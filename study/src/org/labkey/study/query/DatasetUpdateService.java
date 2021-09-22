@@ -98,8 +98,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         StudyImportMaps,        // expected: Map<String,Map<Object,Object>>
 
         KeyList,                // expected: List<String>
-        AllowImportManagedKey,  // expected: Boolean
-        CalledFromQUS           // expected: Boolean - is set to true if we are already in an QUS call
+        AllowImportManagedKey   // expected: Boolean
     }
 
     private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);

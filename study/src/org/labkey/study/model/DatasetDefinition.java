@@ -47,7 +47,6 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
@@ -2150,23 +2149,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         {
             long start = System.currentTimeMillis();
             {
-                // issue 43946 - avoid updating using the QUS so trigger scripts don't get fired multiple
-                // times for the same update
-                if (context.getConfigParameterBoolean(DatasetUpdateService.Config.CalledFromQUS))
+                UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), StudyQuerySchema.SCHEMA_NAME);
+                TableInfo table = schema.getTable(getName());
+                if (table != null)
                 {
-                    DataIteratorBuilder insert = getInsertDataIterator(user, in, context);
-                    Pump p = new Pump(insert.getDataIterator(context), context);
-                    p.run();
-                }
-                else
-                {
-                    UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), StudyQuerySchema.SCHEMA_NAME);
-                    TableInfo table = schema.getTable(getName());
-                    if (table != null)
-                    {
-                        QueryUpdateService qus = table.getUpdateService();
-                        qus.loadRows(user, getContainer(), in, context, null);
-                    }
+                    QueryUpdateService qus = table.getUpdateService();
+                    qus.loadRows(user, getContainer(), in, context, null);
                 }
             }
             long end = System.currentTimeMillis();

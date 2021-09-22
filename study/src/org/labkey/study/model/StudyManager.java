@@ -3506,7 +3506,7 @@ public class StudyManager
                                           @Nullable QCState defaultQCState,
                                           Logger logger,
                                           boolean allowImportManagedKey,
-                                          boolean calledFromQUS) throws IOException
+                                          boolean skipTriggers) throws IOException
     {
         if (data.isEmpty())
             return Collections.emptyList();
@@ -3519,7 +3519,7 @@ public class StudyManager
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
-        options.put(DatasetUpdateService.Config.CalledFromQUS, calledFromQUS);
+        options.put(QueryUpdateService.ConfigParameters.SkipTriggers, skipTriggers);
         context.setConfigParameters(options);
 
         DataLoader loader = new MapLoader(data);
