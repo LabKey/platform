@@ -118,6 +118,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.DEFAULT_DOMAIN;
+import static org.labkey.api.security.AuthenticationManager.DISABLE_HEADER_AUTH_LINKS_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -2394,6 +2395,7 @@ public class LoginController extends SpringActionController
             AuthenticationManager.saveAuthSettings(getUser(), Map.of(
                 SELF_REGISTRATION_KEY, form.isSelfRegistration(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, form.isSelfServiceEmailChanges(),
+                DISABLE_HEADER_AUTH_LINKS_KEY, form.isDisableHeaderAuthLinks(),
                 AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
 
@@ -2413,6 +2415,7 @@ public class LoginController extends SpringActionController
         private boolean _selfRegistration;
         private boolean _selfServiceEmailChanges;
         private boolean _autoCreateAccounts;
+        private boolean _disableHeaderAuthLinks;
         private String _defaultDomain;
         private int[] _formConfigurations;
         private int[] _ssoConfigurations;
@@ -2432,6 +2435,17 @@ public class LoginController extends SpringActionController
         public boolean isSelfServiceEmailChanges()
         {
             return _selfServiceEmailChanges;
+        }
+
+        public boolean isDisableHeaderAuthLinks()
+        {
+            return _disableHeaderAuthLinks;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDisableHeaderAuthLinks(boolean disableHeaderAuthLinks)
+        {
+            _disableHeaderAuthLinks = disableHeaderAuthLinks;
         }
 
         @SuppressWarnings("unused")
@@ -2656,6 +2670,7 @@ public class LoginController extends SpringActionController
             Map<String, Object> globalSettings = Map.of(
                 SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled(),
+                DISABLE_HEADER_AUTH_LINKS_KEY, AuthenticationManager.isDisableHeaderAuthLinks(),
                 AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled(),
                 DEFAULT_DOMAIN, AuthenticationManager.getDefaultDomain()
             );

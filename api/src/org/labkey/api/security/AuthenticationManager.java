@@ -197,7 +197,7 @@ public class AuthenticationManager
             .forEach(cp-> {
                 switch(cp.getName())
                 {
-                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
+                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY, DISABLE_HEADER_AUTH_LINKS_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
                     case DEFAULT_DOMAIN -> setDefaultDomain(null, cp.getValue());
                     default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
                 }
@@ -246,6 +246,11 @@ public class AuthenticationManager
     }
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
+
+    public static boolean isDisableHeaderAuthLinks()
+    {
+        return getAuthSetting(DISABLE_HEADER_AUTH_LINKS_KEY, false);
+    }
 
     public static String getDefaultDomain()
     {
@@ -347,6 +352,11 @@ public class AuthenticationManager
 
         if (ssoConfigurations.isEmpty())
             return null;
+
+        if (AuthenticationManager.isDisableHeaderAuthLinks() && logoType == AuthLogoType.HEADER)
+        {
+            return null;
+        }
 
         HtmlStringBuilder html = HtmlStringBuilder.of("");
 
@@ -554,6 +564,7 @@ public class AuthenticationManager
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+    public static final String DISABLE_HEADER_AUTH_LINKS_KEY = "DisableHeaderAuthLinks";
 
     /**
      * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.

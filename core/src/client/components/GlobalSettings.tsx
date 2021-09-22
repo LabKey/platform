@@ -18,6 +18,11 @@ const ROW_TEXTS = [
         tip: 'Users can change their own email address if their password is managed by LabKey Server.',
     },
     {
+        id: 'DisableHeaderAuthLinks',
+        text: 'Do not show header links for SSO auth providers',
+        tip: 'By default, each SSO will have a login link in the header area. If checked, these links will not be shown.',
+    },
+    {
         id: 'AutoCreateAccounts',
         text: 'Auto-create authenticated users',
         tip: 'Accounts are created automatically when new users authenticate via LDAP or SSO.',
