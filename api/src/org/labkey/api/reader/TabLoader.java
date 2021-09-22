@@ -106,7 +106,7 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
+        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
@@ -136,7 +136,7 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
+        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
@@ -185,7 +185,7 @@ public class TabLoader extends DataLoader
     private TabBufferedReader _reader = null;
     private int _commentLines = 0;
     private char _chDelimiter = '\t';
-    private String _strDelimiter = String.valueOf(_chDelimiter);
+    private String _strDelimiter = new String(new char[]{_chDelimiter});
     private String _lineDelimiter = null;
 
     private String _strQuote = null;
@@ -422,7 +422,7 @@ public class TabLoader extends DataLoader
             {
                 if (_strQuote == null)
                 {
-                    _strQuote = String.valueOf(chQuote);
+                    _strQuote = new String(new char[] {chQuote});
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
@@ -507,7 +507,7 @@ public class TabLoader extends DataLoader
             start = end;
         }
 
-        return listParse.toArray(new String[0]);
+        return listParse.toArray(new String[listParse.size()]);
     }
 
     @Deprecated // Just use a CloseableFilteredIterator.  TODO: Remove
@@ -552,7 +552,7 @@ public class TabLoader extends DataLoader
     public void setDelimiterCharacter(char delimiter)
     {
         _chDelimiter = delimiter;
-        _strDelimiter = String.valueOf(_chDelimiter);
+        _strDelimiter = new String(new char[]{_chDelimiter});
     }
 
     public void setDelimiters(@NotNull String field, @Nullable String line)

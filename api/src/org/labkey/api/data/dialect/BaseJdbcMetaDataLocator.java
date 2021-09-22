@@ -36,6 +36,7 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     private final ConnectionHandler _connectionHandler;
     private final Connection _connection;
     private final DatabaseMetaData _dbmd;
+    private final String _escape;
 
     private String _schemaName;
     private String _schemaNamePattern;
@@ -48,6 +49,7 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
         _connectionHandler = connectionHandler;
         _connection = connectionHandler.getConnection(); // TODO: Do away with ConnectionHandler? Should be able to just implement getConnection() now
         _dbmd = _connection.getMetaData();
+        _escape = _dbmd.getSearchStringEscape();
     }
 
     @Override
@@ -164,11 +166,11 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
 
     // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
     // parameter, see #43821
-    private static String escapeName(@NotNull String name)
+    private String escapeName(@NotNull String name)
     {
-        String ret = name.replace("\\", "\\\\");
-        ret = ret.replace("_", "\\_");
-        ret = ret.replace("%", "\\%");
+        String ret = name.replace(_escape, _escape + _escape);
+        ret = ret.replace("_", _escape + "_");
+        ret = ret.replace("%", _escape + "%");
 
         return ret;
     }
