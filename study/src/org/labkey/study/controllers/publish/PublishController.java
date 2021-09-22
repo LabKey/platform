@@ -31,8 +31,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -346,7 +344,6 @@ public class PublishController extends SpringActionController
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);
-                    ViewCategory targetCategory = _autoLinkCategory != null ? ViewCategoryManager.getInstance().ensureViewCategory(_targetStudyContainer, getUser(), _autoLinkCategory) : null;
 
                     _runIds.forEach((runId) -> {
 
@@ -362,7 +359,7 @@ public class PublishController extends SpringActionController
                                     getUser(),
                                     getContainer(),
                                     _targetStudyContainer,
-                                    targetCategory,
+                                    _autoLinkCategory,
                                     errors,
                                     getLogger());
 

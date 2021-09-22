@@ -41,7 +41,7 @@ import java.util.Set;
  */
 public interface InventoryService
 {
-    String PRODUCT_ID = "freezerManager";
+    String PRODUCT_ID = "FreezerManager";
 
     Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
             "FreezeThawCount",

@@ -300,7 +300,7 @@ public class SubstitutionFormat
     {
         final DecimalFormat _format;
 
-        NumberSubstitutionFormat(String formatString)
+        public NumberSubstitutionFormat(String formatString)
         {
             super("number");
             _format = new DecimalFormat(formatString);

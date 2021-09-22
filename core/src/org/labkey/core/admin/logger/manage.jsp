@@ -64,8 +64,11 @@
 
 </style>
 
-<input id="search" type="text" size="120">
 
+<p style='padding-left:0.75em; margin:0.5em;'>
+    <label for="showLevel">Filter by name:</label>
+    <input id="search" type="text" size="50">
+</p>
 <p style='padding-left:0.75em; margin:0.5em;'>
 <label for="showLevel">Show Level:</label>
 <select id="showLevel" value="">
@@ -94,9 +97,10 @@
 <table id='loggerTable' class='labkey-data-region-legacy labkey-show-borders' style='margin-left:0.75em;'>
   <thead>
     <tr>
-      <td width=80 class='labkey-column-header'>Level</td>
-      <td width=500 class='labkey-column-header'>Name</td>
-      <td width=100 class='labkey-column-header'>Parent</td>
+      <td style="width: 80px" class='labkey-column-header'>Level</td>
+      <td style="width: 500px" class='labkey-column-header'>Name</td>
+      <td style="width: 100px" class='labkey-column-header'>Parent</td>
+      <td style="width: 400px" class='labkey-column-header'>Notes</td>
     </tr>
     <tr>
       <td colspan=3 id='loggerTableMessage' class='labkey-message'></td>
@@ -164,7 +168,7 @@
         {
             return a.name.localeCompare(b.name);
         });
-        if (loggers.length == 0)
+        if (loggers.length === 0)
         {
             loggerTableMessage.innerHTML = 'No loggers in response';
             loggerTableMessage.style.display = '';
@@ -193,12 +197,13 @@
         var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
         return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
-                "data-name='" + logger.name + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + logger.parent + "'>" +
+                "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "' data-notes='" + LABKEY.Utils.encodeHtml(logger.notes) + "'>" +
                 "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
                 logger.level +
                 "</td>" +
-                "<td>" + (logger.name == 'null' ? '&lt;root&gt;' : logger.name) + "</td>" +
-                "<td>" + logger.parent + "</td>" +
+                "<td>" + (logger.name == 'null' ? '&lt;root&gt;' : LABKEY.Utils.encodeHtml(logger.name)) + "</td>" +
+                "<td>" + LABKEY.Utils.encodeHtml(logger.parent) + "</td>" +
+                "<td>" + LABKEY.Utils.encodeHtml(logger.notes ? logger.notes : '') + "</td>" +
                 "</tr>";
     }
 

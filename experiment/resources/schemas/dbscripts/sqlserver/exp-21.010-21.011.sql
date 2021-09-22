@@ -1,0 +1,1 @@
+ALTER TABLE exp.MaterialSource ADD AutoLinkCategory NVARCHAR(200) NULL;

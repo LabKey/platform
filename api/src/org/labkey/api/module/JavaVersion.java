@@ -34,8 +34,8 @@ public enum JavaVersion
     JAVA_14(14, true, true, "https://docs.oracle.com/en/java/javase/14/docs/api/java.base/"),
     JAVA_15(15, true, true, "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/"),
     JAVA_16(16, false, true, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"),
-    JAVA_17(17, false, true, "https://download.java.net/java/early_access/jdk17/docs/api/java.base/"), // TODO: Update to final location, once published
-    JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"); // TODO: Update
+    JAVA_17(17, false, true, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/"),
+    JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/");
 
     private final int _version;
     private final boolean _deprecated;

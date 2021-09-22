@@ -196,6 +196,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.InClauseTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
+            NameGenerator.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
@@ -211,8 +212,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
         List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
-        //TODO: No test cases.
-        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;
     }
 

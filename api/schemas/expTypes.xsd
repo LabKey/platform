@@ -434,9 +434,11 @@
 			<xs:element name="KeyField" type="string" minOccurs="0" maxOccurs="3" />
 			<xs:element name="ParentField" type="string" minOccurs="0" maxOccurs="1" />
             <xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="AliquotNameExpression" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="LabelColor" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="MetricUnit" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="AutoLinkTargetContainerId" type="string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="AutoLinkCategory" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="ParentImportAlias" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:choice minOccurs="0" maxOccurs="unbounded">

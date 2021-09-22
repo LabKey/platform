@@ -87,7 +87,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -265,15 +264,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
-                                 Pair<Dataset.PublishSource, Integer> publishSource,
-                                 List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
-    {
-        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
-    }
-
-    @Override
-    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
                                  String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
@@ -309,7 +300,7 @@ public class StudyPublishManager implements StudyPublishService
         return publishData(user, sourceContainer, targetContainer, null, sourceName, publishSource, dataMaps, columns, keyPropertyName, errors);
     }
 
-    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
                                   String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -338,7 +329,7 @@ public class StudyPublishManager implements StudyPublishService
         return url;
     }
 
-    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, @Nullable ViewCategory datasetCategory, String sourceName,
+    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, @Nullable String datasetCategory, String sourceName,
                                    Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -396,7 +387,7 @@ public class StudyPublishManager implements StudyPublishService
                         .setPublishSource(publishSource.first);
 
                 if (datasetCategory != null)
-                    datasetBuilder.setCategoryId(datasetCategory.getRowId());
+                    datasetBuilder.setCategoryId(ViewCategoryManager.getInstance().ensureViewCategory(targetContainer, user, datasetCategory).getRowId());
 
                 dataset = createDataset(user, datasetBuilder);
             }
@@ -419,7 +410,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (datasetCategory != null && dataset.getCategoryId() == null)
                 {
                     dataset = dataset.createMutable();
-                    dataset.setCategoryId(datasetCategory.getRowId());
+                    dataset.setCategoryId(ViewCategoryManager.getInstance().ensureViewCategory(targetContainer, user, datasetCategory).getRowId());
                     StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
 
@@ -1126,15 +1117,14 @@ public class StudyPublishManager implements StudyPublishService
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
 
                 // Determine if the category is predefined
-                ViewCategory targetStudyCategory = null;
+                String categoryName = null;
                 if (protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI) != null)
                 {
-                    String categoryName = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI).getStringValue();
-                    targetStudyCategory = ViewCategoryManager.getInstance().ensureViewCategory(targetStudyContainer, user, categoryName);
-                    LOG.debug("Determined predefined Dataset Category to assign, " + targetStudyCategory.getLabel());
+                    categoryName = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI).getStringValue();
+                    LOG.debug("Obtained predefined Dataset Category to assign, " + categoryName);
                 }
 
-                return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, targetStudyCategory, errors, LOG);
+                return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, categoryName, errors, LOG);
             }
         }
 
@@ -1190,6 +1180,7 @@ public class StudyPublishManager implements StudyPublishService
                         user,
                         container,
                         targetContainer,
+                        sampleType.getAutoLinkCategory(),
                         sampleTypeName,
                         Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                         dataMaps,
@@ -1210,7 +1201,7 @@ public class StudyPublishManager implements StudyPublishService
 
     @Nullable
     public ActionURL autoLinkResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
-                                     Container targetStudyContainer, @Nullable ViewCategory datasetCategory, List<String> errors, Logger log)
+                                     Container targetStudyContainer, @Nullable String datasetCategory, List<String> errors, Logger log)
     {
         if (targetStudyContainer != null)
         {

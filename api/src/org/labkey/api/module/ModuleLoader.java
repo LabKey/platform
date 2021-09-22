@@ -62,6 +62,7 @@ import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -72,6 +73,7 @@ import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -92,10 +94,13 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -105,6 +110,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -423,6 +429,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private void doInit(ServletContext servletCtx, Execution execution) throws Exception
     {
         _log.info(BANNER);
+        ErrorLogRotator.init();
 
         _servletContext = servletCtx;
 
@@ -482,6 +489,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
         new DebugInfoDumper(modulesDir);
+
+        final File lockFile = createLockFile(modulesDir);
 
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
@@ -607,7 +616,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
+        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade, lockFile);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
     }
@@ -627,6 +636,36 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 throw new IllegalStateException(msg);
             });
+    }
+
+    /** Create a file that indicates the server is in the midst of the upgrade process. Refuse to start up
+     * if a previous startup left the lock file in place. */
+    private File createLockFile(File modulesDir) throws ConfigurationException
+    {
+        File result = new File(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
+        if (result.exists())
+        {
+            if (AppProps.getInstance().isDevMode())
+            {
+                _log.warn("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state.");
+                _log.warn("Bravely continuing because this server is running in Dev mode.");
+            }
+            else
+            {
+                throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete the file and restart Tomcat.");
+
+            }
+        }
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
+        {
+            writer.write("LabKey instance beginning initialization at " + DateUtil.formatDateTimeISO8601(new Date()));
+
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Unable to write lock file at " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " - ensure the user executing Tomcat has permission to create files in parent directory.", e);
+        }
+        return result;
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -1134,7 +1173,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         if (null == tomcat)
         {
-            _log.warn("Could not find CATALINA_HOME environment variable");
+            _log.debug("Could not find CATALINA_HOME environment variable");
             return null;
         }
 
@@ -1436,8 +1475,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     /**
-     * Initiate the module startup process.
-     *
+     * Initiate the module startup process, including any deferred upgrades and firing startup listeners.
      */
     private void initiateModuleStartup()
     {
@@ -1543,6 +1581,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
+
+
         clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
@@ -1608,7 +1648,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    public void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade)
+    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1620,11 +1660,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgrade(() -> afterUpgrade(true), execution);
+                upgrader.upgrade(() -> afterUpgrade(true, lockFile), execution);
             }
             else
             {
-                execution.run(() -> afterUpgrade(coreRequiredUpgrade));
+                execution.run(() -> afterUpgrade(coreRequiredUpgrade, lockFile));
             }
         }
     }
@@ -1632,7 +1672,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     // performedUpgrade is true if any module required upgrading
-    private void afterUpgrade(boolean performedUpgrade)
+    private void afterUpgrade(boolean performedUpgrade, File lockFile)
     {
         verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
@@ -1644,6 +1684,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         initiateModuleStartup();
+
+        // We're out of the critical section (regular and deferred upgrades are complete) so remove the lock file
+        lockFile.delete();
+
         verifyRequiredModules();
     }
 

@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +23,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class SqlScriptRunner
 {
-    private static final Logger _log = LogManager.getLogger(SqlScriptRunner.class);
+    private static final Logger _log = LogHelper.getLogger(SqlScriptRunner.class, "Schema SQL script handling during install and upgrade");
     private static final List<SqlScript> _remainingScripts = new ArrayList<>();
     private static final Object SCRIPT_LOCK = new Object();
 

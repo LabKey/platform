@@ -353,6 +353,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
+        int aliquotNameExpMax = materialSourceTI.getColumn("AliquotNameExpression").getScale();
+        if (StringUtils.isNotBlank(options.getAliquotNameExpression()) && options.getAliquotNameExpression().length() > aliquotNameExpMax)
+            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + nameExpMax + " characters.");
+
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
             throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
@@ -432,9 +436,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int idCol3 = -1;
         int parentCol = -1;
         String nameExpression = null;
+        String aliquotNameExpression = null;
         String labelColor = null;
         String metricUnit = null;
         Container autoLinkTargetContainer = null;
+        String autoLinkCategory = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -447,15 +453,17 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            aliquotNameExpression = StringUtils.trimToNull(arguments.getAliquotNameExpression());
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
+            autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory);
         }
         catch (SQLException e)
         {
