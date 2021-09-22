@@ -16,11 +16,14 @@
 package org.labkey.test.tests.search;
 
 import org.junit.experimental.categories.Category;
-import org.labkey.test.categories.Daily;
-import org.labkey.test.categories.Search;
+import org.labkey.test.categories.Disabled;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
-@Category({Search.class, Daily.class})
+/**
+ * 'Default' is redundant with whatever the default is (MMapDirectory).
+ * Don't include in any suite by default. Retain to allow running manually.
+ */
+@Category({Disabled.class})
 public class SearchTestDefault extends SearchTest
 {
     @Override
