@@ -37,15 +37,6 @@ public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
     @Override
     void close() throws SQLException;
 
-    // Once the implementation is constructed, one of these schema methods must be called...
-    JdbcMetaDataLocator singleSchema(@NotNull String schemaName);
-    JdbcMetaDataLocator allSchemas();
-
-    // ...followed by one of these table methods.
-    JdbcMetaDataLocator singleTable(@NotNull String tableName) throws SQLException;
-    JdbcMetaDataLocator singleTable(@NotNull SchemaTableInfo tableInfo) throws SQLException;
-    JdbcMetaDataLocator allTables();
-
     DbScope getScope();
     DatabaseMetaData getDatabaseMetaData();
     String getCatalogName();

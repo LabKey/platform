@@ -68,7 +68,7 @@ public class SchemaNameCache
     {
         final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).allSchemas().allTables())
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getAllSchemasLocator(scope))
         {
             JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> {
                 // Most dialects support schemas, but MySQL treats them as catalogs

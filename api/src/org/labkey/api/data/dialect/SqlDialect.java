@@ -910,7 +910,7 @@ public abstract class SqlDialect
 
     private static final TableResolver STANDARD_TABLE_RESOLVER = new StandardTableResolver();
 
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return STANDARD_TABLE_RESOLVER;
     }
@@ -918,11 +918,6 @@ public abstract class SqlDialect
     public final void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException
     {
         getTableResolver().addTableInfoFactories(map, scope, schemaName);
-    }
-
-    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
-    {
-        return getTableResolver().getJdbcMetaDataLocator(scope);
     }
 
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)

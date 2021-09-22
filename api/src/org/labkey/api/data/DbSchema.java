@@ -198,7 +198,7 @@ public class DbSchema
     {
         final Map<String, SchemaTableInfoFactory> schemaTableInfoFactoryMap = new CaseInsensitiveHashMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).singleSchema(schemaName).allTables())
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getAllTablesLocator(scope, schemaName))
         {
             new TableMetaDataLoader(locator, ignoreTemp)
             {

@@ -35,62 +35,27 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     private final DbScope _scope;
     private final Connection _connection;
     private final DatabaseMetaData _dbmd;
-    private final String _escape;
 
-    private String _schemaName;
-    private String _schemaNamePattern;
-    private String _tableName;
-    private String _tableNamePattern;
+    private final String _schemaName;
+    private final String _schemaNamePattern;
+    private final String _tableName;
+    private final String _tableNamePattern;
 
-    public StandardJdbcMetaDataLocator(DbScope scope) throws SQLException
+    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
     {
         _scope = scope;
         _connection = getConnection();
         _dbmd = _connection.getMetaData();
-        _escape = _dbmd.getSearchStringEscape();
+
+        _schemaName = schemaName;
+        _schemaNamePattern = schemaNamePattern;
+        _tableName = tableName;
+        _tableNamePattern = tableNamePattern;
     }
 
     protected Connection getConnection() throws SQLException
     {
         return _scope.getConnection();
-    }
-
-    @Override
-    public JdbcMetaDataLocator singleSchema(@NotNull String schemaName)
-    {
-        _schemaName = schemaName;
-        _schemaNamePattern = escapeName(schemaName);
-        return this;
-    }
-
-    @Override
-    public JdbcMetaDataLocator allSchemas()
-    {
-        _schemaName = null;
-        _schemaNamePattern = "%";
-        return this;
-    }
-
-    @Override
-    public JdbcMetaDataLocator singleTable(@NotNull String tableName) throws SQLException
-    {
-        _tableName = tableName;
-        _tableNamePattern = escapeName(tableName);
-        return this;
-    }
-
-    @Override
-    public JdbcMetaDataLocator singleTable(@NotNull SchemaTableInfo tableInfo) throws SQLException
-    {
-        return singleTable(tableInfo.getMetaDataName());
-    }
-
-    @Override
-    public JdbcMetaDataLocator allTables()
-    {
-        _tableName = null;
-        _tableNamePattern = "%";
-        return this;
     }
 
     @Override
@@ -165,16 +130,5 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public boolean supportsSchemas()
     {
         return true;
-    }
-
-    // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
-    // parameter, see #43821
-    private String escapeName(@NotNull String name)
-    {
-        String ret = name.replace(_escape, _escape + _escape);
-        ret = ret.replace("_", _escape + "_");
-        ret = ret.replace("%", _escape + "%");
-
-        return ret;
     }
 }

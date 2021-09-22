@@ -62,9 +62,9 @@ abstract class OracleDialect extends SimpleSqlDialect
     private static final Map<DbScope, ConnectionPool> META_DATA_CONNECTION_POOLS = new ConcurrentHashMap<>();
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
         {
-            return new StandardJdbcMetaDataLocator(scope)
+            return new StandardJdbcMetaDataLocator(scope, schemaName, schemaNamePattern, tableName, tableNamePattern)
             {
                 @Override
                 public Connection getConnection()
@@ -84,7 +84,7 @@ abstract class OracleDialect extends SimpleSqlDialect
     };
 
     @Override
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return TABLE_RESOLVER;
     }

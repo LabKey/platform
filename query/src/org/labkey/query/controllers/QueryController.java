@@ -1410,7 +1410,7 @@ public class QueryController extends SpringActionController
 
                 result.addView(scopeInfo);
 
-                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope).singleSchema(_dbSchemaName).singleTable(_dbTableName))
+                try (JdbcMetaDataLocator locator = dialect.getTableResolver().getSingleTableLocator(scope, _dbSchemaName, _dbTableName))
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaNamePattern(), l.getTableNamePattern(), null));
@@ -1477,7 +1477,7 @@ public class QueryController extends SpringActionController
 
             ModelAndView tablesView;
 
-            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope).singleSchema(dbSchemaName).allTables())
+            try (JdbcMetaDataLocator locator = dialect.getTableResolver().getAllTablesLocator(scope, dbSchemaName))
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
                     (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
