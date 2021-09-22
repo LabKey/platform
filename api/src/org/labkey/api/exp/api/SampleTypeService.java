@@ -30,6 +30,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -42,6 +43,7 @@ public interface SampleTypeService
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";
+    String EXPERIMENTAL_SAMPLE_STATUS = "experimental-sample-status";
 
     static SampleTypeService get()
     {
@@ -51,6 +53,11 @@ public interface SampleTypeService
     static void setInstance(SampleTypeService impl)
     {
         ServiceRegistry.get().registerService(SampleTypeService.class, impl);
+    }
+
+    static boolean isSampleStatusEnabled()
+    {
+        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS);
     }
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);

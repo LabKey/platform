@@ -147,7 +147,6 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
  */
 public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final String EXPERIMENTAL_SAMPLE_STATUS = "experimental-sample-status";
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -208,7 +207,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAMPLE_STATUS,
+        AdminConsole.addExperimentalFeatureFlag(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS,
                 "Sample status tracking",
                 "Sample status values can be provided for samples and will be checked to determine validity of " +
                         "certain sample actions.", false);
@@ -562,7 +561,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
-        json.put(EXPERIMENTAL_SAMPLE_STATUS, ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS));
+        json.put(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS, ExperimentalFeatureService.get().isFeatureEnabled(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS));
         return json;
     }
 
@@ -672,8 +671,4 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
     }
 
-    public static boolean isSampleStatusEnabled()
-    {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS);
-    }
 }

@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -69,7 +70,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
-import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -328,7 +328,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SampleState:
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
-                boolean statusEnabled = ExperimentModule.isSampleStatusEnabled();
+                boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
                 ret.setHidden(!statusEnabled);
                 ret.setShownInDetailsView(!statusEnabled);
                 ret.setShownInInsertView(!statusEnabled);
@@ -579,7 +579,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(ExpMaterialTable.Column.Flag);
 
-        if (ExperimentModule.isSampleStatusEnabled())
+        if (SampleTypeService.isSampleStatusEnabled())
         {
             var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
             statusColInfo.setShownInDetailsView(true);

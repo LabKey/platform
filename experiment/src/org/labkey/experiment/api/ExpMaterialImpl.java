@@ -68,7 +68,6 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
-import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.SampleStateManager;
 
@@ -205,7 +204,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public boolean isOperationPermitted(ExperimentService.SampleOperations operation)
     {
-        if (!ExperimentModule.isSampleStatusEnabled()) // permit everything if feature not enabled
+        if (!SampleTypeService.isSampleStatusEnabled()) // permit everything if feature not enabled
             return true;
 
         DataState state = getSampleState();

@@ -3,10 +3,10 @@ package org.labkey.experiment.samples;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.experiment.ExperimentModule;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ public class SampleStateManager extends DataStateManager
 
     public boolean isOperationPermitted(Container container, Integer stateId, @NotNull ExperimentService.SampleOperations operation)
     {
-        if (!ExperimentModule.isSampleStatusEnabled())
+        if (!SampleTypeService.isSampleStatusEnabled())
             return true;
 
         if (stateId == null)

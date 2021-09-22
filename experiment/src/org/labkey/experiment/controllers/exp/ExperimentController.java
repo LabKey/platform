@@ -3274,7 +3274,7 @@ public class ExperimentController extends SpringActionController
             List<ExpMaterialImpl> allMaterials = service.getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = service.getMaterialsUsedAsInput(deleteForm.getIds(false));
-            if (ExperimentModule.isSampleStatusEnabled())
+            if (SampleTypeService.isSampleStatusEnabled())
                 cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, ExperimentService.SampleOperations.Delete));
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
 

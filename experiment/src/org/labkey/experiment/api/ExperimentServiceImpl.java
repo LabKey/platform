@@ -124,7 +124,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
-import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
@@ -642,7 +641,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<Integer> findIdsNotPermittedForOperation(List<ExpMaterialImpl> candidates, SampleOperations operation)
     {
-        if (!ExperimentModule.isSampleStatusEnabled())
+        if (!SampleTypeService.isSampleStatusEnabled())
             return Collections.emptyList();
 
         return candidates.stream()
