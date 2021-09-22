@@ -70,7 +70,7 @@ import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.samples.SampleStatusManager;
+import org.labkey.experiment.samples.SampleStateManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -180,23 +180,23 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return _object.getAliquotedFromLSID();
     }
 
-    public Integer getStatusId()
+    public Integer getSampleStateId()
     {
-        return _object.getStatus();
+        return _object.getSampleState();
     }
 
     @Override
-    public DataState getDataState()
+    public DataState getSampleState()
     {
-        if (getStatusId() == null)
+        if (getSampleStateId() == null)
             return null;
-        return SampleStatusManager.getInstance().getStateForRowId(getContainer(), getStatusId());
+        return SampleStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
     }
 
     @Override
-    public String getStatusLabel()
+    public String getStateLabel()
     {
-        DataState state = getDataState();
+        DataState state = getSampleState();
         if (state == null)
             return null;
         return state.getLabel();
@@ -208,18 +208,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (!ExperimentModule.isSampleStatusEnabled()) // permit everything if feature not enabled
             return true;
 
-        DataState status = getDataState();
-        // no status means you can do all operations
-        if (status == null)
+        DataState state = getSampleState();
+        // no state means you can do all operations
+        if (state == null)
             return true;
 
-        return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
+        return ExpSchema.SampleStateType.isOperationPermitted(state.getStateType(), operation);
     }
 
     @Override
     public String getNameAndStatus()
     {
-        String statusLabel = getStatusLabel();
+        String statusLabel = getStateLabel();
         return getName() + (statusLabel == null ? "" : " (status: " + statusLabel + ")");
     }
 

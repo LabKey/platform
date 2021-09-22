@@ -866,7 +866,7 @@ public class ExpDataIterators
                             continue;
 
                         if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
-                            throw new ValidationException(String.format("Sample %s with status %s cannot be have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStatusLabel()));
+                            throw new ValidationException(String.format("Sample %s with status %s cannot be have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
                         // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
                         if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())

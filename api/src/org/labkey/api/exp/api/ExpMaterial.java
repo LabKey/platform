@@ -46,9 +46,9 @@ public interface ExpMaterial extends ExpRunItem
 
     String getAliquotedFromLSID();
 
-    DataState getDataState();
+    DataState getSampleState();
 
-    String getStatusLabel();
+    String getStateLabel();
 
     boolean isOperationPermitted(ExperimentService.SampleOperations operation);
 

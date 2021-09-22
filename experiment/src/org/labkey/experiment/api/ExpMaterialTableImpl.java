@@ -325,8 +325,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
-            case Status:
-                var ret = wrapColumn(alias, _rootTable.getColumn("Status"));
+            case SampleState:
+                var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
+                ret.setLabel("Status");
                 boolean statusEnabled = ExperimentModule.isSampleStatusEnabled();
                 ret.setHidden(!statusEnabled);
                 ret.setShownInDetailsView(!statusEnabled);
@@ -580,10 +581,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         if (ExperimentModule.isSampleStatusEnabled())
         {
-            var statusColInfo = addColumn(ExpMaterialTable.Column.Status);
+            var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
             statusColInfo.setShownInDetailsView(true);
             statusColInfo.setShownInInsertView(true);
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Status));
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
             statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
             {
                 @Override

@@ -336,7 +336,7 @@ public class ExpSchema extends AbstractExpSchema
 
         if (SAMPLE_STATUS_TYPE_TABLE.equalsIgnoreCase(name))
         {
-            return new EnumTableInfo<>(SampleStatusType.class, this, SampleStatusType::name, true, "Contains the available sample status types.");
+            return new EnumTableInfo<>(SampleStateType.class, this, SampleStateType::name, true, "Contains the available sample status types.");
         }
 
         return null;
@@ -345,7 +345,7 @@ public class ExpSchema extends AbstractExpSchema
     /**
      * Exposed as EnumTableInfo
      */
-    public enum SampleStatusType
+    public enum SampleStateType
     {
         Available(Set.of(ExperimentService.SampleOperations.values())),
         Consumed(Set.of(
@@ -364,8 +364,7 @@ public class ExpSchema extends AbstractExpSchema
 
         Set<ExperimentService.SampleOperations> _permittedOps;
 
-
-        SampleStatusType(Set<ExperimentService.SampleOperations> permittedOps)
+        SampleStateType(Set<ExperimentService.SampleOperations> permittedOps)
         {
             _permittedOps = permittedOps;
         }
@@ -380,18 +379,18 @@ public class ExpSchema extends AbstractExpSchema
             return _permittedOps.contains(op);
         }
 
-        public static boolean isOperationPermitted(String statusTypeString, ExperimentService.SampleOperations op)
+        public static boolean isOperationPermitted(String stateTypeString, ExperimentService.SampleOperations op)
         {
-            if (statusTypeString == null)
-                return true; // no status provided means all operations are supported
+            if (stateTypeString == null)
+                return true; // no status provided means all operations are permitted
             try
             {
-                SampleStatusType statusType = SampleStatusType.valueOf(statusTypeString);
-                return statusType.operationPermitted(op);
+                SampleStateType stateType = SampleStateType.valueOf(stateTypeString);
+                return stateType.operationPermitted(op);
             }
             catch (IllegalArgumentException e)
             {
-                // invalid status; default to no operations supported
+                // invalid state; default to no operations permitted
                 return false;
             }
         }

@@ -1104,7 +1104,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             String message;
             if (lockedSamples.size() == 1)
-                message = "Sample " + lockedSamples.get(0).getName() + " has status " + lockedSamples.get(0).getStatusLabel() + ", which prevents";
+                message = "Sample " + lockedSamples.get(0).getName() + " has status " + lockedSamples.get(0).getStateLabel() + ", which prevents";
             else if (lockedSamples.size() <= 10)
                 message = "Samples " + lockedSamples.stream().map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", ")) + " have statuses that prevent";
             else

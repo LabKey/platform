@@ -86,7 +86,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.samples.SampleStatusManager;
+import org.labkey.experiment.samples.SampleStateManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -127,7 +127,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static final Set<String> statusUpdateColumns = Set.of(
             ExpMaterialTable.Column.Modified.name().toLowerCase(),
             ExpMaterialTable.Column.ModifiedBy.name().toLowerCase(),
-            ExpMaterialTable.Column.Status.name().toLowerCase(),
+            ExpMaterialTable.Column.SampleState.name().toLowerCase(),
             ExpMaterialTable.Column.Folder.name().toLowerCase()
     );
 
@@ -437,9 +437,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     @Nullable
     @Override
-    public DataState getSampleStatus(Container container, Integer statusRowId)
+    public DataState getSampleState(Container container, Integer stateRowId)
     {
-        return SampleStatusManager.getInstance().getStateForRowId(container, statusRowId);
+        return SampleStateManager.getInstance().getStateForRowId(container, stateRowId);
     }
 
     private ExpSampleTypeImpl _getSampleType(String lsid)

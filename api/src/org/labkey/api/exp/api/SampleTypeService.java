@@ -89,7 +89,7 @@ public interface SampleTypeService
     ExpSampleType getSampleType(String lsid);
 
     @Nullable
-    DataState getSampleStatus(Container container, Integer statusRowId);
+    DataState getSampleState(Container container, Integer stateRowId);
 
     void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
 

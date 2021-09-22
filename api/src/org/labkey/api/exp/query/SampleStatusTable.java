@@ -17,7 +17,7 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         if (cf != null)
             this.setContainerFilter(cf);
         SQLFragment sql = new SQLFragment(("(stateType IN ("));
-        sql.append(Arrays.stream(ExpSchema.SampleStatusType.values()).map(type -> "'" + type.name() + "'").collect(Collectors.joining(",")));
+        sql.append(Arrays.stream(ExpSchema.SampleStateType.values()).map(type -> "'" + type.name() + "'").collect(Collectors.joining(",")));
         sql.append(") )");
         addCondition(sql);
         addWrapColumn(getRealTable().getColumn("RowId"));
@@ -25,6 +25,5 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         addWrapColumn(getRealTable().getColumn("Description"));
         addWrapColumn(getRealTable().getColumn("Container"));
         addWrapColumn("Status Type", getRealTable().getColumn("StateType"));
-
     }
 }

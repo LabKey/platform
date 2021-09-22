@@ -17,8 +17,6 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -31,7 +29,7 @@ public class Material extends RunItem
 {
     private String rootMaterialLSID;
     private String aliquotedFromLSID;
-    private Integer status;
+    private Integer sampleState;
 
     public Material()
     {
@@ -58,14 +56,14 @@ public class Material extends RunItem
         this.aliquotedFromLSID = aliquotedFromLSID;
     }
 
-    public Integer getStatus()
+    public Integer getSampleState()
     {
-        return status;
+        return sampleState;
     }
 
-    public void setStatus(Integer status)
+    public void setSampleState(Integer sampleState)
     {
-        this.status = status;
+        this.sampleState = sampleState;
     }
 
     @Override

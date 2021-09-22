@@ -11,13 +11,13 @@ import org.labkey.experiment.ExperimentModule;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SampleStatusManager extends DataStateManager
+public class SampleStateManager extends DataStateManager
 {
-    private static final SampleStatusManager _instance = new SampleStatusManager();
+    private static final SampleStateManager _instance = new SampleStateManager();
 
-    private SampleStatusManager() {}
+    private SampleStateManager() {}
 
-    public static SampleStatusManager getInstance()
+    public static SampleStateManager getInstance()
     {
         return _instance;
     }
@@ -32,7 +32,7 @@ public class SampleStatusManager extends DataStateManager
             if (typeName == null)
                 return false;
             try {
-                ExpSchema.SampleStatusType.valueOf(typeName);
+                ExpSchema.SampleStateType.valueOf(typeName);
                 return true;
             } catch (IllegalArgumentException e) {
                 return false;
@@ -55,13 +55,13 @@ public class SampleStatusManager extends DataStateManager
             return true;
 
         DataState status = getStateForRowId(container, stateId);
-        return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
+        return ExpSchema.SampleStateType.isOperationPermitted(status.getStateType(), operation);
     }
 
     public boolean isOperationPermitted(DataState status, @NotNull ExperimentService.SampleOperations operation)
     {
         if (status == null)
             return true;
-        return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
+        return ExpSchema.SampleStateType.isOperationPermitted(status.getStateType(), operation);
     }
 }

@@ -109,9 +109,9 @@ public abstract class UploadSamplesHelper
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Description.name());
     }
 
-    private static boolean isStatusHeader(String name)
+    private static boolean isSampleStateHeader(String name)
     {
-        return name.equalsIgnoreCase(ExpMaterialTable.Column.Status.name());
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.SampleState.name());
     }
 
     private static boolean isCommentHeader(String name)
@@ -397,7 +397,7 @@ public abstract class UploadSamplesHelper
             }
             else if (!aliquotParent.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
             {
-                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStatusLabel()));
+                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStateLabel()));
             }
         }
 
@@ -738,7 +738,7 @@ public abstract class UploadSamplesHelper
                         continue;
                     if (isAliasHeader(name))
                         continue;
-                    if (isStatusHeader(name))
+                    if (isSampleStateHeader(name))
                         continue;
                     drop.add(name);
                 }
