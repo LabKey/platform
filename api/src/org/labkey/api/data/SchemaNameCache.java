@@ -15,9 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -70,7 +68,7 @@ public class SchemaNameCache
     {
         final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).allSchemas().allTables())
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getAllSchemasLocator(scope))
         {
             JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> {
                 // Most dialects support schemas, but MySQL treats them as catalogs

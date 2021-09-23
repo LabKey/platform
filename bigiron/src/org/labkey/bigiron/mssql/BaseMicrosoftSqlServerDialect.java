@@ -2020,7 +2020,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
 
     @Override
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return _tableResolver;
     }

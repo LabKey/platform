@@ -18,6 +18,7 @@ package org.labkey.api.data.dialect;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.TableInfo;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -28,6 +29,16 @@ import java.util.Map;
 public interface TableResolver
 {
     void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException;
-    JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException;
     ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName);
+
+    // Internal factory method that each TableResolver can override with a dialect-specific implementation
+    JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException;
+    // All tables in all schemas
+    JdbcMetaDataLocator getAllSchemasLocator(DbScope scope) throws SQLException;
+    // All tables in a single schema
+    JdbcMetaDataLocator getAllTablesLocator(DbScope scope, String schemaName) throws SQLException;
+    // Single table in a schema
+    JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, String tableName) throws SQLException;
+    // Single table in a schema
+    JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, TableInfo tableInfo) throws SQLException;
 }

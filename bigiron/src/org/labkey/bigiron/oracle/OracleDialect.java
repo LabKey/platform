@@ -27,14 +27,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.BaseJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
-import org.labkey.api.data.dialect.ConnectionHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.dialect.TableResolver;
@@ -63,9 +62,9 @@ abstract class OracleDialect extends SimpleSqlDialect
     private static final Map<DbScope, ConnectionPool> META_DATA_CONNECTION_POOLS = new ConcurrentHashMap<>();
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
         {
-            return new BaseJdbcMetaDataLocator(scope, new ConnectionHandler()
+            return new StandardJdbcMetaDataLocator(scope, schemaName, schemaNamePattern, tableName, tableNamePattern)
             {
                 @Override
                 public Connection getConnection()
@@ -80,25 +79,12 @@ abstract class OracleDialect extends SimpleSqlDialect
                         throw new RuntimeSQLException(e);
                     }
                 }
-
-                @Override
-                public void releaseConnection(Connection conn)
-                {
-                    try
-                    {
-                        conn.close();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
-                }
-            });
+            };
         }
     };
 
     @Override
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return TABLE_RESOLVER;
     }
