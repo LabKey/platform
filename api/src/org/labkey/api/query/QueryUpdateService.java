@@ -91,7 +91,8 @@ public interface QueryUpdateService extends HasPermission
         TrimStringRight,     // (Bool) TrimRight strings on insert
         PreserveEmptyString, // (Bool) When source field is an empty string, insert it instead of replacing with null
         // used by Dataspace currently
-        TargetMultipleContainers    // (Bool) allow multi container import
+        TargetMultipleContainers,    // (Bool) allow multi container import
+        SkipTriggers        // (Bool) skip setup and firing of trigger scripts
     }
 
 

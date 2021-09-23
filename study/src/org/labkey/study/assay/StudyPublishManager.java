@@ -458,7 +458,7 @@ public class StudyPublishManager implements StudyPublishService
                 contextualRoles.add(RoleManager.getRole(FolderAdminRole.class));
                 user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
             }
-            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false, false);
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
 
             final ExpObject source = publishSource.first.resolvePublishSource(publishSource.second);

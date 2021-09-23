@@ -2697,7 +2697,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             BatchValidationException errors = new BatchValidationException();
             List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
+                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true, true);
 
             if (errors.hasErrors())
             {
