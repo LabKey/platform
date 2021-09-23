@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class AnalyticsServiceImpl implements AnalyticsService
 {
@@ -53,9 +54,55 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public enum TrackingStatus
     {
-        disabled,
-        enabled,    // google analytics 'property  id'
-        script      // tracking script
+        disabled(false)
+                {
+                    @Override
+                    public String getRawScript()
+                    {
+                        return "";
+                    }
+                },
+        /** Use GA with URL sanitization */
+        enabled(true)
+                {
+                    @Override
+                    public String getRawScript()
+                    {
+                        return TRACKING_SCRIPT_TEMPLATE_ASYNC;
+                    }
+                },
+        /** Use GA without replacing container paths */
+        enabledFullURL(true)
+                {
+                    @Override
+                    public String getRawScript()
+                    {
+                        return TRACKING_SCRIPT_TEMPLATE_ASYNC;
+                    }
+                },
+        /** Custom tracking script */
+        script(true)
+                {
+                    @Override
+                    public String getRawScript()
+                    {
+                        return get().getSavedScript();
+                    }
+                };
+
+        private final boolean _track;
+
+        TrackingStatus(boolean track)
+        {
+            _track = track;
+        }
+
+        public boolean showTrackingScript()
+        {
+            return _track;
+        }
+
+        public abstract String getRawScript();
     }
 
     public enum AnalyticsProperty
@@ -132,25 +179,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
     public String getAccountId()
     {
         String accountId = getProperty(AnalyticsProperty.accountId);
-        if (accountId != null)
-        {
-            return accountId;
-        }
-        return DEFAULT_ACCOUNT_ID;
-    }
-
-
-    private boolean showTrackingScript(ViewContext context)
-    {
-        switch (getTrackingStatus())
-        {
-            default:
-                return false;
-            case enabled:
-                return true;
-            case script:
-                return true;
-        }
+        return Objects.requireNonNullElse(accountId, DEFAULT_ACCOUNT_ID);
     }
 
     /**
@@ -164,7 +193,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         Container container = context.getContainer();
 
         // Adding a null check for container as on rendering the error page, container can be null for a not found page
-        if (null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
+        if (getTrackingStatus() != TrackingStatus.enabledFullURL && null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
         {
             actionUrl.deleteParameters();
             actionUrl.setExtraPath(container.getId());
@@ -200,24 +229,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
     }
 
 
-    private String getRawScript()
-    {
-        switch (getTrackingStatus())
-        {
-            case script:
-                return getSavedScript();
-            case enabled:
-                return TRACKING_SCRIPT_TEMPLATE_ASYNC;
-            case disabled:
-            default:
-                return "";
-        }
-    }
-
     @Override
     public String getTrackingScript(ViewContext context)
     {
-        if (!showTrackingScript(context))
+        if (!getTrackingStatus().showTrackingScript())
             return "";
 
         ActionURL url = context.getActionURL();
@@ -227,13 +242,12 @@ public class AnalyticsServiceImpl implements AnalyticsService
         boolean isSecure = context.getActionURL().getScheme().startsWith("https");
         String gaJS = (isSecure ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
 
-        StringExpression se = StringExpressionFactory.create(getRawScript());
-        String trackingScript = se.eval(PageFlowUtil.map(
+        StringExpression se = StringExpressionFactory.create(getTrackingStatus().getRawScript());
+        return se.eval(PageFlowUtil.map(
                 "ACCOUNT_ID", getAccountId(),
                 "PAGE_URL", getSanitizedUrl(context),
                 "GA_JS", gaJS
                 ));
-        return trackingScript;
     }
 
     static public void populateSettingsWithStartupProps()

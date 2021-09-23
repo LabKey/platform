@@ -300,18 +300,25 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
-        in = preTriggerDataIterator(in, context);
-
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers);
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
-        if (hasTableScript)
-            in = helper.before(in);
+        if (!skipTriggers)
+        {
+            in = preTriggerDataIterator(in, context);
+            if (hasTableScript)
+                in = helper.before(in);
+        }
         DataIteratorBuilder importDIB = createImportDIB(user, container, in, context);
         DataIteratorBuilder out = importDIB;
-        if (hasTableScript)
-            out = helper.after(importDIB);
 
-        out = postTriggerDataIterator(out, context);
+        if (!skipTriggers)
+        {
+            if (hasTableScript)
+                out = helper.after(importDIB);
+
+            out = postTriggerDataIterator(out, context);
+        }
 
         if (hasTableScript)
         {

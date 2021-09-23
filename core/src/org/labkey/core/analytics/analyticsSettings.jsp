@@ -31,46 +31,69 @@
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
-<p>Your LabKey Server can be configured to add JavaScript to your HTML pages, so that information about how your users
-    use your server will be sent to Google Analytics.</p>
-<p>When enabled, the project/folder path will only be reported when it is accessible to Guest users. When a project/folder is secure,
-    LabKey Server will report a GUID instead (which can be translated to the human-readable path). Additionally, HTTP GET parameters will
-    be stripped. Both are efforts to ensure that sensitive data is not sent to Google Analytics.</p>
+<p>Your LabKey Server can be configured to add JavaScript to your web site so that usage information will be sent to a web analytics system.</p>
 
 <labkey:errors/>
 <labkey:form action="<%=new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot())%>" method="POST">
     <table>
         <tr>
-            <td valign=top nowrap>
-                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Off</label>
+            <td style="vertical-align: top; white-space: nowrap">
+                <strong><label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/> Off</label></strong>
             </td>
-            <td style="padding-left: 1em;"><p>Do NOT add Google Analytics tracking script to pages on this web site.</p></td>
+            <td style="padding-left: 1em;"><p>Do not use analytics tracking on this server.</p></td>
         </tr>
 
         <tr>
-            <td valign=top nowrap>
-                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;On</label>
+            <td style="vertical-align: top; white-space: nowrap; padding-top: 2em;">
+                <strong><label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/> Google Analytics with modified URL</label></strong>
             </td>
-            <td style="padding-left: 1em;"><p>Add Google Analytics tracking script to pages on this web site.
-                <p>If you have opted to use Google Analytics, you must provide an Account ID.
-                    If you use the Account ID <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code>,
-                    your data will be sent to LabKey. They would love to see how your users are using your
-                    server.  However, if you would like to see this data yourself, or you would like to keep this information private
-                    from LabKey, you should sign up for your own
-                    <a href="http://www.google.com/analytics">Google Analytics</a> account and use the Account ID that they give you.
-                </p><p>Google Analytics Account ID:<br>
-                    <input <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> type="text" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
+
+            <td style="padding-left: 1em; padding-top: 2em;">
+                <p style="width: 60em;">
+                    The full page URL will only be reported when it is accessible to Guest users.
+                    When a project/folder is secured, LabKey Server will report a unique identifier
+                    (the folder's EntityId, available through Admin->Folder->Management->Information)
+                    instead of the folder path. Additionally, HTTP GET parameters will
+                    be stripped. Both are efforts to ensure that sensitive data is not included.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top; white-space: nowrap">
+                <strong><label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabledFullURL%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/> Google Analytics with full URL</label></strong>
+            </td>
+
+            <td style="padding-left: 1em;"><p>Always report the full page URL, regardless of the folder's permissions.</p></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td style="padding-left: 1em;">
+                <p style="width: 60em;">
+                    <a href="https://www.google.com/analytics">Google Analytics</a> reporting is based on an Account
+                    ID. LabKey monitors the Account ID
+                    <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code> to understand usage and prioritize
+                    development efforts. You can get own Account ID by signing up with Google Analytics.
+                </p>
+                <p style="width: 60em;">
+                    <label for="ff_accountId">Account ID</label>:
+                    <input <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> type="text" id="ff_accountId" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
                 </p>
             </td>
         </tr>
 
         <tr>
-            <td valign=top nowrap>
-                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Custom</label>
+            <td style="vertical-align: top; white-space: nowrap; padding-top: 2em">
+                <strong><label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Custom</label></strong>
             </td>
-            <td style="padding-left: 1em;"><p>Add custom script to the head of every  page.  Include required &lt;script&gt; tags.</p>
-                <p><b>NOTE:</b> You can mess up your site if you make a mistake here.  You may want to take this opportunity to bookmark this page.  Just in case.</p>
-                <p><textarea <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:600px; height:400px;" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea></p></td>
+            <td style="padding-left: 1em; padding-top: 2em;">
+                <p style="width: 60em;">
+                    Add <label for="ff_trackingScript">custom analytics script</label> to the <code>&lt;head&gt;</code> of every page.  Include required <code>&lt;script&gt;</code> tags.
+                </p>
+                <p style="width: 60em;">
+                    <strong>NOTE:</strong> You can mess up your site if you make a mistake here.  You may want to bookmark this page to aid in making corrections, just in case.
+                </p>
+                <textarea <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:100%; height:15em;" id="ff_trackingScript" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea>
+            </td>
         </tr>
     </table>
 

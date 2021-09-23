@@ -182,7 +182,7 @@ public class SchemaColumnMetaData
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).singleSchema(schemaName).singleTable(ti))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getSingleTableLocator(scope, schemaName, ti))
         {
             JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
                 (dbmd, locator1) -> dbmd.getPrimaryKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
@@ -239,7 +239,7 @@ public class SchemaColumnMetaData
         }
         else
         {
-            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).singleSchema(schemaName).singleTable(ti))
+            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getSingleTableLocator(scope, schemaName, ti))
             {
                 JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
                         ((dbmd, l) -> {

@@ -128,6 +128,7 @@ public class DbScope
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final boolean _rds;
+    private final String _escape; // LIKE escape character
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -248,6 +249,7 @@ public class DbScope
         _schemaCache = null;
         _tableCache = null;
         _rds = false;
+        _escape = null;
     }
 
     // Used only for testing
@@ -339,6 +341,7 @@ public class DbScope
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
             _rds = _dialect.isRds(this);
+            _escape = dbmd.getSearchStringEscape();
         }
     }
 
@@ -1433,6 +1436,11 @@ public class DbScope
     public boolean isRds()
     {
         return _rds;
+    }
+
+    public String getSearchStringEscape()
+    {
+        return _escape;
     }
 
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception

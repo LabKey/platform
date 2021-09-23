@@ -15,9 +15,7 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SchemaTableInfo;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -35,16 +33,7 @@ import java.sql.SQLException;
 public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
 {
     @Override
-    void close();
-
-    // Once the implementation is constructed, one of these schema methods must be called...
-    JdbcMetaDataLocator singleSchema(@NotNull String schemaName);
-    JdbcMetaDataLocator allSchemas();
-
-    // ...followed by one of these table methods.
-    JdbcMetaDataLocator singleTable(@NotNull String tableName) throws SQLException;
-    JdbcMetaDataLocator singleTable(@NotNull SchemaTableInfo tableInfo) throws SQLException;
-    JdbcMetaDataLocator allTables();
+    void close() throws SQLException;
 
     DbScope getScope();
     DatabaseMetaData getDatabaseMetaData();
