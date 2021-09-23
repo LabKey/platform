@@ -24,15 +24,29 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URLHelper;
 
+import java.io.File;
 import java.io.FileFilter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 /**
  * <code>FileAnalysisTaskPipeline</code>
+ * A filter interface that implements both the io.FileFilter and nio.DirectoryStream.Filter interfaces
  */
 public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskPipelineSettings>
 {
+    interface FilePathFilter extends FileFilter, DirectoryStream.Filter<Path>
+    {
+        @Override
+        boolean accept(File file);
+
+        @Override
+        boolean accept(Path path);
+    }
+
+
     /**
      * Returns the name of the protocol factory for this pipeline, which
      * will be used as the root directory name for all analyses of this type
@@ -57,7 +71,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      * @return filter for input files
      */
     @NotNull
-    FileFilter getInitialFileTypeFilter();
+    FilePathFilter getInitialFileTypeFilter();
 
     @NotNull
     URLHelper getAnalyzeURL(Container c, String path);

@@ -15,20 +15,17 @@
  */
 package org.labkey.api.cloud;
 
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.xml.StudyDocument;
-import org.springframework.validation.BindException;
 
 import java.nio.file.Path;
+import java.nio.file.WatchEvent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -54,6 +51,14 @@ public interface CloudStoreService
     }
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
+
+    Collection<WatchEvent<Path>> executeWatchJob(int cloudWatcherJobId);
+
+    void registerCloudWatcher(CloudWatcherConfig config);
+
+    Collection<Integer> getWatcherJobs();
+
+    void deleteMessage(String messageId);
 
     class StoreInfo
     {

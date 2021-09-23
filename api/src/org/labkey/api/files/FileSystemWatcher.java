@@ -15,6 +15,8 @@
  */
 package org.labkey.api.files;
 
+import org.labkey.api.cloud.CloudWatcherConfig;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent.Kind;
@@ -29,4 +31,7 @@ public interface FileSystemWatcher
     @SuppressWarnings("unchecked")
     void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException;
     void removeListener(Path directory, FileSystemDirectoryListener listener);
+
+    @SuppressWarnings("unchecked")
+    void addCloudListener(Path directory, FileSystemDirectoryListener listener, CloudWatcherConfig config, Kind<Path>... entryCreate) throws IOException;
 }

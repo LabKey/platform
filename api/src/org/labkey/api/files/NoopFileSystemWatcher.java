@@ -15,6 +15,8 @@
  */
 package org.labkey.api.files;
 
+import org.labkey.api.cloud.CloudWatcherConfig;
+
 import java.nio.file.Path;
 import java.nio.file.WatchEvent.Kind;
 
@@ -33,6 +35,11 @@ public class NoopFileSystemWatcher implements FileSystemWatcher
 
     @Override
     public void removeListener(Path directory, FileSystemDirectoryListener listener)
+    {
+    }
+
+    @Override
+    public void addCloudListener(Path directory, FileSystemDirectoryListener listener, CloudWatcherConfig config, Kind<Path>... entries)
     {
     }
 }

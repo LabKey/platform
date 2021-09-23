@@ -19,9 +19,9 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -29,10 +29,10 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -49,7 +49,7 @@ abstract public class PipelineProvider
 
     private boolean _showActionsIfModuleInactive;
 
-    public static abstract class FileEntryFilter implements FileFilter
+    public static abstract class FileEntryFilter implements FileAnalysisTaskPipeline.FilePathFilter
     {
         private PipelineDirectory _entry;
 
@@ -63,6 +63,18 @@ abstract public class PipelineProvider
             if (_entry == null)
                 return f.exists();
             return _entry.fileExists(f);
+        }
+
+        public boolean fileExists(Path f)
+        {
+            if (_entry == null)
+                return Files.exists(f);
+            return _entry.fileExists(f);
+        }
+
+        public boolean accept(Path file)
+        {
+            return accept(file.toFile());
         }
     }
 
@@ -106,12 +118,18 @@ abstract public class PipelineProvider
         }
 
         @Override
+        @Deprecated //Prefer Path version
         public boolean accept(File f)
+        {
+            return accept(f.toPath(), true);
+        }
+
+        public boolean accept(Path f)
         {
             return accept(f, true);
         }
 
-        public boolean accept(File f, boolean checkSiblings)
+        public boolean accept(Path f, boolean checkSiblings)
         {
             if (_initialFileTypes != null)
             {
@@ -120,7 +138,7 @@ abstract public class PipelineProvider
                     FileType ft = _initialFileTypes[i];
                     if (ft.isType(f))
                     {
-                        File dir = f.getParentFile();
+                        Path dir = f.getParent();
                         String basename = ft.getBaseName(f);
 
                         // If any of the preceding types exist, then don't include this one.
@@ -133,19 +151,20 @@ abstract public class PipelineProvider
                         int indexMatch = ft.getIndexMatch(f);
                         if (checkSiblings && indexMatch > 0 && ft.isExtensionsMutuallyExclusive())
                         {
-                            File[] siblings = dir.listFiles();
-                            if (siblings != null)
+                            try
                             {
-                                for (File sibling : siblings)
-                                {
-                                    if (!sibling.equals(f) &&
+                                //TODO verify this
+                                return Files.walk(
+                                        dir,
+                                        0,
+                                        FileVisitOption.FOLLOW_LINKS
+                                ).noneMatch(sibling -> !sibling.equals(f) &&
                                         ft.getBaseName(sibling).equals(basename) &&
-                                        ft.isType(sibling.getName()) &&
-                                        ft.getIndexMatch(sibling) < indexMatch)
-                                    {
-                                        return false;
-                                    }
-                                }
+                                        ft.isType(sibling.getFileName().toString()) &&
+                                        ft.getIndexMatch(sibling) < indexMatch);
+                            }
+                            catch (IOException e)
+                            {
                             }
                         }
 

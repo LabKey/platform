@@ -28,7 +28,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 import org.labkey.list.model.ListImportContext;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +59,8 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
         }
 
         // guaranteed to only have a single file
-        assert support.getInputFiles().size() == 1;
-        File dataFile = support.getInputFiles().get(0);
+        assert support.getInputFilePaths().size() == 1;
+        Path dataFile = support.getInputFilePaths().get(0);
         PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
 
         if (pr != null)
@@ -72,9 +72,9 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
                 boolean useMerge = false;
 
                 if (params.containsKey(LIST_ID_KEY))
-                    inputDataMap.put(dataFile.getName(), new Pair<>(LIST_ID_KEY, params.get(LIST_ID_KEY)));
+                    inputDataMap.put(dataFile.getFileName().toString(), new Pair<>(LIST_ID_KEY, params.get(LIST_ID_KEY)));
                 else if (params.containsKey(LIST_NAME_KEY))
-                    inputDataMap.put(dataFile.getName(), new Pair<>(LIST_NAME_KEY, params.get(LIST_NAME_KEY)));
+                    inputDataMap.put(dataFile.getFileName().toString(), new Pair<>(LIST_NAME_KEY, params.get(LIST_NAME_KEY)));
 
                 if (params.containsKey(ListImportContext.LIST_MERGE_OPTION))
                     useMerge = Boolean.parseBoolean(params.get(ListImportContext.LIST_MERGE_OPTION));

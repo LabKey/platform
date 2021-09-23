@@ -200,12 +200,13 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     Integer getJobId(User u, Container c, String jobGUID);
 
-    FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+    PathAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
 
     TriggerConfiguration getTriggerConfig(Container c, String name);
     void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
     void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date);
 
+    @Deprecated //Prefer PathAnalysisProperties as it better supports Cloud
     class FileAnalysisProperties
     {
         private final PipeRoot _pipeRoot;
@@ -225,6 +226,35 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
         }
 
         public File getDirData()
+        {
+            return _dirData;
+        }
+
+        public AbstractFileAnalysisProtocolFactory getFactory()
+        {
+            return _factory;
+        }
+    }
+
+    class PathAnalysisProperties
+    {
+        private final PipeRoot _pipeRoot;
+        private final Path _dirData;
+        private final AbstractFileAnalysisProtocolFactory _factory;
+
+        public PathAnalysisProperties(PipeRoot pipeRoot, Path dirData, AbstractFileAnalysisProtocolFactory factory)
+        {
+            _pipeRoot = pipeRoot;
+            _dirData = dirData;
+            _factory = factory;
+        }
+
+        public PipeRoot getPipeRoot()
+        {
+            return _pipeRoot;
+        }
+
+        public Path getDirData()
         {
             return _dirData;
         }

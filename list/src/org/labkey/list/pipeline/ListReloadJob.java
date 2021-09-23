@@ -28,22 +28,23 @@ import org.labkey.list.model.ListImportContext;
 import org.labkey.list.model.ListImporter;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
 public class ListReloadJob extends PipelineJob
 {
-    private final File _dataFile;
+    private final Path _dataFile;
     private final ListImportContext _importContext;
 
     @JsonCreator
-    protected ListReloadJob(@JsonProperty("_dataFile") File dataFile, @JsonProperty("_importContext") ListImportContext importContext)
+    protected ListReloadJob(@JsonProperty("_dataFile") Path dataFile, @JsonProperty("_importContext") ListImportContext importContext)
     {
         _dataFile = dataFile;
         _importContext = importContext;
     }
 
-    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, File dataFile, File logFile, @NotNull ListImportContext importContext)
+    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, Path dataFile, File logFile, @NotNull ListImportContext importContext)
     {
         super(null, info, root);
         _dataFile = dataFile;
@@ -69,12 +70,12 @@ public class ListReloadJob extends PipelineJob
         setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());
         ListImporter importer = new ListImporter(_importContext);
 
-        getLogger().info("Loading " + _dataFile.getName());
+        getLogger().info("Loading " + _dataFile.getFileName());
 
         List<String> errors = new LinkedList<>();
         try
         {
-            if (!importer.processSingle(new FileSystemFile(_dataFile.getParentFile()), _dataFile.getName(), getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
+            if (!importer.processSingle(new FileSystemFile(_dataFile.getParent()), _dataFile.getFileName().toString(), getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
             {
                 error("Job failed.");
             }

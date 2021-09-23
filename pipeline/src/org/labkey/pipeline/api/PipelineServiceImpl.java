@@ -776,23 +776,23 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, @Nullable String path)
+    public PathAnalysisProperties getFileAnalysisProperties(Container c, String taskId, @Nullable String path)
     {
         PipeRoot pr = PipelineService.get().findPipelineRoot(c);
         if (pr == null || !pr.isValid())
             throw new NotFoundException();
 
-        File dirData = null;
+        Path dirData = null;
         if (path != null)
         {
-            dirData = pr.resolvePath(path);
+            dirData = pr.resolveToNioPath(path);
             if (dirData == null || !NetworkDrive.exists(dirData))
                 throw new NotFoundException("Could not resolve path: " + path);
         }
 
         TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(taskId);
         AbstractFileAnalysisProtocolFactory factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
-        return new FileAnalysisProperties(pr, dirData, factory);
+        return new PathAnalysisProperties(pr, dirData, factory);
     }
 
     @Override
@@ -812,17 +812,17 @@ public class PipelineServiceImpl implements PipelineService
             throw new IllegalArgumentException("Must specify a protocol name");
         }
         TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(form.getTaskId());
-        FileAnalysisProperties props = getFileAnalysisProperties(context.getContainer(), form.getTaskId(), form.getPath());
+        PathAnalysisProperties props = getFileAnalysisProperties(context.getContainer(), form.getTaskId(), form.getPath());
         PipeRoot root = props.getPipeRoot();
-        File dirData = props.getDirData();
+        Path dirData = props.getDirData();
         AbstractFileAnalysisProtocolFactory factory = props.getFactory();
 
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
-            dirData = new File(dirData, form.getProtocolName() + "_" + FileUtil.getTimestamp());
-            if (!dirData.mkdir())
+            dirData = dirData.resolve(form.getProtocolName() + "_" + FileUtil.getTimestamp());
+            if (!Files.exists(Files.createDirectories(dirData)))
             {
-                throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData).getAbsolutePath());
+                throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
             }
         }
         AbstractFileAnalysisProtocol protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
@@ -883,16 +883,16 @@ public class PipelineServiceImpl implements PipelineService
 
         protocol.getFactory().ensureDefaultParameters(root);
 
-        File fileParameters = protocol.getParametersFile(dirData, root);
+        Path fileParameters = protocol.getParametersFile(dirData, root);
         // Make sure configure.xml file exists for the job when it runs.
-        if (fileParameters != null && !fileParameters.exists())
+        if (fileParameters != null && !Files.exists(fileParameters))
         {
             protocol.setEmail(context.getUser().getEmail());
             protocol.saveInstance(fileParameters, context.getContainer());
         }
 
         Boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
-        List<File> filesInputList = form.getValidatedFiles(context.getContainer(), allowNonExistentFiles);
+        List<Path> filesInputList = form.getValidatedPaths(context.getContainer(), allowNonExistentFiles);
 
         if (form.isActiveJobs())
         {
@@ -901,11 +901,18 @@ public class PipelineServiceImpl implements PipelineService
 
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
-            for (File inputFile : filesInputList)
+            for (Path inputFile : filesInputList)
             {
-                if (!(inputFile.renameTo(new File(dirData, inputFile.getName())) || allowNonExistentFiles))
+                try
                 {
-                    throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitiveFile(inputFile).getAbsolutePath());
+                    Files.move(inputFile, dirData.resolve(inputFile.getFileName().toString()));
+                }
+                catch (IOException e)
+                {
+                    if (!allowNonExistentFiles)
+                    {
+                        throw new IOException("Failed to move input file into unique directory: " + FileUtil.getAbsoluteCaseSensitivePath(context.getContainer(), inputFile).toAbsolutePath());
+                    }
                 }
             }
         }
@@ -927,7 +934,7 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public boolean isProtocolDefined(AnalyzeForm form)
     {
-        FileAnalysisProperties props = getFileAnalysisProperties(form.getContainer(), form.getTaskId(), form.getPath());
+        PathAnalysisProperties props = getFileAnalysisProperties(form.getContainer(), form.getTaskId(), form.getPath());
         AbstractFileAnalysisProtocolFactory factory = props.getFactory();
         return factory.getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false) != null;
     }

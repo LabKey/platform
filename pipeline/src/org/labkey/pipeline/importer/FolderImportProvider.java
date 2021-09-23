@@ -24,8 +24,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.PipelineController;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 
@@ -55,7 +53,7 @@ public class FolderImportProvider extends PipelineProvider
                 PipelineController.ImportFolderFromPipelineAction.class,
                 "Import Folder",
                 directory,
-                directory.listFiles(new FolderImportFilter()),
+                directory.listPaths(new FolderImportFilter()),
                 false,
                 false,
                 includeAll

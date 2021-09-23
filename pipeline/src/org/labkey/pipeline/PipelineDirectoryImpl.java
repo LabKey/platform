@@ -26,8 +26,11 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,7 +45,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
     PipeRootImpl _root;
     String _relativePath;
     ActionURL _href;
-    Map<String, File> _files;  // Full list of files, if this is a directory.
+    Map<String, Path> _files;  // Full list of files, if this is a directory.
     List<PipelineAction> _actions;
 
     public PipelineDirectoryImpl(PipeRootImpl root, String relativePath, ActionURL href)
@@ -71,44 +74,60 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         _actions.add(action);
     }
 
-    protected void ensureFiles()
+    protected void ensureFiles() throws IOException
     {
         // See if file list needs initialization.
         if (_files == null)
         {
             _files = new LinkedHashMap<>();
 
-            for (File rootPath : _root.getRootPaths())
+            for (Path rootPath : _root.getRootNioPaths())
             {
-                assert !rootPath.isFile() : "Expected to be called with a directory";
+                assert Files.isDirectory(rootPath) : "Expected to be called with a directory";
 
                 // Get the full set of files in the directory.
                 // Use a file object that caches its directory state.
-                File dir = new FileCached(new File(rootPath, _relativePath));
-                File[] files = dir.listFiles();
-
-                if (files != null)
+                Path dir = rootPath.resolve(_relativePath);
+                Files.walkFileTree(dir, new SimpleFileVisitor<>()
                 {
-                    for (File file : files)
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     {
-                        _files.put(file.getName(), file);
+                        _files.put(file.getFileName().toString(), file);
+                        return FileVisitResult.CONTINUE;
                     }
-                }
+                });
             }
         }
     }
 
     @Override
+    @Deprecated //Prefer Path version
     public boolean fileExists(File f)
     {
-        ensureFiles();
-
-        File fileInEntry = _files.get(f.getName());
-        return (fileInEntry != null && fileInEntry.equals(f));
+        return fileExists(f.toPath());
     }
 
     @Override
-    public List<Path> listFiles(DirectoryStream.Filter<Path> filter)
+    public boolean fileExists(Path f)
+    {
+        try
+        {
+            ensureFiles();
+
+            Path fileInEntry = _files.get(f.getFileName().toString());
+                return (fileInEntry != null && Files.isSameFile(fileInEntry, f));
+            }
+        catch (IOException e)
+        {
+            //TODO log error
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<Path> listPaths(DirectoryStream.Filter<Path> filter)
     {
         ArrayList<Path> listFiles = new ArrayList<>();
         try
@@ -142,9 +161,8 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                 ensureFiles();
 
                 // Actually do the filtering.
-                for (File f : _files.values())
+                for (Path path : _files.values())
                 {
-                    Path path = f.toPath();
                     if (filter.accept(path))
                         listFiles.add(path);
                 }
@@ -159,16 +177,26 @@ public class PipelineDirectoryImpl implements PipelineDirectory
     }
 
     @Override
+    @Deprecated //Prefer the List<Path> version
     public File[] listFiles(FileFilter filter)
     {
-        ensureFiles();
+        try
+        {
+            ensureFiles();
+        }
+        catch (IOException e)
+        {
+            // TODO: log error, but otherwise ignore
+            String foo = e.getMessage();
+        }
 
         // Actually do the filtering.
         ArrayList<File> listFiles = new ArrayList<>();
         if (filter instanceof PipelineProvider.FileEntryFilter)
             ((PipelineProvider.FileEntryFilter)filter).setFileEntry(this);
-        for (File f : _files.values())
+        for (Path path : _files.values())
         {
+            File f = path.toFile();
             if (filter.accept(f))
                 listFiles.add(f);
         }

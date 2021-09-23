@@ -433,7 +433,6 @@ abstract public class PipelineJob extends Job implements Serializable
     public void setLogFilePath(Path logFile)
     {
         _logFilePathName = FileUtil.pathToString(logFile);
-//        _logJobStopStart.info("LogFilePath set to " + _logFilePathName);
         _logger = null;
         _logFile = null;
 
@@ -806,7 +805,7 @@ abstract public class PipelineJob extends Job implements Serializable
             boolean success = false;
             try
             {
-                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFilePath());
                 getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
                 if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
                 {
@@ -883,7 +882,6 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean runStateMachine()
     {
         TaskPipeline pipeline = getTaskPipeline();
-
         if (pipeline == null)
         {
             assert false : "Either override getTaskPipeline() or run() for " + getClass();
@@ -1096,18 +1094,23 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (null != _localDirectory & isDone())
         {
+            Path remoteLogFilePath = null;
             try
             {
-                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
-                if (null != remoteLogFilePath)
-                {
-                    setLogFilePath(remoteLogFilePath);
-                    setStatus(getActiveTaskStatus());       // Force writing to statusFiles
-                }
+                remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
             }
             catch (Exception e)
             {
+                // Attempt to record the error to the log. Move failed, so log should still be local and writable.
                 error("Error trying to move log file", e);
+            }
+
+            //Update job log entry's log location to remote path
+            if (null != remoteLogFilePath)
+            {
+                //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
+                setLogFilePath(remoteLogFilePath);
+                setStatus(getActiveTaskStatus());       // Force writing to statusFiles
             }
         }
     }

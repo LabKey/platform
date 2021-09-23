@@ -35,13 +35,15 @@ import org.labkey.api.util.PageFlowUtil;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 /**
@@ -92,13 +94,13 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @param root pipeline root under which the files are stored
      * @return analysis directory
      */
-    public File getAnalysisDir(File dirData, String protocolName, PipeRoot root)
+    public Path getAnalysisDir(Path dirData, String protocolName, PipeRoot root)
     {
-        File defaultFile = new File(new File(dirData, getName()), protocolName);
+        Path defaultFile = dirData.resolve(getName()).resolve(protocolName);
         // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
         // pipeline location
         String relativePath = root.relativePath(defaultFile);
-        return root.resolvePath(relativePath);
+        return root.resolveToNioPath(relativePath);
     }
 
     /**
@@ -109,6 +111,12 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return NetworkDrive.exists(new File(file.getParent(), getParametersFileName()));
     }
 
+    @Deprecated
+    public File getParametersFile(@Nullable File dirData, String protocolName, PipeRoot root)
+    {
+        Path result = getParametersFile(dirData == null? null : dirData.toPath(), protocolName, root);
+        return result != null ? result.toFile() : null;
+    }
     /**
      * Get the parameters file location, given a directory containing the mass spec data.
      *
@@ -118,17 +126,17 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @return parameters file
      */
     @Nullable
-    public File getParametersFile(@Nullable File dirData, String protocolName, PipeRoot root)
+    public Path getParametersFile(@Nullable Path dirData, String protocolName, PipeRoot root)
     {
         if (dirData == null)
         {
             return null;
         }
-        File defaultFile = new File(getAnalysisDir(dirData, protocolName, root), getParametersFileName());
+        Path defaultFile = getAnalysisDir(dirData, protocolName, root).resolve(getParametersFileName());
         // Check if the pipeline root wants us to write somewhere else, because the source file might be in a read-only
         // pipeline location
         String relativePath = root.relativePath(defaultFile);
-        return root.resolvePath(relativePath);
+        return root.resolveToNioPath(relativePath);
     }
 
     /**
@@ -137,9 +145,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      * @param root pipeline root directory
      * @return default parameters file
      */
-    public File getDefaultParametersFile(PipeRoot root)
+    public Path getDefaultParametersFile(PipeRoot root)
     {
-        return new File(getProtocolDir(root, false), getDefaultParametersFileName());
+        return getProtocolDir(root, false).resolve(getDefaultParametersFileName());
     }
 
     /**
@@ -215,32 +223,42 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Override
+    @Deprecated //Prefer Path version
     public T loadInstance(File file) throws IOException
     {
-        ParamParser parser = createParamParser();
-        parser.parse(new FileInputStream(file));
-        if (parser.getErrors() != null)
-        {
-            ParamParser.Error err = parser.getErrors()[0];
-            if (err.getLine() == 0)
-            {
-                throw new IOException("Failed parsing input parameters '" + file + "'.\n" +
-                        err.getMessage());
-            }
-            else
-            {
-                throw new IOException("Failed parsing input parameters '" + file + "'.\n" +
-                        "Line " + err.getLine() + ": " + err.getMessage());
-            }
-        }
+        return loadInstance(file.toPath());
+    }
 
-        return createProtocolInstance(parser);
+
+    public T loadInstance(Path file) throws IOException
+    {
+        ParamParser parser = createParamParser();
+        try (InputStream is = Files.newInputStream(file))
+        {
+            parser.parse(is);
+            if (parser.getErrors() != null)
+            {
+                ParamParser.Error err = parser.getErrors()[0];
+                if (err.getLine() == 0)
+                {
+                    throw new IOException("Failed parsing input parameters '" + file + "'.\n" +
+                            err.getMessage());
+                }
+                else
+                {
+                    throw new IOException("Failed parsing input parameters '" + file + "'.\n" +
+                            "Line " + err.getLine() + ": " + err.getMessage());
+                }
+            }
+
+            return createProtocolInstance(parser);
+        }
     }
 
     public String getDefaultParametersXML(PipeRoot root) throws IOException
     {
-        File fileDefault = getDefaultParametersFile(root);
-        if (!fileDefault.exists())
+        Path fileDefault = getDefaultParametersFile(root);
+        if (!Files.exists(fileDefault))
             return null;
 
         return new FileDefaultsReader(fileDefault).readXML();
@@ -248,9 +266,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     protected class FileDefaultsReader extends DefaultsReader
     {
-        private final File _fileDefaults;
+        private final Path _fileDefaults;
 
-        public FileDefaultsReader(File fileDefaults)
+        public FileDefaultsReader(Path fileDefaults)
         {
             _fileDefaults = fileDefaults;
         }
@@ -258,7 +276,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         @Override
         public Reader createReader() throws IOException
         {
-            return Readers.getReader(_fileDefaults);
+            return Files.newBufferedReader(_fileDefaults, Charset.defaultCharset());
         }
     }
     
@@ -301,10 +319,10 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
                 throw new IllegalArgumentException("Line " + err.getLine() + ": " + err.getMessage());
         }
 
-        File fileDefault = getDefaultParametersFile(root);
-        fileDefault.getParentFile().mkdirs();
+        Path fileDefault = getDefaultParametersFile(root);
+        Files.createDirectories(fileDefault.getParent());
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileDefault)))
+        try (BufferedWriter writer = Files.newBufferedWriter(fileDefault, Charset.defaultCharset(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
         {
             writer.write(xml, 0, xml.length());
         }
@@ -335,11 +353,11 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Nullable
-    public AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, String protocolName, boolean archived)
+    public AbstractFileAnalysisProtocol getProtocol(PipeRoot root, Path dirData, String protocolName, boolean archived)
     {
         try
         {
-            File protocolFile = getParametersFile(dirData, protocolName, root);
+            Path protocolFile = getParametersFile(dirData, protocolName, root);
             AbstractFileAnalysisProtocol result;
             if (NetworkDrive.exists(protocolFile))
             {
@@ -351,7 +369,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             else
             {
                 protocolFile = getProtocolFile(root, protocolName, archived);
-                if (protocolFile == null || !protocolFile.exists())
+                if (protocolFile == null || !Files.exists(protocolFile))
                     return null;
 
                 result = load(root, protocolName, archived);

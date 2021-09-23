@@ -378,26 +378,37 @@ public class FileType implements Serializable
      * @return the index of the first suffix that matches. Useful when looking through a directory of files and
      * determining which is the preferred file for this FileType.
      */
+    @Deprecated //Prefer the Path version
     public int getIndexMatch(File file)
     {
-        if (!isAntiFileType(file.getName(), null))  // avoid, for example, mistaking .pep-prot.xml for .xml
+        return getIndexMatch(file.getName(), file.getPath());
+    }
+
+    public int getIndexMatch(Path file)
+    {
+        return getIndexMatch(file.getFileName().toString(), file.toString());
+    }
+
+    private int getIndexMatch(String filename, String filePath)
+    {
+        if (!isAntiFileType(filename, null))  // avoid, for example, mistaking .pep-prot.xml for .xml
         {
             for (int i = 0; i < _suffixes.size(); i++)
             {
                 String s = toLowerIfCaseInsensitive(_suffixes.get(i));
-                if (toLowerIfCaseInsensitive(file.getName()).endsWith(s))
+                if (toLowerIfCaseInsensitive(filename).endsWith(s))
                 {
                     return i;
                 }
                 // TPP treats .xml.gz as a native format
-                if (_supportGZ.booleanValue() && toLowerIfCaseInsensitive(file.getName()).endsWith(s + ".gz"))
+                if (_supportGZ.booleanValue() && toLowerIfCaseInsensitive(filename).endsWith(s + ".gz"))
                 {
                     return i;
                 }
             }
         }
 
-        throw new IllegalArgumentException("No match found for " + file + " with " + toString());
+        throw new IllegalArgumentException("No match found for " + filePath + " with " + toString());
     }
 
     private String toLowerIfCaseInsensitive(String s)
