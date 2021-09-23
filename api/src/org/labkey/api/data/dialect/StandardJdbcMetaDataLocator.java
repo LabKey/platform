@@ -83,7 +83,7 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public String getSchemaName()
     {
         if (null == _schemaName)
-            throw new IllegalStateException("Schema setting method has not been called");
+            throw new IllegalStateException("Schema name has not been initialized!");
         return _schemaName;
     }
 
@@ -91,7 +91,7 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public String getSchemaNamePattern()
     {
         if (null == _schemaNamePattern)
-            throw new IllegalStateException("Schema setting method has not been called");
+            throw new IllegalStateException("Schema name pattern has not been initialized!");
         return _schemaNamePattern;
     }
 
@@ -99,7 +99,7 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public String getTableName()
     {
         if (null == _tableName)
-            throw new IllegalStateException("Table setting method has not been called");
+            throw new IllegalStateException("Table name has not been initialized!");
         return _tableName;
     }
 
@@ -107,7 +107,7 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     public String getTableNamePattern()
     {
         if (null == _tableNamePattern)
-            throw new IllegalStateException("Table setting method has not been called");
+            throw new IllegalStateException("Table name pattern has not been initialized!");
         return _tableNamePattern;
     }
 
