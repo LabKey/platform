@@ -15,10 +15,8 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SchemaTableInfo;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -29,7 +27,6 @@ import java.sql.SQLException;
  * Date: 2/8/2015
  * Time: 7:47 AM
  */
-
 public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
 {
     private final DbScope _scope;

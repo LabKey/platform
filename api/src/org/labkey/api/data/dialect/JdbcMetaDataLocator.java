@@ -15,9 +15,7 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SchemaTableInfo;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
