@@ -1102,4 +1102,32 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return max;
     }
+
+    @Override
+    public Collection<? extends ExpMaterial> getSamplesNotPermitted(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        return samples.stream()
+                .filter(sample -> !sample.isOperationPermitted(operation))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        String message;
+        if (samples.size() == 1)
+        {
+            ExpMaterial sample = samples.iterator().next();
+            message = "Sample " + sample.getName() + " has status " + sample.getStateLabel() + ", which prevents";
+        }
+        else
+        {
+            message = samples.size() + " samples (";
+            message += samples.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (samples.size() > 10)
+                message += " ...";
+            message += ") have statuses that prevent";
+        }
+        return message + " " + operation.getDescription() + ".";
+    }
 }

@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -303,9 +304,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // and updating from either locked or unlocked to something else while also updating other metadata
         SampleStateManager statusManager = SampleStateManager.getInstance();
         DataState oldStatus = statusManager.getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
-        boolean oldAllowsOp = statusManager.isOperationPermitted(oldStatus, ExperimentService.SampleOperations.EditMetadata);
+        boolean oldAllowsOp = statusManager.isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
         DataState newStatus = statusManager.getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
-        boolean newAllowsOp = statusManager.isOperationPermitted(newStatus, ExperimentService.SampleOperations.EditMetadata);
+        boolean newAllowsOp = statusManager.isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
@@ -440,7 +441,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), ExperimentService.SampleOperations.Delete))
+                if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
                     throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, statusManager.getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()))));
 
                 ids.add(rowId);

@@ -30,6 +30,7 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -347,40 +348,43 @@ public class ExpSchema extends AbstractExpSchema
      */
     public enum SampleStateType
     {
-        Available(Set.of(ExperimentService.SampleOperations.values())),
+        Available(Set.of(SampleTypeService.SampleOperations.values())),
         Consumed(Set.of(
-                ExperimentService.SampleOperations.EditMetadata,
-                ExperimentService.SampleOperations.EditLineage,
-                ExperimentService.SampleOperations.RemoveFromStorage,
-                ExperimentService.SampleOperations.AddToPicklist,
-                ExperimentService.SampleOperations.Delete,
-                ExperimentService.SampleOperations.AddToWorkflow,
-                ExperimentService.SampleOperations.RemoveFromWorkflow,
-                ExperimentService.SampleOperations.AddAssayData,
-                ExperimentService.SampleOperations.LinkToStudy,
-                ExperimentService.SampleOperations.RecallFromStudy
+                SampleTypeService.SampleOperations.EditMetadata,
+                SampleTypeService.SampleOperations.EditLineage,
+                SampleTypeService.SampleOperations.RemoveFromStorage,
+                SampleTypeService.SampleOperations.AddToPicklist,
+                SampleTypeService.SampleOperations.Delete,
+                SampleTypeService.SampleOperations.AddToWorkflow,
+                SampleTypeService.SampleOperations.RemoveFromWorkflow,
+                SampleTypeService.SampleOperations.AddAssayData,
+                SampleTypeService.SampleOperations.LinkToStudy,
+                SampleTypeService.SampleOperations.RecallFromStudy
         )),
-        Locked(Set.of(ExperimentService.SampleOperations.AddToPicklist));
+        Locked(Set.of(SampleTypeService.SampleOperations.AddToPicklist));
 
-        Set<ExperimentService.SampleOperations> _permittedOps;
+        Set<SampleTypeService.SampleOperations> _permittedOps;
 
-        SampleStateType(Set<ExperimentService.SampleOperations> permittedOps)
+        SampleStateType(Set<SampleTypeService.SampleOperations> permittedOps)
         {
             _permittedOps = permittedOps;
         }
 
-        public Set<ExperimentService.SampleOperations> getPermittedOps()
+        public Set<SampleTypeService.SampleOperations> getPermittedOps()
         {
             return _permittedOps;
         }
 
-        public boolean operationPermitted(ExperimentService.SampleOperations op)
+        public boolean operationPermitted(SampleTypeService.SampleOperations op)
         {
             return _permittedOps.contains(op);
         }
 
-        public static boolean isOperationPermitted(String stateTypeString, ExperimentService.SampleOperations op)
+        public static boolean isOperationPermitted(String stateTypeString, SampleTypeService.SampleOperations op)
         {
+            if (!SampleTypeService.isSampleStatusEnabled())
+                return true;
+
             if (stateTypeString == null)
                 return true; // no status provided means all operations are permitted
             try

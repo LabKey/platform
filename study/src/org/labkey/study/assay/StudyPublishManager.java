@@ -66,6 +66,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -1409,11 +1410,10 @@ public class StudyPublishManager implements StudyPublishService
             if (sourceType == Dataset.PublishSource.SampleType && rowIds != null)
             {
                 List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(rowIds);
-                Optional<? extends ExpMaterial>  optLocked = samples.stream()
-                        .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.RecallFromStudy))
-                        .findAny();
-                if (optLocked.isPresent())
-                    return "One or more of the chosen samples cannot be recalled from this dataset due to status.";
+                SampleTypeService sampleService = SampleTypeService.get();
+                Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.RecallFromStudy);
+                if (!lockedSamples.isEmpty())
+                    return sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.RecallFromStudy);
             }
         }
         return null;

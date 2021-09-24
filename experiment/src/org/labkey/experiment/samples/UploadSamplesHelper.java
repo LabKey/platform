@@ -395,7 +395,7 @@ public abstract class UploadSamplesHelper
                 String message = "Aliquot parent '" + aliquotedFrom + "' not found.";
                 throw new ValidationException(message);
             }
-            else if (!aliquotParent.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
+            else if (!aliquotParent.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
             {
                 throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStateLabel()));
             }

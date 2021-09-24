@@ -639,14 +639,14 @@ public class ExperimentServiceImpl implements ExperimentService
         return materials.get(0);
     }
 
-    public List<Integer> findIdsNotPermittedForOperation(List<ExpMaterialImpl> candidates, SampleOperations operation)
+    public List<Integer> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
     {
         if (!SampleTypeService.isSampleStatusEnabled())
             return Collections.emptyList();
 
-        return candidates.stream()
-                .filter(material -> !material.isOperationPermitted(operation))
-                .map(AbstractRunItemImpl::getRowId).collect(Collectors.toList());
+        return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
+                .stream().filter(material -> !material.isOperationPermitted(operation))
+                .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
     @Override
@@ -4134,7 +4134,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
      * and warn user
      */
-    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<ExpMaterialImpl> allMaterials, Set<Integer> deletable, User user, Container container)
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<? extends ExpMaterial> allMaterials, Set<Integer> deletable, User user, Container container)
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
@@ -4250,7 +4250,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
 
-                if (!ignoreStatus && !material.isOperationPermitted(SampleOperations.Delete))
+                if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
                     throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                 if (null == stDeleteFrom)

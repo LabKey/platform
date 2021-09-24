@@ -59,6 +59,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -865,7 +866,7 @@ public class ExpDataIterators
                         if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
                             continue;
 
-                        if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
+                        if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
                             throw new ValidationException(String.format("Sample %s with status %s cannot be have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
                         // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
@@ -957,9 +958,8 @@ public class ExpDataIterators
     {
         List<String> messages = new ArrayList<>();
         // get the relatives whose lineage cannot change
-        Set<ExpMaterial> lockedRelatives = previousSampleRelatives.stream()
-                .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
-                .collect(Collectors.toSet());
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> lockedRelatives = sampleService.getSamplesNotPermitted(previousSampleRelatives, SampleTypeService.SampleOperations.EditLineage);
 
         Set<String> lockedRelativeLsids = lockedRelatives.stream().map(ExpMaterial::getLSID).collect(Collectors.toSet());
         Set<String> newRelativeLsids = currentSampleRelatives.stream().map(ExpMaterial::getLSID).collect(Collectors.toSet());
@@ -974,17 +974,16 @@ public class ExpDataIterators
             messages.add(message);
         }
         //check if any of the newly added relatives are locked
-        Set<ExpMaterial> addedLocked = currentSampleRelatives
-                .stream()
-                .filter(material -> !lockedRelativeLsids.contains(material.getLSID()) &&
-                        !material.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
+        Set<ExpMaterial> addedLocked = sampleService.getSamplesNotPermitted(currentSampleRelatives, SampleTypeService.SampleOperations.EditLineage)
+                .stream().filter(sample -> !lockedRelativeLsids.contains(sample.getLSID()))
                 .collect(Collectors.toSet());
 
         if (!addedLocked.isEmpty())
         {
-            String message = String.format("One or more of the new %s for sample %s has a status that prevents the updating of lineage", relationPlural, sampleName);
-            if (addedLocked.size() <= 10)
-                message += ": " + addedLocked.stream().map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            String message = String.format("One or more of the new %s for sample %s has a status that prevents the updating of lineage: ", relationPlural, sampleName);
+            message += addedLocked.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (addedLocked.size() > 10)
+                message += "...";
             message += ".";
             messages.add(message);
         }

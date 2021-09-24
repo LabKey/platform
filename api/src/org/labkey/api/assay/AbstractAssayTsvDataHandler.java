@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -88,7 +89,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -1097,21 +1097,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
 
-        List<ExpMaterial> lockedSamples = materialInputs.keySet().stream()
-                .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.AddAssayData))
-                .collect(Collectors.toList());
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(materialInputs.keySet(), SampleTypeService.SampleOperations.AddAssayData);
         if (!lockedSamples.isEmpty())
-        {
-            String message;
-            if (lockedSamples.size() == 1)
-                message = "Sample " + lockedSamples.get(0).getName() + " has status " + lockedSamples.get(0).getStateLabel() + ", which prevents";
-            else if (lockedSamples.size() <= 10)
-                message = "Samples " + lockedSamples.stream().map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", ")) + " have statuses that prevent";
-            else
-                message = lockedSamples.size() + " samples have statuses that prevent";
-
-            throw new ValidationException(message + " the addition of associated assay data.");
-        }
+            throw new ValidationException(sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.AddAssayData));
 
         return materialInputs;
     }

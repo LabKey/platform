@@ -209,7 +209,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public boolean isOperationPermitted(ExperimentService.SampleOperations operation)
+    public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
     {
         if (!SampleTypeService.isSampleStatusEnabled()) // permit everything if feature not enabled
             return true;

@@ -2,7 +2,6 @@ package org.labkey.experiment.samples;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.qc.DataState;
@@ -46,7 +45,7 @@ public class SampleStateManager extends DataStateManager
         return !getStates(container).isEmpty();
     }
 
-    public boolean isOperationPermitted(Container container, Integer stateId, @NotNull ExperimentService.SampleOperations operation)
+    public boolean isOperationPermitted(Container container, Integer stateId, @NotNull SampleTypeService.SampleOperations operation)
     {
         if (!SampleTypeService.isSampleStatusEnabled())
             return true;
@@ -58,7 +57,7 @@ public class SampleStateManager extends DataStateManager
         return ExpSchema.SampleStateType.isOperationPermitted(status.getStateType(), operation);
     }
 
-    public boolean isOperationPermitted(DataState status, @NotNull ExperimentService.SampleOperations operation)
+    public boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation)
     {
         if (status == null)
             return true;

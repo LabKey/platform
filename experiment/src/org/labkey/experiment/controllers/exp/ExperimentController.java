@@ -3271,11 +3271,11 @@ public class ExperimentController extends SpringActionController
             Set<Integer> deletable = deleteForm.getIds(false);
             List<Integer> deleteRequest = new ArrayList<>(deletable);
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
-            List<ExpMaterialImpl> allMaterials = service.getExpMaterials(deleteRequest);
+            List<? extends ExpMaterial> allMaterials = service.getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = service.getMaterialsUsedAsInput(deleteForm.getIds(false));
             if (SampleTypeService.isSampleStatusEnabled())
-                cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, ExperimentService.SampleOperations.Delete));
+                cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, SampleTypeService.SampleOperations.Delete));
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
 
             // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()

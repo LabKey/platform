@@ -33,6 +33,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,33 @@ public interface SampleTypeService
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";
     String EXPERIMENTAL_SAMPLE_STATUS = "experimental-sample-status";
+
+    enum SampleOperations {
+        EditMetadata("editing metadata"),
+        EditLineage("editing lineage"),
+        AddToStorage("adding to storage"),
+        UpdateStorageMetadata("updating storage metadata"),
+        RemoveFromStorage("removing from storage"),
+        AddToPicklist("adding to a picklist"),
+        Delete("deleting"),
+        AddToWorkflow("adding to a workflow"),
+        RemoveFromWorkflow("removing from a workflow"),
+        AddAssayData("addition of associated assay data"),
+        LinkToStudy("linking to study"),
+        RecallFromStudy("recalling from a study");
+
+        private final String _description; // used as a suffix in messaging users about what is not allowed
+
+        SampleOperations(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
 
     static SampleTypeService get()
     {
@@ -172,4 +200,9 @@ public interface SampleTypeService
 
     // find the max sequence number with '${sampleName}-' prefix
     long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
+
+    Collection<? extends ExpMaterial> getSamplesNotPermitted(Collection<? extends ExpMaterial> samples, SampleOperations operation);
+
+    String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
+
 }

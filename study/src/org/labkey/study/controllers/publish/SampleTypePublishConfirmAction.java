@@ -1,6 +1,5 @@
 package org.labkey.study.controllers.publish;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -35,12 +34,12 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
@@ -210,12 +209,10 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
         List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(dataKeys.keySet());
-        String unlinkablesMsg = samples.stream()
-                .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.LinkToStudy))
-                .map(ExpMaterial::getNameAndStatus)
-                .collect(Collectors.joining(", "));
-        if (!StringUtils.isEmpty(unlinkablesMsg))
-            errors.add("The following samples have a status that prevents linking to the study: " + unlinkablesMsg);
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> unlinkableSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.LinkToStudy);
+        if (!unlinkableSamples.isEmpty())
+            errors.add(sampleService.getOperationNotPermittedMessage(unlinkableSamples, SampleTypeService.SampleOperations.LinkToStudy));
 
         for (PublishKey publishKey : dataKeys.values())
         {

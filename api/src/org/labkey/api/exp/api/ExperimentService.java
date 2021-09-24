@@ -108,21 +108,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
     int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
 
-    enum SampleOperations {
-        EditMetadata,
-        EditLineage,
-        AddToStorage,
-        UpdateStorageMetadata,
-        RemoveFromStorage,
-        AddToPicklist,
-        Delete,
-        AddToWorkflow,
-        RemoveFromWorkflow,
-        AddAssayData,
-        LinkToStudy,
-        RecallFromStudy,
-    }
-
     static ExperimentService get()
     {
         return ServiceRegistry.get().getService(ExperimentService.class);
