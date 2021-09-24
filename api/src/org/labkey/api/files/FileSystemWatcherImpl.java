@@ -344,7 +344,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void close()
         {
-//            throw new NotImplementedException();
         }
     }
 
