@@ -66,6 +66,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy(), cf);
+        setName(StudyQuerySchema.PROPERTIES_TABLE_NAME);
 
         Container c = schema.getContainer();
 
