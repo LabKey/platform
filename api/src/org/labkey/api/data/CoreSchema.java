@@ -159,7 +159,7 @@ public class CoreSchema
     @Deprecated (since = "21.10")
     public TableInfo getTableInfoQCState()
     {
-        return getSchema().getTable("DataStates");
+        return getTableInfoDataStates();
     }
 
     public TableInfo getTableInfoDataStates()
