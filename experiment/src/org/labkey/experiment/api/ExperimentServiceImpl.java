@@ -645,7 +645,7 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
 
         return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
-                .stream().filter(material -> !material.isOperationPermitted(operation))
+                .stream()
                 .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
