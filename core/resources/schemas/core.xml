@@ -643,7 +643,7 @@
   </table>
 
   <table tableName="DataStates" tableDbType="TABLE">
-    <description>Contains one row per data state.</description>
+    <description>Contains one row per data state (e.g., quality control state, sample state).</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="Label">
