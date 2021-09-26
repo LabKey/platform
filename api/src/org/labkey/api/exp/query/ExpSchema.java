@@ -62,7 +62,7 @@ public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
     public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
-    public static final String SAMPLE_STATUS_TYPE_TABLE = "SampleStatusType";
+    public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -261,7 +261,7 @@ public class ExpSchema extends AbstractExpSchema
             tableNames.add(type.toString());
         }
         tableNames.add(DATA_CLASS_CATEGORY_TABLE);
-        tableNames.add(SAMPLE_STATUS_TYPE_TABLE);
+        tableNames.add(SAMPLE_STATE_TYPE_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -335,9 +335,9 @@ public class ExpSchema extends AbstractExpSchema
             return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Contains the list of available data class category types.");
         }
 
-        if (SAMPLE_STATUS_TYPE_TABLE.equalsIgnoreCase(name))
+        if (SAMPLE_STATE_TYPE_TABLE.equalsIgnoreCase(name))
         {
-            return new EnumTableInfo<>(SampleStateType.class, this, SampleStateType::name, true, "Contains the available sample status types.");
+            return new EnumTableInfo<>(SampleStateType.class, this, SampleStateType::name, true, "Contains the available sample state (status) types.");
         }
 
         return null;
