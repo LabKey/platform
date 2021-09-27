@@ -24,8 +24,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 
+import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -52,13 +52,13 @@ public interface CloudStoreService
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
-    Collection<WatchEvent<Path>> executeWatchJob(int cloudWatcherJobId);
+    Collection<CloudNoticeEvent> executeWatchJob(int cloudWatcherJobId) throws IOException;
 
     void registerCloudWatcher(CloudWatcherConfig config);
 
     Collection<Integer> getWatcherJobs();
 
-    void deleteMessage(String messageId);
+    void deleteMessage(String messageId, int watcherId);
 
     class StoreInfo
     {

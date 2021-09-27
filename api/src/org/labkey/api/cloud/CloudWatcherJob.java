@@ -1,7 +1,6 @@
 package org.labkey.api.cloud;
 
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
+import java.io.IOException;
 import java.util.Collection;
 
 
@@ -11,7 +10,9 @@ import java.util.Collection;
 public interface CloudWatcherJob
 {
     int getRowId();
-    Collection<WatchEvent<Path>> poll();
+    Collection<CloudNoticeEvent> poll() throws IOException;
+
+    void deleteMessage(String messageId);
 }
 
 

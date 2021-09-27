@@ -22,6 +22,7 @@ import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cloud.CloudNoticeEvent;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -136,6 +137,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     {
         // Associate a new PathListenerManager with this directory, if one doesn't already exist
         PathListenerManager plm = new PathListenerManager();
+        //Ensure a trailing '/' by push/pop a directory
         PathListenerManager previous = _listenerMap.putIfAbsent(directory.resolve("a").getParent(), plm);     // Atomic operation
 
         // Register directory with the WatchService, if it's new
@@ -318,27 +320,59 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             try
             {
                 Collection<Integer> queues = CloudStoreService.get().getWatcherJobs();
-                queues.parallelStream().forEach(this::processWatchJob);
+                for (Integer queue : queues)
+                {
+                    processWatchJob(queue);
+                }
             }
             catch (Throwable e)  // Make sure throwables don't kill the background thread
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
 
-            Thread.sleep(1000);
+            Thread.sleep(30000);
         }
 
-        private void processWatchJob(final Integer cloudWatcherJob)
+        private void processWatchJob(final Integer cloudWatcherJob) throws IOException
         {
-            Collection<WatchEvent<Path>> events = CloudStoreService.get().executeWatchJob(cloudWatcherJob);
+            Collection<CloudNoticeEvent> events = CloudStoreService.get().executeWatchJob(cloudWatcherJob);
             events.stream().forEachOrdered(evt -> {
-                Path watchedPath = evt.context().getParent();  //TODO this isn't quite right...
+                Path watchedPath = evt.getPath().getParent();  //TODO this isn't quite right...
                 PathListenerManager plm = _listenerMap.get(watchedPath);
                 if (plm != null)
                 {
-                    plm.fireEvents(evt, watchedPath);
+                    CloudWatchEvent cwe = new CloudWatchEvent(evt.getPath());
+                    plm.fireEvents(cwe, watchedPath);
+                    CloudStoreService.get().deleteMessage(evt.getEventId(), cloudWatcherJob);
                 }
             });
+        }
+
+        private class CloudWatchEvent implements WatchEvent<Path>
+        {
+            private Path cloudPath;
+            private CloudWatchEvent(Path path)
+            {
+                cloudPath = path;
+            }
+
+            @Override
+            public Kind<Path> kind()
+            {
+                return ENTRY_CREATE;
+            }
+
+            @Override
+            public int count()
+            {
+                return 1;
+            }
+
+            @Override
+            public Path context()
+            {
+                return cloudPath;
+            }
         }
 
         @Override
