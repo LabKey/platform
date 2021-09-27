@@ -38,12 +38,29 @@ import java.util.List;
 public class SqlScriptRunner
 {
     private static final Logger _log = LogHelper.getLogger(SqlScriptRunner.class, "Schema SQL script handling during install and upgrade");
-    private static final List<SqlScript> _remainingScripts = new ArrayList<>();
-    private static final Object SCRIPT_LOCK = new Object();
 
-    private static String _currentModuleName = null;
+    private final User _user;
+    private final List<SqlScript> _remainingScripts = new ArrayList<>();
+    private final Object SCRIPT_LOCK = new Object();
 
-    public static List<SqlScript> getRunningScripts(@Nullable String moduleName)
+    private String _currentModuleName = null;
+
+    public SqlScriptRunner()
+    {
+        _user = null;  // Delegate to ModuleLoader.getUpgradeUser() in this case
+    }
+
+    public SqlScriptRunner(@Nullable User user)
+    {
+        _user = user;
+    }
+
+    private User getUser()
+    {
+        return null != _user ? _user : ModuleLoader.getInstance().getUpgradeUser();
+    }
+
+    public List<SqlScript> getRunningScripts(@Nullable String moduleName)
     {
         synchronized (SCRIPT_LOCK)
         {
@@ -54,8 +71,7 @@ public class SqlScriptRunner
         }
     }
 
-
-    public static String getCurrentModuleName()
+    public String getCurrentModuleName()
     {
         synchronized (SCRIPT_LOCK)
         {
@@ -63,9 +79,8 @@ public class SqlScriptRunner
         }
     }
 
-
     // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
-    public static void runScripts(Module module, @Nullable User user, List<SqlScript> scripts) throws SqlScriptException
+    public void runScripts(Module module, List<SqlScript> scripts) throws SqlScriptException
     {
         _log.info("Running " + scripts.toString());
 
@@ -79,7 +94,7 @@ public class SqlScriptRunner
         for (SqlScript script : scripts)
         {
             SqlScriptManager manager = SqlScriptManager.get(script.getProvider(), script.getSchema());
-            manager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module), null);
+            manager.runScript(getUser(), script, ModuleLoader.getInstance().getModuleContext(module), null);
 
             synchronized(SCRIPT_LOCK)
             {
@@ -97,7 +112,6 @@ public class SqlScriptRunner
             _currentModuleName = null;
         }
     }
-
 
     public static class SqlScriptException extends Exception
     {

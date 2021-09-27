@@ -7597,7 +7597,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors)
         {
-            ModuleLoader.getInstance().recreateViews();
+            ModuleLoader.getInstance().recreateViews(getUser());
             return true;
         }
 
