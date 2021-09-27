@@ -66,7 +66,6 @@ public class StudyPropertiesTable extends BaseStudyTable
     public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy(), cf);
-        setName(StudyQuerySchema.PROPERTIES_TABLE_NAME);
 
         Container c = schema.getContainer();
 
@@ -154,6 +153,14 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         // disable import data link for this table
         setImportURL(AbstractTableInfo.LINK_DISABLER);
+    }
+
+    @Override
+    public String getPublicName()
+    {
+        // Issue 43988 - need to use the preferred query schema name for the table to make linked schemas and other
+        // metadata-driven scenarios consistent
+        return StudyQuerySchema.PROPERTIES_TABLE_NAME;
     }
 
     private MutableColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
