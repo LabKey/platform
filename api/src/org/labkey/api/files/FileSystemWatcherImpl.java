@@ -187,11 +187,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     @Override
     public void removeListener(Path directory, FileSystemDirectoryListener listener)
     {
-        PathListenerManager plm = _listenerMap.get(directory);
+        //Ensure a trailing '/' if needed, otherwise some keys won't be found. Path::normalize method doesn't seem to address this
+        Path dir = directory.resolve("a").getParent();
+        PathListenerManager plm = _listenerMap.get(dir);
         if (plm != null)
         {
             plm.removeListener(listener);
-            LOG.debug("Removed a file listener on " + directory.toString());
+            LOG.debug("Removed a file listener on " + directory);
         }
     }
 
