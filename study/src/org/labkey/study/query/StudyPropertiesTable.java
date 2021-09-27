@@ -158,6 +158,8 @@ public class StudyPropertiesTable extends BaseStudyTable
     @Override
     public String getPublicName()
     {
+        // Issue 43988 - need to use the preferred query schema name for the table to make linked schemas and other
+        // metadata-driven scenarios consistent
         return StudyQuerySchema.PROPERTIES_TABLE_NAME;
     }
 
