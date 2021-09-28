@@ -586,7 +586,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null)
+            if (InventoryService.get() != null && !st.isMedia())
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());

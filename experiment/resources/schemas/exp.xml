@@ -339,6 +339,13 @@
       <column columnName="MetricUnit"/>
       <column columnName="AutoLinkTargetContainer"/>
       <column columnName="AutoLinkCategory"/>
+      <column columnName="Category">
+          <fk>
+              <fkDbSchema>exp</fkDbSchema>
+              <fkTable>SampleTypeCategoryType</fkTable>
+              <fkColumnName>Value</fkColumnName>
+          </fk>
+      </column>
       <column columnName="CreatedBy">
         <description>Contains the user that created this sample type</description>
       </column>
@@ -385,8 +392,8 @@
       <column columnName="Category">
         <fk>
             <fkDbSchema>exp</fkDbSchema>
-            <fkTable>DataClassCategory</fkTable>
-            <fkColumnName>category</fkColumnName>
+            <fkTable>DataClassCategoryType</fkTable>
+            <fkColumnName>Value</fkColumnName>
         </fk>
       </column>
         <column columnName="LastIndexed">

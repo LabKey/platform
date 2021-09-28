@@ -646,6 +646,11 @@ public class XarExporter
             xSampleSet.setMetricUnit(sampleType.getMetricUnit());
         }
 
+        if (sampleType.getCategory() != null)
+        {
+            xSampleSet.setCategory(sampleType.getCategory());
+        }
+
         try
         {
             Map<String, String> aliasMap = sampleType.getImportAliasMap();
