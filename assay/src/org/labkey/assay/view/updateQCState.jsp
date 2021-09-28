@@ -105,12 +105,12 @@
             // qc states
             LABKEY.Query.selectRows({
                 schemaName  : 'core',
-                queryName   : 'datastates',
+                queryName   : 'qcstate',
                 containerPath : <%=q(protocolContainerPath)%>,
                 scope       : this,
                 columns     : 'rowid, label',
                 success     : function(data){setQCStates(data);},
-                failure     : function(){LABKEY.Utils.alert('Error', 'Unable to read the core.dataStates table')}
+                failure     : function(){LABKEY.Utils.alert('Error', 'Unable to read the core.qcState table')}
             });
             window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
         });
