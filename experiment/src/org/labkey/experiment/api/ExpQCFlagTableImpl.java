@@ -35,8 +35,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpQCFlagTable;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
@@ -255,7 +255,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                     if (run != null)
                     {
                         // check if there is a QC state associated with this flag
-                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), qcId) : null;
+                        DataState state = qcId != null ? DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
                             ExperimentAuditEvent event = new ExperimentAuditEvent(container.getId(), comment);

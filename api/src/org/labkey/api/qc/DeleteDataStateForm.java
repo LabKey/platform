@@ -15,7 +15,7 @@
  */
 package org.labkey.api.qc;
 
-public class DeleteQCStateForm
+public class DeleteDataStateForm
 {
     private int _id;
     private boolean _all = false;

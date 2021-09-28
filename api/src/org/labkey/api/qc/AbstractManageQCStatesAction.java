@@ -29,24 +29,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RequiresPermission(AdminPermission.class)
-public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQCStatesForm> extends FormViewAction<FORM>
+public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDataStatesForm> extends FormViewAction<FORM>
 {
-    public abstract String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler);
-    public abstract String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler);
+    public abstract String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasQcStateDefaultsPanel();
     public abstract boolean hasDataVisibilityPanel();
 
-    protected QCStateHandler _qcStateHandler;
+    protected DataStateHandler _dataStateHandler;
 
-    public AbstractManageQCStatesAction(QCStateHandler qcStateHandler, Class<FORM> commandClass)
+    public AbstractManageQCStatesAction(DataStateHandler dataStateHandler, Class<FORM> commandClass)
     {
         super(commandClass);
-        _qcStateHandler = qcStateHandler;
+        _dataStateHandler = dataStateHandler;
     }
 
     public void updateQcState(Container container, FORM form, User user)
     {
-        _qcStateHandler.updateQcState(container, form, user);
+        _dataStateHandler.updateState(container, form, user);
     }
 
     @Override
@@ -98,14 +98,14 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
             for (int i = 0; i < form.getIds().length; i++)
             {
                 int rowId = form.getIds()[i];
-                QCState state = new QCState();
+                DataState state = new DataState();
                 state.setRowId(rowId);
                 state.setLabel(form.getLabels()[i]);
                 if (form.getDescriptions() != null)
                     state.setDescription(form.getDescriptions()[i]);
                 state.setPublicData(set.contains(state.getRowId()));
                 state.setContainer(getContainer());
-                QCStateManager.getInstance().updateQCState(getUser(), state);
+                DataStateManager.getInstance().updateState(getUser(), state);
             }
         }
 
@@ -125,13 +125,13 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
             for (int i = 0; i < form.getNewIds().length; i++)
             {
                 int newRowId = form.getNewIds()[i];
-                QCState newState = new QCState();
+                DataState newState = new DataState();
                 newState.setLabel(form.getNewLabels()[i]);
                 if (form.getNewDescriptions() != null)
                     newState.setDescription(form.getNewDescriptions()[i]);
                 newState.setPublicData(newSet.contains(newRowId));
                 newState.setContainer(getContainer());
-                QCStateManager.getInstance().insertQCState(getUser(), newState);
+                DataStateManager.getInstance().insertState(getUser(), newState);
             }
         }
 
@@ -155,15 +155,15 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
             return new ActionURL(defaultActionClass, getContainer());
     }
 
-    protected String getQcStateHtml(Container container, QCStateHandler qcStateHandler, String selectName, Integer qcStateId)
+    protected String getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Integer qcStateId)
     {
         StringBuilder qcStateHtml = new StringBuilder();
         qcStateHtml.append("          <td>");
         qcStateHtml.append("              <select name=\"").append(selectName).append("\">");
         qcStateHtml.append("                  <option value=\"\">[none]</option>");
-        for (Object stateObj : qcStateHandler.getQCStates(container))
+        for (Object stateObj : qcStateHandler.getStates(container))
         {
-            QCState state = (QCState) stateObj;
+            DataState state = (DataState) stateObj;
             boolean selected = (qcStateId != null) && (qcStateId == state.getRowId());
             String selectedText = (selected) ? " selected" : "";
             qcStateHtml.append("              <option value=\"").append(state.getRowId()).append("\"").append(selectedText).append(">").append(state.getLabel()).append("</option>");

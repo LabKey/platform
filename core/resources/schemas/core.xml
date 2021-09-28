@@ -642,19 +642,22 @@
     </columns>
   </table>
 
-  <table tableName="QCState" tableDbType="TABLE">
-    <description>Contains one row per quality control state.</description>
+  <table tableName="DataStates" tableDbType="TABLE">
+    <description>Contains one row per data state (e.g., quality control state, sample state).</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="Label">
-        <description>The short label of each quality control state.</description>
+        <description>The short label of each data state.</description>
       </column>
       <column columnName="Description">
-        <description>The full description of each quality control state.</description>
+        <description>The full description of each data state.</description>
       </column>
       <column columnName="Container"/>
       <column columnName="PublicData">
-        <description>Whether data in each quality control state is considered public.  Public data is displayed by default to all users with read permissions to the study.  Non-public states can be used to hide suspect or pre-QC data from some users.</description>
+        <description>Whether data in each data state is considered public.  Public data is displayed by default to all users with read permissions.  Non-public states can be used to hide suspect or pre-QC data from some users.</description>
+      </column>
+      <column columnName="stateType">
+        <description>Optional type associated with this data state.  By default, the state will be a QC state.</description>
       </column>
     </columns>
   </table>

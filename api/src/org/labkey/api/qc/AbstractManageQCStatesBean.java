@@ -20,9 +20,9 @@ import org.labkey.api.view.ActionURL;
 public class AbstractManageQCStatesBean
 {
     private ActionURL _returnUrl;
-    protected QCStateHandler _qcStateHandler;
+    protected DataStateHandler _qcStateHandler;
     protected AbstractManageQCStatesAction _manageAction;
-    protected Class<? extends AbstractDeleteQCStateAction> _deleteAction;
+    protected Class<? extends AbstractDeleteDataStateAction> _deleteAction;
     protected String _noun;
     protected String _dataNoun;
 
@@ -36,7 +36,7 @@ public class AbstractManageQCStatesBean
         return _returnUrl;
     }
 
-    public QCStateHandler getQCStateHandler()
+    public DataStateHandler getQCStateHandler()
     {
         return _qcStateHandler;
     }
@@ -46,7 +46,7 @@ public class AbstractManageQCStatesBean
         return _manageAction;
     }
 
-    public Class<? extends AbstractDeleteQCStateAction> getDeleteAction()
+    public Class<? extends AbstractDeleteDataStateAction> getDeleteAction()
     {
         return _deleteAction;
     }

@@ -20,12 +20,12 @@ import org.labkey.api.security.User;
 
 import java.util.List;
 
-public interface QCStateHandler<FORM extends AbstractManageQCStatesForm>
+public interface DataStateHandler<FORM extends AbstractManageDataStatesForm>
 {
-    List<QCState> getQCStates(Container container);
-    boolean isQCStateInUse(Container container, QCState state);
-    boolean isBlankQCStatePublic(Container container);
-    void updateQcState(Container container, FORM form, User user);
+    List<DataState> getStates(Container container);
+    boolean isStateInUse(Container container, DataState state);
+    boolean isBlankStatePublic(Container container);
+    void updateState(Container container, FORM form, User user);
     String getHandlerType();
     static <T> boolean nullSafeEqual(T first, T second)
     {

@@ -3,7 +3,7 @@ package org.labkey.api.qc.export;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
@@ -49,10 +49,10 @@ public interface QCStateImportExportHelper
 
     void write(Container container, ImportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml);
 
-    boolean isQCStateInUse(Container container, QCState state);
+    boolean isQCStateInUse(Container container, DataState state);
 
-    QCState insertQCState(User user, QCState state);
-    QCState updateQCState(User user, QCState state);
+    DataState insertQCState(User user, DataState state);
+    DataState updateQCState(User user, DataState state);
 
     /**
      * The default QC state for data linked (published) to the study

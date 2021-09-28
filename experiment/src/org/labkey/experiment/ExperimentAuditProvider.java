@@ -176,7 +176,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                 }
                 else if (COLUMN_NAME_QCSTATE.equalsIgnoreCase(col.getName()))
                 {
-                    col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoQCState(), null, "RowId", "Label"));
+                    col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoDataStates(), null, "RowId", "Label"));
                 }
             }
         };

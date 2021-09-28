@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.AbstractManageQCStatesAction" %>
 <%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.api.qc.QCStateHandler" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
+<%@ page import="org.labkey.api.qc.DataStateHandler" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -34,7 +34,7 @@
     AbstractManageQCStatesAction manageAction = bean.getManageAction();
     ActionURL cancelUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() :
             new ActionURL(manageAction.getClass(), container);
-    QCStateHandler qcStateHandler = bean.getQCStateHandler();
+    DataStateHandler qcStateHandler = bean.getQCStateHandler();
     String currentQCPanelTitle = "Currently Defined " + StringUtils.capitalize(bean.getNoun()) + " QC States";
     String defaultStatesPanelTitle = "Default states for " + bean.getNoun() + " data";
     ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
@@ -53,15 +53,15 @@
             </tr>
                 <td>[none]</td>
                 <td>Applies to data that has not been assigned an explicit QC State</td>
-                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankQCStatePublic(container))%>/></td>
+                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankStatePublic(container))%>/></td>
                 <td><span style="color:black;padding-left: 30%;" class="fa fa-check-circle"><%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></span></td>
             <tr>
             </tr>
             <%
                 baseDeleteStateURL.addParameter("manageReturnUrl", cancelUrl.getLocalURIString());
-                for (Object stateObj : qcStateHandler.getQCStates(container))
+                for (Object stateObj : qcStateHandler.getStates(container))
                 {
-                    QCState state = (QCState)stateObj;
+                    DataState state = (DataState)stateObj;
             %>
             <tr>
                 <td>
@@ -76,7 +76,7 @@
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
                     <%
-                        if (qcStateHandler.isQCStateInUse(container, state))
+                        if (qcStateHandler.isStateInUse(container, state))
                         {
                     %>
                     <span style="color:black; padding-left: 30%;" class="fa fa-check-circle"></span>
