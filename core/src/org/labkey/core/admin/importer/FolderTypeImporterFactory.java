@@ -112,6 +112,30 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
+            if (folderXml.isSetExtraDateParsingFormat())
+            {
+                try
+                {
+                    WriteableFolderLookAndFeelProperties.saveExtraDateParsingFormat(c, folderXml.getExtraDateParsingFormat());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetExtraDateTimeParsingFormat())
+            {
+                try
+                {
+                    WriteableFolderLookAndFeelProperties.saveExtraDateTimeParsingFormat(c, folderXml.getExtraDateTimeParsingFormat());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default date-time format specified: " + e.getMessage());
+                }
+            }
+
             if (folderXml.isSetFolderType())
             {
                 if (null != job)

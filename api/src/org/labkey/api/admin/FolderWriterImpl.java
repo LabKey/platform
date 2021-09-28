@@ -126,10 +126,18 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (null != defaultNumberFormat)
             folderXml.setDefaultNumberFormat(defaultNumberFormat);
 
+        String extraDateParsingFormat = props.getExtraDateParsingFormatStored();
+        if (null != extraDateParsingFormat)
+            folderXml.setExtraDateParsingFormat(extraDateParsingFormat);
+
+        String extraDateTimeParsingFormat = props.getExtraDateTimeParsingFormatStored();
+        if (null != extraDateTimeParsingFormat)
+            folderXml.setExtraDateTimeParsingFormat(extraDateTimeParsingFormat);
+
         if (props.areRestrictedColumnsEnabled())
             folderXml.setRestrictedColumnsEnabled(true);
 
-        // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
+        // Save the folder.xml file. This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
 
         ctx.lockDocument();

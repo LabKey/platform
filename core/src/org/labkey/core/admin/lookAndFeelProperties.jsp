@@ -216,31 +216,15 @@
             "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>" +
             "</table>";
-    String dateFormatHelp = "This format is applied when displaying columns that are defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
-    String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
+    String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
+    String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
+
+    String dateParsingHelp = "This format is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
+    String dateTimeParsingHelp = "This format is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
 %>
 <tr>
-    <td colspan=2>Customize date and number formats (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
 </tr>
-<%
-    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
-    if (c.isRoot())
-    {
-        DateParsingMode dateParsingMode = laf.getDateParsingMode();
-        String dateParsingHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
-                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
-                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
-                "parsing mode that matches your users' expectations.";
-%>
-<tr>
-    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing", dateParsingHelp, false)%></td>
-    <td>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
-    </td>
-</tr><%
-    }
-%>
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
@@ -252,6 +236,40 @@
 <tr>
     <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
+    <td colspan=2>Customize date parsing behavior (<%=bean.helpLink%>)</td>
+</tr>
+<%
+    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
+    if (c.isRoot())
+    {
+        DateParsingMode dateParsingMode = laf.getDateParsingMode();
+        String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
+                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
+                "parsing mode that matches your users' expectations.";
+%>
+<tr>
+    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
+    <td>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
+    </td>
+</tr><%
+    }
+%>
+<tr>
+    <td class="labkey-form-label">Additional parsing format for dates<%=helpPopup("Extra date parsing format", dateParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateParsingFormat" size="50" value="<%= h(laf.getExtraDateParsingFormat()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Additional parsing format for date-times<%=helpPopup("Extra date-time parsing format", dateTimeParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateTimeParsingFormat" size="50" value="<%= h(laf.getExtraDateTimeParsingFormat()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
