@@ -26,7 +26,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -235,7 +234,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
         // Set a default folder type. Will be overridden if user has chosen to copy from source.
         FolderType folderType = FolderTypeManager.get().getFolderType(StudyFolderType.NAME);
-        _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
+        _dstContainer.setFolderType(folderType, User.getSearchUser());
 
         return study;
     }

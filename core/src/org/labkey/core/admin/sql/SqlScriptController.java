@@ -1391,16 +1391,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeCodeForm form, BindException errors) throws Exception
         {
-            try
-            {
-                ModuleLoader.getInstance().setUpgradeUser(getUser());
-                LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
-                _method.invoke(null, _ctx);
-            }
-            finally
-            {
-                ModuleLoader.getInstance().setUpgradeUser(null);
-            }
+            LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
+            _method.invoke(null, _ctx);
             return true;
         }
 

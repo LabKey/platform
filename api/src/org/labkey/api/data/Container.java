@@ -909,7 +909,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
     {
-        setFolderType(folderType, ensureModules,ModuleLoader.getInstance().getUpgradeUser(), errors);
+        setFolderType(folderType, ensureModules, null, errors);
     }
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user, BindException errors)

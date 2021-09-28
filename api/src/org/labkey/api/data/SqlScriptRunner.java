@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ public class SqlScriptRunner
 {
     private static final Logger _log = LogHelper.getLogger(SqlScriptRunner.class, "Schema SQL script handling during install and upgrade");
 
-    private final User _user;
     private final List<SqlScript> _remainingScripts = new ArrayList<>();
     private final Object SCRIPT_LOCK = new Object();
 
@@ -47,17 +45,6 @@ public class SqlScriptRunner
 
     public SqlScriptRunner()
     {
-        _user = null;  // Delegate to ModuleLoader.getUpgradeUser() in this case
-    }
-
-    public SqlScriptRunner(@Nullable User user)
-    {
-        _user = user;
-    }
-
-    private User getUser()
-    {
-        return null != _user ? _user : ModuleLoader.getInstance().getUpgradeUser();
     }
 
     public List<SqlScript> getRunningScripts(@Nullable String moduleName)
@@ -94,7 +81,7 @@ public class SqlScriptRunner
         for (SqlScript script : scripts)
         {
             SqlScriptManager manager = SqlScriptManager.get(script.getProvider(), script.getSchema());
-            manager.runScript(getUser(), script, ModuleLoader.getInstance().getModuleContext(module), null);
+            manager.runScript(null, script, ModuleLoader.getInstance().getModuleContext(module), null);
 
             synchronized(SCRIPT_LOCK)
             {

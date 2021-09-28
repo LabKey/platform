@@ -54,7 +54,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -128,7 +127,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
- * Drives the process of initializing all of the modules at startup time and otherwise managing their life cycle.
+ * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
  * User: migra
  * Date: Jul 13, 2005
  */
@@ -167,7 +166,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
-    private User _upgradeUser = null;
 
     private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
 
@@ -597,7 +595,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
 
             int count = downgradedModules.size();
-            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
+            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules;
             _log.error(message);
             WarningService.get().register(new WarningProvider()
             {
@@ -618,7 +616,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade, lockFile);  // TODO: Change search user to system user
+        startNonCoreUpgradeAndStartup(execution, coreRequiredUpgrade, lockFile);
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
     }
@@ -1395,9 +1393,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     // Runs the drop and create scripts in every module using a new SqlScriptRunner
-    public void recreateViews(User user)
+    public void recreateViews()
     {
-        SqlScriptRunner runner = new SqlScriptRunner(user);
+        SqlScriptRunner runner = new SqlScriptRunner();
 
         synchronized (UPGRADE_LOCK)
         {
@@ -1651,7 +1649,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade, File lockFile)
+    private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1660,7 +1658,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 List<Module> modules = new ArrayList<>(getModules());
                 modules.remove(getCoreModule());
                 setUpgradeState(UpgradeState.UpgradeInProgress);
-                setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
                 upgrader.upgrade(() -> afterUpgrade(true, lockFile), execution);
@@ -1764,7 +1761,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 Map<String, Object> map = new HashMap<>();
                 map.put("AutoUninstall", module.isAutoUninstall());
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
-                Table.update(getUpgradeUser(), getTableInfoModules(), map, module.getName());
+                Table.update(null, getTableInfoModules(), map, module.getName());
             }
             catch (RuntimeSQLException e)
             {
@@ -1772,23 +1769,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
-        }
-    }
-
-
-    public void setUpgradeUser(User user)
-    {
-        synchronized(UPGRADE_LOCK)
-        {
-            _upgradeUser = user;
-        }
-    }
-
-    public User getUpgradeUser()
-    {
-        synchronized(UPGRADE_LOCK)
-        {
-            return _upgradeUser;
         }
     }
 
