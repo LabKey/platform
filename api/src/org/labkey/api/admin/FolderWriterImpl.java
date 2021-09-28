@@ -93,7 +93,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         LOG.info("Done exporting folder to " + vf.getLocation());
     }
 
-    // This writer is responsible for folder.xml.  It writes the top-level folder attributes and saves out the bean when it's complete.
+    // This writer is responsible for folder.xml. It writes the top-level folder attributes and saves out the bean when it's complete.
     private void writeFolderXml(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         FolderDocument.Folder folderXml = ctx.getXml();
