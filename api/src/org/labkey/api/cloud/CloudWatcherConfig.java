@@ -5,6 +5,10 @@ import org.labkey.api.data.Container;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * This interface is the minimal set of properties to setup a cloud watcher
+ * NOTE: CustomConfig map should include properties for SQSUrl (target for receiving event Messages) and CloudAccount (LKS name for Cloud credentials to use)
+ */
 public interface CloudWatcherConfig
 {
     String SQS_URL_KEY = "SQSUrl";
@@ -16,5 +20,7 @@ public interface CloudWatcherConfig
     Container lookupContainer();
     int getRowId();
     String getFilePattern();
-    Map<String, Object> getConfigMap(); //TODO may not need
+    int getDelay();
+
+    String getName();
 }

@@ -2,6 +2,7 @@ package org.labkey.api.cloud;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.function.BiConsumer;
 
 
 /**
@@ -10,7 +11,7 @@ import java.util.Collection;
 public interface CloudWatcherJob
 {
     int getRowId();
-    Collection<CloudNoticeEvent> poll() throws IOException;
+    void poll(BiConsumer<CloudNoticeEvent, Integer> eventProcessor);
 
     void deleteMessage(String messageId);
 }

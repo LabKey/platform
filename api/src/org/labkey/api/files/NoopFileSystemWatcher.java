@@ -34,7 +34,7 @@ public class NoopFileSystemWatcher implements FileSystemWatcher
     }
 
     @Override
-    public void removeListener(Path directory, FileSystemDirectoryListener listener)
+    public void removeListener(Path directory, FileSystemDirectoryListener listener, int listenerId)
     {
     }
 

@@ -185,7 +185,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     }
 
     @Override
-    public void removeListener(Path directory, FileSystemDirectoryListener listener)
+    public void removeListener(Path directory, FileSystemDirectoryListener listener, int listenerId)
     {
         //Ensure a trailing '/' if needed, otherwise some keys won't be found. Path::normalize method doesn't seem to address this
         Path dir = directory.resolve("a").getParent();
@@ -194,6 +194,11 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             plm.removeListener(listener);
             LOG.debug("Removed a file listener on " + directory);
+
+            if (FileUtil.hasCloudScheme(dir) && CloudStoreService.get() != null)
+            {
+                CloudStoreService.get().unregisterCloudWatcher(listenerId);
+            }
         }
     }
 
@@ -319,35 +324,35 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             if (CloudStoreService.get() == null)
                 return;
 
-            try
-            {
-                Collection<Integer> queues = CloudStoreService.get().getWatcherJobs();
-                for (Integer queue : queues)
+                CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
                 {
-                    processWatchJob(queue);
-                }
-            }
-            catch (Throwable e)  // Make sure throwables don't kill the background thread
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+                    try
+                    {
+                        processWatchJob(cloudWatcherJob);
+                    }
+                    catch (Throwable e)  // Make sure throwables don't kill the background thread
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                });
 
-            Thread.sleep(30000);
+            Thread.sleep(60000);
         }
 
         private void processWatchJob(final Integer cloudWatcherJob) throws IOException
         {
-            Collection<CloudNoticeEvent> events = CloudStoreService.get().executeWatchJob(cloudWatcherJob);
-            events.stream().forEachOrdered(evt -> {
-                Path watchedPath = evt.getPath().getParent();  //TODO this isn't quite right...
-                PathListenerManager plm = _listenerMap.get(watchedPath);
-                if (plm != null)
-                {
-                    CloudWatchEvent cwe = new CloudWatchEvent(evt.getPath());
-                    plm.fireEvents(cwe, watchedPath);
-                    CloudStoreService.get().deleteMessage(evt.getEventId(), cloudWatcherJob);
-                }
-            });
+            CloudStoreService.get().executeWatchJob(cloudWatcherJob, this::processNoticeEvents);
+        }
+
+        private void processNoticeEvents(CloudNoticeEvent evt, int cloudWatcherJob)
+        {
+            Path watchedPath = evt.getPath().getParent();  //TODO this isn't quite right...
+            PathListenerManager plm = _listenerMap.get(watchedPath);
+            if (plm != null)
+            {
+                CloudWatchEvent cwe = new CloudWatchEvent(evt.getPath());
+                plm.fireEvents(cwe, watchedPath);
+            }
         }
 
         private class CloudWatchEvent implements WatchEvent<Path>
