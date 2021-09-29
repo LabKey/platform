@@ -89,11 +89,11 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageDataStatesForm;
-import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -486,8 +486,8 @@ public class CoreController extends SpringActionController
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
                 MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
             }
             return null;
         }
