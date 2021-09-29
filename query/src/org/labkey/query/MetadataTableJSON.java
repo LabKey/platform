@@ -72,7 +72,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private boolean _userDefinedQuery;
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
-    private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Table metadata");
+    private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
 
     @Override
     public boolean isEditable(MetadataColumnJSON field)
