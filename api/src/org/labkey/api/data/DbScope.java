@@ -573,31 +573,46 @@ public class DbScope
                                 .filter((l) -> !(l instanceof ServerLock))
                                 .collect(Collectors.toList());
 
-                    result = new TransactionImpl(conn, transactionKind, memoryLocks);
-                    int stackDepth;
-                    synchronized (_transaction)
-                    {
-                        List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
-                        transactions.add(result);
-                        stackDepth = transactions.size();
-                    }
-                    boolean serverLockSuccess = false;
+                    boolean createdTransactionObject = false;
                     try
                     {
-                        serverLocks.forEach(Lock::lock);
-                        serverLockSuccess = true;
+                        result = new TransactionImpl(conn, transactionKind, memoryLocks);
+                        createdTransactionObject = true;
+
+                        int stackDepth;
+                        synchronized (_transaction)
+                        {
+                            List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
+                            transactions.add(result);
+                            stackDepth = transactions.size();
+                        }
+                        boolean serverLockSuccess = false;
+                        try
+                        {
+                            serverLocks.forEach(Lock::lock);
+                            serverLockSuccess = true;
+                        }
+                        finally
+                        {
+                            if (!serverLockSuccess)
+                            {
+                                // We're throwing an exception so the caller will never get the transaction object to
+                                // be able to close it, so do it now
+                                result.close();
+                            }
+                        }
+                        if (stackDepth > 2)
+                            LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                     }
                     finally
                     {
-                        if (!serverLockSuccess)
+                        if (!createdTransactionObject)
                         {
-                            // We're throwing an exception so the caller will never get the transaction object to
-                            // be able to close it, so do it now
-                            result.close();
+                            // We failed to create the Transaction object (perhaps because of problems acquiring
+                            // the locks) - close the otherwise orphaned connection to avoid a leak
+                            try { conn.close(); } catch (SQLException ignored) {}
                         }
                     }
-                    if (stackDepth > 2)
-                        LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
                 else
                 {
