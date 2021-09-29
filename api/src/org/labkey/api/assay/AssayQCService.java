@@ -21,7 +21,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
@@ -74,13 +74,13 @@ public interface AssayQCService
     /**
      * Update the QC states for the specified runs
      */
-    void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, QCState state, String comment);
+    void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, DataState state, String comment);
 
     /**
      * Get the QC state (if any) associated with the run.
      */
     @Nullable
-    QCState getQCState(ExpProtocol protocol, int runId) throws ExperimentException;
+    DataState getQCState(ExpProtocol protocol, int runId) throws ExperimentException;
 
     /**
      * Generate the filter condition for the runs table based on the configured QC state.
@@ -104,14 +104,14 @@ public interface AssayQCService
     /**
      * Determine if any assay runs are assigned the specified state
      */
-    boolean isQCStateInUse(Container container, QCState state);
+    boolean isQCStateInUse(Container container, DataState state);
 
     /**
      * Returns the default QCState for imported data
      */
     @Nullable
-    QCState getDefaultDataImportState(Container container);
-    void setDefaultDataImportState(Container container, QCState state);
+    DataState getDefaultDataImportState(Container container);
+    void setDefaultDataImportState(Container container, DataState state);
 
     /**
      * Gets/sets whether or not a blank state should be interpreted as public data or not
@@ -140,13 +140,13 @@ public interface AssayQCService
         }
 
         @Override
-        public void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, QCState state, String comment)
+        public void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, DataState state, String comment)
         {
         }
 
         @Nullable
         @Override
-        public QCState getQCState(ExpProtocol protocol, int runId)
+        public DataState getQCState(ExpProtocol protocol, int runId)
         {
             return null;
         }
@@ -176,19 +176,19 @@ public interface AssayQCService
         }
 
         @Override
-        public boolean isQCStateInUse(Container container, QCState state)
+        public boolean isQCStateInUse(Container container, DataState state)
         {
             return false;
         }
 
         @Override
-        public @Nullable QCState getDefaultDataImportState(Container container)
+        public @Nullable DataState getDefaultDataImportState(Container container)
         {
             return null;
         }
 
         @Override
-        public void setDefaultDataImportState(Container container, QCState state)
+        public void setDefaultDataImportState(Container container, DataState state)
         {
         }
 

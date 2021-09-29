@@ -66,6 +66,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -74,8 +75,8 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
@@ -445,9 +446,9 @@ public class StudyPublishManager implements StudyPublishService
                 StudyManager.getInstance().uncache(dataset);
             dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
             Integer defaultQCStateId = targetStudy.getDefaultPublishDataQCState();
-            QCState defaultQCState = null;
+            DataState defaultQCState = null;
             if (defaultQCStateId != null)
-                defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+                defaultQCState = DataStateManager.getInstance().getStateForRowId(targetContainer, defaultQCStateId.intValue());
 
             BatchValidationException validationException = new BatchValidationException();
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
@@ -498,11 +499,11 @@ public class StudyPublishManager implements StudyPublishService
         switch (sourceType)
         {
             case SampleType -> {
-                ExpSampleType sampleType = (ExpSampleType)source;
+                ExpSampleType sampleType = (ExpSampleType) source;
                 createProvenanceRun(user, targetContainer, sampleType, errors, dataset, datasetLsids);
             }
             case Assay -> {
-                ExpProtocol protocol = (ExpProtocol)source;
+                ExpProtocol protocol = (ExpProtocol) source;
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider == null)
                 {
@@ -601,7 +602,7 @@ public class StudyPublishManager implements StudyPublishService
     private Map<Optional<String>, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
         // source LSID may be null
-        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String)m.get(SOURCE_LSID_PROPERTY_NAME))));
+        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String) m.get(SOURCE_LSID_PROPERTY_NAME))));
     }
 
     // TODO : consider pushing this into PublishSource
@@ -634,7 +635,7 @@ public class StudyPublishManager implements StudyPublishService
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                     String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
 
-                    List<Integer> sampleIds = rows.stream().map(m -> (Integer)m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
+                    List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
                     List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                     for (ExpMaterial sample : samples)
@@ -974,9 +975,9 @@ public class StudyPublishManager implements StudyPublishService
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-                QCState defaultQCState = null;
+                DataState defaultQCState = null;
                 if (defaultQCStateId != null)
-                    defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                    defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
                 if (!errors.hasErrors())
@@ -1192,7 +1193,9 @@ public class StudyPublishManager implements StudyPublishService
                 {
                     LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
                 }
-            } else {
+            }
+            else
+            {
                 LOG.info("Unable to link the assay data, there is no study in the folder: " + targetContainerPath);
             }
         }
@@ -1335,8 +1338,8 @@ public class StudyPublishManager implements StudyPublishService
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
         {
-            String containerId = (String)row.get("container");
-            int datasetId = ((Number)row.get("datasetid")).intValue();
+            String containerId = (String) row.get("container");
+            int datasetId = ((Number) row.get("datasetid")).intValue();
             Container container = ContainerManager.getForId(containerId);
             result.add(StudyServiceImpl.INSTANCE.getDataset(container, datasetId));
         }
@@ -1396,6 +1399,24 @@ public class StudyPublishManager implements StudyPublishService
         }
 
         return result;
+    }
+
+    @Override
+    public String checkForLockedLinks(Dataset def, @Nullable  List<Integer> rowIds)
+    {
+        Dataset.PublishSource sourceType = def.getPublishSource();
+        if (sourceType != null)
+        {
+            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null)
+            {
+                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(rowIds);
+                SampleTypeService sampleService = SampleTypeService.get();
+                Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.RecallFromStudy);
+                if (!lockedSamples.isEmpty())
+                    return sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.RecallFromStudy);
+            }
+        }
+        return null;
     }
 
     @Override

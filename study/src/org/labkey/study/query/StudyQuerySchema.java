@@ -1334,7 +1334,7 @@ public class StudyQuerySchema extends UserSchema
                     if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                         names.add("Cohort");
 
-                    names.add("QCState");
+                    names.add(QCSTATE_TABLE_NAME);
 
                     // Subject category/group tables:
                     names.add(studyService.getSubjectCategoryTableName(getContainer()));

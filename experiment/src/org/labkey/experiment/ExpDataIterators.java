@@ -59,6 +59,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -854,29 +855,34 @@ public class ExpDataIterators
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
-
+                                    _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
                         }
                         else
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
-
+                                    _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
                         }
 
                         if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
                             continue;
 
+                        if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                            throw new ValidationException(String.format("Sample %s with status %s cannot be have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
+
                         // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
                         if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())
                         {
-                            UploadSamplesHelper.clearSampleSourceRun(_user, (ExpMaterial) runItem);
+                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = UploadSamplesHelper.clearSampleSourceRun(_user, (ExpMaterial) runItem);
+                            String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
+                            lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
+                            if (!lockCheckMessage.isEmpty())
+                                throw new ValidationException(lockCheckMessage);
                         }
                         else
                         {
                             ExpMaterial currentMaterial = null;
                             Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                            
+                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
                             Map<ExpData, String> currentDataMap = Collections.emptyMap();
                             if (_isSample)
                             {
@@ -886,7 +892,7 @@ public class ExpDataIterators
                                 {
                                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                                    UploadSamplesHelper.clearSampleSourceRun(_user, sample);
+                                    previousSampleRelatives = UploadSamplesHelper.clearSampleSourceRun(_user, sample);
                                 }
                                 currentMaterialMap = new HashMap<>();
                                 currentMaterial = sample;
@@ -902,6 +908,11 @@ public class ExpDataIterators
                             {
                                 // Add parent derivation run
                                 Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
+
+                                String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, parentMaterialMap.keySet(), runItem.getName(), "parents");
+                                if (!lockCheckMessage.isEmpty())
+                                    throw new ValidationException(lockCheckMessage);
+
                                 Map<ExpData, String> parentDataMap = pair.first.getDatas();
 
                                 UploadSamplesHelper.record(_isSample, runRecords,
@@ -914,6 +925,9 @@ public class ExpDataIterators
                                 // Add child derivation run
                                 Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
                                 Map<ExpData, String> childDataMap = pair.second.getDatas();
+                                String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.second, childMaterialMap.keySet(), runItem.getName(), "children");
+                                if (!lockCheckMessage.isEmpty())
+                                    throw new ValidationException(lockCheckMessage);
 
                                 UploadSamplesHelper.record(false, runRecords,
                                         currentMaterialMap, childMaterialMap,
@@ -938,6 +952,42 @@ public class ExpDataIterators
             }
             return hasNext;
         }
+    }
+
+    private static String checkForLockedSampleRelativeChange(Set<ExpMaterial> previousSampleRelatives, Set<ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
+    {
+        List<String> messages = new ArrayList<>();
+        // get the relatives whose lineage cannot change
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> lockedRelatives = sampleService.getSamplesNotPermitted(previousSampleRelatives, SampleTypeService.SampleOperations.EditLineage);
+
+        Set<String> lockedRelativeLsids = lockedRelatives.stream().map(ExpMaterial::getLSID).collect(Collectors.toSet());
+        Set<String> newRelativeLsids = currentSampleRelatives.stream().map(ExpMaterial::getLSID).collect(Collectors.toSet());
+        // check if all the locked relatives are still in the current list
+        Set<ExpMaterial> removedLocked = lockedRelatives.stream().filter(sample -> !newRelativeLsids.contains(sample.getLSID())).collect(Collectors.toSet());
+        if (!removedLocked.isEmpty())
+        {
+            String message = String.format("One or more existing %s of sample %s has a status that prevents the updating of lineage", relationPlural, sampleName);
+            if (removedLocked.size() <= 10)
+                message += ": " + removedLocked.stream().map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            message += ".";
+            messages.add(message);
+        }
+        //check if any of the newly added relatives are locked
+        Set<ExpMaterial> addedLocked = sampleService.getSamplesNotPermitted(currentSampleRelatives, SampleTypeService.SampleOperations.EditLineage)
+                .stream().filter(sample -> !lockedRelativeLsids.contains(sample.getLSID()))
+                .collect(Collectors.toSet());
+
+        if (!addedLocked.isEmpty())
+        {
+            String message = String.format("One or more of the new %s for sample %s has a status that prevents the updating of lineage: ", relationPlural, sampleName);
+            message += addedLocked.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (addedLocked.size() > 10)
+                message += "...";
+            message += ".";
+            messages.add(message);
+        }
+        return StringUtils.join(messages, " ");
     }
 
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder

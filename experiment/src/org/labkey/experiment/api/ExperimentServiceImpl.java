@@ -73,6 +73,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
@@ -631,11 +632,21 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
-        if (materials.isEmpty())
+        if (materials == null || materials.isEmpty())
             return null;
         if (materials.size() > 1)
             throw new IllegalArgumentException("Expected 0 or 1 samples, got: " + materials.size());
         return materials.get(0);
+    }
+
+    public List<Integer> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
+    {
+        if (!SampleTypeService.isSampleStatusEnabled())
+            return Collections.emptyList();
+
+        return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
+                .stream()
+                .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
     @Override
@@ -1187,6 +1198,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
+    }
+
+    @Override
+    public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new SampleStatusTable(expSchema, containerFilter);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -4117,7 +4134,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
      * and warn user
      */
-    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<ExpMaterialImpl> allMaterials, Set<Integer> deletable, User user, Container container)
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<? extends ExpMaterial> allMaterials, Set<Integer> deletable, User user, Container container)
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
@@ -4183,9 +4200,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public void deleteMaterialByRowIds(User user, Container container,
                                        Collection<Integer> selectedMaterialIds,
                                        boolean deleteRunsUsingMaterials,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                       @Nullable ExpSampleType stDeleteFrom,
+                                       boolean ignoreStatus)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus);
     }
 
     /**
@@ -4196,10 +4214,11 @@ public class ExperimentServiceImpl implements ExperimentService
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
      */
     private void deleteMaterialByRowIds(User user, Container container,
-                                       Collection<Integer> selectedMaterialIds,
-                                       boolean deleteRunsUsingMaterials,
-                                       boolean deleteFromAllSampleTypes,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                        Collection<Integer> selectedMaterialIds,
+                                        boolean deleteRunsUsingMaterials,
+                                        boolean deleteFromAllSampleTypes,
+                                        @Nullable ExpSampleType stDeleteFrom,
+                                        boolean ignoreStatus)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4230,6 +4249,9 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
+
+                if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
+                    throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                 if (null == stDeleteFrom)
                 {
@@ -4796,7 +4818,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, true, null);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null, true);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";

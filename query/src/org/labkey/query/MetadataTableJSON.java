@@ -16,6 +16,8 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,6 +44,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.TableType;
@@ -69,6 +72,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private boolean _userDefinedQuery;
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
+    private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
 
     @Override
     public boolean isEditable(MetadataColumnJSON field)
@@ -178,7 +182,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 }
                 else
                 {
-                    throw new MetadataUnavailableException("No such column: " + metadataColumnJSON.getName());
+                    log.info("No such column: " + metadataColumnJSON.getName() + " in table: " + schemaName + "." + queryDef.getName() + " in folder: " + container.getName());
                 }
             }
 

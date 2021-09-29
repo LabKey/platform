@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -43,7 +43,7 @@
     JspView<UpdateQCStateForm> me = (JspView<UpdateQCStateForm>) HttpView.currentView();
     UpdateQCStateForm bean = me.getModelBean();
     Container container = getContainer();
-    List<QCState> states = QCStateManager.getInstance().getQCStates(container);
+    List<DataState> states = QCStateManager.getInstance().getStates(container);
 %>
 <%
     FrameFactoryClassic.startTitleFrame(out, "QC State Change", null, null, null);
@@ -61,7 +61,7 @@
                 <select name="newState">
                     <option value="">[Unspecified]</option>
                 <%
-                    for (QCState state : states)
+                    for (DataState state : states)
                     {
                         boolean selected = bean.getNewState() != null && bean.getNewState() == state.getRowId();
                 %>

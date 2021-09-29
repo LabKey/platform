@@ -105,7 +105,6 @@ import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -296,7 +295,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public void applyDefaultQCStateFilter(DataView view)
     {
-        if (QCStateManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
+        if (QCStateManager.getInstance().showStates(view.getRenderContext().getContainer()))
         {
             QCStateSet stateSet = QCStateSet.getDefaultStates(view.getRenderContext().getContainer());
             if (null != stateSet)

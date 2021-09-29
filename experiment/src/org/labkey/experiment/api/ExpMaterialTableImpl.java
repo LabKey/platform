@@ -28,6 +28,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -52,6 +53,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -83,7 +85,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
@@ -104,7 +105,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -344,6 +344,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
+            case SampleState:
+                var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
+                ret.setLabel("Status");
+                boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
+                ret.setHidden(!statusEnabled);
+                ret.setShownInDetailsView(!statusEnabled);
+                ret.setShownInInsertView(!statusEnabled);
+                ret.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, "datastates", "RowId", "Label")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
+                    }
+                });
+                return ret;
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -580,6 +597,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         addColumn(ExpMaterialTable.Column.Flag);
+
+        if (SampleTypeService.isSampleStatusEnabled())
+        {
+            var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
+            statusColInfo.setShownInDetailsView(true);
+            statusColInfo.setShownInInsertView(true);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
+            statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
+            {
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
+                }
+            });
+        }
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
@@ -595,6 +628,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
+
 
         addVocabularyDomains();
         addColumn(Column.Properties);

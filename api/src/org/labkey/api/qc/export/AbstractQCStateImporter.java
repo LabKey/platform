@@ -3,7 +3,7 @@ package org.labkey.api.qc.export;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
@@ -18,7 +18,7 @@ public abstract class AbstractQCStateImporter
         StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
 
         // Remember all of the states that existed before we started importing
-        Map<String, QCState> prexistingStates = getExistingQCStates(ctx);
+        Map<String, DataState> prexistingStates = getExistingQCStates(ctx);
 
         if (states != null)
         {
@@ -31,11 +31,11 @@ public abstract class AbstractQCStateImporter
                 else
                 {
                     // Check if it exists, and remove it from the map if it already does
-                    QCState state = prexistingStates.remove(xmlState.getName());
+                    DataState state = prexistingStates.remove(xmlState.getName());
                     if (state == null)
                     {
                         // Insert a new record
-                        state = new QCState();
+                        state = new DataState();
                         state.setContainer(ctx.getContainer());
 
                         state.setLabel(xmlState.getName());
@@ -56,15 +56,15 @@ public abstract class AbstractQCStateImporter
         }
 
         // Clean up orphaned states if they don't seem to be used anymore
-        for (QCState orphanedState : prexistingStates.values())
+        for (DataState orphanedState : prexistingStates.values())
         {
             if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
-                QCStateManager.getInstance().deleteQCState(orphanedState);
+                QCStateManager.getInstance().deleteState(orphanedState);
             else
                 ctx.getLogger().info("Retaining existing QCState because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
         }
 
-        Map<String, QCState> finalStates = getExistingQCStates(ctx);
+        Map<String, DataState> finalStates = getExistingQCStates(ctx);
 
         // make the default qc state assignments for dataset inserts/updates
         String pipelineDefault = qcXml.getPipelineImportDefault();
@@ -84,10 +84,10 @@ public abstract class AbstractQCStateImporter
     }
 
     @NotNull
-    private static Map<String, QCState> getExistingQCStates(ImportContext<?> ctx)
+    private static Map<String, DataState> getExistingQCStates(ImportContext<?> ctx)
     {
-        Map<String, QCState> prexistingStates = new HashMap<>();
-        for (QCState s : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
+        Map<String, DataState> prexistingStates = new HashMap<>();
+        for (DataState s : QCStateManager.getInstance().getStates(ctx.getContainer()))
         {
             prexistingStates.put(s.getLabel(), s);
         }

@@ -26,6 +26,8 @@ import org.labkey.api.data.dialect.SqlDialect;
  */
 public class CoreSchema
 {
+    public static final String DATA_STATES_TABLE_NAME = "DataStates";
+
     private static final CoreSchema instance = new CoreSchema();
     private static final String SCHEMA_NAME = "core";
 
@@ -153,9 +155,16 @@ public class CoreSchema
         return getSchema().getTable("Notifications");
     }
 
+    // Prefer getTableInfoDataStates
+    @Deprecated (since = "21.10")
     public TableInfo getTableInfoQCState()
     {
-        return getSchema().getTable("QCState");
+        return getTableInfoDataStates();
+    }
+
+    public TableInfo getTableInfoDataStates()
+    {
+        return getSchema().getTable("DataStates");
     }
 
     public TableInfo getTableAPIKeys()
