@@ -92,6 +92,8 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
                 return wrapColumn(alias, _rootTable.getColumn("RecordCount"));
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
+            case EntityId:
+                return wrapColumn(alias, _rootTable.getColumn("EntityId"));
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -173,6 +175,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.StartTime);
         addColumn(Column.EndTime);
         addColumn(Column.RecordCount);
+        addColumn(Column.EntityId);
 
         addColumn(Column.Properties).setHidden(true);
         addVocabularyDomains();

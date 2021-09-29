@@ -31,6 +31,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -47,6 +48,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.DataClass;
@@ -54,6 +56,7 @@ import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.ProtocolApplication;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.io.File;
@@ -424,6 +427,33 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment(sql));
                 transaction.commit();
             }
+        }
+    }
+
+    /**
+     * Called from exp-21.012-21.013.sql
+     * Generates EntityIds for ExpProtocolApplications that do not have a value
+     */
+    public static void generateExpProtocolApplicationEntityIds(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            var protocolApplicationTable = ExperimentService.get().getTinfoProtocolApplication();
+            List<ProtocolApplication> applications = new TableSelector(protocolApplicationTable).getArrayList(ProtocolApplication.class);
+
+            for (var application: applications)
+            {
+                if (application.getEntityId() == null)
+                {
+                    application.setEntityId(GUID.makeGUID());
+                    Table.update(ctx.getUpgradeUser(), protocolApplicationTable, application, application.getRowId());
+                }
+            }
+
+            tx.commit();
         }
     }
 }
