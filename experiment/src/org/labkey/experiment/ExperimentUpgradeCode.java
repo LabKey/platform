@@ -431,7 +431,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-21.012-21.013.sql
+     * Called from exp-21.013-21.014.sql
      * Generates EntityIds for ExpProtocolApplications that do not have a value
      */
     public static void generateExpProtocolApplicationEntityIds(ModuleContext ctx) throws Exception
