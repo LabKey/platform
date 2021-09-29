@@ -161,18 +161,11 @@ public class ProtocolApplication extends IdentifiableBase
 
     }
 
-    @JsonProperty("entityId")
     public GUID getEntityId()
     {
         return _entityId;
     }
 
-    public void setEntityId(String entityId)
-    {
-        setEntityId(ConvertHelper.convert(entityId, GUID.class));
-    }
-
-    @JsonIgnore // entityId is serialized as String
     public void setEntityId(GUID entityId)
     {
         _entityId = entityId;
