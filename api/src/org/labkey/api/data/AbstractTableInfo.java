@@ -364,7 +364,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             cols = Arrays.asList(firstColumn, titleColumnInfo);
             titleIndex = 2;
         }
-        else if (firstColumn == titleColumn)
+        else if (firstColumn == titleColumn || firstColumn.equals(titleColumnInfo))
         {
             cols = Arrays.asList(firstColumn);
             titleIndex = 1;
