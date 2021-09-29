@@ -6924,6 +6924,19 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    public ExpProtocolApplicationImpl getExpProtocolApplicationFromEntityId(String entityId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+        TableInfo table = getTinfoProtocolApplication();
+        ProtocolApplication app = new TableSelector(table, filter, null).getObject(ProtocolApplication.class);
+
+        if (app == null)
+            return null;
+
+        return new ExpProtocolApplicationImpl(app);
+    }
+
+    @Override
     public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsForRun(int runId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
