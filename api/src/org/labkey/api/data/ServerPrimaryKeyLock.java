@@ -82,7 +82,9 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
     @Override
     public boolean tryLock(long time, @NotNull TimeUnit unit)
     {
-        throw new UnsupportedOperationException("ServerRowLock does not support tryLock()");
+        // We don't really support the timeout but pretend we do to participate in DbScope.Transaction's deadlock prevention
+        lock();
+        return true;
     }
 
     @Override
