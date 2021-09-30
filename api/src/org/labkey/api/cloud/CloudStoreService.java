@@ -24,13 +24,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * User: kevink
@@ -55,9 +54,11 @@ public interface CloudStoreService
 
     void executeWatchJob(int cloudWatcherJobId);
 
-    void registerCloudWatcher(CloudWatcherConfig config, Consumer<Path> eventProcessor);
+    void registerCloudWatcher(CloudWatcherConfig config, Function<Path, Boolean> eventProcessor);
 
     void unregisterCloudWatcher(int watcherConfigId);
+
+    void shutdownWatchers();
 
     Collection<Integer> getWatcherJobs();
 

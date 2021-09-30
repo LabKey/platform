@@ -112,7 +112,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     @SafeVarargs
     public final void addCloudListener(Path directory, FileSystemDirectoryListener listener, final CloudWatcherConfig config, Kind<Path>... events) throws IOException
     {
-        addListener(directory, listener, (path, plm) -> registerWithCloudService(path, plm, config), events);
+        //Ensure a trailing '/' by push/pop a directory
+        Path dir = directory.resolve("a").getParent();
+        addListener(dir, listener, (path, plm) -> registerWithCloudService(path, plm, config), events);
     }
 
     private void registerWithCloudService(Path path, @NotNull PathListenerManager plm, final CloudWatcherConfig config)
@@ -124,6 +126,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
             //TODO Could do a validation sanity check before firing event?
             plm.fireEvents(cwe, watchedPath);
+            return true;
         });
     }
 
@@ -143,8 +146,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     {
         // Associate a new PathListenerManager with this directory, if one doesn't already exist
         PathListenerManager plm = new PathListenerManager();
-        //Ensure a trailing '/' by push/pop a directory
-        PathListenerManager previous = _listenerMap.putIfAbsent(directory.resolve("a").getParent(), plm);     // Atomic operation
+        PathListenerManager previous = _listenerMap.putIfAbsent(directory, plm);     // Atomic operation
 
         // Register directory with the WatchService, if it's new
         if (null == previous)
@@ -342,12 +344,14 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 }
             });
 
-            Thread.sleep(60000);
+            Thread.sleep(30000);
         }
 
         @Override
         protected void close()
         {
+            if (CloudStoreService.get() != null)
+                CloudStoreService.get().shutdownWatchers();
         }
     }
 
