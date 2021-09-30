@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.7",
-    "@labkey/components": "2.78.0-fb-fieldEditorFixes2111.2",
+    "@labkey/components": "2.78.0-fb-fieldEditorFixes2111.3",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
