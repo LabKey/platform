@@ -6427,7 +6427,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         rec._protApp._object.getActivityDate(),
                         runId,
                         rec._protApp._object.getActionSequence(),
-                        rec._protApp._object.getLSID()));
+                        rec._protApp._object.getLSID(),
+                        rec._protApp.getEntityId() != null ? rec._protApp.getEntityId().toString() : GUID.makeGUID()));
             }
         }
 
@@ -6651,8 +6652,8 @@ public class ExperimentServiceImpl implements ExperimentService
             if (!params.isEmpty())
             {
                 String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoProtocolApplication().toString() +
-                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)" +
-                        " VALUES (?,?,?,?,?,?,?)";
+                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
+                        " VALUES (?,?,?,?,?,?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
