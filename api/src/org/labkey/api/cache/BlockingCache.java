@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.Filter;
 
 import java.util.HashMap;
@@ -127,7 +128,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
             {
                 if (System.currentTimeMillis() > endTime)
                 {
-                    throw new RuntimeException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit");
+                    throw new DeadlockPreventingException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit");
                 }
                 try
                 {

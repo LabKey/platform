@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
@@ -2080,7 +2081,7 @@ public class DbScope
         private int _closesToIgnore = 0;
         private Long _auditId;
 
-        private int _lockTimeout = 2;
+        private int _lockTimeout = 5;
         private TimeUnit _lockTimeoutUnit = TimeUnit.MINUTES;
 
         TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind)
@@ -2330,13 +2331,13 @@ public class DbScope
                         boolean locked = extraLock.tryLock(_lockTimeout, _lockTimeoutUnit);
                         if (!locked)
                         {
-                            throw new DeadlockLoserDataAccessException("Failed to acquire lock within timeout: " + extraLock, null);
+                            throw new DeadlockPreventingException("Failed to acquire lock within timeout: " + extraLock);
                         }
                         locksToUnlock.add(extraLock);
                     }
                     catch (InterruptedException e)
                     {
-                        throw new DeadlockLoserDataAccessException("Failed to acquire lock: " + extraLock, e);
+                        throw new DeadlockPreventingException("Failed to acquire lock: " + extraLock, e);
                     }
                 }
                 successLocking = true;
@@ -2746,7 +2747,7 @@ public class DbScope
             ReentrantLock lock2 = new ReentrantLock();
             Pair<Throwable, Throwable> throwables = attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS));
 
-            assertTrue(throwables.first instanceof DeadlockLoserDataAccessException || throwables.second instanceof DeadlockLoserDataAccessException);
+            assertTrue(throwables.first instanceof DeadlockPreventingException || throwables.second instanceof DeadlockPreventingException);
             assertFalse("Lock 1 is still locked", lock1.isLocked());
             assertFalse("Lock 2 is still locked", lock2.isLocked());
         }
@@ -2940,7 +2941,7 @@ public class DbScope
                 {
                     throw new RuntimeException(x);
                 }
-                catch (DeadlockLoserDataAccessException x)
+                catch (Throwable x)
                 {
                     result.first = x;
                 }

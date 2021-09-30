@@ -128,7 +128,7 @@ public abstract class SqlDialect
 
     protected abstract @NotNull Set<String> getReservedWords();
 
-    protected String getOtherDatabaseThreads()
+    public String getOtherDatabaseThreads()
     {
         StringBuilder sb = new StringBuilder();
 
