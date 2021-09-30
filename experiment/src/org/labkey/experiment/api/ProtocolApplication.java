@@ -15,13 +15,8 @@
  */
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.IdentifiableBase;
-import org.labkey.api.util.GUID;
 
 import java.util.Date;
 
@@ -30,7 +25,7 @@ import java.util.Date;
  * User: migra
  * Date: Jun 14, 2005
  */
-public class ProtocolApplication extends IdentifiableBase
+public class ProtocolApplication extends IdentifiableEntity
 {
     private int rowId;
     private String name;
@@ -43,7 +38,6 @@ public class ProtocolApplication extends IdentifiableBase
     private Date startTime;
     private Date endTime;
     private Integer recordCount;
-    private GUID _entityId;
 
     public int getRowId()
     {
@@ -159,16 +153,6 @@ public class ProtocolApplication extends IdentifiableBase
     {
         this.endTime = endTime;
 
-    }
-
-    public GUID getEntityId()
-    {
-        return _entityId;
-    }
-
-    public void setEntityId(GUID entityId)
-    {
-        _entityId = entityId;
     }
 
     @Override

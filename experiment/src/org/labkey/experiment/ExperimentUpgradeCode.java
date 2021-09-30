@@ -448,7 +448,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             {
                 if (application.getEntityId() == null)
                 {
-                    application.setEntityId(new GUID());
+                    application.setEntityId(GUID.makeGUID());
                     Table.update(ctx.getUpgradeUser(), protocolApplicationTable, application, application.getRowId());
                 }
             }
