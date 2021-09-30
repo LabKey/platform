@@ -47,10 +47,12 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -64,6 +66,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.samples.SampleStateManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.util.StringUtils;
 
@@ -297,12 +300,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
 
+        // We need to allow updating from one locked status to another locked status, but without other changes
+        // and updating from either locked or unlocked to something else while also updating other metadata
+        SampleStateManager statusManager = SampleStateManager.getInstance();
+        DataState oldStatus = statusManager.getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean oldAllowsOp = statusManager.isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
+        DataState newStatus = statusManager.getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean newAllowsOp = statusManager.isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
+
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
+        boolean hasNonStatusChange = false;
         for (String updateField : rowCopy.keySet())
         {
             Object updateValue = rowCopy.get(updateField);
@@ -319,8 +331,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
             else
             {
+                hasNonStatusChange = hasNonStatusChange || !SampleTypeServiceImpl.statusUpdateColumns.contains(updateField.toLowerCase());
                 validRowCopy.put(updateField, updateValue);
             }
+        }
+        // had a locked status before and either not updating the status or updating to a new locked status
+        if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
+        {
+            throw new ValidationException(String.format("Updating sample metadata when status is '%s' is not allowed.", oldStatus.getLabel()));
         }
 
         keys = new Object[]{lsid};
@@ -387,7 +405,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Integer> id = new LinkedList<>();
         Integer rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false);
         return oldRowMap;
     }
 
@@ -396,6 +414,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
     {
+        SampleStateManager statusManager = SampleStateManager.getInstance();
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
 
         // Check for trigger scripts
@@ -414,18 +434,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
                 if (map == null)
-                    throw new QueryUpdateServiceException("No Sample Type Material found for rowId or LSID");
+                    throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
                 if (rowId == null)
                     rowId = getMaterialRowId(map);
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
+                if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
+                    throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, statusManager.getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()))));
+
                 ids.add(rowId);
                 result.add(map);
             }
             // TODO check if this handle attachments???
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false);
         }
 
         if (result.size() > 0)

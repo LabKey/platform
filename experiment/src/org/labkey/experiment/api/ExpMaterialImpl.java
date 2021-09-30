@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -68,6 +69,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.samples.SampleStateManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -177,6 +179,56 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return _object.getAliquotedFromLSID();
     }
 
+    public Integer getSampleStateId()
+    {
+        return _object.getSampleState();
+    }
+
+    @Override
+    public void setSampleStateId(Integer stateId)
+    {
+        _object.setSampleState(stateId);
+    }
+
+    @Override
+    public DataState getSampleState()
+    {
+        if (getSampleStateId() == null)
+            return null;
+        return SampleStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
+    }
+
+
+    @Override
+    public String getStateLabel()
+    {
+        DataState state = getSampleState();
+        if (state == null)
+            return null;
+        return state.getLabel();
+    }
+
+    @Override
+    public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
+    {
+        if (!SampleTypeService.isSampleStatusEnabled()) // permit everything if feature not enabled
+            return true;
+
+        DataState state = getSampleState();
+        // no state means you can do all operations
+        if (state == null)
+            return true;
+
+        return ExpSchema.SampleStateType.isOperationPermitted(state.getStateType(), operation);
+    }
+
+    @Override
+    public String getNameAndStatus()
+    {
+        String statusLabel = getStateLabel();
+        return getName() + (statusLabel == null ? "" : " (status: " + statusLabel + ")");
+    }
+
     @Override
     @NotNull
     public Collection<String> getAliases()
@@ -243,7 +295,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType());
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType(), false);
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 

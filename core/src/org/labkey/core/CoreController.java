@@ -77,7 +77,6 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -89,12 +88,12 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.premium.PremiumService;
-import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractDeleteDataStateAction;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageQCStatesForm;
-import org.labkey.api.qc.DeleteQCStateForm;
-import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -487,8 +486,8 @@ public class CoreController extends SpringActionController
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
                 MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
             }
             return null;
         }
@@ -2500,7 +2499,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
+    public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultQCState;
 
@@ -2536,7 +2535,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandlerAbstract)
+        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
         {
             CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
 
@@ -2556,7 +2555,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
+        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel");
         }
@@ -2591,22 +2590,22 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
+    public class DeleteQCStateAction extends AbstractDeleteDataStateAction
     {
         public DeleteQCStateAction()
         {
             super();
-            _qcStateHandler = new CoreQCStateHandler();
+            _dataStateHandler = new CoreQCStateHandler();
         }
 
         @Override
-        public QCStateHandler getQCStateHandler()
+        public DataStateHandler getDataStateHandler()
         {
-            return _qcStateHandler;
+            return _dataStateHandler;
         }
 
         @Override
-        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        public ActionURL getSuccessURL(DeleteDataStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)

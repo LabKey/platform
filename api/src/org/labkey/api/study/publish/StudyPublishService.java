@@ -130,6 +130,8 @@ public interface StudyPublishService
      */
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
+    String checkForLockedLinks(Dataset def, @Nullable List<Integer> rowIds);
+
     void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
 
     /**

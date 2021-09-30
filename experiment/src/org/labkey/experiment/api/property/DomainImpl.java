@@ -61,6 +61,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -170,7 +171,7 @@ public class DomainImpl implements Domain
     @Override
     public String getLabel()
     {
-        DomainKind kind = getDomainKind();
+        DomainKind<?> kind = getDomainKind();
         if (kind == null)
         {
             return "Domain '" + getName() + "'";
@@ -554,7 +555,17 @@ public class DomainImpl implements Domain
             {
                 try
                 {
-                    kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null, null);
+                    TableInfo tableInfo = kind.getTableInfo(user, getContainer(), getName());
+                    if (tableInfo == null)
+                    {
+                        throw new ChangePropertyDescriptorException("Couldn't resolve TableInfo for domain kind " + kind + " with name " + getName());
+                    }
+                    QueryUpdateService update = tableInfo.getUpdateService();
+                    if (update == null)
+                    {
+                        throw new ChangePropertyDescriptorException("Couldn't resolve QueryUpdateService for domain kind " + kind + " with name " + getName());
+                    }
+                    update.truncateRows(user, getContainer(), null, null);
                 }
                 catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
                 {
@@ -786,9 +797,7 @@ public class DomainImpl implements Domain
         Set<ColumnInfo> uniqueIndexCols = new HashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
         // but exclude the uniqueId fields themselves.
-        table.getUniqueIndices().values().forEach(idx -> {
-            idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add);
-        });
+        table.getUniqueIndices().values().forEach(idx -> idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
 
@@ -805,12 +814,9 @@ public class DomainImpl implements Domain
         }
         DataIteratorContext ctx = new DataIteratorContext();
         Set<String> colNames = new HashSet<>();
-        uniqueIndexCols.forEach(col -> {
-            colNames.add(col.getName());
-        });
-        uniqueIdProps.forEach(prop -> {
-            colNames.add(prop.getName());
-        });
+        uniqueIndexCols.forEach(col ->
+                colNames.add(col.getName()));
+        uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
         ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
         mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
         SQLFragment sql = new SQLFragment().append("UPDATE ").append(table.getSelectName()).append(" SET ");
@@ -859,7 +865,7 @@ public class DomainImpl implements Domain
         return oldSize > newSize;
     }
 
-    private void checkAndThrowSizeConstraints(DomainKind kind, DomainProperty prop)
+    private void checkAndThrowSizeConstraints(DomainKind<?> kind, DomainProperty prop)
     {
         boolean tooLong = kind.exceedsMaxLength(this, prop);
         if (tooLong)

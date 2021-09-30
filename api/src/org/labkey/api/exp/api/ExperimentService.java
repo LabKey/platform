@@ -55,6 +55,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -452,6 +453,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataTable createFilesTable(String name, UserSchema schema);
+
+    SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 

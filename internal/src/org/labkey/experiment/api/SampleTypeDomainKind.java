@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -101,6 +102,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotCount");
         RESERVED_NAMES.add("AliquotTotalVolume");
         RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(

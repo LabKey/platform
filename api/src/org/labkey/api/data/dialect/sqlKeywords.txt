@@ -350,6 +350,7 @@ file_block_size
 fillfactor
 filter
 final
+finalize
 first
 first_value
 fixed
@@ -395,9 +396,9 @@ granted
 grants
 greatest
 group
-groups
 group_replication
 grouping
+groups
 handler
 hash
 having
@@ -750,6 +751,8 @@ percentile_disc
 perm
 permanent
 permission
+persist
+persist_only
 phase
 pivot
 placing
@@ -887,10 +890,10 @@ rollback
 rollup
 rotate
 routine
-routines
 routine_catalog
 routine_name
 routine_schema
+routines
 row
 row_count
 row_format

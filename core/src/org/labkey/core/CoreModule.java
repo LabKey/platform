@@ -59,7 +59,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -794,7 +794,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
             AuditLogService.get().registerAuditType(new TransactionAuditProvider());
 
-            QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
+            DataStateManager.getInstance().registerDataStateHandler(new CoreQCStateHandler());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
