@@ -820,30 +820,46 @@ validNum:       {
                 PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer;
         if (isNotRunningOnWebServer)
         {
-            return parseDateTime(s, MonthDayOption.MONTH_DAY, true);
+            return parseDateTime(s, MonthDayOption.MONTH_DAY, true, null);
         }
 
-        return parseDateTime(ContainerManager.getRoot(), s);
+        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
+        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
+        ViewContext ctx = HttpView.currentContext();
+        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
+
+        return parseDateTime(c, s);
     }
 
 
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(Container c, String s)
     {
-        String displayFormat = getDateTimeFormatString(c);  // TODO: Pass this into parseDate() as a bonus format?
+        @Nullable String extraDateTimeParsingFormat = FolderSettingsCache.getExtraDateTimeParsingFormat(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
 
-        return parseDateTime(s, monthDayOption);
+        return parseDateTime(s, monthDayOption, true, extraDateTimeParsingFormat);
     }
 
-
-    public static long parseDateTime(String s, MonthDayOption md)
+    private static long parseDateTime(String s, MonthDayOption md)
     {
-        return parseDateTime(s, md, true);
+        return parseDateTime(s, md, true, null);
     }
 
-    public static long parseDateTime(String s, MonthDayOption md, boolean strict)
+    public static long parseDateTime(String s, MonthDayOption md, boolean strict, @Nullable String extraParsingFormat)
     {
+        // If provided, try the extra parsing format first
+        if (null != extraParsingFormat)
+        {
+            try
+            {
+                return parseDateTime(s, extraParsingFormat).getTime();
+            }
+            catch (ParseException ignored)
+            {
+            }
+        }
+
         try
         {
             return parseDateTimeEN(s, DateTimeOption.DateTime, md, strict);
@@ -858,22 +874,40 @@ validNum:       {
     @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
-        return parseDate(ContainerManager.getRoot(), s);
+        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
+        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
+        ViewContext ctx = HttpView.currentContext();
+        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
+
+        return parseDate(c, s);
     }
 
 
     // Lenient parsing using a variety of standard formats
     public static long parseDate(Container c, String s)
     {
-        String displayFormat = getDateFormatString(c);  // TODO: Pass this into parseDate() as a bonus format
+        @Nullable String extraDateParsingFormat = FolderSettingsCache.getExtraDateParsingFormat(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
 
-        return parseDate(s, monthDayOption);
+        return parseDate(s, monthDayOption, extraDateParsingFormat);
     }
 
 
-    private static long parseDate(String s, MonthDayOption md)
+    private static long parseDate(String s, MonthDayOption md, @Nullable String extraParsingFormat)
     {
+        // If provided, try the extra parsing format first
+        if (null != extraParsingFormat)
+        {
+            try
+            {
+                Date parsed = parseDateTime(s, extraParsingFormat);
+                return DateUtils.truncate(parsed, Calendar.DAY_OF_MONTH).getTime(); // Truncate to days... should this throw instead?
+            }
+            catch (ParseException ignored)
+            {
+            }
+        }
+
         try
         {
             // quick check for JDBC/ISO date
@@ -1494,7 +1528,7 @@ Parse:
             try
             {
                 parseDate(s);
-                fail("Not a legal date: " + s);
+                fail("Should not have successfully parsed: " + s);
             }
             catch (ConversionException x)
             {
@@ -1506,7 +1540,7 @@ Parse:
             try
             {
                 parseDateTime(s);
-                fail("Not a legal datetime: " + s);
+                fail("Should not have successfully parsed: " + s);
             }
             catch (ConversionException x)
             {
@@ -1567,9 +1601,9 @@ Parse:
             assertIllegalDateTime("03-FEB-2001 04:05:06:61");
             assertIllegalDateTime("03-FEB-2001 04:05:06:91");
             // invalid fractional seconds > 59, but allowed to overflow when strict=false
-            assertEquals(datetimeExpected+1000, DateUtil.parseDateTime("03-FEB-2001 4:05:06:60", MonthDayOption.MONTH_DAY, false));
-            assertEquals(datetimeExpected+1017, DateUtil.parseDateTime("03-FEB-2001 4:05:06:61", MonthDayOption.MONTH_DAY, false));
-            assertEquals(datetimeExpected+1517, DateUtil.parseDateTime("03-FEB-2001 4:05:06:91", MonthDayOption.MONTH_DAY, false));
+            assertEquals(datetimeExpected+1000, DateUtil.parseDateTime("03-FEB-2001 4:05:06:60", MonthDayOption.MONTH_DAY, false, null));
+            assertEquals(datetimeExpected+1017, DateUtil.parseDateTime("03-FEB-2001 4:05:06:61", MonthDayOption.MONTH_DAY, false, null));
+            assertEquals(datetimeExpected+1517, DateUtil.parseDateTime("03-FEB-2001 4:05:06:91", MonthDayOption.MONTH_DAY, false, null));
 
 
             // Test parseXMLDate() handling of time and date time values
@@ -1660,6 +1694,16 @@ Parse:
             assertEquals(datetimeUTC + 213, parseDateTimeUS("2001-02-03T04:05:06.213Z", DateTimeOption.DateTime, true));
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
+
+            // Test extra date-time parsing format
+            assertIllegalDateTime("03FEB2001:04:05:06"); // Should fail... not a standard format
+            assertEquals(datetimeLocal, DateUtil.parseDateTime("2001-02-03 04:05:06", MonthDayOption.MONTH_DAY, true, "ddMMMyyyy:HH:mm:ss")); // Standard parsing formats still work
+            assertEquals(datetimeLocal, DateUtil.parseDateTime("03FEB2001:04:05:06", MonthDayOption.MONTH_DAY, true, "ddMMMyyyy:HH:mm:ss"));
+
+            // Test extra date parsing format
+            assertIllegalDateTime("03$FEB$2001"); // Should fail... not a standard format
+            assertEquals(dateExpected, DateUtil.parseDate("2001-02-03", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy")); // Standard parsing formats still work
+            assertEquals(dateExpected, DateUtil.parseDate("03$FEB$2001", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy"));
         }
 
 
@@ -1734,8 +1778,8 @@ Parse:
             assertIllegalDateTime("23000101");
 
             // Test XML date format
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00", MonthDayOption.DAY_MONTH));
-            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z", MonthDayOption.DAY_MONTH));
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00", MonthDayOption.DAY_MONTH, null));
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z", MonthDayOption.DAY_MONTH, null));
             assertIllegalDateTime("115468001");
 
             // some zero testing

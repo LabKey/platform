@@ -33,6 +33,8 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     protected static final String DEFAULT_DATE_TIME_FORMAT = "defaultDateTimeFormatString";
     protected static final String RESTRICTED_COLUMNS_ENABLED = "restrictedColumnsEnabled";
     protected static final String DEFAULT_NUMBER_FORMAT = "defaultNumberFormatString";
+    protected static final String EXTRA_DATE_PARSING_FORMAT = "extraDateParsingFormat";
+    protected static final String EXTRA_DATE_TIME_PARSING_FORMAT = "extraDateTimeParsingFormat";
 
     protected final Container _c;
 
@@ -90,25 +92,37 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 
     public String getDefaultDateFormat()
     {
-        // Look up this value starting from the current container (unlike all the other look & feel settings)
+        // Look up this value starting from the current container (unlike most look & feel settings)
         return lookupStringValue(_c, DEFAULT_DATE_FORMAT, DateUtil.getStandardDateFormatString());
     }
 
     public String getDefaultDateTimeFormat()
     {
-        // Look up this value starting from the current container (unlike all the other look & feel settings)
+        // Look up this value starting from the current container (unlike most look & feel settings)
         return lookupStringValue(_c, DEFAULT_DATE_TIME_FORMAT, DateUtil.getStandardDateTimeFormatString());
+    }
+
+    public String getDefaultNumberFormat()
+    {
+        // Look up this value starting from the current container (unlike most look & feel settings)
+        return lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
+    }
+
+    public String getExtraDateParsingFormat()
+    {
+        // Look up this value starting from the current container (unlike most look & feel settings)
+        return lookupStringValue(_c, EXTRA_DATE_PARSING_FORMAT, null);
+    }
+
+    public String getExtraDateTimeParsingFormat()
+    {
+        // Look up this value starting from the current container (unlike most look & feel settings)
+        return lookupStringValue(_c, EXTRA_DATE_TIME_PARSING_FORMAT, null);
     }
 
     public boolean areRestrictedColumnsEnabled()
     {
         return lookupBooleanValue(_c, RESTRICTED_COLUMNS_ENABLED, false);
-    }
-
-    public String getDefaultNumberFormat()
-    {
-        // Look up this value starting from the current container (unlike all the other look & feel settings)
-        return lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
@@ -127,5 +141,17 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     public String getDefaultNumberFormatStored()
     {
         return super.lookupStringValue(_c, DEFAULT_NUMBER_FORMAT, null);
+    }
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getExtraDateParsingFormatStored()
+    {
+        return super.lookupStringValue(_c, EXTRA_DATE_PARSING_FORMAT, null);
+    }
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getExtraDateTimeParsingFormatStored()
+    {
+        return super.lookupStringValue(_c, EXTRA_DATE_TIME_PARSING_FORMAT, null);
     }
 }

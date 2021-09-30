@@ -16,9 +16,7 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,19 +32,12 @@ import java.util.Collections;
  * Time: 10:31 AM
  */
 
-// Folder settings inherit all the way up the folder tree. All the property sets involved should be cached, but the walk up the tree
-// is a potentially expensive operation to perform just to format a date or number. So, we cache the set of resolved properties
-// on a per-container basis and clear the entire cache on every change of look and feel settings.
+// Folder settings inherit all the way up the folder tree. All the property sets involved should be cached, but the walk
+// up the tree is a potentially expensive operation just to format a date or number. So, we cache the set of resolved
+// properties on a per-container basis and clear the entire cache on every change of look and feel settings.
 public class FolderSettingsCache
 {
-    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(10000, CacheManager.DAY, "Folder Settings", new CacheLoader<Container, FolderSettings>()
-    {
-        @Override
-        public FolderSettings load(Container c, @Nullable Object argument)
-        {
-            return new FolderSettings(c);
-        }
-    });
+    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(10000, CacheManager.DAY, "Folder Settings", (c, argument) -> new FolderSettings(c));
 
     public static String getDefaultDateFormat(Container c)
     {
@@ -61,6 +52,16 @@ public class FolderSettingsCache
     public static String getDefaultNumberFormat(Container c)
     {
         return CACHE.get(c).getDefaultNumberFormat();
+    }
+
+    public static String getExtraDateParsingFormat(Container c)
+    {
+        return CACHE.get(c).getExtraDateParsingFormat();
+    }
+
+    public static String getExtraDateTimeParsingFormat(Container c)
+    {
+        return CACHE.get(c).getExtraDateTimeParsingFormat();
     }
 
     public static boolean areRestrictedColumnsEnabled(Container c)
@@ -83,6 +84,8 @@ public class FolderSettingsCache
         private final String _defaultDateFormat;
         private final String _defaultDateTimeFormat;
         private final String _defaultNumberFormat;
+        private final String _extraDateParsingFormat;
+        private final String _extraDateTimeParsingFormat;
         private final boolean _restrictedColumnsEnabled;
 
         FolderSettings(Container c)
@@ -91,6 +94,8 @@ public class FolderSettingsCache
             _defaultDateFormat = props.getDefaultDateFormat();
             _defaultDateTimeFormat = props.getDefaultDateTimeFormat();
             _defaultNumberFormat = props.getDefaultNumberFormat();
+            _extraDateParsingFormat = props.getExtraDateParsingFormat();
+            _extraDateTimeParsingFormat = props.getExtraDateTimeParsingFormat();
             _restrictedColumnsEnabled = props.areRestrictedColumnsEnabled();
         }
 
@@ -107,6 +112,16 @@ public class FolderSettingsCache
         public String getDefaultDateTimeFormat()
         {
             return _defaultDateTimeFormat;
+        }
+
+        public String getExtraDateParsingFormat()
+        {
+            return _extraDateParsingFormat;
+        }
+
+        public String getExtraDateTimeParsingFormat()
+        {
+            return _extraDateTimeParsingFormat;
         }
 
         public boolean areRestrictedColumnsEnabled()
