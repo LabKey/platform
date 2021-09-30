@@ -19,10 +19,10 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cloud.CloudNoticeEvent;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -46,7 +46,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,9 +115,16 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         addListener(directory, listener, (path, plm) -> registerWithCloudService(path, plm, config), events);
     }
 
-    private void registerWithCloudService(Path path, PathListenerManager pathListenerManager, final CloudWatcherConfig config)
+    private void registerWithCloudService(Path path, @NotNull PathListenerManager plm, final CloudWatcherConfig config)
     {
-        CloudStoreService.get().registerCloudWatcher(config);
+        CloudStoreService.get().registerCloudWatcher(config, (Path filePath) -> {
+            LOG.debug("Processing watch event for filePath: " + filePath);
+            Path watchedPath = filePath.getParent();
+            CloudWatchEvent cwe = new CloudWatchEvent(filePath);
+
+            //TODO Could do a validation sanity check before firing event?
+            plm.fireEvents(cwe, watchedPath);
+        });
     }
 
     @Override
@@ -324,67 +330,51 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             if (CloudStoreService.get() == null)
                 return;
 
-                CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
+            CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
+            {
+                try
                 {
-                    try
-                    {
-                        processWatchJob(cloudWatcherJob);
-                    }
-                    catch (Throwable e)  // Make sure throwables don't kill the background thread
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
-                });
+                    CloudStoreService.get().executeWatchJob(cloudWatcherJob);
+                }
+                catch (Throwable e)  // Make sure throwables don't kill the background thread
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            });
 
             Thread.sleep(60000);
-        }
-
-        private void processWatchJob(final Integer cloudWatcherJob) throws IOException
-        {
-            CloudStoreService.get().executeWatchJob(cloudWatcherJob, this::processNoticeEvents);
-        }
-
-        private void processNoticeEvents(CloudNoticeEvent evt, int cloudWatcherJob)
-        {
-            Path watchedPath = evt.getPath().getParent();  //TODO this isn't quite right...
-            PathListenerManager plm = _listenerMap.get(watchedPath);
-            if (plm != null)
-            {
-                CloudWatchEvent cwe = new CloudWatchEvent(evt.getPath());
-                plm.fireEvents(cwe, watchedPath);
-            }
-        }
-
-        private class CloudWatchEvent implements WatchEvent<Path>
-        {
-            private Path cloudPath;
-            private CloudWatchEvent(Path path)
-            {
-                cloudPath = path;
-            }
-
-            @Override
-            public Kind<Path> kind()
-            {
-                return ENTRY_CREATE;
-            }
-
-            @Override
-            public int count()
-            {
-                return 1;
-            }
-
-            @Override
-            public Path context()
-            {
-                return cloudPath;
-            }
         }
 
         @Override
         protected void close()
         {
+        }
+    }
+
+    private class CloudWatchEvent implements WatchEvent<Path>
+    {
+        private Path cloudPath;
+        private CloudWatchEvent(Path path)
+        {
+            cloudPath = path;
+        }
+
+        @Override
+        public Kind<Path> kind()
+        {
+            return ENTRY_CREATE;
+        }
+
+        @Override
+        public int count()
+        {
+            return 1;
+        }
+
+        @Override
+        public Path context()
+        {
+            return cloudPath;
         }
     }
 

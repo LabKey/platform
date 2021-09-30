@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * User: kevink
@@ -53,9 +53,9 @@ public interface CloudStoreService
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
-    void executeWatchJob(int cloudWatcherJobId, BiConsumer<CloudNoticeEvent, Integer> eventProcessor);
+    void executeWatchJob(int cloudWatcherJobId);
 
-    void registerCloudWatcher(CloudWatcherConfig config);
+    void registerCloudWatcher(CloudWatcherConfig config, Consumer<Path> eventProcessor);
 
     void unregisterCloudWatcher(int watcherConfigId);
 
