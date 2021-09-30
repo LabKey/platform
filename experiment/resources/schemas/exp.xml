@@ -640,6 +640,9 @@
       <column columnName="RecordCount">
           <description>Contains the number of records affected by this step</description>
       </column>
+        <column columnName="EntityId">
+            <description>The EntityId of the ProtocolApplication</description>
+        </column>
     </columns>
     <description>Contains a row per step taken when performing an experiment run.</description>
   </table>
