@@ -38,6 +38,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -48,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ExpProtocolApplicationImpl extends ExpIdentifiableEntityImpl<ProtocolApplication> implements ExpProtocolApplication
+public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
     private List<ExpMaterialImpl> _inputMaterials;
     private List<ExpDataImpl> _inputDatas;
@@ -287,7 +288,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableEntityImpl<Protoc
     }
 
     @Override
-    public void setEntityId(String entityId)
+    public void setEntityId(GUID entityId)
     {
         ensureUnlocked();
         _object.setEntityId(entityId);
@@ -336,7 +337,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableEntityImpl<Protoc
     }
 
     @Override
-    public String getEntityId()
+    public GUID getEntityId()
     {
         return _object.getEntityId();
     }
