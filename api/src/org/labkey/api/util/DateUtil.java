@@ -835,10 +835,10 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(Container c, String s)
     {
-        @Nullable String extraDateTimeParsingFormat = FolderSettingsCache.getExtraDateTimeParsingFormat(c);
+        @Nullable String extraDateTimeParsingPattern = FolderSettingsCache.getExtraDateTimeParsingPattern(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
 
-        return parseDateTime(s, monthDayOption, true, extraDateTimeParsingFormat);
+        return parseDateTime(s, monthDayOption, true, extraDateTimeParsingPattern);
     }
 
     private static long parseDateTime(String s, MonthDayOption md)
@@ -846,14 +846,14 @@ validNum:       {
         return parseDateTime(s, md, true, null);
     }
 
-    public static long parseDateTime(String s, MonthDayOption md, boolean strict, @Nullable String extraParsingFormat)
+    public static long parseDateTime(String s, MonthDayOption md, boolean strict, @Nullable String extraParsingPattern)
     {
-        // If provided, try the extra parsing format first
-        if (null != extraParsingFormat)
+        // If provided, try the extra parsing pattern first
+        if (null != extraParsingPattern)
         {
             try
             {
-                return parseDateTime(s, extraParsingFormat).getTime();
+                return parseDateTime(s, extraParsingPattern).getTime();
             }
             catch (ParseException ignored)
             {
@@ -886,21 +886,21 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDate(Container c, String s)
     {
-        @Nullable String extraDateParsingFormat = FolderSettingsCache.getExtraDateParsingFormat(c);
+        @Nullable String extraDateParsingPattern = FolderSettingsCache.getExtraDateParsingPattern(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(c).getDateParsingMode().getDayMonth();
 
-        return parseDate(s, monthDayOption, extraDateParsingFormat);
+        return parseDate(s, monthDayOption, extraDateParsingPattern);
     }
 
 
-    private static long parseDate(String s, MonthDayOption md, @Nullable String extraParsingFormat)
+    private static long parseDate(String s, MonthDayOption md, @Nullable String extraParsingPattern)
     {
-        // If provided, try the extra parsing format first
-        if (null != extraParsingFormat)
+        // If provided, try the extra parsing pattern first
+        if (null != extraParsingPattern)
         {
             try
             {
-                Date parsed = parseDateTime(s, extraParsingFormat);
+                Date parsed = parseDateTime(s, extraParsingPattern);
                 return DateUtils.truncate(parsed, Calendar.DAY_OF_MONTH).getTime(); // Truncate to days... should this throw instead?
             }
             catch (ParseException ignored)
@@ -1695,14 +1695,14 @@ Parse:
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
 
-            // Test extra date-time parsing format
+            // Test extra date-time parsing pattern
             assertIllegalDateTime("03FEB2001:04:05:06"); // Should fail... not a standard format
-            assertEquals(datetimeLocal, DateUtil.parseDateTime("2001-02-03 04:05:06", MonthDayOption.MONTH_DAY, true, "ddMMMyyyy:HH:mm:ss")); // Standard parsing formats still work
+            assertEquals(datetimeLocal, DateUtil.parseDateTime("2001-02-03 04:05:06", MonthDayOption.MONTH_DAY, true, "ddMMMyyyy:HH:mm:ss")); // Standard parsing patterns still work
             assertEquals(datetimeLocal, DateUtil.parseDateTime("03FEB2001:04:05:06", MonthDayOption.MONTH_DAY, true, "ddMMMyyyy:HH:mm:ss"));
 
-            // Test extra date parsing format
+            // Test extra date parsing pattern
             assertIllegalDateTime("03$FEB$2001"); // Should fail... not a standard format
-            assertEquals(dateExpected, DateUtil.parseDate("2001-02-03", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy")); // Standard parsing formats still work
+            assertEquals(dateExpected, DateUtil.parseDate("2001-02-03", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy")); // Standard parsing patterns still work
             assertEquals(dateExpected, DateUtil.parseDate("03$FEB$2001", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy"));
         }
 

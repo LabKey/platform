@@ -23,8 +23,8 @@ import java.text.DecimalFormat;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_TIME_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_PARSING_FORMAT;
-import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_TIME_PARSING_FORMAT;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_PARSING_PATTERN;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.EXTRA_DATE_TIME_PARSING_PATTERN;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.RESTRICTED_COLUMNS_ENABLED;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
 
@@ -133,46 +133,46 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     }
 
     // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateParsingFormat(String extraDateParsingFormat) throws IllegalArgumentException
+    public void setExtraDateParsingPattern(String extraDateParsingPattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(extraDateParsingFormat);
-        storeStringValue(EXTRA_DATE_PARSING_FORMAT, extraDateParsingFormat);
+        FastDateFormat.getInstance(extraDateParsingPattern);
+        storeStringValue(EXTRA_DATE_PARSING_PATTERN, extraDateParsingPattern);
     }
 
     // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateTimeParsingFormat(String extraDateTimeParsingFormat) throws IllegalArgumentException
+    public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern) throws IllegalArgumentException
     {
         // Check for legal format
-        FastDateFormat.getInstance(extraDateTimeParsingFormat);
-        storeStringValue(EXTRA_DATE_TIME_PARSING_FORMAT, extraDateTimeParsingFormat);
+        FastDateFormat.getInstance(extraDateTimeParsingPattern);
+        storeStringValue(EXTRA_DATE_TIME_PARSING_PATTERN, extraDateTimeParsingPattern);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
-    public void clearExtraDateParsingFormat()
+    public void clearExtraDateParsingPattern()
     {
-        remove(EXTRA_DATE_PARSING_FORMAT);
+        remove(EXTRA_DATE_PARSING_PATTERN);
     }
 
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
-    public void clearExtraDateTimeParsingFormat()
+    public void clearExtraDateTimeParsingPattern()
     {
-        remove(EXTRA_DATE_TIME_PARSING_FORMAT);
+        remove(EXTRA_DATE_TIME_PARSING_PATTERN);
     }
 
     // Convenience method to support import: validate and save just this property
-    public static void saveExtraDateParsingFormat(Container c, String extraDateParsingFormat) throws IllegalArgumentException
+    public static void saveExtraDateParsingPattern(Container c, String extraDateParsingPattern) throws IllegalArgumentException
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setExtraDateParsingFormat(extraDateParsingFormat);
+        props.setExtraDateParsingPattern(extraDateParsingPattern);
         props.save();
     }
 
     // Convenience method to support import: validate and save just this property
-    public static void saveExtraDateTimeParsingFormat(Container c, String extraDateTimeParsingFormat) throws IllegalArgumentException
+    public static void saveExtraDateTimeParsingPattern(Container c, String extraDateTimeParsingPattern) throws IllegalArgumentException
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setDefaultDateTimeFormat(extraDateTimeParsingFormat);
+        props.setDefaultDateTimeFormat(extraDateTimeParsingPattern);
         props.save();
     }
 

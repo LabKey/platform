@@ -112,11 +112,11 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
-            if (folderXml.isSetExtraDateParsingFormat())
+            if (folderXml.isSetExtraDateParsingPattern())
             {
                 try
                 {
-                    WriteableFolderLookAndFeelProperties.saveExtraDateParsingFormat(c, folderXml.getExtraDateParsingFormat());
+                    WriteableFolderLookAndFeelProperties.saveExtraDateParsingPattern(c, folderXml.getExtraDateParsingPattern());
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -124,11 +124,11 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
-            if (folderXml.isSetExtraDateTimeParsingFormat())
+            if (folderXml.isSetExtraDateParsingPattern())
             {
                 try
                 {
-                    WriteableFolderLookAndFeelProperties.saveExtraDateTimeParsingFormat(c, folderXml.getExtraDateTimeParsingFormat());
+                    WriteableFolderLookAndFeelProperties.saveExtraDateTimeParsingPattern(c, folderXml.getExtraDateTimeParsingPattern());
                 }
                 catch (IllegalArgumentException e)
                 {

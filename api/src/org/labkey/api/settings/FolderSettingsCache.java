@@ -54,14 +54,14 @@ public class FolderSettingsCache
         return CACHE.get(c).getDefaultNumberFormat();
     }
 
-    public static String getExtraDateParsingFormat(Container c)
+    public static String getExtraDateParsingPattern(Container c)
     {
-        return CACHE.get(c).getExtraDateParsingFormat();
+        return CACHE.get(c).getExtraDateParsingPattern();
     }
 
-    public static String getExtraDateTimeParsingFormat(Container c)
+    public static String getExtraDateTimeParsingPattern(Container c)
     {
-        return CACHE.get(c).getExtraDateTimeParsingFormat();
+        return CACHE.get(c).getExtraDateTimeParsingPattern();
     }
 
     public static boolean areRestrictedColumnsEnabled(Container c)
@@ -84,8 +84,8 @@ public class FolderSettingsCache
         private final String _defaultDateFormat;
         private final String _defaultDateTimeFormat;
         private final String _defaultNumberFormat;
-        private final String _extraDateParsingFormat;
-        private final String _extraDateTimeParsingFormat;
+        private final String _extraDateParsingPattern;
+        private final String _extraDateTimeParsingPattern;
         private final boolean _restrictedColumnsEnabled;
 
         FolderSettings(Container c)
@@ -94,8 +94,8 @@ public class FolderSettingsCache
             _defaultDateFormat = props.getDefaultDateFormat();
             _defaultDateTimeFormat = props.getDefaultDateTimeFormat();
             _defaultNumberFormat = props.getDefaultNumberFormat();
-            _extraDateParsingFormat = props.getExtraDateParsingFormat();
-            _extraDateTimeParsingFormat = props.getExtraDateTimeParsingFormat();
+            _extraDateParsingPattern = props.getExtraDateParsingPattern();
+            _extraDateTimeParsingPattern = props.getExtraDateTimeParsingPattern();
             _restrictedColumnsEnabled = props.areRestrictedColumnsEnabled();
         }
 
@@ -114,14 +114,14 @@ public class FolderSettingsCache
             return _defaultDateTimeFormat;
         }
 
-        public String getExtraDateParsingFormat()
+        public String getExtraDateParsingPattern()
         {
-            return _extraDateParsingFormat;
+            return _extraDateParsingPattern;
         }
 
-        public String getExtraDateTimeParsingFormat()
+        public String getExtraDateTimeParsingPattern()
         {
-            return _extraDateTimeParsingFormat;
+            return _extraDateTimeParsingPattern;
         }
 
         public boolean areRestrictedColumnsEnabled()
