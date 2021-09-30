@@ -128,6 +128,8 @@ public abstract class SqlDialect
 
     protected abstract @NotNull Set<String> getReservedWords();
 
+    public static final String SEPARATOR_BANNER = "******** Other thread info *********";
+
     public String getOtherDatabaseThreads()
     {
         StringBuilder sb = new StringBuilder();
@@ -187,6 +189,12 @@ public abstract class SqlDialect
                 }
             }
         }
+
+        if (sb.length() > 0)
+        {
+            sb.insert(0, SEPARATOR_BANNER + "\n\n");
+        }
+
         return sb.toString();
     }
 
