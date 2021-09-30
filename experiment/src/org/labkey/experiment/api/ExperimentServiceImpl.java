@@ -6937,7 +6937,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
         ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
         if (app == null)
@@ -6946,7 +6946,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationImpl getExpProtocolApplicationFromEntityId(String entityId)
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplicationFromEntityId(String entityId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
         TableInfo table = getTinfoProtocolApplication();
