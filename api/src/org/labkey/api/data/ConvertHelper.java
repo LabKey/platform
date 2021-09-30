@@ -324,7 +324,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
     /**
-     * This format accepts dates in the form MM/dd/yy
+     * This converter accepts dates in a variety of standard formats
      */
     public static class LenientDateConverter implements Converter
     {

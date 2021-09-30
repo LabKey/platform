@@ -823,7 +823,12 @@ validNum:       {
             return parseDateTime(s, MonthDayOption.MONTH_DAY, true, null);
         }
 
-        return parseDateTime(ContainerManager.getRoot(), s);
+        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
+        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
+        ViewContext ctx = HttpView.currentContext();
+        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
+
+        return parseDateTime(c, s);
     }
 
 
@@ -869,7 +874,12 @@ validNum:       {
     @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
-        return parseDate(ContainerManager.getRoot(), s);
+        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
+        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
+        ViewContext ctx = HttpView.currentContext();
+        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
+
+        return parseDate(c, s);
     }
 
 
