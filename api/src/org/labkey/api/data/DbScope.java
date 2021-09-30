@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,13 +39,16 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -77,6 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -106,7 +109,7 @@ import java.util.stream.Collectors;
  */
 public class DbScope
 {
-    private static final Logger LOG = LogManager.getLogger(DbScope.class);
+    private static final Logger LOG = LogHelper.getLogger(DbScope.class, "Retrieving database connections and managing transactions");
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScopeLoader> _scopeLoaders = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
@@ -174,7 +177,9 @@ public class DbScope
         @Override
         default boolean tryLock(long time, @NotNull TimeUnit unit)
         {
-            throw new UnsupportedOperationException();
+            lock();
+            return true;
+            // We don't really support tryLock() but pass through to lock() to help with our deadlock prevention
         }
 
         @Override
@@ -569,31 +574,46 @@ public class DbScope
                                 .filter((l) -> !(l instanceof ServerLock))
                                 .collect(Collectors.toList());
 
-                    result = new TransactionImpl(conn, transactionKind, memoryLocks);
-                    int stackDepth;
-                    synchronized (_transaction)
-                    {
-                        List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
-                        transactions.add(result);
-                        stackDepth = transactions.size();
-                    }
-                    boolean serverLockSuccess = false;
+                    boolean createdTransactionObject = false;
                     try
                     {
-                        serverLocks.forEach(Lock::lock);
-                        serverLockSuccess = true;
+                        result = new TransactionImpl(conn, transactionKind, memoryLocks);
+                        createdTransactionObject = true;
+
+                        int stackDepth;
+                        synchronized (_transaction)
+                        {
+                            List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
+                            transactions.add(result);
+                            stackDepth = transactions.size();
+                        }
+                        boolean serverLockSuccess = false;
+                        try
+                        {
+                            serverLocks.forEach(Lock::lock);
+                            serverLockSuccess = true;
+                        }
+                        finally
+                        {
+                            if (!serverLockSuccess)
+                            {
+                                // We're throwing an exception so the caller will never get the transaction object to
+                                // be able to close it, so do it now
+                                result.close();
+                            }
+                        }
+                        if (stackDepth > 2)
+                            LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                     }
                     finally
                     {
-                        if (!serverLockSuccess)
+                        if (!createdTransactionObject)
                         {
-                            // We're throwing an exception so the caller will never get the transaction object to
-                            // be able to close it, so do it now
-                            result.close();
+                            // We failed to create the Transaction object (perhaps because of problems acquiring
+                            // the locks) - close the otherwise orphaned connection to avoid a leak
+                            try { conn.close(); } catch (SQLException ignored) {}
                         }
                     }
-                    if (stackDepth > 2)
-                        LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
                 else
                 {
@@ -954,18 +974,18 @@ public class DbScope
     {
         synchronized (_transaction)
         {
-            log.info("Data source " + toString() +
+            log.info("Data source " + this +
                     ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
                     ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
                     ", idle: " + getDbScopeLoader().getDsProps().getNumIdle());
 
             if (_transaction.isEmpty())
             {
-                log.info("There are no threads holding connections for the data source '" + toString() + "'");
+                log.info("There are no threads holding connections for the data source '" + this + "'");
             }
             else
             {
-                log.info("There is/are " + _transaction.size() + " thread(s) holding a transaction for the data source '" + toString() + "':");
+                log.info("There is/are " + _transaction.size() + " thread(s) holding a transaction for the data source '" + this + "':");
                 for (Map.Entry<Thread, List<TransactionImpl>> entry : _transaction.entrySet())
                 {
                     Thread thread = entry.getKey();
@@ -2061,6 +2081,9 @@ public class DbScope
         private int _closesToIgnore = 0;
         private Long _auditId;
 
+        private int _lockTimeout = 5;
+        private TimeUnit _lockTimeoutUnit = TimeUnit.MINUTES;
+
         TransactionImpl(@NotNull ConnectionWrapper conn, TransactionKind transactionKind)
         {
             this(conn, transactionKind, Collections.emptyList());
@@ -2240,6 +2263,12 @@ public class DbScope
             }
         }
 
+        public void setLockTimeout(int timeout, TimeUnit units)
+        {
+            _lockTimeout = timeout;
+            _lockTimeoutUnit = units;
+        }
+
         @Override
         public boolean isAborted()
         {
@@ -2291,22 +2320,50 @@ public class DbScope
 
         public void increment(boolean releaseOnFinalCommit, List<Lock> extraLocks)
         {
-            for (Lock extraLock : extraLocks)
+            List<Lock> locksToUnlock = new ArrayList<>();
+            boolean successLocking = false;
+            try
             {
-                extraLock.lock();
-            }
+                for (Lock extraLock : extraLocks)
+                {
+                    try
+                    {
+                        boolean locked = extraLock.tryLock(_lockTimeout, _lockTimeoutUnit);
+                        if (!locked)
+                        {
+                            throw new DeadlockPreventingException("Failed to acquire lock within timeout: " + extraLock);
+                        }
+                        locksToUnlock.add(extraLock);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        throw new DeadlockPreventingException("Failed to acquire lock: " + extraLock, e);
+                    }
+                }
+                successLocking = true;
 
-            // Check if we're inside a nested transaction, and we want to hold the lock until the outermost layer is complete
-            if (!_locks.isEmpty() && releaseOnFinalCommit)
-            {
-                // Add the new locks to the outermost set of locks
-                _locks.get(0).addAll(extraLocks);
-                // Add an empty list to this layer of the transaction
-                _locks.add(new ArrayList<>());
+                // Check if we're inside a nested transaction, and we want to hold the lock until the outermost layer is complete
+                if (!_locks.isEmpty() && releaseOnFinalCommit)
+                {
+                    // Add the new locks to the outermost set of locks
+                    _locks.get(0).addAll(extraLocks);
+                    // Add an empty list to this layer of the transaction
+                    _locks.add(new ArrayList<>());
+                }
+                else
+                {
+                    _locks.add(new ArrayList<>(extraLocks));
+                }
             }
-            else
+            finally
             {
-                _locks.add(new ArrayList<>(extraLocks));
+                if (!successLocking)
+                {
+                    for (Lock lock : locksToUnlock)
+                    {
+                        lock.unlock();
+                    }
+                }
             }
         }
 
@@ -2683,6 +2740,18 @@ public class DbScope
             }
         }
 
+        @Test
+        public void testLockTimeout()
+        {
+            ReentrantLock lock1 = new ReentrantLock();
+            ReentrantLock lock2 = new ReentrantLock();
+            Pair<Throwable, Throwable> throwables = attemptToDeadlock(lock1, lock2, (x) -> ((TransactionImpl)x).setLockTimeout(5, TimeUnit.SECONDS));
+
+            assertTrue(throwables.first instanceof DeadlockPreventingException || throwables.second instanceof DeadlockPreventingException);
+            assertFalse("Lock 1 is still locked", lock1.isLocked());
+            assertFalse("Lock 2 is still locked", lock2.isLocked());
+        }
+
         @Test(expected = IllegalStateException.class)
         public void testNestedFailureCondition()
         {
@@ -2798,76 +2867,100 @@ public class DbScope
         @Test
         public void testServerRowLock()
         {
-            final User user  = TestContext.get().getUser();
-            final Throwable[] bkgException = new Throwable[] {null};
-            Throwable fgException = null;
-
-            final Object notifier = new Object();
+            final User user = TestContext.get().getUser();
 
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
+            Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
+
+            assertTrue(throwables.first instanceof DeadlockLoserDataAccessException || throwables.second instanceof DeadlockLoserDataAccessException );
+        }
+
+        /**
+         * @return foreground and background thread exceptions
+         */
+        private Pair<Throwable, Throwable> attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier)
+        {
+            final Object notifier = new Object();
+            final Pair<Throwable, Throwable> result = new Pair<>(null, null);
+
             // let's try to intentionally cause a deadlock
             Thread bkg = new Thread(() -> {
-                // lockHome should succeed fg has not locked this yet
-                try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lockHome))
+                // lock2 should succeed fg has not locked this yet
+
+                // Use an outer transaction on both threads so that we can customize the timeout to keep the test running quickly
+                try (Transaction outerTx = CoreSchema.getInstance().getScope().ensureTransaction())
                 {
-                    synchronized (notifier)
+                    transactionModifier.accept(outerTx);
+
+                    try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
                     {
-                        notifier.notify();
+                        synchronized (notifier)
+                        {
+                            notifier.notify();
+                        }
+                        // should block on fg thread, but we're not deadlocked yet
+                        try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
+                        {
+                            inner.commit();
+                        }
+                        txBg.commit();
                     }
-                    // should block on fg thread, but we're not deadlocked yet
-                    lockUser.lock();
-                    txBg.commit();
-                }
-                catch (Throwable x)
-                {
-                    bkgException[0] = x;
+                    catch (Throwable x)
+                    {
+                        result.second = x;
+                    }
                 }
             });
 
 
-            // lockUser should succeed (bg has not even started yet)
-            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(lockUser))
+            // lock1 should succeed (bg has not even started yet)
+            try (Transaction outerTx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                // wait for background to acquire 'home' lock
-                synchronized (notifier)
-                {
-                    bkg.start();
-                    // wait for bkg to acquire lockHome
-                    notifier.wait(60*1000);
-                }
-                // try to acquire my second lock
-                // this should cause a deadlock
-                lockHome.lock();
-                txFg.commit();
-            }
-            catch (InterruptedException x)
-            {
-                throw new RuntimeException(x);
-            }
-            catch (DeadlockLoserDataAccessException x)
-            {
-                fgException = x;
-            }
-            finally
-            {
-                bkg.interrupt();
-                try
-                {
-                    bkg.join();
-                }
-                catch (InterruptedException ignored)
-                {
-                }
-            }
+                transactionModifier.accept(outerTx);
 
-            assertTrue( bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException );
+                try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(lock1))
+                {
+                    // wait for background to acquire first locks
+                    synchronized (notifier)
+                    {
+                        bkg.start();
+                        // wait for bkg to acquire lock2
+                        notifier.wait(60 * 1000);
+                    }
+                    // try to acquire my second lock
+                    // this should cause a deadlock
+                    try (Transaction inner = CoreSchema.getInstance().getScope().ensureTransaction(lock2))
+                    {
+                        inner.commit();
+                    }
+                    txFg.commit();
+                }
+                catch (InterruptedException x)
+                {
+                    throw new RuntimeException(x);
+                }
+                catch (Throwable x)
+                {
+                    result.first = x;
+                }
+                finally
+                {
+                    bkg.interrupt();
+                    try
+                    {
+                        bkg.join();
+                    }
+                    catch (InterruptedException ignored)
+                    {
+                    }
+                }
+            }
+            return result;
         }
 
-
-        // TODO this test generates "ERROR ConnectionWrapper ... Probable connection leak"
-        // @Test
+         @Test
         public void testLockException()
         {
             // test ServerLock failures
@@ -2909,7 +3002,7 @@ public class DbScope
                 @Override public void lock() { throw new NullPointerException(); }
                 @Override public void lockInterruptibly() throws InterruptedException { }
                 @Override public boolean tryLock() { return false; }
-                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
+                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { throw new NullPointerException(); }
                 @Override public void unlock() { }
                 @NotNull @Override public Condition newCondition() { return null; }
             };
