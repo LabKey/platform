@@ -103,7 +103,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private @Nullable void initCloudWatcher()
     {
-        CloudWatcherThread thread = new CloudWatcherThread("PollingFileWatcher");
+        CloudWatcherThread thread = new CloudWatcherThread("CloudWatcherPrimaryThread");
         ContextListener.addShutdownListener(thread);
         thread.start();
     }
@@ -331,20 +331,19 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         {
             if (CloudStoreService.get() == null)
                 return;
-
-            CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
+            try
             {
-                try
+                CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
                 {
-                    CloudStoreService.get().executeWatchJob(cloudWatcherJob);
-                }
-                catch (Throwable e)  // Make sure throwables don't kill the background thread
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-            });
+                        CloudStoreService.get().executeWatchJob(cloudWatcherJob);
+                });
+            }
+            catch (Throwable e)  // Make sure throwables don't kill the background thread
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
 
-            Thread.sleep(30000);
+            Thread.sleep(10000);
         }
 
         @Override
