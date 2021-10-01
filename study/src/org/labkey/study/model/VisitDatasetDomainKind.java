@@ -61,11 +61,14 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
         HashSet<String> fields = new HashSet<>(DatasetDefinition.DEFAULT_VISIT_FIELDS);
 
         // Add the study Subject Column Name to reserved fields
-        Study study = StudyManager.getInstance().getStudy(domain.getContainer());
-        if (null != study)
+        if (null != domain)
         {
-            String participantIdField = study.getSubjectColumnName();
-            fields.add(participantIdField);
+            Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+            if (null != study)
+            {
+                String participantIdField = study.getSubjectColumnName();
+                fields.add(participantIdField);
+            }
         }
 
         return Collections.unmodifiableSet(fields);
