@@ -70,6 +70,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -140,6 +141,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
+    private static final Map<Class<? extends UrlProvider>, List<Pair<Module, Class<? extends UrlProvider>>>> _urlProviderToOverrideImpls = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
@@ -2082,6 +2084,27 @@ public class ModuleLoader implements Filter, MemTrackerListener
         {
             _schemaNameToSchemaDetails.clear();
         }
+    }
+
+    /**
+     * Register an implementation class to use for overrides to a URLProvider interface.
+     * @param inter the URLProvider interface
+     * @param impl the override URLProvider implementation class
+     * @param module the module providing the override
+     */
+    public void registerUrlProviderOverride(Class<? extends UrlProvider> inter, Class<? extends UrlProvider> impl, Module module)
+    {
+        List<Pair<Module, Class<? extends UrlProvider>>> impls = new ArrayList<>();
+        if (_urlProviderToOverrideImpls.containsKey(inter))
+            impls = _urlProviderToOverrideImpls.get(inter);
+
+        impls.add(new Pair<>(module, impl));
+        _urlProviderToOverrideImpls.put(inter, impls);
+    }
+
+    public List<Pair<Module, Class<? extends UrlProvider>>> getUrlProviderOverrides(Class<? extends UrlProvider> inter)
+    {
+        return _urlProviderToOverrideImpls.get(inter);
     }
 
     /** @return true if the UrlProvider exists. */
