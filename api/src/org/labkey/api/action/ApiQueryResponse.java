@@ -468,6 +468,7 @@ public class ApiQueryResponse implements ApiResponse
         // see  Ext.grid.ColumnModel Ext.grid.Column
         extGridColumn.put("dataIndex", getColumnName(dc));
         extGridColumn.put("sortable", dc.isSortable());
+        extGridColumn.put("filterable", dc.isFilterable());
         extGridColumn.put("editable", isEditable(dc));
         extGridColumn.put("hidden", colInfo != null && (colInfo.isHidden() || colInfo.isAutoIncrement())); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
         if (dc.getTextAlign() != null)
