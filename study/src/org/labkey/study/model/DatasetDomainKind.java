@@ -60,11 +60,11 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetFactory;
-import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -261,6 +261,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
+    }
+
+    protected Set<String> getStudySubjectReservedName(Domain domain)
+    {
+        HashSet<String> fields = new HashSet<>();
+        if (null != domain)
+        {
+            Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+            if (null != study)
+            {
+                String participantIdField = study.getSubjectColumnName();
+                fields.add(participantIdField);
+            }
+        }
+        return Collections.unmodifiableSet(fields);
     }
 
     @Override

@@ -58,18 +58,8 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        HashSet<String> fields = new HashSet<>(DatasetDefinition.DEFAULT_VISIT_FIELDS);
-
-        // Add the study Subject Column Name to reserved fields
-        if (null != domain)
-        {
-            Study study = StudyManager.getInstance().getStudy(domain.getContainer());
-            if (null != study)
-            {
-                String participantIdField = study.getSubjectColumnName();
-                fields.add(participantIdField);
-            }
-        }
+        HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
+        fields.addAll(DatasetDefinition.DEFAULT_VISIT_FIELDS);
 
         return Collections.unmodifiableSet(fields);
     }
