@@ -6066,7 +6066,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getShowSampleURL(Container c, ExpMaterial material)
         {
-            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", material.getRowId());
+            return getMaterialDetailsBaseURL(c, null).addParameter("rowId", material.getRowId());
         }
 
         @Override
@@ -6367,13 +6367,19 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getMaterialDetailsURL(ExpMaterial material)
         {
-            return new ActionURL(ShowMaterialAction.class, material.getContainer()).addParameter("rowId", material.getRowId());
+            return getMaterialDetailsURL(material.getContainer(), material.getRowId());
         }
 
         @Override
         public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
         {
-            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", materialRowId);
+            return getMaterialDetailsBaseURL(c, null).addParameter("rowId", materialRowId);
+        }
+
+        @Override
+        public ActionURL getMaterialDetailsBaseURL(Container c, @Nullable String materialIdFieldKey)
+        {
+            return new ActionURL(ShowMaterialAction.class, c);
         }
 
         @Override

@@ -86,6 +86,8 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getMaterialDetailsURL(Container c, int materialRowId) { return null; }
 
+    default ActionURL getMaterialDetailsBaseURL(Container c, @Nullable String materialIdFieldKey) { return null; }
+
     default ActionURL getCreateSampleTypeURL(Container c) { return null; }
 
     default ActionURL getImportSamplesURL(Container c, String sampleTypeName) { return null; }
