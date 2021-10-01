@@ -69,6 +69,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -1562,6 +1563,35 @@ public class StudyController extends BaseStudyController
             setHelpTopic("manageStudy");
             _addManageStudy(root);
             root.addChild("Study Properties");
+        }
+
+        @Override
+        public void validateForm(TableViewForm form, Errors errors)
+        {
+            // Validate that the subject column name is not a user defined field in one of the datasets
+            String subjectColName = form.get("SubjectColumnName");
+            if (null != subjectColName)
+            {
+                Study study = StudyService.get().getStudy(getContainer());
+                if (null != study)
+                {
+                    for (Dataset dataset : study.getDatasets())
+                    {
+                        Domain domain = dataset.getDomain();
+                        if (null != domain)
+                        {
+                            for (DomainProperty property : domain.getProperties())
+                            {
+                                if (property.getName().equalsIgnoreCase(subjectColName))
+                                {
+                                    errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ". ");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         @Override
