@@ -6202,7 +6202,13 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getShowSampleTypeURL(ExpSampleType sampleType)
         {
-            return new ActionURL(ShowSampleTypeAction.class, sampleType.getContainer()).addParameter("rowId", sampleType.getRowId());
+            return getShowSampleTypeURL(sampleType, sampleType.getContainer());
+        }
+
+        @Override
+        public ActionURL getShowSampleTypeURL(ExpSampleType sampleType, Container container)
+        {
+            return new ActionURL(ShowSampleTypeAction.class, container).addParameter("rowId", sampleType.getRowId());
         }
 
         public ActionURL getExperimentListURL(Container container)
