@@ -35,6 +35,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.action.UrlProviderOverrideHandler;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
@@ -104,7 +105,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -121,6 +121,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -2691,6 +2692,30 @@ public class PageFlowUtil
     static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
         return ModuleLoader.getInstance().getUrlProvider(inter);
+    }
+
+    /**
+     * Returns a specified <code>UrlProvider</code> interface implementation, for use
+     * in writing URLs implemented in other modules. If the user passes true for the checkForOverrides param,
+     * we will create and return a UrlProviderOverrideHandler which will take into account any module registered
+     * overrides to the given interface. If module overrides exist, they will be checked first for non-null results
+     * when a given method of the interface is invoked before falling back to the default implementation.
+     *
+     * @param inter interface extending UrlProvider
+     * @param checkForOverrides true to check for module overrides to this interface
+     * @return an implementation of the interface.
+     */
+    @Nullable
+    static public <P extends UrlProvider> P urlProvider(Class<P> inter, boolean checkForOverrides)
+    {
+        if (checkForOverrides)
+        {
+            P impl = urlProvider(inter);
+            ClassLoader cl = inter.getClassLoader();
+            return (P) Proxy.newProxyInstance(cl, new Class[]{inter}, new UrlProviderOverrideHandler(inter, impl));
+        }
+
+        return urlProvider(inter);
     }
 
     static private String h(Object o)
