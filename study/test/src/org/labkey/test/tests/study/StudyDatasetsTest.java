@@ -199,6 +199,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         waitForText("Cannot set Subject Column Name to a user defined dataset field. " + mySubjectId + " is already defined in " + subjectIdDataset + ".");
         click(findButton("Ok"));
+        clickButton("Cancel");
+        clickTab("Overview");
     }
 
     @LogMethod
