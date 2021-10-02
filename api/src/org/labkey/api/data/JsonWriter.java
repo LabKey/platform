@@ -163,6 +163,7 @@ public class JsonWriter
         props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
+        props.put("filterable", dc.isFilterable());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());

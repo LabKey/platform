@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -355,26 +356,33 @@ public class PipeRootImpl implements PipeRoot
     @Nullable
     public Path resolveToNioPath(String path)
     {
-        if (null == path)
+        if (StringUtils.isBlank(path))
             throw new NotFoundException("Must specify a file path");
 
-        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        try
         {
-            // Remove leading "./" sometimes added by the client side FileBrowser
-            if (path.startsWith("./"))
-                path = path.substring(2);
+            if (ROOT_BASE.cloud.equals(_defaultRoot))
+            {
+                // Remove leading "./" sometimes added by the client side FileBrowser
+                if (path.startsWith("./"))
+                    path = path.substring(2);
 
-            // Return the path to the default location
-            org.labkey.api.util.Path combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
-                    new org.labkey.api.util.Path(_uris.get(0).getPath(), path) :
-                    new org.labkey.api.util.Path(path);
-            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
-            // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+                // Return the path to the default location
+                org.labkey.api.util.Path combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
+                        new org.labkey.api.util.Path(_uris.get(0).getPath(), path) :
+                        new org.labkey.api.util.Path(path);
+                return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
+                // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+            }
+            else
+            {
+                File file = resolvePath(path);
+                return null != file ? file.toPath() : null;
+            }
         }
-        else
+        catch (InvalidPathException e)
         {
-            File  file = resolvePath(path);
-            return null != file ? file.toPath() : null;
+            throw new NotFoundException("Must specify a valid file path", e);
         }
     }
 
