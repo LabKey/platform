@@ -195,28 +195,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setHidden(false);
                 return columnInfo;
             }
-            case AliquotCount:
-            {
-                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
-                String materialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".LSID";
-
-                SQLFragment sql = new SQLFragment("(CASE WHEN ")
-                        .append(rootMaterialLSIDField)
-                        .append(" IS NOT NULL THEN NULL") // child aliquot count is only needed for 'root' samples
-                        .append(" ELSE (SELECT COUNT(*) FROM ")
-                        .append(ExperimentService.get().getTinfoMaterial(), "aliquotMaterial")
-                        .append(" WHERE aliquotMaterial.RootMaterialLSID = ")
-                        .append(materialLSIDField)
-                        .append(") END)");
-
-                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.INTEGER);
-                columnInfo.setLabel("Aliquots Created Count");
-                columnInfo.setDescription("Total number of aliquots, of all generations, created from a root sample");
-                columnInfo.setUserEditable(false);
-                columnInfo.setReadOnly(true);
-                columnInfo.setHidden(false);
-                return columnInfo;
-            }
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
@@ -582,7 +560,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInUpdateView(false);
 
         addColumn(Column.IsAliquot);
-        addColumn(Column.AliquotCount);
 
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
