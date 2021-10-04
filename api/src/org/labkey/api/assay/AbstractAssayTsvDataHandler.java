@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -1095,6 +1096,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 iter.set(map);
             }
         }
+
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> lockedSamples = sampleService.getSamplesNotPermitted(materialInputs.keySet(), SampleTypeService.SampleOperations.AddAssayData);
+        if (!lockedSamples.isEmpty())
+            throw new ValidationException(sampleService.getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.AddAssayData));
 
         return materialInputs;
     }

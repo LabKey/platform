@@ -27,8 +27,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -149,8 +149,8 @@ public class DatasetImportRunnable implements Runnable
 
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
-        QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                QCStateManager.getInstance().getQCStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+        DataState defaultQCState = _study.getDefaultPipelineQCState() != null ?
+                DataStateManager.getInstance().getStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
         List<String> validateErrors = new ArrayList<>();
         validate(validateErrors);

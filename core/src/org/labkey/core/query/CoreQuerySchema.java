@@ -81,6 +81,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String FILES_TABLE_NAME = "Files";
     public static final String QCSTATE_TABLE_NAME = "QCState";
+    public static final String DATA_STATES_TABLE_NAME = "DataStates";
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
@@ -112,7 +113,7 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
+            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -159,7 +160,9 @@ public class CoreQuerySchema extends UserSchema
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
-            return getQCStateTable();
+           return getQCStatesTable();
+        if (DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
+            return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
@@ -624,9 +627,24 @@ public class CoreQuerySchema extends UserSchema
         return new FileListTableInfo(this);
     }
 
-    protected TableInfo getQCStateTable()
+    protected TableInfo getDataStatesTable()
     {
-        return new QCStateTableInfo(this);
+        return new DataStatesTableInfo(this);
+    }
+
+    public TableInfo getQCStatesTable()
+    {
+        TableInfo dataStatesTable = getDataStatesTable();
+        FilteredTable table = new FilteredTable<>(dataStatesTable, this);
+        SQLFragment sql = new SQLFragment("(stateType IS NULL)");
+        table.setName(QCSTATE_TABLE_NAME);
+
+        table.addCondition(sql);
+        table.addWrapColumn(dataStatesTable.getColumn("RowId"));
+        table.addWrapColumn(dataStatesTable.getColumn("Label"));
+        table.addWrapColumn(dataStatesTable.getColumn("Description"));
+        table.addWrapColumn(dataStatesTable.getColumn("PublicData"));
+        return table;
     }
 
     protected void addNullSetFilter(FilteredTable table)

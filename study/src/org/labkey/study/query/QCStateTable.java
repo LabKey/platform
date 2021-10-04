@@ -19,6 +19,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.query.FilteredTable;
 
+import static org.labkey.study.query.StudyQuerySchema.QCSTATE_TABLE_NAME;
+
 /**
  * User: brittp
  * Created: July 15, 2008 11:13:43 AM
@@ -27,7 +29,8 @@ public class QCStateTable extends FilteredTable<StudyQuerySchema>
 {
     public QCStateTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(CoreSchema.getInstance().getTableInfoQCState(), schema, cf);
+        super(CoreSchema.getInstance().getTableInfoDataStates(), schema, cf);
+        setName(QCSTATE_TABLE_NAME);
         wrapAllColumns(true);
     }
 }

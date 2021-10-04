@@ -1,7 +1,9 @@
 package org.labkey.study.controllers.publish;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -11,7 +13,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Dataset;
@@ -33,6 +34,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -206,6 +208,11 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
+        List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(dataKeys.keySet());
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> unlinkableSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.LinkToStudy);
+        if (!unlinkableSamples.isEmpty())
+            errors.add(sampleService.getOperationNotPermittedMessage(unlinkableSamples, SampleTypeService.SampleOperations.LinkToStudy));
 
         for (PublishKey publishKey : dataKeys.values())
         {

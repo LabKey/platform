@@ -19,6 +19,7 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -68,6 +69,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -82,6 +84,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -158,7 +161,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.013;
+        return 21.014;
     }
 
     @Nullable
@@ -204,6 +207,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+        AdminConsole.addExperimentalFeatureFlag(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS,
+                "Sample status tracking",
+                "Sample status values can be provided for samples and will be checked to determine validity of " +
+                        "certain sample actions.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -551,6 +558,14 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
     @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS, ExperimentalFeatureService.get().isFeatureEnabled(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS));
+        return json;
+    }
+
+    @Override
     @NotNull
     public Set<Class> getIntegrationTests()
     {
@@ -655,4 +670,5 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoData() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
     }
+
 }

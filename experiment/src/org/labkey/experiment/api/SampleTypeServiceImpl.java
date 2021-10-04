@@ -73,6 +73,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -85,6 +86,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.experiment.samples.SampleStateManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -121,6 +123,14 @@ import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    // columns that may appear in a row when only the sample status is updating.
+    public static final Set<String> statusUpdateColumns = Set.of(
+            ExpMaterialTable.Column.Modified.name().toLowerCase(),
+            ExpMaterialTable.Column.ModifiedBy.name().toLowerCase(),
+            ExpMaterialTable.Column.SampleState.name().toLowerCase(),
+            ExpMaterialTable.Column.Folder.name().toLowerCase()
+    );
+
     public static SampleTypeServiceImpl get()
     {
         return (SampleTypeServiceImpl) SampleTypeService.get();
@@ -425,6 +435,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getSampleTypeByType(lsid, null);
     }
 
+    @Nullable
+    @Override
+    public DataState getSampleState(Container container, Integer stateRowId)
+    {
+        return SampleStateManager.getInstance().getStateForRowId(container, stateRowId);
+    }
+
     private ExpSampleTypeImpl _getSampleType(String lsid)
     {
         MaterialSource ms = getMaterialSource(lsid);
@@ -472,7 +489,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             Container container = ContainerManager.getForId(entry.getKey());
             // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true);
             count += entry.getValue().size();
         }
         return count;
@@ -1091,5 +1108,33 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return max;
+    }
+
+    @Override
+    public Collection<? extends ExpMaterial> getSamplesNotPermitted(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        return samples.stream()
+                .filter(sample -> !sample.isOperationPermitted(operation))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        String message;
+        if (samples.size() == 1)
+        {
+            ExpMaterial sample = samples.iterator().next();
+            message = "Sample " + sample.getName() + " has status " + sample.getStateLabel() + ", which prevents";
+        }
+        else
+        {
+            message = samples.size() + " samples (";
+            message += samples.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (samples.size() > 10)
+                message += " ...";
+            message += ") have statuses that prevent";
+        }
+        return message + " " + operation.getDescription() + ".";
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -61,6 +62,7 @@ public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
     public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
+    public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
     public static final String SAMPLE_TYPE_CATEGORY_TABLE = "SampleTypeCategoryType";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
@@ -212,6 +214,14 @@ public class ExpSchema extends AbstractExpSchema
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
+        },
+        SampleStatus
+        {
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
+            {
+                return ExperimentService.get().createSampleStatusTable(expSchema, cf);
+            }
         };
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf);
     }
@@ -252,6 +262,7 @@ public class ExpSchema extends AbstractExpSchema
             tableNames.add(type.toString());
         }
         tableNames.add(DATA_CLASS_CATEGORY_TABLE);
+        tableNames.add(SAMPLE_STATE_TYPE_TABLE);
         tableNames.add(SAMPLE_TYPE_CATEGORY_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
@@ -326,6 +337,11 @@ public class ExpSchema extends AbstractExpSchema
             return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Contains the list of available data class category types.");
         }
 
+        if (SAMPLE_STATE_TYPE_TABLE.equalsIgnoreCase(name))
+        {
+            return new EnumTableInfo<>(SampleStateType.class, this, SampleStateType::name, true, "Contains the available sample state (status) types.");
+        }
+
         if (SAMPLE_TYPE_CATEGORY_TABLE.equalsIgnoreCase(name))
         {
             return new EnumTableInfo<>(SampleTypeCategoryType.class, this, SampleTypeCategoryType::name, true, "Contains the list of available sampletype category types.");
@@ -333,6 +349,64 @@ public class ExpSchema extends AbstractExpSchema
 
         return null;
     }
+
+    /**
+     * Exposed as EnumTableInfo
+     */
+    public enum SampleStateType
+    {
+        Available(Set.of(SampleTypeService.SampleOperations.values())),
+        Consumed(Set.of(
+                SampleTypeService.SampleOperations.EditMetadata,
+                SampleTypeService.SampleOperations.EditLineage,
+                SampleTypeService.SampleOperations.RemoveFromStorage,
+                SampleTypeService.SampleOperations.AddToPicklist,
+                SampleTypeService.SampleOperations.Delete,
+                SampleTypeService.SampleOperations.AddToWorkflow,
+                SampleTypeService.SampleOperations.RemoveFromWorkflow,
+                SampleTypeService.SampleOperations.AddAssayData,
+                SampleTypeService.SampleOperations.LinkToStudy,
+                SampleTypeService.SampleOperations.RecallFromStudy
+        )),
+        Locked(Set.of(SampleTypeService.SampleOperations.AddToPicklist));
+
+        Set<SampleTypeService.SampleOperations> _permittedOps;
+
+        SampleStateType(Set<SampleTypeService.SampleOperations> permittedOps)
+        {
+            _permittedOps = permittedOps;
+        }
+
+        public Set<SampleTypeService.SampleOperations> getPermittedOps()
+        {
+            return _permittedOps;
+        }
+
+        public boolean operationPermitted(SampleTypeService.SampleOperations op)
+        {
+            return _permittedOps.contains(op);
+        }
+
+        public static boolean isOperationPermitted(String stateTypeString, SampleTypeService.SampleOperations op)
+        {
+            if (!SampleTypeService.isSampleStatusEnabled())
+                return true;
+
+            if (stateTypeString == null)
+                return true; // no status provided means all operations are permitted
+            try
+            {
+                SampleStateType stateType = SampleStateType.valueOf(stateTypeString);
+                return stateType.operationPermitted(op);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // invalid state; default to no operations permitted
+                return false;
+            }
+        }
+    };
+
 
     /**
      * Exposed as EnumTableInfo

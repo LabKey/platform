@@ -434,7 +434,7 @@ public class DatasetQueryView extends StudyQueryView
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
-        if (QCStateManager.getInstance().showQCStates(getContainer()))
+        if (QCStateManager.getInstance().showStates(getContainer()))
             bar.add(createQCStateButton());
 
         if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))

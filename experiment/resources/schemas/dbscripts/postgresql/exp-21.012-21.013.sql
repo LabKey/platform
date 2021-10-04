@@ -1,1 +1,4 @@
-ALTER TABLE exp.MaterialSource ADD COLUMN Category VARCHAR(20) NULL;
+ALTER TABLE exp.Material ADD COLUMN SampleState INT;
+
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
+

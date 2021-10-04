@@ -40,5 +40,5 @@ public interface ExpQCFlagTable extends ExpTable<ExpQCFlagTable.Column>
         Key2
     }
 
-    public void setAssayProtocol(AssayProvider provider, ExpProtocol protocol);
+    void setAssayProtocol(AssayProvider provider, ExpProtocol protocol);
 }

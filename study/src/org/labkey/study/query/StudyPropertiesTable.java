@@ -155,6 +155,14 @@ public class StudyPropertiesTable extends BaseStudyTable
         setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
+    @Override
+    public String getPublicName()
+    {
+        // Issue 43988 - need to use the preferred query schema name for the table to make linked schemas and other
+        // metadata-driven scenarios consistent
+        return StudyQuerySchema.PROPERTIES_TABLE_NAME;
+    }
+
     private MutableColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
     {
         var columnInfo = addWrapColumn(_rootTable.getColumn(columnName));

@@ -216,11 +216,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -3274,9 +3272,12 @@ public class ExperimentController extends SpringActionController
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
             Set<Integer> deletable = deleteForm.getIds(false);
             List<Integer> deleteRequest = new ArrayList<>(deletable);
-            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
+            ExperimentServiceImpl service = ExperimentServiceImpl.get();
+            List<? extends ExpMaterial> allMaterials = service.getExpMaterials(deleteRequest);
 
-            List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
+            List<Integer> cannotDelete = service.getMaterialsUsedAsInput(deleteForm.getIds(false));
+            if (SampleTypeService.isSampleStatusEnabled())
+                cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, SampleTypeService.SampleOperations.Delete));
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
 
             // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()

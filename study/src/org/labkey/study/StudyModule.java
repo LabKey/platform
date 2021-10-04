@@ -54,7 +54,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -388,7 +388,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
-        QCStateManager.getInstance().registerQCHandler(new StudyQCStateHandler());
+        DataStateManager.getInstance().registerDataStateHandler(new StudyQCStateHandler());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
         ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
