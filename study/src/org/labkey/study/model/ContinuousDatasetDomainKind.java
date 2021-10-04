@@ -19,6 +19,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.TimepointType;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -55,6 +56,9 @@ public class ContinuousDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return Collections.unmodifiableSet(DatasetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
+        HashSet<String> fields = new HashSet<>(getStudySubjectReservedName(domain));
+        fields.addAll(DatasetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
+
+        return Collections.unmodifiableSet(fields);
     }
 }

@@ -162,6 +162,47 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         checkDataElementsPresent("B", DATASET_B_MERGE.split("\t|\n"));
     }
 
+    @Test
+    public void testDatasetSubjectId()
+    {
+        final String mySubjectId = "MySubjectId";
+        final String subjectIdDataset = "SubjectIdTest";
+
+        // Check the number of server errors.
+        int errorCountBefore = getServerErrorCount();
+
+        goToManageStudy();
+        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
+        String subjectName = getFormElement(Locator.name("SubjectColumnName"));
+        clickButton("Cancel");
+        clickTab("Overview");
+
+        DatasetDesignerPage designerPage = _studyHelper.goToManageDatasets()
+                .clickCreateNewDataset()
+                .setName(subjectIdDataset);
+
+        DomainFormPanel fieldsPanel = designerPage.getFieldsPanel();
+        fieldsPanel.manuallyDefineFields(subjectName);
+        designerPage.saveExpectFail("Property: " + subjectName + " is reserved or exists in the current domain.");
+
+        fieldsPanel.removeField(subjectName);
+        fieldsPanel.manuallyDefineFields(mySubjectId);
+        designerPage.clickSave();
+        checkExpectedErrors(errorCountBefore + 2);
+
+        goToManageStudy();
+        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
+        setFormElement(Locator.name("SubjectColumnName"), mySubjectId);
+        click(findButton("Submit"));
+
+        waitForText("Cannot set Subject Column Name to a user defined dataset field. " + mySubjectId + " is already defined in " + subjectIdDataset + ".");
+        click(findButton("Ok"));
+        clickButton("Cancel");
+        clickTab("Overview");
+    }
+
     @LogMethod
     protected void createDataset(@LoggedParam String name)
     {
