@@ -6427,7 +6427,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         rec._protApp._object.getActivityDate(),
                         runId,
                         rec._protApp._object.getActionSequence(),
-                        rec._protApp._object.getLSID()));
+                        rec._protApp._object.getLSID(),
+                        rec._protApp.getEntityId() != null ? rec._protApp.getEntityId().toString() : GUID.makeGUID()));
             }
         }
 
@@ -6651,8 +6652,8 @@ public class ExperimentServiceImpl implements ExperimentService
             if (!params.isEmpty())
             {
                 String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoProtocolApplication().toString() +
-                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)" +
-                        " VALUES (?,?,?,?,?,?,?)";
+                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
+                        " VALUES (?,?,?,?,?,?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
@@ -6937,11 +6938,24 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
         ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
         if (app == null)
             return null;
+        return new ExpProtocolApplicationImpl(app);
+    }
+
+    @Override
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplicationFromEntityId(String entityId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+        TableInfo table = getTinfoProtocolApplication();
+        ProtocolApplication app = new TableSelector(table, filter, null).getObject(ProtocolApplication.class);
+
+        if (app == null)
+            return null;
+
         return new ExpProtocolApplicationImpl(app);
     }
 
