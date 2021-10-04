@@ -356,7 +356,7 @@ public class PipeRootImpl implements PipeRoot
     @Nullable
     public Path resolveToNioPath(String path)
     {
-        if (StringUtils.isBlank(path))
+        if (path == null)
             throw new NotFoundException("Must specify a file path");
 
         try
