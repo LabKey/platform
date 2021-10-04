@@ -1723,25 +1723,29 @@ public class PropertyController extends SpringActionController
             long totalCount = 0;  // totalCount of all rows with no maxRows or offset applied. Used for paging.
             Set<Domain> domains = null;
 
-            Stream<PropertyDescriptor> properties;
+            List<GWTPropertyDescriptor> gwtProps;
             if (form.getPropertyIds() != null && !form.getPropertyIds().isEmpty())
             {
-                properties = form.getPropertyIds().stream()
+                gwtProps = form.getPropertyIds().stream()
                         .filter(Objects::nonNull)
                         .map(OntologyManager::getPropertyDescriptor)
                         .filter(Objects::nonNull)
-                        .filter(pd -> getContainer().equals(pd.getContainer()));
+                        .filter(pd -> getContainer().equals(pd.getContainer()))
+                        .map(DomainUtil::getPropertyDescriptor)
+                        .collect(Collectors.toList());
 
-                totalCount = properties.count();
+                totalCount = gwtProps.size();
             }
             else if (form.getPropertyURIs() != null && !form.getPropertyURIs().isEmpty())
             {
-                properties = form.getPropertyURIs().stream()
+                gwtProps = form.getPropertyURIs().stream()
                         .filter(Objects::nonNull)
                         .map(uri -> OntologyManager.getPropertyDescriptor(uri, getContainer()))
-                        .filter(Objects::nonNull);
+                        .filter(Objects::nonNull)
+                        .map(DomainUtil::getPropertyDescriptor)
+                        .collect(Collectors.toList());
 
-                totalCount = properties.count();
+                totalCount = gwtProps.size();
             }
             else
             {
@@ -1770,18 +1774,14 @@ public class PropertyController extends SpringActionController
 
                 domains = OntologyManager.getDomains(getContainer(), getUser(), form.getDomainIds(), form.getDomainKinds(), form.getDomainNames());
 
-                List<PropertyDescriptor> pds = OntologyManager.getPropertyDescriptors(getContainer(), getUser(),
-                        domains, form.getSearch(), filter, form.getSort(), form.getMaxRows(), form.getOffset());
-
-                properties = pds.stream();
+                gwtProps = OntologyManager.getPropertyDescriptors(getContainer(), getUser(), domains, form.getSearch(), filter, form.getSort(), form.getMaxRows(), form.getOffset())
+                        .stream()
+                        .map(DomainUtil::getPropertyDescriptor)
+                        .collect(Collectors.toList());
 
                 totalCount = OntologyManager.getPropertyDescriptorsRowCount(getContainer(), getUser(),
                         domains, form.getSearch(), filter);
             }
-
-            List<GWTPropertyDescriptor> gwtProps = properties
-                    .map(DomainUtil::getPropertyDescriptor)
-                    .collect(Collectors.toList());
 
             // If we have the selected domains, then align the default values
             if (domains != null)
