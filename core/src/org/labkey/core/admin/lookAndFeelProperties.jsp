@@ -176,7 +176,7 @@
 <%
     }  // End of project/site only settings
 
-    String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
+    String decimalFormatHelp = "The pattern string for numbers must be compatible with the format that the java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
             "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
@@ -191,7 +191,7 @@
             "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
             "</table>";
 
-    String simpleDateFormatDocs = "<br><br>The format string must be compatible with the format that the java class " +
+    String simpleDateFormatDocs = "<br><br>The pattern string must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
@@ -216,11 +216,11 @@
             "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>" +
             "</table>";
-    String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
-    String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
+    String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs;
+    String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateFormatDocs;
 
-    String dateParsingHelp = "This format is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
-    String dateTimeParsingHelp = "This format is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
+    String dateParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs;
+    String dateTimeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateFormatDocs;
 %>
 <tr>
     <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
@@ -264,12 +264,12 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label">Additional parsing format for dates<%=helpPopup("Extra date parsing format", dateParsingHelp, true, 300)%></td>
-    <td><input type="text" name="extraDateParsingFormat" size="50" value="<%= h(laf.getExtraDateParsingFormat()) %>"></td>
+    <td class="labkey-form-label">Additional parsing pattern for dates<%=helpPopup("Extra date parsing pattern", dateParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateParsingPattern" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Additional parsing format for date-times<%=helpPopup("Extra date-time parsing format", dateTimeParsingHelp, true, 300)%></td>
-    <td><input type="text" name="extraDateTimeParsingFormat" size="50" value="<%= h(laf.getExtraDateTimeParsingFormat()) %>"></td>
+    <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateTimeParsingPattern" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

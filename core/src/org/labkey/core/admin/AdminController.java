@@ -1537,15 +1537,15 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultNumberFormat(String defaultNumberFormat);
 
-        String getExtraDateParsingFormat();
+        String getExtraDateParsingPattern();
 
         @SuppressWarnings("UnusedDeclaration")
-        void setExtraDateParsingFormat(String extraDateParsingFormat);
+        void setExtraDateParsingPattern(String extraDateParsingPattern);
 
-        String getExtraDateTimeParsingFormat();
+        String getExtraDateTimeParsingPattern();
 
         @SuppressWarnings("UnusedDeclaration")
-        void setExtraDateTimeParsingFormat(String extraDateTimeParsingFormat);
+        void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
 
         boolean areRestrictedColumnsEnabled();
 
@@ -1600,8 +1600,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
-        private String _extraDateParsingFormat;
-        private String _extraDateTimeParsingFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
@@ -1835,27 +1835,27 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public String getExtraDateParsingFormat()
+        public String getExtraDateParsingPattern()
         {
-            return _extraDateParsingFormat;
+            return _extraDateParsingPattern;
         }
 
         @Override
-        public void setExtraDateParsingFormat(String extraDateParsingFormat)
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
         {
-            _extraDateParsingFormat = extraDateParsingFormat;
+            _extraDateParsingPattern = extraDateParsingPattern;
         }
 
         @Override
-        public String getExtraDateTimeParsingFormat()
+        public String getExtraDateTimeParsingPattern()
         {
-            return _extraDateTimeParsingFormat;
+            return _extraDateTimeParsingPattern;
         }
 
         @Override
-        public void setExtraDateTimeParsingFormat(String extraDateTimeParsingFormat)
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
-            _extraDateTimeParsingFormat = extraDateTimeParsingFormat;
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -4758,8 +4758,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
-        private String _extraDateParsingFormat;
-        private String _extraDateTimeParsingFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
 
         @Override
@@ -4799,27 +4799,27 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public String getExtraDateParsingFormat()
+        public String getExtraDateParsingPattern()
         {
-            return _extraDateParsingFormat;
+            return _extraDateParsingPattern;
         }
 
         @Override
-        public void setExtraDateParsingFormat(String extraDateParsingFormat)
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
         {
-            _extraDateParsingFormat = extraDateParsingFormat;
+            _extraDateParsingPattern = extraDateParsingPattern;
         }
 
         @Override
-        public String getExtraDateTimeParsingFormat()
+        public String getExtraDateTimeParsingPattern()
         {
-            return _extraDateTimeParsingFormat;
+            return _extraDateTimeParsingPattern;
         }
 
         @Override
-        public void setExtraDateTimeParsingFormat(String extraDateTimeParsingFormat)
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
-            _extraDateTimeParsingFormat = extraDateTimeParsingFormat;
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -10276,9 +10276,9 @@ public class AdminController extends SpringActionController
             return false;
         if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
-        if (!validateAndSaveFormat(form.getExtraDateParsingFormat(), props::clearExtraDateParsingFormat, props::setExtraDateParsingFormat, errors, "date"))
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
-        if (!validateAndSaveFormat(form.getExtraDateTimeParsingFormat(), props::clearExtraDateTimeParsingFormat, props::setExtraDateTimeParsingFormat, errors, "date-time"))
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
             return false;
 
         try
