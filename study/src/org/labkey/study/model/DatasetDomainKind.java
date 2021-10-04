@@ -263,6 +263,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
     }
 
+    // Issue 43898: Add the study subject name column to reserved fields
     protected Set<String> getStudySubjectReservedName(Domain domain)
     {
         HashSet<String> fields = new HashSet<>();

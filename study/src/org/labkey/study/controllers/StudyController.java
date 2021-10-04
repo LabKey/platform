@@ -1568,7 +1568,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            // Validate that the subject column name is not a user defined field in one of the datasets
+            // Issue 43898: Validate that the subject column name is not a user defined field in one of the datasets
             String subjectColName = form.get("SubjectColumnName");
             if (null != subjectColName)
             {
