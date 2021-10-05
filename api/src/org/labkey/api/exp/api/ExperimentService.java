@@ -68,6 +68,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -682,7 +683,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
-    ExpProtocolApplication getExpProtocolApplication(int rowId);
+    @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);
+
+    @Nullable ExpProtocolApplication getExpProtocolApplicationFromEntityId(String entityId);
 
     List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
 
