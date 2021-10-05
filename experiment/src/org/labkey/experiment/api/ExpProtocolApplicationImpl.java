@@ -38,6 +38,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -287,6 +288,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
+    public void setEntityId(GUID entityId)
+    {
+        ensureUnlocked();
+        _object.setEntityId(entityId);
+    }
+
+    @Override
     public int getActionSequence()
     {
         return _object.getActionSequence();
@@ -326,6 +334,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public String getComments()
     {
         return _object.getComments();
+    }
+
+    @Override
+    public GUID getEntityId()
+    {
+        return _object.getEntityId();
     }
 
     @Override

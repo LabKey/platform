@@ -1339,7 +1339,12 @@ public class AnnouncementsController extends SpringActionController
         DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
 
         if (typeProvider != null)
-            return typeProvider.getThreadURL(c, user, ann.getRowId(), ann.getDiscussionSrcIdentifier());
+        {
+            ActionURL threadUrl = typeProvider.getThreadURL(c, user, ann.getRowId(), ann.getDiscussionSrcIdentifier());
+
+            if (threadUrl != null)
+                return threadUrl;
+        }
 
         return getThreadURL(c, ann.getRowId());
     }

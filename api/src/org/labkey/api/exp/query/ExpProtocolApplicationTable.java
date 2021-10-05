@@ -37,7 +37,8 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
         StartTime,
         EndTime,
         RecordCount,
-        Properties
+        Properties,
+        EntityId
     }
 
     BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleType sampleType, String... roleNames);

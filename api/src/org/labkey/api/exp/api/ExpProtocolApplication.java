@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.util.Date;
@@ -86,6 +87,8 @@ public interface ExpProtocolApplication extends ExpObject
 
     String getComments();
 
+    GUID getEntityId();
+
     void setRun(ExpRun run);
 
     void setActionSequence(int actionSequence);
@@ -101,6 +104,8 @@ public interface ExpProtocolApplication extends ExpObject
     void setRecordCount(Integer recordCount);
 
     void setComments(String comments);
+
+    void setEntityId(GUID entityId);
 
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
