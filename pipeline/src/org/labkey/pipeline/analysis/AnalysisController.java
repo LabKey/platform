@@ -22,6 +22,7 @@ import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -74,10 +75,10 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -232,9 +233,9 @@ public class AnalysisController extends SpringActionController
         {
             PipelineService.PathAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
             JSONArray protocols = new JSONArray();
-            for (String protocolName : props.getFactory().getProtocolNames(props.getPipeRoot(), props.getDirData().toFile(), false))
+            for (String protocolName : props.getFactory().getProtocolNames(props.getPipeRoot(), props.getDirData(), false))
             {
-                protocols.put(getProtocolJson(protocolName, props.getPipeRoot(), props.getDirData().toFile(), props.getFactory()));
+                protocols.put(getProtocolJson(protocolName, props.getPipeRoot(), props.getDirData(), props.getFactory()));
             }
 
             if (form.getIncludeWorkbooks())
@@ -269,10 +270,16 @@ public class AnalysisController extends SpringActionController
             return new ApiSimpleResponse(result);
         }
 
-        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws NotFoundException
+        @Deprecated //Prefer the Path version
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
+        {
+            return getProtocolJson(protocolName, root, dirData.toPath(), factory);
+        }
+
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, @Nullable Path dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
         {
             JSONObject protocol = new JSONObject();
-            AbstractFileAnalysisProtocol pipelineProtocol = factory.getProtocol(root, dirData.toPath(), protocolName, false);
+            AbstractFileAnalysisProtocol<?> pipelineProtocol = factory.getProtocol(root, dirData, protocolName, false);
             if (pipelineProtocol == null)
             {
                 throw new NotFoundException("Protocol not found: " + protocolName);
@@ -283,7 +290,7 @@ public class AnalysisController extends SpringActionController
             protocol.put("xmlParameters", pipelineProtocol.getXml());
             protocol.put("containerPath", root.getContainer().getPath());
             ParamParser parser = PipelineJobService.get().createParamParser();
-            parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
+            parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml()), Charset.defaultCharset()));
             if (parser.getErrors() == null || parser.getErrors().length == 0)
             {
                 protocol.put("jsonParameters", new JSONObject(parser.getInputParameters()));

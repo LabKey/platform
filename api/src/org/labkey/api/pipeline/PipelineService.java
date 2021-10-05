@@ -254,6 +254,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
             return _pipeRoot;
         }
 
+        @Nullable
         public Path getDirData()
         {
             return _dirData;

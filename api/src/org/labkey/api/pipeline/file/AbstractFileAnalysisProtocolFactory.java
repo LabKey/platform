@@ -162,7 +162,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Override
-    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
     {
         String[] protocolNames = super.getProtocolNames(root, dirData, archived);
 

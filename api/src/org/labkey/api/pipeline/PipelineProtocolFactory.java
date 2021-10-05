@@ -145,8 +145,14 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return getProtocolDir(root, archived).resolve(name + ".xml");
     }
 
-    /** @return sorted list of protocol names */
+    @Deprecated //Prefer the Path version
     public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    {
+        return getProtocolNames(root, dirData.toPath(), archived);
+    }
+
+    /** @return sorted list of protocol names */
+    public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
     {
         HashSet<String> setNames = new HashSet<>();
 
@@ -164,7 +170,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         // Add all directories that already exist in the analysis root.
         if (dirData != null && !archived)
         {
-            files = new File(dirData, getName()).listFiles(File::isDirectory);
+            files = dirData.resolve(getName()).toFile().listFiles(File::isDirectory);
 
             if (files != null)
             {
@@ -172,7 +178,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                     setNames.add(file.getName());
             }
         }
-        
+
         String[] vals = setNames.toArray(new String[setNames.size()]);
         Arrays.sort(vals, String.CASE_INSENSITIVE_ORDER);
         return vals;
