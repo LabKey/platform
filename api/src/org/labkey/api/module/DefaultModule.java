@@ -299,7 +299,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void beforeUpdate(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
-            ModuleLoader.getInstance().runScripts(this, SchemaUpdateType.Before);
+            ModuleLoader.getInstance().runUpgradeScripts(this, SchemaUpdateType.Before);
     }
 
     /**
@@ -316,6 +316,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             }
 
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
+            SqlScriptRunner runner = ModuleLoader.getInstance().getUpgradeScriptRunner();
 
             for (DbSchema schema : provider.getSchemas())
             {
@@ -323,12 +324,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 List<SqlScript> scripts = manager.getRecommendedScripts(getSchemaVersion());
 
                 if (!scripts.isEmpty())
-                    SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
+                    runner.runScripts(this, scripts);
 
                 SqlScript script = SchemaUpdateType.After.getScript(provider, schema);
 
                 if (null != script)
-                    SqlScriptRunner.runScripts(this, null, Collections.singletonList(script));
+                    runner.runScripts(this, Collections.singletonList(script));
             }
         }
     }

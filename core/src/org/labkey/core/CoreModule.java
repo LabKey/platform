@@ -667,7 +667,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         if (moduleContext.isNewInstall())
         {
-            bootstrap(moduleContext.getUpgradeUser());
+            bootstrap();
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -693,7 +693,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    private void bootstrap(User upgradeUser)
+    private void bootstrap()
     {
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
@@ -722,13 +722,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Users & guests can read from /home
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
-        home.setFolderType(collaborationType, upgradeUser);
+        home.setFolderType(collaborationType, (User)null);
         addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
 
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, upgradeUser);
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, upgradeUser);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, (User)null);
 
         try
         {
