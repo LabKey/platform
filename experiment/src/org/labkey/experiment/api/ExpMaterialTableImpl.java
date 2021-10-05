@@ -559,7 +559,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInDetailsView(false);
         aliquotParentLSID.setShownInUpdateView(false);
 
-        if (st != null && !st.isMedia())
+        if (st == null || !st.isMedia())
             addColumn(Column.IsAliquot);
 
         addColumn(ExpMaterialTable.Column.Created);
