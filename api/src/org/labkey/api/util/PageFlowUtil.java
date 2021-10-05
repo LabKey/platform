@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderOverrideHandler;
+import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
@@ -2678,7 +2679,7 @@ public class PageFlowUtil
     /** @return true if the UrlProvider exists. */
     static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
     {
-        return ModuleLoader.getInstance().hasUrlProvider(inter);
+        return UrlProviderService.getInstance().hasUrlProvider(inter);
     }
 
     /**
@@ -2691,7 +2692,7 @@ public class PageFlowUtil
     @Nullable
     static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return ModuleLoader.getInstance().getUrlProvider(inter);
+        return UrlProviderService.getInstance().getUrlProvider(inter);
     }
 
     /**

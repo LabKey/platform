@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -70,7 +71,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -140,8 +140,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
-    private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
-    private static final Map<Class<? extends UrlProvider>, List<Pair<Module, Class<? extends UrlProvider>>>> _urlProviderToOverrideImpls = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
@@ -1981,7 +1979,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             Class[] supr = inter.getInterfaces();
                             if (supr != null && supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                _urlProviderToImpl.put(inter, innerClass);
+                                UrlProviderService.getInstance().registerUrlProvider(inter, innerClass);
                         }
                     }
                 }
@@ -2085,57 +2083,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             _schemaNameToSchemaDetails.clear();
         }
     }
-
-    /**
-     * Register an implementation class to use for overrides to a URLProvider interface.
-     * @param inter the URLProvider interface
-     * @param impl the override URLProvider implementation class
-     * @param module the module providing the override
-     */
-    public void registerUrlProviderOverride(Class<? extends UrlProvider> inter, Class<? extends UrlProvider> impl, Module module)
-    {
-        List<Pair<Module, Class<? extends UrlProvider>>> impls = new ArrayList<>();
-        if (_urlProviderToOverrideImpls.containsKey(inter))
-            impls = _urlProviderToOverrideImpls.get(inter);
-
-        impls.add(new Pair<>(module, impl));
-        _urlProviderToOverrideImpls.put(inter, impls);
-    }
-
-    public List<Pair<Module, Class<? extends UrlProvider>>> getUrlProviderOverrides(Class<? extends UrlProvider> inter)
-    {
-        return _urlProviderToOverrideImpls.get(inter);
-    }
-
-    /** @return true if the UrlProvider exists. */
-    public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
-    {
-        return _urlProviderToImpl.get(inter) != null;
-    }
-
-    @Nullable
-    public <P extends UrlProvider> P getUrlProvider(Class<P> inter)
-    {
-        Class<? extends UrlProvider> clazz = _urlProviderToImpl.get(inter);
-
-        if (clazz == null)
-            return null;
-
-        try
-        {
-            P impl = (P) clazz.newInstance();
-            return impl;
-        }
-        catch (InstantiationException e)
-        {
-            throw new RuntimeException("Failed to instantiate provider class " + clazz.getName() + " for " + inter.getName(), e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException("Illegal access of provider class " + clazz.getName() + " for " + inter.getName(), e);
-        }
-    }
-
 
     public void registerResourcePrefix(String prefix, Module module)
     {
