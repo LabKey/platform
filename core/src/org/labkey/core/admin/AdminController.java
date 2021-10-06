@@ -1522,6 +1522,16 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultNumberFormat(String defaultNumberFormat);
 
+        String getExtraDateParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraDateParsingPattern(String extraDateParsingPattern);
+
+        String getExtraDateTimeParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
+
         boolean areRestrictedColumnsEnabled();
 
         @SuppressWarnings("UnusedDeclaration")
@@ -1575,6 +1585,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
@@ -1805,6 +1817,30 @@ public class AdminController extends SpringActionController
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        @Override
+        public String getExtraDateParsingPattern()
+        {
+            return _extraDateParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
+        {
+            _extraDateParsingPattern = extraDateParsingPattern;
+        }
+
+        @Override
+        public String getExtraDateTimeParsingPattern()
+        {
+            return _extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
+        {
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -4722,6 +4758,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
 
         @Override
@@ -4758,6 +4796,30 @@ public class AdminController extends SpringActionController
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        @Override
+        public String getExtraDateParsingPattern()
+        {
+            return _extraDateParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
+        {
+            _extraDateParsingPattern = extraDateParsingPattern;
+        }
+
+        @Override
+        public String getExtraDateTimeParsingPattern()
+        {
+            return _extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
+        {
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -10265,59 +10327,16 @@ public class AdminController extends SpringActionController
     // Validate and populate the folder settings; save & log all changes
     private static boolean saveFolderSettings(Container c, SettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
-        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
-        if (null == defaultDateFormat)
-        {
-            props.clearDefaultDateFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultDateFormat(defaultDateFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid date format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        String defaultDateTimeFormat = StringUtils.trimToNull(form.getDefaultDateTimeFormat());
-        if (null == defaultDateTimeFormat)
-        {
-            props.clearDefaultDateTimeFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultDateTimeFormat(defaultDateTimeFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid date time format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
-        if (null == defaultNumberFormat)
-        {
-            props.clearDefaultNumberFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultNumberFormat(defaultNumberFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid number format: " + e.getMessage());
-                return false;
-            }
-        }
+        if (!validateAndSaveFormat(form.getDefaultDateFormat(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
 
         try
         {
@@ -10337,6 +10356,33 @@ public class AdminController extends SpringActionController
         return true;
     }
 
+    private interface FormatSaver
+    {
+        void save(String format) throws IllegalArgumentException;
+    }
+
+    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (null == defaultFormat)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public static class LookAndFeelView extends JspView<LookAndFeelBean>
     {
