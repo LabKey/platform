@@ -285,7 +285,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return getDomainProperty(_object.getParentCol());
     }
 
-    // NOTE: intentionally not public in ExpSampleType interface
+    @Override
     public void setNameExpression(String expression)
     {
         if (expression != null && hasIdColumns() && !hasNameAsIdCol())

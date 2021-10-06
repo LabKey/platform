@@ -97,6 +97,8 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     String getNameExpression();
 
+    void setNameExpression(String expression);
+
     /** @return true if this SampleSet has a name expression. */
     boolean hasNameExpression();
 
