@@ -21,7 +21,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +56,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     }
 
     /**
-     * @return Map of all property names and values that are updateable and appropriate for audit logging
+     * @return Map of all property names and values that are updatable and appropriate for audit logging
      */
     default @NotNull Map<String, Object> getLoggingProperties()
     {
@@ -94,6 +93,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
          */
         boolean isAutoRedirect();
 
+        // TODO: Delete everything below once earliest upgrade is later than 21.008. See #43979.
         void savePlaceholderLogos(User user);
 
         default void ensureLogos(SSOAuthenticationConfiguration configuration, User user, String prefix)
