@@ -839,7 +839,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             return HtmlString.EMPTY_STRING;
 
         Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
-        HtmlStringBuilder builder = HtmlStringBuilder.of("");
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
         HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
         for (Object m : list)
         {
