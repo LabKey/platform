@@ -115,7 +115,8 @@ public class SqlScriptController extends SpringActionController
             JSONObject result = new JSONObject();
             JSONArray modulesJSON = new JSONArray();
 
-            String currentlyUpgradingModule = SqlScriptRunner.getCurrentModuleName();
+            SqlScriptRunner runner = ModuleLoader.getInstance().getUpgradeScriptRunner();
+            String currentlyUpgradingModule = runner.getCurrentModuleName();
             result.put("currentlyUpgradingModule", currentlyUpgradingModule);
 
             for (Module module : ModuleLoader.getInstance().getModules())
@@ -130,7 +131,7 @@ public class SqlScriptController extends SpringActionController
                 if (module.getName().equals(currentlyUpgradingModule))
                 {
                     moduleJSON.put("currentlyUpgrading", true);
-                    List<SqlScript> sqlScripts = SqlScriptRunner.getRunningScripts(currentlyUpgradingModule);
+                    List<SqlScript> sqlScripts = runner.getRunningScripts(currentlyUpgradingModule);
                     for (SqlScript sqlScript : sqlScripts)
                     {
                         JSONObject scriptJSON = new JSONObject();
@@ -1390,16 +1391,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeCodeForm form, BindException errors) throws Exception
         {
-            try
-            {
-                ModuleLoader.getInstance().setUpgradeUser(getUser());
-                LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
-                _method.invoke(null, _ctx);
-            }
-            finally
-            {
-                ModuleLoader.getInstance().setUpgradeUser(null);
-            }
+            LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
+            _method.invoke(null, _ctx);
             return true;
         }
 

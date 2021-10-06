@@ -107,6 +107,7 @@ public class GroupManager
         int gotUserId;
         if ((gotUserId = createSystemGroup(userId, name, type)) != userId)
             _log.warn(name + " group exists but has an unexpected UserId (is " + gotUserId + ", should be " + userId + ")");
+        GroupCache.uncache(userId);
     }
 
 
