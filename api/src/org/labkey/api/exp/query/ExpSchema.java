@@ -344,7 +344,7 @@ public class ExpSchema extends AbstractExpSchema
 
         if (SAMPLE_TYPE_CATEGORY_TABLE.equalsIgnoreCase(name))
         {
-            return new EnumTableInfo<>(SampleTypeCategoryType.class, this, SampleTypeCategoryType::name, true, "Contains the list of available sampletype category types.");
+            return new EnumTableInfo<>(SampleTypeCategoryType.class, this, SampleTypeCategoryType::name, true, "Contains the list of available sample type category types.");
         }
 
         return null;
