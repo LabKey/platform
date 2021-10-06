@@ -4,6 +4,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ContainerFilter;
 
+/**
+ * This class is for a module to define a configuration that will be used in the LKB/LKSM apps to display assay
+ * results for a given sample in the Assays tabbed grid view of the app. This allows for non-standard module based
+ * assays that are not part of the assay designer infrastructure to participate in the app results display.
+ */
 public class SampleAssayResultsConfig
 {
     private String _moduleName;

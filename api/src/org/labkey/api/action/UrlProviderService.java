@@ -70,7 +70,9 @@ public class UrlProviderService
     }
 
     /**
-     * Register an implementation class to use for overrides to a URLProvider interface.
+     * Register an implementation class to use for overrides to a URLProvider interface. Note that if the overriding
+     * implementation is only to be applicable when the given module is enabled in the container being checked, then
+     * it is up to that overriding implementation to make that check.
      * @param inter the URLProvider interface
      * @param impl the override URLProvider implementation class
      * @param module the module providing the override

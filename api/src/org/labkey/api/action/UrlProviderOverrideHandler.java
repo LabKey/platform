@@ -25,6 +25,10 @@ public class UrlProviderOverrideHandler implements InvocationHandler
         _impl = impl;
     }
 
+    /**
+     * Note that if the overriding implementation is only to be applicable when the given module is enabled in
+     * the container being checked, then it is up to that overriding implementation to make that check.
+     */
     @Override
     public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
         // check to see if the given interface has any module registered overrides
