@@ -28,7 +28,7 @@ public class UrlProviderService
 {
     private static final UrlProviderService instance = new UrlProviderService();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
-    private static final Map<Class<? extends UrlProvider>, List<Pair<Module, Class<? extends UrlProvider>>>> _urlProviderToOverrideImpls = new HashMap<>();
+    private static final Map<Class<? extends UrlProvider>, List<Pair<Module, UrlProvider>>> _urlProviderToOverrideImpls = new HashMap<>();
 
     public static UrlProviderService getInstance()
     {
@@ -75,9 +75,9 @@ public class UrlProviderService
      * @param impl the override URLProvider implementation class
      * @param module the module providing the override
      */
-    public void registerUrlProviderOverride(Class<? extends UrlProvider> inter, Class<? extends UrlProvider> impl, Module module)
+    public void registerUrlProviderOverride(Class<? extends UrlProvider> inter, UrlProvider impl, Module module)
     {
-        List<Pair<Module, Class<? extends UrlProvider>>> impls = new ArrayList<>();
+        List<Pair<Module, UrlProvider>> impls = new ArrayList<>();
         if (_urlProviderToOverrideImpls.containsKey(inter))
             impls = _urlProviderToOverrideImpls.get(inter);
 
@@ -85,7 +85,7 @@ public class UrlProviderService
         _urlProviderToOverrideImpls.put(inter, impls);
     }
 
-    public List<Pair<Module, Class<? extends UrlProvider>>> getUrlProviderOverrides(Class<? extends UrlProvider> inter)
+    public List<Pair<Module, UrlProvider>> getUrlProviderOverrides(Class<? extends UrlProvider> inter)
     {
         return _urlProviderToOverrideImpls.get(inter);
     }

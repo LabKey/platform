@@ -28,13 +28,13 @@ public class UrlProviderOverrideHandler implements InvocationHandler
     @Override
     public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
         // check to see if the given interface has any module registered overrides
-        List<Pair<Module, Class<? extends UrlProvider>>> impls = UrlProviderService.getInstance().getUrlProviderOverrides(_inter);
+        List<Pair<Module, UrlProvider>> impls = UrlProviderService.getInstance().getUrlProviderOverrides(_inter);
         if (impls != null)
         {
             // convert the pairs of module/impl to a map from module -> impl and a list of all module dependencies
-            Map<Module, Class<? extends UrlProvider>> moduleToImpl = new HashMap<>();
+            Map<Module, UrlProvider> moduleToImpl = new HashMap<>();
             Set<Module> modulesWithDependentModules = new HashSet<>();
-            for (Pair<Module, Class<? extends UrlProvider>> impl : impls)
+            for (Pair<Module, UrlProvider> impl : impls)
             {
                 moduleToImpl.put(impl.first, impl.second);
                 modulesWithDependentModules.add(impl.first);
@@ -50,7 +50,7 @@ public class UrlProviderOverrideHandler implements InvocationHandler
             {
                 if (moduleToImpl.containsKey(module))
                 {
-                    Object result = m.invoke(moduleToImpl.get(module).getDeclaredConstructor().newInstance(), args);
+                    Object result = m.invoke(moduleToImpl.get(module), args);
                     if (result != null)
                         return result;
                 }
