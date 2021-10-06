@@ -1885,17 +1885,13 @@ public class DbScope
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
             Map<Runnable, Runnable> runnables = getRunnables(transaction);
-            T result = (T)runnables.get(task);
-            if (result == null)
-            {
-                result = task;
-                runnables.put(task, task);
-            }
-            else
+            @SuppressWarnings("unchecked")
+            T existing = (T)runnables.putIfAbsent(task, task);
+            if (existing != null)
             {
                 LOG.debug("Skipping duplicate runnable: " + task.toString());
             }
-            return result;
+            return existing == null ? task : existing;
         }
     }
 
