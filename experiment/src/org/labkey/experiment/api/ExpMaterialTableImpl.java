@@ -575,21 +575,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(ExpMaterialTable.Column.Flag);
 
-        if (SampleTypeService.isSampleStatusEnabled())
+        var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
+        statusColInfo.setShownInDetailsView(true);
+        statusColInfo.setShownInInsertView(true);
+        statusColInfo.setHidden(!SampleTypeService.isSampleStatusEnabled());
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
+        statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
         {
-            var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-            statusColInfo.setShownInDetailsView(true);
-            statusColInfo.setShownInInsertView(true);
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
-            statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
+            @Override
+            public TableInfo getLookupTableInfo()
             {
-                @Override
-                public TableInfo getLookupTableInfo()
-                {
-                    return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
-                }
-            });
-        }
+                return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
+            }
+        });
+
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
