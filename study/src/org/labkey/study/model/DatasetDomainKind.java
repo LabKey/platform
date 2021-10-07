@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
@@ -675,7 +676,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             checkCanUpdate(def, container, user, datasetProperties, original, update);
         }
 
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        // Acquire lock before we actually start the transaction to avoid deadlocks when it's refreshed during the process
+        Lock[] locks = def == null ? new Lock[0] : new Lock[] { def.getDomainLoadingLock() };
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction(locks))
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
