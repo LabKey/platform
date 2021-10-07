@@ -53,6 +53,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -196,7 +197,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return columnInfo;
             }
             case Name:
-                return wrapColumn(alias, _rootTable.getColumn("Name"));
+                var nameCol = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                // shut off this field in insert and update views if user specified names are not allowed
+                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                {
+                    nameCol.setShownInInsertView(false);
+                    nameCol.setShownInUpdateView(false);
+                }
+                return nameCol;
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case SampleSet:

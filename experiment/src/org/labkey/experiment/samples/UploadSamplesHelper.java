@@ -57,6 +57,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.DomainProperty;
@@ -771,7 +772,8 @@ public abstract class UploadSamplesHelper
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
+            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()));
 
             return LoggingDataIterator.wrap(names);
         }
@@ -789,6 +791,7 @@ public abstract class UploadSamplesHelper
         final int _batchSize;
         boolean first = true;
         Map<String, String> importAliasMap = null;
+        boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
 
         String generatedName = null;
         String generatedLsid = null;
@@ -819,6 +822,12 @@ public abstract class UploadSamplesHelper
             addColumn(new BaseColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
             // Ensure we have a cpasType column and it is of the right value
             addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampletype.getLSID()));
+        }
+
+        _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
+        {
+            _allowUserSpecifiedNames = allowUserSpecifiedNames;
+            return this;
         }
 
         void onFirst()
@@ -855,6 +864,13 @@ public abstract class UploadSamplesHelper
                     else
                         return Collections.emptyMap();
                 };
+
+                Object currNameObj = map.get("Name");
+                if (currNameObj != null && !_allowUserSpecifiedNames)
+                {
+                    if (StringUtils.isNotBlank(currNameObj.toString()))
+                        addRowError("Manual entry of names has been disabled for this folder. Only naming pattern generated names are allowed.");
+                }
 
                 generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);;
 

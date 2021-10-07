@@ -39,6 +39,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private Container _container;
     private Function<String, Long> _getNonConflictCountFn;
     private String _counterSeqPrefix;
+    private boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
 
     public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
@@ -56,6 +57,12 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         _getNonConflictCountFn = getNonConflictCountFn;
         _counterSeqPrefix = counterSeqPrefix;
 
+    }
+
+    public NameExpressionDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
+    {
+        _allowUserSpecifiedNames = allowUserSpecifiedNames;
+        return this;
     }
 
     MapDataIterator getInput()
@@ -93,7 +100,11 @@ public class NameExpressionDataIterator extends WrapperDataIterator
                 curName = StringUtils.isEmpty((String)curName) ? null : curName;
 
             if (curName != null)
+            {
+                if (!_allowUserSpecifiedNames)
+                    getErrors().addRowError(new ValidationException("Manual entry of names has been disabled for this folder. Only naming pattern generated names are allowed."));
                 return curName;
+            }
 
             Map<String, Object> currentRow = getInput().getMap();
 
