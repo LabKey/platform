@@ -586,14 +586,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, null, templateInfo, null, null, null, null, null);
+                parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory)
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category)
         throws ExperimentException
     {
         if (name == null)
@@ -646,6 +646,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         int metricUnitMax = materialSourceTable.getColumn("MetricUnit").getScale();
         if (metricUnit != null && metricUnit.length() > metricUnitMax)
             throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
+
+        // Validate the category length
+        int categoryMax = materialSourceTable.getColumn("Category").getScale();
+        if (category != null && category.length() > categoryMax)
+            throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -723,6 +728,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         source.setMetricUnit(metricUnit);
         source.setAutoLinkTargetContainer(autoLinkTargetContainer);
         source.setAutoLinkCategory(autoLinkCategory);
+        source.setCategory(category);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -911,6 +917,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setImportAliasMap(options.getImportAliases());
             st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
             st.setAutoLinkCategory(options.getAutoLinkCategory());
+            if (options.getCategory() != null) // update sample type category is currently not supported
+                st.setCategory(options.getCategory());
         }
 
         ValidationException errors;

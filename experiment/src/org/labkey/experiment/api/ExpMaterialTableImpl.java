@@ -559,7 +559,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInDetailsView(false);
         aliquotParentLSID.setShownInUpdateView(false);
 
-        addColumn(Column.IsAliquot);
+        if (st == null || !st.isMedia())
+            addColumn(Column.IsAliquot);
 
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
@@ -596,7 +597,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null)
+            if (InventoryService.get() != null && !st.isMedia())
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());

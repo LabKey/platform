@@ -367,6 +367,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getMetricUnit()) && options.getMetricUnit().length() > metricUnitMax)
             throw new IllegalArgumentException("Value for Metric Unit field may not exceed " + metricUnitMax + " characters.");
 
+        int categoryMax = materialSourceTI.getColumn("Category").getScale();
+        if (StringUtils.isNotBlank(options.getCategory()) && options.getCategory().length() > categoryMax)
+            throw new IllegalArgumentException("Value for Category field may not exceed " + categoryMax + " characters.");
+
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
             return;
@@ -443,6 +447,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         String metricUnit = null;
         Container autoLinkTargetContainer = null;
         String autoLinkCategory = null;
+        String category = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -460,12 +465,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
             autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
+            category = StringUtils.trimToNull(arguments.getCategory());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category);
         }
         catch (SQLException e)
         {

@@ -304,6 +304,7 @@ public class DomainTemplate
                     idCols[i] = pair.second;
                 }
                 optionsMap.put("idCols", idCols);
+                optionsMap.put("category", options.getCategory());
             }
         }
 
