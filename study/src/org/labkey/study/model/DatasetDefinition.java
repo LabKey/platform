@@ -140,6 +140,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
@@ -1211,6 +1212,12 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public String getResourceDescription()
     {
         return null == _description ? "The study dataset " + getName() : _description;
+    }
+
+    /** @return the lock object used to synchronize domain loading */
+    public Lock getDomainLoadingLock()
+    {
+        return _lock;
     }
 
     private static class AutoCompleteDisplayColumnFactory implements DisplayColumnFactory
