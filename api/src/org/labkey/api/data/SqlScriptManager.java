@@ -285,14 +285,14 @@ public abstract class SqlScriptManager
             if (null == bean)
             {
                 bean = new SchemaBean(_schema.getDisplayName(), _provider.getProviderName(), version);
-                Table.insert(ModuleLoader.getInstance().getUpgradeUser(), tinfo, bean);
+                Table.insert(null, tinfo, bean);
             }
             else
             {
                 if (version != bean.getInstalledVersion())
                 {
                     bean.setInstalledVersion(version);
-                    Table.update(ModuleLoader.getInstance().getUpgradeUser(), tinfo, bean, bean.getName());
+                    Table.update(null, tinfo, bean, bean.getName());
                 }
             }
         }

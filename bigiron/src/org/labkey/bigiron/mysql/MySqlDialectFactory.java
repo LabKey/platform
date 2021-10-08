@@ -42,7 +42,7 @@ public class MySqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = LogManager.getLogger(MySqlDialectFactory.class);
 
-    private String getProductName()
+    private static String getProductName()
     {
         return "MySQL";
     }
@@ -80,6 +80,8 @@ public class MySqlDialectFactory implements SqlDialectFactory
         return "com.mysql.jdbc.Driver".equals(driverClassName) ? new MySqlDialect() : null;
     }
 
+    private final static String RECOMMENDED = getProductName() + " 8.0.x is the recommended version.";
+
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
@@ -95,7 +97,7 @@ public class MySqlDialectFactory implements SqlDialectFactory
         {
             // ...but warn for anything greater than 8.0.x
             if (logWarnings && version > 80)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  getProductName() + " 8.0.x is the recommended version.");
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " +  RECOMMENDED);
 
             if (version >= 80)
                 return new MySql80Dialect();
@@ -106,10 +108,12 @@ public class MySqlDialectFactory implements SqlDialectFactory
             if (version >= 56)
                 return new MySql56Dialect();
 
+            _log.warn(getProductName() + " version " + databaseProductVersion + " has reached end of life and is no longer supported or tested by LabKey. " +  RECOMMENDED);
+
             return new MySqlDialect();
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation to " + getProductName() + " version 5.1 or greater.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. " + RECOMMENDED);
     }
 
     @Override

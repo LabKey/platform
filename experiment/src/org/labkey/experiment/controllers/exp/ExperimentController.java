@@ -611,6 +611,8 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("LabelColor").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MetricUnit").setVisible(false);
+            detailsView.getDataRegion().getDisplayColumn("Category").setVisible(false);
+
             detailsView.setTitle("Sample Type Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
@@ -3647,6 +3649,7 @@ public class ExperimentController extends SpringActionController
         sampleType.put("lsid", st.getLSID());
         sampleType.put("rowId", st.getRowId());
         sampleType.put("domainId", st.getDomain().getTypeId());
+        sampleType.put("category", st.getCategory());
 
         return new ApiSimpleResponse(Map.of("sampleSet", sampleType, "success", true));
     }

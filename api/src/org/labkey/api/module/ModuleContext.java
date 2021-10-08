@@ -175,7 +175,7 @@ public class ModuleContext implements Cloneable
 
     public User getUpgradeUser()
     {
-        return ModuleLoader.getInstance().getUpgradeUser();
+        return User.getSearchUser();
     }
 
     public boolean isAutoUninstall()

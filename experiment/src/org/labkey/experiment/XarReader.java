@@ -535,6 +535,11 @@ public class XarReader extends AbstractXarImporter
             materialSource.setImportAliasMap(aliasMap);
         }
 
+        if (sampleSet.isSetCategory())
+        {
+            materialSource.setCategory(sampleSet.getCategory());
+        }
+
         if (existingMaterialSource != null)
         {
             if (_strictValidateExistingSampleType)

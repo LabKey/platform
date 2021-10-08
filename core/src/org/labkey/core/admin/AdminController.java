@@ -8038,7 +8038,7 @@ public class AdminController extends SpringActionController
 
             ManageFilter filter = form.isManagedOnly() ? ManageFilter.ManagedOnly : (form.isUnmanagedOnly() ? ManageFilter.UnmanagedOnly : ManageFilter.All);
 
-            HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of("");
+            HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of();
             if (hasAdminOpsPerm)
             {
                 deleteInstructions.append(unsafe("<br><br>")).append(
@@ -8048,14 +8048,14 @@ public class AdminController extends SpringActionController
                         PageFlowUtil.link("Create new empty module").href(getCreateURL()));
             }
 
-            HtmlStringBuilder docLink = HtmlStringBuilder.of("");
+            HtmlStringBuilder docLink = HtmlStringBuilder.of();
             docLink.append(unsafe("<br><br>")).append("Additional modules available, click ").append(new HelpTopic("defaultModules").getSimpleLinkHtml("here")).append(" to learn more.");
 
-            HtmlStringBuilder knownDescription = HtmlStringBuilder.of("")
+            HtmlStringBuilder knownDescription = HtmlStringBuilder.of()
                 .append("Each of these modules is installed and has a valid module file. ").append(managedLink).append(unmanagedLink).append(deleteInstructions).append(docLink);
             HttpView known = new ModulesView(knownModules, "Known", knownDescription.getHtmlString(), null, ignoreSet, filter);
 
-            HtmlStringBuilder unknownDescription = HtmlStringBuilder.of("")
+            HtmlStringBuilder unknownDescription = HtmlStringBuilder.of()
                     .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
                     "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                     "module is no longer being distributed, the module has been renamed, the server location where the module " +

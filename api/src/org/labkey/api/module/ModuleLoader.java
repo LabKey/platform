@@ -55,7 +55,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -129,7 +128,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
- * Drives the process of initializing all of the modules at startup time and otherwise managing their life cycle.
+ * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
  * User: migra
  * Date: Jul 13, 2005
  */
@@ -167,7 +166,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
-    private User _upgradeUser = null;
+
+    private final SqlScriptRunner _upgradeScriptRunner = new SqlScriptRunner();
 
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
@@ -595,7 +595,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
 
             int count = downgradedModules.size();
-            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
+            String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules;
             _log.error(message);
             WarningService.get().register(new WarningProvider()
             {
@@ -616,7 +616,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade, lockFile);  // TODO: Change search user to system user
+        startNonCoreUpgradeAndStartup(execution, coreRequiredUpgrade, lockFile);
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
     }
@@ -1273,7 +1273,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 if (!scripts.isEmpty())
                 {
                     _log.info("Upgrading the \"labkey\" schema in \"" + scope.getDisplayName() + "\" to " + to);
-                    SqlScriptRunner.runScripts(coreModule, getUpgradeUser(), scripts);
+                    getUpgradeScriptRunner().runScripts(coreModule, scripts);
                 }
 
                 manager.updateSchemaVersion(to);
@@ -1335,6 +1335,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
+    public SqlScriptRunner getUpgradeScriptRunner()
+    {
+        return _upgradeScriptRunner;
+    }
+
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
@@ -1358,28 +1363,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
         _deferUsageReport = defer;
     }
 
-    private void runDropScripts()
+    // Run scripts using the default upgrade script runner
+    public void runUpgradeScripts(Module module, SchemaUpdateType type)
     {
-        synchronized (UPGRADE_LOCK)
-        {
-            List<Module> modules = getModules();
-            ListIterator<Module> iter = modules.listIterator(modules.size());
-
-            while (iter.hasPrevious())
-                runScripts(iter.previous(), SchemaUpdateType.Before);
-        }
+        runScripts(getUpgradeScriptRunner(), module, type);
     }
 
-    private void runCreateScripts()
-    {
-        synchronized (UPGRADE_LOCK)
-        {
-            for (Module module : getModules())
-                runScripts(module, SchemaUpdateType.After);
-        }
-    }
-
-    public void runScripts(Module module, SchemaUpdateType type)
+    public void runScripts(SqlScriptRunner runner, Module module, SchemaUpdateType type)
     {
         FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
 
@@ -1392,7 +1382,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     SqlScript script = type.getScript(provider, schema);
 
                     if (null != script)
-                        SqlScriptRunner.runScripts(module, null, Collections.singletonList(script));
+                        runner.runScripts(module, Collections.singletonList(script));
                 }
                 catch (Exception e)
                 {
@@ -1402,24 +1392,35 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    // Runs the drop and create scripts in every module
+    // Runs the drop and create scripts in every module using a new SqlScriptRunner
     public void recreateViews()
     {
+        SqlScriptRunner runner = new SqlScriptRunner();
+
         synchronized (UPGRADE_LOCK)
         {
-            runDropScripts();
-            runCreateScripts();
+            List<Module> modules = getModules();
+            ListIterator<Module> iter = modules.listIterator(modules.size());
+
+            // Run all the drop scripts (in reverse dependency order)
+            while (iter.hasPrevious())
+                runScripts(runner, iter.previous(), SchemaUpdateType.Before);
+
+            // Run all the create scripts
+            for (Module module : getModules())
+                runScripts(runner, module, SchemaUpdateType.After);
         }
+
         refreshMissingViews();
     }
 
-    // Runs the drop and create scripts in a single module
+    // Runs the drop and create scripts in a single module using the standard upgrade script runner
     public void recreateViews(Module module)
     {
         synchronized (UPGRADE_LOCK)
         {
-            runScripts(module, SchemaUpdateType.Before);
-            runScripts(module, SchemaUpdateType.After);
+            runUpgradeScripts(module, SchemaUpdateType.Before);
+            runUpgradeScripts(module, SchemaUpdateType.After);
         }
     }
 
@@ -1648,7 +1649,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade, File lockFile)
+    private void startNonCoreUpgradeAndStartup(Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1657,7 +1658,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 List<Module> modules = new ArrayList<>(getModules());
                 modules.remove(getCoreModule());
                 setUpgradeState(UpgradeState.UpgradeInProgress);
-                setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
                 upgrader.upgrade(() -> afterUpgrade(true, lockFile), execution);
@@ -1761,7 +1761,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 Map<String, Object> map = new HashMap<>();
                 map.put("AutoUninstall", module.isAutoUninstall());
                 map.put("Schemas", StringUtils.join(module.getSchemaNames(), ','));
-                Table.update(getUpgradeUser(), getTableInfoModules(), map, module.getName());
+                Table.update(null, getTableInfoModules(), map, module.getName());
             }
             catch (RuntimeSQLException e)
             {
@@ -1769,23 +1769,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
-        }
-    }
-
-
-    public void setUpgradeUser(User user)
-    {
-        synchronized(UPGRADE_LOCK)
-        {
-            _upgradeUser = user;
-        }
-    }
-
-    public User getUpgradeUser()
-    {
-        synchronized(UPGRADE_LOCK)
-        {
-            return _upgradeUser;
         }
     }
 
@@ -2151,19 +2134,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return getModuleForController(HttpView.getRootContext().getActionURL().getController());
     }
 
-
     public ModuleContext getModuleContext(String name)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
         return new TableSelector(getTableInfoModules(), filter, null).getObject(ModuleContext.class);
     }
 
-
     public Collection<ModuleContext> getAllModuleContexts()
     {
         return new TableSelector(getTableInfoModules()).getCollection(ModuleContext.class);
     }
-
 
     public Map<String, ModuleContext> getUnknownModuleContexts()
     {
@@ -2208,7 +2188,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .collect(Collectors.toList());
     }
 
-
     /**
      * Sets the entire config properties MultiValueMap.
      */
@@ -2216,7 +2195,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         _configPropertyMap = configProperties;
     }
-
 
     /**
      * Loads startup/bootstrap properties from configuration files.
@@ -2305,7 +2283,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-
     /**
      * Parse the config property name and construct a ConfigProperty object. A config property
      * can have an optional dot delimited scope and an optional semicolon delimited modifier, for example:
@@ -2358,7 +2335,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             return _type;
         }
     }
-
 
     @Override
     public void beforeReport(Set<Object> set)
