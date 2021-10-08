@@ -1265,7 +1265,7 @@ public class SecurityController extends SpringActionController
         private boolean _skipProfile;
         private String _provider = null;
 
-        private final HtmlStringBuilder _message = HtmlStringBuilder.of("");
+        private final HtmlStringBuilder _message = HtmlStringBuilder.of();
 
         @SuppressWarnings("unused")
         public void setProvider(String provider)
