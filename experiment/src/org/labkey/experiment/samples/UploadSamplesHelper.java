@@ -34,6 +34,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -63,9 +64,11 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -792,6 +795,7 @@ public abstract class UploadSamplesHelper
         boolean first = true;
         Map<String, String> importAliasMap = null;
         boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
+        Set<String> _existingNames = null;
 
         String generatedName = null;
         String generatedLsid = null;
@@ -869,7 +873,16 @@ public abstract class UploadSamplesHelper
                 if (currNameObj != null && !_allowUserSpecifiedNames)
                 {
                     if (StringUtils.isNotBlank(currNameObj.toString()))
-                        addRowError("Manual entry of names has been disabled for this folder. Only naming pattern generated names are allowed.");
+                    {
+                        if (_context.getInsertOption().equals(QueryUpdateService.InsertOption.MERGE))
+                        {
+                            // don't flag rows that already exist if the option is set to update existing
+                            if (!rowExists(currNameObj.toString()))
+                                addRowError("Manual entry of names has been disabled for this folder. Only naming pattern generated names (or existing names) are allowed.");
+                        }
+                        else
+                            addRowError("Manual entry of names has been disabled for this folder. Only naming pattern generated names are allowed.");
+                    }
                 }
 
                 generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);;
@@ -916,6 +929,18 @@ public abstract class UploadSamplesHelper
             super.close();
             if (null != nameState)
                 nameState.close();
+        }
+
+        private boolean rowExists(String name)
+        {
+            if (_existingNames == null)
+            {
+                _existingNames = new HashSet<>();
+                SamplesSchema schema = new SamplesSchema(User.getSearchUser(), _container);
+                TableSelector ts = new TableSelector(schema.getTable(sampletype, null), Set.of("Name")).setMaxRows(1_000_000);
+                ts.fillSet(_existingNames);
+            }
+            return _existingNames.contains(name);
         }
     }
 

@@ -58,6 +58,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -77,6 +78,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -118,6 +120,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -627,6 +630,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (nameExpression != null && idCol1 > -1)
             throw new ExperimentException("Name expression cannot be used with id columns");
 
+        NameExpressionOptionService svc = NameExpressionOptionService.get();
+        if (!svc.allowUserSpecifiedNames(c))
+        {
+            if (nameExpression == null)
+                throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+
+            // automatically apply the configured prefix to the name expression
+            nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
+            aliquotNameExpression = svc.createPrefixedExpression(c, aliquotNameExpression, true);
+        }
+
         // Validate the name expression length
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
@@ -897,6 +911,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
                 st.setNameExpression(sampleIdPattern);
+                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
+                {
+                    ValidationException errors = new ValidationException();
+                    errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+
+                    return errors;
+                }
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());

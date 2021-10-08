@@ -13,6 +13,8 @@ import javax.annotation.Nullable;
  */
 public interface NameExpressionOptionService
 {
+    String NAME_EXPRESSION_REQUIRED_MSG = "A Naming Pattern is required because manually specifying a name has been disabled for this folder.";
+
     NameExpressionOptionService NO_OP_IMPL = new NoOpService();
 
     @NotNull
@@ -50,6 +52,12 @@ public interface NameExpressionOptionService
      */
     void setAllowUserSpecifiedNames(Container c, User user, boolean allowNames) throws Exception;
 
+    /**
+     * Creates a prefixed name expression for new data classes or sample types, if configured for the
+     * container.
+     */
+    String createPrefixedExpression(Container c, String nameExpression, boolean isAliquotNameExpression);
+
     class NoOpService implements NameExpressionOptionService
     {
         @Override
@@ -72,6 +80,12 @@ public interface NameExpressionOptionService
         @Override
         public void setAllowUserSpecifiedNames(Container c, User user, boolean allowNames) throws Exception
         {
+        }
+
+        @Override
+        public String createPrefixedExpression(Container c, String nameExpression, boolean isAliquotNameExpression)
+        {
+            return null;
         }
     }
 }

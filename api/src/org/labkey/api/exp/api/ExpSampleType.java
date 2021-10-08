@@ -109,6 +109,8 @@ public interface ExpSampleType extends ExpObject
     /** @return true if this SampleSet has an override aliquot name expression. */
     boolean hasAliquotNameExpression();
 
+    void setAliquotNameExpression(String expression);
+
     /** @return label color hex value if set. */
     @Nullable
     String getLabelColor();

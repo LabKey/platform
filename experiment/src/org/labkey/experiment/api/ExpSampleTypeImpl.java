@@ -294,6 +294,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         _object.setNameExpression(expression);
     }
 
+    @Override
     public void setAliquotNameExpression(String expression)
     {
         _object.setAliquotNameExpression(expression);
