@@ -113,7 +113,7 @@
                 description : true,
                 shared      : true
             },
-            extraItems : [querySchemaPanel, {xtype: 'hiddenfield', name: 'returnUrl'}],
+            extraItems : [querySchemaPanel],
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',
