@@ -93,7 +93,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         LOG.info("Done exporting folder to " + vf.getLocation());
     }
 
-    // This writer is responsible for folder.xml.  It writes the top-level folder attributes and saves out the bean when it's complete.
+    // This writer is responsible for folder.xml. It writes the top-level folder attributes and saves out the bean when it's complete.
     private void writeFolderXml(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         FolderDocument.Folder folderXml = ctx.getXml();
@@ -126,10 +126,18 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (null != defaultNumberFormat)
             folderXml.setDefaultNumberFormat(defaultNumberFormat);
 
+        String extraDateParsingPattern = props.getExtraDateParsingPatternStored();
+        if (null != extraDateParsingPattern)
+            folderXml.setExtraDateParsingPattern(extraDateParsingPattern);
+
+        String extraDateTimeParsingPattern = props.getExtraDateTimeParsingPatternStored();
+        if (null != extraDateTimeParsingPattern)
+            folderXml.setExtraDateTimeParsingPattern(extraDateTimeParsingPattern);
+
         if (props.areRestrictedColumnsEnabled())
             folderXml.setRestrictedColumnsEnabled(true);
 
-        // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
+        // Save the folder.xml file. This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
 
         ctx.lockDocument();
