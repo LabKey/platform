@@ -120,7 +120,7 @@ LABKEY.WebSocket = new function ()
         return false;
     }
 
-    function toggleBackgroundVisible(shouldBlur) {
+    function toggleBackgroundBlurred(shouldBlur) {
         if (isSessionInvalidBackgroundHideEnabled()) {
             var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window', "div[role='dialog'] > .modal"];
             for (var i = 0; i < divClsSelectors.length; i++) {
@@ -140,7 +140,7 @@ LABKEY.WebSocket = new function ()
     function hideModal() {
         openWebsocket(); // re-establish the websocket connection for the new user session
 
-        toggleBackgroundVisible(false);
+        toggleBackgroundBlurred(false);
 
         var modal = $('#lk-utils-modal');
         if (LABKEY.Utils.isFunction(modal.modal)) {
@@ -159,7 +159,7 @@ LABKEY.WebSocket = new function ()
         if (_modalShowing) return;
         _modalShowing = true;
 
-        toggleBackgroundVisible(true);
+        toggleBackgroundBlurred(true);
 
         if (LABKEY.Utils.modal) {
             LABKEY.Utils.modal(title, null, function() {
