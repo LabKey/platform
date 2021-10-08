@@ -16,6 +16,7 @@
 
 package org.labkey.api.pipeline;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -23,6 +24,7 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -45,6 +47,8 @@ import java.util.List;
  */
 abstract public class PipelineProvider
 {
+    private static Logger _log = LogHelper.getLogger(PipelineProvider.class, "PipelineProvider and subclasses' execution");
+
     public enum Params { path }
 
     private boolean _showActionsIfModuleInactive;
@@ -153,7 +157,6 @@ abstract public class PipelineProvider
                         {
                             try
                             {
-                                //TODO verify this
                                 return Files.walk(
                                         dir,
                                         0,
@@ -165,6 +168,8 @@ abstract public class PipelineProvider
                             }
                             catch (IOException e)
                             {
+                                _log.error("Error matching siblings with filter", e);
+                                return false;
                             }
                         }
 
