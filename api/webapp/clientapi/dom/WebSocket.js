@@ -92,7 +92,6 @@ LABKEY.WebSocket = new function ()
                                 displayModal("Session Expired", 'Your session has expired. ' + modalContent);
                             } else {
                                 hideModal();
-                                openWebsocket(); // re-establish the websocket connection for the new session
                             }
                         }),
                         failure: function () {
@@ -139,6 +138,8 @@ LABKEY.WebSocket = new function ()
     }
 
     function hideModal() {
+        openWebsocket(); // re-establish the websocket connection for the new user session
+
         toggleBackgroundVisible(false);
 
         var modal = $('#lk-utils-modal');
@@ -153,6 +154,8 @@ LABKEY.WebSocket = new function ()
     }
 
     function displayModal(title, message) {
+        openWebsocket(); // re-establish the websocket connection for the new guest user session
+
         if (_modalShowing) return;
         _modalShowing = true;
 
@@ -177,8 +180,6 @@ LABKEY.WebSocket = new function ()
                 $('#lk-websocket-reload').on('click', function() {
                     window.location.reload();
                 });
-
-                openWebsocket(); // re-establish the websocket connection for the new guest user session
             }, null, true, isSessionInvalidBackgroundHideEnabled());
         }
         else {
