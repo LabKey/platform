@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -367,6 +368,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public @Nullable String getAutoLinkCategory()
     {
         return _object.getAutoLinkCategory();
+    }
+
+    @Override
+    public void setCategory(String category)
+    {
+        _object.setCategory(category);
+    }
+
+    @Override
+    public @Nullable String getCategory()
+    {
+        return _object.getCategory();
     }
 
     @Nullable
@@ -820,5 +833,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public Function<String, Long> getMaxSampleCounterFunction()
     {
         return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoMaterial());
+    }
+
+    @Override
+    public boolean isMedia()
+    {
+        return ExpSchema.SampleTypeCategoryType.media.name().equalsIgnoreCase(getCategory());
     }
 }

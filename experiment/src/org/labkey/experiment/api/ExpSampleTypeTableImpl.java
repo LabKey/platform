@@ -22,9 +22,11 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -35,6 +37,7 @@ import java.util.Collections;
 
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
 import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
+import static org.labkey.api.exp.query.ExpSchema.SAMPLE_TYPE_CATEGORY_TABLE;
 
 /**
  * User: jeckels
@@ -97,6 +100,15 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return createImportAliasColumn("DataInputImportAliases", DATA_INPUTS_PREFIX);
             case Properties:
                 return createPropertiesColumn(alias);
+            case Category:
+            {
+                var col = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(SAMPLE_TYPE_CATEGORY_TABLE, "Value", null);
+                col.setFk( fk );
+                return col;
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -125,6 +137,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.MetricUnit).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.AutoLinkTargetContainer).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.AutoLinkCategory).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.Category).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.Created);

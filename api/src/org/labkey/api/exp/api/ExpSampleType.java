@@ -123,6 +123,10 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     String getAutoLinkCategory();
 
+    /** @return Category if set. */
+    @Nullable
+    String getCategory();
+
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.
      * If a row map already has a non-null value for the "name" key, no sample name will be generated.
@@ -208,4 +212,8 @@ public interface ExpSampleType extends ExpObject
     ActionURL urlEditDefinition(ContainerUser cu);
 
     Function<String, Long> getMaxSampleCounterFunction();
+
+    void setCategory(String category);
+
+    boolean isMedia();
 }

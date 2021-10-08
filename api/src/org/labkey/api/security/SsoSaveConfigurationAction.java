@@ -97,7 +97,8 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
         return true;
     }
 
-    private void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, @NotNull AuthLogoType logoType, String action)
+    // TODO: restore to private and non-static once upgrade code is no longer needed
+    public static void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, @NotNull AuthLogoType logoType, String action)
     {
         AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(logoType.getLabel() + " logo for " + configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + configuration.getRowId() + ") was " + action);
         event.setChanges(logoType.getLabel() + " logo " + action);

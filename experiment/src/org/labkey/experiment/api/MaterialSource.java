@@ -52,6 +52,8 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
 
     private String _materialParentImportAliasMap;
 
+    private String _category;
+
     public String getMaterialLSIDPrefix()
     {
         return materialLSIDPrefix;
@@ -188,6 +190,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setMaterialParentImportAliasMap(String materialParentImportAliasMap)
     {
         _materialParentImportAliasMap = materialParentImportAliasMap;
+    }
+
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    public void setCategory(String category)
+    {
+        _category = category;
     }
 
     @Override

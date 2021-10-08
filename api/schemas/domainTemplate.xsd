@@ -132,6 +132,7 @@
                     <xs:element name="nameExpression" type="xs:string" minOccurs="0" maxOccurs="1" />
                     <xs:element name="keyCol" type="xs:string" minOccurs="0" maxOccurs="3" />
                     <xs:element name="parentCol" type="xs:string" minOccurs="0" maxOccurs="1" />
+                    <xs:element name="category" type="xs:string" minOccurs="0" maxOccurs="1" />
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

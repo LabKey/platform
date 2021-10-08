@@ -63,6 +63,7 @@ public class ExpSchema extends AbstractExpSchema
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
     public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
     public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
+    public static final String SAMPLE_TYPE_CATEGORY_TABLE = "SampleTypeCategoryType";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -262,6 +263,7 @@ public class ExpSchema extends AbstractExpSchema
         }
         tableNames.add(DATA_CLASS_CATEGORY_TABLE);
         tableNames.add(SAMPLE_STATE_TYPE_TABLE);
+        tableNames.add(SAMPLE_TYPE_CATEGORY_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -338,6 +340,11 @@ public class ExpSchema extends AbstractExpSchema
         if (SAMPLE_STATE_TYPE_TABLE.equalsIgnoreCase(name))
         {
             return new EnumTableInfo<>(SampleStateType.class, this, SampleStateType::name, true, "Contains the available sample state (status) types.");
+        }
+
+        if (SAMPLE_TYPE_CATEGORY_TABLE.equalsIgnoreCase(name))
+        {
+            return new EnumTableInfo<>(SampleTypeCategoryType.class, this, SampleTypeCategoryType::name, true, "Contains the list of available sample type category types.");
         }
 
         return null;
@@ -423,6 +430,20 @@ public class ExpSchema extends AbstractExpSchema
 
         public static DataClassCategoryType fromString(String typeVal) {
             for (DataClassCategoryType type : DataClassCategoryType.values()) {
+                if (type.name().equalsIgnoreCase(typeVal)) {
+                    return type;
+                }
+            }
+            return null;
+        }
+    }
+
+    public enum SampleTypeCategoryType
+    {
+        media;
+
+        public static SampleTypeCategoryType fromString(String typeVal) {
+            for (SampleTypeCategoryType type : SampleTypeCategoryType.values()) {
                 if (type.name().equalsIgnoreCase(typeVal)) {
                     return type;
                 }
