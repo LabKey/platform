@@ -612,13 +612,15 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * Current view context. Dangerous because some views do not use a ViewContext
      * object for their model and can cause a class cast exception.
+     * @return the current context, or null if the current thread isn't rendering a view (like a background
+     * pipeline thread)
      */
     @Nullable
     public static ViewContext currentContext()
     {
         // CONSIDER: if we ever have something besides HttpView on stack
         // we may need to iterate til we find the top most HttpView
-        return HttpView.currentView().getViewContext();
+        return hasCurrentView() ? currentView().getViewContext() : null;
     }
 
 
