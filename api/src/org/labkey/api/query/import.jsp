@@ -233,6 +233,8 @@
                     case Ext4.form.Action.CONNECT_FAILURE:
                         if (action.result && (action.result.errors || action.result.exception))
                             serverInvalid(action.result);
+                        else if (action.response && action.response.responseText)
+                            serverInvalid(Ext4.decode(action.response.responseText));
                         else
                             Ext4.Msg.alert('Failure', 'Ajax communication failed');
                         break;
