@@ -52,7 +52,7 @@ public interface CloudStoreService
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
-    void executeWatchJob(int cloudWatcherJobId);
+    void pollWatcher(int cloudWatcherJobId);
 
     void registerCloudWatcher(CloudWatcherConfig config, Function<Path, Boolean> eventProcessor);
 

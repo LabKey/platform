@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
@@ -48,6 +47,8 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -78,6 +79,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
+    private static final int POLLING_PERIOD_SECONDS = 10;
 
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
@@ -92,7 +94,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // for files system that do not support registering file watchers we will use a service that polls that watched
         // directory looking for changes since last polling. See: https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html
-        _pollingWatcher = new PollingWatchService(4, 10, TimeUnit.SECONDS);
+        _pollingWatcher = new PollingWatchService(4, POLLING_PERIOD_SECONDS, TimeUnit.SECONDS);
         _pollingWatcher.start();
         FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
         ContextListener.addShutdownListener(pollingThread);
@@ -101,8 +103,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         initCloudWatcher();
     }
 
-    private @Nullable void initCloudWatcher()
+    private void initCloudWatcher()
     {
+        //Can't do Cloud module check here as it likely hasn't loaded yet.
         CloudWatcherThread thread = new CloudWatcherThread("CloudWatcherPrimaryThread");
         ContextListener.addShutdownListener(thread);
         thread.start();
@@ -114,13 +117,16 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     {
         //Ensure a trailing '/' by push/pop a directory
         Path dir = directory.resolve("a").getParent();
-        addListener(dir, listener, (path, plm) -> registerWithCloudService(path, plm, config), events);
+
+        //The cloud service doesn't actually watch the supplied target path directly, and instead watches the notification
+        // queue from the config. Any received notification keys (paths) are then checked later during processing.
+        addListener(dir, listener, (path, plm) -> registerWithCloudService(plm, config), events);
     }
 
-    private void registerWithCloudService(Path path, @NotNull PathListenerManager plm, final CloudWatcherConfig config)
+    private void registerWithCloudService( @NotNull PathListenerManager plm, final CloudWatcherConfig config)
     {
         CloudStoreService.get().registerCloudWatcher(config, (Path filePath) -> {
-            LOG.debug("Processing watch event for filePath: " + filePath);
+            LOG.debug("Processing watch event for filePath: " + FileUtil.getAbsolutePath(filePath)); //Strip off any user info that may be in path URI.
             Path watchedPath = filePath.getParent();
             CloudWatchEvent cwe = new CloudWatchEvent(filePath);
 
@@ -156,7 +162,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         else
         {
             plm = previous;
-            LOG.debug("Detected previously registered file watcher service for file system of type '" + plm.getFileStoreType() + "'. for directory: " + directory.toAbsolutePath().toString());
+            LOG.debug("Detected previously registered file watcher service for file system of type '" + plm.getFileStoreType() + "'. for directory: " + directory.toAbsolutePath());
         }
 
         // Add the listener and its requested events
@@ -210,7 +216,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
-    private abstract class BaseWatcherThread extends Thread implements ShutdownListener
+    private abstract static class BaseWatcherThread extends Thread implements ShutdownListener
     {
         private BaseWatcherThread(String name)
         {
@@ -248,6 +254,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         public void shutdownStarted()
         {
+            this.close();
         }
 
         abstract void close();
@@ -297,10 +304,14 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             {
                 // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event
                 // on this directory. If watch key is no longer valid, then it's probably been deleted.
-                if (!watchKey.reset() && null != watchedPath)
+                if (!watchKey.reset() && null != watchedPath && !isInterrupted())
                 {
                     LOG.debug("WatchKey is invalid: " + watchedPath);
                     handleDeletedDirectory(watchedPath);
+                }
+                else if (isInterrupted())
+                {
+                    LOG.debug("File watcher interrupted: " + watchedPath);
                 }
             }
         }
@@ -321,6 +332,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private class CloudWatcherThread extends BaseWatcherThread
     {
+        private Timer _timer;
         protected CloudWatcherThread(String name)
         {
             super(name);
@@ -330,33 +342,61 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         protected void watch() throws InterruptedException
         {
             if (CloudStoreService.get() == null)
+            {
+                //No reason to watch if the module isn't available and can't really check it at startup as it may not have loaded yet.
+                this.interrupt();
+                this.close();
                 return;
-            try
-            {
-                CloudStoreService.get().getWatcherJobs().parallelStream().forEach(cloudWatcherJob ->
-                {
-                        CloudStoreService.get().executeWatchJob(cloudWatcherJob);
-                });
-            }
-            catch (Throwable e)  // Make sure throwables don't kill the background thread
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
             }
 
-            Thread.sleep(10000);
+            if (_timer == null)
+            {
+                _timer = new Timer();
+                _timer.scheduleAtFixedRate(scheduleWatchTask(), POLLING_PERIOD_SECONDS * 1000, POLLING_PERIOD_SECONDS * 1000);
+            }
+        }
+
+        private TimerTask scheduleWatchTask()
+        {
+            return new TimerTask()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        final CloudStoreService css = CloudStoreService.get();
+                        if (css != null)
+                        {
+                            css.getWatcherJobs().parallelStream().forEach(css::pollWatcher);
+                        }
+                    }
+                    catch (Throwable e)  // Make sure throwables don't kill the background thread
+                    {
+                        LOG.debug("Error running cloud watcher task: ", e);
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                }
+            };
         }
 
         @Override
         protected void close()
         {
+            if (_timer != null)
+            {
+                _timer.cancel();
+                _timer = null;
+            }
+
             if (CloudStoreService.get() != null)
                 CloudStoreService.get().shutdownWatchers();
         }
     }
 
-    private class CloudWatchEvent implements WatchEvent<Path>
+    private static class CloudWatchEvent implements WatchEvent<Path>
     {
-        private Path cloudPath;
+        private final Path cloudPath;
         private CloudWatchEvent(Path path)
         {
             cloudPath = path;
@@ -381,14 +421,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
-    private @Nullable PathListenerManager handleDeletedDirectory(Path deletedDirectory)
+    private void handleDeletedDirectory(Path deletedDirectory)
     {
         PathListenerManager plm = _listenerMap.remove(deletedDirectory);
         if (null != plm)
         {
             plm.fireDirectoryDeleted(deletedDirectory);
         }
-        return plm;
     }
 
     // Manages all the listeners associated with a specific path
