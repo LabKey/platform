@@ -112,7 +112,7 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
                 File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
                 if (null != f)
                 {
-                    HtmlStringBuilder moduleWarning = HtmlStringBuilder.of("")
+                    HtmlStringBuilder moduleWarning = HtmlStringBuilder.of()
                             .append("This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.")
                             .append(HtmlString.BR)
                             .append("Changes to this report will be reflected in all usages across different folders on the server.")

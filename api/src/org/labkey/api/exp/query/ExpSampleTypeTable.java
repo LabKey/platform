@@ -54,6 +54,7 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         RunApplication,
         RunApplicationOutput,
         Property,
+        Category,
         Alias,
         Inputs,
         Outputs,

@@ -348,16 +348,21 @@ public class AuthenticationManager
         if (ssoConfigurations.isEmpty())
             return null;
 
-        HtmlStringBuilder html = HtmlStringBuilder.of("");
+        HtmlStringBuilder html = HtmlStringBuilder.of();
 
         for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
         {
             if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
-                html.startTag("li");
-                html.append(factory.getLink(currentURL, logoType));
-                html.endTag("li");
+                HtmlString link = factory.getLink(currentURL, logoType);
+
+                if (null != link)
+                {
+                    html.startTag("li");
+                    html.append(link);
+                    html.endTag("li");
+                }
             }
         }
 
@@ -1438,15 +1443,11 @@ public class AuthenticationManager
             _configuration = configuration;
         }
 
-        private @NotNull HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
+        private @Nullable HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
         {
-            String content = _configuration.getDescription();
             String img = getImg(prefix);
 
-            if (null != img)
-                content = img;
-
-            return HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>");
+            return null != img ? HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + img + "</a>") : null;
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -1463,7 +1464,7 @@ public class AuthenticationManager
 
                 if (null != logoUrl)
                 {
-                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
+                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + PageFlowUtil.filter(_configuration.getDescription()) + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
             catch (RuntimeSQLException e)

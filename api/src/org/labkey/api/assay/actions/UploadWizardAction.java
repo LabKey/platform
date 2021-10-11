@@ -1138,7 +1138,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     return HtmlString.EMPTY_STRING;
 
                 Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
-                HtmlStringBuilder sb = HtmlStringBuilder.of("");
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
                 StringBuilder msgBox = new StringBuilder();
                 HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
                 int cnt = 0;

@@ -122,6 +122,22 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="extraDateParsingPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the extra date parsing pattern. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="extraDateTimeParsingPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the extra date-time parsing pattern. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
     <xs:complexType name="exportDirType">

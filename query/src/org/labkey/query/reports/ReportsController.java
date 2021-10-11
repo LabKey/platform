@@ -789,7 +789,7 @@ public class ReportsController extends SpringActionController
                 return new AjaxScriptReportView(null, form, Mode.create);
             else
             {
-                HtmlStringBuilder sb = HtmlStringBuilder.of("");
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
 
                 for (ValidationError error : reportErrors)
                     sb.append(error.getMessage()).append(HtmlString.unsafe("<br>"));
