@@ -35,6 +35,7 @@ public class ExperimentRun extends IdentifiableEntity
     private Integer jobId;
     private Integer _replacedByRunId;
     private Integer _batchId;
+    private Integer _workflowTaskId;
 
     public String getProtocolLSID()
     {
@@ -105,6 +106,16 @@ public class ExperimentRun extends IdentifiableEntity
     public void setBatchId(Integer batchId)
     {
         _batchId = batchId;
+    }
+
+    public Integer getWorkflowTaskId()
+    {
+        return _workflowTaskId;
+    }
+
+    public void setWorkflowTaskId(Integer workflowTaskId)
+    {
+        _workflowTaskId = workflowTaskId;
     }
 
     @Override

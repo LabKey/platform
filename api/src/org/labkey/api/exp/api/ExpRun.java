@@ -118,4 +118,7 @@ public interface ExpRun extends ExpObject, Identifiable
     void setCreated(Date created);
     void setCreatedBy(User user);
 
+    void setWorkflowTask(@Nullable ExpProtocolApplication workflowTask);
+
+    @Nullable ExpProtocolApplication getWorkflowTask();
 }
