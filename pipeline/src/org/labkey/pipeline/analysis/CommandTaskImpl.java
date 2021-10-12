@@ -24,13 +24,17 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskId;
@@ -47,6 +51,7 @@ import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
@@ -586,7 +591,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * to replace tokens the script or the command line before executing it.
      * The replaced paths will be resolved to paths in the work directory.
      */
-    protected Map<String, String> createReplacements(@Nullable File scriptFile, String apiKey) throws IOException
+    protected Map<String, String> createReplacements(@Nullable File scriptFile, @Nullable String apiKey, @Nullable Container container) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
@@ -660,7 +665,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
         }
 
-        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, apiKey, replacements);
+        DefaultDataTransformer.addStandardParameters(null, container, scriptFile, apiKey, replacements);
 
         return replacements;
     }
@@ -675,7 +680,14 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
-        try (TransformSession session = SecurityManager.createTransformSession(getJob().getUser()))
+        TransformSession session = null;
+        Container container = null;
+        if (ModuleLoader.getServletContext() != null)
+        {
+            session = SecurityManager.createTransformSession(getJob().getUser());
+            container = getJob().getContainer();
+        }
+        try
         {
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
             
@@ -702,7 +714,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (getJobSupport().getParametersFile() != null)
                 _wd.inputFile(getJobSupport().getParametersFile(), true);
 
-            if (!runCommand(action, session.getApiKey()))
+            if (!runCommand(action, session == null ? null : session.getApiKey(), container))
                 return new RecordedActionSet();
 
             // Read output parameters file, record output parameters, and discard it.
@@ -733,6 +745,17 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         finally
         {
             _wd = null;
+            if (session != null)
+            {
+                try
+                {
+                    session.close();
+                }
+                catch (IOException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+            }
         }
     }
 
@@ -741,13 +764,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * @param action The recorded action.
      * @param apiKey API key to use for the duration of the command execution
      * @return true if the task was run, false otherwise.
-     * @throws IOException
-     * @throws PipelineJobException
      */
     // TODO: Add task and job version information to the recorded action.
-    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, @Nullable String apiKey, @Nullable Container container) throws IOException, PipelineJobException
     {
-        Map<String, String> replacements = createReplacements(null, apiKey);
+        Map<String, String> replacements = container == null ? Collections.emptyMap() : createReplacements(null, apiKey, container);
 
         ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);
