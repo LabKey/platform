@@ -93,7 +93,7 @@ public abstract class EmailTemplate
                 {
                     return sourceValue;
                 }
-                return PageFlowUtil.filter(sourceValue, true, false);
+                return PageFlowUtil.filter(sourceValue, true, true);
             }
         };
 
