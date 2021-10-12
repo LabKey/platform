@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -138,7 +139,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
-    private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
@@ -1962,7 +1962,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             Class[] supr = inter.getInterfaces();
                             if (supr != null && supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                _urlProviderToImpl.put(inter, innerClass);
+                                UrlProviderService.getInstance().registerUrlProvider(inter, innerClass);
                         }
                     }
                 }
@@ -2064,35 +2064,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         synchronized(_schemaNameToSchemaDetails)
         {
             _schemaNameToSchemaDetails.clear();
-        }
-    }
-
-    /** @return true if the UrlProvider exists. */
-    public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
-    {
-        return _urlProviderToImpl.get(inter) != null;
-    }
-
-    @Nullable
-    public <P extends UrlProvider> P getUrlProvider(Class<P> inter)
-    {
-        Class<? extends UrlProvider> clazz = _urlProviderToImpl.get(inter);
-
-        if (clazz == null)
-            return null;
-
-        try
-        {
-            P impl = (P) clazz.newInstance();
-            return impl;
-        }
-        catch (InstantiationException e)
-        {
-            throw new RuntimeException("Failed to instantiate provider class " + clazz.getName() + " for " + inter.getName(), e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RuntimeException("Illegal access of provider class " + clazz.getName() + " for " + inter.getName(), e);
         }
     }
 

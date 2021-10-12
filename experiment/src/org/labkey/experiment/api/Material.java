@@ -16,9 +16,11 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.material table.
@@ -69,9 +71,12 @@ public class Material extends RunItem
     @Override
     public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+        return detailsURL(getContainer(), false);
+    }
+
+    public ActionURL detailsURL(Container container, boolean checkForOverride)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class, checkForOverride).getMaterialDetailsURL(container, getRowId());
     }
 
     public boolean equals(Object o)

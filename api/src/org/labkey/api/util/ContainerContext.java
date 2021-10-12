@@ -40,9 +40,17 @@ public interface ContainerContext
         @NotNull
         final FieldKey _key;
 
+        private  boolean _strictContainerContextEval;
+
         public FieldKeyContext(@NotNull FieldKey key)
         {
             _key = key;
+        }
+
+        public FieldKeyContext(@NotNull FieldKey key, boolean strictContainerContextEval)
+        {
+            _key = key;
+            _strictContainerContextEval = strictContainerContextEval;
         }
 
         public FieldKeyContext copy()
@@ -69,7 +77,7 @@ public interface ContainerContext
             // We couldn't resolve a container in the row of data we're rendering, so fall back to the current container
             // for the request in general, if available. This can happen if a custom query doesn't pull a Container
             // column from the source table to make available in the query's results.
-            if (context instanceof RenderContext)
+            if (!_strictContainerContextEval && context instanceof RenderContext)
                 return ((RenderContext)context).getViewContext().getContainer();
 
             return null;
