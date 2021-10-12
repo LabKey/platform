@@ -38,80 +38,84 @@ public interface ExperimentUrls extends UrlProvider
         return PageFlowUtil.urlProvider(ExperimentUrls.class);
     }
 
-    ActionURL getRunGraphURL(ExpRun run);
-    ActionURL getRunGraphURL(Container c, int rowId);
+    default ActionURL getRunGraphURL(ExpRun run) { return null; }
+    default ActionURL getRunGraphURL(Container c, int rowId) { return null; }
 
-    ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus);
+    default ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus) { return null; }
 
-    ActionURL getRunTextURL(Container c, int rowId);
-    ActionURL getRunTextURL(ExpRun run);
+    default ActionURL getRunTextURL(Container c, int rowId) { return null; }
+    default ActionURL getRunTextURL(ExpRun run) { return null; }
 
-    ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL);
+    default ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL) { return null; }
 
-    ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL);
+    default ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL) { return null; }
 
-    ActionURL getDeleteDatasURL(Container container, URLHelper returnURL);
+    default ActionURL getDeleteDatasURL(Container container, URLHelper returnURL) { return null; }
 
-    ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment);
+    default ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment) { return null; }
 
-    ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment expExperiment);
+    default ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment expExperiment) { return null; }
 
-    ActionURL getExportProtocolURL(Container container, ExpProtocol protocol);
+    default ActionURL getExportProtocolURL(Container container, ExpProtocol protocol) { return null; }
 
-    ActionURL getProtocolDetailsURL(ExpProtocol protocol);
+    default ActionURL getProtocolDetailsURL(ExpProtocol protocol) { return null; }
 
-    ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app);
+    default ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app) { return null; }
 
-    ActionURL getMoveRunsLocationURL(Container container);
+    default ActionURL getMoveRunsLocationURL(Container container) { return null; }
 
-    ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL);
+    default ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL) { return null; }
 
-    ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns);
+    default ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns) { return null; }
 
-    ActionURL getShowRunsURL(Container c, ExperimentRunType type);
+    default ActionURL getShowRunsURL(Container c, ExperimentRunType type) { return null; }
 
-    ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
+    default ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment) { return null; }
 
-    ActionURL getDomainEditorURL(Container container, String domainURI, boolean createOrEdit);
+    default ActionURL getDomainEditorURL(Container container, String domainURI, boolean createOrEdit) { return null; }
 
-    ActionURL getDomainEditorURL(Container container, Domain domain);
+    default ActionURL getDomainEditorURL(Container container, Domain domain) { return null; }
 
-    ActionURL getCreateDataClassURL(Container c);
+    default ActionURL getCreateDataClassURL(Container c) { return null; }
 
-    ActionURL getShowDataClassURL(Container container, int rowId);
+    default ActionURL getShowDataClassURL(Container container, int rowId) { return null; }
 
-    ActionURL getShowFileURL(ExpData data, boolean inline);
+    default ActionURL getShowFileURL(ExpData data, boolean inline) { return null; }
 
-    ActionURL getMaterialDetailsURL(ExpMaterial material);
+    default ActionURL getMaterialDetailsURL(ExpMaterial material) { return null; }
 
-    ActionURL getMaterialDetailsURL(Container c, int materialRowId);
+    default ActionURL getMaterialDetailsURL(Container c, int materialRowId) { return null; }
 
-    ActionURL getCreateSampleTypeURL(Container c);
+    default ActionURL getMaterialDetailsBaseURL(Container c, @Nullable String materialIdFieldKey) { return null; }
 
-    ActionURL getImportSamplesURL(Container c, String sampleTypeName);
+    default ActionURL getCreateSampleTypeURL(Container c) { return null; }
 
-    ActionURL getImportDataURL(Container c, String dataClassName);
+    default ActionURL getImportSamplesURL(Container c, String sampleTypeName) { return null; }
 
-    ActionURL getDataDetailsURL(ExpData data);
+    default ActionURL getImportDataURL(Container c, String dataClassName) { return null; }
 
-    ActionURL getShowFileURL(Container container);
+    default ActionURL getDataDetailsURL(ExpData data) { return null; }
 
-    ActionURL getSetFlagURL(Container container);
+    default ActionURL getShowFileURL(Container container) { return null; }
 
-    ActionURL getShowSampleTypeListURL(Container container);
+    default ActionURL getSetFlagURL(Container container) { return null; }
 
-    ActionURL getShowSampleTypeURL(ExpSampleType sampleType);
+    default ActionURL getShowSampleTypeListURL(Container container) { return null; }
 
-    ActionURL getDataClassListURL(Container container);
+    default ActionURL getShowSampleTypeURL(ExpSampleType sampleType) { return null; }
 
-    ActionURL getShowRunGraphURL(ExpRun run);
+    default ActionURL getShowSampleTypeURL(ExpSampleType sampleType, Container container) { return null; }
 
-    ActionURL getUploadXARURL(Container container);
+    default ActionURL getDataClassListURL(Container container) { return null; }
 
-    ActionURL getRepairTypeURL(Container container);
+    default ActionURL getShowRunGraphURL(ExpRun run) { return null; }
 
-    ActionURL getUpdateMaterialQueryRowAction(Container c, TableInfo table);
+    default ActionURL getUploadXARURL(Container container) { return null; }
 
-    ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table);
+    default ActionURL getRepairTypeURL(Container container) { return null; }
+
+    default ActionURL getUpdateMaterialQueryRowAction(Container c, TableInfo table) { return null; }
+
+    default ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table) { return null; }
 
 }

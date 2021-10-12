@@ -128,6 +128,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return _object.detailsURL();
     }
 
+    @Override
+    public ActionURL detailsURL(Container container, boolean checkForOverride)
+    {
+        return _object.detailsURL(container, checkForOverride);
+    }
 
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
