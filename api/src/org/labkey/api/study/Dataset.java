@@ -35,8 +35,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
@@ -211,18 +209,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     @Override
                     public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
                     {
-                        ActionURL url;
-                        // When the sample management module is enabled in the sample type's container, we want to link into the application
-                        if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("sampleManagement")))
-                        {
-                            url = new ActionURL("sampleManager", "app", container);
-                            url.setFragment("/samples/" + sourceObject.getName());
-                        }
-                        else
-                        {
-                            url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL((ExpSampleType) sourceObject);
-                        }
-                        return url;
+                        return PageFlowUtil.urlProvider(ExperimentUrls.class, true).getShowSampleTypeURL((ExpSampleType) sourceObject, container);
                     }
                 };
 
