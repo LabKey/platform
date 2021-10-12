@@ -327,8 +327,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setLabel("Status");
                 boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
                 ret.setHidden(!statusEnabled);
-                ret.setShownInDetailsView(!statusEnabled);
-                ret.setShownInInsertView(!statusEnabled);
+                ret.setShownInDetailsView(statusEnabled);
+                ret.setShownInInsertView(statusEnabled);
+                ret.setShownInUpdateView(statusEnabled);
                 ret.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, "datastates", "RowId", "Label")
                 {
                     @Override
@@ -580,6 +581,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
         statusColInfo.setShownInDetailsView(statusEnabled);
         statusColInfo.setShownInInsertView(statusEnabled);
+        statusColInfo.setShownInUpdateView(statusEnabled);
         statusColInfo.setHidden(!statusEnabled);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
