@@ -228,7 +228,7 @@ public class PropertyColumn extends LookupColumn
         else if (PropertyType.BOOLEAN == pt)
             return getParentTable().getSqlDialect().getBooleanDataType();
         else
-            return "VARCHAR(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
+            return getParentTable().getSqlDialect().getSqlTypeName(JdbcType.VARCHAR) + "(" + PropertyStorageSpec.DEFAULT_SIZE + ")";
     }
 
 
