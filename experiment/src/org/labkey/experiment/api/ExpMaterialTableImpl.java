@@ -577,10 +577,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(ExpMaterialTable.Column.Flag);
 
         var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-        statusColInfo.setShownInDetailsView(true);
-        statusColInfo.setShownInInsertView(true);
-        statusColInfo.setHidden(!SampleTypeService.isSampleStatusEnabled());
-        if (SampleTypeService.isSampleStatusEnabled())
+        boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
+        statusColInfo.setShownInDetailsView(statusEnabled);
+        statusColInfo.setShownInInsertView(statusEnabled);
+        statusColInfo.setHidden(!statusEnabled);
+        if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
         statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
         {
