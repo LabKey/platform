@@ -170,6 +170,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 //        }
     }
 
+    /**
+     * @return Path String for a local working directory, temporary if root is cloud based
+     */
+    @Override
+    protected String getDefaultLocalDirectoryString()
+    {
+        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().getPath() : _dirAnalysis.toAbsolutePath().toString();
+    }
+
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
     {
         this(job, Collections.singletonList(fileInput));
