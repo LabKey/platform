@@ -371,12 +371,15 @@ public class ChangeSummary
                     m.setSubject(template.renderSubject(container));
                     template.renderSenderToMessage(m, container);
                     m.setHeader("References", references);
-                    String body = template.renderBody(container);
 
-                    m.setTextContent(body);
+                    // support for plain text only if configured via the multipart boundary
+                    if (template.hasMultipleContentTypes())
+                        m.setTextContent(template.renderTextBody(container));
+
+                    // html body plus some additional content
                     StringBuilder html = new StringBuilder();
                     html.append("<html><head></head><body>");
-                    html.append(PageFlowUtil.filter(body,true,true));
+                    html.append(template.renderHtmlBody(container));
                     html.append(
                             "<div itemscope itemtype=\"http://schema.org/EmailMessage\">\n" +
                                     "  <div itemprop=\"action\" itemscope itemtype=\"http://schema.org/ViewAction\">\n" +
