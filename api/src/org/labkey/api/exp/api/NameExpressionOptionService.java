@@ -85,7 +85,7 @@ public interface NameExpressionOptionService
         @Override
         public String createPrefixedExpression(Container c, String nameExpression, boolean isAliquotNameExpression)
         {
-            return null;
+            return nameExpression;
         }
     }
 }

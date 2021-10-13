@@ -878,8 +878,7 @@ public abstract class UploadSamplesHelper
                         {
                             // don't flag rows that already exist if the option is set to update existing
                             if (!rowExists(currNameObj.toString()))
-                                addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern- generated names (or existing names) are allowed.");
-
+                                addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names (or existing names) are allowed.");
                         }
                         else
                             addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names are allowed.");
