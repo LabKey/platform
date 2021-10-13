@@ -386,7 +386,7 @@
       <column columnName="Path">
         <url>/wiki/page.view?name=${Part}</url>
         <displayColumnFactory>
-          <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
+          <className>org.labkey.api.wiki.PathDisplayColumn$Factory</className>
         </displayColumnFactory>
         <sortColumn>PathParts</sortColumn>
       </column>
@@ -433,7 +433,7 @@
       <column columnName="Path">
         <url>/wiki/page.view?name=${Part}</url>
         <displayColumnFactory>
-          <className>org.labkey.wiki.query.PathDisplayColumn$Factory</className>
+          <className>org.labkey.api.wiki.PathDisplayColumn$Factory</className>
         </displayColumnFactory>
         <sortColumn>PathParts</sortColumn>
       </column>
