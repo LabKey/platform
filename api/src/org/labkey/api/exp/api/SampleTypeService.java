@@ -53,6 +53,7 @@ public interface SampleTypeService
         UpdateStorageMetadata("updating storage metadata"),
         RemoveFromStorage("removing from storage"),
         AddToPicklist("adding to a picklist"),
+        RemoveFromPicklist("removing from a picklist"),
         Delete("deleting"),
         AddToWorkflow("adding to a workflow"),
         RemoveFromWorkflow("removing from a workflow"),

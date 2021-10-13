@@ -361,6 +361,7 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.EditLineage,
                 SampleTypeService.SampleOperations.RemoveFromStorage,
                 SampleTypeService.SampleOperations.AddToPicklist,
+                SampleTypeService.SampleOperations.RemoveFromPicklist,
                 SampleTypeService.SampleOperations.Delete,
                 SampleTypeService.SampleOperations.AddToWorkflow,
                 SampleTypeService.SampleOperations.RemoveFromWorkflow,
@@ -368,7 +369,10 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.LinkToStudy,
                 SampleTypeService.SampleOperations.RecallFromStudy
         )),
-        Locked(Set.of(SampleTypeService.SampleOperations.AddToPicklist));
+        Locked(Set.of(
+                SampleTypeService.SampleOperations.AddToPicklist,
+                SampleTypeService.SampleOperations.RemoveFromPicklist
+        ));
 
         Set<SampleTypeService.SampleOperations> _permittedOps;
 
