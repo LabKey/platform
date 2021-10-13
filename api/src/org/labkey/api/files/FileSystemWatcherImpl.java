@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -341,16 +342,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void watch() throws InterruptedException
         {
-            if (CloudStoreService.get() == null)
-            {
-                //No reason to watch if the module isn't available and can't really check it at startup as it may not have loaded yet.
-                this.interrupt();
-                this.close();
-                return;
-            }
-
             if (_timer == null)
             {
+                LOG.info("Initiating a new timer job for cloud watchers.");
                 _timer = new Timer();
                 _timer.scheduleAtFixedRate(scheduleWatchTask(), POLLING_PERIOD_SECONDS * 1000, POLLING_PERIOD_SECONDS * 1000);
             }
@@ -370,6 +364,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                         {
                             css.getWatcherJobs().parallelStream().forEach(css::pollWatcher);
                         }
+                        else if (ModuleLoader.getInstance().isStartupComplete())
+                        {
+                            //No reason to watch if the module isn't available
+                            LOG.info("Shutting down cloud watcher, module not loaded.");
+                            CloudWatcherThread.this.interrupt();
+                            CloudWatcherThread.this.close();
+                        }
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {
@@ -383,8 +384,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void close()
         {
+            LOG.info("Shutting down the CloudWatcher thread: " + this.getId());
             if (_timer != null)
             {
+                LOG.debug("CloudWatcher timer job cancelled.");
                 _timer.cancel();
                 _timer = null;
             }
