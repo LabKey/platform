@@ -41,6 +41,7 @@ import java.util.function.Function;
 public interface ExpSampleType extends ExpObject
 {
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
+    String ALIQUOTED_FROM_EXPRESSION = "${AliquotedFrom}";
 
     String getMaterialLSIDPrefix();
 
