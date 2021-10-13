@@ -42,12 +42,12 @@ public interface NameExpressionOptionService
     void setExpressionPrefix(Container c, User user, @Nullable String prefix) throws Exception;
 
     /**
-     * Returns whether user specified names for samples and dataclasses are permitted for this folder.
+     * Returns whether user-specified names for samples and dataclasses are permitted for this folder.
      */
     boolean allowUserSpecifiedNames(Container c);
 
     /**
-     * Set whether user specified names for samples and dataclasses are allowed for this folder. If set to false
+     * Set whether user-specified names for samples and dataclasses are allowed for this folder. If set to false
      * it is required that all samples and dataclasses in the folder have a configured name expression.
      */
     void setAllowUserSpecifiedNames(Container c, User user, boolean allowNames) throws Exception;

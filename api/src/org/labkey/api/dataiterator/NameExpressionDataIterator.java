@@ -102,7 +102,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
             if (curName != null)
             {
                 if (!_allowUserSpecifiedNames)
-                    getErrors().addRowError(new ValidationException("Manual entry of names has been disabled for this folder. Only naming pattern generated names are allowed."));
+                    getErrors().addRowError(new ValidationException("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names are allowed."));
                 return curName;
             }
 

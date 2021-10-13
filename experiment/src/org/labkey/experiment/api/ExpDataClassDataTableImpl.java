@@ -207,7 +207,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
                 c.setDescription(desc);
 
-                // shut off this field in insert and update views if user specified names are not allowed
+                // shut off this field in insert and update views if user-specified names are not allowed
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
                 {
                     c.setShownInInsertView(false);
