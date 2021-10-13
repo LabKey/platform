@@ -58,7 +58,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
@@ -1013,9 +1012,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
+    public void setWorkflowTaskId(@Nullable Integer workflowTaskId)
+    {
+        _object.setWorkflowTask(workflowTaskId);
+    }
+
+    @Override
     public ExpProtocolApplication getWorkflowTask()
     {
-        Integer id = _object.getWorkflowTaskId();
+        Integer id = _object.getWorkflowTask();
 
         if (id == null) {
             return null;
@@ -1035,8 +1040,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         ensureUnlocked();
 
         if (workflowTask == null)
-            _object.setWorkflowTaskId(null);
+            _object.setWorkflowTask(null);
         else
-            _object.setWorkflowTaskId(workflowTask.getRowId());
+            _object.setWorkflowTask(workflowTask.getRowId());
     }
 }

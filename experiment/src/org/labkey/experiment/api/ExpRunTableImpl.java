@@ -387,8 +387,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createPropertiesColumn(alias);
             case WorkflowTask:
                 var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
-                workflowTaskCol.setShownInInsertView(false);
-                workflowTaskCol.setShownInUpdateView(false);
+                workflowTaskCol.setShownInInsertView(true);
+                workflowTaskCol.setShownInUpdateView(true);
                 workflowTaskCol.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 workflowTaskCol.setLabel("Workflow Task");
                 return workflowTaskCol;
@@ -909,6 +909,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             String newFlag = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
                             appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
                             run.setComment(user, newFlag);
+                        }
+                        else if (entry.getKey().equalsIgnoreCase(Column.WorkflowTask.toString()))
+                        {
+                            Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                            run.setWorkflowTaskId(newWorkflowTaskId);
                         }
 
                         // Also check for properties
