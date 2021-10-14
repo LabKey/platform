@@ -52,7 +52,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.api.qc.SampleQCStateService;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -217,7 +217,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
     {
-        return SampleQCStateService.get().isOperationPermitted(getSampleState(), operation);
+        return SampleStatusService.get().isOperationPermitted(getSampleState(), operation);
     }
 
     @Override
