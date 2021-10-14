@@ -987,6 +987,7 @@ public class RReport extends ExternalScriptEngineReport
             assertTrue( post.contains(">8") );
             String strip = report.stripScriptProlog(post);
             assertEquals(pre, strip);
+
             int[] expected = new int[]{3, 17, 0, 2, 25, 646};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
