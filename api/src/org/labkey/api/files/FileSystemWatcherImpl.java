@@ -126,14 +126,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private void registerWithCloudService( @NotNull PathListenerManager plm, final CloudWatcherConfig config)
     {
-        CloudStoreService.get().registerCloudWatcher(config, (Path filePath) -> {
+        CloudStoreService.get().registerCloudWatcher(config, (Path filePath, Runnable callback) -> {
             LOG.debug("Processing watch event for filePath: " + FileUtil.getAbsolutePath(filePath)); //Strip off any user info that may be in path URI.
             Path watchedPath = filePath.getParent();
             CloudWatchEvent cwe = new CloudWatchEvent(filePath);
 
             //TODO Could do a validation sanity check before firing event?
-            plm.fireEvents(cwe, watchedPath);
-            return true;
+            plm.fireEvents(cwe, watchedPath, callback);
         });
     }
 
@@ -475,6 +474,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         private void fireEvents(WatchEvent<Path> event, Path watchedPath)
         {
+            fireEvents(event, watchedPath, null);
+        }
+
+
+        private void fireEvents(WatchEvent<Path> event, Path watchedPath, Runnable callback)
+        {
             Kind<Path> kind = event.kind();
 
             if (OVERFLOW == (Kind<?>) kind)
@@ -489,7 +494,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 LOG.debug(kind.name() + " event on " + watchedPath.resolve(entry));
 
                 for (ListenerContext listenerContext : _list)
-                    listenerContext.fireEvent(kind, watchedPath, entry);
+                    listenerContext.fireEvent(kind, watchedPath, entry, callback);
             }
         }
 
@@ -511,12 +516,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             _events = Set.of(events);
         }
 
-        private void fireEvent(Kind<Path> kind, Path watchedPath, Path entry)
+        private void fireEvent(Kind<Path> kind, Path watchedPath, Path entry, Runnable callback)
         {
             if (_events.contains(kind))
             {
                 if (ENTRY_CREATE == kind)
-                    _listener.entryCreated(watchedPath, entry);
+                    _listener.entryCreated(watchedPath, entry, callback);
                 else if (ENTRY_DELETE == kind)
                     _listener.entryDeleted(watchedPath, entry);
                 else if (ENTRY_MODIFY == kind)

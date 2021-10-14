@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
 
 /**
  * User: kevink
@@ -54,7 +54,7 @@ public interface CloudStoreService
 
     void pollWatcher(int cloudWatcherJobId);
 
-    void registerCloudWatcher(CloudWatcherConfig config, Function<Path, Boolean> eventProcessor);
+    void registerCloudWatcher(CloudWatcherConfig config, BiConsumer<Path, Runnable> eventProcessor);
 
     void unregisterCloudWatcher(int watcherConfigId);
 
