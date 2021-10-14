@@ -3,6 +3,7 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.security.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,8 @@ public interface SampleStatusService
 
     boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation);
 
+    void ensureDefaultStates(Container container, User user);
+
     class DefaultSampleStatusService implements SampleStatusService
     {
         @Override
@@ -72,6 +75,12 @@ public interface SampleStatusService
         {
             // by default all operations are permitted
             return true;
+        }
+
+        @Override
+        public void ensureDefaultStates(Container container, User user)
+        {
+            // no-op
         }
     }
 }
