@@ -97,6 +97,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.qc.SampleQCStateService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -3276,7 +3277,7 @@ public class ExperimentController extends SpringActionController
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = service.getMaterialsUsedAsInput(deleteForm.getIds(false));
-            if (SampleTypeService.isSampleStatusEnabled())
+            if (SampleQCStateService.get().supportsQC())
                 cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, SampleTypeService.SampleOperations.Delete));
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
 

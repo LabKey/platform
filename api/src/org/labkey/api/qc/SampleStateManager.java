@@ -1,11 +1,8 @@
-package org.labkey.experiment.samples;
+package org.labkey.api.qc;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,24 +40,5 @@ public class SampleStateManager extends DataStateManager
     public boolean showStates(Container container)
     {
         return !getStates(container).isEmpty();
-    }
-
-    public boolean isOperationPermitted(Container container, Integer stateId, @NotNull SampleTypeService.SampleOperations operation)
-    {
-        if (!SampleTypeService.isSampleStatusEnabled())
-            return true;
-
-        if (stateId == null)
-            return true;
-
-        DataState status = getStateForRowId(container, stateId);
-        return ExpSchema.SampleStateType.isOperationPermitted(status.getStateType(), operation);
-    }
-
-    public boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation)
-    {
-        if (status == null)
-            return true;
-        return ExpSchema.SampleStateType.isOperationPermitted(status.getStateType(), operation);
     }
 }
