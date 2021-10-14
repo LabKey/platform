@@ -387,8 +387,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createPropertiesColumn(alias);
             case WorkflowTask:
                 var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
-                workflowTaskCol.setShownInInsertView(true);
-                workflowTaskCol.setShownInUpdateView(true);
+                workflowTaskCol.setShownInInsertView(false);
+                workflowTaskCol.setShownInUpdateView(false);
                 workflowTaskCol.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 workflowTaskCol.setLabel("Workflow Task");
                 return workflowTaskCol;
