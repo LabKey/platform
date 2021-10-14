@@ -28,13 +28,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskId;
@@ -51,7 +49,6 @@ import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
@@ -682,8 +679,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     {
         TransformSession session = null;
         Container container = null;
-        if (ModuleLoader.getServletContext() != null)
+        if (PipelineJobService.get().isWebServer())
         {
+            // We're inside of the web server so we have access to the DB and can set up a transform session, among
+            // other resources
             session = SecurityManager.createTransformSession(getJob().getUser());
             container = getJob().getContainer();
         }
@@ -747,14 +746,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             _wd = null;
             if (session != null)
             {
-                try
-                {
-                    session.close();
-                }
-                catch (IOException e)
-                {
-                    throw new PipelineJobException(e);
-                }
+                session.close();
             }
         }
     }

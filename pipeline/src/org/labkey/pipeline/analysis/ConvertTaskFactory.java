@@ -113,34 +113,34 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         // If this job is not actually running a conversion, then no
         // converter command can be determined.
         List<File> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
-        LOG.info("Checking " + files + " for possible converters");
+        LOG.debug("Checking " + files + " for possible converters");
         if (files == null || files.size() != 1)
             return null;
 
         // Otherwise, find the appropriate converter.
         File fileInput = getInputFile(job);
-        LOG.info("Checking " + fileInput + " against " + _commands.length + " possible converters");
+        LOG.debug("Checking " + fileInput + " against up to " + _commands.length + " possible converters");
         for (TaskId tid : _commands)
         {
-            LOG.info("Checking " + fileInput + " against " + tid);
+            LOG.debug("Checking " + fileInput + " against " + tid);
             TaskFactory<? extends TaskFactorySettings> factory = PipelineJobService.get().getTaskFactory(tid);
             for (FileType ft : factory.getInputTypes())
             {
-                LOG.info("Checking " + fileInput + " against " + tid + ": " + ft);
+                LOG.debug("Checking " + fileInput + " against " + tid + ": " + ft);
                 try
                 {
                     // If we have a match based on the file type and the factory says that it's a participant based
                     // on the search protocol parameters, use it
                     if (ft.isType(fileInput) && factory.isParticipant(job))
                     {
-                        LOG.info("Matched");
+                        LOG.debug("Matched");
                         return factory;
                     }
-                    LOG.info("No match");
+                    LOG.debug("No match");
                 }
-                catch (IOException ignored)
+                catch (IOException e)
                 {
-                    LOG.warn("Exception when checking " + fileInput, ignored);
+                    LOG.debug("Exception when checking " + fileInput + ", reporting that " + tid + " is not available", e);
                     // Consider this command out of the running, caller will report an error if there are no other options
                 }
             }
