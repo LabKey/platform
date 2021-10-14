@@ -58,6 +58,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
@@ -1051,17 +1052,23 @@ public class XarReader extends AbstractXarImporter
     {
         for (ExpRun run : _loadedRuns)
         {
-            String lsidPart = _runWorkflowTaskMap.get(run.getRowId());
+            String objectId = _runWorkflowTaskMap.get(run.getRowId());
 
-            if (lsidPart != null)
+            if (objectId != null)
             {
-                ProtocolApplication protocolApplication = _loadedProtocolApplications.stream()
-                        .filter(p-> p.getLSID().endsWith(lsidPart)).findFirst()
-                        .orElse(null);
+                List<? extends ExpProtocolApplication> protocolApplications = ExperimentService.get().getExpProtocolApplicationsByObjectId(getContainer(), objectId);
 
-                if (protocolApplication != null)
+                if (protocolApplications.size() > 1)
                 {
-                    run.setWorkflowTaskId(protocolApplication.getRowId());
+                    throw new ExperimentException("Multiple ProtocolApplications found with object id: " + objectId);
+                }
+                else if (protocolApplications.size() == 0)
+                {
+                    getLog().warn("Could not find ProtocolApplication with LSID containing object id: " + objectId);
+                }
+                else
+                {
+                    run.setWorkflowTaskId(protocolApplications.get(0).getRowId());
 
                     try {
                         run.save(getUser());
@@ -1070,8 +1077,6 @@ public class XarReader extends AbstractXarImporter
                     {
                         throw new ExperimentException(e);
                     }
-                } else {
-                    getLog().warn("Could not find ProtocolApplication with LSID containing: " + lsidPart);
                 }
             }
         }

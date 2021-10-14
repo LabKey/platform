@@ -3599,7 +3599,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public List<? extends ExpProtocolApplication> getExpProtocolApplicationsByObjectId(Container container, String objectId)
+    public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsByObjectId(Container container, String objectId)
     {
         String likeFilter = "%:" + objectId;
         final SQLFragment sql = new SQLFragment("SELECT * FROM ");
