@@ -1070,6 +1070,8 @@ public class XarReader extends AbstractXarImporter
                     {
                         throw new ExperimentException(e);
                     }
+                } else {
+                    getLog().warn("Could not find ProtocolApplication with LSID containing: " + lsidPart);
                 }
             }
         }
