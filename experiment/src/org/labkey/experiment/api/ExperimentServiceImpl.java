@@ -3597,6 +3597,22 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(ProtocolApplication.class);
     }
 
+    @Override
+    @NotNull
+    public List<? extends ExpProtocolApplication> getExpProtocolApplicationsByObjectId(Container container, String objectId)
+    {
+        String likeFilter = "%:" + objectId;
+        final SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(" WHERE LSID LIKE ? AND RunId IN (SELECT RowId FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE Container = ?)");
+        sql.add(likeFilter);
+        sql.add(container);
+        List<ProtocolApplication> apps = new SqlSelector(getExpSchema(), sql).getArrayList(org.labkey.experiment.api.ProtocolApplication.class);
+        return ExpProtocolApplicationImpl.fromProtocolApplications(apps);
+    }
+
     public List<ProtocolAction> getProtocolActions(int parentProtocolRowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ParentProtocolId"), parentProtocolRowId);
