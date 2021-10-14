@@ -507,7 +507,7 @@ public class RReport extends ExternalScriptEngineReport
     public int[] getPrologAnchors(String script)
     {
         String[] lines = StringUtils.split(script, '\n');
-        int cutstart = -1, cutend = -1;
+        int cutstart = -1, cutend = -1, cutStartCharInd = 0, cutEndCharInd = script.length() - 1;
         int yamlstart = -1;
         int yamlend = -1;
         if (lines.length > 0 && lines[0].trim().startsWith("---"))
@@ -515,6 +515,7 @@ public class RReport extends ExternalScriptEngineReport
         for (int i=0 ; i<lines.length ; i++)
         {
             String line = lines[i].trim();
+            cutStartCharInd = script.indexOf(line, cutStartCharInd);
             if (i > 0 && yamlend == -1 && line.startsWith("---"))
                 yamlend = i;
             if (line.startsWith("#") && line.substring(1).trim().startsWith("8<"))
@@ -528,9 +529,13 @@ public class RReport extends ExternalScriptEngineReport
                 break;
             }
         }
+        String scriptCopy = script;
         for (int i=lines.length-1 ; i>=0 ; i--)
         {
             String line = lines[i].trim();
+            cutEndCharInd = scriptCopy.lastIndexOf(line);;
+            scriptCopy = scriptCopy.substring(0, cutEndCharInd);
+
             if (line.startsWith("#") && line.trim().endsWith(">8"))
             {
                 cutend = i;
@@ -543,7 +548,7 @@ public class RReport extends ExternalScriptEngineReport
             }
         }
 
-        return new int[]{cutstart, cutend, yamlstart, yamlend};
+        return new int[]{cutstart, cutend, yamlstart, yamlend, cutStartCharInd, cutEndCharInd};
     }
 
     // append the pipeline roots to the prolog
@@ -904,8 +909,6 @@ public class RReport extends ExternalScriptEngineReport
 
     public static class TestCase extends Assert
     {
-        private boolean isRStudio = false; //TODO don't hardcode in trunk, test calling concatScriptProlog with isRStudio true and false
-
         @Test
         public void testProlog()
         {
@@ -915,16 +918,21 @@ public class RReport extends ExternalScriptEngineReport
             RScriptEngine r = (RScriptEngine)LabKeyScriptEngineManager.get().getEngineByExtension(context.getContainer(), "r");
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "print('hello world')\n\nprint('line 3')\n";
-            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
-
-            if (isRStudio)
-            {
-                assertTrue( post.contains("# 8<") );
-                assertTrue( post.contains(">8") );
-                String strip = report.stripScriptProlog(post);
-                assertEquals(pre, strip);
-            }
+            boolean isRStudio = false;
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
             assertTrue( post.endsWith(pre) );
+
+            isRStudio = true;
+            post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
+            assertTrue( post.endsWith(pre) );
+            assertTrue( post.contains("# 8<") );
+            assertTrue( post.contains(">8") );
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+            assertTrue( post.endsWith(pre) );
+
+            int[] expected = new int[]{0, 12, -1, -1, 0, 584};
+            assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
         @Test
@@ -938,15 +946,20 @@ public class RReport extends ExternalScriptEngineReport
             //assertEquals(RReportDescriptor.KnitrFormat.Html, r.getKnitrFormat());
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "<b>hello world</b>\n";
-            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
-            if (isRStudio)
-            {
-                assertTrue( post.contains("<!-- 8<") );
-                assertTrue( post.contains(">8 -->") );
-                String strip = report.stripScriptProlog(post);
-                assertEquals(pre, strip);
-            }
+            boolean isRStudio = false;
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
             assertTrue( post.endsWith("<b>hello world</b>\n") );
+
+            isRStudio = true;
+            post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
+            assertTrue( post.contains("<!-- 8<") );
+            assertTrue( post.contains(">8 -->") );
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+            assertTrue( post.endsWith("<b>hello world</b>\n") );
+
+            int[] expected = new int[]{0, 14, -1, -1, 0, 639};
+            assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
         @Test
@@ -961,17 +974,24 @@ public class RReport extends ExternalScriptEngineReport
             String pre = "---\n" +
                     "title: My Report\n" +
                     "---\n" +
-                    "hello world\n";
-            String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
+                    "hello \n\nworld\n";
+
+            boolean isRStudio = false;
+            String post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
             assertTrue( post.startsWith("---\n") );
-            if (isRStudio)
-            {
-                assertTrue( post.contains("<!-- 8<") );
-                assertTrue( post.contains(">8") );
-                String strip = report.stripScriptProlog(post);
-                assertEquals(pre, strip);
-            }
-            assertTrue( post.endsWith("hello world\n") );
+            assertTrue( post.endsWith("hello \n\nworld\n") );
+
+            isRStudio = true;
+            post = report.concatScriptProlog(r, context, pre, null, (Map)params, isRStudio);
+            assertTrue( post.startsWith("---\n") );
+            assertTrue( post.endsWith("hello \n\nworld\n") );
+            assertTrue( post.contains("<!-- 8<") );
+            assertTrue( post.contains(">8") );
+            String strip = report.stripScriptProlog(post);
+            assertEquals(pre, strip);
+
+            int[] expected = new int[]{3, 17, 0, 2, 25, 646};
+            assertArrayEquals(expected, report.getPrologAnchors(post));
         }
     }
 }
