@@ -52,6 +52,10 @@ LABKEY.WebSocket = new function ()
 
     function websocketOnClose(evt) {
         if (evt.wasClean) {
+            var modalContent = 'Please reload the page or '
+                + '<a href="login-login.view?" target="_blank" rel="noopener noreferrer">'
+                + 'log in via another browser tab</a> to continue.'
+
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
                 _callbacks[evt.code].forEach(function(cb){cb(evt)});
@@ -63,7 +67,7 @@ LABKEY.WebSocket = new function ()
                 // normal close
                 if (evt.reason === "org.labkey.api.security.AuthNotify#SessionLogOut") {
                     setTimeout(function(){
-                        displayModal('Logged Out', 'You have been logged out. Please reload the page to continue.');
+                        displayModal('Logged Out', 'You have been logged out. ' + modalContent);
                     }, 1000);
                 }
             }
@@ -85,10 +89,9 @@ LABKEY.WebSocket = new function ()
                             // If the user was previously a guest, don't warn them about session expiration as they
                             // just logged in. See issue 39337
                             if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
-                                displayModal("Session Expired", 'Your session has expired. Please reload the page to continue.');
+                                displayModal("Session Expired", 'Your session has expired. ' + modalContent);
                             } else {
                                 hideModal();
-                                openWebsocket(); // re-establish the websocket connection for the new session
                             }
                         }),
                         failure: function () {
@@ -117,7 +120,7 @@ LABKEY.WebSocket = new function ()
         return false;
     }
 
-    function toggleBackgroundVisible(shouldBlur) {
+    function toggleBackgroundBlurred(shouldBlur) {
         if (isSessionInvalidBackgroundHideEnabled()) {
             var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window', "div[role='dialog'] > .modal"];
             for (var i = 0; i < divClsSelectors.length; i++) {
@@ -135,7 +138,9 @@ LABKEY.WebSocket = new function ()
     }
 
     function hideModal() {
-        toggleBackgroundVisible(false);
+        openWebsocket(); // re-establish the websocket connection for the new user session
+
+        toggleBackgroundBlurred(false);
 
         var modal = $('#lk-utils-modal');
         if (LABKEY.Utils.isFunction(modal.modal)) {
@@ -149,10 +154,12 @@ LABKEY.WebSocket = new function ()
     }
 
     function displayModal(title, message) {
+        openWebsocket(); // re-establish the websocket connection for the new guest user session
+
         if (_modalShowing) return;
         _modalShowing = true;
 
-        toggleBackgroundVisible(true);
+        toggleBackgroundBlurred(true);
 
         if (LABKEY.Utils.modal) {
             LABKEY.Utils.modal(title, null, function() {
@@ -173,9 +180,7 @@ LABKEY.WebSocket = new function ()
                 $('#lk-websocket-reload').on('click', function() {
                     window.location.reload();
                 });
-
-                openWebsocket(); // re-establish the websocket connection for the new guest user session
-            }, null, true, true);
+            }, null, true, isSessionInvalidBackgroundHideEnabled());
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
