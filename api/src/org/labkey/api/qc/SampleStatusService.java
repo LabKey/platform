@@ -47,7 +47,16 @@ public interface SampleStatusService
 
     boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation);
 
+    /**
+     * Ensure default sample states are added to any container with the SM module enabled
+     * that does not have any core.DataStates rows already defined.
+     */
     void ensureDefaultStates(Container container, User user);
+
+    /**
+     * Determine if any samples are assigned the specified state
+     */
+    boolean isSampleStateInUse(DataState state);
 
     class DefaultSampleStatusService implements SampleStatusService
     {
@@ -81,6 +90,12 @@ public interface SampleStatusService
         public void ensureDefaultStates(Container container, User user)
         {
             // no-op
+        }
+
+        @Override
+        public boolean isSampleStateInUse(DataState state)
+        {
+            return false;
         }
     }
 }
