@@ -16,12 +16,12 @@
 
 package org.labkey.api.module;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -66,8 +66,8 @@ import java.util.Set;
  * SpringModule knows how to load spring application context information (applicationContext.xml etc)
  */
 public abstract class SpringModule extends DefaultModule
-{                              
-    private static final Logger _log = LogManager.getLogger(SpringModule.class);
+{
+    private static final Logger _log = LogHelper.getLogger(SpringModule.class, "Module initialization and Spring resource loading");
 
     /**
      * The name of the init parameter on the <code>ServletContext</code> specifying
@@ -93,21 +93,21 @@ public abstract class SpringModule extends DefaultModule
 
 
     @Override
-    public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
+    public Controller getController(@Nullable HttpServletRequest request, Class<? extends Controller> controllerClass)
     {
         try
         {
             // try spring configuration first
-            Controller con = (Controller)getBean(controllerClass);
+            Controller con = getBean(controllerClass);
             if (null == con)
             {
-                con = (Controller)controllerClass.newInstance();
+                con = controllerClass.getDeclaredConstructor().newInstance();
                 if (con instanceof ApplicationContextAware)
                     ((ApplicationContextAware)con).setApplicationContext(getApplicationContext());
             }
             return con;
         }
-        catch (IllegalAccessException | InstantiationException x)
+        catch (ReflectiveOperationException x)
         {
             throw new RuntimeException(x);
         }
@@ -150,14 +150,19 @@ public abstract class SpringModule extends DefaultModule
         String potentialPath = "/WEB-INF/" + getName().toLowerCase() + "Context.xml";
 
         // Look for a context file
-        try (InputStream is = ModuleLoader.getServletContext().getResourceAsStream(potentialPath))
+        ServletContext context = ModuleLoader.getServletContext();
+        if (context != null)
         {
-            if (is != null && is.read() != -1)
+            try (InputStream is = context.getResourceAsStream(potentialPath))
             {
-                return potentialPath;
+                if (is != null && is.read() != -1)
+                {
+                    return potentialPath;
+                }
             }
+            catch (IOException e)
+            { /* Just return */ }
         }
-        catch (IOException e) { /* Just return */ }
 
         return null;
     }
@@ -226,7 +231,7 @@ public abstract class SpringModule extends DefaultModule
                     }
                 };
                 xml.setParent(parentApplicationContext);
-                xml.setConfigLocations(contextConfigFiles.toArray(new String[contextConfigFiles.size()]));
+                xml.setConfigLocations(contextConfigFiles.toArray(new String[0]));
                 xml.setServletContext(getModuleServletContext());
                 xml.setDisplayName(getName() + " WebApplicationContext");
                 xml.refresh();
@@ -250,7 +255,7 @@ public abstract class SpringModule extends DefaultModule
         return ModuleLoader.getServletContext();
     }
 
-    ServletContext _moduleServletContext = null;
+    ServletContext _moduleServletContext;
     
     protected ServletContext createModuleServletContext()
     {
