@@ -545,7 +545,7 @@ public class QueryController extends SpringActionController
 
             StringBuilder sb = new StringBuilder();
 
-            sb.append("\n<div>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available at server startup and the external schemas defined in each.</div><br/>\n");
+            sb.append("\n<div>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available when first referenced and the external schemas defined in each.</div><br/>\n");
             sb.append("\n<table class=\"labkey-data-region\">\n");
             sb.append("<tr class=\"labkey-show-borders\">");
             sb.append("  <td class=\"labkey-column-header\">Data Source</td>");

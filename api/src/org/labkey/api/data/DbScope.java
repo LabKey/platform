@@ -1862,7 +1862,7 @@ public class DbScope
         PRECOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._preCommitTasks;
             }
@@ -1871,7 +1871,7 @@ public class DbScope
         POSTCOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postCommitTasks;
             }
@@ -1880,7 +1880,7 @@ public class DbScope
         POSTROLLBACK
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postRollbackTasks;
             }
@@ -1889,7 +1889,7 @@ public class DbScope
         IMMEDIATE
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 throw new UnsupportedOperationException();
             }
@@ -1902,12 +1902,12 @@ public class DbScope
             }
         };
 
-        protected abstract Set<Runnable> getRunnables(TransactionImpl transaction);
+        protected abstract Map<Runnable, Runnable> getRunnables(TransactionImpl transaction);
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
-            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
 
             for (Runnable task : tasks)
             {
@@ -1919,21 +1919,14 @@ public class DbScope
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
-            T addedObj = task;
-            boolean added = getRunnables(transaction).add(task);
-            for(Runnable r : getRunnables(transaction))
-            {
-                if (r.equals(task))
-                {
-                    addedObj = (T) r;
-                    break;
-                }
-            }
-            if (!added)
+            Map<Runnable, Runnable> runnables = getRunnables(transaction);
+            @SuppressWarnings("unchecked")
+            T existing = (T)runnables.putIfAbsent(task, task);
+            if (existing != null)
             {
                 LOG.debug("Skipping duplicate runnable: " + task.toString());
             }
-            return addedObj;
+            return existing == null ? task : existing;
         }
     }
 
@@ -2068,10 +2061,11 @@ public class DbScope
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
-        // Sets so that we can coalesce identical tasks and avoid duplicating the effort
-        private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
-        private final Set<Runnable> _postCommitTasks = new LinkedHashSet<>();
-        private final Set<Runnable> _postRollbackTasks = new LinkedHashSet<>();
+        // Maps so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
+        // originally added task
+        private final Map<Runnable, Runnable> _preCommitTasks = new LinkedHashMap<>();
+        private final Map<Runnable, Runnable> _postCommitTasks = new LinkedHashMap<>();
+        private final Map<Runnable, Runnable> _postRollbackTasks = new LinkedHashMap<>();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
         private final Throwable _creation = new Throwable();
@@ -2414,11 +2408,14 @@ public class DbScope
             {
                 SqlDialect dialect = scope.getSqlDialect();
 
-                try (Connection conn = scope.getConnection())
+                if (dialect.shouldTest())
                 {
-                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
-                    dialect.testDialectKeywords(executor);
-                    dialect.testKeywordCandidates(executor);
+                    try (Connection conn = scope.getConnection())
+                    {
+                        SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                        dialect.testDialectKeywords(executor);
+                        dialect.testKeywordCandidates(executor);
+                    }
                 }
             }
         }
