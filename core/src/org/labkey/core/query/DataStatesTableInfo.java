@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -80,9 +81,36 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             return true;
         }
 
+        private String validateQCStateChangeAllowed(Map<String, Object> row, Container container)
+        {
+            Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            DataState qcChanging = DataStateManager.getInstance().getStateForRowId(container, (Integer) row.get("rowid"));
+
+            for (DataStateHandler handler : registeredHandlers.values())
+            {
+                String errorMsg = handler.isStateChangeAllowed(container, qcChanging, row);
+                if (errorMsg != null)
+                    return errorMsg;
+            }
+            return null;
+        }
+
+        private boolean validateLabel(Map<String, Object> row)
+        {
+            String label = (String) row.get("label");
+            return !StringUtils.isBlank(label);
+        }
+
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
+            if (!validateLabel(row))
+                throw new QueryUpdateServiceException("QC state label cannot be blank.");
+
+            String errorMsg = validateQCStateChangeAllowed(row, container);
+            if (errorMsg != null)
+                throw new QueryUpdateServiceException(errorMsg);
+
             Map<String, Object> rowToUpdate;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
@@ -96,6 +124,9 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
+            if (!validateLabel(row))
+                throw new QueryUpdateServiceException("QC state label cannot be blank.");
+
             Map<String, Object> rowToInsert;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
