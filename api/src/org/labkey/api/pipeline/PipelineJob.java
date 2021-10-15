@@ -1651,23 +1651,33 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * Gets the <code>User</code> instance from the <code>ViewBackgroundInfo</code>.
-     * WARNING: Not supported if job is not running in the LabKey Server.
+     * WARNING: Not supported if job is not running in the LabKey web server.
      *
      * @return the user who started the job
+     * @throws IllegalStateException if invoked on a remote pipeline server
      */
     public User getUser()
     {
+        if (!PipelineJobService.get().isWebServer())
+        {
+            throw new IllegalStateException("User lookup not available on remote pipeline servers");
+        }
         return getInfo().getUser();
     }
 
     /**
      * Gets the <code>Container</code> instance from the <code>ViewBackgroundInfo</code>.
-     * WARNING: Not supported if job is not running in the LabKey Server.
+     * WARNING: Not supported if job is not running in the LabKey web server.
      *
      * @return the container in which the job was started
+     * @throws IllegalStateException if invoked on a remote pipeline server
      */
     public Container getContainer()
     {
+        if (!PipelineJobService.get().isWebServer())
+        {
+            throw new IllegalStateException("User lookup not available on remote pipeline servers");
+        }
         return getInfo().getContainer();
     }
 
