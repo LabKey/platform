@@ -69,6 +69,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
@@ -1445,9 +1446,9 @@ public class AuthenticationManager
 
         private @Nullable HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
         {
-            String img = getImg(prefix);
+            HtmlString img = getImg(prefix);
 
-            return null != img ? HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + img + "</a>") : null;
+            return null != img ? new LinkBuilder(img).href(getURL(returnURL, false)).clearClasses().getHtmlString() : null;
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -1456,7 +1457,7 @@ public class AuthenticationManager
             return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
         }
 
-        public String getImg(AuthLogoType logoType)
+        public HtmlString getImg(AuthLogoType logoType)
         {
             try
             {
@@ -1464,7 +1465,11 @@ public class AuthenticationManager
 
                 if (null != logoUrl)
                 {
-                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + PageFlowUtil.filter(_configuration.getDescription()) + "\" height=\"" + logoType.getHeight() + "px\">";
+                    HtmlString message = HtmlString.of("Sign in using " + _configuration.getDescription());
+                    return HtmlStringBuilder.of(HtmlString.unsafe("<img src=\"")).append(logoUrl)
+                        .append(HtmlString.unsafe("\" alt=\"")).append(message)
+                        .append(HtmlString.unsafe("\" title=\"")).append(message)
+                        .append(HtmlString.unsafe("\" height=\"")).append(logoType.getHeight()).append(HtmlString.unsafe("px\">")).getHtmlString();
                 }
             }
             catch (RuntimeSQLException e)
