@@ -97,7 +97,7 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
         return true;
     }
 
-    // TODO: restore to private and non-static once upgrade code is no longer needed
+    // TODO: restore to private and non-static once savePlaceholderLogos() upgrade code (from 21.008) is no longer needed
     public static void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, @NotNull AuthLogoType logoType, String action)
     {
         AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(logoType.getLabel() + " logo for " + configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + configuration.getRowId() + ") was " + action);

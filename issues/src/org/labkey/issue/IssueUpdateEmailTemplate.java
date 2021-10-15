@@ -62,7 +62,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
     public IssueUpdateEmailTemplate()
     {
-        super("Issue update", "Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.Plain, Scope.SiteOrFolder);
+        super("Issue update", "Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.HTML, Scope.SiteOrFolder);
 
         Replacements replacements = new Replacements(_replacements);
 
