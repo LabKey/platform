@@ -439,6 +439,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                                     "This assay was created in folder " + protocol.getContainer().getPath());
                         protocol.setName(assay.getName());
                         protocol.setProtocolDescription(assay.getDescription());
+                        if (assay.getStatus() != null)
+                            protocol.setStatus(ExpProtocol.Status.valueOf(assay.getStatus()));
                     }
 
                     Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());

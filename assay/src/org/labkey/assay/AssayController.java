@@ -325,6 +325,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("containerPath", protocol.getContainer().getPath());
         assayProperties.put("name", protocol.getName());
         assayProperties.put("id", protocol.getRowId());
+        assayProperties.put("status", protocol.getStatus());
         assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());

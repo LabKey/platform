@@ -549,6 +549,9 @@
       <column columnName="Container">
           <description>Contains the folder or project where this protocol is stored</description>
       </column>
+      <column columnName="Status">
+          <description>The current status of this protocol</description>
+      </column>
     </columns>
     <description>Contains a row per experiment protocol, a series of steps that may be performed when doing an experiment run.</description>
   </table>
