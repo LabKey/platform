@@ -1917,4 +1917,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         // Don't bother querying LabKey for stored procedures
         return getServerType() != PostgreSqlServerType.LabKey && super.isProcedureExists(scope, schema, name);
     }
+
+    @Override
+    public boolean shouldTest()
+    {
+        // Don't test a LabKey data source
+        return getServerType() != PostgreSqlServerType.LabKey;
+    }
 }

@@ -456,9 +456,7 @@ api/src/org/labkey/api/data/DbSequenceManager.java -text
 api/src/org/labkey/api/data/DeferredUpgrade.java -text
 api/src/org/labkey/api/data/DetailsColumn.java -text
 api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text
-api/src/org/labkey/api/data/dialect/BaseJdbcMetaDataLocator.java -text
 api/src/org/labkey/api/data/dialect/ColumnMetaDataReader.java -text
-api/src/org/labkey/api/data/dialect/ConnectionHandler.java -text
 api/src/org/labkey/api/data/dialect/DatabaseMaintenanceTask.java -text
 api/src/org/labkey/api/data/dialect/DatabaseNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/DialectStringHandler.java -text
@@ -969,7 +967,6 @@ api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataLoaderSettings.java -text
 api/src/org/labkey/api/qc/DataTransformer.java -text
 api/src/org/labkey/api/qc/DefaultTransformResult.java -text
-api/src/org/labkey/api/qc/QCState.java -text
 api/src/org/labkey/api/qc/TransformDataHandler.java -text
 api/src/org/labkey/api/qc/TransformResult.java -text
 api/src/org/labkey/api/qc/TsvDataExchangeHandler.java -text
@@ -2003,7 +2000,6 @@ core/src/org/labkey/core/qc/QcStateWriter.java -text
 core/src/org/labkey/core/query/ApiKeysTableInfo.java -text
 core/src/org/labkey/core/query/AttachmentAuditProvider.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
-core/src/org/labkey/core/query/QCStateTableInfo.java -text
 core/src/org/labkey/core/query/UserAuditProvider.java -text
 core/src/org/labkey/core/query/UserAvatarDisplayColumnFactory.java -text
 core/src/org/labkey/core/query/UsersDomainKind.java -text
@@ -2319,7 +2315,6 @@ internal/src/org/labkey/api/exp/flag/FlagColumnRenderer.java -text
 internal/src/org/labkey/api/exp/flag/FlagForeignKey.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
-internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssueDetailHeaderLinkProvider.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text

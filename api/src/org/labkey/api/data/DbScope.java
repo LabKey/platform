@@ -2414,11 +2414,14 @@ public class DbScope
             {
                 SqlDialect dialect = scope.getSqlDialect();
 
-                try (Connection conn = scope.getConnection())
+                if (dialect.shouldTest())
                 {
-                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
-                    dialect.testDialectKeywords(executor);
-                    dialect.testKeywordCandidates(executor);
+                    try (Connection conn = scope.getConnection())
+                    {
+                        SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                        dialect.testDialectKeywords(executor);
+                        dialect.testKeywordCandidates(executor);
+                    }
                 }
             }
         }

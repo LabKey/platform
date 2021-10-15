@@ -1629,4 +1629,9 @@ public abstract class SqlDialect
     // Does this driver allow stmt.executeBatch() to be called on different thread?
     // Seems to work reliably for postgres but not mssql
     public boolean allowAsynchronousExecute() { return false; }
+
+    public boolean shouldTest()
+    {
+        return true;
+    }
 }
