@@ -635,7 +635,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             if (nameExpression == null)
                 throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+        }
 
+        if (svc.getExpressionPrefix(c) != null)
+        {
             // automatically apply the configured prefix to the name expression
             nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
             aliquotNameExpression = svc.createPrefixedExpression(c, aliquotNameExpression, true);
