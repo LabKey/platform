@@ -305,6 +305,10 @@ public class ToolsController extends SpringActionController
         }
     }
 
+    private static final Set<String> JSPS_TO_IGNORE = Set.of(
+        "/org/labkey/testresults/view/menu.jsp"  // Invoked from some MacCoss JSPs via @include
+    );
+
     @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unused")
     public class JspFinderAction extends SimpleViewAction<Object>
@@ -355,8 +359,18 @@ public class ToolsController extends SpringActionController
                     List<String> candidates = jspFiles.stream()
                         .filter(s->s.endsWith(path))
                         .collect(Collectors.toUnmodifiableList());
+
+                    // If a JSP file is referenced twice (say, once with an absolute path and once with a relative path) then
+                    // we might have already removed the candidate from jspFiles. If no match, check the full list of JSPs.
+                    if (candidates.isEmpty())
+                    {
+                        candidates = copyOfJspFiles.stream()
+                            .filter(s->s.endsWith(path))
+                            .collect(Collectors.toUnmodifiableList());
+                    }
+
                     out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(53 - path.length(), 0)) + " " + candidates)));
-                    jspFiles.removeAll(candidates);
+                    candidates.forEach(jspFiles::remove);
                 });
 
                 if (!jspFiles.isEmpty())
@@ -455,7 +469,7 @@ public class ToolsController extends SpringActionController
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             {
                             String filePath = file.toString().replaceAll("\\\\", "/");
-                            if (filePath.endsWith(".jsp"))
+                            if (filePath.endsWith(".jsp") && !JSPS_TO_IGNORE.contains(filePath))
                             {
                                 // Accommodates /org/labkey, /org/scharp, and /com/hphc
                                 int idx = StringUtils.indexOfAny(filePath, "/org/", "/com/");
