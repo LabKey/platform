@@ -1269,6 +1269,22 @@ quickScan:
         return sb.toString();
     }
 
+    public static String getUnencodedAbsolutePath(Container container, Path path)
+    {
+        if (!path.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(path))
+            return path.toFile().getAbsolutePath();
+        else
+        {
+            return PageFlowUtil.decode( //URI conversion encodes
+                getPathStringWithoutAccessId(
+                        CloudStoreService.get().getPathFromUrl(container, path.toString()).toUri()
+                )
+            );
+        }
+    }
+
 
     public static class TestCase extends Assert
     {

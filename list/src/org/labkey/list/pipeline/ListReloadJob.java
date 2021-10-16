@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
@@ -44,7 +45,7 @@ public class ListReloadJob extends PipelineJob
         _importContext = importContext;
     }
 
-    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, Path dataFile, File logFile, @NotNull ListImportContext importContext)
+    public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, Path dataFile, Path logFile, @NotNull ListImportContext importContext)
     {
         super(null, info, root);
         _dataFile = dataFile;
@@ -70,12 +71,14 @@ public class ListReloadJob extends PipelineJob
         setStatus("RELOADING", "Job started at: " + DateUtil.nowISO());
         ListImporter importer = new ListImporter(_importContext);
 
-        getLogger().info("Loading " + _dataFile.getFileName());
+        String fileName = _dataFile.getFileName().toString();
+
+        getLogger().info("Loading " + fileName);
 
         List<String> errors = new LinkedList<>();
         try
         {
-            if (!importer.processSingle(new FileSystemFile(_dataFile.getParent()), _dataFile.getFileName().toString(), getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
+            if (!importer.processSingle(new FileSystemFile(_dataFile.getParent()), fileName, getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
             {
                 error("Job failed.");
             }

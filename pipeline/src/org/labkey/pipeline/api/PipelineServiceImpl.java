@@ -473,7 +473,8 @@ public class PipelineServiceImpl implements PipelineService
         PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(job.getContainer(), job.getLogFilePath());
         if (sf != null)
         {
-            sf.setFilePath(otherFile.toString());
+            //Use the absolute Path helper to strip user element
+            sf.setFilePath(FileUtil.getAbsolutePath(otherFile));
             PipelineStatusManager.updateStatusFile(sf);
         }
     }

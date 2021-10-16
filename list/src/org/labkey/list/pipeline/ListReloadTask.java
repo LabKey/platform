@@ -83,7 +83,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
                     context = new ListImportContext(inputDataMap, useMerge, true);
 
                 context.setProps(params);
-                ListReloadJob reloadJob = new ListReloadJob(job.getInfo(), pr, dataFile, job.getLogFile(), context);
+                ListReloadJob reloadJob = new ListReloadJob(job.getInfo(), pr, dataFile, job.getLogFilePath(), context);
                 ListReloadJob unserializedJob = (ListReloadJob) PipelineJob.deserializeJob(PipelineJob.serializeJob(reloadJob, false));   // Force round trip to ensure serialization works
                 unserializedJob.run();
 

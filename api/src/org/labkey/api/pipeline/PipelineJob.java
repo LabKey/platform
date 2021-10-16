@@ -47,6 +47,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -432,7 +433,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFilePath(Path logFile)
     {
-        _logFilePathName = FileUtil.pathToString(logFile);
+        _logFilePathName = PageFlowUtil.decode(FileUtil.pathToString(logFile)); // For cloud i think we need to decode this...
         _logger = null;
         _logFile = null;
 
@@ -1109,7 +1110,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (null != remoteLogFilePath)
             {
                 //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
-                setLogFilePath(remoteLogFilePath);
+                setLogFile(remoteLogFilePath);
                 setStatus(getActiveTaskStatus());       // Force writing to statusFiles
             }
         }

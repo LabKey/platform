@@ -129,6 +129,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         CloudStoreService.get().registerCloudWatcher(config, (Path filePath, Runnable callback) -> {
             LOG.debug("Processing watch event for filePath: " + FileUtil.getAbsolutePath(filePath)); //Strip off any user info that may be in path URI.
             Path watchedPath = filePath.getParent();
+
             CloudWatchEvent cwe = new CloudWatchEvent(filePath);
 
             //TODO Could do a validation sanity check before firing event?
@@ -341,11 +342,21 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void watch() throws InterruptedException
         {
-            if (_timer == null)
+            try
             {
-                LOG.info("Initiating a new timer job for cloud watchers.");
-                _timer = new Timer();
-                _timer.scheduleAtFixedRate(scheduleWatchTask(), POLLING_PERIOD_SECONDS * 1000, POLLING_PERIOD_SECONDS * 1000);
+                if (_timer == null)
+                {
+                    LOG.info("Initiating a new timer job for cloud watchers.");
+                    _timer = new Timer();
+                    _timer.scheduleAtFixedRate(scheduleWatchTask(), POLLING_PERIOD_SECONDS * 1000, POLLING_PERIOD_SECONDS * 1000);
+                }
+            }
+            catch (Throwable t)
+            {
+                LOG.debug("Caught error in CloudWatcherThread. Cancelling running jobs");
+                _timer.cancel();
+                _timer = null;
+                throw t;
             }
         }
 
