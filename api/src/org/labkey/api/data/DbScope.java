@@ -1669,7 +1669,19 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::get)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Some DbScopes shouldn't be exercised by junit tests (e.g., an external data source connected to LabKey Server via
+     * the PostgreSQL wire protocol)
+     * @return A collection of DbScopes that are suitable for testing
+     */
+    public static @NotNull Collection<DbScope> getDbScopesToTest()
+    {
+        return getDbScopes().stream()
+            .filter(scope->scope.getSqlDialect().shouldTest())
+            .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -1681,7 +1693,7 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::getIfPresent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .collect(Collectors.toUnmodifiableList());
     }
 
     /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
@@ -2404,18 +2416,15 @@ public class DbScope
         @Test
         public void testAllScopes() throws SQLException, IOException
         {
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
 
-                if (dialect.shouldTest())
+                try (Connection conn = scope.getConnection())
                 {
-                    try (Connection conn = scope.getConnection())
-                    {
-                        SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
-                        dialect.testDialectKeywords(executor);
-                        dialect.testKeywordCandidates(executor);
-                    }
+                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                    dialect.testDialectKeywords(executor);
+                    dialect.testKeywordCandidates(executor);
                 }
             }
         }
@@ -2457,7 +2466,7 @@ public class DbScope
         @Test
         public void testGroupConcat()
         {
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
                 if (!dialect.supportsGroupConcat())
@@ -2507,7 +2516,7 @@ public class DbScope
             // and then SELECT 10 rows from a random table in a random schema in every datasource.
             List<TableInfo> tablesToTest = new LinkedList<>();
 
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
                 List<String> schemaNames = new ArrayList<>();
@@ -2539,7 +2548,7 @@ public class DbScope
             try (Transaction ignored = getLabKeyScope().ensureTransaction())
             {
                 // LabKey scope should have an active transaction, and all other scopes should not
-                for (DbScope scope : getDbScopes())
+                for (DbScope scope : getDbScopesToTest())
                     Assert.assertEquals(scope.isLabKeyScope(), scope.isTransactionActive());
 
                 for (TableInfo table : tablesToTest)
