@@ -105,7 +105,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             if (!validateLabel(row))
-                throw new QueryUpdateServiceException("QC state label cannot be blank.");
+                throw new QueryUpdateServiceException("State label cannot be blank.");
 
             String errorMsg = validateQCStateChangeAllowed(row, container);
             if (errorMsg != null)
@@ -125,7 +125,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             if (!validateLabel(row))
-                throw new QueryUpdateServiceException("QC state label cannot be blank.");
+                throw new QueryUpdateServiceException("State label cannot be blank.");
 
             Map<String, Object> rowToInsert;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -141,7 +141,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             if (!validateQCStateNotInUse(oldRowMap, container))
-                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
+                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted because it is currently in-use.");
 
             Map<String, Object> rowToDelete;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
