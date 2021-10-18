@@ -464,7 +464,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public boolean supportsGroupConcat()
     {
-        return true;
+        return getServerType().supportsGroupConcat();
     }
 
     @Override
@@ -801,36 +801,36 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
-    // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
+    // When the PostgreSQLColumnMetaDataReader reads metadata, it returns these scale values for all domains.
     private void initializeUserDefinedTypes(DbScope scope)
     {
         // Skip domains query if connecting to LabKey Server - it has no user-defined types
-        if (getServerType() == PostgreSqlServerType.LabKey)
-            return;
+        if (getServerType().supportsSpecialMetadataQueries())
+        {
+            Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
+            selector.forEach(rs -> {
+                String schemaName = rs.getString("domain_schema");
+                String domainName = rs.getString("domain_name");
+                String dataType = rs.getString("data_type");
+                int scale;
 
-        Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
-        selector.forEach(rs -> {
-            String schemaName = rs.getString("domain_schema");
-            String domainName = rs.getString("domain_name");
-            String dataType = rs.getString("data_type");
-            int scale;
+                if (dataType.startsWith("character"))
+                {
+                    String maxLength = rs.getString("character_maximum_length");
 
-            if (dataType.startsWith("character"))
-            {
-                String maxLength = rs.getString("character_maximum_length");
+                    // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
+                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                }
+                else
+                {
+                    // Assume everything else is an integer for now. We should support more types for better external schema handling.
+                    scale = 4;
+                }
 
-                // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
-            }
-            else
-            {
-                // Assume everything else is an integer for now. We should support more types for better external schema handling.
-                scale = 4;
-            }
-
-            String key = getDomainKey(schemaName, domainName);
-            _domainScaleMap.put(key, scale);
-        });
+                String key = getDomainKey(schemaName, domainName);
+                _domainScaleMap.put(key, scale);
+            });
+        }
     }
 
 
@@ -847,7 +847,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
     private void determineSettings(DbScope scope)
     {
-        if (getServerType() == PostgreSqlServerType.PostgreSQL)
+        if (getServerType().supportsSpecialMetadataQueries())
         {
             Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
             _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
@@ -858,7 +858,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // Does this datasource include our sort array function? The LabKey datasource should always have it, but external datasources might not
     private void determineIfArraySortFunctionExists(DbScope scope)
     {
-        if (getServerType() == PostgreSqlServerType.PostgreSQL)
+        if (getServerType().supportsSpecialMetadataQueries())
         {
             Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
             _arraySortFunctionExists.set(selector.exists());
@@ -1915,13 +1915,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public boolean isProcedureExists(DbScope scope, String schema, String name)
     {
         // Don't bother querying LabKey for stored procedures
-        return getServerType() != PostgreSqlServerType.LabKey && super.isProcedureExists(scope, schema, name);
+        return getServerType().supportsSpecialMetadataQueries() && super.isProcedureExists(scope, schema, name);
     }
 
     @Override
     public boolean shouldTest()
     {
         // Don't test a LabKey data source
-        return getServerType() != PostgreSqlServerType.LabKey;
+        return getServerType().shouldTest();
     }
 }

@@ -122,17 +122,17 @@ public class XarExporter
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
      */
-    private Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<>();
-    private Set<String> _experimentRunLSIDs = new HashSet<>();
-    private Set<String> _protocolLSIDs = new HashSet<>();
-    private Set<String> _inputDataLSIDs = new HashSet<>();
-    private Set<String> _inputMaterialLSIDs = new HashSet<>();
+    private final Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<>();
+    private final Set<String> _experimentRunLSIDs = new HashSet<>();
+    private final Set<String> _protocolLSIDs = new HashSet<>();
+    private final Set<String> _inputDataLSIDs = new HashSet<>();
+    private final Set<String> _inputMaterialLSIDs = new HashSet<>();
 
-    private Set<String> _sampleSetLSIDs = new HashSet<>();
+    private final Set<String> _sampleSetLSIDs = new HashSet<>();
     /** Use a TreeMap so that we order domains by their RowIds, see issue 22459 */
-    private Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
-    private Set<String> _domainLSIDs = new HashSet<>();
-    private Set<Integer> _expDataIDs = new HashSet<>();
+    private final Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
+    private final Set<String> _domainLSIDs = new HashSet<>();
+    private final Set<Integer> _expDataIDs = new HashSet<>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
@@ -302,6 +302,16 @@ public class XarExporter
         for (ExpProtocolApplication application : ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId()))
         {
             addProtocolApplication(application, run, xApplications);
+        }
+
+        ExpProtocolApplication workflowTask = run.getWorkflowTask();
+
+        if (workflowTask != null)
+        {
+            // Due to the way ProtocolApplication LSIDs are generated we can't actually round trip them the normal way
+            // via the LSIDRelativizer. Instead we construct an LSID out of the object ID with a custom prefix.
+            String workflowObjectId = Lsid.parse(workflowTask.getLSID()).getObjectId();
+            xRun.setWorkflowTaskLSID("${WorkflowTaskReference}:" + workflowObjectId);
         }
 
         // get AssayService.get().getProvider(run).getXarCallbacks().beforeXarExportRun() with simple attempt at caching for common case

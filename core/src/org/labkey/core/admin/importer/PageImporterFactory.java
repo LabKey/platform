@@ -34,6 +34,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartCache;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -53,7 +54,7 @@ import java.util.Map;
 public class PageImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<?> create()
     {
         return new PageImporter();
     }
@@ -82,7 +83,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
     }
 
 
-    public class PageImporter implements FolderImporter<FolderDocument.Folder>
+    public static class PageImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()
@@ -130,6 +131,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
                 PagesDocument.Pages.Page[] pageXmls = pagesDocXml.getPages().getPageArray();
                 List<FolderTab> tabs = new ArrayList<>();
+                int webpartCount = 0;
                 for (PagesDocument.Pages.Page pageXml : pageXmls)
                 {
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
@@ -137,11 +139,6 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     String properties = pageXml.getPropertyString();
                     boolean hidden = pageXml.getHidden();
 
-/*                    if (pageId.equals("Overview") && Portal.getParts(ctx.getContainer(), pageId).size() == 0)
-                    {
-                        pageId = Portal.DEFAULT_PORTAL_PAGE_ID;       // TODO: seems to cause problem with new container tab and import/export features. Check this.
-                    }
-*/
                     FolderTab tab = new _FolderTab(pageXml.getName(), pageXml.getIndex(), StringUtils.trimToNull(pageXml.getCaption()));
                     tabs.add(tab);
 
@@ -183,6 +180,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                             }
                         }
                         webparts.add(webPart);
+                        webpartCount++;
                     }
                     Portal.saveParts(ctx.getContainer(), pageId, webparts);
                     Portal.addProperties(ctx.getContainer(), pageId, properties);
@@ -195,7 +193,10 @@ public class PageImporterFactory extends AbstractFolderImportFactory
                     Portal.resetPages(ctx.getContainer(), tabs, true);
                 }
 
-                ctx.getLogger().info("Done importing " + getDescription());
+                // Clear the cache one more time - attempt to avoid race condition on TeamCity
+                WebPartCache.remove(ctx.getContainer());
+
+                ctx.getLogger().info("Done importing " + pageXmls.length + " page(s) with " + webpartCount + " webpart(s)");
             }
         }
 

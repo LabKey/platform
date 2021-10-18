@@ -686,6 +686,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpProtocolApplication getExpProtocolApplicationFromEntityId(String entityId);
 
+    @NotNull
+    List<? extends ExpProtocolApplication> getExpProtocolApplicationsByObjectId(Container container, String objectId);
+
     List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
 
     List<? extends ExpProtocol> getExpProtocols(Container... containers);

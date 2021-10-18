@@ -58,6 +58,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
@@ -121,6 +122,7 @@ public class XarReader extends AbstractXarImporter
 {
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
+    private final Map<Integer, String> _runWorkflowTaskMap = new HashMap<>();
 
     private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
@@ -129,6 +131,7 @@ public class XarReader extends AbstractXarImporter
     private boolean _strictValidateExistingSampleType = true;
 
     private final List<ExpRun> _loadedRuns = new ArrayList<>();
+    private final List<ProtocolApplication> _loadedProtocolApplications = new ArrayList<>();
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
     private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
 
@@ -377,6 +380,11 @@ public class XarReader extends AbstractXarImporter
                 {
                     loadExperimentRun(experimentRun, startingMaterials, startingData);
                 }
+            }
+
+            if (_runWorkflowTaskMap.size() > 0)
+            {
+                saveRunWorkflowTaskIds();
             }
 
             transaction.commit();
@@ -951,7 +959,15 @@ public class XarReader extends AbstractXarImporter
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
+            String workflowTaskLSID = a.getWorkflowTaskLSID();
 
+            if (workflowTaskLSID != null)
+            {
+                if (!workflowTaskLSID.startsWith("${WorkflowTaskReference}:"))
+                    throw new XarFormatException("Invalid WorkflowTaskLSID encountered: " + workflowTaskLSID);
+
+                workflowTaskLSID = workflowTaskLSID.split(":")[1];
+            }
             // remember which job created the run so we can show this run on the job details page
             vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
 
@@ -960,6 +976,9 @@ public class XarReader extends AbstractXarImporter
             {
                 impl.save(getUser());
                 run = impl.getDataObject();
+
+                if (workflowTaskLSID != null)
+                    _runWorkflowTaskMap.put(run.getRowId(), workflowTaskLSID);
             }
             catch (BatchValidationException x)
             {
@@ -1024,6 +1043,44 @@ public class XarReader extends AbstractXarImporter
         getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
     }
 
+    /**
+     * This method runs last, and is used to wire up the Workflow Task FK relationship between Exp Runs and
+     * Exp ProtocolApplications. This needs to run last because we have no good way to guarantee import order and ensure
+     * all the appropriate ProtocolApplications are imported before the Exp Runs.
+     */
+    private void saveRunWorkflowTaskIds() throws ExperimentException
+    {
+        for (ExpRun run : _loadedRuns)
+        {
+            String objectId = _runWorkflowTaskMap.get(run.getRowId());
+
+            if (objectId != null)
+            {
+                List<? extends ExpProtocolApplication> protocolApplications = ExperimentService.get().getExpProtocolApplicationsByObjectId(getContainer(), objectId);
+
+                if (protocolApplications.size() > 1)
+                {
+                    throw new ExperimentException("Multiple ProtocolApplications found with object id: " + objectId);
+                }
+                else if (protocolApplications.size() == 0)
+                {
+                    getLog().warn("Could not find ProtocolApplication with LSID containing object id: " + objectId);
+                }
+                else
+                {
+                    run.setWorkflowTaskId(protocolApplications.get(0).getRowId());
+
+                    try {
+                        run.save(getUser());
+                    }
+                    catch (BatchValidationException e)
+                    {
+                        throw new ExperimentException(e);
+                    }
+                }
+            }
+        }
+    }
 
     public List<String> getProcessedRunsLSIDs()
     {
@@ -1132,6 +1189,7 @@ public class XarReader extends AbstractXarImporter
         if (null == protocolApp)
             throw new XarFormatException("No row found");
 
+        _loadedProtocolApplications.add(protocolApp);
         int protAppId = protocolApp.getRowId();
 
         PropertyCollectionType xbProps = xmlProtocolApp.getProperties();
