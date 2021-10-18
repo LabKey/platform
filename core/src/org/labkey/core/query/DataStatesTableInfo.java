@@ -56,12 +56,14 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             var wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
                 wrappedColumn.setHidden(true);
-            if ("StateType".equalsIgnoreCase(name) && !SampleStatusService.get().supportsSampleStatus())
+            if ("StateType".equalsIgnoreCase(name))
             {
-                wrappedColumn.setHidden(true);
+                boolean enabledStatus = SampleStatusService.get().supportsSampleStatus();
+                wrappedColumn.setHidden(!enabledStatus);
+                wrappedColumn.setShownInDetailsView(enabledStatus);
+                // always exclude this column from insert and update as we want users to use the manageSampleStatuses page
                 wrappedColumn.setShownInInsertView(false);
                 wrappedColumn.setShownInUpdateView(false);
-                wrappedColumn.setShownInDetailsView(false);
             }
         }
     }
