@@ -37,7 +37,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerTree;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -126,7 +125,7 @@ public class PlateController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
         {
-            setHelpTopic(new HelpTopic("editPlateTemplate"));
+            setHelpTopic("editPlateTemplate");
             List<? extends PlateTemplate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
             return new JspView<>("/org/labkey/assay/plate/view/plateTemplateList.jsp",
                     new PlateTemplateListBean(plateTemplates));

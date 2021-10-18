@@ -119,7 +119,7 @@ public class HelpTopic
     }
 
     /**
-     * @return a link to this class' JavaDoc in the current LabKey-supported Oracle JDK
+     * @return a link to this class' JavaDoc for the currently running JDK version
      */
     public static String getJDKJavaDocLink(Class c)
     {

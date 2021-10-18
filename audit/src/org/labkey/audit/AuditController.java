@@ -53,7 +53,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -168,7 +167,7 @@ public class AuditController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("audits"));
+            setHelpTopic("audits");
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Audit Log", getClass(), getContainer());
         }
     }

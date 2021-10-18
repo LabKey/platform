@@ -124,7 +124,7 @@
             xtype: 'displayfield',
             value: 'LabKey Server can extract a thumbnail image from some '
             + 'document types to provide a preview in the user interface. '
-            + 'Click <%=AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here")%> for more details.'
+            + 'Click <%=helpLink(AttachmentReportForm.getHelpTopic(), "here")%> for more details.'
         };
 
         <% if (canUseDiskFile) { %>

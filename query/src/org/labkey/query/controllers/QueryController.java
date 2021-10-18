@@ -91,7 +91,6 @@ import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -290,7 +289,7 @@ public class QueryController extends SpringActionController
                 remoteConnectionForm.setPassword(map1.get("password"));
                 remoteConnectionForm.setContainer(map1.get("container"));
             }
-            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
+            setHelpTopic("remoteConnection");
             return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", remoteConnectionForm, errors);
         }
 
@@ -526,7 +525,7 @@ public class QueryController extends SpringActionController
     {
         // set default help topic for query controller
         PageConfig config = super.defaultPageConfig();
-        config.setHelpTopic(new HelpTopic("querySchemaBrowser"));
+        config.setHelpTopic("querySchemaBrowser");
         return config;
     }
 
@@ -817,7 +816,7 @@ public class QueryController extends SpringActionController
             }
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
-            setHelpTopic(new HelpTopic("sqlTutorial"));
+            setHelpTopic("sqlTutorial");
             return new JspView<>("/org/labkey/query/view/newQuery.jsp", form, errors);
         }
 
@@ -998,7 +997,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("useSqlEditor"));
+            setHelpTopic("useSqlEditor");
 
             addSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
 
@@ -1319,7 +1318,7 @@ public class QueryController extends SpringActionController
             }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
-            setHelpTopic(new HelpTopic("customSQL"));
+            setHelpTopic("customSQL");
             _queryView = queryView;
             return queryView;
         }
@@ -2279,7 +2278,7 @@ public class QueryController extends SpringActionController
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
-            setHelpTopic(new HelpTopic("editQueryProperties"));
+            setHelpTopic("editQueryProperties");
             _queryName = form.getQueryName();
 
             return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);
@@ -4281,7 +4280,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
@@ -4346,7 +4345,7 @@ public class QueryController extends SpringActionController
             {
                 connectionMap = null; // render the failure page
             }
-            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
+            setHelpTopic("remoteConnection");
             return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 
@@ -4421,7 +4420,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
-            setHelpTopic(new HelpTopic("filterSchema"));
+            setHelpTopic("filterSchema");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
@@ -4437,7 +4436,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
@@ -4616,7 +4615,7 @@ public class QueryController extends SpringActionController
         {
             LinkedSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic(new HelpTopic("linkedSchemas"));
+            setHelpTopic("linkedSchemas");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
@@ -4641,7 +4640,7 @@ public class QueryController extends SpringActionController
         {
             ExternalSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
     }
