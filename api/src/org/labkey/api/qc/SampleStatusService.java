@@ -1,9 +1,11 @@
 package org.labkey.api.qc;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +60,8 @@ public interface SampleStatusService
      */
     boolean isSampleStateInUse(DataState state);
 
+    @Nullable ActionURL getManageSampleStatusesURL(Container container);
+
     class DefaultSampleStatusService implements SampleStatusService
     {
         @Override
@@ -96,6 +100,12 @@ public interface SampleStatusService
         public boolean isSampleStateInUse(DataState state)
         {
             return false;
+        }
+
+        @Override
+        public @Nullable ActionURL getManageSampleStatusesURL(Container container)
+        {
+            return null;
         }
     }
 }

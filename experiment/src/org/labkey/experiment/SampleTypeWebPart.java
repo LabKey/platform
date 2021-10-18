@@ -119,10 +119,13 @@ public class SampleTypeWebPart extends QueryView
 
         if (SampleStatusService.get().supportsSampleStatus())
         {
-            ActionURL manageSampleStatusesURL = new ActionURL("experiment", "manageSampleStatuses", getContainer());
-            ActionButton manageSampleStatusesButton = new ActionButton(manageSampleStatusesURL, "Manage Sample Statuses");
-            manageSampleStatusesButton.setDisplayPermission(AdminPermission.class);
-            bar.add(manageSampleStatusesButton);
+            ActionURL manageSampleStatusesURL = SampleStatusService.get().getManageSampleStatusesURL(getContainer());
+            if (manageSampleStatusesURL != null)
+            {
+                ActionButton manageSampleStatusesButton = new ActionButton(manageSampleStatusesURL, "Manage Sample Statuses");
+                manageSampleStatusesButton.setDisplayPermission(AdminPermission.class);
+                bar.add(manageSampleStatusesButton);
+            }
         }
 
 //      Deferred--Uncomment if supporting SampleType-level links is desired
