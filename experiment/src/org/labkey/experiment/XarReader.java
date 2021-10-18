@@ -2023,6 +2023,8 @@ public class XarReader extends AbstractXarImporter
         protocol.setSoftware(trimString(p.getSoftware()));
         if (null != p.getContact())
             protocol.setContactId(p.getContact().getContactId());
+        if (null != p.getStatus())
+            protocol.setStatus(ExpProtocol.Status.valueOf(p.getStatus()));
 
         protocol.setContainer(getContainer());
 

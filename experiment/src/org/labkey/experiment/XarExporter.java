@@ -1021,7 +1021,10 @@ public class XarExporter
         {
             xProtocol.setSoftware(protocol.getSoftware());
         }
-
+        if (protocol.getStatus() != null)
+        {
+            xProtocol.setStatus(protocol.getStatus().name());
+        }
         Map<String, ProtocolParameter> params = protocol.getProtocolParameters();
         SimpleValueCollectionType valueCollection = null;
         for (ProtocolParameter param : params.values())

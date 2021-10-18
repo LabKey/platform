@@ -359,6 +359,7 @@
 			</xs:element>
 			<xs:element name="Instrument" type="string" minOccurs="0"/>
 			<xs:element name="Software" type="string" minOccurs="0"/>
+			<xs:element name="Status" type="string" minOccurs="0"/>
 			<xs:element name="Contact" type="exp:ContactType" minOccurs="0"/>
 			<xs:element name="ParameterDeclarations" type="exp:SimpleValueCollectionType" minOccurs="0"/>
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
