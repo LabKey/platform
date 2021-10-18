@@ -25,6 +25,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
@@ -55,6 +56,13 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             var wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
                 wrappedColumn.setHidden(true);
+            if ("StateType".equalsIgnoreCase(name) && !SampleStatusService.get().supportsSampleStatus())
+            {
+                wrappedColumn.setHidden(true);
+                wrappedColumn.setShownInInsertView(false);
+                wrappedColumn.setShownInUpdateView(false);
+                wrappedColumn.setShownInDetailsView(false);
+            }
         }
     }
 
