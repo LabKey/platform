@@ -30,6 +30,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -436,7 +437,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     static
     {
         ObjectFactory.Registry.register(PropertyDescriptor.class,
-            new BeanObjectFactory<PropertyDescriptor>(PropertyDescriptor.class)
+            new BeanObjectFactory<>(PropertyDescriptor.class)
             {
                 @Override
                 public @NotNull Map<String, Object> toMap(PropertyDescriptor bean, @Nullable Map<String, Object> m)
@@ -467,11 +468,13 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         return false;
     }
 
+    @Transient
     public @NotNull Collection<? extends IPropertyValidator> getValidators()
     {
         return PropertyService.get().getPropertyValidators(this);
     }
 
+    @Transient
     public @NotNull Collection<ConditionalFormat> getConditionalFormats()
     {
         return PropertyService.get().getConditionalFormats(this);
@@ -498,7 +501,8 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
 
     Boolean _vocabulary = null;
 
-    // returns true if this property is a member of a VocabularyDomainKind
+    /** @return true if this property is a member of a VocabularyDomainKind */
+    @Transient
     public boolean isVocabulary()
     {
         if (_vocabulary == null)

@@ -1669,7 +1669,19 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::get)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Some DbScopes shouldn't be exercised by junit tests (e.g., an external data source connected to LabKey Server via
+     * the PostgreSQL wire protocol)
+     * @return A collection of DbScopes that are suitable for testing
+     */
+    public static @NotNull Collection<DbScope> getDbScopesToTest()
+    {
+        return getDbScopes().stream()
+            .filter(scope->scope.getSqlDialect().shouldTest())
+            .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -1681,7 +1693,7 @@ public class DbScope
         return getLoaders().stream()
             .map(DbScopeLoader::getIfPresent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .collect(Collectors.toUnmodifiableList());
     }
 
     /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
@@ -1862,7 +1874,7 @@ public class DbScope
         PRECOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._preCommitTasks;
             }
@@ -1871,7 +1883,7 @@ public class DbScope
         POSTCOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postCommitTasks;
             }
@@ -1880,7 +1892,7 @@ public class DbScope
         POSTROLLBACK
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postRollbackTasks;
             }
@@ -1889,7 +1901,7 @@ public class DbScope
         IMMEDIATE
         {
             @Override
-            protected Set<Runnable> getRunnables(TransactionImpl transaction)
+            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
             {
                 throw new UnsupportedOperationException();
             }
@@ -1902,12 +1914,12 @@ public class DbScope
             }
         };
 
-        protected abstract Set<Runnable> getRunnables(TransactionImpl transaction);
+        protected abstract Map<Runnable, Runnable> getRunnables(TransactionImpl transaction);
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
-            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
 
             for (Runnable task : tasks)
             {
@@ -1919,21 +1931,14 @@ public class DbScope
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
-            T addedObj = task;
-            boolean added = getRunnables(transaction).add(task);
-            for(Runnable r : getRunnables(transaction))
-            {
-                if (r.equals(task))
-                {
-                    addedObj = (T) r;
-                    break;
-                }
-            }
-            if (!added)
+            Map<Runnable, Runnable> runnables = getRunnables(transaction);
+            @SuppressWarnings("unchecked")
+            T existing = (T)runnables.putIfAbsent(task, task);
+            if (existing != null)
             {
                 LOG.debug("Skipping duplicate runnable: " + task.toString());
             }
-            return addedObj;
+            return existing == null ? task : existing;
         }
     }
 
@@ -2068,10 +2073,11 @@ public class DbScope
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
-        // Sets so that we can coalesce identical tasks and avoid duplicating the effort
-        private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
-        private final Set<Runnable> _postCommitTasks = new LinkedHashSet<>();
-        private final Set<Runnable> _postRollbackTasks = new LinkedHashSet<>();
+        // Maps so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
+        // originally added task
+        private final Map<Runnable, Runnable> _preCommitTasks = new LinkedHashMap<>();
+        private final Map<Runnable, Runnable> _postCommitTasks = new LinkedHashMap<>();
+        private final Map<Runnable, Runnable> _postRollbackTasks = new LinkedHashMap<>();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
         private final Throwable _creation = new Throwable();
@@ -2410,7 +2416,7 @@ public class DbScope
         @Test
         public void testAllScopes() throws SQLException, IOException
         {
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
 
@@ -2460,7 +2466,7 @@ public class DbScope
         @Test
         public void testGroupConcat()
         {
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
                 if (!dialect.supportsGroupConcat())
@@ -2510,7 +2516,7 @@ public class DbScope
             // and then SELECT 10 rows from a random table in a random schema in every datasource.
             List<TableInfo> tablesToTest = new LinkedList<>();
 
-            for (DbScope scope : getDbScopes())
+            for (DbScope scope : getDbScopesToTest())
             {
                 SqlDialect dialect = scope.getSqlDialect();
                 List<String> schemaNames = new ArrayList<>();
@@ -2542,7 +2548,7 @@ public class DbScope
             try (Transaction ignored = getLabKeyScope().ensureTransaction())
             {
                 // LabKey scope should have an active transaction, and all other scopes should not
-                for (DbScope scope : getDbScopes())
+                for (DbScope scope : getDbScopesToTest())
                     Assert.assertEquals(scope.isLabKeyScope(), scope.isTransactionActive());
 
                 for (TableInfo table : tablesToTest)

@@ -37,13 +37,15 @@ import java.util.Map;
 
 public class SystemProperty
 {
-    static final private Logger _log = LogManager.getLogger(SystemProperty.class);
-    static private Map<String, SystemProperty> _systemProperties = new LinkedHashMap<>();
-    static private boolean _registered = false;
+    private static final Logger _log = LogManager.getLogger(SystemProperty.class);
+    private static final Map<String, SystemProperty> _systemProperties = new LinkedHashMap<>();
 
-    private String _propertyURI;
-    private PropertyType _type;
-    private String _name;
+    private static boolean _registered = false;
+
+    private final String _propertyURI;
+    private final PropertyType _type;
+    private final String _name;
+
     private PropertyDescriptor _pd;
 
     public SystemProperty(String propertyURI, PropertyType type, String name)

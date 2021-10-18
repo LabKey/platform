@@ -1,18 +1,18 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-apache-mime4j-core-0.8.3.jar|Apache James Mime4J|0.8.1|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
-apache-mime4j-dom-0.8.3.jar|Apache James Mime4J|0.8.1|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
-commons-compress-1.20.jar|Commons Compress|1.18|{link:Apache|https://commons.apache.org/proper/commons-compress/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Utilities for working with compressed files
+apache-mime4j-core-0.8.3.jar|Apache James Mime4J|0.8.3|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
+apache-mime4j-dom-0.8.3.jar|Apache James Mime4J|0.8.3|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
+commons-compress-1.20.jar|Commons Compress|1.20|{link:Apache|https://commons.apache.org/proper/commons-compress/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Utilities for working with compressed files
 commons-csv-1.8.jar|Commons CSV ™|1.8|{link:Apache|http://commons.apache.org/proper/commons-csv/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV files via Tika
-jempbox-1.8.16.jar|jempbox|1.8.13|{link:Apache|https://pdfbox.apache.org/1.8/dependencies.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|PDFBox dependency
+jempbox-1.8.16.jar|jempbox|1.8.16|{link:Apache|https://pdfbox.apache.org/1.8/dependencies.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|PDFBox dependency
 jhighlight-1.0.3.jar|JHighlight|1.0.3|{link:codelibs|https://github.com/codelibs/jhighlight}|{link:CDDL|https://github.com/codelibs/jhighlight/blob/master/LICENSE_CDDL.txt}|adam|Parsers for Java, HTML, XHTML, XML and LZX
-lucene-core-8.0.0.jar|Lucene|8.0.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
-lucene-analyzers-common-8.0.0.jar|Lucene Analyzers|8.0.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
-lucene-queryparser-8.0.0.jar|Lucene Query Parsers|8.0.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Query parser support for full-text search
+lucene-core-8.10.0.jar|Lucene|8.10.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-analyzers-common-8.10.0.jar|Lucene Analyzers|8.10.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
+lucene-queryparser-8.10.0.jar|Lucene Query Parsers|8.10.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Query parser support for full-text search
 metadata-extractor-2.8.1.jar|Metadata Extractor|2.8.1|{link:drewnoakes|https://github.com/drewnoakes/metadata-extractor}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers that read metadata from image files
-pdfbox-2.0.23.jar|Apache PDFBox®|2.0.11|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
-poi-scratchpad-4.1.2.jar|Apache POI OOXML|4.0.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for older Microsoft document formats (e.g., PPT, DOC, VSD, PUB)
+pdfbox-2.0.23.jar|Apache PDFBox®|2.0.23|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
+poi-scratchpad-4.1.2.jar|Apache POI OOXML|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for older Microsoft document formats (e.g., PPT, DOC, VSD, PUB)
 tagsoup-1.2.1.jar|TagSoup|1.2.1|{link:TagSoup|http://vrici.lojban.org/~cowan/XML/tagsoup/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for HTML/XML
-tika-parsers-1.26.jar|Tika|1.19.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for text simple formats plus adapters for many external parsing libraries
-xz-1.9.jar|XZ for Java|1.8|{link:tukaani.org|https://tukaani.org/xz/java.html}|{link:public|https://tukaani.org/xz/java.html#Licensing}|ians|Transitive dependency of commons-compress to support additional compression types for search
+tika-parsers-1.26.jar|Tika|1.26|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsers for text simple formats plus adapters for many external parsing libraries
+xz-1.9.jar|XZ for Java|1.9|{link:tukaani.org|https://tukaani.org/xz/java.html}|{link:public|https://tukaani.org/xz/java.html#Licensing}|ians|Transitive dependency of commons-compress to support additional compression types for search
 {table}
