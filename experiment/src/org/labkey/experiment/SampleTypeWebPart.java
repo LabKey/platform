@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -116,10 +117,13 @@ public class SampleTypeWebPart extends QueryView
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
 
-        ActionURL manageSampleStatusesURL = new ActionURL("experiment", "manageSampleStatuses", getContainer());
-        ActionButton manageSampleStatusesButton = new ActionButton(manageSampleStatusesURL, "Manage Sample Statuses");
-        manageSampleStatusesButton.setDisplayPermission(AdminPermission.class);
-        bar.add(manageSampleStatusesButton);
+        if (SampleStatusService.get().supportsSampleStatus())
+        {
+            ActionURL manageSampleStatusesURL = new ActionURL("experiment", "manageSampleStatuses", getContainer());
+            ActionButton manageSampleStatusesButton = new ActionButton(manageSampleStatusesURL, "Manage Sample Statuses");
+            manageSampleStatusesButton.setDisplayPermission(AdminPermission.class);
+            bar.add(manageSampleStatusesButton);
+        }
 
 //      Deferred--Uncomment if supporting SampleType-level links is desired
 //        StudyUrls studyUrls = PageFlowUtil.urlProvider(StudyUrls.class);
