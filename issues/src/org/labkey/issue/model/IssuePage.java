@@ -42,13 +42,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
@@ -78,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -357,10 +356,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             // issue 27109 : need to add additional bindings to the render context so display values for lookup columns
             // don't render as broken lookups
             TableInfo table = getIssueTable(context);
-            QueryDefinition queryDefinition = table.getUserSchema().getQueryDefForTable(_issueListDef.getName());
-            if (queryDefinition != null)
+            if (table != null)
             {
-                List<ColumnInfo> selectCols = RenderContext.getSelectColumns(queryDefinition.getDisplayColumns(null, table), table);
+                List<DisplayColumn> displayColumns = table.getColumns().stream()
+                        .map(ColumnInfo::getRenderer)
+                        .collect(Collectors.toUnmodifiableList());
+                List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, table);
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
 
                 try (Results results = new TableSelector(table, selectCols, filter, null).getResults())
