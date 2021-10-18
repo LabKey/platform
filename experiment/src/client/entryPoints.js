@@ -9,10 +9,5 @@ module.exports = {
         title: 'Experiment Run Graph',
         path: './src/client/RunGraph',
         generateLib: true // used by experimentRunGraphView.jsp
-    }, {
-        name: 'manageSampleStatuses',
-        title: 'Manage Sample Statuses',
-        permission: 'admin',
-        path: './src/client/ManageSampleStatuses'
     }]
 };
