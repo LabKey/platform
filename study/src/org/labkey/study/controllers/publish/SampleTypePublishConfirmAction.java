@@ -22,7 +22,6 @@ import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -266,7 +265,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     public void addNavTrail(NavTree root)
     {
-        setHelpTopic(new HelpTopic("linkSampleData"));
+        setHelpTopic("linkSampleData");
         root.addChild("Sample Types", urlProvider(ExperimentUrls.class).getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));

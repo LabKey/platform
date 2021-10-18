@@ -25,7 +25,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -82,7 +81,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         AssayProvider provider = summaryForm.getProvider();
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
-        setHelpTopic(new HelpTopic("workWithAssayData#runs"));
+        setHelpTopic("workWithAssayData#runs");
 
         // If canceling out of transform warning, cleanup files
         if(summaryForm.getUploadAttemptID() != null)
