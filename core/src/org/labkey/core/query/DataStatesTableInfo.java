@@ -151,7 +151,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             if (!validateQCStateNotInUse(oldRowMap, container))
-                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted because it is currently in-use.");
+                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted because it is currently in use.");
 
             Map<String, Object> rowToDelete;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
