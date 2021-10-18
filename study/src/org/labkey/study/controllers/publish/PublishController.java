@@ -37,7 +37,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -128,7 +127,7 @@ public class PublishController extends SpringActionController
             QueryView historyView = createHistoryView(_protocol.getRowId(), PublishAuditProvider.COLUMN_NAME_PROTOCOL, containerFilter, errors);
             view.addView(historyView);
 
-            setHelpTopic(new HelpTopic("publishHistory"));
+            setHelpTopic("publishHistory");
             return view;
         }
 
@@ -199,7 +198,7 @@ public class PublishController extends SpringActionController
             QueryView historyView = createHistoryView(_sampleType.getRowId(), PublishAuditProvider.COLUMN_NAME_SAMPLE_TYPE_ID, containerFilter, errors);
             view.addView(historyView);
 
-            setHelpTopic(new HelpTopic("publishHistory"));
+            setHelpTopic("publishHistory");
             return view;
         }
 

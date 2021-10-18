@@ -2196,8 +2196,9 @@ public class LoginController extends SpringActionController
             getPageConfig().setTitle("Reset Password");
             getPageConfig().setIncludeLoginLink(false);
             getPageConfig().setIncludeSearch(false);
-            getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
             getPageConfig().setNoIndex();
+
+            setHelpTopic("passwordReset");
 
             if (null != _finishView)
                 return _finishView;
@@ -2380,7 +2381,7 @@ public class LoginController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("authenticationModule"));
+            setHelpTopic("authenticationModule");
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", getClass(), getContainer());
         }
     }

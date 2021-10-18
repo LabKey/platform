@@ -102,11 +102,6 @@ public class StatusController extends SpringActionController
 
     protected static final String _newline = System.getProperty("line.separator");
 
-    private static HelpTopic getHelpTopic(String topic)
-    {
-        return new HelpTopic(topic);
-    }
-
     private void reject(Errors errors, String message)
     {
         errors.reject(message);
@@ -134,7 +129,7 @@ public class StatusController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig p = super.defaultPageConfig();
-        p.setHelpTopic(getHelpTopic("pipeline"));
+        p.setHelpTopic("pipeline");
         return p;
     }
 
@@ -193,7 +188,7 @@ public class StatusController extends SpringActionController
         {
             Container c = getContainerCheckAdmin();
 
-            setHelpTopic(getHelpTopic("pipeline"));
+            setHelpTopic("pipeline");
 
             QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, PipelineService.PipelineButtonOption.Standard, getViewContext().getActionURL());
             gridView.setTitle("Data Pipeline");

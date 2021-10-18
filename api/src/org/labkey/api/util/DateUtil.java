@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -810,6 +811,17 @@ validNum:       {
         return new SimpleDateFormat(pattern).parse(s);
     }
 
+    private static @NotNull Container getCurrentContainer()
+    {
+        // Yes, using ThreadLocal is unfortunate, but some code paths have no way to pass a Container through to the
+        // parsing methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
+        Container c = (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+
+        if (null == c)
+            c = ContainerManager.getRoot();
+
+        return c;
+    }
 
     // Lenient parsing using a variety of standard formats
     @Deprecated  // Use version that takes a Container instead
@@ -823,12 +835,7 @@ validNum:       {
             return parseDateTime(s, MonthDayOption.MONTH_DAY, true, null);
         }
 
-        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
-        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
-        ViewContext ctx = HttpView.currentContext();
-        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
-
-        return parseDateTime(c, s);
+        return parseDateTime(getCurrentContainer(), s);
     }
 
 
@@ -874,12 +881,7 @@ validNum:       {
     @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
-        // Yes, this approach is unfortunate, but some code paths have no way to pass a Container through to the parsing
-        // methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
-        ViewContext ctx = HttpView.currentContext();
-        Container c = null != ctx ? ctx.getContainer() : ContainerManager.getRoot();
-
-        return parseDate(c, s);
+        return parseDate(getCurrentContainer(), s);
     }
 
 

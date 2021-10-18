@@ -153,7 +153,7 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
                     // Special case "labkey" schema, which gets added to all module data sources
                     if ("labkey".equalsIgnoreCase(fullyQualified))
                     {
-                        // Invalidate "labkey" in every scope if its meta data changes
+                        // Invalidate "labkey" in every scope if its metadata changes
                         for (DbScope scope : DbScope.getDbScopes())
                             invalidateSchema(scope, "labkey");
                     }

@@ -17,7 +17,6 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -35,6 +34,7 @@ public class ExperimentRun extends IdentifiableEntity
     private Integer jobId;
     private Integer _replacedByRunId;
     private Integer _batchId;
+    private Integer _workflowTask;
 
     public String getProtocolLSID()
     {
@@ -105,6 +105,16 @@ public class ExperimentRun extends IdentifiableEntity
     public void setBatchId(Integer batchId)
     {
         _batchId = batchId;
+    }
+
+    public Integer getWorkflowTask()
+    {
+        return _workflowTask;
+    }
+
+    public void setWorkflowTask(Integer workflowTaskId)
+    {
+        _workflowTask = workflowTaskId;
     }
 
     @Override

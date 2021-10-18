@@ -24,7 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -96,8 +95,9 @@ public class CustomFolderType implements FolderType
             return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         return c.getDefaultModule(u).getTabURL(c, u);
     }
+
     @Override
-    public HelpTopic getHelpTopic() { return null; }
+    public String getHelpTopic() { return null; }
 
     @Override
     public void addManageLinks(NavTree adminNavTree, Container container, User user)

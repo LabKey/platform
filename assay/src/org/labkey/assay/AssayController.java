@@ -117,7 +117,6 @@ import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -213,7 +212,7 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(ProtocolIdForm o, BindException errors)
         {
-            setHelpTopic(new HelpTopic("adminAssays"));
+            setHelpTopic("adminAssays");
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 
@@ -523,7 +522,7 @@ public class AssayController extends SpringActionController
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));
-            setHelpTopic(new HelpTopic("manageAssayDesign"));
+            setHelpTopic("manageAssayDesign");
             return new VBox(bbar, fileTree, bbar);
         }
 
@@ -735,7 +734,7 @@ public class AssayController extends SpringActionController
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
-            setHelpTopic(new HelpTopic("defineAssaySchema"));
+            setHelpTopic("defineAssaySchema");
         }
     }
 

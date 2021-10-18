@@ -385,6 +385,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return batchIdCol;
             case Properties:
                 return createPropertiesColumn(alias);
+            case WorkflowTask:
+                var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
+                workflowTaskCol.setShownInInsertView(false);
+                workflowTaskCol.setShownInUpdateView(false);
+                workflowTaskCol.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
+                workflowTaskCol.setLabel("Workflow Task");
+                return workflowTaskCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -547,8 +554,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
-
         addColumn(Column.Properties);
+        addColumn(Column.WorkflowTask);
         addVocabularyDomains();
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
@@ -565,6 +572,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Modified));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.WorkflowTask));
         setDefaultVisibleColumns(defaultVisibleColumns);
     }
 
@@ -901,6 +909,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             String newFlag = value == null ? null : (String)ConvertUtils.convert(value.toString(), String.class);
                             appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
                             run.setComment(user, newFlag);
+                        }
+                        else if (entry.getKey().equalsIgnoreCase(Column.WorkflowTask.toString()))
+                        {
+                            Integer newWorkflowTaskId = value == null ? null : (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+                            run.setWorkflowTaskId(newWorkflowTaskId);
                         }
 
                         // Also check for properties

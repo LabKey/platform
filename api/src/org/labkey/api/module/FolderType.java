@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -116,7 +115,7 @@ public interface FolderType
     /**
      * Help topic of the start page.
      */
-    HelpTopic getHelpTopic();
+    @Nullable String getHelpTopic();
 
     /**
      * Whether the menu bar should be shown by default.

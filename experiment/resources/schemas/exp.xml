@@ -183,6 +183,9 @@
       </column>
       <column columnName="ObjectId"/>
       <column columnName="LastIndexed"/>
+      <column columnName="WorkflowTask">
+        <description>The Workflow Task this run is associated with.</description>
+      </column>
     </columns>
     <description>Contains a row per experiment run in this folder.</description>
   </table>

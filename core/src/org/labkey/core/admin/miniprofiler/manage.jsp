@@ -19,13 +19,13 @@
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler.RenderPosition" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler.Settings" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController" %>
 <%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController.ManageAction" %>
+<%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController.ResetAction" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController.ResetAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -65,7 +65,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
                 The MiniProfiler is a simple profiler utility that shows at a glance how long actions and queries take
                 to execute. It's shown in the corner of each LabKey web page. Administrators or developers can enable or
                 disable the profiler if the user has the <%=helpLink("devRoles#platformDeveloper", "Platform Developer")%> role.
-                <%=MiniProfiler.getHelpTopic().getLinkHtml("MiniProfiler Help")%>
+                <%=new HelpTopic(MiniProfiler.getHelpTopic()).getLinkHtml("MiniProfiler Help")%>
             </td>
         </tr>
 

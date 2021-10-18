@@ -96,6 +96,7 @@
 			<xs:element name="Comments" type="string" minOccurs="0"/>
             <xs:element name="ExperimentLSID" type="string" minOccurs="0" maxOccurs="1" />
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+            <xs:element name="WorkflowTaskLSID" type="string" minOccurs="0" maxOccurs="1" />
 			<xs:element name="ExperimentLog" minOccurs="0">
 				<xs:complexType>
 					<xs:sequence>

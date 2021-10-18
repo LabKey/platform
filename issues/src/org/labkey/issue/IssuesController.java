@@ -103,7 +103,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -228,7 +227,7 @@ public class IssuesController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
-        config.setHelpTopic(new HelpTopic(helpTopic));
+        config.setHelpTopic(helpTopic);
 
         String templateHeader = getViewContext().getRequest().getHeader("X-TEMPLATE");
         if (!StringUtils.isEmpty(templateHeader))
