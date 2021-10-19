@@ -836,7 +836,13 @@ public class StudyPublishManager implements StudyPublishService
 
             // auto generate a dataset ID
             if (null == builder.getDatasetId())
-                builder.setDatasetId(new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class));
+            {
+                int id = study.isDataspaceStudy() ? 10000 : MIN_ASSAY_ID;
+                id = Math.max(id,new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId()).getObject(Integer.class));
+                if (study.isDataspaceStudy())
+                    id = Math.max(id,new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getProject().getId()).getObject(Integer.class));
+                builder.setDatasetId(id+1);
+            }
 
             DatasetDefinition dsd = builder.build();
             if (dsd.getUseTimeKeyField() && (dsd.isDemographicData() || dsd.getKeyPropertyName() != null))
