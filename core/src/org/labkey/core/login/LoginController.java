@@ -2754,6 +2754,26 @@ public class LoginController extends SpringActionController
         }
     }
 
+
+    /**
+     * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
+     * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
+     */
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.ALL)
+    public static class CsrfAction extends ReadOnlyApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors)
+        {
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("success", true);
+            return res;
+        }
+    }
+
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
