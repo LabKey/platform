@@ -93,7 +93,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -202,7 +201,7 @@ public class ListController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
-        return config.setHelpTopic(new HelpTopic("lists"));
+        return config.setHelpTopic("lists");
     }
 
     @RequiresPermission(ReadPermission.class)

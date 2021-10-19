@@ -91,7 +91,7 @@ public class MiniProfilerController extends SpringActionController
         {
             MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings(getUser());
 
-            getPageConfig().setHelpTopic(MiniProfiler.getHelpTopic());
+            setHelpTopic(MiniProfiler.getHelpTopic());
 
             return new JspView<>("/org/labkey/core/admin/miniprofiler/manage.jsp", settings, errors);
         }
@@ -273,7 +273,7 @@ public class MiniProfilerController extends SpringActionController
             if (!MiniProfiler.isEnabled(getViewContext()))
                 throw new UnauthorizedException();
 
-            getPageConfig().setHelpTopic(MiniProfiler.getHelpTopic());
+            setHelpTopic(MiniProfiler.getHelpTopic());
 
             // TODO: filter requests by user/session if not site admin
             List<RequestInfo> requests = MemTracker.getInstance().getNewRequests(0);

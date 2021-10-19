@@ -132,6 +132,12 @@ public class PageConfig
         return this;
     }
 
+    public PageConfig setHelpTopic(String topic)
+    {
+        _helpTopic = new HelpTopic(topic);
+        return this;
+    }
+
     public @NotNull HelpTopic getHelpTopic()
     {
         return _helpTopic == null ? HelpTopic.DEFAULT_HELP_TOPIC : _helpTopic;

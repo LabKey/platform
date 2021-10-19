@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -331,7 +330,7 @@ public class DefaultFolderType implements FolderType
     }
 
     @Override
-    public HelpTopic getHelpTopic()
+    public String getHelpTopic()
     {
         return null;
     }

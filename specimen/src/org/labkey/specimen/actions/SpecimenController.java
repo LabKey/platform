@@ -109,7 +109,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -1566,7 +1565,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("specimenRequest#display"));
+            setHelpTopic("specimenRequest#display");
             addManageStudyNavTrail(root);
             root.addChild("Manage Specimen Display Settings");
         }
@@ -2728,15 +2727,13 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(Form form, boolean reshow, BindException errors)
         {
             ensureSpecimenRequestsConfigured(false);
-            return getJspView(getStudyRedirectIfNull());
+            return new JspView<>(_jsp, getStudyRedirectIfNull());
         }
-
-        protected abstract JspView<Study> getJspView(Study study);
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic(_helpTopic));
+            setHelpTopic(_helpTopic);
             addManageStudyNavTrail(root);
             root.addChild(_title);
         }
@@ -2772,13 +2769,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageActorsAction()
         {
-            super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageActors.jsp", study);
+            super("/org/labkey/specimen/view/manageActors.jsp", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
         }
 
         @Override
@@ -2846,13 +2837,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageActorOrderAction()
         {
-            super("manageActorOrder", "Manage Actor Order", "specimenRequest");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageActorOrder.jsp", study);
+            super("/org/labkey/specimen/view/manageActorOrder.jsp", "Manage Actor Order", "specimenRequest");
         }
 
         @Override
@@ -3006,13 +2991,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageStatusesAction()
         {
-            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageStatuses.jsp", study);
+            super("/org/labkey/specimen/view/manageStatuses.jsp", "Manage Specimen Request Statuses", "specimenRequest#status");
         }
 
         @Override
@@ -3093,13 +3072,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageStatusOrderAction()
         {
-            super("manageStatusOrder", "Manage Status Order", "specimenRequest");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageStatusOrder.jsp", study);
+            super("/org/labkey/specimen/view/manageStatusOrder.jsp", "Manage Status Order", "specimenRequest");
         }
 
         @Override
@@ -5308,7 +5281,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("externalSpecimens"));
+            setHelpTopic("externalSpecimens");
             return new JspView<>("/org/labkey/specimen/view/chooseImporter.jsp", form, errors);
         }
 

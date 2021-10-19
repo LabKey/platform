@@ -144,7 +144,6 @@ import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -308,7 +307,7 @@ public class ExperimentController extends SpringActionController
     {
         // set default help topic for controller
         PageConfig config = super.defaultPageConfig();
-        config.setHelpTopic(new HelpTopic("experiment"));
+        config.setHelpTopic("experiment");
         return config;
     }
 
