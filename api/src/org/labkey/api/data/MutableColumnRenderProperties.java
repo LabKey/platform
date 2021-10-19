@@ -8,7 +8,7 @@ import org.labkey.api.util.StringExpression;
 
 import java.util.Set;
 
-public interface MutableColumnRenderProperties extends ColumnRenderProperties
+public interface MutableColumnRenderProperties extends ColumnRenderProperties, MutableColumnConceptProperties
 {
     void setSortDirection(Sort.SortDirection sortDirection);
 
