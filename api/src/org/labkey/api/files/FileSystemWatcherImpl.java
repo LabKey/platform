@@ -46,6 +46,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -372,7 +373,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                         final CloudStoreService css = CloudStoreService.get();
                         if (css != null)
                         {
-                            css.getWatcherJobs().parallelStream().forEach(css::pollWatcher);
+                            Collection<Integer> watchers = css.getWatcherJobs();
+                            LOG.debug("Watcher count: " + watchers);
+                            watchers.parallelStream().forEach(css::pollWatcher);
                         }
                         else if (ModuleLoader.getInstance().isStartupComplete())
                         {

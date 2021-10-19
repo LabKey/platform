@@ -131,7 +131,7 @@ public interface CloudStoreService
     /**
      * Returns a list of all store names.
      */
-    public Collection<String> getCloudStores();
+    Collection<String> getCloudStores();
 
     /**
      * Returns a list of enabled store names in the container.
@@ -170,12 +170,6 @@ public interface CloudStoreService
     Path getPathFromUrl(Container container, String url);
 
     /**
-     * Return nio.Path matching url (which has bucket, etc.)
-     */
-    @Nullable
-    Path getPathFromUrl(String url);
-
-    /**
      * Return nio.Path for otherContainer, given a cloud url/container
      */
     @Nullable
@@ -183,15 +177,7 @@ public interface CloudStoreService
                                   @NotNull org.labkey.api.util.Path path);
 
     @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)      // TODO: remove this when implementation switches to below
-    {
-        return null;
-    }
-    @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay)
-    {
-        return getWebFilesResource(parent, container, name);
-    }
+    WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay);
 
     default Map<String, StoreInfo> getStoreInfos(@Nullable Container container)
     {

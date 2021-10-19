@@ -1110,7 +1110,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (null != remoteLogFilePath)
             {
                 //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
-                setLogFile(remoteLogFilePath);
+                setLogFilePath(remoteLogFilePath);
                 setStatus(getActiveTaskStatus());       // Force writing to statusFiles
             }
         }

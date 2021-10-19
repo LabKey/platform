@@ -337,14 +337,7 @@ public class FileUtil
 
     public static boolean hasCloudScheme(String url)
     {
-        try
-        {
-            return hasCloudScheme(new URI(url));
-        }
-        catch (URISyntaxException e)
-        {
-            return false;
-        }
+        return hasCloudScheme(FileUtil.createUri(url));
     }
 
     public static String getAbsolutePath(Path path)
