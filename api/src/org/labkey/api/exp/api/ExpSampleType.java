@@ -41,6 +41,7 @@ import java.util.function.Function;
 public interface ExpSampleType extends ExpObject
 {
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
+    String ALIQUOTED_FROM_EXPRESSION = "${AliquotedFrom}";
 
     String getMaterialLSIDPrefix();
 
@@ -97,6 +98,8 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     String getNameExpression();
 
+    void setNameExpression(String expression);
+
     /** @return true if this SampleSet has a name expression. */
     boolean hasNameExpression();
 
@@ -106,6 +109,8 @@ public interface ExpSampleType extends ExpObject
 
     /** @return true if this SampleSet has an override aliquot name expression. */
     boolean hasAliquotNameExpression();
+
+    void setAliquotNameExpression(String expression);
 
     /** @return label color hex value if set. */
     @Nullable
