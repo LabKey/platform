@@ -346,10 +346,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(context.getContainer(), domain, context.getUser());
                 for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
                 {
-                    if (row.get(entry.getKey()) == null)
-                    {
-                        row.put(entry.getKey().getName(), entry.getValue());
-                    }
+                    row.putIfAbsent(entry.getKey().getName(), entry.getValue());
                 }
             }
 
@@ -371,7 +368,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                         Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
                         for (Map.Entry<FieldKey, Object> entry : rowMap.entrySet())
                         {
-                            row.put(entry.getKey().encode(), entry.getValue());
+                            row.putIfAbsent(entry.getKey().encode(), entry.getValue());
                         }
                     }
                 }
