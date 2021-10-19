@@ -86,7 +86,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -135,11 +134,6 @@ public class PipelineController extends SpringActionController
 
     public enum Params { path, rootset, overrideRoot }
 
-    private static HelpTopic getHelpTopic(String topic)
-    {
-        return new HelpTopic(topic);
-    }
-
     public PipelineController()
     {
         setActionResolver(_resolver);
@@ -149,7 +143,7 @@ public class PipelineController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig p = super.defaultPageConfig();
-        p.setHelpTopic(getHelpTopic("pipeline"));
+        p.setHelpTopic("pipeline");
         return p;
     }
 
@@ -300,7 +294,7 @@ public class PipelineController extends SpringActionController
         @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
-            setHelpTopic(getHelpTopic("pipelineSetup"));
+            setHelpTopic("pipelineSetup");
 
             if (getViewContext().getRequest().getParameter(Params.overrideRoot.toString()) == null && !reshow)
             {
@@ -417,7 +411,7 @@ public class PipelineController extends SpringActionController
             BrowseWebPart wp = new BrowseWebPart(path);
             wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
+            setHelpTopic("fileSharing");
             return wp;
         }
 

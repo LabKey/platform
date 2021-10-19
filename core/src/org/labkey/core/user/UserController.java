@@ -103,7 +103,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -800,12 +799,12 @@ public class UserController extends SpringActionController
         {
             if (getContainer().isRoot())
             {
-                setHelpTopic(new HelpTopic("manageUsers"));
+                setHelpTopic("manageUsers");
                 root.addChild("Site Users");
             }
             else
             {
-                setHelpTopic(new HelpTopic("manageProjectMembers"));
+                setHelpTopic("manageProjectMembers");
                 root.addChild("Project Users");
             }
         }

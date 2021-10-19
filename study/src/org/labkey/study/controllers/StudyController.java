@@ -157,7 +157,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -2588,7 +2587,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
+            setHelpTopic("DatasetBulkDefinition");
             _addNavTrailDatasetAdmin(root);
             root.addChild("Bulk Import");
         }
@@ -3897,7 +3896,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customViews"));
+            setHelpTopic("customViews");
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 

@@ -70,7 +70,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -631,7 +630,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(QueryReportForm form, BindException errors)
         {
-            setHelpTopic(new HelpTopic("datasetViews"));
+            setHelpTopic("datasetViews");
             return new JspView<>("/org/labkey/study/view/createQueryReport.jsp",
                     new CreateQueryReportBean(getViewContext(), form.getQueryName()));
         }
@@ -650,7 +649,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            setHelpTopic(new HelpTopic("crosstabReports"));
+            setHelpTopic("crosstabReports");
             return new JspView<>("/org/labkey/study/view/createCrosstabReport.jsp",
                     new CreateCrosstabBean(getViewContext()));
         }

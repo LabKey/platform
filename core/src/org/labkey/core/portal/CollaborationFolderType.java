@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
@@ -79,8 +78,8 @@ public class CollaborationFolderType extends MultiPortalFolderType
     }
 
     @Override
-    public HelpTopic getHelpTopic()
+    public String getHelpTopic()
     {
-        return new HelpTopic("default");
+        return "default";
     }
 }
