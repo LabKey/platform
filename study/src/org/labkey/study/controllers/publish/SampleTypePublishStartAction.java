@@ -8,7 +8,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.AbstractPublishStartAction;
 import org.labkey.api.study.publish.PublishStartForm;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
@@ -147,7 +146,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     public void addNavTrail(NavTree root)
     {
-        setHelpTopic(new HelpTopic("linkSampleData"));
+        setHelpTopic("linkSampleData");
         root.addChild("Sample Types", ExperimentUrls.get().getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));

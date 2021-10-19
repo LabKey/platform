@@ -23,7 +23,7 @@ public interface FolderImporterFactory
 {
     int DEFAULT_PRIORITY = 50;
 
-    FolderImporter create();
+    FolderImporter<?> create();
 
     /* priority allows importers to be ordered relative to each other in ascending order. 0 would be the highest priority */
     int getPriority();

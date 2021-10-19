@@ -24,10 +24,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.publish.AbstractPublishConfirmAction;
+import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -37,8 +38,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.publish.AbstractPublishConfirmAction;
-import org.labkey.api.study.publish.PublishConfirmForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -309,7 +308,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     public void addNavTrail(NavTree root)
     {
-        getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
+        setHelpTopic("publishAssayData");
         root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
         if (_protocol != null)
             root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));

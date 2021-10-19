@@ -50,9 +50,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
@@ -380,7 +378,7 @@ public class SearchController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("searchAdmin"));
+            setHelpTopic("searchAdmin");
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Full-Text Search Configuration", getClass(), getContainer());
         }
     }
@@ -781,7 +779,7 @@ public class SearchController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             ResponseHelper.setPrivate(response, Duration.ofMinutes(5));
             getPageConfig().setNoIndex();
-            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
+            setHelpTopic("luceneSearch");
 
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }

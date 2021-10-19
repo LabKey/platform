@@ -54,7 +54,8 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         ReplacedByRun,
         ReplacesRun,
         Batch,
-        Properties
+        Properties,
+        WorkflowTask
     }
 
     /**

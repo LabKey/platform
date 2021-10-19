@@ -248,6 +248,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     ServletContext _servletContext = null;
 
+    @Nullable
     public static ServletContext getServletContext()
     {
         return getInstance() == null ? null : getInstance()._servletContext;

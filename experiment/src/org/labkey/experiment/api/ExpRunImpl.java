@@ -58,7 +58,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
@@ -91,6 +90,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private ExpRunImpl _replacedByRun;
     private Integer _maxOutputActionSequence = null;
     private static final Logger LOG = LogManager.getLogger(ExpRunImpl.class);
+    private ExpProtocolApplication _workflowTask;
 
     static public List<ExpRunImpl> fromRuns(List<ExperimentRun> runs)
     {
@@ -1009,5 +1009,39 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         return false;
+    }
+
+    @Override
+    public void setWorkflowTaskId(@Nullable Integer workflowTaskId)
+    {
+        _object.setWorkflowTask(workflowTaskId);
+    }
+
+    @Override
+    public ExpProtocolApplication getWorkflowTask()
+    {
+        Integer id = _object.getWorkflowTask();
+
+        if (id == null) {
+            return null;
+        }
+
+        if (_workflowTask == null || _workflowTask.getRowId() != id.intValue())
+        {
+            _workflowTask = ExperimentServiceImpl.get().getExpProtocolApplication(id);
+        }
+
+        return _workflowTask;
+    }
+
+    @Override
+    public void setWorkflowTask(ExpProtocolApplication workflowTask)
+    {
+        ensureUnlocked();
+
+        if (workflowTask == null)
+            _object.setWorkflowTask(null);
+        else
+            _object.setWorkflowTask(workflowTask.getRowId());
     }
 }
