@@ -204,6 +204,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
+        result.setStatus(protocol.getStatus().name());
         Map<String, String> gwtProtocolParams = new HashMap<>();
         for (ProtocolParameter property : protocol.getProtocolParameters().values())
         {
