@@ -369,7 +369,7 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.RecallFromStudy
         )),
         Locked(Set.of(
-                SampleTypeService.SampleOperations.AddToPicklist,
+                SampleTypeService.SampleOperations.AddToPicklist
         ));
 
         Set<SampleTypeService.SampleOperations> _permittedOps;
