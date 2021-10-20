@@ -62,7 +62,13 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -97,6 +103,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -105,14 +112,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
     /**
      * The sample LSID or the assay result LSID column is added to the dataset for assays that support it.
+     *
      * @see AssayTableMetadata#getResultLsidFieldKey()
      */
     public static final String SOURCE_ROW_LSID = "SourceRowLsid";
 
     protected static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
-    protected final @NotNull DatasetDefinition _dsd;
+    protected final @NotNull
+    DatasetDefinition _dsd;
 
     private TableInfo _fromTable;
+
+    private Predicate<String> canModifyParticipantPredicate = (ptid) -> true;
 
     public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
@@ -442,7 +453,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
+    public @NotNull
+    Set<FieldKey> getPHIDataLoggingColumns()
     {
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         Set<FieldKey> loggingColumns = new HashSet<>(1);
@@ -474,7 +486,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public String getContainerFilterColumn()
     {
         if (null == _rootTable.getColumn("container"))
-                return null;
+            return null;
 
         return "Container";
     }
@@ -542,8 +554,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             result = columns.get(fieldKey);
             if (null != result)
             {
-                ((BaseColumnInfo)result).setFieldKey(new FieldKey(null,name));
-                ((BaseColumnInfo)result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
+                ((BaseColumnInfo) result).setFieldKey(new FieldKey(null, name));
+                ((BaseColumnInfo) result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
             }
         }
         return result;
@@ -561,7 +573,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         checkLocked();
 
         if (filter instanceof DataspaceContainerFilter)
-            filter = ((DataspaceContainerFilter)filter).getCanOptimizeDatasetContainerFilter();
+            filter = ((DataspaceContainerFilter) filter).getCanOptimizeDatasetContainerFilter();
 
         super._setContainerFilter(filter);
     }
@@ -572,7 +584,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         ContainerFilter f = super.getDefaultContainerFilter();
         if (f instanceof DataspaceContainerFilter)
-            f = ((DataspaceContainerFilter)f).getCanOptimizeDatasetContainerFilter();
+            f = ((DataspaceContainerFilter) f).getCanOptimizeDatasetContainerFilter();
         return f;
     }
 
@@ -591,7 +603,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
         else
         {
-            String innerAlias = "__" +  alias;
+            String innerAlias = "__" + alias;
             SqlDialect d = getSchema().getSqlDialect();
             sqlf = new SQLFragment();
             sqlf.appendComment("<DatasetTableImpl>", d);
@@ -724,7 +736,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public ContainerContext getContainerContext()
     {
         if (_dsd.isShared())
-            return new ContainerContext.FieldKeyContext(new FieldKey(null,"Folder"));
+            return new ContainerContext.FieldKeyContext(new FieldKey(null, "Folder"));
         else
             return _dsd.getContainer();
     }
@@ -757,13 +769,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 else
                 {
-                    if(overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
+                    if (overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
                         LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
                 if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
                 {
                     // TableName different than both name and label, so overlay it if found
-                    if(overlayMetadataIfExists(tableName, schema, errors))
+                    if (overlayMetadataIfExists(tableName, schema, errors))
                         LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
             }
@@ -919,7 +931,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             super(cf, StudyService.get().getSubjectColumnName(_userSchema.getContainer()), null);
             // 19918: GROUP BY columns in custom query no longer retain ForeignKey configuration
             if (_dsd.isShared())
-                addJoin(new FieldKey(null,"Folder"),"Container",false);
+                addJoin(new FieldKey(null, "Folder"), "Container", false);
             // Perf improvement - stash the table name so it can be accessed without needing to create the whole TableInfo
             _tableName = StudyService.get().getSubjectTableName(_userSchema.getContainer());
         }
@@ -956,7 +968,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
             // 20546: row duplication for dataspace project w/ same ptid in multiple containers
             if (_dsd.isShared())
-                addJoin(new FieldKey(null,"Folder"),"Container",false);
+                addJoin(new FieldKey(null, "Folder"), "Container", false);
         }
 
         @Override
@@ -1035,5 +1047,44 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         if (fk instanceof SpecimenForeignKey)
             ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
         return wrappedColumn;
+    }
+
+    /** Caller is still responsible for calling hasPermission() */
+    @Override
+    public void setCanModifyParticipantPredicate(Predicate<String> edit)
+    {
+        canModifyParticipantPredicate = edit;
+    }
+
+     public boolean canUpdateRowForParticipant(String subjectid)
+     {
+         assert hasPermission(getUserSchema().getUser(), UpdatePermission.class) || hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class);
+         return canModifyParticipantPredicate.test(subjectid);
+     }
+
+    public boolean canInsertRowForParticipant(String subjectid)
+    {
+        assert hasPermission(getUserSchema().getUser(), InsertPermission.class) || hasPermission(getUserSchema().getUser(), RestrictedInsertPermission.class);
+        return canModifyParticipantPredicate.test(subjectid);
+    }
+
+    public boolean canDeleteRowForParticipant(String subjectid)
+    {
+        assert hasPermission(getUserSchema().getUser(), DeletePermission.class) || hasPermission(getUserSchema().getUser(), RestrictedDeletePermission.class);
+        return canModifyParticipantPredicate.test(subjectid);
+    }
+
+    @Override
+    public boolean hasUpdateURLOverride()
+    {
+        // TODO
+        return super.hasUpdateURLOverride();
+    }
+
+    @Override
+    public boolean allowQueryTableURLOverrides()
+    {
+        // TODO
+        return super.allowQueryTableURLOverrides() || hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class);
     }
 }

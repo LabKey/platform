@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -996,6 +997,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     public boolean canUpdate(UserPrincipal user)
     {
         return hasPermission(user, UpdatePermission.class);
+    }
+
+    // Currently, this is used ONLY for row-at-a-time form update. All other code paths check canUpdate().
+    public boolean canUpdateSome(UserPrincipal user)
+    {
+        return hasPermission(user, UpdatePermission.class) || hasPermission(user, RestrictedUpdatePermission.class);
     }
 
     @Override

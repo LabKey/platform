@@ -820,6 +820,11 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
     }
 
+    protected boolean canUpdateSome()
+    {
+        return canUpdate();
+    }
+
     protected boolean canDelete()
     {
         TableInfo table = getTable();
@@ -2962,24 +2967,33 @@ public class QueryView extends WebPartView<Object>
             if (urlDetails != null && urlDetails != AbstractTableInfo.LINK_DISABLER)
             {
                 // We'll decide at render time if we have enough columns in the results to make the DetailsColumn visible
-                ret.add(createDetailsColumn(urlDetails, table));
+                DisplayColumn dc = createDetailsColumn(urlDetails, table);
+                if (null != dc)
+                    ret.add(dc);
             }
         }
 
         if (_showUpdateColumn && (canUpdate() || allowQueryTableUpdateURLOverride()))
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
-
             if (urlUpdate != null)
             {
-                ret.add(0, new UpdateColumn(urlUpdate));
+                DisplayColumn dc = createUpdateColumn(urlUpdate, table);
+                if (null != dc)
+                    ret.add(0, dc);
             }
         }
     }
 
+    @Nullable
     protected DisplayColumn createDetailsColumn(StringExpression urlDetails, TableInfo table)
     {
         return new DetailsColumn(urlDetails, table);
+    }
+
+    protected DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
+    {
+        return new UpdateColumn.Impl(urlUpdate);
     }
 
     public QueryDefinition getQueryDef()

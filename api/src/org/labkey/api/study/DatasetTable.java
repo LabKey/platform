@@ -19,6 +19,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 
+import java.util.function.Predicate;
+
 /**
  * Table backed by a {@link Dataset}
  * User: brittp
@@ -28,4 +30,7 @@ public interface DatasetTable extends TableInfo
 {
     Dataset getDataset();
     DataIterator getPrimaryKeyDataIterator(DataIterator it, DataIteratorContext context);
+
+    /* for user with UpdateSomePermission, InsertSomePermission */
+    void setCanModifyParticipantPredicate(Predicate<String> edit);
 }

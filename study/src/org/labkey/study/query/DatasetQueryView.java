@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
@@ -40,6 +41,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.qc.QCStateManager;
@@ -56,6 +58,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -65,6 +69,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -234,6 +239,62 @@ public class DatasetQueryView extends StudyQueryView
         view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
+    }
+
+
+    @Override
+    protected boolean canUpdateSome()
+    {
+        TableInfo table = getTable();
+        if (null == table)
+            return false;
+        return (table.hasPermission(getUser(), UpdatePermission.class) || table.hasPermission(getUser(), RestrictedUpdatePermission.class))
+                && table.getUpdateService() != null;
+    }
+
+
+    @Override
+    protected @Nullable DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
+    {
+        final DatasetTableImpl dtable = (DatasetTableImpl)table;
+        final FieldKey subject = dtable.getColumn(dtable.getDataset().getStudy().getSubjectColumnName()).getFieldKey();
+
+        return new UpdateColumn.Impl(urlUpdate)
+        {
+            @Override
+            public void addQueryFieldKeys(Set<FieldKey> keys)
+            {
+                super.addQueryFieldKeys(keys);
+                keys.add(subject);
+            }
+
+            /* NOTE oddly the DataRegion does not call this Display column to render itself???
+             * Instead, it pieces together the HTML calling only getValue(), renderURL(), and getLinkTarget().
+             */
+            @Override
+            public Object getValue(RenderContext ctx)
+            {
+                String value = (String)super.getValue(ctx);
+                if (null == value)
+                    return null;
+                String subjectId = (String)ctx.get(subject);
+                if (null != subjectId && dtable.canUpdateRowForParticipant(subjectId))
+                    return value;
+                return null;
+            }
+
+            @Override
+            public String renderURL(RenderContext ctx)
+            {
+                return super.renderURL(ctx);
+            }
+
+            @Override
+            public String getLinkTarget()
+            {
+                return super.getLinkTarget();
+            }
+        };
     }
 
     private boolean hasUsefulDetailsPage()
