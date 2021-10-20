@@ -52,6 +52,13 @@ public interface ExpMaterial extends ExpRunItem
 
     String getStateLabel();
 
+    // rollup - begin
+    boolean isRecomputeRollup();
+    int getAliquotCount();
+    double getAliquotVolume();
+    String getAliquotUnit();
+    // rollup - end
+
     boolean isOperationPermitted(SampleTypeService.SampleOperations operation);
 
     String getNameAndStatus();

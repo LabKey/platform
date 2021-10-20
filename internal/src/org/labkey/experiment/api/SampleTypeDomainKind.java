@@ -99,8 +99,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotedFrom");
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
-        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
+        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("AliquotVolume");
+        RESERVED_NAMES.add("AliquotUnit");
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);

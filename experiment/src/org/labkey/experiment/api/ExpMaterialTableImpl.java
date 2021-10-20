@@ -347,7 +347,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     }
                 });
                 return ret;
-
+            case RecomputeRollup:
+                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            case AliquotCount:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+            case AliquotVolume:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
+            case AliquotUnit:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -569,7 +576,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInUpdateView(false);
 
         if (st == null || !st.isMedia())
+        {
             addColumn(Column.IsAliquot);
+            if (InventoryService.get() != null)
+            {
+                addColumn(Column.AliquotCount);
+                addColumn(Column.AliquotVolume);
+                addColumn(Column.AliquotUnit);
+                addColumn(Column.RecomputeRollup);
+            }
+        }
 
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);

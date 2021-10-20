@@ -291,6 +291,10 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
+      <column columnName="RecomputeRollup"/>
+      <column columnName="AliquotCount"/>
+      <column columnName="AliquotVolume"/>
+      <column columnName="AliquotUnit"/>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>

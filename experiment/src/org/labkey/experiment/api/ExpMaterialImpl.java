@@ -214,6 +214,30 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public boolean isRecomputeRollup()
+    {
+        return _object.isRecomputeRollup();
+    }
+
+    @Override
+    public int getAliquotCount()
+    {
+        return _object.getAliquotCount();
+    }
+
+    @Override
+    public double getAliquotVolume()
+    {
+        return _object.getAliquotVolume();
+    }
+
+    @Override
+    public String getAliquotUnit()
+    {
+        return _object.getAliquotUnit();
+    }
+
+    @Override
     public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
     {
         if (!SampleTypeService.isSampleStatusEnabled()) // permit everything if feature not enabled

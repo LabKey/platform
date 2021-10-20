@@ -33,6 +33,12 @@ public class Material extends RunItem
     private String aliquotedFromLSID;
     private Integer sampleState;
 
+    //rollup columns
+    private boolean recomputeRollup;
+    private int aliquotCount;
+    private double aliquotVolume;
+    private String aliquotUnit;
+
     public Material()
     {
         setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
@@ -66,6 +72,46 @@ public class Material extends RunItem
     public void setSampleState(Integer sampleState)
     {
         this.sampleState = sampleState;
+    }
+
+    public boolean isRecomputeRollup()
+    {
+        return recomputeRollup;
+    }
+
+    public int getAliquotCount()
+    {
+        return aliquotCount;
+    }
+
+    public double getAliquotVolume()
+    {
+        return aliquotVolume;
+    }
+
+    public String getAliquotUnit()
+    {
+        return aliquotUnit;
+    }
+
+    public void setRecomputeRollup(boolean recomputeRollup)
+    {
+        this.recomputeRollup = recomputeRollup;
+    }
+
+    public void setAliquotCount(int aliquotCount)
+    {
+        this.aliquotCount = aliquotCount;
+    }
+
+    public void setAliquotVolume(double aliquotVolume)
+    {
+        this.aliquotVolume = aliquotVolume;
+    }
+
+    public void setAliquotUnit(String aliquotUnit)
+    {
+        this.aliquotUnit = aliquotUnit;
     }
 
     @Override
