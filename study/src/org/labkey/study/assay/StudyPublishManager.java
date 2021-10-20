@@ -875,9 +875,15 @@ public class StudyPublishManager implements StudyPublishService
             if (null == builder.getDatasetId())
             {
                 int id = study.isDataspaceStudy() ? 10000 : MIN_ASSAY_ID;
-                id = Math.max(id,new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId()).getObject(Integer.class));
+                Integer mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId()).getObject(Integer.class);
+                if (null != mx)
+                    id = Math.max(id,mx);
                 if (study.isDataspaceStudy())
-                    id = Math.max(id,new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getProject().getId()).getObject(Integer.class));
+                {
+                    mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getProject().getId()).getObject(Integer.class);
+                    if (null != mx)
+                       id = Math.max(id, mx);
+                }
                 builder.setDatasetId(id+1);
             }
 
