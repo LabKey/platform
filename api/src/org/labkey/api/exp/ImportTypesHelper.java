@@ -25,6 +25,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnConceptProperties;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
@@ -33,6 +34,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -188,6 +190,10 @@ public class ImportTypesHelper
                 if (columnXml.isSetDefaultValue())
                     builder.setDefaultValue(columnXml.getDefaultValue());
 
+                OntologyService os = OntologyService.get();
+                if (null != os)
+                    os.parseXml(columnXml,builder);
+
                 builders.add(builder);
             }
         }
@@ -279,7 +285,7 @@ public class ImportTypesHelper
         return ret;
     }
 
-    public static class Builder implements org.labkey.api.data.Builder<PropertyDescriptor>
+    public static class Builder implements org.labkey.api.data.Builder<PropertyDescriptor>, MutableColumnConceptProperties
     {
         private PropertyType _type;
         private Container _container;
@@ -312,6 +318,12 @@ public class ImportTypesHelper
         private boolean _excludeFromShifting;
         private int _scale;
         private DefaultValueType _defaultValueType = null;
+
+        private String _principalConceptCode = null;
+        private String _conceptImportColumn = null;
+        private String _conceptLabelColumn = null;
+        private String _sourceOntology = null;
+        private String _conceptSubtree = null;
 
         // not part of PropertyDescriptors, this class could eventually become a builder for DomainProperty
         private String _domainName;
@@ -379,6 +391,11 @@ public class ImportTypesHelper
             pd.setExcludeFromShifting(_excludeFromShifting);
             pd.setScale(_scale);
             pd.setDefaultValueTypeEnum(_defaultValueType);
+            pd.setPrincipalConceptCode(_principalConceptCode);
+            pd.setConceptImportColumn(_conceptImportColumn);
+            pd.setConceptLabelColumn(_conceptLabelColumn);
+            pd.setSourceOntology(_sourceOntology);
+            pd.setConceptSubtree(_conceptSubtree);
 
             return pd;
         }
@@ -652,6 +669,58 @@ public class ImportTypesHelper
         public void setDefaultValue(String defaultValue)
         {
             _defaultValue = defaultValue;
+        }
+
+
+        // interface MutableColumnConceptProperties
+        public String getPrincipalConceptCode()
+        {
+            return _principalConceptCode;
+        }
+
+        public void setPrincipalConceptCode(String principalConceptCode)
+        {
+            this._principalConceptCode = principalConceptCode;
+        }
+
+        public String getConceptImportColumn()
+        {
+            return _conceptImportColumn;
+        }
+
+        public void setConceptImportColumn(String conceptImportColumn)
+        {
+            this._conceptImportColumn = conceptImportColumn;
+        }
+
+        public String getConceptLabelColumn()
+        {
+            return _conceptLabelColumn;
+        }
+
+        public void setConceptLabelColumn(String conceptLabelColumn)
+        {
+            this._conceptLabelColumn = conceptLabelColumn;
+        }
+
+        public String getSourceOntology()
+        {
+            return _sourceOntology;
+        }
+
+        public void setSourceOntology(String sourceOntology)
+        {
+            this._sourceOntology = sourceOntology;
+        }
+
+        public String getConceptSubtree()
+        {
+            return _conceptSubtree;
+        }
+
+        public void setConceptSubtree(String conceptSubtree)
+        {
+            this._conceptSubtree = conceptSubtree;
         }
 
         private String convertNumberFormatChars(String format)
