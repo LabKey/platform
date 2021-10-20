@@ -195,7 +195,7 @@ import java.util.Objects;
         }
         catch (NoSuchMethodException | ScriptException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e, "Script execution failed for row with values: " + Arrays.toString(args));
         }
 
         return null;
