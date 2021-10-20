@@ -51,6 +51,8 @@ import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -1221,18 +1223,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             {
                 switch (displayColumnClassName)
                 {
-                    case "DEFAULT":
-                        _displayColumnFactory = DEFAULT_FACTORY;
-                        break;
-                    case "NOWRAP":
-                        _displayColumnFactory = NOWRAP_FACTORY;
-                        break;
-                    case "NOLOOKUP":
-                        _displayColumnFactory = NOLOOKUP_FACTORY;
-                        break;
-                    default:
-                        Class clazz = Class.forName(displayColumnClassName);
-
+                    case "DEFAULT" -> _displayColumnFactory = DEFAULT_FACTORY;
+                    case "NOWRAP" -> _displayColumnFactory = NOWRAP_FACTORY;
+                    case "NOLOOKUP" -> _displayColumnFactory = NOLOOKUP_FACTORY;
+                    default -> {
+                        Class<?> clazz = Class.forName(displayColumnClassName);
                         if (DisplayColumnFactory.class.isAssignableFrom(clazz))
                         {
                             //noinspection unchecked
@@ -1253,12 +1248,26 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                         {
                             LOG.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
                         }
-                        break;
+                    }
                 }
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
             {
-                LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
+                String message = "Can't instantiate DisplayColumnFactory: " + displayColumnClassName;
+                // Defer logging an error until column is actually used, Issue #44103
+                // Substitute a factory that provides a renderer that displays and logs the error at render time
+                LOG.debug(message, e);
+                _displayColumnFactory = colInfo -> {
+                    LOG.error(message, e);
+                    return new SimpleDisplayColumn()
+                    {
+                        @Override
+                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                        {
+                            out.write(PageFlowUtil.filter("Error: " + message));
+                        }
+                    };
+                };
             }
         }
 
