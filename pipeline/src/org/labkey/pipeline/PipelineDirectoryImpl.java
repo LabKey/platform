@@ -15,10 +15,13 @@
  */
 package org.labkey.pipeline;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipeRootImpl;
 
@@ -43,6 +46,8 @@ import java.util.Map;
  */
 public class PipelineDirectoryImpl implements PipelineDirectory
 {
+    private static final Logger LOG = LogHelper.getLogger(PipelineDirectory.class, "Pipeline Directory and file actions");
+
     PipeRootImpl _root;
     String _relativePath;
     ActionURL _href;
@@ -121,8 +126,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             }
         catch (IOException e)
         {
-            //TODO log error
-            e.printStackTrace();
+            LOG.error("Error attempting to determine if File exists." + f, e);
             return false;
         }
     }
@@ -171,8 +175,10 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         }
         catch (IOException e)
         {
-            // TODO: log error, but otherwise ignore
-            String foo = e.getMessage();
+            if (LOG.isDebugEnabled())
+                LOG.debug("Error listing files.", e);
+            else
+                LOG.warn("Ignoring error accessing file. Enable debug log for more details");
         }
         return listFiles;
     }
@@ -187,8 +193,10 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         }
         catch (IOException e)
         {
-            // TODO: log error, but otherwise ignore
-            String foo = e.getMessage();
+            if (LOG.isDebugEnabled())
+                LOG.debug("Error listing files.", e);
+            else
+                LOG.warn("Ignoring error listing files. Enable debug log for more details");
         }
 
         // Actually do the filtering.
