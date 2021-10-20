@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.SubfolderType;
@@ -46,7 +47,7 @@ public class SubfolderWriter extends BaseFolderWriter
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         // start with just those child containers that the user has permissions to export.
-        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), FolderExportPermission.class);
+        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), ctx.getSubfolderPermission());
         List<Container> childrenToExport = new ArrayList<>();
         getChildrenToExport(ctx, allChildren, childrenToExport);
 
@@ -72,6 +73,11 @@ public class SubfolderWriter extends BaseFolderWriter
                 FolderExportContext childCtx = new FolderExportContext(ctx.getUser(), child, ctx.getDataTypes(), ctx.getFormat(),
                         ctx.isIncludeSubfolders(), ctx.getPhiLevel(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.isMaskClinic(), ctx.getLoggerGetter());
                 childCtx.setAddExportComment(ctx.isAddExportComment());
+
+                // pass the export context to each subfolder
+                var parentXarCtx = ctx.getContext(XarExportContext.class);
+                if (parentXarCtx != null)
+                    childCtx.addContext(XarExportContext.class, parentXarCtx);
 
                 FolderWriterImpl childFolderWriter = new FolderWriterImpl();
                 childFolderWriter.write(child, childCtx, childDir);

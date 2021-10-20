@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.PHI;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
@@ -58,6 +59,12 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     default AuditBehaviorType getAuditBehaviorType() throws Exception
     {
         return null;
+    }
+
+    // Used to determine the level of permissions the user needs to have in order to export a subfolder.
+    default Class<? extends Permission> getSubfolderPermission()
+    {
+        return FolderExportPermission.class;
     }
 
     // These methods let writers add and get module-specific context information
