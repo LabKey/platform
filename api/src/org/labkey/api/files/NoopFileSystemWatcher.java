@@ -15,6 +15,8 @@
  */
 package org.labkey.api.files;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cloud.CloudWatcherConfig;
 
 import java.nio.file.Path;
@@ -34,7 +36,7 @@ public class NoopFileSystemWatcher implements FileSystemWatcher
     }
 
     @Override
-    public void removeListener(Path directory, FileSystemDirectoryListener listener, int listenerId)
+    public void removeListener(@NotNull Path directory, FileSystemDirectoryListener listener, @Nullable Integer listenerId)
     {
     }
 

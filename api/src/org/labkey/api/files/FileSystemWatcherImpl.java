@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
@@ -201,7 +202,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     }
 
     @Override
-    public void removeListener(Path directory, FileSystemDirectoryListener listener, int listenerId)
+    public void removeListener(@NotNull Path directory, FileSystemDirectoryListener listener, @Nullable Integer listenerId)
     {
         //Ensure a trailing '/' if needed, otherwise some keys won't be found. Path::normalize method doesn't seem to address this
         Path dir = directory.resolve("a").getParent();
