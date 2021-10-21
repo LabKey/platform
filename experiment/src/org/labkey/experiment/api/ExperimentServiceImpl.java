@@ -96,6 +96,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -178,6 +179,7 @@ import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
@@ -3595,6 +3597,22 @@ public class ExperimentServiceImpl implements ExperimentService
     public ProtocolApplication getProtocolApplication(String lsid)
     {
         return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(ProtocolApplication.class);
+    }
+
+    @Override
+    @NotNull
+    public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsByObjectId(Container container, String objectId)
+    {
+        String likeFilter = "%:" + objectId;
+        final SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(" WHERE LSID LIKE ? AND RunId IN (SELECT RowId FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE Container = ?)");
+        sql.add(likeFilter);
+        sql.add(container);
+        List<ProtocolApplication> apps = new SqlSelector(getExpSchema(), sql).getArrayList(org.labkey.experiment.api.ProtocolApplication.class);
+        return ExpProtocolApplicationImpl.fromProtocolApplications(apps);
     }
 
     public List<ProtocolAction> getProtocolActions(int parentProtocolRowId)
@@ -7036,8 +7054,21 @@ public class ExperimentServiceImpl implements ExperimentService
         bean.setLSID(lsid.toString());
         if (options != null)
         {
+            String nameExpression = options.getNameExpression();
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
+            if (!svc.allowUserSpecifiedNames(c))
+            {
+                if (nameExpression == null)
+                    throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+            }
+
+            if (svc.getExpressionPrefix(c) != null)
+            {
+                // automatically apply the configured prefix to the name expression
+                nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
+            }
             bean.setDescription(options.getDescription());
-            bean.setNameExpression(options.getNameExpression());
+            bean.setNameExpression(nameExpression);
             bean.setMaterialSourceId(options.getSampleType());
             bean.setCategory(options.getCategory());
         }
@@ -7076,6 +7107,14 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
+
+            if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
+            {
+                ValidationException errors = new ValidationException();
+                errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+
+                return errors;
+            }
         }
 
         ValidationException errors;

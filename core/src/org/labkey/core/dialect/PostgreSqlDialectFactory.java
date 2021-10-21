@@ -92,16 +92,16 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx);
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
-        Connection conn = md.getConnection();
-        Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
-        PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
-
-        PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt(), serverType);
+        PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt());
 
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
         PostgreSql96Dialect dialect = psv.getDialect();
+
+        Connection conn = md.getConnection();
+        Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
+        PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
         dialect.setServerType(serverType);
 
         if (logWarnings)

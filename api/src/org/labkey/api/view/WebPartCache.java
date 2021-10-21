@@ -146,7 +146,7 @@ public class WebPartCache
         return CACHE.get(c.getId(), c, _webpartLoader);
     }
 
-    static void remove(Container c)
+    public static void remove(Container c)
     {
         CoreSchema.getInstance().getSchema().getScope().addCommitTask(
                 () -> CACHE.remove(c.getId()),

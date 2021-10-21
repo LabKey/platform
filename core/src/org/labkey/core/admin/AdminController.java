@@ -422,7 +422,7 @@ public class AdminController extends SpringActionController
             if (null != returnUrl)
                 root.addChild("Return to Project", returnUrl);
             root.addChild("Admin Console");
-            getPageConfig().setHelpTopic(new HelpTopic("siteManagement"));
+            setHelpTopic("siteManagement");
         }
     }
 
@@ -1457,7 +1457,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
+            setHelpTopic("siteValidation");
             addAdminNavTrail(root, "Site Validation", this.getClass());
         }
     }
@@ -2317,7 +2317,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("dumpDebugging#threads"));
+            setHelpTopic("dumpDebugging#threads");
             addAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
@@ -2335,7 +2335,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
+            setHelpTopic("dumpHeap");
             addAdminNavTrail(root, "Heap dump", getClass());
         }
     }
@@ -2521,7 +2521,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("actionsDiagnostics"));
+            setHelpTopic("actionsDiagnostics");
             addAdminNavTrail(root, "Actions", this.getClass());
         }
     }
@@ -2591,7 +2591,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("queryPerf"));
+            setHelpTopic("queryPerf");
             addAdminNavTrail(root, "Queries", this.getClass());
         }
     }
@@ -2905,7 +2905,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("cachesDiagnostics"));
+            setHelpTopic("cachesDiagnostics");
             addAdminNavTrail(root, "Cache Statistics", this.getClass());
         }
     }
@@ -3237,7 +3237,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("memTracker"));
+            setHelpTopic("memTracker");
             addAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
         }
     }
@@ -3649,7 +3649,7 @@ public class AdminController extends SpringActionController
 
             getPageConfig().setTemplate(Template.Wizard);
             getPageConfig().setTitle(bean.verb + " Modules");
-            getPageConfig().setHelpTopic(new HelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade"));
+            setHelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade");
 
             return vbox;
         }
@@ -6201,7 +6201,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customEmail"));
+            setHelpTopic("customEmail");
             addAdminNavTrail(root, "Customize " + (getContainer().isRoot() ? "Site-Wide" : StringUtils.capitalize(getContainer().getContainerNoun()) + "-Level") + " Email", this.getClass());
         }
     }
@@ -7195,7 +7195,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            getPageConfig().setHelpTopic(new HelpTopic("createProject"));
+            setHelpTopic("createProject");
         }
     }
 
@@ -8275,7 +8275,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("defaultModules"));
+            setHelpTopic("defaultModules");
             addAdminNavTrail(root, "Modules", getClass());
         }
     }

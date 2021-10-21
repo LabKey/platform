@@ -802,12 +802,12 @@ public class Portal implements ModuleChangeListener
 
     public static void saveParts(Container c, Collection<WebPart> newParts)
     {
-        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts.toArray(new WebPart[newParts.size()]));
+        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts.toArray(new WebPart[0]));
     }
 
     public static void saveParts(Container c, String pageId, Collection<WebPart> newParts)
     {
-        saveParts(c, pageId, newParts.toArray(new WebPart[newParts.size()]));
+        saveParts(c, pageId, newParts.toArray(new WebPart[0]));
     }
 
 

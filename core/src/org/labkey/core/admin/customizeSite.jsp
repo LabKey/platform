@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
@@ -336,7 +335,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure API Keys (<%=new HelpTopic("configAdmin#apiKey").getSimpleLinkHtml("more info...")%>)</td>
+    <td colspan=2>Configure API Keys (<%=helpLink("configAdmin#apiKey", "more info...")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>

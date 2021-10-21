@@ -82,14 +82,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.data.CompareType.STARTS_WITH;
-
 public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
 {
     private static final String categoryName = "materialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
 
-    public static final String ALIQUOT_NAME_EXPRESSION = "${${AliquotedFrom}-:withCounter}";
+    public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
     public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
 
     private Domain _domain;
@@ -286,7 +284,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return getDomainProperty(_object.getParentCol());
     }
 
-    // NOTE: intentionally not public in ExpSampleType interface
+    @Override
     public void setNameExpression(String expression)
     {
         if (expression != null && hasIdColumns() && !hasNameAsIdCol())
@@ -295,6 +293,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         _object.setNameExpression(expression);
     }
 
+    @Override
     public void setAliquotNameExpression(String expression)
     {
         _object.setAliquotNameExpression(expression);

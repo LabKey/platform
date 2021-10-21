@@ -121,6 +121,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -128,6 +129,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -157,7 +159,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -2588,7 +2589,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
+            setHelpTopic("DatasetBulkDefinition");
             _addNavTrailDatasetAdmin(root);
             root.addChild("Bulk Import");
         }
@@ -3897,7 +3898,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customViews"));
+            setHelpTopic("customViews");
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -4682,7 +4683,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresAllOf({AdminPermission.class, BrowserDeveloperPermission.class})
     public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
     {
         @Override
@@ -4693,9 +4694,6 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors)
         {
-            // We know that the user is at least a folder admin - they must also be either a developer
-            if (!getUser().isPlatformDeveloper())
-                throw new UnauthorizedException();
             Study study = getStudyRedirectIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)

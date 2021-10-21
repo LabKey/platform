@@ -2196,8 +2196,9 @@ public class LoginController extends SpringActionController
             getPageConfig().setTitle("Reset Password");
             getPageConfig().setIncludeLoginLink(false);
             getPageConfig().setIncludeSearch(false);
-            getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
             getPageConfig().setNoIndex();
+
+            setHelpTopic("passwordReset");
 
             if (null != _finishView)
                 return _finishView;
@@ -2380,7 +2381,7 @@ public class LoginController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("authenticationModule"));
+            setHelpTopic("authenticationModule");
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", getClass(), getContainer());
         }
     }
@@ -2752,6 +2753,26 @@ public class LoginController extends SpringActionController
             return urlProvider(LoginUrls.class).getConfigureURL();
         }
     }
+
+
+    /**
+     * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
+     * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
+     */
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.ALL)
+    public static class CsrfAction extends ReadOnlyApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors)
+        {
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("success", true);
+            return res;
+        }
+    }
+
 
     public static class TestCase extends AbstractActionPermissionTest
     {

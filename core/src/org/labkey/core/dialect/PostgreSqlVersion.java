@@ -63,11 +63,6 @@ public enum PostgreSqlVersion
         .max(Comparator.naturalOrder())
         .orElseThrow();
 
-    static @NotNull PostgreSqlVersion get(int version, PostgreSqlServerType type)
-    {
-        return get(PostgreSqlServerType.LabKey == type ? MAX_KNOWN_VERSION : version);
-    }
-
     static @NotNull PostgreSqlVersion get(int version)
     {
         version = version >= 100 ? version / 10 * 10 : version;

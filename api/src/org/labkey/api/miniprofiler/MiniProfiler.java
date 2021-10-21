@@ -24,7 +24,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -76,9 +75,9 @@ public class MiniProfiler
 
     private MiniProfiler() { }
 
-    public static HelpTopic getHelpTopic()
+    public static String getHelpTopic()
     {
-        return new HelpTopic("profiler#mini");
+        return "profiler#mini";
     }
 
     public static boolean isEnabled(ViewContext context)

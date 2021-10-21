@@ -21,7 +21,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.springframework.validation.BindException;
@@ -78,7 +77,7 @@ public class FolderManagement
             @Override
             void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
-                action.setHelpTopic(new HelpTopic("customizeLook"));
+                action.setHelpTopic("customizeLook");
                 root.addChild("Project Settings");
             }
 
@@ -93,7 +92,7 @@ public class FolderManagement
             @Override
             void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
-                action.setHelpTopic(new HelpTopic("customizeLook"));
+                action.setHelpTopic("customizeLook");
                 PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Look and Feel Settings", action.getClass(), c);
             }
 
