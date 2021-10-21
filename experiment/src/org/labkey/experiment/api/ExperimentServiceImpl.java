@@ -81,9 +81,11 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -659,6 +661,19 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
+        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
+
+        return materials;
+    }
+
+    @Override
+    @NotNull
+    public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
+        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+
+        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
         selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
 
         return materials;
@@ -4260,6 +4275,11 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
+            boolean isAliquotRollupSupported = InventoryService.get() != null
+                    && container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Inventory"));
+
+            Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
+
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
@@ -4297,6 +4317,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
+
+                if (isAliquotRollupSupported && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                {
+                    ExpSampleType sampleType = material.getSampleType();
+                    if (!sampleTypeAliquotParents.containsKey(sampleType))
+                        sampleTypeAliquotParents.put(sampleType, new HashSet<>());
+                    sampleTypeAliquotParents.get(sampleType).add(material.getRootMaterialLSID());
+                }
+
             }
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
@@ -4395,6 +4424,29 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
                 lsidFragFrag.append(lsidInFrag);
                 OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+            }
+
+            // recalculate rollup
+            if (isAliquotRollupSupported)
+            {
+                try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
+                {
+                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
+                    {
+                        ExpSampleType parentSampleType = sampleTypeParents.getKey();
+                        Set<String> parentLsids = sampleTypeParents.getValue();
+
+                        List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
+                        Set<Integer> parentSampleIds = new HashSet<>();
+                        parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
+
+                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType, container);
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
 
             // On successful commit, start task to remove items from search index
@@ -6583,11 +6635,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
+            Set<Integer> parentIds = new HashSet<>();
+            TableInfo tableInfo = getTinfoMaterial();
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
+                    parentIds.add(parent.getRowId());
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
                     // Use cache to double check detemine subaliquots's root
@@ -6595,7 +6650,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
                                 append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
                         String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
@@ -6610,9 +6665,19 @@ public class ExperimentServiceImpl implements ExperimentService
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
                         
-                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                        new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
+            }
+
+            // mark aliquot parents RecomputeRollup=true
+            if (!parentIds.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
+                        append(" SET RecomputeRollup = ? WHERE RowId ");
+                sql.add(true);
+                sql.appendInClause(parentIds, tableInfo.getSqlDialect());
+                new SqlExecutor(tableInfo.getSchema()).execute(sql);
             }
         }
         

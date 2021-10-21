@@ -213,7 +213,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
@@ -224,6 +224,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container);
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -426,6 +429,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else
         {
             List<Integer> ids = new LinkedList<>();
+            Set<String> aliquotParents = new HashSet<>();
 
             for (Map<String, Object> k : keys)
             {
@@ -443,6 +447,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
                     throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, statusManager.getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()))));
+
+                if (map.containsKey("RootMaterialLSID") && !StringUtils.isEmpty(map.get("RootMaterialLSID")))
+                    aliquotParents.add((String) map.get("RootMaterialLSID"));
 
                 ids.add(rowId);
                 result.add(map);

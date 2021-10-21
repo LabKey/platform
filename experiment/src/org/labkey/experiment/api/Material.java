@@ -34,9 +34,9 @@ public class Material extends RunItem
     private Integer sampleState;
 
     //rollup columns
-    private boolean recomputeRollup;
-    private int aliquotCount;
-    private double aliquotVolume;
+    private Boolean recomputeRollup;
+    private Integer aliquotCount;
+    private Double aliquotVolume;
     private String aliquotUnit;
 
     public Material()
@@ -74,17 +74,17 @@ public class Material extends RunItem
         this.sampleState = sampleState;
     }
 
-    public boolean isRecomputeRollup()
+    public Boolean isRecomputeRollup()
     {
         return recomputeRollup;
     }
 
-    public int getAliquotCount()
+    public Integer getAliquotCount()
     {
         return aliquotCount;
     }
 
-    public double getAliquotVolume()
+    public Double getAliquotVolume()
     {
         return aliquotVolume;
     }
@@ -94,17 +94,17 @@ public class Material extends RunItem
         return aliquotUnit;
     }
 
-    public void setRecomputeRollup(boolean recomputeRollup)
+    public void setRecomputeRollup(Boolean recomputeRollup)
     {
         this.recomputeRollup = recomputeRollup;
     }
 
-    public void setAliquotCount(int aliquotCount)
+    public void setAliquotCount(Integer aliquotCount)
     {
         this.aliquotCount = aliquotCount;
     }
 
-    public void setAliquotVolume(double aliquotVolume)
+    public void setAliquotVolume(Double aliquotVolume)
     {
         this.aliquotVolume = aliquotVolume;
     }
