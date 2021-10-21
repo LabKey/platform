@@ -976,7 +976,7 @@ public class ListController extends SpringActionController
             ctx.setListIds(IDs);
             ListWriter writer = new ListWriter();
 
-            // Export to a temporary file first so any exceptions are displayed by the standard error page, Issue #44152
+            // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
             // Same pattern as ExportFolderAction
             Path tempDir = FileUtil.getTempDirectory().toPath();
             String filename = FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip");

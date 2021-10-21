@@ -4371,7 +4371,7 @@ public class AdminController extends SpringActionController
                     {
                         ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
 
-                        // Export to a temporary file first so any exceptions are displayed by the standard error page, Issue #44152
+                        // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
                         // Same pattern as ExportListArchiveAction
                         Path tempDir = FileUtil.getTempDirectory().toPath();
                         Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
