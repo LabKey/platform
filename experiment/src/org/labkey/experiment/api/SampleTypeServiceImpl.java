@@ -76,6 +76,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -998,10 +999,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
         updatedRow.forEach((fieldName, value) -> {
             if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+            {
                 if (!originalRow.containsKey(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
                 }
+            }
+            else if (ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(fieldName))
+            {
+                if (SampleStatusService.get().supportsSampleStatus())
+                {
+                    Container c = ContainerManager.getForId((String) originalRow.get("folder"));
+                    DataState status = SampleTypeService.get().getSampleState(c, (Integer) updatedRow.get(fieldName));
+                    if (status != null)
+                        modifiedRow.put("StatusLabel", status.getLabel());
+                }
+            }
         });
     }
 
