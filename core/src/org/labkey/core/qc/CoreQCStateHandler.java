@@ -87,7 +87,7 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
     }
 
     @Override
-    public @Nullable String isStateChangeAllowed(Container container, DataState state, Map<String, Object> rowUpdates)
+    public @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates)
     {
         return null;
     }

@@ -25,7 +25,7 @@ public interface SampleStatusService
         if (_providers.isEmpty())
             _providers.add(provider);
         else
-            throw new RuntimeException("An implementation of SampleStatusService has previously been registered");
+            throw new RuntimeException("An implementation of SampleStatusService has previously been registered.");
     }
 
     @NotNull
