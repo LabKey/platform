@@ -4366,14 +4366,7 @@ public class AdminController extends SpringActionController
                     }
                     Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
                     Files.createDirectories(exportDir);
-                    try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
-                    {
-                        writer.write(container, ctx, zip);
-                    }
-                    catch (Container.ContainerException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    }
+                    exportFolderToFile(exportDir, container, writer, ctx, errors);
                     _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     break;
                 }
@@ -4381,11 +4374,19 @@ public class AdminController extends SpringActionController
                 {
                     try
                     {
-                        ContainerManager.checkContainerValidity(container);
-                        try (ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
+                        ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
+
+                        // Export to a temporary file first so any exceptions can be displayed to the user, Issue #44152
+                        Path tempDir = FileUtil.getTempDirectory().toPath();
+                        Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
+
+                        // No exceptions, so stream the resulting zip file to the browser
+                        try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
                         {
-                            writer.write(container, ctx, zip);
+                            Files.copy(tempZipFile, os);
                         }
+
+                        Files.delete(tempZipFile);
                     }
                     catch (Container.ContainerException e)
                     {
@@ -4396,6 +4397,21 @@ public class AdminController extends SpringActionController
             }
 
             return !errors.hasErrors();
+        }
+
+        private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
+        {
+            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+            try (ZipFile zip = new ZipFile(exportDir, filename))
+            {
+                writer.write(container, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return exportDir.resolve(filename);
         }
 
         @Override
