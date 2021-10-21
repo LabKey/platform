@@ -4329,10 +4329,9 @@ public class AdminController extends SpringActionController
                     form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                     form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-            switch(form.getLocation())
+            switch (form.getLocation())
             {
-                case 0:
-                {
+                case 0 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4349,16 +4348,14 @@ public class AdminController extends SpringActionController
                         {
                             writer.write(container, ctx, new FileSystemFile(exportDir));
                         }
-                        catch (Container.ContainerException e)
+                        catch (ContainerException e)
                         {
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
                         _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
-                    break;
                 }
-                case 1:
-                {
+                case 1 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4368,31 +4365,31 @@ public class AdminController extends SpringActionController
                     Files.createDirectories(exportDir);
                     exportFolderToFile(exportDir, container, writer, ctx, errors);
                     _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                    break;
                 }
-                case 2:
-                {
+                case 2 -> {
                     try
                     {
                         ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
 
-                        // Export to a temporary file first so any exceptions can be displayed to the user, Issue #44152
+                        // Export to a temporary file first so any exceptions are displayed by the standard error page, Issue #44152
+                        // Same pattern as ExportListArchiveAction
                         Path tempDir = FileUtil.getTempDirectory().toPath();
                         Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
 
-                        // No exceptions, so stream the resulting zip file to the browser
+                        // No exceptions, so stream the resulting zip file to the browser and delete it
                         try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
                         {
                             Files.copy(tempZipFile, os);
                         }
-
-                        Files.delete(tempZipFile);
+                        finally
+                        {
+                            Files.delete(tempZipFile);
+                        }
                     }
-                    catch (Container.ContainerException e)
+                    catch (ContainerException e)
                     {
                         errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                     }
-                    break;
                 }
             }
 
@@ -4402,6 +4399,7 @@ public class AdminController extends SpringActionController
         private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
         {
             String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+
             try (ZipFile zip = new ZipFile(exportDir, filename))
             {
                 writer.write(container, ctx, zip);
