@@ -93,7 +93,7 @@ public class ZipFile extends AbstractVirtualFile
         return new BufferedOutputStream(fos);
     }
 
-    private static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
+    public static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
     {
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + _makeLegalName(name) + "\";");
