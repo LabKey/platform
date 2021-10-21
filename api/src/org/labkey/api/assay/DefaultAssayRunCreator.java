@@ -156,6 +156,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
             run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
             run.setComments(context.getComments());
+            run.setWorkflowTaskId(context.getWorkflowTask());
 
             exp = saveExperimentRun(context, exp, run, false);
 

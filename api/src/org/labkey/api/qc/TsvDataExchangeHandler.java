@@ -1231,6 +1231,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @Override
+        public Integer getWorkflowTask()
+        {
+            return null;
+        }
+
+        @Override
         public User getUser()
         {
             return _context.getUser();
