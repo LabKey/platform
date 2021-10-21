@@ -434,7 +434,7 @@ public class ToolsController extends SpringActionController
                                         public boolean string(int beginIndex, int endIndex)
                                         {
                                             String s = code.substring(beginIndex + 1, endIndex - 1);
-                                            if (s.length() > 4 && s.endsWith(".jsp"))
+                                            if (s.length() > 4 && s.contains("/") && s.endsWith(".jsp"))
                                                 ret.add(s);
                                             return true;
                                         }
