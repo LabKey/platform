@@ -931,7 +931,7 @@ public class RReport extends ExternalScriptEngineReport
             assertEquals(pre, strip);
             assertTrue( post.endsWith(pre) );
             boolean isRStudioEnabled = RStudioService.get() != null;
-            int[] expected = isRStudioEnabled ? new int[]{0, 12, -1, -1, 0, 584} : new int[]{0, 7, -1, -1, 0, 437};
+            int[] expected = isRStudioEnabled ? new int[]{0, 12, -1, -1, 0, 584} : new int[]{0, 7, -1, -1, 0, post.indexOf("# >8")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
@@ -959,7 +959,7 @@ public class RReport extends ExternalScriptEngineReport
             assertTrue( post.endsWith("<b>hello world</b>\n") );
 
             boolean isRStudioEnabled = RStudioService.get() != null;
-            int[] expected = isRStudioEnabled ? new int[]{0, 14, -1, -1, 0, 639} : new int[]{0, 9, -1, -1, 0, 492};
+            int[] expected = isRStudioEnabled ? new int[]{0, 14, -1, -1, 0, 639} : new int[]{0, 9, -1, -1, 0, post.indexOf("<!-- >8 -->")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
 
@@ -992,7 +992,7 @@ public class RReport extends ExternalScriptEngineReport
             assertEquals(pre, strip);
 
             boolean isRStudioEnabled = RStudioService.get() != null;
-            int[] expected = isRStudioEnabled ? new int[]{3, 17, 0, 2, 25, 646} : new int[]{3, 12, 0, 2, 25, 499};
+            int[] expected = isRStudioEnabled ? new int[]{3, 17, 0, 2, 25, 646} : new int[]{3, 12, 0, 2, 25, post.indexOf("<!-- >8 -->")};
             assertArrayEquals(expected, report.getPrologAnchors(post));
         }
     }
