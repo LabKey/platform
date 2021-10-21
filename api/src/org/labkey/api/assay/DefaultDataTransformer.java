@@ -202,7 +202,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return result;
     }
 
-    public static void addStandardParameters(@Nullable HttpServletRequest request, Container container, @Nullable File scriptFile, String apiKey, @NotNull Map<String, String> paramMap)
+    public static void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable File scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)
     {
         if (scriptFile != null)
         {
@@ -216,7 +216,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         paramMap.put(SecurityManager.API_KEY, apiKey);
         paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
                                                     + AppProps.getInstance().getContextPath());
-        paramMap.put(CONTAINER_PATH, container.getPath());
+        paramMap.put(CONTAINER_PATH, container == null ? null : container.getPath());
     }
 
     @Deprecated

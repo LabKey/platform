@@ -130,6 +130,9 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -973,9 +976,26 @@ public class ListController extends SpringActionController
             ctx.setListIds(IDs);
             ListWriter writer = new ListWriter();
 
-            try (ZipFile zip = new ZipFile(response, FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip")))
+            // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+            // Same pattern as ExportFolderAction
+            Path tempDir = FileUtil.getTempDirectory().toPath();
+            String filename = FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip");
+
+            try (ZipFile zip = new ZipFile(tempDir, filename))
             {
                 writer.write(c, getUser(), zip, ctx);
+            }
+
+            Path tempZipFile = tempDir.resolve(filename);
+
+            // No exceptions, so stream the resulting zip file to the browser and delete it
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), filename))
+            {
+                Files.copy(tempZipFile, os);
+            }
+            finally
+            {
+                Files.delete(tempZipFile);
             }
         }
     }
