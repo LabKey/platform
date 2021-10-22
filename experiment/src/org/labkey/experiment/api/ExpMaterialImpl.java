@@ -51,6 +51,8 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -69,7 +71,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.samples.SampleStateManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -200,7 +201,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         if (getSampleStateId() == null)
             return null;
-        return SampleStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
+        return DataStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
     }
 
 
@@ -216,15 +217,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
     {
-        if (!SampleTypeService.isSampleStatusEnabled()) // permit everything if feature not enabled
-            return true;
-
-        DataState state = getSampleState();
-        // no state means you can do all operations
-        if (state == null)
-            return true;
-
-        return ExpSchema.SampleStateType.isOperationPermitted(state.getStateType(), operation);
+        return SampleStatusService.get().isOperationPermitted(getSampleState(), operation);
     }
 
     @Override
