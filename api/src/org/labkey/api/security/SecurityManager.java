@@ -3040,6 +3040,9 @@ public class SecurityManager
 
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
     {
+        if (policy == null)
+            return Set.of();
+
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null != c && (principal instanceof User && c.isForbiddenProject((User) principal)))
             return Set.of();

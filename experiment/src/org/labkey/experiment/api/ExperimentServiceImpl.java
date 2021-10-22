@@ -4234,9 +4234,10 @@ public class ExperimentServiceImpl implements ExperimentService
                                        Collection<Integer> selectedMaterialIds,
                                        boolean deleteRunsUsingMaterials,
                                        @Nullable ExpSampleType stDeleteFrom,
-                                       boolean ignoreStatus)
+                                       boolean ignoreStatus,
+                                       boolean isTruncate)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, isTruncate);
     }
 
     /**
@@ -4251,7 +4252,8 @@ public class ExperimentServiceImpl implements ExperimentService
                                         boolean deleteRunsUsingMaterials,
                                         boolean deleteFromAllSampleTypes,
                                         @Nullable ExpSampleType stDeleteFrom,
-                                        boolean ignoreStatus)
+                                        boolean ignoreStatus,
+                                        boolean isTruncate)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4427,7 +4429,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
             // recalculate rollup
-            if (isAliquotRollupSupported)
+            if (!isTruncate && isAliquotRollupSupported)
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
@@ -4888,7 +4890,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, true, null, true);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null, true, true);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";

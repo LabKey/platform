@@ -492,7 +492,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             Container container = ContainerManager.getForId(entry.getKey());
             // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
             count += entry.getValue().size();
         }
         return count;
