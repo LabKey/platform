@@ -175,5 +175,10 @@ public interface PipelineJobService extends TaskPipelineRegistry
         RemoteExecutionEngine
     }
 
-    public FormSchema getFormSchema(Container container);
+    FormSchema getFormSchema(Container container);
+
+    /** @return true if the current instance is the web server, which has access to more resources including the
+     * primary database, or false if we're on a remote server
+     */
+    boolean isWebServer();
 }

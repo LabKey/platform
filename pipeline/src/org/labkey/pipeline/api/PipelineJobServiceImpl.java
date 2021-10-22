@@ -589,6 +589,12 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return new FormSchema(fields);
     }
 
+    @Override
+    public boolean isWebServer()
+    {
+        return ModuleLoader.getServletContext() != null;
+    }
+
     public void setJobStore(PipelineStatusFile.JobStore jobStore)
     {
         _jobStore = jobStore;

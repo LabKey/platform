@@ -626,6 +626,9 @@ public class SecurityManager
         {
             return _apikey;
         }
+
+        @Override
+        public abstract void close();
     }
 
     private static final class HttpSessionTransformSession extends TransformSession
@@ -637,7 +640,7 @@ public class SecurityManager
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
             SessionApiKeyManager.get().invalidateKey(getApiKey());
         }
@@ -652,7 +655,7 @@ public class SecurityManager
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
             ApiKeyManager.get().deleteKey(getApiKey());
         }

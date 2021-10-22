@@ -533,17 +533,20 @@ public class SearchController extends SpringActionController
 
             SearchService.IndexTask task = null;
 
-            if (full)
+            try (var x = SpringActionController.ignoreSqlUpdates())
             {
-                ss.indexFull(true);
-            }
-            else if (since)
-            {
-                task = ss.indexContainer(null, getContainer(), new Date(System.currentTimeMillis()- TimeUnit.DAYS.toMillis(1)));
-            }
-            else
-            {
-                task = ss.indexContainer(null, getContainer(), null);
+                if (full)
+                {
+                    ss.indexFull(true);
+                }
+                else if (since)
+                {
+                    task = ss.indexContainer(null, getContainer(), new Date(System.currentTimeMillis()- TimeUnit.DAYS.toMillis(1)));
+                }
+                else
+                {
+                    task = ss.indexContainer(null, getContainer(), null);
+                }
             }
 
             if (wait && null != task)

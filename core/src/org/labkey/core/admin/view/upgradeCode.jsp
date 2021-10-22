@@ -12,7 +12,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Class<?>[] params = new Class[]{ModuleContext.class};
-    Map<String, String> methodMap = new TreeMap<>();
+    Map<String, String> methodMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     ModuleLoader.getInstance().getModules().forEach(module -> {
         UpgradeCode code = module.getUpgradeCode();
         if (null != code)
