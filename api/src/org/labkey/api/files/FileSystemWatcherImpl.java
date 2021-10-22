@@ -82,7 +82,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
-    private static final int POLLING_PERIOD_SECONDS = 10;
+    private static final long POLLING_PERIOD_SECONDS = 10L;
 
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
@@ -184,21 +184,24 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         if (null != fileStoreType)
             fileStoreType = fileStoreType.toLowerCase();
 
+        final WatchKey watchKey;
+
         // ensure we catch variations such as both nfs and nfs4
         boolean pollingWatcher = null != fileStoreType && (fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs"));
         if (pollingWatcher)
         {
-            LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath());
-            _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
+            watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
         }
         else
         {
-            LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath());
-            directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
+            LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath().toString());
+            watchKey = directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
         }
 
         plm.setFileStoreType(fileStoreType);
         plm.setPollingWatcher(pollingWatcher);
+        plm.setWatchKey(watchKey);
     }
 
     @Override
@@ -307,12 +310,14 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             {
                 // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event
                 // on this directory. If watch key is no longer valid, then it's probably been deleted.
-                if (!watchKey.reset() && null != watchedPath && !isInterrupted())
+                if (!watchKey.reset() && null != watchedPath )
                 {
                     LOG.debug("WatchKey is invalid: " + watchedPath);
-                    handleDeletedDirectory(watchedPath);
+                    if (!isInterrupted())
+                        handleDeletedDirectory(watchedPath);
                 }
-                else if (isInterrupted())
+
+                if (isInterrupted())
                 {
                     LOG.debug("File watcher interrupted: " + watchedPath);
                 }
@@ -454,17 +459,22 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         private final List<ListenerContext> _list = new CopyOnWriteArrayList<>();
 
         private volatile String _fileStoreType;
+        private volatile WatchKey _watchKey;
         private volatile boolean _pollingWatcher;
 
         private void addListener(FileSystemDirectoryListener listener, Kind<Path>[] events)
         {
             // Track the listener and its requested events (the only ones we'll fire)
             _list.add(new ListenerContext(listener, events));
+            if (_watchKey != null)
+                _watchKey.reset();
         }
 
         private void removeListener(FileSystemDirectoryListener listener)
         {
             _list.removeIf(listenerContext -> listenerContext.getListener().equals(listener));
+            if (_watchKey != null)
+                _watchKey.reset();
         }
 
         private String getFileStoreType()
@@ -485,6 +495,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         public void setPollingWatcher(boolean pollingWatcher)
         {
             _pollingWatcher = pollingWatcher;
+        }
+
+        private WatchKey getWatchKey()
+        {
+            return _watchKey;
+        }
+
+        private void setWatchKey(WatchKey watchKey)
+        {
+            _watchKey = watchKey;
+            _watchKey.reset();
         }
 
         private void fireEvents(WatchEvent<Path> event, Path watchedPath)
