@@ -179,10 +179,10 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
         String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
         if (oldRecord != null)
-            event.setOldRecordMap(oldRecord);
+            event.setOldRecordMap(oldRecord, c);
 
         String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, modifiedRow);
         if (newRecord != null)
-            event.setNewRecordMap(newRecord);
+            event.setNewRecordMap(newRecord, c);
     }
 }

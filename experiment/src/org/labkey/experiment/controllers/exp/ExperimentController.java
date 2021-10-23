@@ -97,6 +97,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -3310,7 +3311,7 @@ public class ExperimentController extends SpringActionController
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 notPermittedIds = service.getMaterialsUsedAsInput(requestIds);
 
-            if (SampleTypeService.isSampleStatusEnabled())
+            if (SampleStatusService.get().supportsSampleStatus())
                 notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
 
             Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allMaterials);

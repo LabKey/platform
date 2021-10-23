@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -24,6 +25,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
@@ -54,6 +56,15 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             var wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
                 wrappedColumn.setHidden(true);
+            if ("StateType".equalsIgnoreCase(name))
+            {
+                boolean enabledStatus = SampleStatusService.get().supportsSampleStatus();
+                wrappedColumn.setHidden(!enabledStatus);
+                wrappedColumn.setShownInDetailsView(enabledStatus);
+                // always exclude this column from insert and update as we want users to use the manageSampleStatuses page
+                wrappedColumn.setShownInInsertView(false);
+                wrappedColumn.setShownInUpdateView(false);
+            }
         }
     }
 
@@ -80,9 +91,36 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             return true;
         }
 
+        private String validateQCStateChangeAllowed(Map<String, Object> row, Container container)
+        {
+            Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            DataState qcChanging = DataStateManager.getInstance().getStateForRowId(container, (Integer) row.get("rowid"));
+
+            for (DataStateHandler handler : registeredHandlers.values())
+            {
+                String errorMsg = handler.getStateChangeError(container, qcChanging, row);
+                if (errorMsg != null)
+                    return errorMsg;
+            }
+            return null;
+        }
+
+        private boolean validateLabel(Map<String, Object> row)
+        {
+            String label = (String) row.get("label");
+            return !StringUtils.isBlank(label);
+        }
+
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
+            if (!validateLabel(row))
+                throw new QueryUpdateServiceException("Label cannot be blank.");
+
+            String errorMsg = validateQCStateChangeAllowed(row, container);
+            if (errorMsg != null)
+                throw new QueryUpdateServiceException(errorMsg);
+
             Map<String, Object> rowToUpdate;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
@@ -96,6 +134,9 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
+            if (!validateLabel(row))
+                throw new QueryUpdateServiceException("Label cannot be blank.");
+
             Map<String, Object> rowToInsert;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
@@ -110,7 +151,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             if (!validateQCStateNotInUse(oldRowMap, container))
-                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
+                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted because it is currently in use.");
 
             Map<String, Object> rowToDelete;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
