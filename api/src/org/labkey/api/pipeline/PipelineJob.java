@@ -447,8 +447,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFile(Path logFile)
     {
-        setLogFilePath(logFile);
-        _logFile = logFile;
+        Path normalizedPath = logFile.toAbsolutePath().normalize();
+        setLogFilePath(normalizedPath);
+        _logFile = normalizedPath;
     }
 
     public File getLogFile()
