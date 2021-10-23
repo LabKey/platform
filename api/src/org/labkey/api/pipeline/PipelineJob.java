@@ -465,7 +465,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (_logFilePathName == null)
             return null;
 
-        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName)).toPath();
+        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName, false)).toPath();
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
