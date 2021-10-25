@@ -225,7 +225,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             if (InventoryService.get() != null)
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container);
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
 
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);

@@ -4320,7 +4320,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (isAliquotRollupSupported && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
                     if (!sampleTypeAliquotParents.containsKey(sampleType))

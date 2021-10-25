@@ -82,7 +82,7 @@ public interface InventoryService
 
     boolean isAliquotRollupRecomputeNeeded(ExpSampleType sampleType, Container container);
 
-    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
 
     void recomputeSamplesRollup(Set<Integer> parentIds, ExpSampleType parentSampleType, Container container) throws SQLException;
 

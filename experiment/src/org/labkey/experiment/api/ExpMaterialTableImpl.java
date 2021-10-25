@@ -331,6 +331,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
             case SampleState:
+            {
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
                 boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
@@ -347,14 +348,47 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     }
                 });
                 return ret;
+            }
             case RecomputeRollup:
-                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+                ret.setHidden(true);
+                ret.setUserEditable(false);
+                ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
+                return ret;
+            }
+
             case AliquotCount:
-                return wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+                ret.setUserEditable(false);
+                ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
+                return ret;
+            }
+
             case AliquotVolume:
-                return wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
+                ret.setLabel("Aliquot Total Volume");
+                ret.setUserEditable(false);
+                ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
+                return ret;
+            }
             case AliquotUnit:
-                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                ret.setUserEditable(false);
+                ret.setShownInDetailsView(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
+                return ret;
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -579,12 +613,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             addColumn(Column.IsAliquot);
             if (InventoryService.get() != null)
-            {
                 addColumn(Column.AliquotCount);
-                addColumn(Column.AliquotVolume);
-                addColumn(Column.AliquotUnit);
-                addColumn(Column.RecomputeRollup);
-            }
         }
 
         addColumn(ExpMaterialTable.Column.Created);
