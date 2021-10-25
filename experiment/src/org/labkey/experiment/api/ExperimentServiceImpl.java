@@ -93,6 +93,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -645,7 +646,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<Integer> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
     {
-        if (!SampleTypeService.isSampleStatusEnabled())
+        if (!SampleStatusService.get().supportsSampleStatus())
             return Collections.emptyList();
 
         return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)

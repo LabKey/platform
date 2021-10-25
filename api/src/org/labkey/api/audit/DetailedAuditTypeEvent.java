@@ -26,6 +26,11 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
         return _oldRecordMap;
     }
 
+    public void setOldRecordMap(String oldRecordMap, Container container)
+    {
+        setOldRecordMap(oldRecordMap);
+    }
+
     public void setOldRecordMap(String oldRecordMap)
     {
         _oldRecordMap = oldRecordMap;
@@ -36,10 +41,13 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
         return _newRecordMap;
     }
 
+    public void setNewRecordMap(String newRecordMap, Container container)
+    {
+        setNewRecordMap(newRecordMap);
+    }
+
     public void setNewRecordMap(String newRecordMap)
     {
         _newRecordMap = newRecordMap;
     }
-
-
 }

@@ -22,6 +22,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnConceptProperties;
 import org.labkey.api.data.PHI;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -32,7 +33,7 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import java.util.List;
 import java.util.Set;
 
-public interface DomainProperty extends ImportAliasable
+public interface DomainProperty extends ImportAliasable, MutableColumnConceptProperties
 {
     int getPropertyId();
     Container getContainer();
@@ -127,15 +128,20 @@ public interface DomainProperty extends ImportAliasable
      */
     void setSchemaImport(boolean isSchemaImport);
 
+    @Override
     void setPrincipalConceptCode(String code);
     String getPrincipalConceptCode();
     String getSourceOntology();
+    @Override
     void setSourceOntology(String sourceOntology);
     String getConceptSubtree();
+    @Override
     void setConceptSubtree(String path);
     String getConceptImportColumn();
+    @Override
     void setConceptImportColumn(String conceptImportColumn);
     String getConceptLabelColumn();
+    @Override
     void setConceptLabelColumn(String conceptLabelColumn);
 
     void setDerivationDataScope(String type);

@@ -15,16 +15,29 @@
  */
 package org.labkey.api.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DataStateHandler<FORM extends AbstractManageDataStatesForm>
 {
     List<DataState> getStates(Container container);
     boolean isStateInUse(Container container, DataState state);
     boolean isBlankStatePublic(Container container);
+
+    /**
+     * Check if a given state allows for changes based on things like if it is in-use, etc. and return the error
+     * message to show to the user if that state change is not allowed.
+     * @param container
+     * @param state The QC state being changed
+     * @param rowUpdates The map of row changes for this state
+     * @return Error message to show the user if the change is not allowed
+     */
+    @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates);
+
     void updateState(Container container, FORM form, User user);
     String getHandlerType();
     static <T> boolean nullSafeEqual(T first, T second)

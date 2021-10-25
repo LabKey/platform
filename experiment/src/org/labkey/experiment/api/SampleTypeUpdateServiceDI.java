@@ -53,6 +53,8 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -66,7 +68,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
-import org.labkey.experiment.samples.SampleStateManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.util.StringUtils;
 
@@ -305,11 +306,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
-        SampleStateManager statusManager = SampleStateManager.getInstance();
-        DataState oldStatus = statusManager.getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
-        boolean oldAllowsOp = statusManager.isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
-        DataState newStatus = statusManager.getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
-        boolean newAllowsOp = statusManager.isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
+        DataState oldStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
+        DataState newStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
@@ -417,8 +417,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
     {
-        SampleStateManager statusManager = SampleStateManager.getInstance();
-
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
 
         // Check for trigger scripts
@@ -445,8 +443,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
-                    throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, statusManager.getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()))));
+                if (!SampleStatusService.get().isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
+                {
+                    DataState dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()));
+                    throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, dataState));
+                }
 
                 if (map.containsKey("RootMaterialLSID") && !StringUtils.isEmpty(map.get("RootMaterialLSID")))
                     aliquotParents.add((String) map.get("RootMaterialLSID"));

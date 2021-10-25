@@ -15,6 +15,7 @@
  */
 package org.labkey.study.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -28,6 +29,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.List;
+import java.util.Map;
 
 public class StudyQCStateHandler implements DataStateHandler<StudyController.ManageQCStatesForm>
 {
@@ -53,7 +55,9 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
     @Override
     public boolean isStateInUse(Container container, DataState state)
     {
-        StudyImpl study = StudyController.getStudyThrowIfNull(container);
+        StudyImpl study = StudyController.getStudy(container);
+        if (study == null)
+            return false;
 
         if (StudyManager.safeIntegersEqual(study.getDefaultPublishDataQCState(), state.getRowId()) ||
                 StudyManager.safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
@@ -97,5 +101,11 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
         return study.isBlankQCStatePublic();
+    }
+
+    @Override
+    public @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates)
+    {
+        return null;
     }
 }

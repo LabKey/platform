@@ -77,6 +77,7 @@ import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -90,7 +91,6 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.samples.SampleStateManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
@@ -446,7 +446,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DataState getSampleState(Container container, Integer stateRowId)
     {
-        return SampleStateManager.getInstance().getStateForRowId(container, stateRowId);
+        return DataStateManager.getInstance().getStateForRowId(container, stateRowId);
     }
 
     private ExpSampleTypeImpl _getSampleType(String lsid)
