@@ -74,7 +74,7 @@ public interface ExpProtocol extends ExpObject
     }
 
     /**
-     * Current status for a protocol, defaults to 'Active'
+     * Current status for a protocol, defaults to 'Active'. See assay/models.Status in 'labkey-ui-components' repository
      */
     enum Status
     {
