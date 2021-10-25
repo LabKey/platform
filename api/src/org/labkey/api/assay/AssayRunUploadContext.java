@@ -65,7 +65,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
-    Integer getWorkflowTask();
+    @Nullable
+    default Integer getWorkflowTask() {
+        return null;
+    };
 
     @Override
     User getUser();
