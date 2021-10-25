@@ -62,7 +62,7 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     }
 
     // Used to determine the level of permissions the user needs to have in order to export a subfolder.
-    default Class<? extends Permission> getSubfolderPermission()
+    default Class<? extends Permission> getSubfolderExportPermission()
     {
         return FolderExportPermission.class;
     }
