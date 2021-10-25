@@ -19,10 +19,14 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.cloud.CloudWatcherConfig;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -43,8 +47,11 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -75,6 +82,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
+    private static final long POLLING_PERIOD_SECONDS = 10L;
 
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
@@ -89,22 +97,61 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // for files system that do not support registering file watchers we will use a service that polls that watched
         // directory looking for changes since last polling. See: https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html
-        _pollingWatcher = new PollingWatchService(4, 10, TimeUnit.SECONDS);
+        _pollingWatcher = new PollingWatchService(4, POLLING_PERIOD_SECONDS, TimeUnit.SECONDS);
         _pollingWatcher.start();
         FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
         ContextListener.addShutdownListener(pollingThread);
         pollingThread.start();
+
+        initCloudWatcher();
+    }
+
+    private void initCloudWatcher()
+    {
+        //Can't do Cloud module check here as it likely hasn't loaded yet.
+        CloudWatcherThread thread = new CloudWatcherThread("CloudWatcherPrimaryThread");
+        ContextListener.addShutdownListener(thread);
+        thread.start();
+    }
+
+    @Override
+    @SafeVarargs
+    public final void addCloudListener(Path directory, FileSystemDirectoryListener listener, final CloudWatcherConfig config, Kind<Path>... events) throws IOException
+    {
+        //Ensure a trailing '/' by push/pop a directory
+        Path dir = directory.resolve("a").getParent();
+
+        //The cloud service doesn't actually watch the supplied target path directly, and instead watches the notification
+        // queue from the config. Any received notification keys (paths) are then checked later during processing.
+        addListener(dir, listener, (path, plm) -> registerWithCloudService(plm, config), events);
+    }
+
+    private void registerWithCloudService( @NotNull PathListenerManager plm, final CloudWatcherConfig config)
+    {
+        CloudStoreService.get().registerCloudWatcher(config, (Path filePath, Runnable callback) -> {
+            LOG.debug("Processing watch event for filePath: " + FileUtil.getAbsolutePath(filePath)); //Strip off any user info that may be in path URI.
+            Path watchedPath = filePath.getParent();
+
+            CloudWatchEvent cwe = new CloudWatchEvent(filePath);
+
+            //TODO Could do a validation sanity check before firing event?
+            plm.fireEvents(cwe, watchedPath, callback);
+        });
     }
 
     @Override
     @SafeVarargs
     public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>... events) throws IOException
     {
-        addListener(directory, listener, true, events);
+        addListener(directory, listener, this::registerWithWatchService, events);
     }
 
-    @SafeVarargs
-    private void addListener(Path directory, FileSystemDirectoryListener listener, boolean ensureDirectoryDeleteListenerOnParent, Kind<Path>... events) throws IOException
+    @FunctionalInterface
+    public interface BiConsumer_WithExceptions<T, U, E extends Exception> {
+        void accept(T t, U u) throws E;
+    }
+
+    private void addListener(Path directory, FileSystemDirectoryListener listener, BiConsumer_WithExceptions<Path, PathListenerManager, IOException> registrar, Kind<Path>[] events) throws IOException
     {
         // Associate a new PathListenerManager with this directory, if one doesn't already exist
         PathListenerManager plm = new PathListenerManager();
@@ -113,12 +160,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         // Register directory with the WatchService, if it's new
         if (null == previous)
         {
-            registerWithWatchService(directory, plm);
+            registrar.accept(directory, plm);
         }
         else
         {
             plm = previous;
-            LOG.debug("Detected previously registered file watcher service for file system of type '" + plm.getFileStoreType() + "'. for directory: " + directory.toAbsolutePath().toString());
+            LOG.debug("Detected previously registered file watcher service for file system of type '" + plm.getFileStoreType() + "'. for directory: " + directory.toAbsolutePath());
         }
 
         // Add the listener and its requested events
@@ -128,7 +175,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 //            ensureDeleteDirectoryListener(plm, directory);
 //        }
 
-        LOG.debug("Registered a file listener on " + directory.toString());
+        LOG.debug("Registered a file listener on " + directory);
     }
 
     private void registerWithWatchService(Path directory, PathListenerManager plm) throws IOException
@@ -157,81 +204,29 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         plm.setWatchKey(watchKey);
     }
 
-    // This could be used to ensure we see directories where we have listeners getting deleted. But at least on Windows,
-    // WatchKey.reset() indicates when directories have been deleted, so this may not be necessary. Need to test on other
-    // file systems.
-    private void ensureDeleteDirectoryListener(PathListenerManager plm, Path directory) throws IOException
-    {
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (plm)
-        {
-            if (!plm.isDirectoryDeleteListenerOnParent())
-            {
-                Path parent = directory.getParent();
-                if (null != parent)
-                {
-                    LOG.debug("Registering a directory delete listener for " + directory.toString() + " on " + parent);
-                    Path fileName = directory.getFileName();
-                    addListener(parent, new FileSystemDirectoryListener()
-                    {
-                        @Override
-                        public void entryCreated(Path directory, Path entry)
-                        {
-                        }
-
-                        @Override
-                        public void entryDeleted(Path directory, Path entry)
-                        {
-                            if (entry.equals(fileName))
-                            {
-                                LOG.debug("Directory deleted. Need to cancel its WatchKey and inform all its listeners.");
-                                PathListenerManager plm = handleDeletedDirectory(directory.resolve(entry));
-
-                                if (null != plm)
-                                    plm.getWatchKey().cancel();
-                            }
-                        }
-
-                        @Override
-                        public void entryModified(Path directory, Path entry)
-                        {
-                        }
-
-                        @Override
-                        public void overflow()
-                        {
-                        }
-                    }, false, ENTRY_DELETE);
-                }
-                plm.setDirectoryDeleteListenerOnParent();
-            }
-            else
-            {
-                LOG.debug("Already have a directory delete listener for " + directory.toString());
-            }
-        }
-    }
-
     @Override
-    public void removeListener(Path directory, FileSystemDirectoryListener listener)
+    public void removeListener(@NotNull Path directory, FileSystemDirectoryListener listener, @Nullable Integer listenerId)
     {
-        PathListenerManager plm = _listenerMap.get(directory);
+        //Ensure a trailing '/' if needed, otherwise some keys won't be found. Path::normalize method doesn't seem to address this
+        Path dir = directory.resolve("a").getParent();
+        PathListenerManager plm = _listenerMap.get(dir);
         if (plm != null)
         {
             plm.removeListener(listener);
-            LOG.debug("Removed a file listener on " + directory.toString());
+            LOG.debug("Removed a file listener on " + directory);
+
+            if (FileUtil.hasCloudScheme(dir) && CloudStoreService.get() != null)
+            {
+                CloudStoreService.get().unregisterCloudWatcher(listenerId);
+            }
         }
     }
 
-    // Not a daemon thread because listeners could be performing I/O and other tasks that are dangerous to interrupt.
-    private class FileSystemWatcherThread extends Thread implements ShutdownListener
+    private abstract static class BaseWatcherThread extends Thread implements ShutdownListener
     {
-        private final WatchService _watcher;
-
-        private FileSystemWatcherThread(String name, WatchService watcher)
+        private BaseWatcherThread(String name)
         {
             super(name);
-            _watcher = watcher;
         }
 
         @Override
@@ -241,41 +236,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             {
                 while (!isInterrupted())
                 {
-                    WatchKey watchKey = _watcher.take();
-                    Path watchedPath = null;
-
-                    try
-                    {
-                        watchedPath = (Path)watchKey.watchable();
-                        PathListenerManager plm = _listenerMap.get(watchedPath);
-
-                        // Not sure how this would happen (_listenerMap.remove() below is likely involved... could it be
-                        // multiple threads racing with the same WatchKey which also simultaneously becomes invalid?),
-                        // but #26934 shows occasional examples.
-                        if (null != plm)
-                        {
-                            for (WatchEvent<?> watchEvent : watchKey.pollEvents())
-                            {
-                                @SuppressWarnings("unchecked")
-                                WatchEvent<Path> event = (WatchEvent<Path>) watchEvent;
-                                plm.fireEvents(event, watchedPath);
-                            }
-                        }
-                    }
-                    catch (Throwable e)  // Make sure throwables don't kill the background thread
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
-                    finally
-                    {
-                        // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event
-                        // on this directory. If watch key is no longer valid, then it's probably been deleted.
-                        if (!watchKey.reset() && null != watchedPath)
-                        {
-                            LOG.debug("WatchKey is invalid: " + watchedPath);
-                            handleDeletedDirectory(watchedPath);
-                        }
-                    }
+                    watch();
                 }
             }
             catch (ClosedWatchServiceException | InterruptedException ignored)
@@ -299,9 +260,72 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         public void shutdownStarted()
         {
+            this.close();
         }
 
-        private void close()
+        abstract void close();
+        abstract void watch() throws InterruptedException;
+    }
+
+    // Not a daemon thread because listeners could be performing I/O and other tasks that are dangerous to interrupt.
+    private class FileSystemWatcherThread extends BaseWatcherThread
+    {
+        private final WatchService _watcher;
+
+        private FileSystemWatcherThread(String name, WatchService watcher)
+        {
+            super(name);
+            _watcher = watcher;
+        }
+
+        @Override
+        protected void watch() throws InterruptedException
+        {
+            WatchKey watchKey = _watcher.take();
+            Path watchedPath = null;
+
+            try
+            {
+                watchedPath = (Path)watchKey.watchable();
+                PathListenerManager plm = _listenerMap.get(watchedPath);
+
+                // Not sure how this would happen (_listenerMap.remove() below is likely involved... could it be
+                // multiple threads racing with the same WatchKey which also simultaneously becomes invalid?),
+                // but #26934 shows occasional examples.
+                if (null != plm)
+                {
+                    for (WatchEvent<?> watchEvent : watchKey.pollEvents())
+                    {
+                        @SuppressWarnings("unchecked")
+                        WatchEvent<Path> event = (WatchEvent<Path>) watchEvent;
+                        plm.fireEvents(event, watchedPath);
+                    }
+                }
+            }
+            catch (Throwable e)  // Make sure throwables don't kill the background thread
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+            finally
+            {
+                // Always reset the watchKey, even if a listener throws, otherwise we'll never see another event
+                // on this directory. If watch key is no longer valid, then it's probably been deleted.
+                if (!watchKey.reset() && null != watchedPath )
+                {
+                    LOG.debug("WatchKey is invalid: " + watchedPath);
+                    if (!isInterrupted())
+                        handleDeletedDirectory(watchedPath);
+                }
+
+                if (isInterrupted())
+                {
+                    LOG.debug("File watcher interrupted: " + watchedPath);
+                }
+            }
+        }
+
+        @Override
+        protected void close()
         {
             try
             {
@@ -314,14 +338,121 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
-    private @Nullable PathListenerManager handleDeletedDirectory(Path deletedDirectory)
+    private class CloudWatcherThread extends BaseWatcherThread
+    {
+        private Timer _timer;
+        protected CloudWatcherThread(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        protected void watch() throws InterruptedException
+        {
+            try
+            {
+                if (_timer == null)
+                {
+                    LOG.info("Initiating a new timer job for cloud watchers.");
+                    _timer = new Timer();
+                    _timer.scheduleAtFixedRate(scheduleWatchTask(), POLLING_PERIOD_SECONDS * 1000, POLLING_PERIOD_SECONDS * 1000);
+                }
+            }
+            catch (Throwable t)
+            {
+                if (_timer != null)
+                {
+                    LOG.debug("Caught error in CloudWatcherThread. Cancelling running jobs");
+                    _timer.cancel();
+                    _timer = null;
+                }
+
+                throw t;
+            }
+        }
+
+        private TimerTask scheduleWatchTask()
+        {
+            return new TimerTask()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        final CloudStoreService css = CloudStoreService.get();
+                        if (css != null)
+                        {
+                            Collection<Integer> watchers = css.getWatcherJobs();
+                            LOG.debug("Watcher count: " + watchers);
+                            watchers.parallelStream().forEach(css::pollWatcher);
+                        }
+                        else if (ModuleLoader.getInstance().isStartupComplete())
+                        {
+                            //No reason to watch if the module isn't available
+                            LOG.info("Shutting down cloud watcher, module not loaded.");
+                            CloudWatcherThread.this.interrupt();
+                        }
+                    }
+                    catch (Throwable e)  // Make sure throwables don't kill the background thread
+                    {
+                        LOG.debug("Error running cloud watcher task: ", e);
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                }
+            };
+        }
+
+        @Override
+        protected void close()
+        {
+            LOG.info("Shutting down the CloudWatcher thread: " + this.getId());
+            if (_timer != null)
+            {
+                LOG.debug("CloudWatcher timer job cancelled.");
+                _timer.cancel();
+                _timer = null;
+            }
+
+            if (CloudStoreService.get() != null)
+                CloudStoreService.get().shutdownWatchers();
+        }
+    }
+
+    private static class CloudWatchEvent implements WatchEvent<Path>
+    {
+        private final Path cloudPath;
+        private CloudWatchEvent(Path path)
+        {
+            cloudPath = path;
+        }
+
+        @Override
+        public Kind<Path> kind()
+        {
+            return ENTRY_CREATE;
+        }
+
+        @Override
+        public int count()
+        {
+            return 1;
+        }
+
+        @Override
+        public Path context()
+        {
+            return cloudPath;
+        }
+    }
+
+    private void handleDeletedDirectory(Path deletedDirectory)
     {
         PathListenerManager plm = _listenerMap.remove(deletedDirectory);
         if (null != plm)
         {
             plm.fireDirectoryDeleted(deletedDirectory);
         }
-        return plm;
     }
 
     // Manages all the listeners associated with a specific path
@@ -334,17 +465,19 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         private volatile WatchKey _watchKey;
         private volatile boolean _pollingWatcher;
 
-        private boolean _directoryDeleteListenerOnParent = false;
-
         private void addListener(FileSystemDirectoryListener listener, Kind<Path>[] events)
         {
             // Track the listener and its requested events (the only ones we'll fire)
             _list.add(new ListenerContext(listener, events));
+            if (_watchKey != null)
+                _watchKey.reset();
         }
 
         private void removeListener(FileSystemDirectoryListener listener)
         {
             _list.removeIf(listenerContext -> listenerContext.getListener().equals(listener));
+            if (_watchKey != null)
+                _watchKey.reset();
         }
 
         private String getFileStoreType()
@@ -375,19 +508,16 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         private void setWatchKey(WatchKey watchKey)
         {
             _watchKey = watchKey;
-        }
-
-        private boolean isDirectoryDeleteListenerOnParent()
-        {
-            return _directoryDeleteListenerOnParent;
-        }
-
-        private void setDirectoryDeleteListenerOnParent()
-        {
-            _directoryDeleteListenerOnParent = true;
+            _watchKey.reset();
         }
 
         private void fireEvents(WatchEvent<Path> event, Path watchedPath)
+        {
+            fireEvents(event, watchedPath, null);
+        }
+
+
+        private void fireEvents(WatchEvent<Path> event, Path watchedPath, Runnable callback)
         {
             Kind<Path> kind = event.kind();
 
@@ -403,7 +533,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 LOG.debug(kind.name() + " event on " + watchedPath.resolve(entry));
 
                 for (ListenerContext listenerContext : _list)
-                    listenerContext.fireEvent(kind, watchedPath, entry);
+                    listenerContext.fireEvent(kind, watchedPath, entry, callback);
             }
         }
 
@@ -425,12 +555,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             _events = Set.of(events);
         }
 
-        private void fireEvent(Kind<Path> kind, Path watchedPath, Path entry)
+        private void fireEvent(Kind<Path> kind, Path watchedPath, Path entry, Runnable callback)
         {
             if (_events.contains(kind))
             {
                 if (ENTRY_CREATE == kind)
-                    _listener.entryCreated(watchedPath, entry);
+                    _listener.entryCreated(watchedPath, entry, callback);
                 else if (ENTRY_DELETE == kind)
                     _listener.entryDeleted(watchedPath, entry);
                 else if (ENTRY_MODIFY == kind)

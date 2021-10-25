@@ -106,7 +106,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         setProvider(job.getProvider());
         setEmail(job.getInfo().getUserEmail());
         setDescription(job.getDescription());
-        setFilePath(FileUtil.getAbsolutePath(job.getContainer(), job.getLogFilePath().toUri()));
+        setFilePath(FileUtil.getUnencodedAbsolutePath(job.getContainer(), job.getLogFilePath()));
         setStatus(status);
         setInfo(info);
 

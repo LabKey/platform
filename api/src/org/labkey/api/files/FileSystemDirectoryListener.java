@@ -33,6 +33,15 @@ public interface FileSystemDirectoryListener
      */
     void entryCreated(Path directory, Path entry);
 
+    default void entryCreated(Path directory, Path entry, Runnable callback)
+    {
+        entryCreated(directory, entry);
+        if (callback != null)
+        {
+            callback.run();
+        }
+    }
+
     /**
      * An entry (file or directory) in the directory was deleted. Invoked only if the event was listed at registration time
      */

@@ -15,24 +15,21 @@
  */
 package org.labkey.api.cloud;
 
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.study.xml.StudyDocument;
-import org.springframework.validation.BindException;
 
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * User: kevink
@@ -54,6 +51,18 @@ public interface CloudStoreService
     }
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
+
+    void pollWatcher(int cloudWatcherJobId);
+
+    void registerCloudWatcher(CloudWatcherConfig config, BiConsumer<Path, Runnable> eventProcessor);
+
+    void unregisterCloudWatcher(int watcherConfigId);
+
+    void shutdownWatchers();
+
+    Collection<Integer> getWatcherJobs();
+
+    void deleteMessage(String messageId, int watcherId);
 
     class StoreInfo
     {
@@ -122,7 +131,7 @@ public interface CloudStoreService
     /**
      * Returns a list of all store names.
      */
-    public Collection<String> getCloudStores();
+    Collection<String> getCloudStores();
 
     /**
      * Returns a list of enabled store names in the container.
@@ -161,12 +170,6 @@ public interface CloudStoreService
     Path getPathFromUrl(Container container, String url);
 
     /**
-     * Return nio.Path matching url (which has bucket, etc.)
-     */
-    @Nullable
-    Path getPathFromUrl(String url);
-
-    /**
      * Return nio.Path for otherContainer, given a cloud url/container
      */
     @Nullable
@@ -174,15 +177,7 @@ public interface CloudStoreService
                                   @NotNull org.labkey.api.util.Path path);
 
     @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)      // TODO: remove this when implementation switches to below
-    {
-        return null;
-    }
-    @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay)
-    {
-        return getWebFilesResource(parent, container, name);
-    }
+    WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay);
 
     default Map<String, StoreInfo> getStoreInfos(@Nullable Container container)
     {
