@@ -360,9 +360,13 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             }
             catch (Throwable t)
             {
-                LOG.debug("Caught error in CloudWatcherThread. Cancelling running jobs");
-                _timer.cancel();
-                _timer = null;
+                if (_timer != null)
+                {
+                    LOG.debug("Caught error in CloudWatcherThread. Cancelling running jobs");
+                    _timer.cancel();
+                    _timer = null;
+                }
+
                 throw t;
             }
         }
@@ -388,7 +392,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                             //No reason to watch if the module isn't available
                             LOG.info("Shutting down cloud watcher, module not loaded.");
                             CloudWatcherThread.this.interrupt();
-                            CloudWatcherThread.this.close();
                         }
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
