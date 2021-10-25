@@ -337,7 +337,7 @@ public class FileUtil
 
     public static boolean hasCloudScheme(String url)
     {
-        return hasCloudScheme(URI.create(PageFlowUtil.encodeURI(url)));
+        return url.toLowerCase().startsWith("s3://");
     }
 
     public static String getAbsolutePath(Path path)
