@@ -939,6 +939,10 @@
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
+      <column columnName="RecomputeRollup"/>
+      <column columnName="AliquotCount"/>
+      <column columnName="AliquotVolume"/>
+      <column columnName="AliquotUnit"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
