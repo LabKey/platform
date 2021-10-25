@@ -33,7 +33,7 @@ public class Material extends RunItem
     private String aliquotedFromLSID;
     private Integer sampleState;
 
-    //rollup columns
+    // aliquot rollup columns
     private Boolean recomputeRollup;
     private Integer aliquotCount;
     private Double aliquotVolume;
