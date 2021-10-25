@@ -374,7 +374,7 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.RemoveFromPicklist
         ));
 
-        Set<SampleTypeService.SampleOperations> _permittedOps;
+        Set<SampleTypeService.SampleOperations> _permittedOps = Collections.emptySet();
 
         SampleStateType(Set<SampleTypeService.SampleOperations> permittedOps)
         {
@@ -384,30 +384,6 @@ public class ExpSchema extends AbstractExpSchema
         public Set<SampleTypeService.SampleOperations> getPermittedOps()
         {
             return _permittedOps;
-        }
-
-        public boolean operationPermitted(SampleTypeService.SampleOperations op)
-        {
-            return _permittedOps.contains(op);
-        }
-
-        public static boolean isOperationPermitted(String stateTypeString, SampleTypeService.SampleOperations op)
-        {
-            if (!SampleTypeService.isSampleStatusEnabled())
-                return true;
-
-            if (stateTypeString == null)
-                return true; // no status provided means all operations are permitted
-            try
-            {
-                SampleStateType stateType = SampleStateType.valueOf(stateTypeString);
-                return stateType.operationPermitted(op);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // invalid state; default to no operations permitted
-                return false;
-            }
         }
     };
 

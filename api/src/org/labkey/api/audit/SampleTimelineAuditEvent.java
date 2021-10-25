@@ -1,7 +1,11 @@
 package org.labkey.api.audit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.QueryService;
 
 import java.util.LinkedHashMap;
@@ -199,5 +203,56 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("metadata", getMetadata());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
+    }
+
+    /**
+     * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
+     * audit log timeline event even if the DataState row is later deleted.
+     */
+    @Override
+    public void setOldRecordMap(String oldRecordMap, Container container)
+    {
+        if (oldRecordMap != null)
+        {
+            Map<String, String> row = AbstractAuditTypeProvider.decodeFromDataMap(oldRecordMap);
+            String label = getStatusLabel(row, container);
+            if (label != null)
+            {
+                row.put("samplestatelabel", label);
+                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
+            }
+        }
+        super.setOldRecordMap(oldRecordMap);
+    }
+
+    /**
+     * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
+     * audit log timeline event even if the DataState row is later deleted.
+     */
+    @Override
+    public void setNewRecordMap(String newRecordMap, Container container)
+    {
+        if (newRecordMap != null)
+        {
+            Map<String, String> row = AbstractAuditTypeProvider.decodeFromDataMap(newRecordMap);
+            String label = getStatusLabel(row, container);
+            if (label != null)
+            {
+                row.put("samplestatelabel", label);
+                newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
+            }
+        }
+        super.setNewRecordMap(newRecordMap, container);
+    }
+
+    private String getStatusLabel(Map<String, String> row, Container container)
+    {
+        if (row.get("samplestate") != null && !StringUtils.isBlank(row.get("samplestate")))
+        {
+            DataState status = DataStateManager.getInstance().getStateForRowId(container, Integer.parseInt(row.get("samplestate")));
+            if (status != null)
+                return status.getLabel();
+        }
+        return null;
     }
 }

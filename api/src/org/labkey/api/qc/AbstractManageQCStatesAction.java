@@ -15,6 +15,7 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
@@ -63,6 +64,11 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
                     errors.reject(null, "QC state \"" + label + "\" is defined more than once.");
                     return;
                 }
+                else if (StringUtils.isBlank(label))
+                {
+                    errors.reject(null, "QC state label cannot be blank.");
+                    return;
+                }
                 else
                     labels.add(label);
             }
@@ -73,9 +79,18 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
             {
                 if (labels.contains(newLabel) || newLabels.contains(newLabel))
                     errors.reject(null, "QC state \"" + newLabel + "\" is defined more than once.");
+                else if (StringUtils.isBlank(newLabel))
+                    errors.reject(null, "QC state label cannot be blank.");
                 else
                     newLabels.add(newLabel);
             }
+        }
+        if (form.getNewIds() != null || form.getNewLabels() != null)
+        {
+            int numNewIds = form.getNewIds() == null ? 0 : form.getNewIds().length;
+            int numNewLabels = form.getNewLabels() == null ? 0 : form.getNewLabels().length;
+            if (numNewIds != numNewLabels)
+                errors.reject(null, "QC state label cannot be blank.");
         }
     }
 

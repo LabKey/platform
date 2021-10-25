@@ -65,6 +65,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -331,9 +332,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
             case SampleState:
+                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus();
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
-                boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
                 ret.setHidden(!statusEnabled);
                 ret.setShownInDetailsView(statusEnabled);
                 ret.setShownInInsertView(statusEnabled);
@@ -586,7 +587,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(ExpMaterialTable.Column.Flag);
 
         var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-        boolean statusEnabled = SampleTypeService.isSampleStatusEnabled();
+        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus();
         statusColInfo.setShownInDetailsView(statusEnabled);
         statusColInfo.setShownInInsertView(statusEnabled);
         statusColInfo.setShownInUpdateView(statusEnabled);
