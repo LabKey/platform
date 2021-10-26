@@ -1054,6 +1054,11 @@ public class QueryController extends SpringActionController
                             {
                                 if (null != tableType)
                                 {
+                                    if (!Objects.equals(tableType.getTableName(), form.getQueryName()))
+                                    {
+                                        errors.reject(ERROR_MSG, "Table name must not be modified");
+                                    }
+
                                     TableType.Columns tableColumns = tableType.getColumns();
                                     if (null != tableColumns)
                                     {
