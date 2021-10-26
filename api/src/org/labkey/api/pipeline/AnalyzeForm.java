@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: tgaluhn
@@ -63,7 +64,7 @@ public class AnalyzeForm extends PipelinePathForm
         setProtocolName(protocolName);
     }
 
-    public void initStatus(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis)
+    public void initStatus(AbstractFileAnalysisProtocol protocol, Path dirData, Path dirAnalysis)
     {
         if (fileInputStatus != null)
             return;
@@ -79,7 +80,7 @@ public class AnalyzeForm extends PipelinePathForm
         fileInputStatus[len] = initStatusFile(protocol, dirData, dirAnalysis, null, false);
     }
 
-    private String initStatusFile(AbstractFileAnalysisProtocol protocol, File dirData, File dirAnalysis,
+    private String initStatusFile(AbstractFileAnalysisProtocol protocol, Path dirData, Path dirAnalysis,
                                   String fileInputName, boolean statusSingle)
     {
         if (protocol == null)
@@ -87,7 +88,7 @@ public class AnalyzeForm extends PipelinePathForm
             return UNKNOWN_STATUS;
         }
 
-        File fileStatus = null;
+        Path fileStatus = null;
 
         if (!statusSingle)
         {
@@ -96,7 +97,7 @@ public class AnalyzeForm extends PipelinePathForm
         }
         else if (fileInputName != null)
         {
-            File fileInput = new File(dirData, fileInputName);
+            Path fileInput = dirData.resolve(fileInputName);
             FileType ft = protocol.findInputType(fileInput);
             if (ft != null)
                 fileStatus = PipelineJob.FT_LOG.newFile(dirAnalysis, ft.getBaseName(fileInput));
@@ -104,7 +105,7 @@ public class AnalyzeForm extends PipelinePathForm
 
         if (fileStatus != null)
         {
-            PipelineStatusFile sf = PipelineService.get().getStatusFile(fileStatus);
+            PipelineStatusFile sf = PipelineService.get().getStatusFile(getContainer(), fileStatus);
             if (sf == null)
                 return null;
 
