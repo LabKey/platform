@@ -81,7 +81,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
     private boolean _initialFileTypesRequired = true;
-    private FileFilter _initialInputFileFilter;
+    private FilePathFilter _initialInputFileFilter;
     private Map<FileType, List<FileType>> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
@@ -247,11 +247,17 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     @Override
     @NotNull
-    public FileFilter getInitialFileTypeFilter()
+    public FilePathFilter getInitialFileTypeFilter()
     {
         if (!isInitialFileTypesRequired()) {
             return new PipelineProvider.FileEntryFilter()
             {
+                @Override
+                public boolean accept(java.nio.file.Path pathname)
+                {
+                    return true;
+                }
+
                 @Override
                 public boolean accept(File pathname)
                 {

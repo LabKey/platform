@@ -88,6 +88,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                     {
                         try
                         {
+                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultDateFormat());
                             WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
                         }
                         catch (IllegalArgumentException e)
@@ -101,6 +102,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                     {
                         try
                         {
+                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultNumberFormat());
                             WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
                         }
                         catch (IllegalArgumentException e)

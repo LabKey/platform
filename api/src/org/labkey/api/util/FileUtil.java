@@ -18,6 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -51,7 +53,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -336,14 +337,7 @@ public class FileUtil
 
     public static boolean hasCloudScheme(String url)
     {
-        try
-        {
-            return hasCloudScheme(new URI(url));
-        }
-        catch (URISyntaxException e)
-        {
-            return false;
-        }
+        return url.toLowerCase().startsWith("s3://");
     }
 
     public static String getAbsolutePath(Path path)
@@ -1212,38 +1206,76 @@ quickScan:
         return sb.toString();
     }
 
-    private static void printTree(StringBuilder sb, File node, LinkedList<Boolean> hasMoreFlags)
+    private static void printTree(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
     {
-        if (hasMoreFlags.isEmpty())
-            sb.append(node.getAbsolutePath());
-        else
-            sb.append(indent(hasMoreFlags)).append(node.getName());
-
-        if (node.isDirectory())
-            sb.append("/");
-        else
-            sb.append(" (").append(FileUtils.byteCountToDisplaySize(node.length())).append(")");
-        sb.append("\n");
-
-        File[] children = node.listFiles();
-        if (children != null)
+        Files.walkFileTree(node, new SimplePathVisitor()
         {
-            Arrays.sort(children, Comparator.comparing(File::getName));
-            for (int i = 0; i < children.length; i++)
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
             {
-                File child = children[i];
-                hasMoreFlags.add(i < children.length - 1);
-                printTree(sb, child, hasMoreFlags);
-                hasMoreFlags.removeLast();
+                hasMoreFlags.add(true);
+                return super.preVisitDirectory(dir, attrs);
             }
-        }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            {
+                appendFileLogEntry(sb, file, hasMoreFlags);
+                return super.visitFile(file, attrs);
+            }
+
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException
+            {
+                hasMoreFlags.removeLast();
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
     }
 
-    public static String printTree(File root)
+    private static void appendFileLogEntry(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
+    {
+        if (hasMoreFlags.isEmpty())
+            sb.append(node.toAbsolutePath());
+        else
+            sb.append(indent(hasMoreFlags)).append(node.getFileName());
+
+        if (Files.isDirectory(node))
+            sb.append("/");
+        else
+            sb.append(" (").append(FileUtils.byteCountToDisplaySize(Files.size(node))).append(")");
+        sb.append("\n");
+    }
+
+    public static String printTree(Path root) throws IOException
     {
         StringBuilder sb = new StringBuilder();
         printTree(sb, root, new LinkedList<>());
         return sb.toString();
+    }
+
+    public static String printTree(File root) throws IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        printTree(sb, root.toPath(), new LinkedList<>());
+        return sb.toString();
+    }
+
+    public static String getUnencodedAbsolutePath(Container container, Path path)
+    {
+        if (!path.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(path))
+            return path.toFile().getAbsolutePath();
+        else
+        {
+            return PageFlowUtil.decode( //URI conversion encodes
+                getPathStringWithoutAccessId(
+                        CloudStoreService.get().getPathFromUrl(container, path.toString()).toUri()
+                )
+            );
+        }
     }
 
 

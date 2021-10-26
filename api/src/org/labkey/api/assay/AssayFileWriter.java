@@ -160,13 +160,19 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return pipelineRoot;
     }
 
+    @Deprecated //Prefer the Path version
     public static File findUniqueFileName(String originalFilename, File dir)
+    {
+        return findUniqueFileName(originalFilename, dir.toPath()).toFile();
+    }
+
+    public static Path findUniqueFileName(String originalFilename, Path dir)
     {
         if (originalFilename == null || "".equals(originalFilename))
         {
             originalFilename = "[unnamed]";
         }
-        File file;
+        Path file;
         int uniquifier = 0;
         do
         {
@@ -185,10 +191,10 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 suffix = "";
             }
             String fullName = prefix + (uniquifier == 0 ? "" : "-" + uniquifier) + suffix;
-            file = new File(dir, fullName);
+            file = dir.resolve(fullName);
             uniquifier++;
         }
-        while (file.exists());
+        while (Files.exists(file));
 
         return file;
     }
