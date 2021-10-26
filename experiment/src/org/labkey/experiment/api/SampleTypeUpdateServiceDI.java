@@ -155,6 +155,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -194,6 +206,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
         }
@@ -207,6 +231,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.MERGE);
         }
