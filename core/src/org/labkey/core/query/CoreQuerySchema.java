@@ -658,7 +658,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
     @Override
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         SecurityLogger.indent("CoreQuerySchema.canReadSchema()");
         try

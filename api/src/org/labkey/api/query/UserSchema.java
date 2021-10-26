@@ -113,7 +113,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         _restricted = restricted;
     }
 
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         User user = getUser();
         if (user == null)

@@ -21,7 +21,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
@@ -335,12 +334,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
         public UserSchema getUserSchema()
         {
             return this.schema;
-        }
-
-        @Override
-        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-        {
-            return ReadPermission.class.isAssignableFrom(perm) && getUserSchema().getContainer().hasPermission(user, perm);
         }
     }
 }

@@ -20,9 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 
 public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
 {
@@ -46,7 +49,8 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     {
         // We only allow delete on this table. No need for permission check, since we already know user has
         // UserManagementPermission at the root.
-        return perm.equals(DeletePermission.class);
+        assert((User)user).hasRootPermission(UserManagementPermission.class);
+        return perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class);
     }
 
     @Override

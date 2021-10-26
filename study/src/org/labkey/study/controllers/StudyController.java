@@ -965,7 +965,7 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("User does not have read permission on this report.");
             }
-            else if (report == null && !def.canRead(getUser()))
+            else if (report == null && !table.hasPermission(getUser(),ReadPermission.class))
             {
                 return new HtmlView("User does not have read permission on this dataset.");
             }
@@ -2448,7 +2448,7 @@ public class StudyController extends BaseStudyController
 
             User user = getUser();
             // Go through normal getTable() codepath to be sure all metadata is applied
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
+            TableInfo t = StudyQuerySchema.createSchema(_study, user).getTable(_def.getName(), null);
             if (t == null)
                 throw new NotFoundException("Dataset not found");
             setTarget(t);
@@ -2797,13 +2797,13 @@ public class StudyController extends BaseStudyController
 
             if (def != null)
             {
-                final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
+                final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
                 DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
                     //requiresLogin();
-                    view.addView(new HtmlView("User does not have read permission on this dataset."));
+                    view.addView(new HtmlView(HtmlString.of("User does not have read permission on this dataset.")));
                 }
                 else
                 {
@@ -3004,7 +3004,7 @@ public class StudyController extends BaseStudyController
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
 
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
                 TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset, null);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
@@ -3280,7 +3280,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
 
-            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser());
             QuerySettings qs = querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
 
@@ -3636,7 +3636,7 @@ public class StudyController extends BaseStudyController
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
-            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
 
             qs.setSchemaName(querySchema.getSchemaName());
@@ -6134,7 +6134,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No LSID specified");
             }
 
-            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
 
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
             assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";

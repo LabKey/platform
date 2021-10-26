@@ -59,6 +59,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenuView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationUrls;
 
@@ -765,7 +766,18 @@ public class DataRegion extends DisplayElement
     final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
         if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
-            return null;
+        {
+            // this should usually be detected sooner!
+            _log.warn("Unauthorized thrown from DataRegion.getResults()");
+            throw new UnauthorizedException();
+        }
+
+        if (!getTable().hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+        {
+            // this should usually be detected sooner!
+            _log.warn("Unauthorized thrown from DataRegion.getResults()");
+            throw new UnauthorizedException();
+        }
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
@@ -776,10 +788,13 @@ public class DataRegion extends DisplayElement
 
         try
         {
+            TableInfo tinfoMain = getTable();
+            if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+                throw new UnauthorizedException();
+
             results = ctx.getResults();
             if (null == results)
             {
-                TableInfo tinfoMain = getTable();
                 if (null == tinfoMain)
                 {
                     throw new SQLException("Table or query not found: " + getSettings().getQueryName());
@@ -1943,6 +1958,8 @@ public class DataRegion extends DisplayElement
         }
         else
         {
+            if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+                throw new UnauthorizedException();
             LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
             TableSelector selector = new TableSelector(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort()).setForDisplay(true);
             selector.setNamedParameters(getQueryParameters());
@@ -2003,7 +2020,11 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                Collection<Map<String, Object>> maps = new TableSelector(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
+                TableInfo tinfoMain = getTable();
+                if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+                    throw new UnauthorizedException();
+
+                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
                 if (!maps.isEmpty())
                     valueMap = maps.iterator().next();
             }
@@ -2028,7 +2049,8 @@ public class DataRegion extends DisplayElement
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
         TableInfo table = getTable();
-        SqlSelector selector;
+        if (!table.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+            throw new UnauthorizedException();
 
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
@@ -2052,7 +2074,7 @@ public class DataRegion extends DisplayElement
 
             sql = table.getSqlDialect().limitRows(sql, 2);
 
-            selector = new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+            SqlSelector selector = new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
 
             int count = 0;
             Object commonValue = null;

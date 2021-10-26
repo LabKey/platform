@@ -47,6 +47,7 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
 
@@ -83,6 +84,22 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     private final @NotNull TableRules _rules;
     private Set<FieldKey> _rulesOmittedColumns = null;
     private Set<FieldKey> _rulesTransformedColumns = null;
+
+    // for debugging/validation only
+    protected Set<Class<? extends Permission>> checkedPermissions = new HashSet<>();
+
+    private static boolean assertCheckedPermissions = false; // for fail fast (developers only)
+
+    @Override
+    public void checkReadBeforeExecute()
+    {
+        // strongest (can't leave on until every subclass uses checkedPermissions.add()
+        assert !assertCheckedPermissions || checkedPermissions.contains(ReadPermission.class) : "caller should call TableInfo.hasPermission()";
+        // strong
+        assert !assertCheckedPermissions || hasPermission(getUserSchema().getUser(), ReadPermission.class) : "Caller should check TableInfo.hasPermission()";
+        if (!hasPermission(getUserSchema().getUser(), ReadPermission.class))
+            throw new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
+    }
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
     {
@@ -473,11 +490,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         return getFromSQL(alias, false);
     }
 
     public SQLFragment getFromSQL(String alias, boolean skipTransform)
     {
+        checkReadBeforeExecute();
         SimpleFilter filter = getFilter();
         SQLFragment where = filter.getSQLFragment(_rootTable.getSqlDialect());
         if (where.isEmpty())
@@ -819,6 +838,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        checkedPermissions.add(perm);
         if (ReadPermission.class.isAssignableFrom(perm))
         {
             return _userSchema.getContainer().hasPermission(user, perm);

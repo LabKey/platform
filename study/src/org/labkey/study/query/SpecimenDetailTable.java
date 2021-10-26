@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
@@ -46,6 +47,7 @@ import org.labkey.api.specimen.query.SpecimenUpdateService;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -67,7 +69,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
     public SpecimenDetailTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf,  true);
 
         var guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -355,7 +357,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm) &&
-               getContainer().hasPermission(user, EditSpecimenDataPermission.class);
+                (perm.equals(ReadPermission.class) || getContainer().hasPermission(user, EditSpecimenDataPermission.class));
     }
 
     @Override
@@ -371,6 +373,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         return getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
     }
 

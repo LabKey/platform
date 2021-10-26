@@ -522,6 +522,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     @Override @NotNull
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         assert null != getColMembers();
 
         SQLFragment sql = new SQLFragment();

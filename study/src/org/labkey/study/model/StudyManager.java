@@ -107,6 +107,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -4168,7 +4169,7 @@ public class StudyManager
     // Return a source->alias map for the specified participant
     public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user, true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user).getParticipantAliasesTable();
 
         if (null == aliasTable)
             return Collections.emptyMap();
@@ -4259,7 +4260,7 @@ public class StudyManager
 
         body.append(keywords).append("\n");
 
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), RoleManager.getRole(ReaderRole.class));
         TableInfo tableInfo = schema.createDatasetTableInternal(dsd, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
@@ -4329,7 +4330,7 @@ public class StudyManager
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
 
         if (null != aliasTable)
         {

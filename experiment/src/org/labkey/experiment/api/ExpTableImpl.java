@@ -271,7 +271,7 @@ abstract public class ExpTableImpl<C extends Enum>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (getUpdateService() != null)
+        if (perm == ReadPermission.class || getUpdateService() != null)
             return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
         return false;
     }

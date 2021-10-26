@@ -104,10 +104,4 @@ public class VisitTable extends BaseStudyTable
     {
         return hasPermissionOverridable(user, perm);
     }
-
-    @Override
-    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return getContainer().hasPermission(user, perm);
-    }
 }

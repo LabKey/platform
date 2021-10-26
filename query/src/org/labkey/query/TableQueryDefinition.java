@@ -37,6 +37,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -118,7 +119,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         List<QueryException> errors = new ArrayList<>();
         TableInfo table = getTable(errors, true);
-        if (table != null)
+        if (table != null && table.hasPermission(getUser(), ReadPermission.class))
         {
             if (action == QueryAction.detailsQueryRow)
             {

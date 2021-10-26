@@ -47,6 +47,9 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -74,34 +77,34 @@ import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
+    final protected Role _contextualRole;
+
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf)
     {
-        this(schema, realTable, cf,false);
+        this(schema, realTable, cf, false);
     }
 
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData)
     {
-        this(schema, realTable, cf, includeSourceStudyData, false);
-    }
-
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData, boolean skipPermissionChecks)
-    {
         super(realTable, schema);
 
+        Role contextualRole = null;
+        if (!schema.isDataspace() && schema.hasContextualReadRole())
+            contextualRole = RoleManager.getRole(ReaderRole.class);
+        _contextualRole = contextualRole;
+
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
-            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), skipPermissionChecks));
+            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), null != _contextualRole && ReaderRole.class == _contextualRole.getClass()));
         else if (null != cf && supportsContainerFilter())
             _setContainerFilter(cf);
         else
             _setContainerFilter(getDefaultContainerFilter());
 
-        if (!includeSourceStudyData && skipPermissionChecks)
-            throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
         if (includeSourceStudyData && getParticipantColumnName() != null)
         {
             // If we're in an ancillary study, show the parent folder's specimens, but filter to include only those
             // that relate to subjects in the ancillary study.  This filter will have no effect on samples uploaded
-            // directly in this this study folder (since all local specimens should have an associated subject ID
+            // directly in this study folder (since all local specimens should have an associated subject ID
             // already in the participant table.
             StudyImpl currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
             if (currentStudy != null && currentStudy.isAncillaryStudy())
@@ -786,15 +789,17 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     // ONLY OVERRIDE THIS IF TABLE SHOULD BE VISIBLE IN DATASPACE PROJECT-LEVEL CONTAINER
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
             return false;
         return hasPermissionOverridable(user, perm);
     }
 
     protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return false;
+        // by default tables are readable
+        return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
     }
 
     protected boolean canReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)

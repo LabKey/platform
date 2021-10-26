@@ -94,12 +94,6 @@ public class AssaySpecimenTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return getContainer().hasPermission(user, perm);
-    }
-
-    @Override
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());

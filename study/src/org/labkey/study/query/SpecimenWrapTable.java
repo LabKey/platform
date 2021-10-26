@@ -37,7 +37,7 @@ public class SpecimenWrapTable extends BaseStudyTable
 
     public SpecimenWrapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimenDetail(schema.getContainer()), cf, true);
 
         addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
@@ -65,6 +65,7 @@ public class SpecimenWrapTable extends BaseStudyTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         return SpecimenDetailTable.getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
     }
 

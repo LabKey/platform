@@ -30,6 +30,7 @@ import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
@@ -83,7 +84,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
     @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        if (perm.equals(DeletePermission.class))
+        if (perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class))
             return getContainer().hasPermission(user, perm);
         else
             return false;

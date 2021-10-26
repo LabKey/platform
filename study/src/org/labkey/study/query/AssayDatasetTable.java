@@ -40,7 +40,7 @@ public class AssayDatasetTable extends DatasetTableImpl
     private List<FieldKey> _defaultVisibleColumns = null;
     private TableInfo _assayResultTable;
 
-    public AssayDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    AssayDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         super(schema, cf, dsd);
 
@@ -153,7 +153,7 @@ public class AssayDatasetTable extends DatasetTableImpl
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
+                            return getUserSchema().getTable(_dsd.getName(), getLookupContainerFilter());
                         }
 
                         @Override

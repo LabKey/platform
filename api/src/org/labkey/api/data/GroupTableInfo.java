@@ -68,6 +68,7 @@ public class GroupTableInfo extends VirtualTable
     @Override @NotNull
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment("SELECT ");
         String sep = "";
         

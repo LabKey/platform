@@ -83,12 +83,6 @@ public class VisitTagTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return getContainer().hasPermission(user, perm);
-    }
-
-    @Override
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
@@ -99,11 +93,5 @@ public class VisitTagTable extends BaseStudyTable
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
         super._setContainerFilter(filter);
-    }
-
-    @Override
-    public @NotNull SQLFragment getFromSQL(String alias, boolean skip)
-    {
-        return super.getFromSQL(alias, skip);
     }
 }

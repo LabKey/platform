@@ -266,6 +266,7 @@ public class LineageTableInfo extends VirtualTable
     @Override
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         ExpLineageOptions options = new ExpLineageOptions();
         options.setForLookup(true);
         options.setParents(_parents);
@@ -329,7 +330,7 @@ public class LineageTableInfo extends VirtualTable
         @Override
         public SQLFragment getFromSQL()
         {
-            // giant union query
+            checkReadBeforeExecute();
             SQLFragment sql = new SQLFragment();
             sql.append(
                     "SELECT container, CAST('Data' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid, CAST(NULL AS VARCHAR(200)) AS RunProtocolLsid\n" +

@@ -1500,7 +1500,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user, true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user);
                     return schema.getTable("Datasets");
                 }
             };
@@ -2599,7 +2599,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u, true);
+        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u);
         TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
 
         TableInfo tInfo = getTableInfo(u, true);

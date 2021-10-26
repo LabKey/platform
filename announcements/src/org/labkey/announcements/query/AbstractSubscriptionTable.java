@@ -56,6 +56,7 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        checkedPermissions.add(perm);
         return hasPermission(user, perm, getContainer());
     }
 

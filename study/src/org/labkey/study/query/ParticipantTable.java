@@ -408,14 +408,4 @@ public class ParticipantTable extends BaseStudyTable
         ret.addClause(new ParticipantGroupFilterClause(participantFieldKey, group));
         return ret;
     }
-
-
-    @NotNull
-    @Override
-    public SQLFragment getFromSQL(String alias)
-    {
-        SQLFragment ret;
-        ret = super.getFromSQL(alias);
-        return ret;
-    }
 }

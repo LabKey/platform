@@ -61,8 +61,8 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
 
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
 
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
+        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
         // add the assay schedule specific tables
         TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME, null);
@@ -85,7 +85,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
 
     private void writeAssaySpecimenVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
         List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());

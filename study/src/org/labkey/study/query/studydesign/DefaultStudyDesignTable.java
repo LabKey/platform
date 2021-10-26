@@ -43,6 +43,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
@@ -171,7 +172,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Most tables should not editable in Dataspace
-        if (getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
             return false;
         return hasPermissionOverridable(user, perm);
     }

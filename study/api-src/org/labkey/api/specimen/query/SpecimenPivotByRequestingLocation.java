@@ -36,6 +36,7 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
     public SpecimenPivotByRequestingLocation(final SpecimenQuerySchema schema, ContainerFilter cf)
     {
         super(SpecimenReportQuery.getPivotByRequestingLocation(schema, cf), schema);
+        setName(PIVOT_BY_REQUESTING_LOCATION);
         setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
