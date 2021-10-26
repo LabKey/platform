@@ -277,6 +277,7 @@ public class AdminController extends SpringActionController
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
+    private static long _primaryLogMark = 0;
 
     public static void registerAdminConsoleLinks()
     {
@@ -2486,6 +2487,31 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    @AdminConsoleAction(ApplicationAdminPermission.class)
+    public class ResetPrimaryLogMarkAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            File logFile = getPrimaryLogFile();
+            _primaryLogMark = logFile.length();
+            return null;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class ShowPrimaryLogSinceMarkAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            PageFlowUtil.streamLogFile(response, _primaryLogMark, getPrimaryLogFile());
+        }
+    }
+
+
     @AdminConsoleAction
     public class ShowPrimaryLogAction extends ExportAction<Object>
     {
@@ -2493,14 +2519,18 @@ public class AdminController extends SpringActionController
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
-            File logFile = new File(getLabKeyLogDir(), "labkey.log");
-            PageFlowUtil.streamLogFile(response, 0, logFile);
+            PageFlowUtil.streamLogFile(response, 0, getPrimaryLogFile());
         }
     }
 
     private File getErrorLogFile()
     {
         return new File(getLabKeyLogDir(), "labkey-errors.log");
+    }
+
+    private File getPrimaryLogFile()
+    {
+        return new File(getLabKeyLogDir(), "labkey.log");
     }
 
     private static ActionURL getActionsURL()

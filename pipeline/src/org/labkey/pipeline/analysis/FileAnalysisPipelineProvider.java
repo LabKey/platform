@@ -98,7 +98,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             String path = directory.cloneHref().getParameter(Params.path.toString());
             String actionId = createActionId(this.getClass(), tp.getDescription()); // XXX: use task id instead so it's unique?
             addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
-                    directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, false, includeAll);
+                    directory, directory.listPaths(tp.getInitialFileTypeFilter()), true, false, includeAll);
         }
     }
 
