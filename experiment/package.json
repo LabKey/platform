@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.86.0-fb-smSampleStatusEnabled.0"
+    "@labkey/components": "2.86.0-fb-smSampleStatusEnabled.1"
   },
   "devDependencies": {
     "@labkey/build": "4.0.1"
