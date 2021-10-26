@@ -65,6 +65,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
+    @Nullable
+    default Integer getWorkflowTask() {
+        return null;
+    };
+
     @Override
     User getUser();
 
@@ -204,6 +209,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected ViewContext _context;
         protected String _comments;
         protected String _name;
+        protected Integer _workflowTask;
         protected String _targetStudy;
         protected Integer _reRunId;
         protected Map<String, Object> _rawRunProperties;
@@ -261,6 +267,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public final FACTORY setName(String name)
         {
             _name = name;
+            return self();
+        }
+
+        public final FACTORY setWorkflowTask(Integer workflowTask)
+        {
+            _workflowTask = workflowTask;
             return self();
         }
 

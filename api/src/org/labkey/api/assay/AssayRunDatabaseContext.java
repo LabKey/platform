@@ -25,6 +25,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -119,6 +120,15 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     public String getName()
     {
         return _run.getName();
+    }
+
+    @Override
+    public Integer getWorkflowTask()
+    {
+        if (_run.getWorkflowTask() != null)
+            return _run.getWorkflowTask().getRowId();
+
+        return null;
     }
 
     @Override
