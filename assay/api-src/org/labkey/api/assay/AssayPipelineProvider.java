@@ -30,6 +30,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.List;
 
 /**
@@ -69,7 +70,7 @@ public class AssayPipelineProvider extends PipelineProvider
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             return;
 
-        File[] files = directory.listFiles(_filter);
+        File[] files = directory.listFiles((FileFilter) _filter);
         if (includeAll || (files != null && files.length > 0))
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());

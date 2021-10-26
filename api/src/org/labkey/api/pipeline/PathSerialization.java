@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.util.FileUtil;
 
 import java.io.IOException;
@@ -74,16 +74,7 @@ public class PathSerialization
             String str = parser.getValueAsString();
             if (FileUtil.hasCloudScheme(str))
             {
-                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
-                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
-                CloudStoreService css = CloudStoreService.get();
-                if (css != null)
-                {
-                    //TODO this will likely work only for cloud paths that include access ids eg: s3://<pub-access-key>@s3.amazonaws.com/<my bucket>/...
-                    return css.getPathFromUrl(str);
-                    //TODO need LKS container to pull the appropriate S3 credentials/FileSystem representation (in the event of interrupted job)
-                }
-
+                throw new PremiumFeatureNotEnabledException("Cloud module not installed. Please talk to your account representative for additional information.");
             }
             return Path.of(str);
         }
