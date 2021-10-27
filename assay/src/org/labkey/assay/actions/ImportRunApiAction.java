@@ -90,6 +90,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         Integer batchId;
         String name;
+        Integer workflowTask;
         String comments;
         Map<String, Object> runProperties;
         Map<String, Object> batchProperties;
@@ -126,6 +127,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = json.optInt(AssayJSONConverter.BATCH_ID);
             name = json.optString(ExperimentJSONConverter.NAME, null);
+            workflowTask = json.optInt(ExperimentJSONConverter.WORKFLOW_TASK);
+            if (workflowTask == 0)
+                workflowTask = null;
             comments = json.optString(ExperimentJSONConverter.COMMENT, null);
             forceAsync = json.optBoolean("forceAsync");
             jobDescription = json.optString("jobDescription", null);
@@ -157,6 +161,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
             batchId = form.getBatchId();
             name = form.getName();
+            workflowTask = form.getWorkflowTask();
             comments = form.getComment();
             runProperties = form.getProperties();
             batchProperties = form.getBatchProperties();
@@ -216,6 +221,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
                 = provider.createRunUploadFactory(protocol, getViewContext());
         factory.setName(name)
+                .setWorkflowTask(workflowTask)
                 .setComments(comments)
                 .setRunProperties(runProperties)
                 .setBatchProperties(batchProperties)
@@ -333,6 +339,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _comment;
         private JSONObject _json;
         private String _name;
+        private Integer _workflowTask;
         private Integer _reRunId;
         private String _targetStudy;
         private Map<String, Object> _properties = new HashMap<>();
@@ -386,6 +393,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setName(String name)
         {
             _name = name;
+        }
+
+        public Integer getWorkflowTask()
+        {
+            return _workflowTask;
+        }
+
+        public void setWorkflowTask(Integer workflowTask)
+        {
+            _workflowTask = workflowTask;
         }
 
         public String getComment()
