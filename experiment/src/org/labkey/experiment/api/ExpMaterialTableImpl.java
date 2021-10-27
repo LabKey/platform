@@ -364,6 +364,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case AliquotCount:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+                ret.setLabel("Aliquot Created Count");
                 ret.setUserEditable(false);
                 ret.setShownInDetailsView(false);
                 ret.setShownInInsertView(false);
