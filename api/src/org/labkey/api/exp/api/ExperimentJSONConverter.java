@@ -71,6 +71,7 @@ public class ExperimentJSONConverter
     public static final String MODIFIED = "modified";
     public static final String MODIFIED_BY = "modifiedBy";
     public static final String NAME = "name";
+    public static final String WORKFLOW_TASK = "workflowTask";
     public static final String LSID = "lsid";
     public static final String CPAS_TYPE = "cpasType";
     // Matches the expType parameter used in the linage api: "Data", "Material", "ExperimentRun", "Object"
