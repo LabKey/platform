@@ -965,7 +965,7 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("User does not have read permission on this report.");
             }
-            else if (report == null && !table.hasPermission(getUser(),ReadPermission.class))
+            else if (report == null && (null==table || !table.hasPermission(getUser(),ReadPermission.class)))
             {
                 return new HtmlView("User does not have read permission on this dataset.");
             }

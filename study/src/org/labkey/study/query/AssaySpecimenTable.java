@@ -21,7 +21,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -97,5 +96,12 @@ public class AssaySpecimenTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        // see StudyDesignController.UpdateAssayScheduleAction @RequiresPermission(UpdatePermission.class)
+        return checkContainerPermission(user, perm);
     }
 }

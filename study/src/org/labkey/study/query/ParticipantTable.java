@@ -42,6 +42,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.TitleForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantGroup;
@@ -174,7 +176,11 @@ public class ParticipantTable extends BaseStudyTable
         {
             DatasetDefinition dataset = _study.getDataset(_study.getParticipantAliasDatasetId());
             User user = getUserSchema().getUser();
-            if (dataset != null && dataset.canRead(user))
+            /* NOTE We are probably in the middle of constructing a dataset that contains a ParticipantForeignKey.
+             * Calling dataset.canRead() will try to construct a dataset tableInfo and we'll end up with a StackOverflow.
+             * Use the study permission directly (no contextual roles, etc).
+             */
+            if (dataset != null && dataset.canReadInternal(user))
             {
                 // Get the table and the two admin-configured columns
                 final DatasetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);

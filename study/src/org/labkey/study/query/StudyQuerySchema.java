@@ -37,6 +37,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
@@ -47,6 +48,7 @@ import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
 import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -177,10 +179,18 @@ public class StudyQuerySchema extends UserSchema
     private ParticipantGroup _sessionParticipantGroup;
 
 
-    /* use createSchema() */
+    /** use StudyQuerySchema.createSchema() */
     protected StudyQuerySchema(@NotNull StudyImpl study, User user, @Nullable Role contextualRole)
     {
         this(study, study.getContainer(), user, contextualRole);
+
+        // StudyQuerySchema does not return datasets that not readable
+        _getTableAcceptor = (t) ->
+        {
+            boolean allow;
+            allow = !(t instanceof DatasetTable) || t.hasPermission(StudyQuerySchema.this.getUser(), ReadPermission.class);
+            return allow;
+        };
 
         initSessionParticipantGroup(study, user);
     }
@@ -237,9 +247,11 @@ public class StudyQuerySchema extends UserSchema
 
     protected Set<String> getSubSchemaNames()
     {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
-            return new LinkedHashSet<>(Arrays.asList("Datasets","Design","Specimens"));
-        return Collections.emptySet();
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
+            return Collections.emptySet();
+        if (null != ModuleLoader.getInstance().getModule("Specimen"))
+            return new LinkedHashSet<>(Arrays.asList("Datasets", "Design", "Specimens"));
+        return new LinkedHashSet<>(Arrays.asList("Datasets", "Design"));
     }
 
     @Override
@@ -981,22 +993,16 @@ public class StudyQuerySchema extends UserSchema
 
             DatasetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             // Check for permission before deciding to treat the request as a dataset
-            if (null != dsd)
+            if (dsd != null && dsd.canReadInternal(getUser()))
             {
                 // Issue 18787: if dataset name and label differ, use the name for the queryName
                 if (!settings.getQueryName().equals(dsd.getName()))
                     settings.setQueryName(dsd.getName());
 
-                TableInfo table = getTable(settings.getQueryName());
-                if (null != table)
-                {
-                    if (!(settings instanceof DatasetQuerySettings))
-                        settings = new DatasetQuerySettings(settings);
+                if (!(settings instanceof DatasetQuerySettings))
+                    settings = new DatasetQuerySettings(settings);
 
-                    return new DatasetQueryView(this, (DatasetQuerySettings) settings, errors);
-                }
-                // this should resolve so don't fall through
-                throw new UnauthorizedException("Resolving table failed: " + settings.getQueryName());
+                return new DatasetQueryView(this, (DatasetQuerySettings)settings, errors);
             }
         }
         return super.createView(context, settings, errors);
@@ -1022,6 +1028,12 @@ public class StudyQuerySchema extends UserSchema
     {
         return null != _contextualRole && _contextualRole.getClass() == ReaderRole.class;
     }
+
+    public Set<Role> getContextualRoles()
+    {
+        return null != _contextualRole ? Set.of(_contextualRole) : Set.of();
+    }
+
 
     @Override
     @Nullable
@@ -1279,7 +1291,7 @@ public class StudyQuerySchema extends UserSchema
                     User user = getUser();
                     for (DatasetDefinition dsd : _study.getDatasets())
                     {
-                        boolean canRead = dsd.canRead(user);
+                        boolean canRead = dsd.canReadInternal(user);
                         if (dsd.getName() == null || !canRead)
                             continue;
                         names.add(dsd.getName());

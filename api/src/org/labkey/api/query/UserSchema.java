@@ -74,6 +74,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     protected final Collection<UserSchemaCustomizer> _schemaCustomizers;
     private boolean hasRegisteredSchemaLinks = false;
 
+    protected java.util.function.Predicate<TableInfo> _getTableAcceptor = (t) -> true;
+
     public UserSchema(@NotNull String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
         this(SchemaKey.fromParts(name), description, user, container, dbSchema, null);
@@ -224,6 +226,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
+
+
     private boolean validateTableInfo(TableInfo t)
     {
         if (null == t)
@@ -287,10 +291,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 table.overlayMetadata(name, this, errors);
             }
             afterConstruct(table);
+            fireAfterConstruct(table);
             if (!forWrite)
                 table.setLocked(true);
-            fireAfterConstruct(table);
-            if (null != cacheKey)
+            /* last chance thumbs-up thumbs-down for returning this table, e.g. Study does not return tables that don't have read permission */
+            if (!_getTableAcceptor.test(table))
+                table = null;
+            if (null != table && null != cacheKey)
                 tableInfoCache.put(cacheKey, table);
             torq = table;
         }

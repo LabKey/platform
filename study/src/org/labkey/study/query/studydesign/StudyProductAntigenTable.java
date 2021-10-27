@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * Created by klum on 12/13/13.
  */
-public class StudyProductAntigenTable extends DefaultStudyDesignTable
+public class StudyProductAntigenTable extends DefaultStudyDesignTable<StudyQuerySchema>
 {
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -52,7 +52,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
     }
 
 
-    public static StudyProductAntigenTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
+    public static StudyProductAntigenTable create(Domain domain, StudyQuerySchema schema, @Nullable ContainerFilter filter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         if (null == storageTableInfo)
@@ -63,7 +63,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
     }
 
 
-    private StudyProductAntigenTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    private StudyProductAntigenTable(Domain domain, TableInfo storageTableInfo, StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
         super(domain, storageTableInfo, schema, containerFilter);
 

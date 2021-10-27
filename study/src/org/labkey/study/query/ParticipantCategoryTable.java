@@ -84,8 +84,9 @@ public class ParticipantCategoryTable extends BaseStudyTable
     @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
+        // see ParticipantGroupController, note most actions only require ReadPermission
         if (perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class))
-            return getContainer().hasPermission(user, perm);
+            return checkContainerPermission(user, perm);
         else
             return false;
     }

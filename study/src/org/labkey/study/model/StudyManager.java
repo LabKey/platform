@@ -480,7 +480,6 @@ public class StudyManager
         return _instance;
     }
 
-
     @Nullable
     public StudyImpl getStudy(@NotNull Container c)
     {
@@ -599,6 +598,7 @@ public class StudyManager
         {
             SpecimenSchema.get().getTableInfoLocation(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
+            clearCaches(container,false);
 
             //note: we no longer copy the container's policy to the study upon creation
             //instead, we let it inherit the container's policy until the security type
@@ -2048,7 +2048,7 @@ public class StudyManager
         DatasetDefinition def = getDatasetDefinition(study, cohortDatasetId);
 
         if (def != null)
-            return def.canRead(user);
+            return def.canReadInternal(user);
 
         return false;
     }

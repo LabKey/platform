@@ -80,7 +80,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
@@ -184,8 +183,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 });
 
                 column.setFk(new ParticipantForeignKey(cf));
-                if (null == column.getURL())
-                    column.setURL(column.getFk().getURL(column));
+// I don't think we need to do this?  This is what getEffectiveURL() is for?
+//                if (null == column.getURL())
+//                    column.setURL(column.getFk().getURL(column));
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
@@ -888,8 +888,15 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        // OK to edit these in Dataspace project and in any folder
-        return getDatasetDefinition().hasPermission(user, perm);
+        if (!perm.equals(ReadPermission.class) && !canUserAccessPhi())
+            return false;
+        return getDatasetDefinition().hasPermission(user, perm, getContextualRoles());
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        throw new IllegalStateException();
     }
 
     @Override

@@ -94,4 +94,10 @@ public class VisitTagTable extends BaseStudyTable
     {
         super._setContainerFilter(filter);
     }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return checkReadOrIsAdminPermission(user, perm);
+    }
 }

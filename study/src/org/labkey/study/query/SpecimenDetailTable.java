@@ -356,8 +356,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, perm) &&
-                (perm.equals(ReadPermission.class) || getContainer().hasPermission(user, EditSpecimenDataPermission.class));
+        return checkSpecimenEditPermissions(user, perm);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class ParticipantGroupTable extends BaseStudyTable
     {
         checkedPermissions.add(perm);
         if (perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class))
-            return getContainer().hasPermission(user, perm);
+            return checkContainerPermission(user, perm);
         else
             return false;
     }

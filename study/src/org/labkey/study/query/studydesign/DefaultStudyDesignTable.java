@@ -44,21 +44,24 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.study.StudySchema;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by klum on 12/12/13.
  */
-public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
+public class DefaultStudyDesignTable<SchemaType extends StudyQuerySchema> extends FilteredTable<SchemaType>
 {
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
     private Domain _domain;
 
 
-    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo,  UserSchema schema)
+    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo, SchemaType schema)
     {
         super(storageTableInfo, schema);
         _domain = domain;
@@ -90,7 +93,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
                                 return dc;
                             });
                         }
-                        col.setFieldKey(new FieldKey(null,pd.getName()));
+                        col.setFieldKey(new FieldKey(null, pd.getName()));
                     }
                 }
             }
@@ -120,7 +123,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     }
 
 
-    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo,  UserSchema schema, @Nullable ContainerFilter containerFilter)
+    protected DefaultStudyDesignTable(Domain domain, TableInfo storageTableInfo, SchemaType schema, @Nullable ContainerFilter containerFilter)
     {
         this(domain, storageTableInfo, schema);
         if (null != containerFilter)
@@ -128,10 +131,16 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     }
 
 
-    public static DefaultStudyDesignTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public static <SchemaType extends StudyQuerySchema> DefaultStudyDesignTable create(Domain domain, SchemaType schema, @Nullable ContainerFilter containerFilter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         return new DefaultStudyDesignTable(domain, storageTableInfo, schema, containerFilter);
+    }
+
+
+    protected Set<Role> getContextualRoles()
+    {
+        return getUserSchema().getContextualRoles();
     }
 
 
@@ -179,7 +188,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, perm);
+        return getContainer().hasPermission(user, perm, getContextualRoles());
     }
 
     /**

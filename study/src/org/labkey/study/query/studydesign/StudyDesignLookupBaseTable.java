@@ -30,7 +30,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
@@ -96,9 +95,9 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     {
         // Only admins are allowed to insert into these tables at the project level
         if (getContainer().isProject())
-            return canReadOrIsAdminPermission(user, perm);
+            return checkReadOrIsAdminPermission(user, perm);
         else
-            return getContainer().hasPermission(user, perm);
+            return checkContainerPermission(user, perm);
     }
 
     private class StudyDesignLookupsQueryUpdateService extends DefaultQueryUpdateService

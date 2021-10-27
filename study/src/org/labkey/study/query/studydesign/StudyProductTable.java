@@ -17,7 +17,6 @@ package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
@@ -38,7 +37,7 @@ import java.util.List;
 /**
  * Created by klum on 12/12/13.
  */
-public class StudyProductTable extends DefaultStudyDesignTable
+public class StudyProductTable extends DefaultStudyDesignTable<StudyQuerySchema>
 {
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -50,7 +49,7 @@ public class StudyProductTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Type"));
     }
 
-    public static StudyProductTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public static StudyProductTable create(Domain domain, StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         if (null == storageTableInfo)
@@ -60,7 +59,7 @@ public class StudyProductTable extends DefaultStudyDesignTable
         return new StudyProductTable(domain, storageTableInfo, schema, containerFilter);
     }
 
-    private StudyProductTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    private StudyProductTable(Domain domain, TableInfo storageTableInfo, StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
          super(domain, storageTableInfo, schema, containerFilter);
 

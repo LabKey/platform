@@ -27,9 +27,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -92,7 +90,7 @@ public class VisitTagMapTable extends BaseStudyTable
     public boolean hasPermissionOverridable(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Only allow admins to edit directly.
-        return canReadOrIsAdminPermission(user, perm);
+        return checkReadOrIsAdminPermission(user, perm);
     }
 
     private static Map<String, String> _columnMappings = new HashMap<>();

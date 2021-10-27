@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -655,6 +656,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      * Get table info representing dataset.  This relies on the DatasetDefinition being removed from
      * the cache if the dataset type changes.
      * see StudyManager.importDatasetTSV()
+     *
+     * TODO convert usages of DatasetDefinition.getTableInfo() to use StudyQuerySchema.getTable()
      */
     @Override
     public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
@@ -677,7 +680,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         if (user == null && checkPermission)
             throw new IllegalArgumentException("user cannot be null");
 
-        if (checkPermission && !canRead(user))
+        if (checkPermission && !canReadInternal(user))
         {
             throw new UnauthorizedException();
         }
@@ -918,6 +921,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
+        return getPermissions(user, null);
+    }
+
+    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @Nullable Set<Role> contextualRoles)
+    {
         Set<Class<? extends Permission>> result = new HashSet<>();
 
         //if the study security type is basic read or basic write, use the container's policy instead of the
@@ -927,18 +935,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
                 SecurityPolicyManager.getPolicy(getContainer()) : SecurityPolicyManager.getPolicy(getStudy());
 
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(studyPolicy, user, contextualRoles);
+
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
-        if (studyPolicy.hasPermission(user, ReadPermission.class) ||
-            (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityPolicyManager.getPolicy(this).hasPermission(user, ReadPermission.class)))
+        copyReadPerms(studyPermissions, result);
+        if (studyPermissions.contains(ReadSomePermission.class))
         {
-            result.add(ReadPermission.class);
+            Set<Class<? extends Permission>> datasetPermissions = SecurityPolicyManager.getPolicy(this).getOwnPermissions(user);
+            copyReadPerms(datasetPermissions, result);
+        }
 
-            // a dataspace study always has read-only datasets, you cannot edit no matter who you are
-            if (_study.isDataspaceStudy())
-                return result;
-
+        if (result.contains(ReadPermission.class))
+        {
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
@@ -951,7 +961,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 copyEditPerms(studyPolicy, user, result);
                 // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
                 // so check for a custom security policy even if they have UpdatePermission on the study's policy
-                if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                if (studyPermissions.contains(ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
@@ -960,7 +970,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             }
         }
 
+        if (isEditProhibited(user, result))
+            result.retainAll(READ_PERMS);
         return result;
+    }
+
+
+    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class);
+
+    private void copyReadPerms(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> result)
+    {
+        READ_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
     private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
@@ -971,43 +991,73 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
+    /* use  DatasetTableImpl.hasPermission()! */
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (perm != ReadPermission.class && isEditProhibited(user))
+        if (!perm.equals(ReadPermission.class))
+            throw new UnsupportedOperationException("use DatasetTableImpl.hasPermission()");
+        return hasPermission(user, perm, null);
+    }
+
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    {
+        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
+        if (perm != ReadPermission.class && isEditProhibited(user, granted))
             return false;
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
-        return getPermissions(user).contains(perm);
+        return granted.contains(perm);
     }
 
-    private boolean isEditProhibited(UserPrincipal user)
+    private boolean isEditProhibited(UserPrincipal user, Set<Class<? extends Permission>> perms)
     {
-        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user));
+        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user, perms));
     }
 
     @Override
+    @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class);
+        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
+        if (null == t || !(t instanceof DatasetTableImpl))
+            return false;
+        return t.hasPermission(user, ReadPermission.class);
+    }
+
+    public boolean canReadInternal(UserPrincipal user)
+    {
+        return hasPermission(user, ReadPermission.class, null);
     }
 
     @Override
+    @Deprecated
     public boolean canUpdate(UserPrincipal user)
     {
-        return hasPermission(user, UpdatePermission.class);
+        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
+        if (null == t || !(t instanceof DatasetTableImpl))
+            return false;
+        return t.hasPermission(user, UpdatePermission.class);
     }
 
     @Override
+    @Deprecated
     public boolean canDelete(UserPrincipal user)
     {
-        return hasPermission(user, DeletePermission.class);
+        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
+        if (null == t || !(t instanceof DatasetTableImpl))
+            return false;
+        return t.hasPermission(user, DeletePermission.class);
     }
 
     @Override
+    @Deprecated
     public boolean canInsert(UserPrincipal user)
     {
-        return hasPermission(user, InsertPermission.class);
+        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
+        if (null == t || !(t instanceof DatasetTableImpl))
+            return false;
+        return t.hasPermission(user, InsertPermission.class);
     }
 
     @Override
@@ -1025,11 +1075,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
     }
 
-    public boolean canAccessPhi(User user)
+    public boolean canAccessPhi(User user, Set<Class<? extends Permission>> perms)
     {
-        if (canRead(user))
+        if (perms.contains(ReadPermission.class))
         {
-            DatasetSchemaTableInfo table = getTableInfo(user);
+            DatasetSchemaTableInfo table = getTableInfo(user, false);
             if (null != table)
                 return table.canUserAccessPhi();
         }
