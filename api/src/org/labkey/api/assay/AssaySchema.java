@@ -69,7 +69,7 @@ public abstract class AssaySchema extends UserSchema
     }
 
     @Override
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         return true;
     }

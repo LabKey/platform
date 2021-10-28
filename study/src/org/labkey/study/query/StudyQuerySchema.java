@@ -276,7 +276,7 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         SecurityLogger.indent("StudyQuerySchema.canReadSchema()");
         try
