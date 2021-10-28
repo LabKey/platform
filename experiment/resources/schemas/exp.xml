@@ -291,10 +291,33 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
-      <column columnName="RecomputeRollup"/>
-      <column columnName="AliquotCount"/>
-      <column columnName="AliquotVolume"/>
-      <column columnName="AliquotUnit"/>
+      <column columnName="RecomputeRollup">
+          <isHidden>true</isHidden>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotCount">
+          <columnTitle>Aliquot Created Count</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotVolume">
+          <columnTitle>Aliquot Total Volume</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotUnit">
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>

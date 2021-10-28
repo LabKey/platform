@@ -4227,6 +4227,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /**
+     * TODO move to SampleTypeService
      * Delete samples by rowId. When <code>stDeleteFrom</code> SampleType is provided,
      * the samples must all be members of the SampleType.  When <code>stSampleType</code> is
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE}.
@@ -4324,9 +4325,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
-                    if (!sampleTypeAliquotParents.containsKey(sampleType))
-                        sampleTypeAliquotParents.put(sampleType, new HashSet<>());
-                    sampleTypeAliquotParents.get(sampleType).add(material.getRootMaterialLSID());
+                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                            .add(material.getRootMaterialLSID());
                 }
 
             }
@@ -4443,7 +4443,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         Set<Integer> parentSampleIds = new HashSet<>();
                         parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
 
-                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType, container);
+                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit(), container);
                     }
                 }
                 catch (SQLException e)

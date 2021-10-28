@@ -351,46 +351,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return ret;
             }
             case RecomputeRollup:
-            {
-                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
-                ret.setHidden(true);
-                ret.setUserEditable(false);
-                ret.setShownInDetailsView(false);
-                ret.setShownInInsertView(false);
-                ret.setShownInUpdateView(false);
-                return ret;
-            }
-
+                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
             case AliquotCount:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
                 ret.setLabel("Aliquot Created Count");
-                ret.setUserEditable(false);
-                ret.setShownInDetailsView(false);
-                ret.setShownInInsertView(false);
-                ret.setShownInUpdateView(false);
                 return ret;
             }
-
             case AliquotVolume:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
                 ret.setLabel("Aliquot Total Volume");
-                ret.setUserEditable(false);
-                ret.setShownInDetailsView(false);
-                ret.setShownInInsertView(false);
-                ret.setShownInUpdateView(false);
                 return ret;
             }
             case AliquotUnit:
-            {
-                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
-                ret.setUserEditable(false);
-                ret.setShownInDetailsView(false);
-                ret.setShownInInsertView(false);
-                ret.setShownInUpdateView(false);
-                return ret;
-            }
+                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }

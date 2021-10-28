@@ -84,7 +84,7 @@ public interface InventoryService
 
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
 
-    void recomputeSamplesRollup(Set<Integer> parentIds, ExpSampleType parentSampleType, Container container) throws SQLException;
+    void recomputeSamplesRollup(Set<Integer> parentIds, String sampleTypeMetricUnit, Container container) throws SQLException;
 
     static boolean isFreezerManagementEnabled(Container c)
     {

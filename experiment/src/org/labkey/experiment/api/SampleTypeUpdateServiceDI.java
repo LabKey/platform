@@ -463,7 +463,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else
         {
             List<Integer> ids = new LinkedList<>();
-            Set<String> aliquotParents = new HashSet<>();
 
             for (Map<String, Object> k : keys)
             {
@@ -484,9 +483,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     DataState dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()));
                     throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, dataState));
                 }
-
-                if (map.containsKey("RootMaterialLSID") && !StringUtils.isEmpty(map.get("RootMaterialLSID")))
-                    aliquotParents.add((String) map.get("RootMaterialLSID"));
 
                 ids.add(rowId);
                 result.add(map);
