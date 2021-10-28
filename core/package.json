@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.7",
-    "@labkey/components": "2.88.0-fb-siteUsersGridPanel43687.0",
+    "@labkey/components": "2.88.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
