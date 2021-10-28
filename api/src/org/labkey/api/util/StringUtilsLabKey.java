@@ -384,7 +384,7 @@ public class StringUtilsLabKey
      * @param original The string to be sanitized
      * @return the sanitized string
      */
-    public static String replaceBadCharacters(String original)
+    public static @Nullable String replaceBadCharacters(@Nullable String original)
     {
         if (original == null)
             return null;
