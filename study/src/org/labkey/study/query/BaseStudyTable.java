@@ -88,7 +88,10 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         super(realTable, schema);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
-            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), schema.hasContextualReadRole()));
+        {
+            boolean hasReaderRole = getContextualRoles().contains(RoleManager.getRole(ReaderRole.class));
+            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), hasReaderRole));
+        }
         else if (null != cf && supportsContainerFilter())
             _setContainerFilter(cf);
         else

@@ -40,6 +40,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenQuerySchema;
@@ -275,14 +276,14 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    public boolean canReadSchema()
+    protected boolean canReadSchema()
     {
         SecurityLogger.indent("StudyQuerySchema.canReadSchema()");
         try
         {
-            if (!hasContextualReadRole())
+            if (getContextualRoles().contains(RoleManager.getRole(ReaderRole.class)))
             {
-                SecurityLogger.log("hasContextualReadRole()==true", getUser(), null, true);
+                SecurityLogger.log("hasContextualReadRole==true", getUser(), null, true);
                 return true;
             }
             return super.canReadSchema();
@@ -1024,12 +1025,7 @@ public class StudyQuerySchema extends UserSchema
         return visit.getLabel();
     }
 
-    public boolean hasContextualReadRole()
-    {
-        return null != _contextualRole && _contextualRole.getClass() == ReaderRole.class;
-    }
-
-    public Set<Role> getContextualRoles()
+    public @NotNull Set<Role> getContextualRoles()
     {
         return null != _contextualRole ? Set.of(_contextualRole) : Set.of();
     }

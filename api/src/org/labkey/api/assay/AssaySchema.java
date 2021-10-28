@@ -68,9 +68,8 @@ public abstract class AssaySchema extends UserSchema
         return protocol.getName() + " " + tableType;
     }
 
-    // UNDONE: need to check permissions here 8449
     @Override
-    public boolean canReadSchema()
+    protected boolean canReadSchema()
     {
         return true;
     }
