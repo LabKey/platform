@@ -1897,16 +1897,10 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (xarProtocol.getStatus() == null) {
-                xarProtocol.setStatus(ExpProtocol.Status.Active);
-            }
             protocol = ExperimentServiceImpl.get().saveProtocol(getUser(), xarProtocol);
             getLog().debug("Finished loading Protocol with LSID '" + protocolLSID + "'");
         }
 
-        if (protocol.getStatus() == null) {
-            protocol.setStatus(ExpProtocol.Status.Active);
-        }
         ExpProtocolImpl protocolImpl = new ExpProtocolImpl(protocol);
 
         _xarSource.addProtocol(protocolImpl);
@@ -2087,8 +2081,11 @@ public class XarReader extends AbstractXarImporter
         protocol.setSoftware(trimString(p.getSoftware()));
         if (null != p.getContact())
             protocol.setContactId(p.getContact().getContactId());
+
         if (null != p.getStatus())
             protocol.setStatus(ExpProtocol.Status.valueOf(p.getStatus()));
+        else if (applicationType.equals("ExperimentRun"))
+            protocol.setStatus(ExpProtocol.Status.Active);
 
         protocol.setContainer(getContainer());
 
