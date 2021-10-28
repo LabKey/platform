@@ -1,11 +1,12 @@
 package org.labkey.list;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentListener;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.list.model.ListDef;
@@ -26,13 +27,13 @@ public class PicklistMaterialListener implements ExperimentListener
         picklists.forEach(picklist -> {
             ListQuerySchema listQuerySchema = new ListQuerySchema(user, container);
             TableInfo table = listQuerySchema.getTable(picklist.getName());
+
             if (table != null)
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
-                        .append(((FilteredTable) table).getRealTable(), "")
-                        .append(" WHERE SampleID ").appendInClause(materialIds, table.getSqlDialect());
-                new SqlExecutor(table.getSchema()).execute(sql);
+                SimpleFilter filter = new SimpleFilter();
+                filter.addInClause(FieldKey.fromParts("SampleID"), materialIds);
 
+                Table.delete(((FilteredTable) table).getRealTable(), filter);
             }
         });
     }
