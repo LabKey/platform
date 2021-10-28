@@ -90,7 +90,7 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                             Ext4.Msg.hide();
                         }
                         else if (btn === 'ok') {
-                            const canDelete = response.data.canDelete;
+                            const canDelete = response.data.allowed;
                             Ext4.Ajax.request({
                                 url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
                                 method: 'POST',

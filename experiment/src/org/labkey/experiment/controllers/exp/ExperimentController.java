@@ -3294,9 +3294,9 @@ public class ExperimentController extends SpringActionController
         public void validateForm(OperationConfirmationForm form, Errors errors)
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
-                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
             if (form.getSampleOperation() == null)
-                errors.reject(ERROR_REQUIRED, "An operation type must be provided");
+                errors.reject(ERROR_REQUIRED, "An operation type must be provided.");
         }
 
         @Override
