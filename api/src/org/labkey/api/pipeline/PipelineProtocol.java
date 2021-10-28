@@ -21,9 +21,14 @@ import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.NetworkDrive;
 
 import java.beans.PropertyDescriptor;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,7 +99,7 @@ public abstract class PipelineProtocol
             throw new PipelineValidationException("The name '" + name + "' is not a valid protocol name.");
     }
 
-    public File getDefinitionFile(PipeRoot root)
+    public Path getDefinitionFile(PipeRoot root)
     {
         return getFactory().getProtocolFile(root, name, false);
     }
@@ -146,14 +151,38 @@ public abstract class PipelineProtocol
         return propMap;
     }
 
+    @Deprecated
     public void save(File file) throws IOException
     {
-        File dir = file.getParentFile();
-        if (!dir.exists() && !dir.mkdirs())
+        save(file.toPath());
+    }
+
+    private void ensureDir(Path dir) throws IOException
+    {
+        try
         {
-            NetworkDrive.ensureDrive(dir.getPath());
-            if (!dir.exists() && !dir.mkdirs())
-                throw new IOException("Failed to create directory '" + dir + "'.");
+            if (!Files.exists(dir))
+            {
+                Files.createDirectories(dir);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new IOException("Failed to create directory '" + dir + "'.");
+        }
+    }
+
+    public void save(Path file) throws IOException
+    {
+        Path dir = file.getParent();
+        try
+        {
+            ensureDir(dir);
+        }
+        catch (IOException e)
+        {
+            NetworkDrive.ensureDrive(dir.toString());
+            ensureDir(dir);
         }
 
         PipelineProtocolPropsDocument doc =
@@ -175,12 +204,15 @@ public abstract class PipelineProtocol
         if (null != template)
             ppp.setTemplate(template);
 
-            Map<String, String> mapNS = new HashMap<>();
-            mapNS.put("", _xmlNamespace);
-            XmlOptions opts = new XmlOptions()
-                    .setSavePrettyPrint()
-                    .setSaveImplicitNamespaces(mapNS);
-            doc.save(file, opts);
+        Map<String, String> mapNS = new HashMap<>();
+        mapNS.put("", _xmlNamespace);
+        XmlOptions opts = new XmlOptions()
+                .setSavePrettyPrint()
+                .setSaveImplicitNamespaces(mapNS);
+        try (BufferedWriter bfw = Files.newBufferedWriter(file, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
+        {
+            doc.save(bfw, opts);
+        }
     }
 
     public String getTemplate()

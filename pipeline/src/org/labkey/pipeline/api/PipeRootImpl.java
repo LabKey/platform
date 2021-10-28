@@ -63,6 +63,7 @@ public class PipeRootImpl implements PipeRoot
     private String _containerId;
     private final List<URI> _uris = new ArrayList<>();
     private List<File> _rootPaths = new ArrayList<>();
+    private List<Path> _rootNioPaths = new ArrayList<>();
     private final String _entityId;
     private final boolean _searchable;
     private String _cloudStoreName;         // Only used for cloud
@@ -250,6 +251,21 @@ public class PipeRootImpl implements PipeRoot
             }
         }
         return _rootPaths;
+    }
+
+    public synchronized List<Path> getRootNioPaths()
+    {
+        if (_rootNioPaths.size() == 0 && !isCloudRoot())
+        {
+            for (URI uri : _uris)
+            {
+                Path file = FileUtil.getPath(getContainer(), uri);
+                _rootNioPaths.add(file);
+                assert file != null;
+                NetworkDrive.ensureDrive(file.toString());
+            }
+        }
+        return _rootNioPaths;
     }
 
     public List<URI> getRootURIs()

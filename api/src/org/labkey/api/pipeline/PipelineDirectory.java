@@ -39,7 +39,10 @@ public interface PipelineDirectory
     ActionURL cloneHref();
     List<PipelineAction> getActions();
     void addAction(PipelineAction action);
+
+    @Deprecated // prefer the Path version
     boolean fileExists(File f);
+    boolean fileExists(Path f);
 
     /**
      * Returns a filtered set of files with cached directory/file status.
@@ -47,9 +50,10 @@ public interface PipelineDirectory
      * @param filter The filter to use on the listed files.
      * @return List of filtered files.
      */
+    @Deprecated // prefer the DirectoryStream version
     File[] listFiles(FileFilter filter);
 
-    List<Path> listFiles(DirectoryStream.Filter<Path> filter);
+    List<Path> listPaths(DirectoryStream.Filter<Path> filter);
 
     String getPathParameter();
 

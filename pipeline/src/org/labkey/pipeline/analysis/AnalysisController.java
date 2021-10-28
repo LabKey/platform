@@ -22,6 +22,7 @@ import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -74,10 +75,11 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -193,10 +195,10 @@ public class AnalysisController extends SpringActionController
             {
                 throw new NotFoundException("No protocol specified");
             }
-            PipelineService.FileAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
+            PipelineService.PathAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
             AbstractFileAnalysisProtocol protocol = props.getFactory().getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false);
             //NOTE: if protocol if null, initFileStatus() will return a result of UNKNOWN
-            File dirAnalysis = props.getFactory().getAnalysisDir(props.getDirData(), form.getProtocolName(), props.getPipeRoot());
+            Path dirAnalysis = props.getFactory().getAnalysisDir(props.getDirData(), form.getProtocolName(), props.getPipeRoot());
             form.initStatus(protocol, props.getDirData(), dirAnalysis);
 
             boolean isRetry = false;
@@ -229,7 +231,7 @@ public class AnalysisController extends SpringActionController
         @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
-            PipelineService.FileAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
+            PipelineService.PathAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
             JSONArray protocols = new JSONArray();
             for (String protocolName : props.getFactory().getProtocolNames(props.getPipeRoot(), props.getDirData(), false))
             {
@@ -268,10 +270,16 @@ public class AnalysisController extends SpringActionController
             return new ApiSimpleResponse(result);
         }
 
-        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws NotFoundException
+        @Deprecated //Prefer the Path version
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
+        {
+            return getProtocolJson(protocolName, root, dirData.toPath(), factory);
+        }
+
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, @Nullable Path dirData, AbstractFileAnalysisProtocolFactory<?> factory) throws NotFoundException
         {
             JSONObject protocol = new JSONObject();
-            AbstractFileAnalysisProtocol pipelineProtocol = factory.getProtocol(root, dirData, protocolName, false);
+            AbstractFileAnalysisProtocol<?> pipelineProtocol = factory.getProtocol(root, dirData, protocolName, false);
             if (pipelineProtocol == null)
             {
                 throw new NotFoundException("Protocol not found: " + protocolName);
@@ -282,7 +290,7 @@ public class AnalysisController extends SpringActionController
             protocol.put("xmlParameters", pipelineProtocol.getXml());
             protocol.put("containerPath", root.getContainer().getPath());
             ParamParser parser = PipelineJobService.get().createParamParser();
-            parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
+            parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml()), Charset.defaultCharset()));
             if (parser.getErrors() == null || parser.getErrors().length == 0)
             {
                 protocol.put("jsonParameters", new JSONObject(parser.getInputParameters()));
@@ -308,7 +316,7 @@ public class AnalysisController extends SpringActionController
         archive
             {
                 @Override
-                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException
                 {
                     return factory.changeArchiveStatus(root, name, true);
                 }
@@ -316,13 +324,13 @@ public class AnalysisController extends SpringActionController
         unarchive
             {
                 @Override
-                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException
                 {
                     return factory.changeArchiveStatus(root, name, false);
                 }
             };
 
-        abstract boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name);
+        abstract boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException;
 
         String pastTense()
         {
@@ -338,15 +346,22 @@ public class AnalysisController extends SpringActionController
             return selected.entrySet().stream().allMatch( entry -> {
                 PipelineProtocolFactory factory = getProtocolFactory(getTaskPipeline(entry.getKey()));
                 return entry.getValue().stream().allMatch( name -> {
-                    if (doIt(root, factory, name))
+                    try
                     {
-                        AuditLogService.get().addEvent(cu.getUser(),
-                                new ProtocolManagementAuditProvider.ProtocolManagementEvent(ProtocolManagementAuditProvider.EVENT,
-                                        cu.getContainer(), factory.getName(), name, this.pastTense()));
-                        return true;
+                        if (doIt(root, factory, name))
+                        {
+                            AuditLogService.get().addEvent(cu.getUser(),
+                                    new ProtocolManagementAuditProvider.ProtocolManagementEvent(ProtocolManagementAuditProvider.EVENT,
+                                            cu.getContainer(), factory.getName(), name, this.pastTense()));
+                            return true;
+                        }
+                        else
+                            return false;
                     }
-                    else
-                        return false;
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException("Error during protocol execution", e);
+                    }
                 });
             });
         }

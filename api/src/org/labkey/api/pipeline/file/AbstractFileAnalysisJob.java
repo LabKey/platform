@@ -34,13 +34,13 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -135,7 +135,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (paramDefaults != null)
             fileDefaults = getPipeRoot().resolveToNioPath(paramDefaults);
         else
-            fileDefaults = protocol.getFactory().getDefaultParametersFile(root).toPath();
+            fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
         _parametersDefaults = getInputParameters(fileDefaults).getInputParameters();
 
@@ -156,7 +156,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setLogFilePath(FT_LOG.newFile(_dirAnalysis, _baseName));
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
 
         // CONSIDER: Remove writing out jobInfo file completely
 //        // Write out job information
@@ -167,6 +167,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 //            writeJobInfoTSV(_fileJobInfo);
 //            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
 //        }
+    }
+
+    /**
+     * @return Path String for a local working directory, temporary if root is cloud based
+     */
+    @Override
+    protected String getDefaultLocalDirectoryString()
+    {
+        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().getPath() : _dirAnalysis.toAbsolutePath().toString();
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -230,7 +239,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public boolean isSplittable()
     {
-        return _splittable && getInputFiles().size() > 1;
+        return _splittable && getInputFilePaths().size() > 1;
     }
 
     @Override
@@ -310,6 +319,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public File getDataDirectory()
     {
         return _dirData.toFile();
+    }
+
+    @Override
+    public Path getDataDirectoryPath()
+    {
+        return _dirData;
     }
 
     @Override
@@ -457,7 +472,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectory(), getBaseName(), getJoinedBaseName(), getProtocolName());
+        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName());
     }
 
     @Override
@@ -472,19 +487,25 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return null;
     }
 
+    @Deprecated //prefer Path version
     public static String getDataDescription(File dirData, String baseName, String joinedBaseName, String protocolName)
+    {
+        return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName);
+    }
+
+    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName)
     {
         String dataName = "";
         if (dirData != null)
         {
-            dataName = dirData.getName();
+            dataName = dirData.getFileName().toString();
             // Can't remember why we would ever need the "xml" check. We may get an extra "." in the path,
             // so check for that and remove it.
             if (".".equals(dataName) || "xml".equals(dataName))
             {
-                dirData = dirData.getParentFile();
+                dirData = dirData.getParent();
                 if (dirData != null)
-                    dataName = dirData.getName();
+                    dataName = dirData.getFileName().toString();
             }
         }
 

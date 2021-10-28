@@ -35,8 +35,10 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -44,7 +46,11 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -437,14 +443,35 @@ public class CoreQuerySchema extends UserSchema
             if (_projectUserIds == null)
             {
                 _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
+                // add all Site Admin group members
+                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
                 _projectUserIds.addAll(
                     SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
                         .stream()
                         .map(UserPrincipal::getUserId)
                         .collect(Collectors.toList())
                 );
+
+                // add all user with root container ApplicationAdminRole or SiteAdminRole assignments
+                for (Role adminRole : Set.of(RoleManager.getRole(SiteAdminRole.class), RoleManager.getRole(ApplicationAdminRole.class)))
+                {
+                    SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
+                    List<RoleAssignment> assignments = rootContainerPolicy.getAssignments().stream()
+                            .filter(assignment -> adminRole.equals(assignment.getRole())).collect(Collectors.toList());
+                    assignments.forEach(assignment -> {
+                        Group assignedGroup = SecurityManager.getGroup(assignment.getUserId());
+                        if (assignedGroup != null)
+                            _projectUserIds.addAll(
+                                    SecurityManager.getAllGroupMembers(assignedGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
+                                            .stream()
+                                            .map(UserPrincipal::getUserId)
+                                            .collect(Collectors.toList())
+                            );
+
+                        _projectUserIds.add(assignment.getUserId());
+                    });
+                }
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

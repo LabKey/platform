@@ -24,6 +24,8 @@ import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,10 +44,10 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     private static final Logger LOG = LogManager.getLogger(PipelineProtocolFactory.class);
 
-    public static File getProtocolRootDir(PipeRoot root)
+    public static Path getProtocolRootDir(PipeRoot root)
     {
-        File systemDir = root.ensureSystemDirectory();
-        return new File(systemDir, _pipelineProtocolDir);        
+        Path systemDir = root.ensureSystemDirectoryPath();
+        return systemDir.resolve(_pipelineProtocolDir);
     }
 
     public static File locateProtocolRootDir(File rootDir, File systemDir)
@@ -71,6 +73,11 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     protected T load(File file) throws IOException
     {
+        return load(file.toPath());
+    }
+
+    protected T load(Path file) throws IOException
+    {
         try
         {
             Map<String, String> mapNS = new HashMap<>();
@@ -78,7 +85,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
             XmlOptions opts = new XmlOptions().setLoadSubstituteNamespaces(mapNS);
 
             PipelineProtocolPropsDocument doc =
-                    PipelineProtocolPropsDocument.Factory.parse(file, opts);
+                    PipelineProtocolPropsDocument.Factory.parse(Files.newInputStream(file), opts);
             PipelineProtocolPropsDocument.PipelineProtocolProps ppp =
                     doc.getPipelineProtocolProps();
             String type = ppp.getType();
@@ -111,7 +118,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         }
         catch (Exception e)
         {
-            throw (IOException)new IOException("Failed to load protocol document " + file.getAbsolutePath() + ".").initCause(e);
+            throw (IOException)new IOException("Failed to load protocol document " + file.toAbsolutePath() + ".").initCause(e);
         }
     }
 
@@ -122,29 +129,35 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public boolean exists(PipeRoot root, String name, boolean archived)
     {
-        return getProtocolFile(root, name, archived).exists();
+        return Files.exists(getProtocolFile(root, name, archived));
     }
 
-    public File getProtocolDir(PipeRoot root, boolean archived)
+    public Path getProtocolDir(PipeRoot root, boolean archived)
     {
-        File protocolDir = new File(getProtocolRootDir(root), getName());
+        Path protocolDir = getProtocolRootDir(root).resolve(getName());
         if (archived)
-            protocolDir = new File(protocolDir, _archivedProtocolDir);
+            protocolDir = protocolDir.resolve(_archivedProtocolDir);
         return protocolDir;
     }
 
-    public File getProtocolFile(PipeRoot root, String name, boolean archived)
+    public Path getProtocolFile(PipeRoot root, String name, boolean archived)
     {
-        return new File(getProtocolDir(root, archived), name + ".xml");
+        return getProtocolDir(root, archived).resolve(name + ".xml");
+    }
+
+    @Deprecated //Prefer the Path version
+    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    {
+        return getProtocolNames(root, dirData.toPath(), archived);
     }
 
     /** @return sorted list of protocol names */
-    public String[] getProtocolNames(PipeRoot root, File dirData, boolean archived)
+    public String[] getProtocolNames(PipeRoot root, Path dirData, boolean archived)
     {
         HashSet<String> setNames = new HashSet<>();
 
         // Add <protocol-name>.xml files
-        File[] files = getProtocolDir(root, archived).listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
+        File[] files = getProtocolDir(root, archived).toFile().listFiles(f -> f.getName().endsWith(".xml") && !f.isDirectory());
         if (files != null)
         {
             for (File file : files)
@@ -157,7 +170,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         // Add all directories that already exist in the analysis root.
         if (dirData != null && !archived)
         {
-            files = new File(dirData, getName()).listFiles(File::isDirectory);
+            files = dirData.resolve(getName()).toFile().listFiles(File::isDirectory);
 
             if (files != null)
             {
@@ -165,7 +178,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                     setNames.add(file.getName());
             }
         }
-        
+
         String[] vals = setNames.toArray(new String[setNames.size()]);
         Arrays.sort(vals, String.CASE_INSENSITIVE_ORDER);
         return vals;
@@ -179,26 +192,36 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
      * @return true if the file was successfully moved or does not exist; false on error moving or if the archived directory
      * can't be created
      */
-    public boolean changeArchiveStatus(PipeRoot root, String name, boolean moveToArchive)
+    public boolean changeArchiveStatus(PipeRoot root, String name, boolean moveToArchive) throws IOException
     {
         // Is the file's current location opposite the destination? No sense in moving it if it's already where the caller wants it.
         if (exists(root, name, !moveToArchive))
         {
             if (moveToArchive)
             {
-               File archiveDir = getProtocolDir(root, true);
-               if (!archiveDir.exists())
+               Path archiveDir = getProtocolDir(root, true);
+               if (!Files.exists(archiveDir))
                {
-                   archiveDir.mkdir();
+                   Files.createDirectories(archiveDir);
                }
-               else if (archiveDir.isFile())
+               else if (Files.isRegularFile(archiveDir))
                {
                    LOG.error("Unable to create archived directory because a file with that name exists in the protocol directory: "
-                           + getProtocolDir(root, false).getAbsolutePath());
+                           + getProtocolDir(root, false).toAbsolutePath());
                    return false;
                }
             }
-            return getProtocolFile(root, name, !moveToArchive).renameTo(getProtocolFile(root, name, moveToArchive));
+
+            try
+            {
+                Files.move(getProtocolFile(root, name, !moveToArchive), getProtocolFile(root, name, moveToArchive));
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
+
+            return true;
         }
         return true; // We don't care if the file doesn't exist (maybe was already in the destination?)
     }
@@ -212,13 +235,26 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
      */
     public boolean deleteProtocolFile(PipeRoot root, String name)
     {
-        File protocolFile = getProtocolFile(root, name, false);
-        if (!protocolFile.exists())
+        Path protocolFile = getProtocolFile(root, name, false);
+
+        //If it doesn't exist, check archive
+        if (!Files.exists(protocolFile))
             protocolFile = getProtocolFile(root, name, true);
-        if (!protocolFile.exists())
+
+        //If it still doesn't exist, move on
+        if (!Files.exists(protocolFile))
         {
             return true; // We don't care if the file doesn't exist
         }
-        return protocolFile.delete();
+
+        try
+        {
+            return Files.deleteIfExists(protocolFile);
+        }
+        catch (IOException e)
+        {
+            LogManager.getLogger(PipelineProtocolFactory.class).debug("Error attempting to delete protocol file " + protocolFile, e);
+            return false;
+        }
     }
 }

@@ -35,6 +35,8 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="java.nio.file.Path" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -56,8 +58,8 @@
         sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
 
         // Directory that will be deleted if they aren't any usages
-        File statusFile = new File(file.getFilePath());
-        File analysisDir = statusFile.getParentFile();
+        Path statusFile = FileUtil.getPath(getContainer(), FileUtil.createUri(file.getFilePath()));
+        Path analysisDir = statusFile.getParent();
         if (root != null && root.isUnderRoot(analysisDir) && NetworkDrive.exists(analysisDir))
         {
             String relativePath = root.relativePath(analysisDir);
