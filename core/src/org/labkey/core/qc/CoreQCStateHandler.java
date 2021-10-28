@@ -15,6 +15,7 @@
  */
 package org.labkey.core.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
@@ -25,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.core.CoreController;
 
 import java.util.List;
+import java.util.Map;
 
 public class CoreQCStateHandler implements DataStateHandler<CoreController.ManageQCStatesForm>
 {
@@ -82,5 +84,11 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
         {
             setProps(container, form.isBlankQCStatePublic(), form.getDefaultQCState());
         }
+    }
+
+    @Override
+    public @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates)
+    {
+        return null;
     }
 }

@@ -91,6 +91,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -643,7 +644,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<Integer> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
     {
-        if (!SampleTypeService.isSampleStatusEnabled())
+        if (!SampleStatusService.get().supportsSampleStatus())
             return Collections.emptyList();
 
         return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
@@ -4127,24 +4128,23 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedDeleteObjects(List<Integer> deleteRequest, List<Integer> cannotDelete, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, List<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
     {
-        // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from the deleteRequest set.
-        deleteRequest.removeAll(cannotDelete);
-        List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-        List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
+        List<Integer> permittedIds = new ArrayList<>(requestIds);
+        permittedIds.removeAll(notPermittedIds);
+        List<Map<String, Object>> allowedRows = new ArrayList<>();
+        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
             Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
-            if (deleteRequest.contains(dataObject.getRowId()))
-                canDeleteRows.add(rowMap);
+            if (permittedIds.contains(dataObject.getRowId()))
+                allowedRows.add(rowMap);
             else
-                cannotDeleteRows.add(rowMap);
+                notAllowedRows.add(rowMap);
         });
 
-
         Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-        partitionedIds.put("canDelete", canDeleteRows);
-        partitionedIds.put("cannotDelete", cannotDeleteRows);
+        partitionedIds.put("allowed", allowedRows);
+        partitionedIds.put("notAllowed", notAllowedRows);
         return partitionedIds;
     }
 

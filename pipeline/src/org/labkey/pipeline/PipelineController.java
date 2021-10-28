@@ -510,13 +510,15 @@ public class PipelineController extends SpringActionController
             if (relativePath.startsWith("/"))
                 relativePath = relativePath.substring(1);
 
-            if (pr.isCloudRoot() && null != pr.getCloudStoreName())
-            {
-                if (relativePath.startsWith(pr.getCloudStoreName()))
-                    relativePath = relativePath.replace(pr.getCloudStoreName(), "");
-                if (relativePath.startsWith("//"))
-                    relativePath = relativePath.substring(1);
-            }
+//            if (pr.isCloudRoot() && null != pr.getCloudStoreName())
+//            {
+                  //TODO: Not sure if this is needed for something, but it causes an error when there is a folder that
+                  // starts with the Store name. Leaving commented out for now, will remove at later date if no issues arise.
+//                if (relativePath.startsWith(pr.getCloudStoreName() + "/")) //
+//                    relativePath = relativePath.replace(pr.getCloudStoreName(), "");
+//                if (relativePath.startsWith("//"))
+//                    relativePath = relativePath.substring(1);
+//            }
 
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
             // S3-backed storage may not have an entry for the root if there are no children, see issue 38377

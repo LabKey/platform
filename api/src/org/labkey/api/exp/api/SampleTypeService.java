@@ -30,7 +30,6 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -53,7 +52,6 @@ public interface SampleTypeService
         UpdateStorageMetadata("updating storage metadata"),
         RemoveFromStorage("removing from storage"),
         AddToPicklist("adding to a picklist"),
-        RemoveFromPicklist("removing from a picklist"),
         Delete("deleting"),
         AddToWorkflow("adding to a workflow"),
         RemoveFromWorkflow("removing from a workflow"),
@@ -82,11 +80,6 @@ public interface SampleTypeService
     static void setInstance(SampleTypeService impl)
     {
         ServiceRegistry.get().registerService(SampleTypeService.class, impl);
-    }
-
-    static boolean isSampleStatusEnabled()
-    {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS);
     }
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);

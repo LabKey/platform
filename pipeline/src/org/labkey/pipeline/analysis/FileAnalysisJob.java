@@ -29,6 +29,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,8 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            PipeRoot root,
                            TaskId taskPipelineId,
                            String protocolName,
-                           File fileParameters,
-                           List<File> filesInput,
+                           Path fileParameters,
+                           List<Path> filesInput,
                            @Nullable Map<String, String> variableMap,
                            boolean splittable,
                            boolean writeJobInfoFile) throws IOException

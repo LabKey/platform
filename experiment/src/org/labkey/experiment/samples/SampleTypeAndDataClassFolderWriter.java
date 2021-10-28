@@ -314,6 +314,15 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
                 columns.put(flagAlias.getFieldKey(), flagAlias);
             }
+            else if (ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName()))
+            {
+                // substitute the Label value for the RowId lookup value
+                FieldKey statusFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.SampleState.name(), "Label");
+                Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(statusFieldKey));
+                ColumnInfo statusAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.SampleState.name(), select.get(statusFieldKey));
+
+                columns.put(statusAlias.getFieldKey(), statusAlias);
+            }
             else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
             {
                 MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);

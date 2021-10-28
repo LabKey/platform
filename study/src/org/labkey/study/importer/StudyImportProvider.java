@@ -25,8 +25,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
@@ -55,7 +53,7 @@ public class StudyImportProvider extends PipelineProvider
 
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
         String actionId = createActionId(StudyController.ImportStudyFromPipelineAction.class, null);
-        addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false, false, includeAll);
+        addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listPaths(new StudyImportFilter()), false, false, includeAll);
     }
 
     private static class StudyImportFilter implements DirectoryStream.Filter<Path>

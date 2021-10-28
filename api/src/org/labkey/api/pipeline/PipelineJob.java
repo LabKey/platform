@@ -47,6 +47,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -432,8 +433,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFilePath(Path logFile)
     {
-        _logFilePathName = FileUtil.pathToString(logFile);
-//        _logJobStopStart.info("LogFilePath set to " + _logFilePathName);
+        _logFilePathName = PageFlowUtil.decode(FileUtil.pathToString(logFile)); // For cloud i think we need to decode this...
         _logger = null;
         _logFile = null;
 
@@ -447,8 +447,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFile(Path logFile)
     {
-        setLogFilePath(logFile);
-        _logFile = logFile;
+        Path normalizedPath = logFile.toAbsolutePath().normalize();
+        setLogFilePath(normalizedPath);
+        _logFile = normalizedPath;
     }
 
     public File getLogFile()
@@ -464,7 +465,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (_logFilePathName == null)
             return null;
 
-        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName)).toPath();
+        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : _logFile;
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
@@ -806,7 +807,7 @@ abstract public class PipelineJob extends Job implements Serializable
             boolean success = false;
             try
             {
-                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                logStartStopInfo("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFilePath());
                 getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
                 if (PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer)
                 {
@@ -883,7 +884,6 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean runStateMachine()
     {
         TaskPipeline pipeline = getTaskPipeline();
-
         if (pipeline == null)
         {
             assert false : "Either override getTaskPipeline() or run() for " + getClass();
@@ -1096,18 +1096,23 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (null != _localDirectory & isDone())
         {
+            Path remoteLogFilePath = null;
             try
             {
-                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
-                if (null != remoteLogFilePath)
-                {
-                    setLogFilePath(remoteLogFilePath);
-                    setStatus(getActiveTaskStatus());       // Force writing to statusFiles
-                }
+                remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
             }
             catch (Exception e)
             {
+                // Attempt to record the error to the log. Move failed, so log should still be local and writable.
                 error("Error trying to move log file", e);
+            }
+
+            //Update job log entry's log location to remote path
+            if (null != remoteLogFilePath)
+            {
+                //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
+                setLogFilePath(remoteLogFilePath);
+                setStatus(getActiveTaskStatus());       // Force writing to statusFiles
             }
         }
     }
@@ -1674,23 +1679,33 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * Gets the <code>User</code> instance from the <code>ViewBackgroundInfo</code>.
-     * WARNING: Not supported if job is not running in the LabKey Server.
+     * WARNING: Not supported if job is not running in the LabKey web server.
      *
      * @return the user who started the job
+     * @throws IllegalStateException if invoked on a remote pipeline server
      */
     public User getUser()
     {
+        if (!PipelineJobService.get().isWebServer())
+        {
+            throw new IllegalStateException("User lookup not available on remote pipeline servers");
+        }
         return getInfo().getUser();
     }
 
     /**
      * Gets the <code>Container</code> instance from the <code>ViewBackgroundInfo</code>.
-     * WARNING: Not supported if job is not running in the LabKey Server.
+     * WARNING: Not supported if job is not running in the LabKey web server.
      *
      * @return the container in which the job was started
+     * @throws IllegalStateException if invoked on a remote pipeline server
      */
     public Container getContainer()
     {
+        if (!PipelineJobService.get().isWebServer())
+        {
+            throw new IllegalStateException("User lookup not available on remote pipeline servers");
+        }
         return getInfo().getContainer();
     }
 

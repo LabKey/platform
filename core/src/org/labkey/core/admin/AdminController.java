@@ -277,6 +277,7 @@ public class AdminController extends SpringActionController
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
+    private static long _primaryLogMark = 0;
 
     public static void registerAdminConsoleLinks()
     {
@@ -2486,6 +2487,31 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    @AdminConsoleAction(ApplicationAdminPermission.class)
+    public class ResetPrimaryLogMarkAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            File logFile = getPrimaryLogFile();
+            _primaryLogMark = logFile.length();
+            return null;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class ShowPrimaryLogSinceMarkAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            PageFlowUtil.streamLogFile(response, _primaryLogMark, getPrimaryLogFile());
+        }
+    }
+
+
     @AdminConsoleAction
     public class ShowPrimaryLogAction extends ExportAction<Object>
     {
@@ -2493,14 +2519,18 @@ public class AdminController extends SpringActionController
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
-            File logFile = new File(getLabKeyLogDir(), "labkey.log");
-            PageFlowUtil.streamLogFile(response, 0, logFile);
+            PageFlowUtil.streamLogFile(response, 0, getPrimaryLogFile());
         }
     }
 
     private File getErrorLogFile()
     {
         return new File(getLabKeyLogDir(), "labkey-errors.log");
+    }
+
+    private File getPrimaryLogFile()
+    {
+        return new File(getLabKeyLogDir(), "labkey.log");
     }
 
     private static ActionURL getActionsURL()
@@ -4329,10 +4359,9 @@ public class AdminController extends SpringActionController
                     form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                     form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-            switch(form.getLocation())
+            switch (form.getLocation())
             {
-                case 0:
-                {
+                case 0 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4349,16 +4378,14 @@ public class AdminController extends SpringActionController
                         {
                             writer.write(container, ctx, new FileSystemFile(exportDir));
                         }
-                        catch (Container.ContainerException e)
+                        catch (ContainerException e)
                         {
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
                         _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
-                    break;
                 }
-                case 1:
-                {
+                case 1 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4366,36 +4393,53 @@ public class AdminController extends SpringActionController
                     }
                     Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
                     Files.createDirectories(exportDir);
-                    try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
-                    {
-                        writer.write(container, ctx, zip);
-                    }
-                    catch (Container.ContainerException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    }
+                    exportFolderToFile(exportDir, container, writer, ctx, errors);
                     _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                    break;
                 }
-                case 2:
-                {
+                case 2 -> {
                     try
                     {
-                        ContainerManager.checkContainerValidity(container);
-                        try (ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
+                        ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
+
+                        // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+                        // Same pattern as ExportListArchiveAction
+                        Path tempDir = FileUtil.getTempDirectory().toPath();
+                        Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
+
+                        // No exceptions, so stream the resulting zip file to the browser and delete it
+                        try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
                         {
-                            writer.write(container, ctx, zip);
+                            Files.copy(tempZipFile, os);
+                        }
+                        finally
+                        {
+                            Files.delete(tempZipFile);
                         }
                     }
-                    catch (Container.ContainerException e)
+                    catch (ContainerException e)
                     {
                         errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                     }
-                    break;
                 }
             }
 
             return !errors.hasErrors();
+        }
+
+        private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
+        {
+            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+
+            try (ZipFile zip = new ZipFile(exportDir, filename))
+            {
+                writer.write(container, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return exportDir.resolve(filename);
         }
 
         @Override
