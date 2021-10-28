@@ -43,7 +43,6 @@ public interface SampleTypeService
     String NEW_SAMPLE_TYPE_ALIAS_VALUE = "{{this_sample_set}}";
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";
-    String EXPERIMENTAL_SAMPLE_STATUS = "experimental-sample-status";
 
     enum SampleOperations {
         EditMetadata("editing metadata"),
