@@ -26,6 +26,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
@@ -119,6 +120,7 @@ public class ListModule extends SpringModule
         RoleManager.registerPermission(new ManagePicklistsPermission());
 
         AttachmentService.get().registerAttachmentType(ListItemType.get());
+        ExperimentService.get().addExperimentListener(new PicklistMaterialListener());
     }
 
     @Override
