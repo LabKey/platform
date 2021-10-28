@@ -69,6 +69,7 @@ import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -123,7 +124,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private TableInfo _fromTable;
 
-    private Predicate<String> canModifyParticipantPredicate = (ptid) -> true;
+    Set<Role> _contextualRoles = null;
+    // NYI private Predicate<String> canModifyParticipantPredicate = (ptid) -> true;
 
     public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
@@ -431,6 +433,27 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         addFolderColumn();
     }
+
+
+    @Override
+    public void addContextualRole(Role contextualRole)
+    {
+        if (null == _contextualRoles)
+            _contextualRoles = new HashSet<>();
+        _contextualRoles.add(contextualRole);
+    }
+
+//TODO MERGE   @Override
+    @NotNull
+    Set<Role> getContextualRoles()
+    {
+//        var ret = new HashSet<Role>(getUserSchema().getContextualRoles());
+        var ret = new HashSet<Role>();
+        if (null != _contextualRoles)
+            ret.addAll(_contextualRoles);
+        return ret;
+    }
+
 
     @NotNull
     @Override
@@ -1049,7 +1072,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return wrappedColumn;
     }
 
-    /** Caller is still responsible for calling hasPermission() */
+    /** Caller is still responsible for calling hasPermission()
     @Override
     public void setCanModifyParticipantPredicate(Predicate<String> edit)
     {
@@ -1073,6 +1096,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         assert hasPermission(getUserSchema().getUser(), DeletePermission.class) || hasPermission(getUserSchema().getUser(), RestrictedDeletePermission.class);
         return canModifyParticipantPredicate.test(subjectid);
     }
+    */
 
     @Override
     public boolean hasUpdateURLOverride()

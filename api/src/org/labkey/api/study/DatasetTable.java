@@ -18,8 +18,7 @@ package org.labkey.api.study;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
-
-import java.util.function.Predicate;
+import org.labkey.api.security.roles.Role;
 
 /**
  * Table backed by a {@link Dataset}
@@ -30,7 +29,9 @@ public interface DatasetTable extends TableInfo
 {
     Dataset getDataset();
     DataIterator getPrimaryKeyDataIterator(DataIterator it, DataIteratorContext context);
+    void addContextualRole(Role contextualRole);
 
-    /* for user with UpdateSomePermission, InsertSomePermission */
+    /* NYI for user with restricted edit permissions
     void setCanModifyParticipantPredicate(Predicate<String> edit);
+    */
 }

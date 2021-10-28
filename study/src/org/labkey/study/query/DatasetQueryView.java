@@ -256,6 +256,8 @@ public class DatasetQueryView extends StudyQueryView
     @Override
     protected @Nullable DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
     {
+        return super.createUpdateColumn(urlUpdate, table);
+        /*
         final DatasetTableImpl dtable = (DatasetTableImpl)table;
         final FieldKey subject = dtable.getColumn(dtable.getDataset().getStudy().getSubjectColumnName()).getFieldKey();
 
@@ -268,9 +270,8 @@ public class DatasetQueryView extends StudyQueryView
                 keys.add(subject);
             }
 
-            /* NOTE oddly the DataRegion does not call this Display column to render itself???
-             * Instead, it pieces together the HTML calling only getValue(), renderURL(), and getLinkTarget().
-             */
+            // NOTE oddly the DataRegion does not call this Display column to render itself???
+            // Instead, it pieces together the HTML calling only getValue(), renderURL(), and getLinkTarget().
             @Override
             public Object getValue(RenderContext ctx)
             {
@@ -295,6 +296,7 @@ public class DatasetQueryView extends StudyQueryView
                 return super.getLinkTarget();
             }
         };
+    */
     }
 
     private boolean hasUsefulDetailsPage()
