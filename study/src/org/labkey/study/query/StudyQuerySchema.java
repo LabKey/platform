@@ -377,7 +377,7 @@ public class StudyQuerySchema extends UserSchema
                 User user = getUser();
                 for (DatasetDefinition dsd : _study.getDatasets())
                 {
-                    boolean canRead = dsd.canRead(user);
+                    boolean canRead = dsd.canReadInternal(user);
                     if (dsd.getName() == null || !canRead)
                         continue;
                     names.add(dsd.getName());
@@ -1047,7 +1047,7 @@ public class StudyQuerySchema extends UserSchema
         DatasetDefinition def = getDatasetDefinitionByQueryName(queryName);
         if (def != null)
         {
-            if (def.canRead(getUser()))
+            if (def.canReadInternal(getUser()))
                 return def.getTypeURI();
             else
                 throw new RuntimeException("User does not have permission to read that dataset");

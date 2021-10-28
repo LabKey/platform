@@ -1019,10 +1019,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
-        if (null == t || !(t instanceof DatasetTableImpl))
-            return false;
-        return t.hasPermission(user, ReadPermission.class);
+        return hasPermission(user, ReadPermission.class, null);
     }
 
     public boolean canReadInternal(UserPrincipal user)
@@ -1034,30 +1031,21 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Deprecated
     public boolean canUpdate(UserPrincipal user)
     {
-        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
-        if (null == t || !(t instanceof DatasetTableImpl))
-            return false;
-        return t.hasPermission(user, UpdatePermission.class);
+        return hasPermission(user, UpdatePermission.class, null);
     }
 
     @Override
     @Deprecated
     public boolean canDelete(UserPrincipal user)
     {
-        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
-        if (null == t || !(t instanceof DatasetTableImpl))
-            return false;
-        return t.hasPermission(user, DeletePermission.class);
+        return hasPermission(user, DeletePermission.class, null);
     }
 
     @Override
     @Deprecated
     public boolean canInsert(UserPrincipal user)
     {
-        var t = StudyQuerySchema.createSchema(getStudy(),(User)user,null).getTable(this.getName());
-        if (null == t || !(t instanceof DatasetTableImpl))
-            return false;
-        return t.hasPermission(user, InsertPermission.class);
+        return hasPermission(user, InsertPermission.class, null);
     }
 
     @Override
