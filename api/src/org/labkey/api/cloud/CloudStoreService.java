@@ -52,18 +52,6 @@ public interface CloudStoreService
 
     Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
-    void pollWatcher(int cloudWatcherJobId);
-
-    void registerCloudWatcher(CloudWatcherConfig config, BiConsumer<Path, Runnable> eventProcessor);
-
-    void unregisterCloudWatcher(int watcherConfigId);
-
-    void shutdownWatchers();
-
-    Collection<Integer> getWatcherJobs();
-
-    void deleteMessage(String messageId, int watcherId);
-
     class StoreInfo
     {
         private final boolean _isEnabled;

@@ -11,9 +11,7 @@ import java.util.Map;
  */
 public interface CloudWatcherConfig
 {
-    String SQS_URL_KEY = "SQSUrl";
-    String ACCOUNT_NAME_KEY = "CloudAccount";
-
+    String getLocation();
     Map<String, Object> getCustomConfig();
     boolean isEnabled();
     Date getLastChecked();
