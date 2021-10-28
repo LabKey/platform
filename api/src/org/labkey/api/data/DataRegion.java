@@ -765,19 +765,8 @@ public class DataRegion extends DisplayElement
      */
     final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
-        {
-            // this should usually be detected sooner!
-            _log.warn("Unauthorized thrown from DataRegion.getResults()");
+        if (!hasPermission(ctx, ReadPermission.class))
             throw new UnauthorizedException();
-        }
-
-        if (!getTable().hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
-        {
-            // this should usually be detected sooner!
-            _log.warn("Unauthorized thrown from DataRegion.getResults()");
-            throw new UnauthorizedException();
-        }
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
@@ -789,8 +778,6 @@ public class DataRegion extends DisplayElement
         try
         {
             TableInfo tinfoMain = getTable();
-            if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
-                throw new UnauthorizedException();
 
             results = ctx.getResults();
             if (null == results)
@@ -966,12 +953,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!hasPermission(ctx, ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
             return;
         }
-
         Results results = null;
         try
         {
@@ -1880,12 +1866,8 @@ public class DataRegion extends DisplayElement
         ViewContext viewContext = ctx.getViewContext();
         User user = viewContext.getUser();
         HasPermission p = getTable();
-        // TODO : tables need to accurately represent their own permissions
-        // TODO : or maybe we need DataRegion.setPermissionToCheck(HasPermissions)
-        // TODO : and perhaps consolidate with permission check in DisplayElement.shouldRender() ?
         if (null == p || p instanceof SchemaTableInfo)
             p = viewContext;
-
         return p.hasPermission(user, perm);
     }
 
@@ -1949,6 +1931,9 @@ public class DataRegion extends DisplayElement
         if (null != results)
             return;
 
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
+
         TableInfo tinfoMain = getTable();
 
         if (null == tinfoMain)
@@ -1958,8 +1943,6 @@ public class DataRegion extends DisplayElement
         }
         else
         {
-            if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
-                throw new UnauthorizedException();
             LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
             TableSelector selector = new TableSelector(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort()).setForDisplay(true);
             selector.setNamedParameters(getQueryParameters());
@@ -2020,10 +2003,10 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                TableInfo tinfoMain = getTable();
-                if (!tinfoMain.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+                if (!hasPermission(ctx, ReadPermission.class))
                     throw new UnauthorizedException();
 
+                TableInfo tinfoMain = getTable();
                 Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
                 if (!maps.isEmpty())
                     valueMap = maps.iterator().next();
@@ -2048,9 +2031,10 @@ public class DataRegion extends DisplayElement
         Map<String, Object> rowMap = new HashMap<>();
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
-        TableInfo table = getTable();
-        if (!table.hasPermission(ctx.getViewContext().getUser(), ReadPermission.class))
+
+        if (!hasPermission(ctx, ReadPermission.class))
             throw new UnauthorizedException();
+        TableInfo table = getTable();
 
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
