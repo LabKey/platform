@@ -91,6 +91,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -156,6 +157,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
             run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
             run.setComments(context.getComments());
+            run.setWorkflowTaskId(context.getWorkflowTask());
 
             exp = saveExperimentRun(context, exp, run, false);
 
@@ -893,13 +895,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                                    String role,
                                    @NotNull Set<Container> searchContainers,
                                    @Nullable ExpSampleType st,
-                                   @NotNull Map<Integer, ExpMaterial> materialCache)
+                                   @NotNull Map<Integer, ExpMaterial> materialCache) throws ExperimentException
     {
         final Container c = context.getContainer();
         final User user = context.getUser();
         ExpMaterial material = materialCache.computeIfAbsent(sampleRowId, (x) -> ExperimentService.get().getExpMaterial(c, user, sampleRowId, null));
+
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
+            if (!material.isOperationPermitted(SampleTypeService.SampleOperations.AddAssayData))
+                throw new ExperimentException(SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddAssayData));
             if (st == null || st.getLSID().equals(material.getCpasType()))
                 resolved.put(material, role);
         }
