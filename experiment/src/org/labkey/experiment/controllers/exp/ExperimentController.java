@@ -6924,6 +6924,7 @@ public class ExperimentController extends SpringActionController
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
                         "S.SampleSet as SampleType",
+                        "S.SampleState",
                         "S.isAliquot",
                         "S.Created",
                         "S.CreatedBy"
@@ -6935,6 +6936,7 @@ public class ExperimentController extends SpringActionController
                         "S.Name AS SampleID",
                         "S.LabelColor",
                         "S.SampleSet",
+                        "S.SampleState",
                         "S.StoredAmount",
                         "S.Units",
                         "S.SampleTypeUnits",
