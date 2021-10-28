@@ -1407,10 +1407,9 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot root LSID");
 
                 String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
-                if (((Material) output).getRootMaterialLSID() != null)
+                if (((Material) output).getRootMaterialLSID() != null && !((Material) output).getRootMaterialLSID().equals(rootMaterialLSID))
                 {
-                    if (!((Material) output).getRootMaterialLSID().equalsIgnoreCase(newRootLsid))
-                        throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + rootMaterialLSID);
+                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + newRootLsid);
                 }
                 else
                 {
@@ -1427,10 +1426,9 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot parent LSID");
 
                 String newParentLsid = aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID;
-                if (((Material) output).getAliquotedFromLSID() != null)
+                if (((Material) output).getAliquotedFromLSID() != null && !((Material) output).getAliquotedFromLSID().equalsIgnoreCase(aliquotedFromLSID))
                 {
-                    if (!((Material) output).getAliquotedFromLSID().equalsIgnoreCase(newParentLsid))
-                        throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
+                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
                 }
                 else
                 {
