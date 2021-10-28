@@ -11,7 +11,7 @@ import {
     PermissionsPageContextProvider,
     PermissionsProviderProps,
     SecurityPolicy,
-    SiteUsersGridPanel,
+    UsersGridPanel,
     fetchContainerSecurityPolicy,
     queryGridInvalidate,
     SCHEMAS,
@@ -25,7 +25,7 @@ interface State {
     message: string
 }
 
-class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProviderProps, State> {
+class UsersGridPanelPageImpl extends React.PureComponent<PermissionsProviderProps, State> {
 
     constructor(props: PermissionsProviderProps) {
         super(props);
@@ -95,9 +95,9 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
 
         return (
             <>
-                <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually update site users for this server.</Alert>
+                <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually update users for this server.</Alert>
                 {message && <Alert bsStyle={'success'}>{message}</Alert>}
-                <SiteUsersGridPanel
+                <UsersGridPanel
                     user={user}
                     showDetailsPanel={user.isRootAdmin}
                     onCreateComplete={this.onSuccess}
@@ -110,5 +110,5 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
     }
 }
 
-export const SiteUsersGridPanelPage = PermissionsPageContextProvider(SiteUsersGridPanelPageImpl);
+export const UsersGridPanelPage = PermissionsPageContextProvider(UsersGridPanelPageImpl);
 

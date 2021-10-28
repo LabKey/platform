@@ -48,7 +48,7 @@ import { AssayImportPage } from "./AssayImportPage";
 import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
 import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
-import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
+import { UsersGridPanelPage } from "./UsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
 
 const COMPONENT_NAMES = List<string>([
@@ -78,7 +78,7 @@ const COMPONENT_NAMES = List<string>([
     {value: 'SchemaListing'},
     {value: 'SearchResultCard'},
     {value: 'SearchResultsPanel'},
-    {value: 'SiteUsersGridPanel'},
+    {value: 'UsersGridPanel'},
     {value: 'Tip'},
     {value: 'ToggleButtons'},
     {value: 'UserDetailHeader'},
@@ -421,8 +421,8 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
-                {selected === 'SiteUsersGridPanel' &&
-                    <SiteUsersGridPanelPage/>
+                {selected === 'UsersGridPanel' &&
+                    <UsersGridPanelPage/>
                 }
                 {selected === 'Tip' &&
                     this.renderPanel('Tip',
