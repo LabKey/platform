@@ -991,12 +991,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
-    /* use  DatasetTableImpl.hasPermission()! */
+    /** @deprecated use DatasetTableImpl.hasPermission()! */
     @Override
+    @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (!perm.equals(ReadPermission.class))
-            throw new UnsupportedOperationException("use DatasetTableImpl.hasPermission()");
         return hasPermission(user, perm, null);
     }
 
