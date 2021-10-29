@@ -1100,19 +1100,19 @@ abstract public class PipelineJob extends Job implements Serializable
             try
             {
                 remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
+
+                //Update job log entry's log location to remote path
+                if (null != remoteLogFilePath && FileUtil.hasCloudScheme(remoteLogFilePath))
+                {
+                    //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
+                    setLogFilePath(remoteLogFilePath);
+                    setStatus(getActiveTaskStatus());       // Force writing to statusFiles
+                }
             }
             catch (Exception e)
             {
                 // Attempt to record the error to the log. Move failed, so log should still be local and writable.
                 error("Error trying to move log file", e);
-            }
-
-            //Update job log entry's log location to remote path
-            if (null != remoteLogFilePath)
-            {
-                //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
-                setLogFilePath(remoteLogFilePath);
-                setStatus(getActiveTaskStatus());       // Force writing to statusFiles
             }
         }
     }
