@@ -366,7 +366,7 @@ public class FolderTypeManager
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
             if (null != simpleTest)
-                assertEquals("Folder types from the simpletest module", 5, manager.CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Folder types from the simpletest module", 6, manager.CACHE.getResourceMap(simpleTest).size());
         }
     }
 }
