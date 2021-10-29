@@ -203,6 +203,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
+import static org.labkey.core.view.template.bootstrap.CoreWarningProvider.WEBSOCKET_CONNECTION_KEY;
 
 /**
  * User: jeckels
@@ -2415,6 +2416,53 @@ public class CoreController extends SpringActionController
             }
 
             return new ApiSimpleResponse(json);
+        }
+    }
+
+    @RequiresLogin
+    public class WebSocketConnectionAction extends MutatingApiAction<WebSocketWarningForm>
+    {
+        @Override
+        public ApiResponse execute(WebSocketWarningForm form, BindException errors)
+        {
+            // update session attribute so warnings will display via CoreWarningProvider.java
+            ViewContext context = getViewContext();
+            HttpSession session = context.getRequest().getSession(true);
+            Object previousValue = session.getAttribute(WEBSOCKET_CONNECTION_KEY);
+            session.setAttribute(WEBSOCKET_CONNECTION_KEY, form.isConnected());
+
+            JSONObject json = new JSONObject();
+            json.put("success", true);
+
+            // if the value has changed, recheck for warning messages
+            Object updatedValue = session.getAttribute(WEBSOCKET_CONNECTION_KEY);
+            if (previousValue == null || !previousValue.equals(updatedValue))
+            {
+                Warnings warnings = WarningService.get().getWarnings(context);
+                if (!warnings.isEmpty())
+                    json.put("warningsHtml", WarningService.get().getWarningsHtml(warnings, context).toString());
+
+                // if the value changed to "not connected", set client side metric
+                if (updatedValue != null && !(boolean) updatedValue)
+                    ClientSideMetricManager.get().setFlag("Core", "webSocketConnectionFailed", true);
+            }
+
+            return new ApiSimpleResponse(json);
+        }
+    }
+
+    public static class WebSocketWarningForm
+    {
+        private boolean _connected;
+
+        public boolean isConnected()
+        {
+            return _connected;
+        }
+
+        public void setConnected(boolean connected)
+        {
+            _connected = connected;
         }
     }
 

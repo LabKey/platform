@@ -37,6 +37,7 @@ import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 
+import javax.servlet.http.HttpSession;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.Map;
@@ -46,6 +47,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreWarningProvider implements WarningProvider
 {
     private static final boolean SHOW_ALL_WARNINGS = WarningService.get().showAllWarnings();
+    public static final String WEBSOCKET_CONNECTION_KEY = "PAGE_CONFIG$WEBSOCKET_CONNECTION_KEY";
 
     public CoreWarningProvider()
     {
@@ -78,6 +80,8 @@ public class CoreWarningProvider implements WarningProvider
             getModuleErrorWarnings(warnings, context);
 
             getProbableLeakCountWarnings(warnings);
+
+            getWebSocketConnectionWarnings(warnings, context);
 
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
@@ -166,6 +170,14 @@ public class CoreWarningProvider implements WarningProvider
             }
             addStandardWarning(warnings, "The following modules experienced errors during startup:", moduleFailures.keySet().toString(), PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()));
         }
+    }
+
+    private void getWebSocketConnectionWarnings(Warnings warnings, ViewContext context)
+    {
+        HttpSession session = context.getRequest().getSession(true);
+        Object connected = session.getAttribute(WEBSOCKET_CONNECTION_KEY);
+        if (SHOW_ALL_WARNINGS || (connected != null && !(boolean) connected))
+            addStandardWarning(warnings, "The WebSocket connection failed.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
     private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings)
