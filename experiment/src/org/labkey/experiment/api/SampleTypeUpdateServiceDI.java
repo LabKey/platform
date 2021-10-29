@@ -159,7 +159,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 try
                 {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
                 }
                 catch (SQLException e)
                 {
@@ -210,7 +210,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 try
                 {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
                 }
                 catch (SQLException e)
                 {
@@ -235,7 +235,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 try
                 {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
                 }
                 catch (SQLException e)
                 {
@@ -262,7 +262,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             if (InventoryService.get() != null)
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, true);
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
 
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
