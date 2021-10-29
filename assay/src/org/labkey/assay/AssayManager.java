@@ -141,7 +141,7 @@ public class AssayManager implements AssayService
 
     public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol) throws ExperimentException
     {
-        ExpProtocol.Status status = null;
+        ExpProtocol.Status status = ExpProtocol.Status.Active;
         if (newProtocol.getStatus() != null)
             status = ExpProtocol.Status.valueOf(newProtocol.getStatus());
 
