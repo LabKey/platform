@@ -114,6 +114,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -6995,7 +6996,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         DataClassDomainKindProperties options = new DataClassDomainKindProperties();
         options.setDescription(description);
-        options.setNameExpression(nameExpression);
+        options.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
         options.setSampleType(sampleTypeId);
         options.setCategory(category);
         return createDataClass(c, u, name, options, properties, indices, templateInfo);
@@ -7068,7 +7069,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
             }
             bean.setDescription(options.getDescription());
-            bean.setNameExpression(nameExpression);
+            bean.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
             bean.setMaterialSourceId(options.getSampleType());
             bean.setCategory(options.getCategory());
         }
