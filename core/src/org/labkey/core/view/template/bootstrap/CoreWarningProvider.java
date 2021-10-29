@@ -177,7 +177,7 @@ public class CoreWarningProvider implements WarningProvider
         HttpSession session = context.getRequest().getSession(true);
         Object connected = session.getAttribute(WEBSOCKET_CONNECTION_KEY);
         if (SHOW_ALL_WARNINGS || (connected != null && !(boolean) connected))
-            addStandardWarning(warnings, "The WebSocket connection failed.", "configTomcat#websocket", "Tomcat Configuration");
+            addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
     private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings)
