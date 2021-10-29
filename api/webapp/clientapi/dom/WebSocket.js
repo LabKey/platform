@@ -40,21 +40,16 @@ LABKEY.WebSocket = new function ()
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
-        _websocket.onerror = websocketConnectionUpdate;
+        _websocket.onopen = function() { websocketConnectionStatus(true); }
+        _websocket.onerror = function() { websocketConnectionStatus(false); }
     }
 
-    function websocketConnectionUpdate() {
+    function websocketConnectionStatus(connected) {
         if (!LABKEY.user.isGuest) {
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("core", "webSocketConnection.api"),
                 method: 'POST',
-                params: { connected: false },
-                success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                    if (response.warningsHtml) {
-                        $('.lk-dismissable-alert-ct').html(response.warningsHtml);
-                        $('#headerWarningIcon').hide();
-                    }
-                })
+                params: { connected: connected }
             });
         }
     }

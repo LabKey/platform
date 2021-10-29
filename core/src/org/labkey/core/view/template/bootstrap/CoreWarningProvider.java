@@ -36,8 +36,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 
-import javax.servlet.http.HttpSession;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.Map;
@@ -47,7 +47,6 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreWarningProvider implements WarningProvider
 {
     private static final boolean SHOW_ALL_WARNINGS = WarningService.get().showAllWarnings();
-    public static final String WEBSOCKET_CONNECTION_KEY = "PAGE_CONFIG$WEBSOCKET_CONNECTION_KEY";
 
     public CoreWarningProvider()
     {
@@ -81,7 +80,7 @@ public class CoreWarningProvider implements WarningProvider
 
             getProbableLeakCountWarnings(warnings);
 
-            getWebSocketConnectionWarnings(warnings, context);
+            getWebSocketConnectionWarnings(warnings);
 
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
@@ -172,11 +171,9 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getWebSocketConnectionWarnings(Warnings warnings, ViewContext context)
+    private void getWebSocketConnectionWarnings(Warnings warnings)
     {
-        HttpSession session = context.getRequest().getSession(true);
-        Object connected = session.getAttribute(WEBSOCKET_CONNECTION_KEY);
-        if (SHOW_ALL_WARNINGS || (connected != null && !(boolean) connected))
+        if (SHOW_ALL_WARNINGS || WebSocketConnectionManager.getInstance().showWarning())
             addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
