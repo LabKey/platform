@@ -59,7 +59,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     private static final String STUDY1 = "Study001";
     private static final String STUDY2 = "Study002";
     private static final String SHARED_DEMOGRAPHICS = "P_One_Shared";
-    private static final String SHARED_DEMOGRAPHICS_ID = "5001";
+    private static final String SHARED_DEMOGRAPHICS_ID = "10001";
     private static final String STUDY2_DATASET = "Extra Dataset";
     private static final String STUDY2_DATASET_ID = "999";
     private static final String[] STUDY1_PTIDS = {"1000", "1001", "1002", "1003"};

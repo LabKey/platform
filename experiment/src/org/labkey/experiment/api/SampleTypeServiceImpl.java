@@ -91,6 +91,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
@@ -921,7 +922,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (options != null)
         {
-            String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
+            String sampleIdPattern = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(options.getNameExpression()));
             String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {

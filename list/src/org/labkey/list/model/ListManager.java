@@ -128,6 +128,13 @@ public class ListManager implements SearchService.DocumentProvider
         return getListMetadataSchema().getTable("list");
     }
 
+    public Collection<ListDef> getPicklists(Container container)
+    {
+        List<ListDef> ownLists = _listDefCache.get(container.getId());
+        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
+        return scopedLists.stream().filter(ListDef::isPicklist).collect(Collectors.toList());
+    }
+
     public Collection<ListDef> getLists(Container container)
     {
         return getLists(container, null, false, true);
