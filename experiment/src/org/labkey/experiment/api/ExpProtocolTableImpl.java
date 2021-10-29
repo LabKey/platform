@@ -101,6 +101,8 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 runCountColumnInfo.setDescription("Contains the number of runs of this protocol type");
                 return runCountColumnInfo;
             }
+            case Status:
+                return wrapColumn(alias, _rootTable.getColumn("Status"));
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -132,6 +134,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         addColumn(Column.ApplicationType);
         addColumn(Column.ProtocolImplementation);
         addColumn(Column.RunCount);
+        addColumn(Column.Status);
 
         DetailsURL detailsURL = new DetailsURL(
                 new ActionURL(ExperimentController.ProtocolDetailsAction.class, _userSchema.getContainer()),
