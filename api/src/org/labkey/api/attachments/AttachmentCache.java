@@ -17,6 +17,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
@@ -35,10 +36,10 @@ public class AttachmentCache
     public static final String FAVICON_FILE_NAME = "labkey-favicon.ico";
     public static final String STYLESHEET_FILE_NAME = "labkey-stylesheet.css";
 
-    private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
-    private static Map<Container, CacheableWriter> _logoMobileCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
-    private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<>(100, 0.75f, 4);     // Site + project, so size to one per project
-    private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<>(5, 0.75f, 4);           // Site-wide
+    private static final Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<>(Constants.getMaxProjects(), 0.75f, 4);        // Site + project, so size to one per project
+    private static final Map<Container, CacheableWriter> _logoMobileCache = new ConcurrentHashMap<>(Constants.getMaxProjects(), 0.75f, 4);  // Site + project, so size to one per project
+    private static final Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<>(Constants.getMaxProjects(), 0.75f, 4);     // Site + project, so size to one per project
+    private static final Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<>(5, 0.75f, 4);                                  // Site-wide
 
     static
     {
