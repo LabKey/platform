@@ -6641,14 +6641,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
-            Set<Integer> parentIds = new HashSet<>();
+            Set<String> parentLsids = new HashSet<>();
             TableInfo tableInfo = getTinfoMaterial();
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
-                    parentIds.add(parent.getRowId());
+                    parentLsids.add(StringUtils.isEmpty(parent.getRootMaterialLSID()) ?  parent.getLSID() : parent.getRootMaterialLSID());
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
                     // Use cache to double check detemine subaliquots's root
@@ -6677,12 +6677,12 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
             // mark aliquot parents RecomputeRollup=true
-            if (!parentIds.isEmpty())
+            if (!parentLsids.isEmpty())
             {
                 SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-                        append(" SET RecomputeRollup = ? WHERE RowId ");
+                        append(" SET RecomputeRollup = ? WHERE LSID ");
                 sql.add(true);
-                sql.appendInClause(parentIds, tableInfo.getSqlDialect());
+                sql.appendInClause(parentLsids, tableInfo.getSqlDialect());
                 new SqlExecutor(tableInfo.getSchema()).execute(sql);
             }
         }
