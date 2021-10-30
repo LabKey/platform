@@ -73,6 +73,15 @@ public interface ExpProtocol extends ExpObject
         }
     }
 
+    /**
+     * Current status for a protocol, defaults to 'Active'. See assay/models.Status in 'labkey-ui-components' repository
+     */
+    enum Status
+    {
+        Active,
+        Archived,
+    }
+
     void setObjectProperties(Map<String, ObjectProperty> props);
 
     /**
@@ -139,6 +148,9 @@ public interface ExpProtocol extends ExpObject
     List<? extends ExpRun> getExpRuns();
 
     Set<Container> getExpRunContainers();
+
+    Status getStatus();
+    void setStatus(Status status);
 
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override

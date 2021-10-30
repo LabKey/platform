@@ -1027,6 +1027,9 @@ public class ExperimentServiceImpl implements ExperimentService
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
         protocol.setOutputMaterialType("Material");
+        // the default for runs
+        if (ExperimentRun.equals(type))
+            protocol.setStatus(ExpProtocol.Status.Active);
         return new ExpProtocolImpl(protocol);
     }
 

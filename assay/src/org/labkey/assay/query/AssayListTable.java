@@ -95,6 +95,8 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         typeColumn.setDisplayColumnFactory(TypeDisplayColumn::new);
         addColumn(typeColumn);
 
+        addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);
+
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Name"));
         defaultCols.add(FieldKey.fromParts("Description"));

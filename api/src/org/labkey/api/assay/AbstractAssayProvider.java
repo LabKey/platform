@@ -688,7 +688,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
+    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status)
             throws ExperimentException
     {
         String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
@@ -698,6 +698,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setLSID(protocolLsid);
         protocol.setMaxInputMaterialPerInstance(1);
         protocol.setMaxInputDataPerInstance(1);
+        protocol.setStatus(status);
 
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
