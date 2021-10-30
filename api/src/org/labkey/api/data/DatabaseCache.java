@@ -267,7 +267,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     {
         @SuppressWarnings({"StringEquality"})
         @Test
-        public void testDbCache()
+        public void testDatabaseCache()
         {
             MyScope scope = new MyScope();
 
@@ -315,14 +315,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
             switch (trackingCache.getCacheType())
             {
-                case DeterministicLRU:
-                    assertEquals("Count was " + correctCount, correctCount, 20);
-                    break;
-                case NonDeterministicLRU:
-                    assertTrue("Count was " + correctCount, correctCount > 11);
-                    break;
-                default:
-                    fail("Unknown cache type");
+                case DeterministicLRU -> assertEquals("Count was " + correctCount, correctCount, 20);
+                case NonDeterministicLRU -> assertTrue("Count was " + correctCount, correctCount > 11);
+                default -> fail("Unknown cache type");
             }
 
             // add 5 more (if deterministic, should kick out 16-20 which are now LRU)
@@ -344,18 +339,15 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // As above, this test isn't very useful for a NonDeterministicLRU cache.
             switch (trackingCache.getCacheType())
             {
-                case DeterministicLRU:
-                    assertEquals("Count was " + correctCount, correctCount, 10);
-                    break;
-                case NonDeterministicLRU:
+                case DeterministicLRU -> assertEquals("Count was " + correctCount, correctCount, 10);
+                case NonDeterministicLRU -> {
                     assertTrue("Count was " + correctCount, correctCount > 4);
 
                     // Make sure key_11 is in the cache
                     cache.put("key_11", values[11]);
                     assertSame(cache.get("key_11"), values[11]);
-                    break;
-                default:
-                    fail("Unknown cache type");
+                }
+                default -> fail("Unknown cache type");
             }
 
             // transaction testing

@@ -3947,7 +3947,7 @@ public class StudyManager
 
     private String getParticipantCacheName(Container container)
     {
-        return container.getId() + "/" + Participant.class.toString();
+        return container.getId() + "/" + Participant.class;
     }
 
     /** non-permission checking, non-recursive */
@@ -3993,7 +3993,7 @@ public class StudyManager
         }
     }
 
-    /* non-permission checking,  may return participant from sub folder */
+    /* non-permission checking, may return participant from sub folder */
     public Container findParticipant(Study study, String ptid) throws ParticipantNotUniqueException
     {
         Participant p = getParticipant(study, ptid);
