@@ -3250,40 +3250,7 @@ public class ExperimentController extends SpringActionController
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getDataUsedAsInput(deleteForm.getIds(false));
 
-            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allData));
-        }
-    }
-
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(DeletePermission.class)
-    public class GetMaterialDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
-    {
-        @Override
-        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
-        {
-            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
-                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
-        }
-
-        @Override
-        public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
-        {
-            // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            Set<Integer> deletable = deleteForm.getIds(false);
-            List<Integer> deleteRequest = new ArrayList<>(deletable);
-            ExperimentServiceImpl service = ExperimentServiceImpl.get();
-            List<? extends ExpMaterial> allMaterials = service.getExpMaterials(deleteRequest);
-
-            List<Integer> cannotDelete = service.getMaterialsUsedAsInput(deleteForm.getIds(false));
-            if (SampleStatusService.get().supportsSampleStatus())
-                cannotDelete.addAll(service.findIdsNotPermittedForOperation(allMaterials, SampleTypeService.SampleOperations.Delete));
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
-
-            // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
-            response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, deletable, getUser(), getContainer()));
-
-            return success(response);
+            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(deleteRequest, cannotDelete, allData));
         }
     }
 
@@ -3315,6 +3282,59 @@ public class ExperimentController extends SpringActionController
         public Set<Integer> getIds(boolean clear)
         {
             return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        }
+    }
+
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    {
+        @Override
+        public void validateForm(OperationConfirmationForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
+            if (form.getSampleOperation() == null)
+                errors.reject(ERROR_REQUIRED, "An operation type must be provided.");
+        }
+
+        @Override
+        public Object execute(OperationConfirmationForm form, BindException errors)
+        {
+            Set<Integer> requestIds = form.getIds(false);
+            ExperimentServiceImpl service = ExperimentServiceImpl.get();
+            List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
+
+            List<Integer> notPermittedIds = new ArrayList<>();
+            // We prevent deletion if a sample is used as a parent or has assay data
+            if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
+                notPermittedIds = service.getMaterialsUsedAsInput(requestIds);
+
+            if (SampleStatusService.get().supportsSampleStatus())
+                notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
+
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allMaterials);
+            if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
+                // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
+                response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, requestIds, getUser(), getContainer()));
+
+            return success(response);
+        }
+    }
+
+    public static class OperationConfirmationForm extends DeleteConfirmationForm
+    {
+        private SampleTypeService.SampleOperations _sampleOperation;
+
+        public SampleTypeService.SampleOperations getSampleOperation()
+        {
+            return _sampleOperation;
+        }
+
+        public void setSampleOperation(SampleTypeService.SampleOperations sampleOperation)
+        {
+            _sampleOperation = sampleOperation;
         }
     }
 
@@ -6904,6 +6924,7 @@ public class ExperimentController extends SpringActionController
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
                         "S.SampleSet as SampleType",
+                        "S.SampleState",
                         "S.isAliquot",
                         "S.Created",
                         "S.CreatedBy"
@@ -6915,6 +6936,7 @@ public class ExperimentController extends SpringActionController
                         "S.Name AS SampleID",
                         "S.LabelColor",
                         "S.SampleSet",
+                        "S.SampleState",
                         "S.StoredAmount",
                         "S.Units",
                         "S.SampleTypeUnits",

@@ -92,6 +92,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
+    private Integer _workflowTask;
     private String _dataCollectorName;
     private boolean _multiRunUpload;
     private String _uploadStep;
@@ -198,6 +199,17 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setName(String name)
     {
         _name = name;
+    }
+
+    @Override
+    public Integer getWorkflowTask()
+    {
+        return _workflowTask;
+    }
+
+    public void setWorkflowTask(Integer workflowTask)
+    {
+        _workflowTask = workflowTask;
     }
 
     public String getDataCollectorName()

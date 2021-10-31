@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -156,8 +157,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", FileUtil.makeFileNameWithTimestamp(_baseName));
-
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
 
         // CONSIDER: Remove writing out jobInfo file completely
 //        // Write out job information
@@ -203,7 +203,8 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _filesInput = filesInput.stream().map(File::toPath).collect(Collectors.toList());
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
-        setLogFilePath(FT_LOG.newFile(_dirAnalysis, _baseName));
+
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
 
         // CONSIDER: Remove writing out jobInfo file completely
         // If parent job wrote a job info file, assume the child should too

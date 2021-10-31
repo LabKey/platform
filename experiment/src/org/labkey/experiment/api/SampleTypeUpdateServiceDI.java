@@ -155,6 +155,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -194,6 +206,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
         }
@@ -207,6 +231,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.MERGE);
         }
@@ -214,7 +250,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
@@ -225,6 +261,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -338,7 +377,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // had a locked status before and either not updating the status or updating to a new locked status
         if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
         {
-            throw new ValidationException(String.format("Updating sample metadata when status is '%s' is not allowed.", oldStatus.getLabel()));
+            throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
 
         keys = new Object[]{lsid};
@@ -405,7 +444,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Integer> id = new LinkedList<>();
         Integer rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false, false);
         return oldRowMap;
     }
 
@@ -449,7 +488,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 result.add(map);
             }
             // TODO check if this handle attachments???
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false, false);
         }
 
         if (result.size() > 0)
