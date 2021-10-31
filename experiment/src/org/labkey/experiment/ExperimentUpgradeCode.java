@@ -258,6 +258,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Compounds';\n");
                 sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Materials';\n");
                 sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Lot';\n");
+                // Drop index
+                sql.append("EXEC core.fn_dropifexists 'material', 'exp', 'index', 'IDX_exp_material_recompute';\n");
                 // Remove primary key constraint
                 sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
 
@@ -277,6 +279,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 sql.append("EXEC sp_rename 'exp.material.RowId_copy', 'RowId', 'COLUMN';\n");
                 sql.append("ALTER TABLE exp.Material ALTER COLUMN RowId INT NOT NULL;\n");
                 sql.append("ALTER TABLE exp.Material ADD CONSTRAINT PK_Material PRIMARY KEY (RowId);\n");
+                // Add index
+                sql.append("CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=1;\n");
                 // Add the foreign key constraints back again
                 sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
                 sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +

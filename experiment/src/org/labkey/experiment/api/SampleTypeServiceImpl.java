@@ -43,6 +43,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -72,6 +73,7 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
@@ -92,6 +94,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -104,6 +107,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -493,7 +497,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             Container container = ContainerManager.getForId(entry.getKey());
             // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
             count += entry.getValue().size();
         }
         return count;
@@ -914,6 +918,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setDescription(newDescription);
         }
 
+        boolean hasMetricUnitChanged = false;
+
         if (options != null)
         {
             String sampleIdPattern = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(options.getNameExpression()));
@@ -938,6 +944,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             st.setLabelColor(options.getLabelColor());
+            String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
+            String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
+
+            if (!Objects.equals(oldMetricUnit, newMetricUnit))
+                hasMetricUnitChanged = true;
+
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
             st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
@@ -954,7 +966,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (!errors.hasErrors())
             {
-                transaction.addCommitTask(() -> clearMaterialSourceCache(container), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
+                transaction.addCommitTask(() -> {
+                    clearMaterialSourceCache(container);
+
+                    if (finalHasMetricUnitChanged && InventoryService.get() != null)
+                    {
+                        try
+                        {
+                            InventoryService.get().recomputeSampleTypeRollup(st, container, true);
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                    }
+
+                }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
             }
         }

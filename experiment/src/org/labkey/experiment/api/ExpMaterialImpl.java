@@ -215,6 +215,30 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public boolean isRecomputeRollup()
+    {
+        return _object.isRecomputeRollup();
+    }
+
+    @Override
+    public int getAliquotCount()
+    {
+        return _object.getAliquotCount();
+    }
+
+    @Override
+    public double getAliquotVolume()
+    {
+        return _object.getAliquotVolume();
+    }
+
+    @Override
+    public String getAliquotUnit()
+    {
+        return _object.getAliquotUnit();
+    }
+
+    @Override
     public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
     {
         return SampleStatusService.get().isOperationPermitted(getSampleState(), operation);
@@ -293,7 +317,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType(), false);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType(), false, false);
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
