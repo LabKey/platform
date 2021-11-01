@@ -305,7 +305,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
 
         public PropsTable(UserSchema schema)
         {
-            super(schema.getDbSchema(), "props");
+            super(schema.getDbSchema(), "props", schema);
             this.schema = schema;
             SqlDialect d = schema.getDbSchema().getSqlDialect();
 

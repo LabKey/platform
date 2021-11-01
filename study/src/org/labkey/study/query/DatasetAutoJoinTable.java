@@ -72,7 +72,7 @@ public class DatasetAutoJoinTable extends VirtualTable
                                 @Nullable FieldKey sequenceNumFieldKey,
                                 @Nullable FieldKey keyFieldKey)
     {
-        super(StudySchema.getInstance().getSchema(), "DataSets");
+        super(StudySchema.getInstance().getSchema(), "DataSets", schema);
         _schema = schema;
         _source = source;
         _keyPropertyName = _source.getKeyPropertyName();

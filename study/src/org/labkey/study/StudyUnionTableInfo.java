@@ -75,7 +75,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user, boolean crossContainer)
     {
-        super(StudySchema.getInstance().getSchema(), "StudyData");
+        super(StudySchema.getInstance().getSchema(), "StudyData", null);
         _study = study;
         _user = user;
         _crossContainer = crossContainer;

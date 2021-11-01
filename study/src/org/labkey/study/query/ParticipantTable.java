@@ -41,6 +41,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.TitleForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -375,7 +376,7 @@ public class ParticipantTable extends BaseStudyTable
         public TableInfo getLookupTableInfo()
         {
             // Create a simple virtual table so that we can expose one column per alias source
-            VirtualTable result = new VirtualTable(getSchema(), null);
+            VirtualTable result = new VirtualTable(getSchema(), null, (UserSchema)_sourceSchema);
             for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
             {
                 var column = new BaseColumnInfo(source, JdbcType.VARCHAR);

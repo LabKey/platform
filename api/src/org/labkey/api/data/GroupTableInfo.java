@@ -43,7 +43,7 @@ public class GroupTableInfo extends VirtualTable
 
     public GroupTableInfo(TableInfo source, SimpleFilter sourceFilter, List<ColumnInfo> groupByCols, List<CrosstabMeasure> measures)
     {
-        super(source.getSchema(), ALIAS);
+        super(source.getSchema(), ALIAS, source.getUserSchema());
 
         assert null != groupByCols && groupByCols.size() > 0 : "No group by columns passed to GroupTableInfo constructor!";
         assert null != measures && measures.size() > 0 : "No measures passed to GroupTableInfo constructor!";

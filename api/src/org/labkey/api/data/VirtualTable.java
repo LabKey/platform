@@ -53,19 +53,14 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
         _setContainerFilter(cf);
     }
 
-    /**
-     * @deprecated Use constructor with SchemaType parameter instead
-     */
-    @Deprecated
-    public VirtualTable(DbSchema schema, String name)
-    {
-        this(schema, name, null);
-    }
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        boolean result = perm.equals(ReadPermission.class) && getUserSchema().getContainer().hasPermission(getUserSchema().getUser(), perm);
+        var us = getUserSchema();
+        if (null == us)
+            return false;
+        boolean result = perm.equals(ReadPermission.class) && us.getContainer().hasPermission(user, perm);
         SecurityLogger.log("VirtualTable.hasPermission " + getName(), user, null, result);
         return result;
     }

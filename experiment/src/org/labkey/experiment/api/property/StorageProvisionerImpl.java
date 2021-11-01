@@ -627,7 +627,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
-            super(schema, name);
+            super(schema, name, null);
             _inner = inner;
             _map.putAll(map);
         }
