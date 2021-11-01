@@ -277,7 +277,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
 
             if (views.length > 1) {
-                config.activeTab = (this.allowFaceting() ? 1 : 0);
+                config.activeTab = this.getDefaultTab();
             }
             else {
                 views[0].title = false;
@@ -320,6 +320,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         return filters;
+    },
+
+    getDefaultTab: function() {
+        return this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule ?
+                0 : (this.allowFaceting() ? 1 : 0);
     },
 
     getDefaultView: function(filters) {
