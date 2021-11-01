@@ -2007,7 +2007,7 @@ public class DataRegion extends DisplayElement
                     throw new UnauthorizedException();
 
                 TableInfo tinfoMain = getTable();
-                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
+                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
                 if (!maps.isEmpty())
                     valueMap = maps.iterator().next();
             }
