@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
@@ -882,5 +883,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             tableInfoCache.put(key,ret);
         }
         return ret;
+    }
+
+
+    public interface HasContextualRoles
+    {
+        @NotNull Set<Role> getContextualRoles();
     }
 }

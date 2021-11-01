@@ -55,9 +55,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.writer.AbstractContext;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -111,7 +109,7 @@ import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENREQUE
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIALREQUEST_TABLENAME;
 
-public class StudyQuerySchema extends UserSchema
+public class StudyQuerySchema extends UserSchema implements UserSchema.HasContextualRoles
 {
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 

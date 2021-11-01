@@ -19,6 +19,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
@@ -293,6 +295,7 @@ public class AssayDatasetTable extends DatasetTableImpl
                 return null;
             }
             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
+            schema.addContextualRole(RoleManager.getRole(ReaderRole.class));
             _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
         }
         return _assayResultTable;

@@ -43,6 +43,7 @@ import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -841,7 +842,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         checkedPermissions.add(perm);
         if (ReadPermission.class.isAssignableFrom(perm))
         {
-            return _userSchema.getContainer().hasPermission(user, perm);
+            // Not sure the historical reason why this code did not just call AbstractTable.hasPermission()
+            // however this is a useful place to handle UserSchema.HasContextualRoles()
+            Set<Role> roles = null;
+            if (_userSchema instanceof UserSchema.HasContextualRoles)
+                roles = ((UserSchema.HasContextualRoles) _userSchema).getContextualRoles();
+            if (_userSchema.getContainer().hasPermission(user, perm, roles))
+                return true;
         }
         return super.hasPermission(user, perm);
     }
