@@ -3,13 +3,14 @@ package org.labkey.core.metrics;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WebSocketConnectionManager implements UsageMetricsProvider
 {
     private static final WebSocketConnectionManager _instance = new WebSocketConnectionManager();
 
-    private int successCounter = 0;
-    private int failureCounter = 0;
+    final private AtomicInteger successCounter = new AtomicInteger();
+    final private AtomicInteger failureCounter = new AtomicInteger();
 
     private WebSocketConnectionManager()
     {
@@ -23,14 +24,14 @@ public class WebSocketConnectionManager implements UsageMetricsProvider
     public void incrementCounter(boolean success)
     {
         if (success)
-            successCounter++;
+            successCounter.incrementAndGet();
         else
-            failureCounter++;
+            failureCounter.incrementAndGet();
     }
 
     public boolean showWarning()
     {
-        return successCounter == 0 && failureCounter > 0;
+        return successCounter.get() == 0 && failureCounter.get() > 0;
     }
 
     @Override
@@ -38,8 +39,8 @@ public class WebSocketConnectionManager implements UsageMetricsProvider
     {
         return Map.of(
             "webSocketConnections", Map.of(
-                    "success", successCounter,
-                    "failure", failureCounter
+                    "success", successCounter.get(),
+                    "failure", failureCounter.get()
                 )
         );
     }
