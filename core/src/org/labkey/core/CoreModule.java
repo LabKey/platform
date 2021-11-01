@@ -190,6 +190,7 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -975,6 +976,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         ClientSideMetricManager.get().registerUsageMetrics(getName());
+        UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
