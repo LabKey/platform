@@ -452,4 +452,16 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
         return containers;
     }
+
+    @Override
+    public Status getStatus()
+    {
+        return _object.getStatus();
+    }
+
+    @Override
+    public void setStatus(Status status)
+    {
+        _object.setStatus(status);
+    }
 }

@@ -431,15 +431,20 @@ abstract public class PipelineJob extends Job implements Serializable
         return _pipeRoot;
     }
 
-    public void setLogFilePath(Path logFile)
+    /**
+     * Set Log file path and clear/reset logger
+     * @param logFile
+     */
+    private void updateLogFilePath(Path logFile)
     {
         _logFilePathName = PageFlowUtil.decode(FileUtil.pathToString(logFile)); // For cloud i think we need to decode this...
-        _logger = null;
-        _logFile = null;
+        _logger = null; //This should trigger getting the new Logger next time getLogger is called
+        _logFile = logFile;
 
         // Intentionally leave any existing log output in the file
     }
 
+    @Deprecated //Please switch to the Path version
     public void setLogFile(File logFile)
     {
         setLogFile(logFile.toPath());
@@ -448,7 +453,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public void setLogFile(Path logFile)
     {
         Path normalizedPath = logFile.toAbsolutePath().normalize();
-        setLogFilePath(normalizedPath);
+        updateLogFilePath(normalizedPath);
         _logFile = normalizedPath;
     }
 
@@ -1096,16 +1101,15 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (null != _localDirectory & isDone())
         {
-            Path remoteLogFilePath = null;
             try
             {
-                remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
+                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
 
                 //Update job log entry's log location to remote path
-                if (null != remoteLogFilePath && FileUtil.hasCloudScheme(remoteLogFilePath))
+                if (null != remoteLogFilePath)
                 {
                     //NOTE: any errors here can't be recorded to job log as it may no longer be local and writable
-                    setLogFilePath(remoteLogFilePath);
+                    setLogFile(remoteLogFilePath);
                     setStatus(getActiveTaskStatus());       // Force writing to statusFiles
                 }
             }
