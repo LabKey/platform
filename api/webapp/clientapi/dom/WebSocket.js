@@ -40,6 +40,17 @@ LABKEY.WebSocket = new function ()
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
+        _websocket.onerror = websocketConnectionFailure;
+    }
+
+    function websocketConnectionFailure() {
+        if (!LABKEY.user.isGuest) {
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("core", "webSocketConnection.api"),
+                method: 'POST',
+                params: { connected: false }
+            });
+        }
     }
 
     function websocketOnMessage(evt) {

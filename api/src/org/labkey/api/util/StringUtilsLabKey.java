@@ -379,8 +379,36 @@ public class StringUtilsLabKey
         return s.length() > maxLength ? s.substring(0, maxLength - 3) + "..." : s;
     }
 
+    /**
+     * Replaces known bad characters (currently curly quotes) with reasonable replacements (non-curly quotes).
+     * @param original The string to be sanitized
+     * @return the sanitized string
+     */
+    public static @Nullable String replaceBadCharacters(@Nullable String original)
+    {
+        if (original == null)
+            return null;
+
+        return original.replaceAll("[\\u2018\\u2019]", "'")
+                        .replaceAll("[\\u201C\\u201D]", "\"");
+
+    }
+
     public static class TestCase extends Assert
     {
+        @Test
+        public void testReplaceBadCharacters()
+        {
+            assertNull(replaceBadCharacters(null));
+            assertEquals("", replaceBadCharacters(""));
+            assertEquals("It's all good", replaceBadCharacters("It's all good"));
+            assertEquals("She said \"yes\"", replaceBadCharacters("She said \"yes\""));
+            assertEquals("'It's bad'", replaceBadCharacters("\u2018It\u2018s bad\u2018"));
+            assertEquals("It's bad", replaceBadCharacters("It\u2019s bad"));
+            assertEquals("\"Stuff\"", replaceBadCharacters("\u201CStuff\u201D"));
+            assertEquals("\"It's 'My' Stuff\"", replaceBadCharacters("\u201CIt\u2018s \u2019My\u2019 Stuff\u201D"));
+        }
+
         @Test
         public void testFindCommonPrefix()
         {

@@ -61,6 +61,7 @@ public class Protocol extends IdentifiableEntity
     private Map<String, ProtocolParameter> _protocolParameters;
     private Map<String, ObjectProperty> _objectProperties;
     private List<? extends ExpProtocolInputImpl> _protocolInputs;
+    private ExpProtocol.Status _status;
 
     public Protocol()
     {
@@ -269,6 +270,16 @@ public class Protocol extends IdentifiableEntity
         _contactId = contactId;
     }
 
+    public ExpProtocol.Status getStatus()
+    {
+        return _status;
+    }
+
+    public void setStatus(ExpProtocol.Status status)
+    {
+        _status = status;
+    }
+
     public List<Difference> diff(Protocol other)
     {
         List<Difference> result = new ArrayList<>();
@@ -292,6 +303,7 @@ public class Protocol extends IdentifiableEntity
         diff(_software, other._software, "Software", result);
         diff(getName(), other.getName(), "Name", result);
         diff(getContainer(), other.getContainer(), "Container", result);
+        diff(_status, other.getStatus(), "Status", result);
 
         // Diff the protocol parameters
         Map<String, ProtocolParameter> thisParams = retrieveProtocolParameters();

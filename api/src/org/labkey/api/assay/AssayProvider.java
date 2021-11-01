@@ -138,7 +138,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @NotNull
     AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
-    ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
+    ExpProtocol createAssayDefinition(User user, Container container, String name, String description, @Nullable ExpProtocol.Status status) throws ExperimentException;
 
     /**
      * Creates the default set of domains for a new assay definition, pre-populated with their default
