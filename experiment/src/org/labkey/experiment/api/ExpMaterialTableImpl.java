@@ -332,6 +332,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
             case SampleState:
+            {
                 boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
@@ -348,7 +349,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     }
                 });
                 return ret;
-
+            }
+            case RecomputeRollup:
+                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            case AliquotCount:
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+                ret.setLabel("Aliquots Created Count");
+                return ret;
+            }
+            case AliquotVolume:
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
+                ret.setLabel("Aliquot Total Volume");
+                return ret;
+            }
+            case AliquotUnit:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }

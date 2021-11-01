@@ -81,9 +81,11 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -666,6 +668,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return materials;
     }
 
+    @Override
+    @NotNull
+    public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
+        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+
+        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
+        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
+
+        return materials;
+    }
+
     @NotNull
     public List<ExpMaterialImpl> getExpMaterialsByLSID(Collection<String> lsids)
     {
@@ -1012,6 +1027,9 @@ public class ExperimentServiceImpl implements ExperimentService
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
         protocol.setOutputMaterialType("Material");
+        // the default for runs
+        if (ExperimentRun.equals(type))
+            protocol.setStatus(ExpProtocol.Status.Active);
         return new ExpProtocolImpl(protocol);
     }
 
@@ -4212,6 +4230,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /**
+     * TODO move to SampleTypeService
      * Delete samples by rowId. When <code>stDeleteFrom</code> SampleType is provided,
      * the samples must all be members of the SampleType.  When <code>stSampleType</code> is
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE}.
@@ -4220,9 +4239,10 @@ public class ExperimentServiceImpl implements ExperimentService
                                        Collection<Integer> selectedMaterialIds,
                                        boolean deleteRunsUsingMaterials,
                                        @Nullable ExpSampleType stDeleteFrom,
-                                       boolean ignoreStatus)
+                                       boolean ignoreStatus,
+                                       boolean isTruncate)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, isTruncate);
     }
 
     /**
@@ -4237,7 +4257,8 @@ public class ExperimentServiceImpl implements ExperimentService
                                         boolean deleteRunsUsingMaterials,
                                         boolean deleteFromAllSampleTypes,
                                         @Nullable ExpSampleType stDeleteFrom,
-                                        boolean ignoreStatus)
+                                        boolean ignoreStatus,
+                                        boolean isTruncate)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4260,6 +4281,11 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
+
+            boolean isAliquotRollupSupported = InventoryService.get() != null
+                    && container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Inventory"));
+
+            Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
@@ -4298,6 +4324,14 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
+
+                if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                {
+                    ExpSampleType sampleType = material.getSampleType();
+                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                            .add(material.getRootMaterialLSID());
+                }
+
             }
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
@@ -4396,6 +4430,29 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
                 lsidFragFrag.append(lsidInFrag);
                 OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+            }
+
+            // recalculate rollup
+            if (!isTruncate && isAliquotRollupSupported)
+            {
+                try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
+                {
+                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
+                    {
+                        ExpSampleType parentSampleType = sampleTypeParents.getKey();
+                        Set<String> parentLsids = sampleTypeParents.getValue();
+
+                        List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
+                        Set<Integer> parentSampleIds = new HashSet<>();
+                        parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
+
+                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit(), container);
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
 
             // On successful commit, start task to remove items from search index
@@ -4837,7 +4894,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, true, null, true);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null, true, true);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
@@ -6584,11 +6641,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
+            Set<String> parentLsids = new HashSet<>();
+            TableInfo tableInfo = getTinfoMaterial();
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
+                    parentLsids.add(StringUtils.isEmpty(parent.getRootMaterialLSID()) ?  parent.getLSID() : parent.getRootMaterialLSID());
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
                     // Use cache to double check detemine subaliquots's root
@@ -6596,7 +6656,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
                                 append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
                         String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
@@ -6611,9 +6671,19 @@ public class ExperimentServiceImpl implements ExperimentService
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
                         
-                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                        new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
+            }
+
+            // mark aliquot parents RecomputeRollup=true
+            if (!parentLsids.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
+                        append(" SET RecomputeRollup = ? WHERE LSID ");
+                sql.add(true);
+                sql.appendInClause(parentLsids, tableInfo.getSqlDialect());
+                new SqlExecutor(tableInfo.getSchema()).execute(sql);
             }
         }
         
