@@ -69,7 +69,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 handler: this.closeDialog,
                 scope: this
             }],
-            width: this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule ?
+            width: this.isConceptColumnFilter() ?
                     (Ext.isGecko ? 533 : 518) :
                     // 24846
                     (Ext.isGecko ? 425 : 410),
@@ -323,12 +323,16 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     getDefaultTab: function() {
-        return this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule ?
+        return this.isConceptColumnFilter() ?
                 0 : (this.allowFaceting() ? 1 : 0);
     },
 
+    isConceptColumnFilter: function() {
+        return this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule;
+    },
+
     getDefaultView: function(filters) {
-        const xtypeVal = this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule
+        const xtypeVal = this.isConceptColumnFilter()
                 ? 'filter-view-conceptfilter'
                 : 'filter-view-default';
 
