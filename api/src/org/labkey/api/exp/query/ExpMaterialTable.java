@@ -54,7 +54,11 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Inputs,
         Outputs,
         Properties,
-        SampleState
+        SampleState,
+        RecomputeRollup,
+        AliquotCount,
+        AliquotVolume,
+        AliquotUnit
     }
 
     void populate(@Nullable ExpSampleType st, boolean filterSampleType);

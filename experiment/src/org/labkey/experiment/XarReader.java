@@ -1405,10 +1405,18 @@ public class XarReader extends AbstractXarImporter
                 if (run != null)
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
                 getLog().debug("Updating " + description + " with aliquot root LSID");
-                if (((Material) output).getRootMaterialLSID() != null)
-                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + rootMaterialLSID);
-                ((Material) output).setRootMaterialLSID(rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID);
-                changed = true;
+
+                String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
+                if (((Material) output).getRootMaterialLSID() != null && !((Material) output).getRootMaterialLSID().equals(rootMaterialLSID))
+                {
+                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + newRootLsid);
+                }
+                else
+                {
+                    ((Material) output).setRootMaterialLSID(newRootLsid);
+                    changed = true;
+                }
+
             }
             if (aliquotedFromLSID != null)
             {
@@ -1416,10 +1424,17 @@ public class XarReader extends AbstractXarImporter
                 if (run != null)
                     aliquotParent = _xarSource.getMaterial(run.getExpObject(), null, aliquotedFromLSID);
                 getLog().debug("Updating " + description + " with aliquot parent LSID");
-                if (((Material) output).getAliquotedFromLSID() != null)
+
+                String newParentLsid = aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID;
+                if (((Material) output).getAliquotedFromLSID() != null && !((Material) output).getAliquotedFromLSID().equalsIgnoreCase(aliquotedFromLSID))
+                {
                     throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
-                ((Material) output).setAliquotedFromLSID(aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID);
-                changed = true;
+                }
+                else
+                {
+                    ((Material) output).setAliquotedFromLSID(newParentLsid);
+                    changed = true;
+                }
             }
 
         }
@@ -1897,7 +1912,24 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            protocol = ExperimentServiceImpl.get().saveProtocol(getUser(), xarProtocol);
+            if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) || xarProtocol.getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
+            {
+                // create derivation and aliquot protocol using shared folder
+                if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
+                    ExperimentServiceImpl.get().ensureSampleDerivationProtocol(getUser());
+                else
+                    ExperimentServiceImpl.get().ensureSampleAliquotProtocol(getUser());
+
+                ExpProtocolImpl ensuredExpProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
+
+                if (ensuredExpProtocol == null)
+                    throw new XarFormatException("Protocol with LSID '" + protocolLSID + "' does not exist.");
+
+                protocol = ensuredExpProtocol.getDataObject();
+            }
+            else
+                protocol = ExperimentServiceImpl.get().saveProtocol(getUser(), xarProtocol);
+
             getLog().debug("Finished loading Protocol with LSID '" + protocolLSID + "'");
         }
 

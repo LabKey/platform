@@ -287,6 +287,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
 
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
+
     ExpMaterial getExpMaterial(String lsid);
 
     /**
