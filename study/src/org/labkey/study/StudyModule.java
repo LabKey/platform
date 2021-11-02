@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -454,6 +455,29 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
+                metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
+                metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
+
+                metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData").getObject(Long.class));
+                metric.put("standardDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE Type = 'Standard'").getObject(Long.class));
+
+                metric.put("managedThirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE KeyManagementType <> 'None'").getObject(Long.class));
+                metric.put("thirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE (KeyManagementType = 'None' AND KeyPropertyName IS NOT NULL) OR (UseTimeKeyField)").getObject(Long.class));
+
+                metric.put("datasetsLinkedFromAssays", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
+                metric.put("datasetsLinkedFromSamples", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
+
+                metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.AssaySpecimen").getObject(Long.class));
+
+                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT(x.container)) ")
+                        .append("FROM (")
+                        .append("SELECT container FROM study.Participant WHERE AlternateId IS NOT NULL ")
+                        .append("UNION ")
+                        .append("SELECT container FROM study.Study WHERE AlternateIdPrefix IS NOT NULL ")
+                        .append(") x");
+                metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class));
+                metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
+
                 // grab the counts of report and dataset notification settings (by notification option)
                 Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
                 Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
@@ -479,6 +503,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 HashBag<String> specimenBag = new HashBag<>();
                 MutableInt requestsEnabled = new MutableInt(0);
                 MutableInt hasLocations = new MutableInt(0);
+                MutableInt hasProducts = new MutableInt(0);
+                MutableInt hasTreatments = new MutableInt(0);
 
                 allStudies.stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
@@ -514,6 +540,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                             hasLocations.increment();
                         }
 
+                        TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                        long productCount = new TableSelector(products).getRowCount();
+                        if (productCount > 0)
+                            hasProducts.increment();
+
+                        TableInfo treatments = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                        long treatmentCount = new TableSelector(treatments).getRowCount();
+                        if (treatmentCount > 0)
+                            hasTreatments.increment();
+
                         LOG.debug(specimenBag.toString());
                     });
 
@@ -522,6 +558,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 requestsMap.put("enabled", requestsEnabled);
                 specimensMap.put("requests", requestsMap);
                 specimensMap.put("hasLocations", hasLocations.intValue());
+
+                metric.put("studyProducts", hasProducts.intValue());
+                metric.put("studyTreatments", hasTreatments.intValue());
 
                 metric.put("specimens", specimensMap);
 
