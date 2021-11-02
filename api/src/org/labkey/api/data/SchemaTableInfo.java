@@ -364,45 +364,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
-        if (columnName == null)
-            return getSelectList(getPkColumnNames());
-
-        ColumnInfo column = getColumn(columnName);
-        if (column == null)
-            return new NamedObjectList();
-
-        return getSelectList(Collections.singletonList(column.getName()));
-    }
-
-    private @NotNull NamedObjectList getSelectList(List<String> columnNames)
-    {
-        LogManager.getLogger(SchemaTableInfo.class).info("SchemaTableInfo.getSelectList() called on " + getName());
-        StringBuilder pkColumnSelect = new StringBuilder();
-        String sep = "";
-
-        for (String columnName : columnNames)
-        {
-            pkColumnSelect.append(sep);
-            pkColumnSelect.append(columnName);
-            sep = "+','+";
-        }
-
-        String cacheKey = "selectArray:" + pkColumnSelect;
-        NamedObjectList list = (NamedObjectList) DbCache.get(this, cacheKey);
-
-        if (null != list)
-            return list;
-
-        String titleColumn = getTitleColumn();
-
-        final NamedObjectList newList = new NamedObjectList();
-        String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
-
-        new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
-
-        DbCache.put(this, cacheKey, newList, CacheManager.MINUTE);
-
-        return newList;
+        throw new UnsupportedOperationException();
     }
 
     @Override

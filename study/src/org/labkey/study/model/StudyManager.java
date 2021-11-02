@@ -3945,7 +3945,7 @@ public class StudyManager
         return sql;
     }
 
-    private String getParticipantCacheName(Container container)
+    private String getParticipantCacheKey(Container container)
     {
         return container.getId() + "/" + Participant.class;
     }
@@ -3953,7 +3953,7 @@ public class StudyManager
     /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
-        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
+        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()));
         if (participantMap == null)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
@@ -3963,14 +3963,14 @@ public class StudyManager
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
             participantMap = Collections.unmodifiableMap(participantMap);
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, CacheManager.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()), participantMap, CacheManager.HOUR);
         }
         return participantMap;
     }
 
     public void clearParticipantCache(Container container)
     {
-        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(container));
+        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
     }
 
     public Collection<Participant> getParticipants(Study study)
