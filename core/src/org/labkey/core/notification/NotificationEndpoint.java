@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 
 import javax.servlet.http.HttpSession;
 import javax.websocket.CloseReason;
@@ -78,6 +79,7 @@ public class NotificationEndpoint extends Endpoint
             if (this.userId > 0)
             {
                 endpointsMap.put(this.userId, this);
+                WebSocketConnectionManager.getInstance().incrementCounter(true);
                 MemTracker.get().put(this);
             }
         }

@@ -1054,6 +1054,12 @@ public class QueryController extends SpringActionController
                             {
                                 if (null != tableType)
                                 {
+                                    if (!Objects.equals(tableType.getTableName(), form.getQueryName()))
+                                    {
+                                        errors.reject(ERROR_MSG, "Table name in the XML metadata must match the table/query name: " + form.getQueryName());
+
+                                    }
+
                                     TableType.Columns tableColumns = tableType.getColumns();
                                     if (null != tableColumns)
                                     {

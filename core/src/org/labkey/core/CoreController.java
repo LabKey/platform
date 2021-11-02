@@ -162,6 +162,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -2415,6 +2416,32 @@ public class CoreController extends SpringActionController
             }
 
             return new ApiSimpleResponse(json);
+        }
+    }
+
+    @RequiresLogin
+    public class WebSocketConnectionAction extends MutatingApiAction<WebSocketConnectionForm>
+    {
+        @Override
+        public Object execute(WebSocketConnectionForm form, BindException errors)
+        {
+            WebSocketConnectionManager.getInstance().incrementCounter(form.isConnected());
+            return success();
+        }
+    }
+
+    public static class WebSocketConnectionForm
+    {
+        private boolean _connected;
+
+        public boolean isConnected()
+        {
+            return _connected;
+        }
+
+        public void setConnected(boolean connected)
+        {
+            _connected = connected;
         }
     }
 

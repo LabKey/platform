@@ -123,6 +123,12 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 throw new MetadataUnavailableException(e.getMessage());
             }
             xmlTable = getTableType(this.getName(), doc);
+            // when there is a queryDef but xmlTable is null it means the xmlMetaData contains tableName which does not
+            // match with actual queryName then reconstruct the xml table metadata : See Issue 43523
+            if (xmlTable == null)
+            {
+                doc = null;
+            }
         }
         else
         {
