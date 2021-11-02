@@ -173,7 +173,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
-                var column = new AliasedColumn(this, subjectColName, baseColumn);
+                var column = new AliasedColumn(this, subjectColName, baseColumn)
+                {
+                    @Override
+                    public StringExpression getURL()
+                    {
+                        // delay constructing Participant table
+                        if (null == _url && null != getFk())
+                            _url = getFk().getURL(this);
+                        return _url;
+                    }
+                };
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
                 column.setDisplayColumnFactory(colInfo -> {
@@ -183,9 +193,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 });
 
                 column.setFk(new ParticipantForeignKey(cf));
-// I don't think we need to do this?  This is what getEffectiveURL() is for?
-//                if (null == column.getURL())
-//                    column.setURL(column.getFk().getURL(column));
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
