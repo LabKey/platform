@@ -50,6 +50,7 @@ import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -248,7 +249,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Collections.emptySet();
-        if (null != ModuleLoader.getInstance().getModule("Specimen"))
+        if (null != SpecimenService.get())
             return new LinkedHashSet<>(Arrays.asList("Datasets", "Design", "Specimens"));
         return new LinkedHashSet<>(Arrays.asList("Datasets", "Design"));
     }
