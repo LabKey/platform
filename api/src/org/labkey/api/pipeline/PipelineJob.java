@@ -962,7 +962,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private boolean findRunnableTask(TaskId[] progression, int i)
     {
         // Search for next task that is not already complete
-        TaskFactory factory = null;
+        TaskFactory<?> factory = null;
         while (i < progression.length)
         {
             try
