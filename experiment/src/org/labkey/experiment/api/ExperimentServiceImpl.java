@@ -994,9 +994,6 @@ public class ExperimentServiceImpl implements ExperimentService
         Cache<String, ExpProtocolImpl> c = getProtocolCache();
         c.remove(getCacheKey(p.getLSID()));
         c.remove("ROWID/" + p.getRowId());
-        //TODO I don't think we're using a DbCache for protocols... verify and remove the below
-        assert !DbCache.hasCache(getTinfoProtocol());
-        LOG.info("Verified no DbCache associated with " + getTinfoProtocol());
     }
 
 
