@@ -125,7 +125,13 @@ public class AssayDatasetTable extends DatasetTableImpl
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        var result = super.resolveColumn(name);
+        ColumnInfo result = null;
+
+        // NOTE: calling QueryService.get().getColumns() can cause recursion because it may call resolveColumn()!
+        // should probably handle our cases first then call super.resolveColumn()
+        if ("Properties".equalsIgnoreCase(name))
+            result = super.resolveColumn(name);
+
         if (result != null)
             return result;
 
