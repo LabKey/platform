@@ -1303,11 +1303,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public int addCoaleseColumn(String name, int fromIndex, Supplier second)
+    public int addCoaleseColumn(String name, int firstIndex, Supplier second)
     {
-        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(firstIndex));
         col.setName(name);
-        return addColumn(col, new CoalesceColumn(fromIndex, second));
+        return addColumn(col, new CoalesceColumn(firstIndex, second));
+    }
+
+
+    public int addCoaleseColumn(String name, int firstIndex, int secondIndex)
+    {
+        return addCoaleseColumn(name, firstIndex, _data.getSupplier(secondIndex));
     }
 
 

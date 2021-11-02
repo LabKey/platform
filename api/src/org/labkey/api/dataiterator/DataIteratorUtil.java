@@ -237,7 +237,9 @@ public class DataIteratorUtil
                 var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
                 if (vocabProperties.size() > 0)
                 {
-                    to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
+                    var propCol = target.getColumn(from.getColumnName());
+                    if (null != propCol)
+                        to = Pair.of(propCol, MatchType.propertyuri);
                 }
             }
             if (null != to && null == to.first)
