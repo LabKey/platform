@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -43,6 +44,7 @@ public class HelpTopic
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 
     private final String _topic;
+    private final String _fragment;
 
     public String getTopic()
     {
@@ -51,7 +53,13 @@ public class HelpTopic
 
     public HelpTopic(@NotNull String topic)
     {
+        this(topic.contains("#") ? topic.split("#")[0] : topic, topic.contains("#") ? topic.split("#")[1] : null);
+    }
+
+    public HelpTopic(@NotNull String topic, @Nullable String fragment)
+    {
         _topic = topic;
+        _fragment = fragment;
     }
 
     @Override
@@ -87,7 +95,7 @@ public class HelpTopic
 
     public String getHelpTopicHref(@NotNull Referrer referrer)
     {
-        return HELP_LINK_PREFIX + _topic + "&referrer=" + referrer;
+        return HELP_LINK_PREFIX + _topic + "&referrer=" + referrer + (_fragment == null ? "" : ("#" + _fragment));
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) to the help topic, displaying

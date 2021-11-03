@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
@@ -29,6 +30,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 
 import javax.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
  */
 public class MothershipReport implements Runnable
 {
+    private final static Logger LOG = LogHelper.getLogger(MothershipReport.class, "Exception reporting and usage statistics submissions");
     private final URL _url;
     private final Map<String, String> _params = new LinkedHashMap<>();
     private final String _errorCode;
@@ -313,6 +316,7 @@ public class MothershipReport implements Runnable
         catch (Exception ignored)
         {
             // Don't bother the client if this report fails
+            LOG.debug("Failed to submit report to " + this._target + " at " + _url, ignored);
         }
     }
 
