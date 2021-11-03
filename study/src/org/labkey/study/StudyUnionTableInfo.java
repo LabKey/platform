@@ -30,6 +30,9 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 
@@ -68,11 +71,6 @@ public class StudyUnionTableInfo extends VirtualTable
     boolean _crossContainer = false;
     Collection<DatasetDefinition> _defs;
 
-    public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user)
-    {
-        this(study, defs, user, false);
-    }
-
     public StudyUnionTableInfo(StudyImpl study, Collection<DatasetDefinition> defs, User user, boolean crossContainer)
     {
         super(StudySchema.getInstance().getSchema(), "StudyData", null);
@@ -81,6 +79,15 @@ public class StudyUnionTableInfo extends VirtualTable
         _crossContainer = crossContainer;
         _defs = defs;
         init(defs);
+    }
+
+    @Override
+    public void checkReadBeforeExecute()
+    {
+        // this table does not have a UserSchema, so can't use default implementation
+        // PS: why is user nullable?
+        if (null != _user && !_study.getContainer().hasPermission(_user, ReadPermission.class))
+            throw new UnauthorizedException();
     }
 
     public void init(Collection<DatasetDefinition> defs)
@@ -360,5 +367,11 @@ public class StudyUnionTableInfo extends VirtualTable
         }
 
         return result;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class perm)
+    {
+        return super.hasPermission(user, perm);
     }
 }
