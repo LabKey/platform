@@ -92,8 +92,10 @@ public class StudyProductTable extends DefaultStudyDesignTable<StudyQuerySchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm.equals(ReadPermission.class))
+            return hasPermissionOverridable(user, perm);
         // This is editable in Dataspace, but not in a folder within a Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().getProject().isDataspace() && !getContainer().isDataspace())
+        if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
             return false;
         return hasPermissionOverridable(user, perm);
     }

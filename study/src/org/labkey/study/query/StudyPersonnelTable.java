@@ -28,6 +28,7 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 
 import java.util.ArrayList;
@@ -86,6 +87,8 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable<StudyQuerySchem
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm.equals(ReadPermission.class))
+            return hasPermissionOverridable(user, perm);
         // This is editable in Dataspace, but not in a folder within a Dataspace
         if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
             return false;
