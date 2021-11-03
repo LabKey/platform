@@ -1159,7 +1159,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     @Override
     @NotNull
-    @Transient
     public Boolean getShareDatasetDefinitions()
     {
         return _shareDatasetDefinitions && getContainer().isProject();
