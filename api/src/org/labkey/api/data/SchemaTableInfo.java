@@ -18,7 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
@@ -48,7 +48,6 @@ import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -70,7 +69,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A thin wrapper over a table in the real underlying database. Includes JDBC-provided metadata and configuration
@@ -87,8 +85,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     private String _name;
     private String _description;
-    private String _title = null;
-    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
+    private String _title;
+    private int _cacheSize = CacheManager.DEFAULT_CACHE_SIZE;
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
     private DetailsURL _importURL;
@@ -363,52 +361,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
-        if (columnName == null)
-            return getSelectList(getPkColumnNames());
-
-        ColumnInfo column = getColumn(columnName);
-        if (column == null)
-            return new NamedObjectList();
-
-        return getSelectList(Collections.singletonList(column.getName()));
-    }
-
-    private @NotNull NamedObjectList getSelectList(List<String> columnNames)
-    {
-        StringBuilder pkColumnSelect = new StringBuilder();
-        String sep = "";
-
-        for (String columnName : columnNames)
-        {
-            pkColumnSelect.append(sep);
-            pkColumnSelect.append(columnName);
-            sep = "+','+";
-        }
-
-        String cacheKey = "selectArray:" + pkColumnSelect;
-        NamedObjectList list = (NamedObjectList) DbCache.get(this, cacheKey);
-
-        if (null != list)
-            return list;
-
-        String titleColumn = getTitleColumn();
-
-        final NamedObjectList newList = new NamedObjectList();
-        String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
-
-        new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
-
-        DbCache.put(this, cacheKey, newList, getSelectListTimeout());
-
-        return newList;
-    }
-
-
-    private long _selectListTimeout = TimeUnit.MINUTES.toMillis(1);
-
-    private long getSelectListTimeout()
-    {
-        return _selectListTimeout;
+        throw new UnsupportedOperationException();
     }
 
     @Override

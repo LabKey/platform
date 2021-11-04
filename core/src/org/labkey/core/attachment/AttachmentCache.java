@@ -44,7 +44,7 @@ import java.util.Set;
 public class AttachmentCache
 {
     private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
-    private static final Cache<String, Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(100000, CacheManager.MONTH, "Attachments");
+    private static final Cache<String, Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(200000, CacheManager.MONTH, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
     {

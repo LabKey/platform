@@ -63,7 +63,7 @@ import java.util.Set;
  */
 public class CohortManager
 {
-    private static CohortManager _instance = new CohortManager();
+    private static final CohortManager _instance = new CohortManager();
 
     private CohortManager()
     {
