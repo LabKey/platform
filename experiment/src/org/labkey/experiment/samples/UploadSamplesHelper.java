@@ -1024,6 +1024,8 @@ public abstract class UploadSamplesHelper
                         {
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
+//                        else if (to.getName().equals(ExpMaterialTable.Column.SampleState.name()))
+//                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.Error);
                         else
                             addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
                     }
@@ -1071,10 +1073,10 @@ public abstract class UploadSamplesHelper
             return super.get(i);
         }
 
-        @Override
-        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
-        {
-            return value;
-        }
+//        @Override
+//        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
+//        {
+//            return value;
+//        }
     }
 }

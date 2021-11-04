@@ -1205,7 +1205,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      */
     public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, boolean useOriginalValueOnRemapFailure)
     {
-        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, null, null, col.getJdbcType(), useOriginalValueOnRemapFailure);
+        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, null, null, col.getJdbcType(), useOriginalValueOnRemapFailure, null);
         return addColumn(col, c);
     }
 
@@ -1255,19 +1255,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param useOriginalValueOnRemapFailure When true and remapping fails, use the original value.
      *                                       When false and remapping fails, indicate an error if the column is required or null if not required.
      *                                       Used when doing "lightweight convert" prior to running trigger scripts.
+     * @param remapMissingBehavior The behavior desired when remapping fails.  If not null, useOriginalValueOnRemapFailure is ignored.
      */
-    public int addConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, boolean useOriginalValueOnRemapFailure)
+    public int addConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, boolean useOriginalValueOnRemapFailure, @Nullable RemapMissingBehavior remapMissingBehavior)
     {
-        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, pd, pt, col.getJdbcType(), useOriginalValueOnRemapFailure);
+        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, pd, pt, col.getJdbcType(), useOriginalValueOnRemapFailure, remapMissingBehavior);
         return addColumn(col, c);
     }
 
     public SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, boolean useOriginalValueOnRemapFailure)
     {
-        return createConvertColumn(col, fromIndex, NO_MV_INDEX, null, col.getPropertyType(), col.getJdbcType(), useOriginalValueOnRemapFailure);
+        return createConvertColumn(col, fromIndex, NO_MV_INDEX, null, col.getPropertyType(), col.getJdbcType(), useOriginalValueOnRemapFailure, null);
     }
 
-    private SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable JdbcType type, boolean useOriginalValueOnRemapFailure)
+    private SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable JdbcType type, boolean useOriginalValueOnRemapFailure, @Nullable RemapMissingBehavior remapMissingBehavior)
     {
         final String name = col.getName();
 
@@ -1284,11 +1285,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         ForeignKey fk = col.getFk();
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
-            RemapMissingBehavior missing;
-            if (useOriginalValueOnRemapFailure)
-                missing = RemapMissingBehavior.OriginalValue;
-            else
-                missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            RemapMissingBehavior missing = remapMissingBehavior;
+            if (missing == null)
+            {
+                if (useOriginalValueOnRemapFailure)
+                    missing = RemapMissingBehavior.OriginalValue;
+                else
+                    missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            }
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
         }
 

@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -453,6 +454,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     public ColumnLogging getColumnLogging()
     {
         return delegate.getColumnLogging();
+    }
+
+    @Override
+    public SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior()
+    {
+        return delegate.getRemapMissingBehavior();
     }
 
     @Override
