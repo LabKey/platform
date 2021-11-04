@@ -417,7 +417,7 @@ public class DefaultStudyDesignImporter
                 ContainerFilter currentFilter = null;
                 try {
 
-                    if (_tableInfo instanceof ContainerFilterable)
+                    if (_tableInfo instanceof ContainerFilterable && _tableInfo.supportsContainerFilter())
                     {
                         currentFilter = _tableInfo.getContainerFilter();
                         ((ContainerFilterable)_tableInfo).setContainerFilter(ContainerFilter.Type.Project.create(_tableInfo.getUserSchema()));
