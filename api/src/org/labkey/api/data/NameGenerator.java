@@ -526,9 +526,6 @@ public class NameGenerator
             if (_expLineageLookupFields.containsKey(INPUT_PARENT))
                 fieldNames.addAll(_expLineageLookupFields.get(INPUT_PARENT));
 
-            if (fieldNames == null)
-                return;
-
             for (String fieldName : fieldNames)
             {
                 Object lookupValue = getParentFieldValue(parentObject, fieldName);
