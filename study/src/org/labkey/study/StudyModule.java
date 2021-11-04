@@ -457,6 +457,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
                 metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
+                metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
 
                 metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData").getObject(Long.class));
                 metric.put("standardDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE Type = 'Standard'").getObject(Long.class));
@@ -469,13 +470,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.AssaySpecimen").getObject(Long.class));
 
-                SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT(x.container)) ")
-                        .append("FROM (")
-                        .append("SELECT container FROM study.Participant WHERE AlternateId IS NOT NULL ")
-                        .append("UNION ")
-                        .append("SELECT container FROM study.Study WHERE AlternateIdPrefix IS NOT NULL ")
-                        .append(") x");
-                metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class));
+                metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class));
+                metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
                 metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
 
                 // grab the counts of report and dataset notification settings (by notification option)
