@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -122,7 +122,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected DbSchema _schema;
     protected String _titleColumn;
     protected boolean _hasDefaultTitleColumn = true;
-    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
+    private int _cacheSize = CacheManager.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
     /** Columns that aren't part of this table any more, but can still be resolved for backwards compatibility */

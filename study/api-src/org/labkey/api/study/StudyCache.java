@@ -23,7 +23,6 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.study.StudyCachable;
 
 /**
  * User: brittp
@@ -44,14 +43,6 @@ public class StudyCache
         DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
     }
 
-    public static void cache(TableInfo tinfo, Container c, Object cacheKey, StudyCachable cachable)
-    {
-        // We allow caching of null values: 
-        if (cachable != null)
-            cachable.lock();
-        DbCache.put(tinfo, getCacheName(c, cacheKey), cachable, CacheManager.HOUR);
-    }
-
     public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
         DbCache.remove(tinfo, getCacheName(c, cacheKey));
@@ -67,8 +58,8 @@ public class StudyCache
         // Don't use a BlockingCache as that can cause deadlocks when needing to do a
         // load when all other DB connections are in use in threads, including one
         // that holds the BlockingCache's lock
-        DatabaseCache<String, Object> cache2 = DbCache.getCacheGeneric(tinfo);
-        return cache2.get(getCacheName(c, cacheKey), null, loader);
+        DatabaseCache<String, Object> cache = DbCache.getCache(tinfo, true);
+        return cache.get(getCacheName(c, cacheKey), null, loader);
     }
 
     public static void clearCache(TableInfo tinfo, Container c)

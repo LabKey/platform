@@ -54,6 +54,7 @@ public class CacheManager
     public static final long YEAR = DAY * 365;
 
     public static final long DEFAULT_TIMEOUT = HOUR;
+    public static final int DEFAULT_CACHE_SIZE = 5000;
 
     // Set useCache = false to completely disable all caching... and slow your server to a near halt. Possibly useful for
     // reproducing CacheLoader re-entrancy problems, but not much else.

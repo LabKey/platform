@@ -340,7 +340,10 @@ public class ProjectController extends SpringActionController
             }
 
             PageConfig page = getPageConfig();
-            page.setHelpTopic(folderType.getHelpTopic());
+            if (folderType.getHelpTopic() != null)
+            {
+                page.setHelpTopic(folderType.getHelpTopic());
+            }
             page.setNavTrail(Collections.emptyList());
 
             Template t = isPrint() ? Template.Print : Template.Home;
