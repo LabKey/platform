@@ -1139,7 +1139,7 @@ public class ExpDataIterators
         private final TableInfo _propertiesTable;
         private final Container _container;
         private final User _user;
-        private final Integer _ownerObjectId;
+        private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
@@ -1154,7 +1154,6 @@ public class ExpDataIterators
             _propertiesTable = propsTable;
             _container = container;
             _user = user;
-            _ownerObjectId = ownerObjectId;
             _importAliases = importAliases;
         }
 
@@ -1229,7 +1228,7 @@ public class ExpDataIterators
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step1, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table

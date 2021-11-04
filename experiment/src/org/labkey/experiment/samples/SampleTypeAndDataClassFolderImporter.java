@@ -53,7 +53,7 @@ import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.X
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
-    private SampleTypeAndDataClassFolderImporter()
+    protected SampleTypeAndDataClassFolderImporter()
     {
     }
 
@@ -133,38 +133,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     if (job == null)
                     {
                         // need to fake up a job for the XarReader
-                        job = new PipelineJob()
-                        {
-                            @Override
-                            public User getUser()
-                            {
-                                return ctx.getUser();
-                            }
-
-                            @Override
-                            public Container getContainer()
-                            {
-                                return ctx.getContainer();
-                            }
-
-                            @Override
-                            public synchronized Logger getLogger()
-                            {
-                                return ctx.getLogger();
-                            }
-
-                            @Override
-                            public URLHelper getStatusHref()
-                            {
-                                return null;
-                            }
-
-                            @Override
-                            public String getDescription()
-                            {
-                                return "Sample Type and Data Class XAR Import";
-                            }
-                        };
+                        job = getDummyPipelineJob(ctx);
                     }
 
                     XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
@@ -216,7 +185,43 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         }
     }
 
-    private void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
+    protected PipelineJob getDummyPipelineJob(ImportContext ctx)
+    {
+        return new PipelineJob()
+        {
+            @Override
+            public User getUser()
+            {
+                return ctx.getUser();
+            }
+
+            @Override
+            public Container getContainer()
+            {
+                return ctx.getContainer();
+            }
+
+            @Override
+            public synchronized Logger getLogger()
+            {
+                return ctx.getLogger();
+            }
+
+            @Override
+            public URLHelper getStatusHref()
+            {
+                return null;
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Sample Type and Data Class XAR Import";
+            }
+        };
+    }
+
+    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);

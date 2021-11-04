@@ -117,6 +117,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -171,6 +172,29 @@ public class XarReader extends AbstractXarImporter
         _reloadExistingRuns = reloadExistingRuns;
         _auditBehaviorType = auditBehaviorType;
         parseAndLoad();
+    }
+
+    public List<String> getSampleTypeNames() throws ExperimentException
+    {
+        try
+        {
+            ExperimentArchiveDocument document = _xarSource.getDocument();
+            ExperimentArchiveType.SampleSets sampleSets = document.getExperimentArchive().getSampleSets();
+            if (sampleSets != null)
+            {
+                return Arrays.stream(sampleSets.getSampleSetArray())
+                        .map(SampleSetType::getName)
+                        .collect(Collectors.toList());
+            }
+            else
+            {
+                return Collections.emptyList();
+            }
+        }
+        catch (IOException | XmlException e)
+        {
+            throw new XarFormatException(e);
+        }
     }
 
     public void parseAndLoad() throws ExperimentException
