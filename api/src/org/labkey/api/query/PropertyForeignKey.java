@@ -173,7 +173,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     @Override
     public TableInfo getLookupTableInfo()
     {
-        VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema(), null);
+        VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema(), null, (UserSchema)_sourceSchema);
         for (Map.Entry<String, PropertyDescriptor> entry : _pdMap.entrySet())
         {
             BaseColumnInfo column = constructColumnInfo(null, new FieldKey(null,entry.getKey()), entry.getValue());

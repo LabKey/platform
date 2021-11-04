@@ -1048,7 +1048,7 @@ public void testExpMaterialPermissions() throws Exception
     try
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(
-                user, c, List.of(stSampleId, m.getRowId()), true, null, false);
+                user, c, List.of(stSampleId, m.getRowId()), true, null, false, false);
         fail("Expected to throw exception");
     }
     catch (Exception e)
@@ -1060,7 +1060,7 @@ public void testExpMaterialPermissions() throws Exception
     try
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(
-                user, c, List.of(stSampleId, m.getRowId()), true, st, false);
+                user, c, List.of(stSampleId, m.getRowId()), true, st, false, false);
         fail("Expected to throw exception");
     }
     catch (Exception e)

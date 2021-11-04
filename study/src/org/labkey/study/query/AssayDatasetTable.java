@@ -19,6 +19,8 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ public class AssayDatasetTable extends DatasetTableImpl
     private List<FieldKey> _defaultVisibleColumns = null;
     private TableInfo _assayResultTable;
 
-    public AssayDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    AssayDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         super(schema, cf, dsd);
 
@@ -123,7 +125,13 @@ public class AssayDatasetTable extends DatasetTableImpl
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        var result = super.resolveColumn(name);
+        ColumnInfo result = null;
+
+        // NOTE: calling QueryService.get().getColumns() can cause recursion because it may call resolveColumn()!
+        // should probably handle our cases first then call super.resolveColumn()
+        if ("Properties".equalsIgnoreCase(name))
+            result = super.resolveColumn(name);
+
         if (result != null)
             return result;
 
@@ -153,7 +161,7 @@ public class AssayDatasetTable extends DatasetTableImpl
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
+                            return getUserSchema().getTable(_dsd.getName(), getLookupContainerFilter());
                         }
 
                         @Override
@@ -293,6 +301,7 @@ public class AssayDatasetTable extends DatasetTableImpl
                 return null;
             }
             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
+            schema.addContextualRole(RoleManager.getRole(ReaderRole.class));
             _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
         }
         return _assayResultTable;

@@ -446,9 +446,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public boolean hasPermissions(@NotNull User user, @NotNull Set<Class<? extends Permission>> permissions)
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, Set.of());
+    }
+
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    {
+        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, contextualRoles);
     }
 
 

@@ -240,7 +240,7 @@ public class StudyPublishManager implements StudyPublishService
                         dataset.getKeyPropertyName() != null)
                 {
                     // Check to see if it already has the data rows that are being linked
-                    TableInfo tableInfo = dataset.getTableInfo(user, false);
+                    TableInfo tableInfo = dataset.getTableInfo(user);
                     Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataset.getKeyPropertyName()), entry.getValue()));
                     long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
                     if (existingRowCount > 0)
@@ -1394,7 +1394,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 // Don't enforce permissions for the current user - we still want to tell them if the data
                 // has been linked even if they can't see the dataset.
-                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
+                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user);
                 TableInfo tableInfo = schema.getTable(dataset.getName());
                 AssayProvider provider = AssayService.get().getProvider(entry.getKey());
                 if (provider != null)

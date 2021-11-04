@@ -75,6 +75,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _backgroundUpload;
     private boolean _qcEnabled;
     private boolean _plateMetadata;
+    private String _status;
 
     public GWTProtocol()
     {
@@ -393,5 +394,15 @@ public class GWTProtocol implements IsSerializable
     public void setPlateMetadata(boolean plateMetadata)
     {
         _plateMetadata = plateMetadata;
+    }
+
+    public String getStatus()
+    {
+        return _status;
+    }
+
+    public void setStatus(String status)
+    {
+        _status = status;
     }
 }

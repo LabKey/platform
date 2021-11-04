@@ -161,7 +161,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.016;
+        return 21.018;
     }
 
     @Nullable
@@ -207,10 +207,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-        AdminConsole.addExperimentalFeatureFlag(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS,
-                "Sample status tracking",
-                "Sample status values can be provided for samples and will be checked to determine validity of " +
-                        "certain sample actions.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -555,14 +551,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
         return list;
-    }
-
-    @Override
-    public JSONObject getPageContextJson(ContainerUser context)
-    {
-        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
-        json.put(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS, ExperimentalFeatureService.get().isFeatureEnabled(SampleTypeService.EXPERIMENTAL_SAMPLE_STATUS));
-        return json;
     }
 
     @Override

@@ -397,6 +397,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         @Override
         public @NotNull SQLFragment getFromSQL()
         {
+            checkReadBeforeExecute();
             SQLFragment sql = new SQLFragment();
             String separator = "";
             EnumSet<StatsService.CurveFitType> enumSet = EnumSet.allOf(_enum);

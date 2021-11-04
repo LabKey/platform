@@ -59,8 +59,8 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
 
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
         Set<String> treatmentTableNames = new HashSet<>();
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
+        StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
         // add the treatment specific tables
         treatmentTableNames.add(StudyQuerySchema.PRODUCT_TABLE_NAME);
@@ -93,7 +93,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
 
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
 
         List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());

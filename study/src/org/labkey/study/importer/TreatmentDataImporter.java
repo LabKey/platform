@@ -99,8 +99,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     importTableinfo(ctx, vf, TreatmentDataWriter.SCHEMA_FILENAME);
 
                     // import project-level tables first, since study-level may reference them
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
-                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser());
+                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();

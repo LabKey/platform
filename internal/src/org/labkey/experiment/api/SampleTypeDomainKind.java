@@ -59,6 +59,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -99,8 +100,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotedFrom");
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
-        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
+        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("AliquotVolume");
+        RESERVED_NAMES.add("AliquotUnit");
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
@@ -459,8 +463,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
-            nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
-            aliquotNameExpression = StringUtils.trimToNull(arguments.getAliquotNameExpression());
+            nameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getNameExpression()));
+            aliquotNameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getAliquotNameExpression()));
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());

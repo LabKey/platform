@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
@@ -111,7 +110,7 @@ public class LocationTable extends BaseStudyTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, AdminPermission.class);
+        return checkReadOrIsAdminPermission(user, perm);
     }
 
     @Override
@@ -320,5 +319,11 @@ public class LocationTable extends BaseStudyTable
     public boolean hasUnionTable()
     {
         return true;
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return checkSpecimenEditPermissions(user, perm);
     }
 }

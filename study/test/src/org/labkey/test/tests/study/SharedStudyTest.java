@@ -109,7 +109,10 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         DatasetDesignerPage datasetDesignerPage = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDesignerPage.setIsDemographicData(true);
-        datasetDesignerPage.shareDemographics("Share by PandaId");
+        datasetDesignerPage.openAdvancedDatasetSettings()
+                .setDatasetId(SHARED_DEMOGRAPHICS_ID)
+                .shareDemographics("Share by PandaId")
+                .clickApply();
         datasetDesignerPage.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
         // leave the 'visits' column unmapped, make sure it doesn't have a value/only has a placeholder
         // (this dataset doesn't have a meaningful visit field)
