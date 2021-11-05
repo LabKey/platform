@@ -311,7 +311,7 @@ public class CohortController extends BaseStudyController
         protected CohortTable getTableInfo()
         {
             StudyImpl study = getStudyThrowIfNull();
-            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
             return new CohortTable(schema, null);
         }
 

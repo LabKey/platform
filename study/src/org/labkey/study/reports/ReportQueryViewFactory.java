@@ -36,6 +36,8 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -68,7 +70,7 @@ public class ReportQueryViewFactory
     public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor,
                                                     String queryName, String viewName)
     {
-        StudyQuerySchema schema = getStudyQuerySchema(context, ReadPermission.class, descriptor);
+        StudyQuerySchema schema = getStudyQuerySchema(context, descriptor);
 
         if (schema != null)
         {
@@ -117,21 +119,15 @@ public class ReportQueryViewFactory
         return false;   // user is OK, don't check permissions
     }
 
-    private static StudyQuerySchema getStudyQuerySchema(ContainerUser context, @NotNull Class<? extends Permission> perm, ReportDescriptor descriptor)
-    {
-        if (perm != ReadPermission.class)
-            throw new IllegalArgumentException("only PERM_READ supported");
-        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
-        boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), perm, descriptor);
-
-        if (study != null)
-            return StudyQuerySchema.createSchema(study, context.getUser(), mustCheckUserPermissions);
-        return null;
-    }
-
     public static StudyQuerySchema getStudyQuerySchema(ContainerUser context, ReportDescriptor descriptor)
     {
-        return getStudyQuerySchema(context, ReadPermission.class, descriptor);
+        StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
+        if (study != null)
+        {
+            boolean mustCheckUserPermissions = mustCheckDatasetPermissions(context.getUser(), ReadPermission.class, descriptor);
+            return StudyQuerySchema.createSchema(study, context.getUser(), mustCheckUserPermissions ? null : RoleManager.getRole(ReaderRole.class));
+        }
+        return null;
     }
 
     public static class StudyReportQueryView extends ReportQueryView

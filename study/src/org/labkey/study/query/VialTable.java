@@ -72,6 +72,7 @@ public class VialTable extends BaseStudyTable
     @Override @NotNull
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment ret = new SQLFragment();
         ret.appendComment("<org.labkey.study.query.VialTable>",getSqlDialect());
         ret.append("(SELECT ");

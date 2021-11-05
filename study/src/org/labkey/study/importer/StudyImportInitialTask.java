@@ -138,6 +138,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 
                 StudyController.createStudy(null, ctx.getContainer(), ctx.getUser(), studyForm);
+
+                if (null == StudyManager.getInstance().getStudy(ctx.getContainer()))
+                    throw new IllegalStateException("Where's my study!");
             }
             else
             {
