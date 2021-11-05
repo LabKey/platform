@@ -239,32 +239,16 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
 
                     if (!columns.isEmpty())
-                    {
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
-                        {
-                            tsvWriter.setApplyFormats(false);
-                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = dir.getPrintWriter(SAMPLE_TYPE_PREFIX + sampleType.getName() + ".tsv");
-                            tsvWriter.write(out);
-                        }
-                    }
+                        writeTsv(tinfo, columns, filter, sort, dir, SAMPLE_TYPE_PREFIX + sampleType.getName());
 
-                    Collection<ColumnInfo> statusColumns = getStatusColumnsToExport(ctx, tinfo, relativizedLSIDs);
+                    Collection<ColumnInfo> statusColumns = getStatusColumnsToExport(tinfo);
                     if (!statusColumns.isEmpty())
                     {
                         // don't need to write out rows for samples that don't have a status
                         // This means an import will never erase the status of a sample.  Is that what we want?
                         // If we do output these values, there will be an extra audit log entry for the update that changes nothing.
-                        filter.addCondition(FieldKey.fromParts(ExpMaterialTable.Column.SampleState.name()), null, CompareType.NONBLANK);
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, statusColumns, filter, sort);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
-                        {
-                            tsvWriter.setApplyFormats(false);
-                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = dir.getPrintWriter(SAMPLE_STATUS_PREFIX + sampleType.getName() + ".tsv");
-                            tsvWriter.write(out);
-                        }
+//                        filter.addCondition(FieldKey.fromParts(ExpMaterialTable.Column.SampleState.name()), null, CompareType.NONBLANK);
+                        writeTsv(tinfo, statusColumns, filter, sort, dir, SAMPLE_STATUS_PREFIX + sampleType.getName());
                     }
                 }
             }
@@ -288,20 +272,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     {
                         SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
 
-                        // filter only to the specific samples
+                        // filter only to the specific data
                         if (_xarCtx != null && _xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
                             filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()));
 
                         // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
-                        Sort sort = new Sort(FieldKey.fromParts("RowId"));
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
-                        {
-                            tsvWriter.setApplyFormats(false);
-                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = dir.getPrintWriter(DATA_CLASS_PREFIX + dataClass.getName() + ".tsv");
-                            tsvWriter.write(out);
-                        }
+                        writeTsv(tinfo, columns, filter, new Sort(FieldKey.fromParts("RowId")), dir, DATA_CLASS_PREFIX + dataClass.getName());
 
                         writeAttachments(ctx.getContainer(), tinfo, dir);
                     }
@@ -310,7 +286,19 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
-    private Collection<ColumnInfo> getStatusColumnsToExport(ImportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
+    private void writeTsv(TableInfo tinfo, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, VirtualFile dir, String baseName) throws IOException
+    {
+        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
+        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
+        {
+            tsvWriter.setApplyFormats(false);
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
+            PrintWriter out = dir.getPrintWriter(baseName + ".tsv");
+            tsvWriter.write(out);
+        }
+    }
+
+    private Collection<ColumnInfo> getStatusColumnsToExport(TableInfo tinfo)
     {
         List<ColumnInfo> columns = new ArrayList<>();
 
