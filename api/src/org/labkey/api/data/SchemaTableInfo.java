@@ -48,6 +48,7 @@ import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -361,7 +362,36 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
-        throw new UnsupportedOperationException();
+        if (columnName == null)
+            return getSelectList(getPkColumnNames());
+
+        ColumnInfo column = getColumn(columnName);
+        if (column == null)
+            return new NamedObjectList();
+
+        return getSelectList(Collections.singletonList(column.getName()));
+    }
+
+    private @NotNull NamedObjectList getSelectList(List<String> columnNames)
+    {
+        StringBuilder pkColumnSelect = new StringBuilder();
+        String sep = "";
+
+        for (String columnName : columnNames)
+        {
+            pkColumnSelect.append(sep);
+            pkColumnSelect.append(columnName);
+            sep = "+','+";
+        }
+
+        String titleColumn = getTitleColumn();
+
+        final NamedObjectList newList = new NamedObjectList();
+        String sql = "SELECT " + pkColumnSelect + " AS VALUE, " + titleColumn + " AS TITLE FROM " + _selectName.getSQL() + " ORDER BY " + titleColumn;
+
+        new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
+
+        return newList;
     }
 
     @Override
