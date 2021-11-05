@@ -68,6 +68,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.roles.Role;
@@ -929,7 +930,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (!perm.equals(ReadPermission.class) && !canUserAccessPhi())
+        if (!perm.equals(ReadPermission.class) && !perm.equals(RestrictedReadPermission.class) && !canUserAccessPhi())
             return false;
         return getDatasetDefinition().hasPermission(user, perm, getContextualRoles());
     }

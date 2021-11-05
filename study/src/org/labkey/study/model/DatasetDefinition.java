@@ -95,6 +95,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.roles.Role;
@@ -977,7 +978,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     }
 
 
-    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class);
+    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class, RestrictedReadPermission.class);
 
     private void copyReadPerms(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> result)
     {
@@ -997,18 +998,32 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return hasPermission(user, perm, null);
+        return hasPermissions(user, Set.of(perm), null);
     }
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
-        if (perm != ReadPermission.class && isEditProhibited(user, granted))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return granted.contains(perm);
+        return hasPermissions(user, Set.of(perm), contextualRoles);
     }
+
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    {
+        if (perms.isEmpty())
+            throw new IllegalStateException();
+        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
+        boolean editProhibited = isEditProhibited(user, granted);
+        boolean hasAdmin = getContainer().hasPermission(user, AdminPermission.class);
+
+        for (var perm : perms)
+        {
+            if (perm != ReadPermission.class && perm != RestrictedReadPermission.class && editProhibited)
+                return false;
+            if (!hasAdmin && !granted.contains(perm))
+                return false;
+        }
+        return true;
+    }
+
 
     private boolean isEditProhibited(UserPrincipal user, Set<Class<? extends Permission>> perms)
     {
