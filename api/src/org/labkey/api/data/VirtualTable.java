@@ -20,6 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.AbstractContainerFilterable;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 /**
  * A {@link org.labkey.api.data.TableInfo} implementation that is not backed directly by a real table in the database,
@@ -49,13 +53,16 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
         _setContainerFilter(cf);
     }
 
-    /**
-     * @deprecated Use constructor with SchemaType parameter instead
-     */
-    @Deprecated
-    public VirtualTable(DbSchema schema, String name)
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        this(schema, name, null);
+        var us = getUserSchema();
+        if (null == us)
+            return false;
+        boolean result = perm.equals(ReadPermission.class) && us.getContainer().hasPermission(user, perm);
+        SecurityLogger.log("VirtualTable.hasPermission " + getName(), user, null, result);
+        return result;
     }
 
     @Override

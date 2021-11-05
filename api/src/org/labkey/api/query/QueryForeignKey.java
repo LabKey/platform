@@ -27,6 +27,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
@@ -384,7 +385,10 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         if (_table == null && getSchema() != null)
         {
-            _table = getSchema().getTable(_tableName, getLookupContainerFilter());
+            TableInfo t = getSchema().getTable(_tableName, getLookupContainerFilter());
+            if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
+                t = null;
+            _table = t;
         }
         return _table;
     }

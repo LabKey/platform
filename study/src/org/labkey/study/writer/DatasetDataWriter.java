@@ -94,7 +94,7 @@ public class DatasetDataWriter implements InternalStudyWriter
 
         VirtualFile vf = root.getDir(DatasetDefinitionWriter.DEFAULT_DIRECTORY);
 
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
 
         // Write out all the dataset .tsv files
         for (DatasetDefinition def : datasets)

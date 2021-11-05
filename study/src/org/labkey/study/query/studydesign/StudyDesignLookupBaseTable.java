@@ -30,13 +30,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.query.BaseStudyTable;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -96,9 +96,9 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     {
         // Only admins are allowed to insert into these tables at the project level
         if (getContainer().isProject())
-            return canReadOrIsAdminPermission(user, perm);
+            return checkReadOrIsAdminPermission(user, perm);
         else
-            return getContainer().hasPermission(user, perm);
+            return checkContainerPermission(user, perm);
     }
 
     private class StudyDesignLookupsQueryUpdateService extends DefaultQueryUpdateService
@@ -152,6 +152,8 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm.equals(ReadPermission.class))
+            return hasPermissionOverridable(user, perm);
         // These are editable in Dataspace, but not in a folder within a Dataspace
         if (null == getContainer() || null == getContainer().getProject() || (getContainer().getProject().isDataspace() && !getContainer().isDataspace()))
             return false;

@@ -133,7 +133,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
             {
                 Object obj = getObject(dataLoggingColumn.getAlias());
                 if (null == obj)
-                    throw new UnauthorizedException("Unable to read expected data logging column.");
+                    throw new UnauthorizedException("Unable to read expected data logging column for " + dataLoggingColumn.getFieldKey() + " with alias " + dataLoggingColumn.getAlias());
                 _dataLoggingValues.add(obj);
             }
         }

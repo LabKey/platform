@@ -59,6 +59,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenuView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationUrls;
 
@@ -764,8 +765,8 @@ public class DataRegion extends DisplayElement
      */
     final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
-            return null;
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
@@ -776,10 +777,11 @@ public class DataRegion extends DisplayElement
 
         try
         {
+            TableInfo tinfoMain = getTable();
+
             results = ctx.getResults();
             if (null == results)
             {
-                TableInfo tinfoMain = getTable();
                 if (null == tinfoMain)
                 {
                     throw new SQLException("Table or query not found: " + getSettings().getQueryName());
@@ -951,12 +953,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!hasPermission(ctx, ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
             return;
         }
-
         Results results = null;
         try
         {
@@ -1865,12 +1866,8 @@ public class DataRegion extends DisplayElement
         ViewContext viewContext = ctx.getViewContext();
         User user = viewContext.getUser();
         HasPermission p = getTable();
-        // TODO : tables need to accurately represent their own permissions
-        // TODO : or maybe we need DataRegion.setPermissionToCheck(HasPermissions)
-        // TODO : and perhaps consolidate with permission check in DisplayElement.shouldRender() ?
         if (null == p || p instanceof SchemaTableInfo)
             p = viewContext;
-
         return p.hasPermission(user, perm);
     }
 
@@ -1933,6 +1930,9 @@ public class DataRegion extends DisplayElement
         Results results = ctx.getResults();
         if (null != results)
             return;
+
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
 
         TableInfo tinfoMain = getTable();
 
@@ -2003,7 +2003,11 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                Collection<Map<String, Object>> maps = new TableSelector(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
+                if (!hasPermission(ctx, ReadPermission.class))
+                    throw new UnauthorizedException();
+
+                TableInfo tinfoMain = getTable();
+                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
                 if (!maps.isEmpty())
                     valueMap = maps.iterator().next();
             }
@@ -2027,8 +2031,10 @@ public class DataRegion extends DisplayElement
         Map<String, Object> rowMap = new HashMap<>();
         QueryService service = QueryService.get();
         QueryLogging queryLogging = new QueryLogging();
+
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
         TableInfo table = getTable();
-        SqlSelector selector;
 
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
@@ -2052,7 +2058,7 @@ public class DataRegion extends DisplayElement
 
             sql = table.getSqlDialect().limitRows(sql, 2);
 
-            selector = new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+            SqlSelector selector = new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
 
             int count = 0;
             Object commonValue = null;

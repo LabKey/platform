@@ -67,6 +67,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -110,7 +111,7 @@ import java.util.Set;
  * User: kevink
  * Date: 9/15/12
  */
-public abstract class AssayProtocolSchema extends AssaySchema
+public abstract class AssayProtocolSchema extends AssaySchema implements UserSchema.HasContextualRoles
 {
     public static final String RUNS_TABLE_NAME = "Runs";
     public static final String DATA_TABLE_NAME = "Data";
@@ -128,6 +129,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
+    private Set<Role> _contextualRoles = new HashSet<>();
+
     public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
     {
         return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
@@ -144,6 +147,22 @@ public abstract class AssayProtocolSchema extends AssaySchema
         if (provider == null)
             throw new NotFoundException("Assay provider for assay protocol '" + protocol.getName() + "' not found");
         _provider = provider;
+    }
+
+    /** NOTE: this method should not be used for schemas created via QuerySchema.getSchema() (e.g. DefaultSchema.getSchema())
+     * as those might be cached.
+     * This should only be used for locally created Schema.
+     */
+    public void addContextualRole(@NotNull Role role)
+    {
+        assert role == RoleManager.getRole(role.getClass());
+        _contextualRoles.add(role);
+    }
+
+    @Override
+    public @NotNull Set<Role> getContextualRoles()
+    {
+        return _contextualRoles;
     }
 
     private static String descr(ExpProtocol protocol)

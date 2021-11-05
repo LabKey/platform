@@ -63,7 +63,7 @@
     Container container  = getContainer();
     User user            = getUser();
     Study study = StudyService.get().getStudy(container);
-    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl)study, user);
     String subjectTableName = StudyService.get().getSubjectTableName(container);
     String subjectColumnname = StudyService.get().getSubjectColumnName(container);
 

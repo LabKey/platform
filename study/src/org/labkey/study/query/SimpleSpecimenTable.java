@@ -24,12 +24,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
     public SimpleSpecimenTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        this(schema, cf, false);
-    }
-
-    public SimpleSpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks)
-    {
-        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, true);
         setName("SimpleSpecimen");
 
         getMutableColumn(StudyService.get().getSubjectColumnName(getContainer())).clearFk();

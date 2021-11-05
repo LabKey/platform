@@ -642,7 +642,7 @@ public abstract class VisitManager
         // reasons.
         if (study.isAncillaryStudy() && null != user)
         {
-            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user, false);
+            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user);
             studyQuerySchema.setDontAliasColumns(true);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }

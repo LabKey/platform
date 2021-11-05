@@ -77,7 +77,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
                     // import project-level tables first, since study-level may reference them
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser());
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();
@@ -86,7 +86,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
                     studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
 
-                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
+                    StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
                         StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName, null);

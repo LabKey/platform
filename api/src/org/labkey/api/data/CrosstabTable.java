@@ -80,7 +80,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      */
     public CrosstabTable(CrosstabSettings settings, List<CrosstabMember> colMembers)
     {
-        super(settings.getSourceTable().getSchema(), ALIAS);
+        super(settings.getSourceTable().getSchema(), ALIAS, settings.getSourceTable().getUserSchema());
 
         assert null != settings.getRowAxis() && null != settings.getColumnAxis() && null != settings.getMeasures();
         assert !settings.getRowAxis().getDimensions().isEmpty() && ! settings.getColumnAxis().getDimensions().isEmpty();
@@ -522,6 +522,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     @Override @NotNull
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         assert null != getColMembers();
 
         SQLFragment sql = new SQLFragment();

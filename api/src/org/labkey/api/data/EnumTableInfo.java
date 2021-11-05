@@ -128,6 +128,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     @Override @NotNull
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
         String separator = "";
         EnumSet<EnumType> enumSet = EnumSet.allOf(_enum);
