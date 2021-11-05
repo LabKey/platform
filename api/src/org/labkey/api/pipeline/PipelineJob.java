@@ -1113,6 +1113,11 @@ abstract public class PipelineJob extends Job implements Serializable
                     setStatus(getActiveTaskStatus());       // Force writing to statusFiles
                 }
             }
+            catch (JobLogInaccessibleException e)
+            {
+                // Can't write to job log as the log file is either null or inaccessible.
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
             catch (Exception e)
             {
                 // Attempt to record the error to the log. Move failed, so log should still be local and writable.
@@ -1597,13 +1602,21 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
+    public static class JobLogInaccessibleException extends IllegalStateException
+    {
+        public JobLogInaccessibleException(String message)
+        {
+            super(message);
+        }
+    }
+
     // Multiple threads log messages, so synchronize to make sure that no one gets a partially intitialized logger
     public synchronized Logger getLogger()
     {
         if (_logger == null)
         {
             if (null == _logFilePathName || FileUtil.hasCloudScheme(_logFilePathName))
-                throw new IllegalStateException("LogFile null or cloud.");
+                throw new JobLogInaccessibleException("LogFile null or cloud.");
 
             Path logFile = null != _logFile ? _logFile : Path.of(URI.create(_logFilePathName));
 
