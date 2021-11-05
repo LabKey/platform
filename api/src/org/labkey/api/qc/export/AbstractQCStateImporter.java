@@ -71,7 +71,7 @@ public abstract class AbstractQCStateImporter
             if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
                 QCStateManager.getInstance().deleteState(orphanedState);
             else
-                ctx.getLogger().info("Retaining existing QCState because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
+                ctx.getLogger().info("Retaining existing Data State because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
         }
 
         Map<String, DataState> finalStates = getExistingDataStates(ctx);
