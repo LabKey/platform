@@ -62,14 +62,9 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.RestrictedDeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.RestrictedReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
@@ -106,7 +101,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -121,15 +115,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String SOURCE_ROW_LSID = "SourceRowLsid";
 
     protected static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
-    protected final @NotNull
-    DatasetDefinition _dsd;
+    protected final @NotNull DatasetDefinition _dsd;
 
     private TableInfo _fromTable;
 
     Set<Role> _contextualRoles = null;
-    // NYI private Predicate<String> canModifyParticipantPredicate = (ptid) -> true;
 
-    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         /* NOTE! some code paths still expect this to throw rather than checking table.canRead() */
         super(schema, dsd.getTableInfo(schema.getUser(), false, true), null);
