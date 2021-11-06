@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -39,11 +40,13 @@ import java.nio.file.StandardCopyOption;
  *      (d) directory and its contents automatically cleaned up when job finishes (with error or complete)
  * Or simply refers to a local directory where the input lives
  */
+//@JsonIgnoreProperties(value={"_moduleName"})
 public class LocalDirectory implements Serializable
 {
     @NotNull private final File _localDirectoryFile;
     private final boolean _isTemporary;
     private final PipeRoot _pipeRoot;
+    private final Path _remoteDir;
     private Path _logFile;
     private final String _baseLogFileName;
     private final String _moduleName;
@@ -53,11 +56,17 @@ public class LocalDirectory implements Serializable
         return create(root, moduleName, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
     }
 
-    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull String localDirPath)
+    @Deprecated //Prefer to use a Path for workingDir -- can be local or remote, but should match with root
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull String workingDir)
+    {
+        return create(root, moduleName, baseLogFileName, Path.of(workingDir));
+    }
+
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName, @NotNull String baseLogFileName, @NotNull Path workingDir)
     {
         return !root.isCloudRoot() ?
-                new LocalDirectory(new File(localDirPath), moduleName, baseLogFileName) :
-                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
+                new LocalDirectory(workingDir.toFile(), moduleName, baseLogFileName) :
+                new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName, workingDir);
     }
 
     @JsonCreator
@@ -66,11 +75,13 @@ public class LocalDirectory implements Serializable
             @JsonProperty("_isTemporary") boolean isTemporary,
             @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
             @JsonProperty("_baseLogFileName") String baseLogFileName,
-            @JsonProperty("_moduleName") String moduleName)
+            @JsonProperty("_moduleName") String moduleName,
+            @JsonProperty("_remoteDir") Path remoteDir)
     {
         _localDirectoryFile = localDirectoryFile;
         _isTemporary = isTemporary;
         _pipeRoot = pipeRoot;
+        _remoteDir = remoteDir == null ? _pipeRoot.getRootNioPath() : remoteDir; //Using _piperoot as default for backwards compatability
         _baseLogFileName = baseLogFileName;
         _moduleName = moduleName;
     }
@@ -78,8 +89,14 @@ public class LocalDirectory implements Serializable
     // Constructor for runs and actions when pipeline root is cloud
     public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename)
     {
+        this(container, moduleName, pipeRoot, basename,  pipeRoot.getRootNioPath());
+    }
+
+    public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename, Path remoteDir)
+    {
         _isTemporary = true;
         _pipeRoot = pipeRoot;
+        _remoteDir = remoteDir;
         _baseLogFileName = basename;
         _moduleName = moduleName;
 
@@ -104,6 +121,7 @@ public class LocalDirectory implements Serializable
         _pipeRoot = null;
         _baseLogFileName = basename;
         _moduleName = moduleName;
+        _remoteDir = null;
     }
 
     @NotNull
@@ -116,12 +134,12 @@ public class LocalDirectory implements Serializable
     {
         // If _isTemporary, look for existing file in the parent
         _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName).toPath();
-        if (_isTemporary && null != _pipeRoot)
+        if (_isTemporary && null != _remoteDir)
         {
             try
             {
-                Path remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getFileName().toString());
-                if (null != remoteLogFilePath && Files.exists(remoteLogFilePath))
+                Path remoteLogFilePath = _remoteDir.resolve(_logFile.getFileName().toString());
+                if (Files.exists(remoteLogFilePath))
                 {
                     Files.copy(remoteLogFilePath, _logFile);
                 }
@@ -244,7 +262,7 @@ public class LocalDirectory implements Serializable
             if (null != _logFile && Files.exists(_logFile))
             {
                 // Copy file back to the cloud
-                remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getFileName().toString());
+                remoteLogFilePath = getRemoteLogFilePath();
                 if (null != remoteLogFilePath)
                 {
                     try
@@ -284,5 +302,10 @@ public class LocalDirectory implements Serializable
     public static File getContainerLocalTempDirectory(Container container)
     {
         return new File(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+    }
+
+    public Path getRemoteLogFilePath()
+    {
+        return _remoteDir.resolve(_logFile.getFileName().toString());
     }
 }

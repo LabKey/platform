@@ -126,7 +126,7 @@ public class PipelineStatusManager
     {
         return (path == null ? null :
                 getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"),
-                        PipelineJobService.statusPathOf(FileUtil.getAbsolutePath(container, path.toUri())))));
+                        PipelineJobService.statusPathOf(FileUtil.getUnencodedAbsolutePath(container, path)))));
     }
 
     /**
@@ -160,10 +160,17 @@ public class PipelineStatusManager
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
-        if (sfExist == null && null != job.getLogFile())
+        if (sfExist == null && null != job.getLogFilePath())
         {
             // Then try based on file path
             sfExist = getStatusFile(job.getContainer(), job.getLogFilePath());
+        }
+
+        if (sfExist == null && job.getLogFilePath() != job.getRemoteLogPath() && null != job.getRemoteLogPath())
+        {
+            // Check to see if the job is listed under the Remote log file.
+            // This will happen if job was previously run from a cloud root.
+            sfExist = getStatusFile(job.getContainer(), job.getRemoteLogPath());
         }
         PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
 

@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -47,7 +48,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -89,6 +89,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * A job represents the invocation of a pipeline on a certain set of inputs. It can be monolithic (a single run() method)
  * or be comprised of multiple tasks ({@link Task}) that can be checkpointed and restarted individually.
  */
+@JsonIgnoreProperties(value={"_logFilePathName"}, allowGetters = true)  //Property removed. Added here for backwards compatibility
 abstract public class PipelineJob extends Job implements Serializable
 {
     public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));
@@ -265,7 +266,6 @@ abstract public class PipelineJob extends Job implements Serializable
     private int _activeTaskRetries;
     @NotNull
     private PipeRoot _pipeRoot;
-    private String _logFilePathName;        // .nio.Path as String; Path does not serialize well.
     volatile private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
@@ -314,7 +314,6 @@ abstract public class PipelineJob extends Job implements Serializable
         _provider = job._provider;
         _parentGUID = job._jobGUID;
         _pipeRoot = job._pipeRoot;
-        _logFilePathName = job._logFilePathName;
         _interrupted = job._interrupted;
         _submitted = job._submitted;
         _errors = job._errors;
@@ -437,7 +436,6 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     private void updateLogFilePath(Path logFile)
     {
-        _logFilePathName = PageFlowUtil.decode(FileUtil.pathToString(logFile)); // For cloud i think we need to decode this...
         _logger = null; //This should trigger getting the new Logger next time getLogger is called
         _logFile = logFile;
 
@@ -467,10 +465,21 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public Path getLogFilePath()
     {
-        if (_logFilePathName == null)
-            return null;
+        return _logFile;
+    }
 
-        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : _logFile;
+    /**
+     * Get the remote log path (if local dir set) else return getLogFilePath
+     *
+     * TODO: Better name getStatusKeyPath? or similar
+     */
+    public Path getRemoteLogPath()
+    {
+        LocalDirectory dir = getLocalDirectory();
+        if (dir == null)
+            return getLogFilePath();
+
+        return dir.getRemoteLogFilePath();
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
@@ -728,7 +737,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return !isSplitWaiting();
         }
         // Initialize status for non-task pipeline jobs.
-        else if (_logFilePathName != null)
+        else if (_logFile != null)
         {
             setStatus(initialState);
             try
@@ -1615,14 +1624,12 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (_logger == null)
         {
-            if (null == _logFilePathName || FileUtil.hasCloudScheme(_logFilePathName))
+            if (null == _logFile || FileUtil.hasCloudScheme(_logFile))
                 throw new JobLogInaccessibleException("LogFile null or cloud.");
 
-            Path logFile = null != _logFile ? _logFile : Path.of(URI.create(_logFilePathName));
-
             // Create appending logger.
-            String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
-            _logger = new OutputLogger(this, logFile, loggerName, Level.toLevel(_loggerLevel));
+            String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFile.toString();
+            _logger = new OutputLogger(this, _logFile, loggerName, Level.toLevel(_loggerLevel));
         }
 
         return _logger;
@@ -1982,7 +1989,6 @@ abstract public class PipelineJob extends Job implements Serializable
                     log.error("Class not found", e);
             }
         }
-
     }
 
     @Override
@@ -2025,8 +2031,6 @@ abstract public class PipelineJob extends Job implements Serializable
             else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile.toFile()).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile.toFile()).getAbsolutePath()))
                 errors.add("_logFile");
         }
-        if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
-            errors.add("_logFilePathName");
         if (!PropertyUtil.nullSafeEquals(job1._parentGUID, job2._parentGUID))
             errors.add("_parentGUID");
         if (!PropertyUtil.nullSafeEquals(job1._provider, job2._provider))
@@ -2040,9 +2044,9 @@ abstract public class PipelineJob extends Job implements Serializable
     /**
      * @return Path String for a local working directory, temporary if root is cloud based
      */
-    protected String getDefaultLocalDirectoryString()
+    protected Path getWorkingDirectoryString()
     {
-        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootPath().getPath() : FileUtil.getTempDirectory().getPath();
+        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootNioPath() : FileUtil.getTempDirectory().toPath();
     }
 
     /**
@@ -2055,7 +2059,7 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
     {
-        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getDefaultLocalDirectoryString());
+        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getWorkingDirectoryString());
         setLocalDirectory(localDirectory);
         setLogFile(localDirectory.determineLogFile());
     }
