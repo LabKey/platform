@@ -168,7 +168,7 @@ public class NameGenerator
 
     public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
     {
-        String sTok = token.toString().toLowerCase();
+        String sTok = token.toString();
 
         return INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
