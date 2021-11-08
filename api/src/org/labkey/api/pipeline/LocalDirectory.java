@@ -81,7 +81,7 @@ public class LocalDirectory implements Serializable
         _localDirectoryFile = localDirectoryFile;
         _isTemporary = isTemporary;
         _pipeRoot = pipeRoot;
-        _remoteDir = remoteDir == null ? _pipeRoot.getRootNioPath() : remoteDir; //Using _piperoot as default for backwards compatability
+        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = baseLogFileName;
         _moduleName = moduleName;
     }
@@ -89,14 +89,14 @@ public class LocalDirectory implements Serializable
     // Constructor for runs and actions when pipeline root is cloud
     public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename)
     {
-        this(container, moduleName, pipeRoot, basename,  pipeRoot.getRootNioPath());
+        this(container, moduleName, pipeRoot, basename, null);
     }
 
     public LocalDirectory(Container container, String moduleName, PipeRoot pipeRoot, String basename, Path remoteDir)
     {
         _isTemporary = true;
         _pipeRoot = pipeRoot;
-        _remoteDir = remoteDir;
+        _remoteDir = remoteDir != null ? remoteDir : _pipeRoot == null ? null : _pipeRoot.getRootNioPath(); //Using _piperoot as default for backwards compatability
         _baseLogFileName = basename;
         _moduleName = moduleName;
 
@@ -306,6 +306,8 @@ public class LocalDirectory implements Serializable
 
     public Path getRemoteLogFilePath()
     {
+        if (_remoteDir == null)
+            return _logFile;
         return _remoteDir.resolve(_logFile.getFileName().toString());
     }
 }
