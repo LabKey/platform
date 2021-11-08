@@ -220,7 +220,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 if (view != null && !errors.hasErrors())
                 {
-                    StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser(), false);
+                    StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser());
                     view.setContainerFilter(studySchema.getDefaultContainerFilter());
                     if (null != view.getTable())
                     {
@@ -448,7 +448,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
-                        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, form.getViewContext().getUser(), false);
+                        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, form.getViewContext().getUser());
                         view.setContainerFilter(studySchema.getDefaultContainerFilter());
                         if (view.getTable() == null)
                         {

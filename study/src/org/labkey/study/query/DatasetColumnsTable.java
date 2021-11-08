@@ -73,6 +73,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     @Override @NotNull
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment result = new SQLFragment();
         result.appendComment("<DataSetColumnsTable>", getSqlDialect());
         result.append("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
@@ -98,7 +99,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        assert null == filter || filter.getType() == ContainerFilter.Type.Current;
+        assert null == filter || filter.getType() == ContainerFilter.Type.Current || filter.getType() == ContainerFilter.Type.CurrentWithUser;
     }
 
     @Override

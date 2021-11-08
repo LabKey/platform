@@ -84,6 +84,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.Pair;
@@ -91,6 +92,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
@@ -437,6 +439,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         TableInfo provisioned = _dataClass.getTinfo();
 
         // all columns from exp.data except lsid

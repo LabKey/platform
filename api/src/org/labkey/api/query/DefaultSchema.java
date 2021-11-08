@@ -236,11 +236,15 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         SchemaKey skey = new SchemaKey(null, name);
         QuerySchema ret = cache.get(skey);
         if (ret != null)
+        {
+            assert !(ret instanceof UserSchema.HasContextualRoles) || ((UserSchema.HasContextualRoles)ret).getContextualRoles().isEmpty();
             return ret;
+        }
         ret = _getSchema(name);
         if (null != ret)
         {
             // If QuerySchema had getSchemaKey(), it would be nice to cache under a canonical name
+            assert !(ret instanceof UserSchema.HasContextualRoles) || ((UserSchema.HasContextualRoles)ret).getContextualRoles().isEmpty();
             cache.put(skey,ret);
             if (ret.getContainer().equals(getContainer()))
             {

@@ -179,7 +179,7 @@ public class DatasetQueryView extends StudyQueryView
     private DatasetFilterForm getForm(ViewContext context)
     {
         DatasetFilterForm form = new DatasetFilterForm();
-
+        form.setViewContext(context);
         form.bindParameters(context.getBindPropertyValues());
         return form;
     }
@@ -553,7 +553,11 @@ public class DatasetQueryView extends StudyQueryView
         @Override
         public @NotNull BindException bindParameters(PropertyValues params)
         {
-            return BaseViewAction.springBindParameters(this, "form", params);
+            assert _bindState == BindState.UNBOUND;
+            _bindState = BindState.BINDING;
+            var ret = BaseViewAction.springBindParameters(this, "form", params);
+            _bindState = BindState.BOUND;
+            return ret;
         }
 
         public String getCohortFilterType()

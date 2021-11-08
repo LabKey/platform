@@ -38,11 +38,13 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
@@ -725,4 +727,17 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
     }
 
+    /**
+     * Useful helper to combine permission check/throw.  This is especially useful for tables where permissions can
+     * differ from the containing schema/container.
+     *
+     * TableInfo users should still always check hasPermission() as early as possible for best error handling, and
+     * to fail-fast (or degrade gracefully).
+     */
+    default void checkReadBeforeExecute()
+    {
+        assert null != getUserSchema(); // this is only for tables in UserSchema
+        if (null != getUserSchema() && !hasPermission(getUserSchema().getUser(), ReadPermission.class))
+            throw new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
+    }
 }

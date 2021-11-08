@@ -26,7 +26,7 @@ public class SampleDatasetTable extends DatasetTableImpl
     private TableInfo _sampleTable;
     private List<FieldKey> _defaultVisibleColumns = null;
 
-    public SampleDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    SampleDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         super(schema, cf, dsd);
 

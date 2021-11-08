@@ -55,6 +55,7 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
     @Override @NotNull
     public SQLFragment getFromSQL()
     {
+        checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
         String separator = "";
 

@@ -62,6 +62,7 @@ import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -396,6 +397,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment result = new SQLFragment();
         result.append("(SELECT innerResults.*, innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container" );
         result.append(" FROM\n");
@@ -535,9 +537,11 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm)) &&
-                _provider.isEditableResults(_protocol) &&
-                _userSchema.getContainer().hasPermission(user, perm);
+        if (perm.equals(ReadPermission.class))
+            return _userSchema.getContainer().hasPermission(user, perm);
+        if (DeletePermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm))
+                return _provider.isEditableResults(_protocol) && _userSchema.getContainer().hasPermission(user, perm);
+        return false;
     }
 
     @Override

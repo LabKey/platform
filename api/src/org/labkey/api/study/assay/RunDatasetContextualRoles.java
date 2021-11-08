@@ -113,7 +113,8 @@ public class RunDatasetContextualRoles implements HasContextualRoles
         if (provider == null)
             return null;
 
-        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+        // use a user with elevated permissions to do the query to figure out permissions
+        AssayProtocolSchema schema = provider.createProtocolSchema(User.getSearchUser(), container, protocol, null);
         if (schema == null)
             return null;
 

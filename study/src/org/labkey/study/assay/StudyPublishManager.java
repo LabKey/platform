@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
@@ -874,13 +875,16 @@ public class StudyPublishManager implements StudyPublishService
             // auto generate a dataset ID
             if (null == builder.getDatasetId())
             {
-                int id = study.isDataspaceStudy() ? 10000 : MIN_ASSAY_ID;
+                // To help avoid datasetid collisions, child studies in a dataspace project try to avoid colliding with project dataset id's.
+                // Even better would be if the project datasets also tried to avoid collisions with all other datasets in the entire project folder hierarchy
+                var sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+                int id = null != sharedStudy ? 10000 : MIN_ASSAY_ID;
                 Integer mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getId()).getObject(Integer.class);
                 if (null != mx)
                     id = Math.max(id,mx);
-                if (study.isDataspaceStudy())
+                if (null != sharedStudy)
                 {
-                    mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", study.getContainer().getProject().getId()).getObject(Integer.class);
+                    mx = new SqlSelector(schema, "SELECT MAX(datasetid) FROM study.dataset WHERE container=?", sharedStudy.getContainer().getId()).getObject(Integer.class);
                     if (null != mx)
                        id = Math.max(id, mx);
                 }
@@ -1394,7 +1398,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 // Don't enforce permissions for the current user - we still want to tell them if the data
                 // has been linked even if they can't see the dataset.
-                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
+                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, RoleManager.getRole(ReaderRole.class));
                 TableInfo tableInfo = schema.getTable(dataset.getName());
                 AssayProvider provider = AssayService.get().getProvider(entry.getKey());
                 if (provider != null)

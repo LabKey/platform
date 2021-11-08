@@ -108,6 +108,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment ret = new SQLFragment("(SELECT * FROM (SELECT rl.* FROM ");
         ret.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
         ret.append(", ");

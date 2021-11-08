@@ -110,7 +110,7 @@ public class AuditQuerySchema extends UserSchema
     }
 
     @Override
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         return true;
     }
