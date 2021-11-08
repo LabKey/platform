@@ -228,6 +228,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Allow read, but not insert, update, or delete.
-        return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
+        return perm.equals(ReadPermission.class) && getContainer().hasOneOf((User)user, ReadPermission.class, CanSeeAuditLogPermission.class);
     }
 }
