@@ -55,7 +55,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -530,7 +530,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
-        QCStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
+        DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
     @Override

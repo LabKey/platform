@@ -12,9 +12,9 @@ import org.labkey.study.xml.qcStates.StudyqcDocument;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractQCStateImporter
+public abstract class AbstractDataStateImporter
 {
-    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, QCStateImportExportHelper helper) throws ImportException
+    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, DataStateImportExportHelper helper) throws ImportException
     {
         StudyqcDocument.Studyqc qcXml = doc.getStudyqc();
         StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
@@ -45,7 +45,7 @@ public abstract class AbstractQCStateImporter
                         state.setPublicData(xmlState.getPublic());
                         state.setStateType(xmlState.getType() == null ? null : xmlState.getType().toString());
 
-                        helper.insertQCState(ctx.getUser(), state);
+                        helper.insertDataState(ctx.getUser(), state);
                     }
                     else
                     {
@@ -59,7 +59,7 @@ public abstract class AbstractQCStateImporter
                         {
                             throw new ImportException(String.format("Cannot change the type of state %s from %s to %s", state.getLabel(), state.getStateType(), updatedType));
                         }
-                        helper.updateQCState(ctx.getUser(), state);
+                        helper.updateDataState(ctx.getUser(), state);
                     }
                 }
             }
@@ -68,7 +68,7 @@ public abstract class AbstractQCStateImporter
         // Clean up orphaned states if they don't seem to be used anymore
         for (DataState orphanedState : preexistingStates.values())
         {
-            if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
+            if (!helper.isDataStateInUse(ctx.getContainer(), orphanedState))
                 QCStateManager.getInstance().deleteState(orphanedState);
             else
                 ctx.getLogger().info("Retaining existing Data State because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
