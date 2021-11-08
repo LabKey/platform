@@ -166,19 +166,14 @@ public class NameGenerator
                 .filter(s -> !s.isEmpty());
     }
 
-    private boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
+    public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString().toLowerCase();
 
-        if (INPUT_PARENT.equalsIgnoreCase(sTok)
+        return INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok)
-                || (importAliases != null && importAliases.containsKey(sTok)))
-        {
-            return true;
-        }
-
-        return false;
+                || (importAliases != null && importAliases.containsKey(sTok));
     }
 
     // Inspect the expression looking for:
@@ -582,24 +577,24 @@ public class NameGenerator
 
 
             boolean hasTypeLookup = false;
-            if (_expLineageLookupFields.containsKey("Inputs"))
+            if (_expLineageLookupFields.containsKey(INPUT_PARENT))
                 hasTypeLookup = true;
 
             if (!hasTypeLookup && isMaterialParent)
             {
-                if (_expLineageLookupFields.containsKey("MaterialInputs"))
+                if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
                     hasTypeLookup = true;
 
-                if (_expLineageLookupFields.containsKey("MaterialInputs/" + parentTypeName))
+                if (_expLineageLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
                     hasTypeLookup = true;
             }
 
             if (!hasTypeLookup && !isMaterialParent)
             {
-                if (_expLineageLookupFields.containsKey("DataInputs"))
+                if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
                     hasTypeLookup = true;
 
-                if (_expLineageLookupFields.containsKey("DataInputs/" + parentTypeName))
+                if (_expLineageLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
                     hasTypeLookup = true;
             }
 
@@ -721,15 +716,7 @@ public class NameGenerator
                         if (_exprHasLineageInputs)
                             addInputs(parts, colName, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
-                        {
-                            boolean isParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) || parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
-                            if (isParent)
-                            {
-                                boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
-                                for (String parent : parentNames(value, colName))
-                                    addLineageLookupContext(parts[1], parent, isMaterialParent, parentImportAliases, inputLookupValues);
-                            }
-                        }
+                            addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                     else if (parentImportAliases != null && parentImportAliases.containsKey(colName))
                     {
@@ -738,15 +725,7 @@ public class NameGenerator
                         if (_exprHasLineageInputs)
                             addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
-                        {
-                            boolean isParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) || parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
-                            if (isParent)
-                            {
-                                boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
-                                for (String parent : parentNames(value, colName))
-                                    addLineageLookupContext(parts[1], parent, isMaterialParent, parentImportAliases, inputLookupValues);
-                            }
-                        }
+                            addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                 }
 
@@ -813,6 +792,17 @@ public class NameGenerator
             }
 
             return ctx;
+        }
+
+        private void addLineageInput(String[] parts, String colName, Object value, Map<String, String> parentImportAliases, Map<String, ArrayList<Object>> inputLookupValues)
+        {
+            boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
+            boolean isDataParent = parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
+            if (isMaterialParent || isDataParent)
+            {
+                for (String parent : parentNames(value, colName))
+                    addLineageLookupContext(parts[1], parent, isMaterialParent, parentImportAliases, inputLookupValues);
+            }
         }
 
         private Collection<String> parentNames(Object value, String parentColName)
