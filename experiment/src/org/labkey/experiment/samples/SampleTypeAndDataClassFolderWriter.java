@@ -240,15 +240,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     if (!columns.isEmpty())
                         writeTsv(tinfo, columns, filter, sort, dir, SAMPLE_TYPE_PREFIX + sampleType.getName());
 
-                    Collection<ColumnInfo> statusColumns = getStatusColumnsToExport(tinfo);
-                    if (!statusColumns.isEmpty())
-                    {
-                        // don't need to write out rows for samples that don't have a status
-                        // This means an import will never erase the status of a sample.  Is that what we want?
-                        // If we do output these values, there will be an extra audit log entry for the update that changes nothing.
-//                        filter.addCondition(FieldKey.fromParts(ExpMaterialTable.Column.SampleState.name()), null, CompareType.NONBLANK);
-                        writeTsv(tinfo, statusColumns, filter, sort, dir, SAMPLE_STATUS_PREFIX + sampleType.getName());
-                    }
+                    writeTsv(tinfo, getStatusColumnsToExport(tinfo), filter, sort, dir, SAMPLE_STATUS_PREFIX + sampleType.getName());
                 }
             }
         }

@@ -34,7 +34,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.xar.XarImportContext;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -153,9 +152,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
                     // process any sample type data files and data class files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            sampleTypeDataFiles, xarDir);
+                            sampleTypeDataFiles, xarDir, true);
                     importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir);
+                            dataClassDataFiles, xarDir, true);
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
@@ -221,7 +220,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir) throws IOException, SQLException
+    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired) throws IOException, SQLException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
@@ -281,7 +280,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         log.error("Failed to find table '" + schemaName + "." + tableName + "' to import data file: " + dataFileName);
                     }
                 }
-                else
+                else if (fileRequired)
                 {
                     log.error("Unable to import TSV data for table " + tableName + ". File not found.");
                 }

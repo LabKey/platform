@@ -104,7 +104,7 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
                     XarReader typesReader = new XarReader(typesXarSource, job);
 
                     // process any sample status data files
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir);
+                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false);
 
                 }
                 else
