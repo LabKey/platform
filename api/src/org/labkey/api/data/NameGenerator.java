@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -110,6 +111,7 @@ public class NameGenerator
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
     private final RemapCache renameCache = new RemapCache(true);
+    private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
 
@@ -506,10 +508,19 @@ public class NameGenerator
                     return parentObject.getModifiedBy();
                 default:
                 {
+                    if (objectPropertiesCache.containsKey(parentObject.getLSID()))
+                        return objectPropertiesCache.get(parentObject.getLSID()).get(field);
                     Map<String, Object> properties = new CaseInsensitiveHashMap<>();
                     parentObject.getObjectProperties().values().forEach(prop -> {
-                        properties.put(prop.getName(), prop.getObjectValue());
+                        PropertyType pt = null;
+                        if (prop.getConceptURI() != null || prop.getRangeURI() != null)
+                            pt = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI(), null);
+                        if (pt != null)
+                            properties.put(prop.getName(), pt.convert(prop.getObjectValue()));
+                        else
+                            properties.put(prop.getName(), prop.getObjectValue());
                     });
+                    objectPropertiesCache.put(parentObject.getLSID(), properties);
                     return properties.get(field);
                 }
             }
@@ -529,6 +540,8 @@ public class NameGenerator
             for (String fieldName : fieldNames)
             {
                 Object lookupValue = getParentFieldValue(parentObject, fieldName);
+                if (lookupValue == null)
+                    continue;
 
                 // add to Input/lookupfield
                 inputLookupValues.computeIfAbsent(INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
@@ -606,6 +619,9 @@ public class NameGenerator
                 ExpObject parentObject = isMaterialParent ?
                         ExperimentService.get().findExpMaterial(_container, user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
                         : ExperimentService.get().findExpData(_container, user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
+
+                if (parentObject == null)
+                    throw new RuntimeValidationException("Unable to find parent " + parentName);
 
                 addLineageLookupValues(parentTypeName, isMaterialParent, parentImportAliases, parentObject, inputLookupValues);
             }
