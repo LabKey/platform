@@ -1421,6 +1421,8 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
+        // The aliquot samples will have been imported with the TSV file.  Here, we need to attach their parents and root samples from the
+        // Aliquot run protocols.
         if (output instanceof Material)
         {
             if (rootMaterialLSID != null)
@@ -1431,9 +1433,10 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot root LSID");
 
                 String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
+                // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
                 if (((Material) output).getRootMaterialLSID() != null && !((Material) output).getRootMaterialLSID().equals(rootMaterialLSID))
                 {
-                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + newRootLsid);
+                    getLog().info(description + " with LSID '" + lsid + "' already has root material LSID of " + ((Material) output).getRootMaterialLSID() + "; not updating to " + newRootLsid + ".");
                 }
                 else
                 {
@@ -1450,9 +1453,10 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot parent LSID");
 
                 String newParentLsid = aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID;
+                // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
                 if (((Material) output).getAliquotedFromLSID() != null && !((Material) output).getAliquotedFromLSID().equalsIgnoreCase(aliquotedFromLSID))
                 {
-                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
+                    getLog().info(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; not updating to " + newParentLsid + ".");
                 }
                 else
                 {
