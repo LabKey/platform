@@ -1375,7 +1375,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            updateSourceInfo(material.getDataObject(), sourceApplicationId, run, rootMaterialLSID, aliquotedFromLSID, context, tiMaterial);
+            updateSourceInfo(material.getDataObject(), sourceApplicationId, run, rootMaterialLSID, aliquotedFromLSID, tiMaterial);
         }
 
         _xarSource.addMaterial(run == null ? null : run.getLSID(), material, null);
@@ -1385,45 +1385,53 @@ public class XarReader extends AbstractXarImporter
     }
 
     private void updateSourceInfo(RunItem output, Integer sourceApplicationId,
-                                  ExperimentRun run, String rootMaterialLSID, String aliquotedFromLSID, XarContext context, TableInfo tableInfo)
+                                  ExperimentRun run, String rootMaterialLSID, String aliquotedFromLSID, TableInfo tableInfo)
             throws XarFormatException
     {
         String description = output.getClass().getSimpleName();
         String lsid = output.getLSID();
         boolean changed = false;
+        boolean isAliquot = aliquotedFromLSID != null;
+        boolean hadSource = false;
+        boolean hadRun = false;
 
         getLog().debug("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
 
+        // if the output is an aliquot, its source and run have already been wired up during the import of the tsv file
+        // by virtue of the AliquotedFrom column being included in that file.  For importing legacy folder imports where the
+        // AliquotedFrom column was not included, we need to allow for changing from a null value to a non-null value.
         if (sourceApplicationId != null)
         {
-            if (output.getSourceApplicationId() == null)
+            hadSource = output.getSourceApplicationId() != null;
+            if (!hadSource)
             {
                 getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting SourceApplicationId");
                 output.setSourceApplicationId(sourceApplicationId);
                 changed = true;
             }
-            else
+            else if (!isAliquot)
             {
                 throw new XarFormatException(description + " with LSID '" + lsid + "' already has a source application of " + output.getSourceApplicationId() + ", cannot set it to " + sourceApplicationId);
             }
         }
         if (run != null && sourceApplicationId != null)
         {
-            if (output.getRunId() == null)
+            hadRun = output.getRunId() != null;
+            if (!hadRun)
             {
                 getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
                 output.setRunId(run.getRowId());
                 changed = true;
             }
-            else
+            else if (!isAliquot)
             {
                 throw new XarFormatException(description + " with LSID '" + lsid + "' already has an experiment run id of " + output.getRunId() + ", cannot set it to " + run.getRowId());
             }
         }
 
-        // The aliquot samples will have been imported with the TSV file.  Here, we need to attach their parents and root samples from the
-        // Aliquot run protocols.
-        if (output instanceof Material)
+        // The aliquot samples will have been imported with the TSV file.  When the TSV file does not include the
+        // AliquotedFrom column, we need to attach their parents and root samples from the Aliquot run protocols.
+        if (output instanceof Material && !hadSource && !hadRun)
         {
             if (rootMaterialLSID != null)
             {
@@ -1572,7 +1580,7 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
 
-            updateSourceInfo(data, sourceApplicationId, experimentRun, null, null, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, experimentRun, null, null, tiData);
         }
         else
         {

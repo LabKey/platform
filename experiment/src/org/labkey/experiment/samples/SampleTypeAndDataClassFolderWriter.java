@@ -10,7 +10,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -298,6 +297,14 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
+    private ColumnInfo getAliquotedFromNameColumn(TableInfo tinfo)
+    {
+        ColumnInfo col = tinfo.getColumn(FieldKey.fromParts(ExpMaterialTable.Column.AliquotedFromLSID.name()));
+        AliasedColumn aliquotedAlias = new AliasedColumn(tinfo, "AliquotedFrom", col);
+        aliquotedAlias.setDisplayColumnFactory(NameFromLsidDataColumn::new);
+        return aliquotedAlias;
+    }
+
     private Collection<ColumnInfo> getStatusColumnsToExport(TableInfo tinfo)
     {
         List<ColumnInfo> columns = new ArrayList<>();
@@ -319,10 +326,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
         // In order to update status values for Aliquots, the AliquotedFrom field, which is the
         // name of the aliquot's parent, must be present.  We get the name from the LSID.
-        col = tinfo.getColumn(FieldKey.fromParts(ExpMaterialTable.Column.AliquotedFromLSID.name()));
-        AliasedColumn aliquotedAlias = new AliasedColumn(tinfo, "AliquotedFrom", col);
-        aliquotedAlias.setDisplayColumnFactory(NameFromLsidDataColumn::new);
-        columns.add(aliquotedAlias);
+        columns.add(getAliquotedFromNameColumn(tinfo));
 
         return columns;
     }
@@ -379,6 +383,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
                 // CONSIDER: Alternate strategy would be to export the lookup target values?
                 ctx.getLogger().info("Skipping multi-value column: " + col.getName());
+            }
+            else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
+            {
+                // In order to reimport Aliquots, the AliquotedFrom field, which is the
+                // name of the aliquot's parent, must be present.  We get the name from the LSID.
+                ColumnInfo wrappedCol = getAliquotedFromNameColumn(tinfo);
+                columns.put(col.getFieldKey(), wrappedCol);
             }
             else if (col.isKeyField() ||
                     ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
