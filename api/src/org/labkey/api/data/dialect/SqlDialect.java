@@ -1197,6 +1197,20 @@ public abstract class SqlDialect
                 return null;
             }
         }
+
+        public Long getMaxWaitMillis()
+        {
+            try
+            {
+                return callGetter("getMaxWaitMillis");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max wait (ms) from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+
     }
 
 
