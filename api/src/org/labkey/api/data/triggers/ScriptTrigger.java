@@ -213,11 +213,18 @@ import java.util.function.Supplier;
     private <T> T _invokeTableScript(Container c, User user, Class<T> resultType, String methodName, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         return _try(c, user, extraContext, (script) -> {
-            if (_script.hasFn(methodName))
+            try
             {
-                return _script.invokeFn(resultType, methodName, args);
+                if (_script.hasFn(methodName))
+                {
+                    return _script.invokeFn(resultType, methodName, args);
+                }
             }
-
+            catch (NoSuchMethodException | ScriptException e)
+            {
+                String extraErrorMessage = errorDetail.get();
+                throw UnexpectedException.wrap(e, "Script execution failed for " + methodName + "()" + (extraErrorMessage == null ? "" : " " + extraErrorMessage));
+            }
             return null;
         });
     }
@@ -232,6 +239,7 @@ import java.util.function.Supplier;
                 // Push a view context if we don't already have one available. It will be pulled if labkey.js
                 // is required by the trigger script being invoked, via the call to PageFlowUtil.jsInitObject() in
                 // server/modules/core/resources/scripts/labkey/init.js
+                //noinspection deprecation
                 viewContextResetter = ViewContext.pushMockViewContext(user, c, new ActionURL("dummy", "dummy", c));
             }
             try
@@ -260,8 +268,7 @@ import java.util.function.Supplier;
         }
         catch (NoSuchMethodException | ScriptException e)
         {
-            String extraErrorMessage = errorDetail.get();
-            throw UnexpectedException.wrap(e, "Script execution failed for " + methodName + "()" + (extraErrorMessage == null ? "" : " " + extraErrorMessage));
+            throw UnexpectedException.wrap(e);
         }
     }
 
