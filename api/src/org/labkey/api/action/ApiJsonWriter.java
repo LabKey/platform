@@ -18,7 +18,6 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.json.JSONArray;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JsonUtil;
@@ -102,8 +101,7 @@ public class ApiJsonWriter extends ApiResponseWriter
      */
     protected ObjectMapper createObjectMapper()
     {
-        // We must register JavaTimeModule in order to serialize LocalDate, etc.
-        return JsonUtil.DEFAULT_MAPPER.registerModule(new JavaTimeModule());
+        return JsonUtil.DEFAULT_MAPPER;
     }
 
     @Override

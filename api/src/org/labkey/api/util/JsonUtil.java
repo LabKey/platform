@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -38,14 +39,17 @@ public class JsonUtil
 {
     // Default ObjectMapper configured for the common case.
     // The ObjectMapper is threadsafe and can be shared across requests
-    // but shouldn't be mutated.  If you need to reconfigure the ObjectMapper,
+    // but shouldn't be mutated. If you need to reconfigure the ObjectMapper,
     // create a new instance by calling <code>ObjectMapper.copy()</code>.
     public static final ObjectMapper DEFAULT_MAPPER;
 
-    static {
+    static
+    {
         DEFAULT_MAPPER = new ObjectMapper();
         // Allow org.json classes to be serialized by Jackson
         DEFAULT_MAPPER.registerModule(new JsonOrgModule());
+        // We must register JavaTimeModule in order to serialize LocalDate, etc.
+        DEFAULT_MAPPER.registerModule(new JavaTimeModule());
         DEFAULT_MAPPER.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
     }
 
