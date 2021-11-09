@@ -457,7 +457,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public boolean hasOneOf(@NotNull User user, @NotNull Set<Class<? extends Permission>> perms)
+    public boolean hasOneOf(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms)
     {
         return SecurityManager.hasAnyPermissions(null, getPolicy(), user, perms, Set.of());
     }

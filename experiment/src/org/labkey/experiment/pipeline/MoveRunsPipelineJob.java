@@ -30,6 +30,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
+import java.io.File;
+import java.nio.file.Path;
+
 /**
  * User: jeckels
  * Date: Feb 14, 2007
@@ -72,9 +75,9 @@ public class MoveRunsPipelineJob extends PipelineJob
     }
 
     @Override
-    protected String getDefaultLocalDirectoryString()
+    protected Path getWorkingDirectoryString()
     {
-        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().getPath() : FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(getPipeRoot()));
+        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().toPath() : new File(FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(getPipeRoot()))).toPath();
     }
 
     @Override

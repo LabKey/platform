@@ -99,7 +99,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public PipelineStatusFileImpl(PipelineJob job, String status, String info)
     {
-        assert(job.getLogFilePath() != null) : "Must have a status file to set status.";
+        assert(job.getRemoteLogPath() != null) : "Must have a status file to set status.";
 
         setJob(job.getJobGUID());
         setJobParent(job.getParentGUID());
