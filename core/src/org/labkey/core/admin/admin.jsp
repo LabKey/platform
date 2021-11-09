@@ -92,6 +92,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(bean.scope.getDataSourceProperties().getNumActive())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(bean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Max Wait (ms)</td><td id="connectionPoolMaxWait"><%=h(bean.scope.getDataSourceProperties().getMaxWaitMillis())%></td></tr>
             </table>
             <br/>
 <%
