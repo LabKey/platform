@@ -124,7 +124,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         /* NOTE! some code paths still expect this to throw rather than checking table.canRead() */
-        super(schema, dsd.getTableInfo(schema.getUser(), false, true), null);
+        super(schema, dsd.getDatasetSchemaTableInfo(schema.getUser(), false, true), null);
 
         if (null != cf && dsd.getStudy().getShareDatasetDefinitions())
             _setContainerFilter(cf);
@@ -185,6 +185,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     public StringExpression getURL()
                     {
                         // delay constructing Participant table
+                        // This is still expensive and should be handled by getEffectiveURL()
                         if (null == _url && null != getFk())
                             _url = getFk().getURL(this);
                         return _url;
@@ -879,7 +880,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), false, true);
+            _fromTable = _dsd.getDatasetSchemaTableInfo(_userSchema.getUser(), false, true);
         }
         return _fromTable;
     }

@@ -1019,7 +1019,7 @@ public class StudyServiceImpl implements StudyService
         for (Dataset dataset : datasets)
         {
             DatasetDefinition d = (DatasetDefinition)dataset;
-            TableInfo t = d.getTableInfo(user,true, false);
+            TableInfo t = d.getTableInfo(user);
             if (null == t)
                 continue;
             long count = new TableSelector(t).getRowCount();

@@ -97,9 +97,11 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -315,6 +317,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
+        sub._study = substudy;
 
         // apply substudy dataset overrides
         String category = "dataset-overrides:" + getDatasetId();
@@ -653,7 +656,22 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         return StudySchema.getInstance().getSchema().getTable("studydatatemplate");
     }
-    
+
+
+    /**
+     * For consistency, now return the equivalent of
+     *    StudyUserSchema().createSchema().getSchema("Datasets").getTable(_dataset.getLabel());
+     *
+     * Internal study code can still use the DatasetSchemaTableInfo methods, however, we should try hard to
+     * remove usages of DatasetSchemaTableInfo.
+     */
+    @Override
+    public TableInfo getTableInfo(User user) throws UnauthorizedException
+    {
+        var sqs = StudyQuerySchema.createSchema(_study, user, null);
+        var dqs = sqs.getSchema("Datasets");
+        return dqs.getTable(getLabel());
+    }
 
     /**
      * Get table info representing dataset.  This relies on the DatasetDefinition being removed from
@@ -662,22 +680,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      *
      * TODO convert usages of DatasetDefinition.getTableInfo() to use StudyQuerySchema.getTable()
      */
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user) throws UnauthorizedException
     {
-        return getTableInfo(user, true, false);
+        return getDatasetSchemaTableInfo(user, true, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
-        return getTableInfo(user, checkPermission, false);
+        return getDatasetSchemaTableInfo(user, checkPermission, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
@@ -1083,7 +1096,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         if (perms.contains(ReadPermission.class))
         {
-            DatasetSchemaTableInfo table = getTableInfo(user, false);
+            DatasetSchemaTableInfo table = getDatasetSchemaTableInfo(user, false);
             if (null != table)
                 return table.canUserAccessPhi();
         }
@@ -2314,7 +2327,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
-        TableInfo table = getTableInfo(user, false);
+        TableInfo table = getDatasetSchemaTableInfo(user);
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
@@ -2656,7 +2669,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u);
         TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
 
-        TableInfo tInfo = getTableInfo(u, true);
+        TableInfo tInfo = getTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 

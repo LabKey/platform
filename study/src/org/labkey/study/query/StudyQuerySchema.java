@@ -1297,6 +1297,28 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             }
             return _tableNames;
         }
+
+        @Override
+        public TableInfo createTable(String name, ContainerFilter cf)
+        {
+            // check for datasets first
+            // Might be a dataset
+            DatasetDefinition dsd = getDatasetDefinitionByQueryName(name);
+
+            if (null != dsd)
+            {
+                try
+                {
+                    return DatasetFactory.createDataset(this, cf, dsd);
+                }
+                catch (UnauthorizedException e)
+                {
+                    return null;
+                }
+            }
+
+            return super.createTable(name, cf);
+        }
     }
 
 

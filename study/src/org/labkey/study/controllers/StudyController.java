@@ -144,6 +144,7 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -244,6 +245,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -4287,8 +4289,9 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
+            var sqs = Objects.requireNonNull(StudyQuerySchema.createSchema(_study, getUser()).getSchema("Datasets"));
             Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
-            for (Dataset def : _study.getDatasets())
+            for (DatasetDefinition def : _study.getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4296,11 +4299,15 @@ public class StudyController extends BaseStudyController
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.shared = def.isShared();
-                data.inherited = ((DatasetDefinition)def).isInherited();
+                data.inherited = def.isInherited();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 if ("None".equals(data.status))
                     data.status = null;
-                TableInfo t = def.getTableInfo(getViewContext().getUser(), false, _study.isDataspaceStudy());
+                TableInfo t = sqs.getTable(def.getLabel());
+                // dataset could be masked by another table/query
+                assert t instanceof DatasetTable;
+                if (!(t instanceof DatasetTable))
+                    continue;
                 long rowCount = new TableSelector(t).getRowCount();
                 data.rowCount = rowCount;
                 data.empty = 0 == rowCount;
