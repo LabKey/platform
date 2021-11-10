@@ -977,7 +977,8 @@ public class DbScope
             log.info("Data source " + this +
                     ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
                     ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle());
+                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
+                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
 
             if (_transaction.isEmpty())
             {
