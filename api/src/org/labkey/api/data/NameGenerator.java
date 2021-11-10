@@ -511,7 +511,15 @@ public class NameGenerator
                         if (prop.getConceptURI() != null || prop.getRangeURI() != null)
                             pt = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI(), null);
                         if (pt != null)
-                            properties.put(prop.getName(), pt.convert(prop.getObjectValue()));
+                        {
+                            Object rawObj = prop.getObjectValue();
+                            if ("Boolean".equals(pt.getXmlName()) && rawObj instanceof Double)
+                            {
+                                rawObj = (Double) rawObj < 1.0 ? Boolean.FALSE : Boolean.TRUE;
+                            }
+
+                            properties.put(prop.getName(), pt.convert(rawObj));
+                        }
                         else
                             properties.put(prop.getName(), prop.getObjectValue());
                     });
