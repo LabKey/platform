@@ -5069,7 +5069,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private boolean checkRunsMatch(Set<String> lsids, List<ExpRunImpl> runs)
     {
-        return runs.stream().allMatch(r -> lsids.contains(r.getLSID()));
+        return lsids.size() == runs.size() && runs.stream().allMatch(r -> lsids.contains(r.getLSID()));
     }
 
     @Override
