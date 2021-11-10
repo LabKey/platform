@@ -1025,7 +1025,7 @@ public abstract class UploadSamplesHelper
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }
                 }
                 else
@@ -1053,7 +1053,7 @@ public abstract class UploadSamplesHelper
 
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
-            SimpleConvertColumn c = createConvertColumn(col, fromIndex, true);
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
