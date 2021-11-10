@@ -1392,8 +1392,6 @@ public class XarReader extends AbstractXarImporter
         String lsid = output.getLSID();
         boolean changed = false;
         boolean isAliquot = aliquotedFromLSID != null;
-        boolean hadSource = false;
-        boolean hadRun = false;
 
         getLog().debug("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
 
@@ -1402,8 +1400,7 @@ public class XarReader extends AbstractXarImporter
         // AliquotedFrom column was not included, we need to allow for changing from a null value to a non-null value.
         if (sourceApplicationId != null)
         {
-            hadSource = output.getSourceApplicationId() != null;
-            if (!hadSource)
+            if (output.getSourceApplicationId() == null)
             {
                 getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting SourceApplicationId");
                 output.setSourceApplicationId(sourceApplicationId);
@@ -1416,8 +1413,7 @@ public class XarReader extends AbstractXarImporter
         }
         if (run != null && sourceApplicationId != null)
         {
-            hadRun = output.getRunId() != null;
-            if (!hadRun)
+            if (output.getRunId() == null)
             {
                 getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
                 output.setRunId(run.getRowId());
@@ -1429,9 +1425,9 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
-        // The aliquot samples will have been imported with the TSV file.  When the TSV file does not include the
-        // AliquotedFrom column, we need to attach their parents and root samples from the Aliquot run protocols.
-        if (output instanceof Material && !hadSource && !hadRun)
+        // The aliquot samples will have been imported with the TSV file, but we need to attach their parent and root samples
+        // from the Aliquot run protocols.
+        if (output instanceof Material)
         {
             if (rootMaterialLSID != null)
             {

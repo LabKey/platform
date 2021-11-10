@@ -663,7 +663,7 @@ public class ExpDataIterators
             super(di);
             _context = context;
             _isSample = isSample;
-            _skipAliquot = skipAliquot;
+            _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
@@ -709,7 +709,7 @@ public class ExpDataIterators
             if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
-                if (_aliquotParentCol > -1)
+                if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
                     String aliquotParentName = null;

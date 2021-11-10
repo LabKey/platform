@@ -16,6 +16,7 @@ import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
@@ -260,6 +261,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     {
                                         log.error("Unable to get audit behavior for import. Default behavior will be used.");
                                     }
+                                    options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
                                     context.setConfigParameters(options);
 
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);

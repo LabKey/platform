@@ -1030,7 +1030,7 @@ public abstract class UploadSamplesHelper
                 }
                 else
                 {
-                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows)
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
                         addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
