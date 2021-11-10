@@ -97,11 +97,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.permissions.RestrictedUpdatePermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -669,8 +665,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     public TableInfo getTableInfo(User user) throws UnauthorizedException
     {
         var sqs = StudyQuerySchema.createSchema(_study, user, null);
-        var dqs = sqs.getSchema("Datasets");
-        return dqs.getTable(getLabel());
+        return sqs.getDatasetTable(this, null);
     }
 
     /**
@@ -2666,10 +2661,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u);
-        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
+        TableInfo queryTableInfo = getTableInfo(u);
 
-        TableInfo tInfo = getTableInfo(u);
+        DatasetSchemaTableInfo tInfo = getDatasetSchemaTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 

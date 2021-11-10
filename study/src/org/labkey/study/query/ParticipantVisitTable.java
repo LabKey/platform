@@ -20,7 +20,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -193,13 +192,11 @@ public class ParticipantVisitTable extends BaseStudyTable
         }
         
         @Override
-        public DatasetTableImpl getLookupTableInfo()
+        public TableInfo getLookupTableInfo()
         {
             try
             {
-                DatasetTableImpl ret = _userSchema.createDatasetTableInternal(dsd, getLookupContainerFilter());
-                ret.hideParticipantLookups();
-                return ret;
+                return _userSchema.getDatasetTableForLookup(dsd, getLookupContainerFilter());
             }
             catch (UnauthorizedException e)
             {

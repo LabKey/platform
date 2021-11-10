@@ -427,7 +427,7 @@
         continue;
 
     // get the data for this dataset and group rows by SequenceNum/Key
-    TableInfo table = querySchema.createDatasetTableInternal(dataset, null);
+    TableInfo table = querySchema.getDatasetTable(dataset, null);
     Map<Double, Map<Object, Map<String, Object>>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
     ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);

@@ -115,6 +115,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 
     public static final String SCHEMA_NAME = "study";
+    public static final String DATASETS_SCHEMA_NAME = "Datasets";
+    public static final String DESIGN_SCHEMA_NAME = "Design";
+    public static final String SPECIMENTS_SCHEMA_NAME = "Specimens";
+
+
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
@@ -248,20 +253,21 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     protected Set<String> getSubSchemaNames()
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
-            return Collections.emptySet();
+            return Set.of();
+        var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (null != SpecimenService.get())
-            return new LinkedHashSet<>(Arrays.asList("Datasets", "Design", "Specimens"));
-        return new LinkedHashSet<>(Arrays.asList("Datasets", "Design"));
+            ret.add(SPECIMENTS_SCHEMA_NAME);
+        return ret;
     }
 
     @Override
     public QuerySchema getSchema(String name)
     {
-        if (StringUtils.equalsIgnoreCase("Datasets",name))
+        if (StringUtils.equalsIgnoreCase(DATASETS_SCHEMA_NAME,name))
             return new DatasetSchema(this);
-        if (StringUtils.equalsIgnoreCase("Design",name))
+        if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase("Specimens",name))
+        if (StringUtils.equalsIgnoreCase(SPECIMENTS_SCHEMA_NAME,name))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -436,18 +442,48 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
      * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
      * UserSchema will call afterConstruct() for tables constructed the usual way
      */
+    @Deprecated
     public DatasetTableImpl createDatasetTableInternal(DatasetDefinition definition, ContainerFilter cf)
     {
-        try
-        {
-            DatasetTableImpl ret = DatasetFactory.createDataset(this, cf, definition);
-            ret.afterConstruct();
-            return ret;
-        }
-        catch (UnauthorizedException e)
-        {
+        throw new IllegalStateException();
+    }
+
+    /* There used to be a handy method called createDatasetTableInternal(), but it did not go through
+     * UserSchema.getTable().  That is probably a bad idea, so here is a similar method that returns
+     * a 100% constructed table info that is guaranteed to represent a dataset.
+     *
+     * The only reason this would be null is in case of a race condition.
+     *
+     * NOTE: using subschema DATASETS_SCHEMA_NAME ensures that we resolve against datasets first.
+     * However, it also means we may not cache as effectively compared to using "this" (StudyQuerySchema).
+     * FUTURE: Can we (or do we?) prevent naming datasets that collide with internal tables and/or
+     *         resolve datasets first?
+     */
+    public DatasetTable getDatasetTable(DatasetDefinition definition, ContainerFilter cf)
+    {
+        var ret = ((DatasetSchema)getSchema(DATASETS_SCHEMA_NAME)).getTable(definition.getName(), cf);
+        if (!(ret instanceof DatasetTable))
             return null;
-        }
+        return (DatasetTable)ret;
+    }
+
+    public DatasetTable getDatasetTableForLookup(DatasetDefinition definition, ContainerFilter cf)
+    {
+        final DatasetSchema ds = (DatasetSchema)getSchema(DATASETS_SCHEMA_NAME);
+        if (null == cf)
+            cf = getDefaultContainerFilter();
+        final ContainerFilter CF = cf;
+        String cacheKey = "//Datasets/NOPARTICIPANTLOOKUPS/" + cf.getCacheKey() + "/" + definition.getEntityId();
+        var dt = ds.getCachedLookupTableInfo(cacheKey, () ->
+        {
+                TableInfo ret = ds.getTable(definition.getName(), CF, true, true);
+                if (!(ret instanceof DatasetTable))
+                    return null;
+                ((DatasetTableImpl)ret).hideParticipantLookups();
+                ret.setLocked(true);
+                return ret;
+        });
+        return (DatasetTable)dt;
     }
 
     synchronized List<BigDecimal> getSequenceNumsForDataset(Dataset dsd)
@@ -1249,7 +1285,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
         DatasetSchema(StudyQuerySchema parent)
         {
-            super(new SchemaKey(parent.getSchemaPath(), "Datasets"), "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
+            super(new SchemaKey(parent.getSchemaPath(), DATASETS_SCHEMA_NAME), "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
             _parentSchema = parent;
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
@@ -1328,7 +1364,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
         DesignSchema(StudyQuerySchema parent)
         {
-            super(new SchemaKey(parent.getSchemaPath(), "Design"), "Contains all study design", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
+            super(new SchemaKey(parent.getSchemaPath(), DESIGN_SCHEMA_NAME), "Contains all study design", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
             _parentSchema = parent;
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
