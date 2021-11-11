@@ -125,7 +125,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _title;
 
     private LockState _lockState = null;
-    @JsonIgnore // Current Jackson version (2.11.3) can't handle LocalDate, so skip expiration date during serialization
     private LocalDate _expirationDate = null;
 
     // Might add others in the future (e.g., ReadOnly)
