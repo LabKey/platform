@@ -33,7 +33,6 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
-import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
@@ -395,28 +394,36 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testShadowingSharedDataset()
     {
-        final String datasetName = "Shadowing Dataset";
+        final String folderName = "ShadowingDataset Folder";
+        final String folderPath = getProjectName() + "/" + folderName;
+        final String shadowId = "11001";
+        final String shadowedDataset = "Shadowed Dataset";
+        final String shadowingDataset = "Shadowing Dataset";
 
-        _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
+        _containerHelper.createSubfolder(getProjectName(), folderName, "Study");
         createDefaultStudy();
 
-        ManageDatasetsPage datasetsPage = goToManageStudy()
-            .goToManageStudy()
-            .manageDatasets();
-        assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
-        datasetsPage.clickCreateNewDataset()
-            .setName(datasetName)
-            .openAdvancedDatasetSettings()
-            .setDatasetId(SHARED_DEMOGRAPHICS_ID)
+        // Server doesn't let you create a dataset that collides with an existing shared dataset.
+        DatasetDesignerPage datasetDesigner = _studyHelper.defineDataset(shadowingDataset, folderPath, SHARED_DEMOGRAPHICS_ID);
+        final List<String> errors = datasetDesigner.clickSaveExpectingErrors();
+        checker().verifyEquals("Dataset id error",
+            List.of("A Dataset already exists with the datasetId \"" + SHARED_DEMOGRAPHICS_ID + "\"."), errors);
+
+        datasetDesigner.openAdvancedDatasetSettings()
+            .setDatasetId(shadowId)
             .clickApply()
             .clickSave();
 
-        // Default dataset ID will overlap shared demographics (5001)
+        // Server doesn't prevent you from creating a shared dataset that collides with a dataset ID
+        _studyHelper.defineDataset(shadowedDataset, getProjectName(), shadowId)
+            .clickSave();
 
-        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        // Go to Manage Datasets
+        beginAt(WebTestHelper.buildURL("study", folderPath, "manageTypes"));
         assertTextPresent("WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.");
-        assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+
+        clickAndWait(Locator.linkWithText(shadowId));
+        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", shadowedDataset));
     }
 
     @Test
