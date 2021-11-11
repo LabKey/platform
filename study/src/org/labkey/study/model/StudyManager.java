@@ -842,6 +842,7 @@ public class StudyManager
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+        datasetDefinition.refreshDomain();
         return true;
     }
 
