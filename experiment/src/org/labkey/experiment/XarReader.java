@@ -119,6 +119,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX;
+
 public class XarReader extends AbstractXarImporter
 {
     private final Set<String> _experimentLSIDs = new HashSet<>();
@@ -1233,6 +1238,10 @@ public class XarReader extends AbstractXarImporter
             String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
             ExpMaterial inputRow = _xarSource.getMaterial(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
+            String operationPermitMsg = getOperationNotPermittedMessage(protocolApp.getProtocolLSID(), inputRow);
+            if (operationPermitMsg != null)
+                throw new XarFormatException(operationPermitMsg);
+
             if (firstApp)
             {
                 _xarSource.addMaterial(experimentRun.getLSID(), inputRow, null);
@@ -1288,6 +1297,18 @@ public class XarReader extends AbstractXarImporter
             loadData(d, experimentRun, protAppId, context);
         }
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
+    }
+
+    private String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
+    {
+        // For existing samples, we check their current status to see if it allows runs to be added.
+        if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
+                !material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.EditLineage);
+        if ((protocolLSID.contains(SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) || protocolLSID.contains(SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                && !material.isOperationPermitted(SampleTypeService.SampleOperations.AddToWorkflow))
+            return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddToWorkflow);
+        return null;
     }
 
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
@@ -1375,6 +1396,13 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
+            if (run != null)
+            {
+                String permitMsg = getOperationNotPermittedMessage(run.getProtocolLSID(), material);
+                if (permitMsg != null)
+                    throw new XarFormatException(permitMsg);
+            }
+
             updateSourceInfo(material.getDataObject(), sourceApplicationId, run, rootMaterialLSID, aliquotedFromLSID, tiMaterial);
         }
 
@@ -1395,9 +1423,7 @@ public class XarReader extends AbstractXarImporter
 
         getLog().debug("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
 
-        // if the output is an aliquot, its source and run have already been wired up during the import of the tsv file
-        // by virtue of the AliquotedFrom column being included in that file.  For importing legacy folder imports where the
-        // AliquotedFrom column was not included, we need to allow for changing from a null value to a non-null value.
+        // if the output is an aliquot, we need to allow for changing from a null value to a non-null value.
         if (sourceApplicationId != null)
         {
             if (output.getSourceApplicationId() == null)
@@ -1944,7 +1970,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) || xarProtocol.getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
+            if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) || xarProtocol.getLSID().equals(SAMPLE_ALIQUOT_PROTOCOL_LSID))
             {
                 // create derivation and aliquot protocol using shared folder
                 if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
