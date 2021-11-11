@@ -469,10 +469,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected abstract CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash);
 
     /**
-     * Returns an iterator over the data, requests that Loader adds row hash for each row.
+     * Returns an iterator over the data, potentially adding a row hash for each row.
      * The loader is _not_ required to support this functionality, but the idea is that the
      * loader is closer to the raw data, and may be able to do a more reliable/reproducible job.
      * If supported, the value should be added to the returned with a key of HashDataIterator.HASH_COLUMN_NAME
+     *
+     * Respects the map filter, if set
      */
     public final CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
     {
@@ -1055,10 +1057,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             sb.append(this.getClass().getName()).append("\n");
             Arrays.stream(_columns)
-                .forEach(c ->
-                {
-                    sb.append("    ").append(c.name).append(" ").append(c.clazz.getSimpleName()).append("\n");
-                });
+                .forEach(c -> sb.append("    ").append(c.name).append(" ").append(c.clazz.getSimpleName()).append("\n"));
         }
     }
 }
