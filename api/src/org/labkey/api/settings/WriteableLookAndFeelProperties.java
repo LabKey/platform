@@ -35,7 +35,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.DISCUSSION_ENABLED_P
 import static org.labkey.api.settings.LookAndFeelProperties.FOLDER_DISPLAY_MODE;
 import static org.labkey.api.settings.LookAndFeelProperties.HELP_MENU_ENABLED_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.LOGO_HREF_PROP;
-import static org.labkey.api.settings.LookAndFeelProperties.NAVIGATION_BAR_WIDTH;
 import static org.labkey.api.settings.LookAndFeelProperties.REPORT_A_PROBLEM_PATH_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.SUPPORT_EMAIL;
 import static org.labkey.api.settings.LookAndFeelProperties.SYSTEM_DESCRIPTION_PROP;
@@ -102,12 +101,6 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void setSupportEmail(@Nullable String email)
     {
         storeStringValue(SUPPORT_EMAIL, email);
-    }
-
-    // TODO: Remove this setting? There's no way to set it...
-    public void setNavigationBarWidth(String width)
-    {
-        storeStringValue(NAVIGATION_BAR_WIDTH, width);
     }
 
     public void setThemeName(String themeName)

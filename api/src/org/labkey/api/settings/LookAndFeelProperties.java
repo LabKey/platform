@@ -40,7 +40,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public static final String APPLICATION_MENU_DISPLAY_MODE = "applicationMenuDisplayMode";
     protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
     protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
-    protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
@@ -87,12 +86,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(_settingsContainer, name, defaultValue);
     }
 
-    // TODO: Shouldn't this be static?
-    public boolean hasProperties()
-    {
-        return !getProperties(_c).isEmpty();
-    }
-
     public String getDescription()
     {
         return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
@@ -131,11 +124,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public boolean isDiscussionEnabled()
     {
         return lookupBooleanValue(DISCUSSION_ENABLED_PROP, true);
-    }
-
-    public String getNavigationBarWidth()
-    {
-        return lookupStringValue(NAVIGATION_BAR_WIDTH, "146"); // TODO: Remove this property? There's no way to set it...
     }
 
     public String getUnsubstitutedLogoHref()
