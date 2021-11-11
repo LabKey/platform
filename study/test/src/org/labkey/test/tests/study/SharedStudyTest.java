@@ -406,6 +406,9 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
         datasetsPage.clickCreateNewDataset()
             .setName(datasetName)
+            .openAdvancedDatasetSettings()
+            .setDatasetId(SHARED_DEMOGRAPHICS_ID)
+            .clickApply()
             .clickSave();
 
         // Default dataset ID will overlap shared demographics (5001)

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Implements a trigger for table operations backed by JavaScript code.
@@ -97,16 +99,29 @@ import java.util.Objects;
         return false;
     }
 
+    /**
+     * To avoid leaking PHI through log files, avoid including the full row info in the error detail when any of the
+     * columns in the target table is considered PHI
+     */
+    private Supplier<String> filterErrorDetailByPhi(TableInfo table, Supplier<String> errorDetail)
+    {
+        if (table.getMaxPhiLevel() != PHI.NotPHI)
+        {
+            return () -> null;
+        }
+        return errorDetail;
+    }
+
     @Override
     public void init(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "init", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, user, "init", errors, extraContext, () -> null, event.name().toLowerCase());
     }
 
     @Override
     public void complete(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "complete", errors, extraContext, event.name().toLowerCase());
+        invokeTableScript(table, c, user, "complete", errors, extraContext, () -> null, event.name().toLowerCase());
     }
 
 
@@ -115,7 +130,14 @@ import java.util.Objects;
                              User user, @Nullable Map<String, Object> newRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "beforeInsert", errors, extraContext, newRow);
+        invokeTableScript(table,
+                c,
+                user,
+                "beforeInsert",
+                errors,
+                extraContext,
+                filterErrorDetailByPhi(table, () -> "New row data: " + newRow),
+                newRow);
     }
 
     @Override
@@ -123,7 +145,7 @@ import java.util.Objects;
                              User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "beforeUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, user, "beforeUpdate", errors, extraContext, filterErrorDetailByPhi(table, () -> "New row: " + newRow + ". Old row: "  + oldRow), newRow, oldRow);
     }
 
     @Override
@@ -131,7 +153,7 @@ import java.util.Objects;
                              User user, @Nullable Map<String, Object> oldRow,
                              ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "beforeDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, user, "beforeDelete", errors, extraContext,  filterErrorDetailByPhi(table, () -> "Old row: "  + oldRow), oldRow);
     }
 
     @Override
@@ -139,7 +161,7 @@ import java.util.Objects;
                             User user, @Nullable Map<String, Object> newRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "afterInsert", errors, extraContext, newRow);
+        invokeTableScript(table, c, user, "afterInsert", errors, extraContext,  filterErrorDetailByPhi(table, () -> "New row: " + newRow), newRow);
     }
 
     @Override
@@ -147,7 +169,7 @@ import java.util.Objects;
                             User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "afterUpdate", errors, extraContext, newRow, oldRow);
+        invokeTableScript(table, c, user, "afterUpdate", errors, extraContext, filterErrorDetailByPhi(table, () -> "New row: " + newRow + ". Old row: "  + oldRow), newRow, oldRow);
     }
 
     @Override
@@ -155,15 +177,15 @@ import java.util.Objects;
                             User user, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext)
     {
-        invokeTableScript(table, c, user, "afterDelete", errors, extraContext, oldRow);
+        invokeTableScript(table, c, user, "afterDelete", errors, extraContext, filterErrorDetailByPhi(table, () -> "Old row: "  + oldRow), oldRow);
     }
 
 
-    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Object... args)
+    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, BatchValidationException errors, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, errorDetail, allArgs);
         if (success != null && !success)
             errors.addRowError(new ValidationException(methodName + " validation failed"));
         if (isConnectionClosed(table.getSchema().getScope()))
@@ -171,11 +193,11 @@ import java.util.Objects;
     }
 
 
-    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, ValidationException errors, Map<String, Object> extraContext, Object... args)
+    protected void invokeTableScript(TableInfo table, Container c, User user, String methodName, ValidationException errors, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         Object[] allArgs = Arrays.copyOf(args, args.length+1);
         allArgs[allArgs.length-1] = errors;
-        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, allArgs);
+        Boolean success = _invokeTableScript(c, user, Boolean.class, methodName, extraContext, errorDetail, allArgs);
         if (success != null && !success)
             errors.addGlobalError(methodName + " validation failed");
         if (isConnectionClosed(table.getSchema().getScope()))
@@ -188,14 +210,21 @@ import java.util.Objects;
         return _try(c, user, null, (script) -> _script.hasFn(methodName));
     }
 
-    private <T> T _invokeTableScript(Container c, User user, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
+    private <T> T _invokeTableScript(Container c, User user, Class<T> resultType, String methodName, Map<String, Object> extraContext, Supplier<String> errorDetail, Object... args)
     {
         return _try(c, user, extraContext, (script) -> {
-            if (_script.hasFn(methodName))
+            try
             {
-                return _script.invokeFn(resultType, methodName, args);
+                if (_script.hasFn(methodName))
+                {
+                    return _script.invokeFn(resultType, methodName, args);
+                }
             }
-
+            catch (NoSuchMethodException | ScriptException e)
+            {
+                String extraErrorMessage = errorDetail.get();
+                throw UnexpectedException.wrap(e, "Script execution failed for " + methodName + "()" + (extraErrorMessage == null ? "" : " " + extraErrorMessage));
+            }
             return null;
         });
     }
@@ -239,7 +268,7 @@ import java.util.Objects;
         }
         catch (NoSuchMethodException | ScriptException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 

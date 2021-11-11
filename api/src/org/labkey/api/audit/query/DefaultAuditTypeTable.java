@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -228,6 +229,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Allow read, but not insert, update, or delete.
-        return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
+        return perm.equals(ReadPermission.class) && getContainer().hasOneOf(user, Set.of(ReadPermission.class, CanSeeAuditLogPermission.class));
     }
 }

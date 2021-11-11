@@ -37,6 +37,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.Connection;
 import java.util.Set;
@@ -56,7 +57,11 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return isAllowedPermission(perm) && getContainer().hasPermission(user, perm) && canUserAccessPhi();
+        if (!isAllowedPermission(perm))
+            return false;
+        if (!getContainer().hasPermission(user, perm))
+            return false;
+        return perm.equals(ReadPermission.class) || canUserAccessPhi();
     }
 
     protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)
