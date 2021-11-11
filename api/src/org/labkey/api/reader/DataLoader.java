@@ -43,10 +43,12 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Filter;
 
 import java.io.Closeable;
 import java.io.File;
@@ -59,9 +61,10 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * User: jgarms
@@ -111,6 +114,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // true if the results can be scrolled by the DataIterator created in .getDataIterator()
     protected Boolean _scrollable = null;
     protected boolean _preserveEmptyString = false;
+    private Filter<Map<String, Object>> _mapFilter = null;
 
     protected DataLoader()
     {
@@ -146,8 +150,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         return _includeBlankLines;
     }
-
-
 
     /** When false (the default), lines that have no values will be skipped. When true, a row of null values is returned instead. */
     public void setIncludeBlankLines(boolean includeBlankLines)
@@ -438,23 +440,33 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return "column" + col;
     }
 
-
-
-
-
     /**
-     * Set the number of lines to look ahead in the file when infering the data types of the columns.
+     * Set the number of lines to look ahead in the file when inferring the data types of the columns.
      */
     public void setScanAheadLineCount(int count)
     {
         _scanAheadLineCount = count;
     }
 
+    // This is convenient when configuring a DataLoader that is returned or passed to other code
+    public void setMapFilter(Filter<Map<String, Object>> mapFilter)
+    {
+        _mapFilter = mapFilter;
+    }
+
     /**
-     * Returns an iterator over the data
+     * Returns an iterator over the data, respecting the map filter and not including a row hash
      */
     @Override
-    public abstract CloseableIterator<Map<String, Object>> iterator();
+    public final CloseableIterator<Map<String, Object>> iterator()
+    {
+        return iterator(false);
+    }
+
+    /**
+     * Subclasses implement this method and don't override public iterator()
+     */
+    protected abstract CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash);
 
     /**
      * Returns an iterator over the data, requests that Loader adds row hash for each row.
@@ -462,9 +474,23 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      * loader is closer to the raw data, and may be able to do a more reliable/reproducible job.
      * If supported, the value should be added to the returned with a key of HashDataIterator.HASH_COLUMN_NAME
      */
-    public CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
+    public final CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
     {
-        return iterator();
+        CloseableIterator<Map<String, Object>> iter = _iterator(includeRowHash);
+
+        if (null == _mapFilter)
+            return iter;
+        else
+            return new CloseableFilteredIterator<>(iter, _mapFilter);
+    }
+
+    /**
+     * Returns a closeable Stream over the data. Either the DataLoader or the Stream must be closed by the caller.
+     * @return a Stream over the data
+     */
+    public Stream<Map<String, Object>> stream()
+    {
+        return StreamSupport.stream(spliterator(), false).onClose(this::close);
     }
 
     /**
@@ -488,12 +514,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
         protected final ColumnDescriptor[] _activeColumns;
+
         private final RowMapFactory<Object> _factory;
+        private final boolean _generateInputRowHash;
 
         private Object[] _fields = null;
         private Map<String, Object> _values = null;
-        private int _lineNum = 0;
-        private boolean _generateInputRowHash;
+        private int _lineNum;
 
         protected DataLoaderIterator(int lineNum) throws IOException
         {

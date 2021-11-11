@@ -354,7 +354,7 @@ public class ExcelLoader extends DataLoader
     }
 
     @Override
-    public CloseableIterator<Map<String, Object>> iterator()
+    protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         try
         {
@@ -685,17 +685,17 @@ public class ExcelLoader extends DataLoader
         {
             List<Map<String, Object>> data = loader.load();
 
-            assertTrue(data.size() == 7);
+            assertEquals(7, data.size());
 
-            for (Map map : data)
+            for (Map<String, Object> map : data)
             {
-                assertTrue(map.size() == 18);
+                assertEquals(18, map.size());
             }
 
-            Map firstRow = data.get(0);
-            assertTrue(firstRow.get("scan").equals(96));
-            assertTrue(firstRow.get("accurateMZ").equals(false));
-            assertTrue(firstRow.get("description").equals("description"));
+            Map<String, Object> firstRow = data.get(0);
+            assertEquals(96, firstRow.get("scan"));
+            assertFalse((boolean)firstRow.get("accurateMZ"));
+            assertEquals("description", firstRow.get("description"));
         }
 
         @Test

@@ -1131,8 +1131,7 @@ public class Query
         private int i=1;
 
         @Override
-        @NotNull
-        public CloseableIterator<Map<String, Object>> iterator()
+        protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
         {
             return new _Iterator();
         }
@@ -1148,7 +1147,7 @@ public class Query
             @Override
             public Map<String, Object> next()
             {
-                return _rowMapFactory.getRowMap((Object[])data[i++]);
+                return _rowMapFactory.getRowMap(data[i++]);
             }
 
             @Override

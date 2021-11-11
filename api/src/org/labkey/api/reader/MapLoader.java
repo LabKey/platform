@@ -122,7 +122,7 @@ public class MapLoader extends DataLoader
     }
 
     @Override
-    public CloseableIterator<Map<String, Object>> iterator()
+    protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         try
         {
