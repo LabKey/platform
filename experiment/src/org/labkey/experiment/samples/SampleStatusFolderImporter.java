@@ -80,32 +80,10 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
             {
                 if (typesXarFile != null)
                 {
-                    Path logFile = null;
-                    // we don't need the log file in cases where the xarFile is a virtual file and not in the file system
-                    if (Files.exists(typesXarFile))
-                        logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
-
-                    if (job == null)
-                    {
-                        // need to fake up a job for the XarReader
-                        job = getDummyPipelineJob(ctx);
-                    }
-
-                    XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
-                    try
-                    {
-                        typesXarSource.init();
-                    }
-                    catch (Exception e)
-                    {
-                        log.error("Failed to initialize types XAR source", e);
-                        throw(e);
-                    }
-                    XarReader typesReader = new XarReader(typesXarSource, job);
+                    XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
 
                     // process any sample status data files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false);
-
                 }
                 else
                     log.info("No sample types XAR file to process.");

@@ -13,6 +13,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
@@ -126,28 +127,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 if (typesXarFile != null)
                 {
                     Path logFile = null;
-                    // we don't need the log file in cases where the xarFile is a virtual file and not in the file system
                     if (Files.exists(typesXarFile))
                         logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
+                    XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
 
-                    if (job == null)
-                    {
-                        // need to fake up a job for the XarReader
-                        job = getDummyPipelineJob(ctx);
-                    }
-
-                    XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
-                    try
-                    {
-                        typesXarSource.init();
-                    }
-                    catch (Exception e)
-                    {
-                        log.error("Failed to initialize types XAR source", e);
-                        throw(e);
-                    }
-                    log.info("Importing the types XAR file: " + typesXarFile.getFileName().toString());
-                    XarReader typesReader = new XarReader(typesXarSource, job);
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
@@ -183,6 +166,35 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 log.info("Finished importing Sample Types and Data Classes");
             }
         }
+    }
+
+    protected XarReader getXarReader(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
+    {
+        VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
+        Logger log = ctx.getLogger();
+
+        Path logFile = null;
+        // we don't need the log file in cases where the xarFile is a virtual file and not in the file system
+        if (Files.exists(typesXarFile))
+            logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
+
+        if (job == null)
+        {
+            // need to fake up a job for the XarReader
+            job = getDummyPipelineJob(ctx);
+        }
+
+        XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
+        try
+        {
+            typesXarSource.init();
+        }
+        catch (Exception e)
+        {
+            log.error("Failed to initialize types XAR source", e);
+            throw(e);
+        }
+        return new XarReader(typesXarSource, job);
     }
 
     protected PipelineJob getDummyPipelineJob(ImportContext ctx)
