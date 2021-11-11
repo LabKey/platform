@@ -58,21 +58,21 @@
 									<xs:attribute name="name" type="xs:string" use="required">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 The name of the QC state.
+                                                 The name of the data state.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
 									<xs:attribute name="description" type="xs:string">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 The description of this QC state.
+                                                 The description of this data state.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
 									<xs:attribute name="public" type="xs:boolean" default="false">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 Indicates whether data in this QC state is publicly available or not.
+                                                 Indicates whether data in this data state is publicly available or not.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
