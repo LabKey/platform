@@ -43,11 +43,15 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
             "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
+
+    // issue 43992 - add HTML line breaks to preserve original formatting, issue update emails no longer include
+    // a plain text version unless the --text/html--boundary-- boundary is specified in the template
+    //
     protected static final String DEFAULT_BODY =
-            "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
-                    "Modified by: ^user^\n" +
-                    "^modifiedFields^\n" +
-                    "^comment^\n" +
+            "You can review this ^itemNameLowerCase^ here: ^detailsURL^<br>\n" +
+                    "Modified by: ^user^<br>\n" +
+                    "^modifiedFields^<br>\n" +
+                    "^comment^<br>\n" +
                     "^attachments^";
     private final List<ReplacementParam<?>> _replacements = new ArrayList<>();
     private final List<ReplacementParam<?>> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
