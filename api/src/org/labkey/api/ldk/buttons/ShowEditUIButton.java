@@ -84,7 +84,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
     @Override
     protected String getJsHandler(TableInfo ti)
     {
-        String ret = getHandlerName() + "(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",dataRegionName, {";
+        String ret = getHandlerName() + "(" + PageFlowUtil.jsString(ti.getPublicSchemaName()) + "," + PageFlowUtil.jsString(ti.getPublicName()) + ",dataRegionName, {";
 
         String delim = "";
         if (_urlParamMap != null)

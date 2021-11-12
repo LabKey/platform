@@ -278,7 +278,7 @@ public void test() throws Throwable
 
 private void _testDatasetUpdateService(StudyImpl study) throws Throwable
 {
-    StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser());
     Dataset def = createDataset(study, "A", false);
     TableInfo tt = ss.getTable(def.getName());
     QueryUpdateService qus = tt.getUpdateService();
@@ -440,7 +440,7 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
             .getObject(Integer.class);
     int rowid = null==RowId ? 0 : RowId.intValue();
 
-    StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), true);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser());
     Dataset def = createDataset(study, "DL", true);
     TableInfo tt = ss.getTable(def.getName());
     QueryUpdateService qus = tt.getUpdateService();
@@ -522,7 +522,7 @@ private void _testImportDatasetDataAllowImportGuid(Study study) throws Throwable
 {
     int sequenceNum = 0;
 
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
     Dataset def = createDataset(study, "GU", DatasetType.OPTIONAL_GUID);
     TableInfo tt = def.getTableInfo(_context.getUser());
 
@@ -558,7 +558,7 @@ private void _testImportDatasetData(Study study) throws Throwable
 {
     int sequenceNum = 0;
 
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
     Dataset def = createDataset(study, "B", false);
     TableInfo tt = def.getTableInfo(_context.getUser());
 
@@ -713,7 +713,7 @@ private void importRow(Dataset def, Map map, @Nullable Logger logger, String... 
 
 private void _testImportDemographicDatasetData(Study study) throws Throwable
 {
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
     Dataset def = createDataset(study, "Dem", true);
     TableInfo tt = def.getTableInfo(_context.getUser());
 
@@ -781,7 +781,7 @@ private void _testImportDemographicDatasetData(Study study) throws Throwable
  */
 private void _testDaysSinceStartCalculation(Study study) throws Throwable
 {
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
     Dataset dem = createDataset(study, "Dem", true);
     Dataset ds = createDataset(study, "DS", false);
 
@@ -838,7 +838,7 @@ private void _testDaysSinceStartCalculation(Study study) throws Throwable
 private void  _testDatasetTransformExport(Study study) throws Throwable
 {
     // create a dataset
-    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser());
     Dataset def = createDataset(study, "DS", false);
     TableInfo datasetTI = ss.getTable(def.getName());
     QueryUpdateService qus = datasetTI.getUpdateService();

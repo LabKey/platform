@@ -124,6 +124,6 @@ public class CohortTable extends BaseStudyTable
     {
         if (!(user instanceof User) || !StudyManager.getInstance().showCohorts(_userSchema.getContainer(), (User)user))
             return false;
-        return canReadOrIsAdminPermission(user, perm);
+        return checkReadOrIsAdminPermission(user, perm);
     }
 }

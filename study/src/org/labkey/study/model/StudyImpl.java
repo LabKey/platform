@@ -39,6 +39,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Transient;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -51,6 +52,8 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
@@ -173,6 +176,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public SecurableResource getParentResource()
     {
         //overridden to return the container
@@ -196,6 +200,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     @NotNull
     @Override
+    @Transient
     public String getResourceDescription()
     {
         return "The study " + _label;
@@ -218,6 +223,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     // TODO: Make short name admin editable, persist, and display. For now, just use the first "word" of the label.
     @Override
+    @Transient
     public String getShortName()
     {
         String label = _label == null ? "Study" : _label;
@@ -233,6 +239,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public Map<String, BigDecimal> getVisitAliases()
     {
         return StudyManager.getInstance().getCustomVisitImportMapping(this)
@@ -259,6 +266,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public List<DatasetDefinition> getDatasets()
     {
         return StudyManager.getInstance().getDatasetDefinitions(this);
@@ -270,12 +278,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getDatasetDefinitions(this, null, types);
     }
 
+    @Transient
     public Set<PropertyDescriptor> getSharedProperties()
     {
         return StudyManager.getInstance().getSharedProperties(this);
     }
 
     @Override
+    @Transient
     public List<LocationImpl> getLocations()
     {
         return LocationManager.get().getLocations(getContainer());
@@ -313,6 +323,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public List<VisitImpl> getVisitsForAssaySchedule()
     {
         return StudyManager.getInstance().getVisitsForAssaySchedule(getContainer());
@@ -337,6 +348,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public List<VisitImpl> getVisitsForTreatmentSchedule()
     {
         return TreatmentManager.getInstance().getVisitsForTreatmentSchedule(getContainer());
@@ -351,7 +363,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public Object getPrimaryKey()
     {
-        return getContainer();
+        return getContainer().getId();
     }
 
     public int getRowId()
@@ -551,7 +563,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public int getNumExtendedProperties(User user)
     {
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(this, user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(this, user);
         String domainURI = DOMAIN_INFO.getDomainURI(schema.getContainer());
         Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
 
@@ -680,6 +692,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public HtmlString getDescriptionHtml()
     {
         String description = getDescription();
@@ -705,6 +718,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
     }
 
+    @Transient
     public WikiRendererType getDescriptionWikiRendererType()
     {
         try
@@ -759,6 +773,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public List<Attachment> getProtocolDocuments()
     {
         return new ArrayList<>(AttachmentService.get().getAttachments(getProtocolDocumentAttachmentParent()));
@@ -798,6 +813,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     @Override
     @Nullable
+    @Transient
     public StudyImpl getSourceStudy()
     {
         if (getSourceStudyContainerId() == null)
@@ -963,6 +979,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
+    @Transient
     public AttachmentParent getProtocolDocumentAttachmentParent()
     {
         return new ProtocolDocumentAttachmentParent(this);
@@ -970,6 +987,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
 
     @Override
+    @Transient
     public String getSearchDisplayTitle()
     {
         return "Study -- " + getLabel();
@@ -984,11 +1002,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    @Transient
     public String getSearchKeywords()
     {
         StringBuilder sb = new StringBuilder();
 
-        StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
+        StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), RoleManager.getRole(ReaderRole.class));
         TableInfo sp = sqs.getTable("StudyProperties");
         if (null != sp)
         {
@@ -1021,6 +1040,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
 
     @Override
+    @Transient
     public String getSearchBody()
     {
         Container c = getContainer();

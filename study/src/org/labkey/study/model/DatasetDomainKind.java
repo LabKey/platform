@@ -757,7 +757,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
             return null;
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user);
         DatasetDefinition dsd = schema.getDatasetDefinitionByName(name);
         if (null == dsd)
             return null;

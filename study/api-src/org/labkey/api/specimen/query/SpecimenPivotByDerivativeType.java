@@ -36,6 +36,7 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
     public SpecimenPivotByDerivativeType(final SpecimenQuerySchema schema, ContainerFilter cf)
     {
         super(SpecimenReportQuery.getPivotByDerivativeType(schema, cf), schema);
+        setName(PIVOT_BY_DERIVATIVE_TYPE);
         setDescription("Contains up to one row of Specimen Primary/Derivative Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 

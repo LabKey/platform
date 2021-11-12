@@ -38,7 +38,25 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -4692,12 +4710,14 @@ public class AdminController extends SpringActionController
             }
             catch (FileNotFoundException e)
             {
+                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
                 errors.reject("folderImport", "File not found.");
                 return null;
             }
             catch (IOException e)
             {
-                errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
+                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
+                errors.reject("folderImport", "Unable to unzip folder archive.");
                 return null;
             }
         }
@@ -5596,6 +5616,7 @@ public class AdminController extends SpringActionController
             }
             catch (UncheckedExecutionException e)
             {
+                LOG.debug("Failed to configure cloud store(s).", e);
                 // UncheckedExecutionException with cause org.jclouds.blobstore.ContainerNotFoundException
                 // is what BlobStore hands us if bucket (S3 container) does not exist
                 if (null != e.getCause())
@@ -5605,6 +5626,7 @@ public class AdminController extends SpringActionController
             }
             catch (RuntimeException e)
             {
+                LOG.debug("Failed to configure cloud store(s).", e);
                 errors.reject(ERROR_MSG, e.getMessage());
             }
         }
@@ -7604,7 +7626,7 @@ public class AdminController extends SpringActionController
         {
             if(null == form.getTo() || form.getTo().equals(""))
             {
-                errors.reject("To field cannot be blank.");
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
                 form.setException(new ConfigurationException("To field cannot be blank"));
                 return;
             }
@@ -7615,7 +7637,7 @@ public class AdminController extends SpringActionController
             }
             catch(ValidEmail.InvalidEmailException e)
             {
-                errors.reject(e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
                 form.setException(new ConfigurationException(e.getMessage()));
             }
         }
@@ -7669,7 +7691,7 @@ public class AdminController extends SpringActionController
                 }
                 catch (MessagingException e)
                 {
-                    errors.reject(e.getMessage());
+                    errors.reject(ERROR_MSG, e.getMessage());
                     return false;
                 }
             return true;

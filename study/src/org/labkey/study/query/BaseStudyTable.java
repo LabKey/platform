@@ -47,7 +47,11 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -76,32 +80,28 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf)
     {
-        this(schema, realTable, cf,false);
+        this(schema, realTable, cf, false);
     }
 
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData)
     {
-        this(schema, realTable, cf, includeSourceStudyData, false);
-    }
-
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData, boolean skipPermissionChecks)
-    {
         super(realTable, schema);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
-            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), skipPermissionChecks));
+        {
+            boolean hasReaderRole = getContextualRoles().contains(RoleManager.getRole(ReaderRole.class));
+            _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getContainer(), schema.getUser(), hasReaderRole));
+        }
         else if (null != cf && supportsContainerFilter())
             _setContainerFilter(cf);
         else
             _setContainerFilter(getDefaultContainerFilter());
 
-        if (!includeSourceStudyData && skipPermissionChecks)
-            throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
         if (includeSourceStudyData && getParticipantColumnName() != null)
         {
             // If we're in an ancillary study, show the parent folder's specimens, but filter to include only those
             // that relate to subjects in the ancillary study.  This filter will have no effect on samples uploaded
-            // directly in this this study folder (since all local specimens should have an associated subject ID
+            // directly in this study folder (since all local specimens should have an associated subject ID
             // already in the participant table.
             StudyImpl currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
             if (currentStudy != null && currentStudy.isAncillaryStudy())
@@ -335,7 +335,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             _seqNumMinFieldKey = seqNumMinFieldKey;
         }
 
-        @Override @NotNull
+        @Override
+        @NotNull
         public HtmlString getFormattedHtml(RenderContext ctx)
         {
             Object value = getDisplayValue(ctx);
@@ -464,7 +465,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         TableInfo participantVisitCommentTable = validParticipantVisitCommentTable ? defPtidVisit.getTableInfo(schema.getUser()) : null;
 
         addColumn(new SpecimenCommentColumn(this, participantCommentTable, study.getParticipantCommentProperty(),
-            participantVisitCommentTable, study.getParticipantVisitCommentProperty(), alias, includeVialComments, hidden));
+                participantVisitCommentTable, study.getParticipantVisitCommentProperty(), alias, includeVialComments, hidden));
+    }
+
+
+    /* Subclass can override to support per-table roles */
+    protected Set<Role> getContextualRoles()
+    {
+        return getUserSchema().getContextualRoles();
     }
 
     public static class SpecimenCommentColumn extends ExprColumn
@@ -619,7 +627,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             for (int i = 0; i < fields.size(); i++)
             {
                 castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR" +
-                                 (getSqlDialect().isSqlServer() ? "(500)" : "") + ")";
+                        (getSqlDialect().isSqlServer() ? "(500)" : "") + ")";
                 sep = "', '";
             }
 
@@ -705,7 +713,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object value = getDisplayColumn().getValue(ctx);
-            if (value != null  && value instanceof String)
+            if (value != null && value instanceof String)
                 out.write((String) value);
         }
     }
@@ -761,12 +769,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
             if (renderHtml)
             {
-                sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun) +  "/Visit"));
+                sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun) + "/Visit"));
                 sb.append(PageFlowUtil.filter(participantVisitComment));
             }
             else
             {
-                sb.append(String.format(commentFormat, subjectNoun +  "/Visit"));
+                sb.append(String.format(commentFormat, subjectNoun + "/Visit"));
                 sb.append(participantVisitComment);
             }
             sb.append(lineSeparator);
@@ -782,25 +790,52 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return null;
     }
 
+    /**
+     * ONLY OVERRIDE THIS IF TABLE SHOULD BE EDITABLE IN DATASPACE PROJECT-LEVEL CONTAINER
+     * CONSIDER: use a "allowEditInDataspace" field to avoid need to override
+     */
     @Override
-    // ONLY OVERRIDE THIS IF TABLE SHOULD BE VISIBLE IN DATASPACE PROJECT-LEVEL CONTAINER
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        checkedPermissions.add(perm);
         // Most tables should not be editable in Dataspace
-        if (getContainer().isDataspace())
+        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
             return false;
         return hasPermissionOverridable(user, perm);
     }
 
+    /**
+     *  Override this method if
+     * a) You need special per-table read behavior (e.g. datasets)
+     * b) You implement getUpdateService()
+     */
     protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return false;
+        return checkHasReadPermission(user, perm);
     }
 
-    protected boolean canReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)
+    protected boolean checkReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm) ||
-                _userSchema.getContainer().hasPermission(user, AdminPermission.class);
+        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm, getContextualRoles()) ||
+                _userSchema.getContainer().hasPermission(user, AdminPermission.class, getContextualRoles());
+    }
+
+    protected boolean checkHasReadPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm, getContextualRoles());
+    }
+
+    protected boolean checkContainerPermission(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return _userSchema.getContainer().hasPermission(user, perm, getContextualRoles());
+    }
+
+    protected boolean checkSpecimenEditPermissions(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        if (perm.equals(ReadPermission.class))
+            return getContainer().hasPermission(user, perm, getContextualRoles());
+        else
+            return getContainer().hasPermissions(user, Set.of(perm, EditSpecimenDataPermission.class), getContextualRoles());
     }
 
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)

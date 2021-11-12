@@ -320,22 +320,30 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     /**
      * @return whether the user has permission to read rows from this dataset
+     * @deprecated use DatasetTableImpl.hasPermission()
      */
+    @Deprecated
     boolean canRead(UserPrincipal user);
 
     /**
      * @return whether the user has permission to update the dataset
+     * @deprecated use DatasetTableImpl.hasPermission()
      */
+    @Deprecated
     boolean canUpdate(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete from the dataset
+     * @deprecated use DatasetTableImpl.hasPermission()
      */
+    @Deprecated
     boolean canDelete(UserPrincipal user);
 
     /**
      * @return whether the user has permission to insert rows into the dataset
+     * @deprecated use DatasetTableImpl.hasPermission()
      */
+    @Deprecated
     boolean canInsert(UserPrincipal user);
 
     /**

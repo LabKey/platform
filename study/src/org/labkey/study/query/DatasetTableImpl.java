@@ -63,6 +63,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -114,9 +115,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private TableInfo _fromTable;
 
-    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
-        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), null);
+        /* NOTE! some code paths still expect this to throw rather than checking table.canRead() */
+        super(schema, dsd.getTableInfo(schema.getUser(), false, true), null);
 
         if (null != cf && dsd.getStudy().getShareDatasetDefinitions())
             _setContainerFilter(cf);
@@ -171,7 +173,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
-                var column = new AliasedColumn(this, subjectColName, baseColumn);
+                var column = new AliasedColumn(this, subjectColName, baseColumn)
+                {
+                    @Override
+                    public StringExpression getURL()
+                    {
+                        // delay constructing Participant table
+                        if (null == _url && null != getFk())
+                            _url = getFk().getURL(this);
+                        return _url;
+                    }
+                };
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
                 column.setDisplayColumnFactory(colInfo -> {
@@ -181,8 +193,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 });
 
                 column.setFk(new ParticipantForeignKey(cf));
-                if (null == column.getURL())
-                    column.setURL(column.getFk().getURL(column));
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
@@ -580,6 +590,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @NotNull
     protected SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
+        checkReadBeforeExecute();
         ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
         DatasetDefinition.DataSharing sharing = getDataset().getDataSharingEnum();
 
@@ -841,7 +852,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), _userSchema.getMustCheckPermissions(), true);
+            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), false, true);
         }
         return _fromTable;
     }
@@ -884,8 +895,15 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        // OK to edit these in Dataspace project and in any folder
-        return getDatasetDefinition().hasPermission(user, perm);
+        if (!perm.equals(ReadPermission.class) && !canUserAccessPhi())
+            return false;
+        return getDatasetDefinition().hasPermission(user, perm, getContextualRoles());
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        throw new IllegalStateException();
     }
 
     @Override

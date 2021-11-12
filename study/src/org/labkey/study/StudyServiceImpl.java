@@ -59,6 +59,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
@@ -389,7 +391,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public UserSchema getStudyQuerySchema(Study study, User user)
     {
-        return StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+        return StudyQuerySchema.createSchema((StudyImpl)study, user);
     }
 
     @Override
@@ -665,7 +667,7 @@ public class StudyServiceImpl implements StudyService
             Study s = StudyManager.getInstance().getStudy(c);
             if (null != s)
             {
-                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, RoleManager.getRole(ReaderRole.class));
                 BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
                 tables.put(c, t);
@@ -851,7 +853,7 @@ public class StudyServiceImpl implements StudyService
             Study s = StudyManager.getInstance().getStudy(c);
             if (null != s)
             {
-                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, RoleManager.getRole(ReaderRole.class));
                 BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
                 tables.put(c, t);

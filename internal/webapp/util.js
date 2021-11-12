@@ -32,9 +32,12 @@ function getHelpDiv()
                 '  </table>'+
                 '</div>'
         );
-        _helpDiv = document.getElementById("helpDiv");
-        document.addEventListener('keyup', helpDivHideHandler);
-        document.addEventListener('click', helpDivHideHandler);
+        const helpDiv = document.getElementById("helpDiv");
+        if (helpDiv) {
+            _helpDiv = helpDiv;
+            document.addEventListener('keyup', helpDivHideHandler);
+            document.addEventListener('click', helpDivHideHandler);
+        }
     }
     return _helpDiv;
 }
@@ -64,7 +67,11 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     posTop += elem.offsetHeight;
 
-    var div = getHelpDiv();
+    // helpDiv can potentially not render if the web page is in a loading state
+    const div = getHelpDiv();
+    if (!div) {
+        return false;
+    }
     div.anchorElem = elem;
 
     document.getElementById("helpDivTitle").innerHTML = titleText;
@@ -102,8 +109,13 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
 function hideHelpDiv(force)
 {
-    if (force || !_mouseInHelpDiv)
-        getHelpDiv().style.display = "none";
+    if (force || !_mouseInHelpDiv) {
+        // helpDiv can potentially not render if the web page is in a loading state
+        const helpDiv = getHelpDiv();
+        if (helpDiv) {
+            helpDiv.style.display = "none";
+        }
+    }
     return false;
 }
 

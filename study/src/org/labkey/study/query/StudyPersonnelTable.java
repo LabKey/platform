@@ -28,6 +28,7 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.query.studydesign.DefaultStudyDesignTable;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ import java.util.List;
 /**
  * Created by klum on 12/17/13.
  */
-public class StudyPersonnelTable extends DefaultStudyDesignTable
+public class StudyPersonnelTable extends DefaultStudyDesignTable<StudyQuerySchema>
 {
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -50,7 +51,7 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
     }
 
 
-    public static StudyPersonnelTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public static StudyPersonnelTable create(Domain domain, StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         if (null == storageTableInfo)
@@ -60,7 +61,7 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
         return new StudyPersonnelTable(domain, storageTableInfo, schema, containerFilter);
     }
 
-    private StudyPersonnelTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    private StudyPersonnelTable(Domain domain, TableInfo storageTableInfo, StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
         super(domain, storageTableInfo, schema, containerFilter);
 
@@ -86,6 +87,8 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm.equals(ReadPermission.class))
+            return hasPermissionOverridable(user, perm);
         // This is editable in Dataspace, but not in a folder within a Dataspace
         if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())
             return false;
