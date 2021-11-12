@@ -107,6 +107,7 @@ public enum PostgreSqlVersion
             test(96, POSTGRESQL_UNSUPPORTED);
             test(97, POSTGRESQL_UNSUPPORTED);
             test(98, POSTGRESQL_UNSUPPORTED);
+            test(99, POSTGRESQL_UNSUPPORTED);
         }
 
         private void test(int version, PostgreSqlVersion expectedVersion)
