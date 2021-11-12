@@ -125,7 +125,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _title;
 
     private LockState _lockState = null;
-    @JsonIgnore // Current Jackson version (2.11.3) can't handle LocalDate, so skip expiration date during serialization
     private LocalDate _expirationDate = null;
 
     // Might add others in the future (e.g., ReadOnly)
@@ -1682,26 +1681,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _lockState = lockState;
     }
 
-    @Deprecated @JsonIgnore
-    public @Nullable LocalDate getExpirationDateLD()
+    public @Nullable LocalDate getExpirationDate()
     {
         return _expirationDate;
     }
 
-    @Deprecated
-    public void setExpirationDateLD(LocalDate expirationDate)
+    public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
-    }
-
-    // TODO: Convert to LocalDate once we fix Jackson serialization of LocalDate
-    public java.sql.Date getExpirationDate()
-    {
-        return java.sql.Date.valueOf(_expirationDate);
-    }
-
-    public void setExpirationDate(java.sql.Date expirationDate)
-    {
-        _expirationDate = expirationDate.toLocalDate();
     }
 }
