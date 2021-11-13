@@ -1036,7 +1036,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     private boolean isEditProhibited(UserPrincipal user, Set<Class<? extends Permission>> perms)
     {
-        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user, perms));
+        return getStudy().isDataspaceStudy();
     }
 
     @Override

@@ -206,25 +206,20 @@ public abstract class VisitManager
     protected abstract void updateVisitTable(User user, @Nullable Logger logger);
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
-    // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
-    protected abstract SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll);
+    // it also needs to filter by cohort and qcstates.
+    @Nullable
+    protected abstract SQLFragment getVisitSummarySql(StudyQuerySchema studyQuerySchema, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll);
 
     public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
-        String alias = "SD";
-        StringBuilder statsSql = new StringBuilder();
-
-        for (VisitStatistic stat : stats)
-        {
-            statsSql.append(", ");
-            statsSql.append(stat.getSql(alias));
-        }
-
         Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
         VisitMapKey key = null;
         VisitStatistics statistics = new VisitStatistics();
 
-        SQLFragment sql = getVisitSummarySql(user, cohortFilter, qcStates, statsSql.toString(), alias, showAll);
+        StudyQuerySchema sqs = StudyQuerySchema.createSchema(_study, user);
+        SQLFragment sql = getVisitSummarySql(sqs, cohortFilter, qcStates, stats, showAll);
+        if (null == sql || sql.isEmpty())
+            return visitSummary;
 
         try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
         {
@@ -292,9 +287,9 @@ public abstract class VisitManager
         ParticipantCount
         {
             @Override
-            String getSql(@NotNull String alias)
+            SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return "CAST(COUNT(DISTINCT " + alias + ".ParticipantId) AS INT)";
+                return new SQLFragment("CAST(COUNT(DISTINCT ").append(ptid).append(") AS INT)");
             }
 
             @Override
@@ -306,9 +301,9 @@ public abstract class VisitManager
         RowCount
         {
             @Override
-            String getSql(@NotNull String alias)
+            SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return "CAST(COUNT(*) AS INT)";
+                return new SQLFragment("CAST(COUNT(*) AS INT)");
             }
 
             @Override
@@ -318,7 +313,7 @@ public abstract class VisitManager
             }
         };
 
-        abstract String getSql(@NotNull String alias);
+        abstract SQLFragment getSql(@NotNull SQLFragment participant);
         public abstract String getDisplayString(Study study);
     }
 

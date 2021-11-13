@@ -73,6 +73,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -99,12 +100,17 @@
 
     User user = (User) request.getUserPrincipal();
     List<DatasetDefinition> allDatasets = manager.getDatasetDefinitions(study);
-    ArrayList<DatasetDefinition> datasets = new ArrayList<>(allDatasets.size());
+
+    ArrayList<Pair<DatasetDefinition,TableInfo>> datasets = new ArrayList<>(allDatasets.size());
+
     for (DatasetDefinition def : allDatasets)
     {
-        if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
+        if (!def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
             continue;
-        datasets.add(def);
+        TableInfo t = querySchema.getDatasetTableForLookup(def, null);
+        if (!t.hasPermission(user, ReadPermission.class))
+            continue;
+        datasets.add(new Pair<>(def,t));
     }
 
     //
@@ -135,14 +141,27 @@
     final VisitMultiMap visitSequenceMap = new VisitMultiMap();
     final Map<Double, Integer> countKeysForSequence = new HashMap<>();
     final Set<Integer> datasetSet = new HashSet<>();
-    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(study.getSubjectColumnName()), bean.getParticipantId());
-    Sort sort = new Sort("SequenceNum");
+
     SQLFragment f = new SQLFragment();
-    f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
-    f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets, user).getFromSQL("SD"));
-    f.append("\nWHERE ParticipantId = ?");
-    f.append("\nGROUP BY ParticipantId, SequenceNum, DatasetId");
-    f.add(bean.getParticipantId());
+    String union = "";
+    for (var pair : datasets)
+    {
+        DatasetDefinition dd = pair.getKey();
+        TableInfo t = pair.getValue();
+        String alias = "__x" + dd.getDatasetId() + "__";
+        ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
+        ColumnInfo seq = t.getColumn("SequenceNum");
+        f.append(union).append("SELECT ")
+                .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
+                .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
+                .append(dd.getDatasetId()).append(" as DatasetId,")
+                .append("COUNT(*) AS _RowCount");
+        f.append("\nFROM ").append(t.getFromSQL(alias));
+        f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
+        f.append("\nGROUP BY ").append(ptid.getValueSql(alias)).append(",").append(seq.getValueSql(alias));
+        union = "\n  UNION ALL\n";
+    }
+    f.append("\n ORDER BY 2");
 
     new SqlSelector(dbSchema, f).forEach(rs -> {
         String ptid = rs.getString(1);
@@ -395,8 +414,11 @@
 </tr>
 
 <%
-    for (DatasetDefinition dataset : datasets)
+    for (var pair : datasets)
     {
+        var dataset = pair.getKey();
+        var table = pair.getValue();
+
         // Do not display demographic data here. That goes in a separate web part,
         // the participant characteristics
         if (dataset.isDemographicData())
@@ -411,7 +433,8 @@
         if ("expand".equalsIgnoreCase(expandedMap.get(datasetId)))
             expanded = true;
 
-        if (!dataset.canRead(user))
+        assert table.hasPermission(user,ReadPermission.class);
+        if (!table.hasPermission(user,ReadPermission.class))
         {
 %>
 <tr class="labkey-header">
@@ -421,13 +444,12 @@
 </tr>
 <%
         continue;
-    }
+        }
 
     if (!datasetSet.contains(datasetId))
         continue;
 
     // get the data for this dataset and group rows by SequenceNum/Key
-    TableInfo table = querySchema.getDatasetTable(dataset, null);
     Map<Double, Map<Object, Map<String, Object>>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
     ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
@@ -437,6 +459,8 @@
     ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
 
     final int rowCount;
+    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(study.getSubjectColumnName()), bean.getParticipantId());
+    Sort sort = new Sort("SequenceNum");
     try (Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults())
     {
         rowCount = dsResults.getSize();

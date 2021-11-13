@@ -36,6 +36,7 @@ import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
@@ -435,6 +436,23 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 
+        var datasetId = new BaseColumnInfo("DatasetId", this, JdbcType.INTEGER)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAliasName)
+            {
+                return new SQLFragment(String.valueOf(_dsd.getDatasetId()));
+            }
+        };
+        datasetId.setHidden(true);
+        datasetId.setCalculated(true);
+        datasetId.setReadOnly(true);
+        datasetId.setShownInDetailsView(false);
+        datasetId.setShownInInsertView(false);
+        datasetId.setShownInUpdateView(false);
+        datasetId.setRequired(false);
+        addColumn(datasetId);
+
         addFolderColumn();
     }
 
@@ -615,6 +633,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+
+    /** This function is too complicated, consider NOT calling super.getFromSQL() to make the paths through this code more consistent */
     @NotNull
     protected SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
@@ -623,6 +643,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         DatasetDefinition.DataSharing sharing = getDataset().getDataSharingEnum();
 
         final SQLFragment sqlf;
+        boolean hasWhere = false;
 
         if (!includeParticipantVisit && !_dsd.isPublishedData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
         {
@@ -643,25 +664,31 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else
             {
                 TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-                sqlf.append("(SELECT ").append(innerAlias).append(".*, PV.VisitRowId");
+                sqlf.append("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
                 if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-                    sqlf.append(", PV.Day");
-                SQLFragment from = getRealTable().getFromSQL(innerAlias);
-                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV"))
-                        .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId = PV.ParticipantId AND ")
-                        .append(innerAlias).append(".SequenceNum = PV.SequenceNum");
+                    sqlf.append(", __PV__.Day");
+                SQLFragment from = getRealTable().getFromSQL("__DS__");
+                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
+                        .append("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
 
                 if (null != getRealTable().getColumn("container"))
                 {
-                    sqlf.append(" AND PV.Container = ").append(innerAlias).append(".Container");
+                    sqlf.append(" AND __PV__.Container = __DS__.Container");
                 }
                 else
                 {
-                    sqlf.append(" AND PV.Container = '").append(getContainer().getId()).append("'");
+                    sqlf.append(" AND __PV__.Container = '").append(getContainer().getId()).append("'");
+                }
+                sqlf.append(") ").append(innerAlias).append(" ");
+
+                Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+                SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), innerAlias, columnMap);
+                if (!filterFrag.isEmpty())
+                {
+                    sqlf.append(filterFrag);
+                    hasWhere = true;
                 }
             }
-
-            boolean hasWhere = false;
 
             // Datasets mostly ignore container filters because they usually belong to a single container.
             // In the dataspace case, they are unfiltered (no container filter).
@@ -678,17 +705,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
                     if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
-                        sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
                     }
                     else
                     {
                         // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
                         if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
                             throw new IllegalStateException("problem generating dataset SQL");
-                        sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        hasWhere = true;
                     }
-
-                    hasWhere = true;
                 }
             }
 
@@ -958,7 +984,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     // TODO see BaseStudyTable.addWrapParticipantColumn(), do we need both?
     class ParticipantForeignKey extends LookupForeignKey
     {
-        private ParticipantTable _tableInfo;
+        private TableInfo _tableInfo;
 
         ParticipantForeignKey(ContainerFilter cf)
         {
@@ -975,12 +1001,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             if (_tableInfo == null)
             {
-                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantTable(_userSchema, getLookupContainerFilter(), true);
-                _tableInfo.setIgnoreSessionParticipantGroup();
-                _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
-                _tableInfo.afterConstruct();
+                final ContainerFilter cf = getLookupContainerFilter();
+                _tableInfo = getUserSchema().getCachedLookupTableInfo(this.getClass().getName() + "/" + (null==cf?"null":cf.getCacheKey()), () ->
+                {
+                    // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                    // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                    var t = new ParticipantTable(_userSchema, getLookupContainerFilter(), true);
+                    t.setIgnoreSessionParticipantGroup();
+                    t.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
+                    t.afterConstruct();
+                    t.setLocked(true);
+                    return t;
+                });
             }
             return _tableInfo;
         }
@@ -994,7 +1026,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     class ParticipantVisitForeignKey extends LookupForeignKey
     {
-        private ParticipantVisitTable _tableInfo;
+        private TableInfo _tableInfo;
 
         ParticipantVisitForeignKey(ContainerFilter cf, String pkColumnName)
         {
@@ -1010,11 +1042,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             if (_tableInfo == null)
             {
-                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), true);
-                _tableInfo.setIgnoreSessionParticipantGroup();
-                _tableInfo.afterConstruct();
+                final ContainerFilter cf = getLookupContainerFilter();
+                _tableInfo = getUserSchema().getCachedLookupTableInfo(this.getClass().getName() + "/" + (null==cf?"null":cf.getCacheKey()), () ->
+                {
+                    // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                    // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                    var t = new ParticipantVisitTable(_userSchema, cf, true);
+                    t.setIgnoreSessionParticipantGroup();
+                    t.afterConstruct();
+                    t.setLocked(true);
+                    return t;
+                });
             }
             return _tableInfo;
         }

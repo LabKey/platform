@@ -125,7 +125,7 @@ public class StudySchema
         return new StudyUnionTableInfo(study, defs, user, study.isDataspaceStudy());
     }
 
-    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
+/*    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
     {
         List<DatasetDefinition> defsAll = study.getDatasets();
         List<DatasetDefinition> defsVisible = new ArrayList<>(defsAll.size());
@@ -138,7 +138,7 @@ public class StudySchema
             defsVisible.add(def);
         }
         return new StudyUnionTableInfo(study, defsVisible, user, study.isDataspaceStudy());
-    }
+    } */
 
     public TableInfo getTableInfoParticipant()
     {
