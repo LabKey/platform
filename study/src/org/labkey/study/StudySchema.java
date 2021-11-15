@@ -27,9 +27,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: brittp
@@ -124,21 +122,6 @@ public class StudySchema
     {
         return new StudyUnionTableInfo(study, defs, user, study.isDataspaceStudy());
     }
-
-/*    public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
-    {
-        List<DatasetDefinition> defsAll = study.getDatasets();
-        List<DatasetDefinition> defsVisible = new ArrayList<>(defsAll.size());
-        for (DatasetDefinition def : defsAll)
-        {
-            if (!def.isShowByDefault())
-                continue;
-            if (null != user && !def.canRead(user))
-                continue;
-            defsVisible.add(def);
-        }
-        return new StudyUnionTableInfo(study, defsVisible, user, study.isDataspaceStudy());
-    } */
 
     public TableInfo getTableInfoParticipant()
     {

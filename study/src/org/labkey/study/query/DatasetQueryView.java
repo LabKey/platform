@@ -41,7 +41,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.qc.QCStateManager;
@@ -58,8 +57,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -239,17 +236,6 @@ public class DatasetQueryView extends StudyQueryView
         view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
-    }
-
-
-    @Override
-    protected boolean canUpdateSome()
-    {
-        TableInfo table = getTable();
-        if (null == table)
-            return false;
-        return (table.hasPermission(getUser(), UpdatePermission.class) || table.hasPermission(getUser(), RestrictedUpdatePermission.class))
-                && table.getUpdateService() != null;
     }
 
 

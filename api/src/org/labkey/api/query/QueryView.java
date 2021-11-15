@@ -820,11 +820,6 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
     }
 
-    protected boolean canUpdateSome()
-    {
-        return canUpdate();
-    }
-
     protected boolean canDelete()
     {
         TableInfo table = getTable();
