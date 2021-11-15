@@ -22,6 +22,7 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
@@ -71,7 +72,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         Replacements replacements = new Replacements(_replacements);
 
         replacements.add("issueId", Integer.class, "Unique id for the issue", ContentType.Plain, c -> _newIssue == null ? null : _newIssue.getIssueId());
-        replacements.add("detailsURL", String.class, "URL to get the details view for the issue", ContentType.Plain, c -> _detailsURL == null ? null : _detailsURL.getURIString());
+        replacements.add("detailsURL", String.class, "URL to get the details view for the issue", ContentType.HTML, c -> _detailsURL == null ? null : PageFlowUtil.filter(_detailsURL.getURIString(), true, true));
         replacements.add("action", String.class, "Description of the type of action, like 'opened' or 'resolved'", ContentType.Plain, c -> _change);
         replacements.add("itemName", String.class, "Potentially customized singular item name, typically 'Issue'", ContentType.Plain, c -> getEntryTypeName(c, _newIssue).singularName);
         replacements.add("itemNameLowerCase", String.class, "Potentially customized singular item name in lower case, typically 'issue'", ContentType.Plain, c -> getEntryTypeName(c, _newIssue).singularName.toLowerCase());
