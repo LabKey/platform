@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false, null),
-    JAVA_14(14, true, true, "https://docs.oracle.com/en/java/javase/14/docs/api/java.base/"),
-    JAVA_15(15, true, true, "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/"),
     JAVA_16(16, false, true, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"),
     JAVA_17(17, false, true, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/"),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/");
@@ -130,10 +128,10 @@ public enum JavaVersion
             test(11, JAVA_UNSUPPORTED);
             test(12, JAVA_UNSUPPORTED);
             test(13, JAVA_UNSUPPORTED);
+            test(14, JAVA_UNSUPPORTED);
+            test(15, JAVA_UNSUPPORTED);
 
             // Good
-            test(14, JAVA_14);
-            test(15, JAVA_15);
             test(16, JAVA_16);
             test(17, JAVA_17);
 
