@@ -445,12 +445,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         };
         datasetId.setHidden(true);
-        datasetId.setCalculated(true);
         datasetId.setReadOnly(true);
+        datasetId.setUserEditable(false);
         datasetId.setShownInDetailsView(false);
         datasetId.setShownInInsertView(false);
         datasetId.setShownInUpdateView(false);
-        datasetId.setRequired(false);
         addColumn(datasetId);
 
         addFolderColumn();
