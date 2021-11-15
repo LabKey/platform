@@ -610,29 +610,27 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         if (view != null)
         {
             QueryDefinition def = view.getQueryDef();
-            if (def != null)
-            {
-                List<QueryException> errors = new ArrayList<>();
-                TableInfo table = def.getTable(errors, false);
-
-                if (!errors.isEmpty())
-                {
-                    StringBuilder sb = new StringBuilder();
-                    String delim = "";
-
-                    for (QueryException error : errors)
-                    {
-                        sb.append(delim).append(error.getMessage());
-                        delim = "\n";
-                    }
-                    throw new ValidationException("Unable to get table or query: " + sb.toString());
-                }
-
-                if (table == null)
-                    throw new ValidationException("Table or query not found: " + view.getSettings().getQueryName());
-            }
-            else
+            if (def == null)
                 throw new ValidationException("Unable to get a query definition from table or query: " + view.getSettings().getQueryName());
+
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo table = def.getTable(errors, false);
+
+            if (!errors.isEmpty())
+            {
+                StringBuilder sb = new StringBuilder();
+                String delim = "";
+
+                for (QueryException error : errors)
+                {
+                    sb.append(delim).append(error.getMessage());
+                    delim = "\n";
+                }
+                throw new ValidationException("Unable to get table or query: " + sb.toString());
+            }
+
+            if (table == null)
+                throw new ValidationException("Table or query not found: " + view.getSettings().getQueryName());
         }
     }
 

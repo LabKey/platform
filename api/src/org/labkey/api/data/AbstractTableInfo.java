@@ -54,6 +54,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -889,6 +890,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         SecurityLogger.log("AbstractTableInfo.hasPermission " + getName(), user, null, false);
+        UserSchema s = getUserSchema();
+        if (perm.equals(ReadPermission.class) && null != s)
+            return s.canReadSchema() && s.getContainer().hasPermission(user, perm);
         return false;
     }
 

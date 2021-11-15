@@ -128,7 +128,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
-            if (!dataset.canRead(schema.getUser()))
+            if (!dataset.canReadInternal(schema.getUser()))
                 continue;
 
             String name = _userSchema.decideTableName(dataset);

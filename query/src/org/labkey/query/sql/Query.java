@@ -73,6 +73,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -943,6 +944,9 @@ public class Query
                 ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
                 addDependency(QueryService.DependencyType.Table, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
             }
+
+            if (!tableInfo.hasPermission(getSchema().getUser(), ReadPermission.class))
+                throw new UnauthorizedException(tableInfo.getPublicSchemaName() + "." + tableInfo.getName());
 
             return new QueryTable(this, resolvedSchema, tableInfo, alias);
         }

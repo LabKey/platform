@@ -71,7 +71,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private boolean _bindQueryName = true;
     private boolean _bindSchemaName = true;
     private boolean _bindViewName = true;
-    private BindState _bindState = BindState.UNBOUND;
+    protected BindState _bindState = BindState.UNBOUND;
     private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
 
@@ -104,7 +104,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _queryView;
     }
 
-    private enum BindState { UNBOUND, BINDING, BOUND }
+    protected enum BindState { UNBOUND, BINDING, BOUND }
 
     protected PropertyValues _initParameters = null;
 

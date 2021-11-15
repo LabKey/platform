@@ -66,6 +66,8 @@ public class StudyPropertiesTable extends BaseStudyTable
     public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy(), cf);
+        // use STUDY_TABLE_NAME because that's what's returned in StudyQuerySchema.getTableNames()
+        setName(StudyQuerySchema.STUDY_TABLE_NAME);
 
         Container c = schema.getContainer();
 
@@ -188,7 +190,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         if (UpdatePermission.class == perm || InsertPermission.class == perm || ReadPermission.class.equals(perm))
-            return canReadOrIsAdminPermission(user, perm);
+            return checkReadOrIsAdminPermission(user, perm);
         return false;
     }
 

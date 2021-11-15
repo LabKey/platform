@@ -108,6 +108,8 @@ public class VisitTable extends BaseStudyTable
     @Override
     protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, perm);
+        // see Study.CreateVisitAction @RequiresPermission(AdminPermission.class
+        // see StudyDesignController @RequiresPermission(UpdatePermission.class)
+        return checkReadOrIsAdminPermission(user, perm);
     }
 }

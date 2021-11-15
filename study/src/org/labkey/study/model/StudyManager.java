@@ -107,6 +107,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -479,7 +480,6 @@ public class StudyManager
         return _instance;
     }
 
-
     @Nullable
     public StudyImpl getStudy(@NotNull Container c)
     {
@@ -598,6 +598,7 @@ public class StudyManager
         {
             SpecimenSchema.get().getTableInfoLocation(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
+            clearCaches(container,false);
 
             //note: we no longer copy the container's policy to the study upon creation
             //instead, we let it inherit the container's policy until the security type
@@ -2047,7 +2048,7 @@ public class StudyManager
         DatasetDefinition def = getDatasetDefinition(study, cohortDatasetId);
 
         if (def != null)
-            return def.canRead(user);
+            return def.canReadInternal(user);
 
         return false;
     }
@@ -4168,7 +4169,7 @@ public class StudyManager
     // Return a source->alias map for the specified participant
     public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user, true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user).getParticipantAliasesTable();
 
         if (null == aliasTable)
             return Collections.emptyMap();
@@ -4259,7 +4260,7 @@ public class StudyManager
 
         body.append(keywords).append("\n");
 
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), RoleManager.getRole(ReaderRole.class));
         TableInfo tableInfo = schema.createDatasetTableInternal(dsd, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
@@ -4329,7 +4330,7 @@ public class StudyManager
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
 
         if (null != aliasTable)
         {

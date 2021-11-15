@@ -49,7 +49,7 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("DescriptionRendererType"));
     }
 
-    public static StudyTreatmentTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
+    public static StudyTreatmentTable create(Domain domain, StudyQuerySchema schema, @Nullable ContainerFilter filter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         if (null == storageTableInfo)
@@ -60,7 +60,7 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
     }
 
 
-    private StudyTreatmentTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter filter)
+    private StudyTreatmentTable(Domain domain, TableInfo storageTableInfo, StudyQuerySchema schema, @Nullable ContainerFilter filter)
     {
         super(domain, storageTableInfo, schema, filter);
 

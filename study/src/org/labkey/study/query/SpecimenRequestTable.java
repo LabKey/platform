@@ -26,6 +26,8 @@ import org.labkey.api.specimen.SpecimenSchema;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENREQUEST_TABLENAME;
+
 /**
  * User: brittp
  * Date: Apr 20, 2007
@@ -36,6 +38,7 @@ public class SpecimenRequestTable extends BaseStudyTable
     public SpecimenRequestTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, SpecimenSchema.get().getTableInfoSampleRequest(), cf);
+        setName(SPECIMENREQUEST_TABLENAME);
 
         AliasedColumn rowIdColumn = new AliasedColumn(this, "RequestId", _rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);

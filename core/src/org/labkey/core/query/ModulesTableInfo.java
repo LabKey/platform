@@ -33,7 +33,9 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -150,6 +152,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         var h = getSqlDialect().getStringHandler();
         SQLFragment ret = new SQLFragment();
 

@@ -58,7 +58,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
             throw new QueryUpdateServiceException("No study found.");
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
+        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user);
         TableInfo queryTableInfo = querySchema.getTable("StudyProperties", null);
         if (null == queryTableInfo)
             throw new QueryUpdateServiceException("StudyProperties table not found.");

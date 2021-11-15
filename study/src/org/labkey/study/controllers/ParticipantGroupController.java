@@ -1519,7 +1519,7 @@ public class ParticipantGroupController extends BaseStudyController
     {
         if (!getStudy().isDataspaceStudy())
             return null;
-        DataspaceQuerySchema dqs = new DataspaceQuerySchema(getStudy(), getUser(), true);
+        DataspaceQuerySchema dqs = new DataspaceQuerySchema(getStudy(), getUser());
         return dqs.getDefaultContainerFilter();
     }
 

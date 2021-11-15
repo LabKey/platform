@@ -141,7 +141,7 @@ public class SubstitutionFormat
                 return null;
 
             if (!(value instanceof Collection))
-                throw new IllegalArgumentException("Expected collection: " + value);
+                return value;
 
             Collection<?> c = (Collection)value;
             return c.stream().findFirst().orElse(null);
@@ -157,7 +157,7 @@ public class SubstitutionFormat
                 return null;
 
             if (!(value instanceof Collection))
-                throw new IllegalArgumentException("Expected collection: " + value);
+                return value;
 
             Collection<?> c = (Collection)value;
             return c.stream().skip(1).collect(Collectors.toList());
@@ -173,7 +173,7 @@ public class SubstitutionFormat
                 return null;
 
             if (!(value instanceof Collection))
-                throw new IllegalArgumentException("Expected collection: " + value);
+                return value;
 
             Collection<?> c = (Collection)value;
             return c.stream().reduce((a, b) -> b).orElse(null);

@@ -35,9 +35,9 @@ public class SpecimenTable extends AbstractSpecimenTable
 {
     private List<SpecimenTable> _studySpecimenTables = null;
 
-    public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks, boolean allStudies)
+    public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean allStudies)
     {
-        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, true);
 
         var ptidColumn = getMutableColumn(StudyService.get().getSubjectColumnName(getContainer()));
 //        addWrapColumn(getRealTable().getColumn("RowId"));
@@ -72,8 +72,8 @@ public class SpecimenTable extends AbstractSpecimenTable
 //                if (study.getContainer().hasPermission(user, ReadPermission.class))
                 if (study.getContainer().hasPermission(user, ReadPermission.class) && study.getContainer().getId() != getContainer().getId())
                 {
-                    StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema((StudyImpl)study, user, false);
-                    SpecimenTable table = new SpecimenTable(studyQuerySchema, null, skipPermissionChecks, false);
+                    StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema((StudyImpl)study, user);
+                    SpecimenTable table = new SpecimenTable(studyQuerySchema, null, false);
                     _studySpecimenTables.add(table);
                 }
             }
@@ -85,6 +85,7 @@ public class SpecimenTable extends AbstractSpecimenTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment sql = new SQLFragment();
         if (null != _studySpecimenTables)
         {

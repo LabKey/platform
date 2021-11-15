@@ -151,8 +151,6 @@ if (typeof LABKEY == "undefined")
                 elem.innerHTML = html;
                 document.body.appendChild(elem.firstChild);
             }
-            else
-                document.write(html);
         };
 
         //private. used to append additional module context objects for AJAXd views

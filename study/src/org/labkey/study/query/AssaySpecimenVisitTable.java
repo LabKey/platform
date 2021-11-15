@@ -77,7 +77,8 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
     @Override
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, perm);
+        // see StudyDesignController.UpdateAssayScheduleAction @RequiresPermission(UpdatePermission.class)
+        return checkContainerPermission(user, perm);
     }
 
     @Override
