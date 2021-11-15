@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -108,6 +107,11 @@ public class RecordedAction
     public void addInput(URI input, String role)
     {
         addInput(input, role, true);
+    }
+
+    public void addInputIfNotPresent(File input, String role)
+    {
+        addInput(input.toURI(), role, false);
     }
 
     /**
@@ -457,6 +461,38 @@ public class RecordedAction
         return _description + " Inputs: " + _inputs + " Outputs: " + _outputs;
     }
 
+    public boolean updateForMovedFile(File original, File moved)
+    {
+        boolean changed = false;
+
+        if (potentiallySwapFiles(original, moved, _inputs))
+        {
+            changed = true;
+        }
+
+        if (potentiallySwapFiles(original, moved, _outputs))
+        {
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private boolean potentiallySwapFiles(File original, File moved, Set<DataFile> toInspect)
+    {
+        boolean changed = false;
+        for (DataFile df : toInspect)
+        {
+            if (original.toURI().equals(df.getURI()))
+            {
+                df._uri = moved.toURI();
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -465,11 +501,11 @@ public class RecordedAction
 
         RecordedAction that = (RecordedAction) o;
 
-        if (!Objects.equals(_description, that._description)) return false;
-        if (!Objects.equals(_inputs, that._inputs)) return false;
-        if (!Objects.equals(_name, that._name)) return false;
-        if (!Objects.equals(_outputs, that._outputs)) return false;
-        return Objects.equals(_params, that._params);
+        if (_description != null ? !_description.equals(that._description) : that._description != null) return false;
+        if (_inputs != null ? !_inputs.equals(that._inputs) : that._inputs != null) return false;
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+        if (_outputs != null ? !_outputs.equals(that._outputs) : that._outputs != null) return false;
+        return !(_params != null ? !_params.equals(that._params) : that._params != null);
     }
 
     @Override
