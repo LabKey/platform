@@ -351,7 +351,7 @@ public class ExpSchema extends AbstractExpSchema
     }
 
     /**
-     * Exposed as EnumTableInfo
+     * Exposed as EnumTableInfo.  Update stateTypeEnum in qcStates.xsd if the enum values change.
      */
     public enum SampleStateType
     {

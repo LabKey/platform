@@ -12,20 +12,20 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public interface QCStateImportExportHelper
+public interface DataStateImportExportHelper
 {
-    List<QCStateImportExportHelper> _providers = new ArrayList<>();
+    List<DataStateImportExportHelper> _providers = new ArrayList<>();
 
-    static void registerProvider(QCStateImportExportHelper provider)
+    static void registerProvider(DataStateImportExportHelper provider)
     {
         _providers.add(provider);
     }
 
     @Nullable
-    static QCStateImportExportHelper getProvider(Container container)
+    static DataStateImportExportHelper getProvider(Container container)
     {
-        List<QCStateImportExportHelper> helpers = new ArrayList<>();
-        for (QCStateImportExportHelper helper : _providers)
+        List<DataStateImportExportHelper> helpers = new ArrayList<>();
+        for (DataStateImportExportHelper helper : _providers)
         {
             if (helper.matches(container))
             {
@@ -33,7 +33,7 @@ public interface QCStateImportExportHelper
             }
         }
 
-        helpers.sort(Comparator.comparingInt(QCStateImportExportHelper::getPriority));
+        helpers.sort(Comparator.comparingInt(DataStateImportExportHelper::getPriority));
         if (!helpers.isEmpty())
             return helpers.get(0);
 
@@ -49,10 +49,10 @@ public interface QCStateImportExportHelper
 
     void write(Container container, ImportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml);
 
-    boolean isQCStateInUse(Container container, DataState state);
+    boolean isDataStateInUse(Container container, DataState state);
 
-    DataState insertQCState(User user, DataState state);
-    DataState updateQCState(User user, DataState state);
+    DataState insertDataState(User user, DataState state);
+    DataState updateDataState(User user, DataState state);
 
     /**
      * The default QC state for data linked (published) to the study

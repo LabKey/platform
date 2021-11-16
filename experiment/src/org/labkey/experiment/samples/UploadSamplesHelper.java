@@ -1025,12 +1025,12 @@ public abstract class UploadSamplesHelper
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }
                 }
                 else
                 {
-                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows)
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
                         addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
@@ -1053,7 +1053,7 @@ public abstract class UploadSamplesHelper
 
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
-            SimpleConvertColumn c = createConvertColumn(col, fromIndex, true);
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
@@ -1071,10 +1071,5 @@ public abstract class UploadSamplesHelper
             return super.get(i);
         }
 
-        @Override
-        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
-        {
-            return value;
-        }
     }
 }

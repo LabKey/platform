@@ -204,8 +204,8 @@ import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.qc.CoreQCStateHandler;
-import org.labkey.core.qc.QCStateImporter;
-import org.labkey.core.qc.QCStateWriter;
+import org.labkey.core.qc.DataStateImporter;
+import org.labkey.core.qc.DataStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -908,7 +908,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
-            fsr.addFactories(new QCStateWriter.Factory(), new QCStateImporter.Factory());
+            fsr.addFactories(new DataStateWriter.Factory(), new DataStateImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 

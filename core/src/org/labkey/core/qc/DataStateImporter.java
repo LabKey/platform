@@ -9,8 +9,8 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.qc.export.AbstractQCStateImporter;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.export.AbstractDataStateImporter;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
@@ -18,7 +18,7 @@ import org.labkey.study.xml.qcStates.StudyqcDocument;
 import java.util.Collection;
 import java.util.Collections;
 
-public class QCStateImporter extends AbstractQCStateImporter implements FolderImporter<FolderDocument.Folder>
+public class DataStateImporter extends AbstractDataStateImporter implements FolderImporter<FolderDocument.Folder>
 {
     public static final String QC_STATE_SETTINGS = "QC State Settings";
 
@@ -45,7 +45,7 @@ public class QCStateImporter extends AbstractQCStateImporter implements FolderIm
             FolderDocument.Folder.QcStates qcStates = ctx.getXml().getQcStates();
             ctx.getLogger().info("Loading QC states");
             StudyqcDocument doc = getSettingsFile(ctx, root);
-            QCStateImportExportHelper helper = QCStateImportExportHelper.getProvider(ctx.getContainer());
+            DataStateImportExportHelper helper = DataStateImportExportHelper.getProvider(ctx.getContainer());
 
             if (helper != null)
             {
@@ -98,7 +98,7 @@ public class QCStateImporter extends AbstractQCStateImporter implements FolderIm
         @Override
         public FolderImporter create()
         {
-            return new QCStateImporter();
+            return new DataStateImporter();
         }
 
         @Override
