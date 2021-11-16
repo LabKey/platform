@@ -16,7 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
- * By default, this is this permission will NOT grant the ability to delete rows. Some modules may implement special rules
+ * By default, this permission will NOT grant the ability to delete rows. Some modules may implement special rules
  * to allow restricted ability to delete to users with this permission.
  */
 public class RestrictedDeletePermission extends AbstractPermission
