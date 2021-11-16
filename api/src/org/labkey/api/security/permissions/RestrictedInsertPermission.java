@@ -18,7 +18,7 @@ package org.labkey.api.security.permissions;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * By default this is this permission will NOT grant the ability to insert rows.  Some modules may implement special rules
+ * By default this permission will NOT grant the ability to insert rows.  Some modules may implement special rules
  * to allow restricted ability to insert to users with this permission.
  */
 public class RestrictedInsertPermission extends AbstractPermission
