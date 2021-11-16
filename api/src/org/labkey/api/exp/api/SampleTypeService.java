@@ -44,6 +44,10 @@ public interface SampleTypeService
     String MATERIAL_INPUTS_PREFIX = "MaterialInputs/";
     String MODULE_NAME = "Experiment";
 
+    enum ConfigParameters {
+        DeferAliquotRuns // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately
+    }
+
     enum SampleOperations {
         EditMetadata("editing metadata"),
         EditLineage("editing lineage"),

@@ -18,8 +18,8 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.qc.export.AbstractQCStateImporter;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.export.AbstractDataStateImporter;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -35,7 +35,7 @@ import org.springframework.validation.BindException;
  * Importer for dataset QC information located in the legacy study folder. Newer archive formats will write this out
  * at the folder level but this code is needed for backwards compatibility for archive formats older than 19.2
  */
-public class StudyQcStatesImporter extends AbstractQCStateImporter implements InternalStudyImporter
+public class StudyQcStatesImporter extends AbstractDataStateImporter implements InternalStudyImporter
 {
     @Override
     public String getDescription()
@@ -58,7 +58,7 @@ public class StudyQcStatesImporter extends AbstractQCStateImporter implements In
         if (isValidForImportArchive(ctx, root))
         {
             StudyDocument.Study.QcStates qcStates = ctx.getXml().getQcStates();
-            QCStateImportExportHelper helper = new StudyQCImportExportHelper();
+            DataStateImportExportHelper helper = new StudyQCImportExportHelper();
 
             ctx.getLogger().info("Loading QC states");
             StudyqcDocument doc = getSettingsFile(ctx, root);

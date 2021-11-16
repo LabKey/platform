@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -341,6 +342,9 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     ColumnLogging getColumnLogging();
 
+    @Nullable SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior();
+
+
     // statics added to make conversion easier
     static String labelFromName(String name)
     {
@@ -371,13 +375,13 @@ public interface ColumnInfo extends ColumnRenderProperties
         return BaseColumnInfo.booleanFromObj(o);
     }
 
-    public static boolean checkIsMutable(ColumnInfo col)
+    static boolean checkIsMutable(ColumnInfo col)
     {
         assert col instanceof MutableColumnInfo && !((MutableColumnInfo)col).isLocked();
         return col instanceof MutableColumnInfo && !((MutableColumnInfo)col).isLocked();
     }
 
-    public static String toString(ColumnInfo col)
+    static String toString(ColumnInfo col)
     {
         StringBuilder sb = new StringBuilder(64);
 
