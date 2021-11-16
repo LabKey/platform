@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -37,6 +38,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
@@ -44,8 +46,10 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -131,12 +135,30 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
     }
 
+
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        String lsid = keyFromMap(keys);
-        return _dataset.getDatasetRow(user, lsid);
+        var list = getRows(user, container, List.of(keys));
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+        ArrayList<String> lsids = new ArrayList<>(keys.size());
+        for (var m : keys)
+            lsids.add(keyFromMap(m));
+        var result = (List)(new TableSelector(getQueryTable(),
+                    TableSelector.ALL_COLUMNS,
+                    new SimpleFilter(new FieldKey(null,"lsid"), lsids, CompareType.IN),
+                    null))
+                .getArrayList(Map.class);
+        return (List<Map<String, Object>>)result;
     }
 
 
