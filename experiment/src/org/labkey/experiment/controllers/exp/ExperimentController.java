@@ -3783,6 +3783,10 @@ public class ExperimentController extends SpringActionController
             setImportHelpTopic("importSampleSets");     // importOptions help topic
             setShowImportOptions(true);
             setTypeName("samples");
+            _importViewBean.urlEndpoint = getViewContext().getActionURL().clone()
+                    .addParameter("importAlias.SampleId", "Name")
+                    .addParameter("importAlias.Sample Id", "Name")
+                    .getLocalURIString();
             return getDefaultImportView(form, errors);
         }
 
