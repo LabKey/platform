@@ -300,7 +300,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertTextPresent("over 6 visits. Data is present for 6 Pandas.");
 
         // verfiy that published study description has correct dataset
-        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
         // verify dataset has correct participants
@@ -500,7 +500,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), mixed_group, PARTICIPANT_NOUN_SINGULAR, ptids);
 
         clickTab("Overview");
-        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
         DataRegionTable dataset = new DataRegionTable("Dataset", this);
@@ -525,7 +525,7 @@ public class SharedStudyTest extends BaseWebDriverTest
             assertElementNotPresent(Locator.css("li.ptid"));
 
             clickTab("Overview");
-            clickAndWait(Locator.linkWithText("1 dataset"));
+            clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
             clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
             DataRegionTable dataset = new DataRegionTable("Dataset", this);
@@ -556,7 +556,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
             clickTab("Overview");
 
-            clickAndWait(Locator.linkWithText("1 dataset"));
+            clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
             clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
             DataRegionTable dataset = new DataRegionTable("Dataset", this);
