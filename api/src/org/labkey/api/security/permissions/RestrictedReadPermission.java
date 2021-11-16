@@ -16,7 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
- * By default, this is this permission will NOT grant the ability to read rows. Some modules may implement special rules
+ * By default, this permission will NOT grant the ability to read rows. Some modules may implement special rules
  * to allow restricted ability to read to users with this permission.
  */
 public class RestrictedReadPermission extends AbstractPermission
