@@ -1243,13 +1243,16 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         TableInfo unionTable = StudyServiceImpl.get().createUnionTable(this, bst, columnNames, containers, "StudyData", null, Map.of(), false, false);
         var ft = new FilteredTable<>(unionTable, this);
         String subjectColumnName = study.getSubjectColumnName();
+        ColumnInfo subjectColumn = null;
         for (ColumnInfo col : ft.getRealTable().getColumns())
         {
             String name = col.getName();
-            if (name.equalsIgnoreCase(subjectColumnName) && !"ParticipantId".equalsIgnoreCase(study.getSubjectColumnName()))
-                ft.addWrapColumn("ParticipantId", col);
+            if (name.equalsIgnoreCase(subjectColumnName))
+                subjectColumn = col;
             ft.addWrapColumn(col);
         }
+        if (null != subjectColumn && null == ft.getColumn("ParticipantId"))
+            ft.addWrapColumn("ParticipantId", subjectColumn).setHidden(true);
         return ft;
     }
 
