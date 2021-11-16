@@ -552,31 +552,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
-            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
-            {
-                for (ColumnInfo c : ti.getColumns())
-                {
-                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
-                        continue;
-                    if (c.isMvIndicatorColumn())
-                        continue;
-                    Object value = c.getValue(rs);
-                    String mvIndicator = null;
-                    if (null != c.getMvColumnName())
-                    {
-                        ColumnInfo mv = ti.getColumn(c.getMvColumnName());
-                        mvIndicator = null==mv ? null : (String)mv.getValue(rs);
-                    }
-                    if (null == value && null == mvIndicator)
-                        continue;
-                    if (null != mvIndicator)
-                        value = null;
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
-                    if (null != mvIndicator)
-                        prop.setMvIndicator(mvIndicator);
-                    ret.put(c.getPropertyURI(), prop);
-                }
-            });
+            ret.putAll(getObjectProperties(ti));
         }
         return ret;
     }

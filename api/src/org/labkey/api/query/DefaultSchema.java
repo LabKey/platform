@@ -152,8 +152,6 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
     /**
      * Get QuerySchema for SchemaKey encoded schema path.
      *
-     * @param user
-     * @param container
      * @param schemaPath SchemaKey encoded schema path.
      * @return The QuerySchema resolved by the schema path.
      * @see QueryService#getUserSchema(org.labkey.api.security.User, org.labkey.api.data.Container, String)
@@ -171,8 +169,6 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
     /**
      * Get QuerySchema for SchemaKey schema path.
      *
-     * @param user
-     * @param container
      * @param schemaPath SchemaKey schema path.
      * @return The QuerySchema resolved by the schema path.
      * @see QueryService#getUserSchema(org.labkey.api.security.User, org.labkey.api.data.Container, String)
@@ -260,7 +256,16 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
 
         SchemaProvider provider = _providers.get(name);
         if (provider != null)
-            return provider.getSchema(this);
+        {
+            QuerySchema result = provider.getSchema(this);
+            // Not all providers will be enabled in the current folder. For example, some are based on whether
+            // the module is enabled or not. If they don't resolve the schema, pass through to let dynamic providers
+            // (like linked schemas) claim the same name. This is helpful for automated testing.
+            if (result != null)
+            {
+                return result;
+            }
+        }
 
         if (name.startsWith("/"))
         {
@@ -329,7 +334,6 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
 
     /**
      * Get immediate UserSchema children names.
-     * @return
      */
     public Set<String> getUserSchemaNames(boolean includeHidden)
     {
@@ -360,7 +364,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
      */
     public Set<SchemaKey> getUserSchemaPaths(boolean includeHidden)
     {
-        SimpleSchemaTreeVisitor<Set<SchemaKey>, Void> visitor = new SimpleSchemaTreeVisitor<Set<SchemaKey>, Void>(includeHidden)
+        SimpleSchemaTreeVisitor<Set<SchemaKey>, Void> visitor = new SimpleSchemaTreeVisitor<>(includeHidden)
         {
             @Override
             public Set<SchemaKey> reduce(Set<SchemaKey> r1, Set<SchemaKey> r2)
@@ -414,7 +418,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
     }
 
     @Override
-    public VisualizationProvider createVisualizationProvider()
+    public VisualizationProvider<?> createVisualizationProvider()
     {
         return null;
     }

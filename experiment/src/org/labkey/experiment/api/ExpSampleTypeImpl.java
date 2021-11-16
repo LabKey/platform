@@ -476,7 +476,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (expr != null)
         {
             TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-            nameGen = new NameGenerator(expr, parentTable);
+            nameGen = new NameGenerator(expr, parentTable, getContainer());
         }
         else
         {
