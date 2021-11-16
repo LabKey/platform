@@ -1087,17 +1087,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
     }
 
-    public boolean canAccessPhi(User user, Set<Class<? extends Permission>> perms)
-    {
-        if (perms.contains(ReadPermission.class))
-        {
-            DatasetSchemaTableInfo table = getDatasetSchemaTableInfo(user, false);
-            if (null != table)
-                return table.canUserAccessPhi();
-        }
-        return false;
-    }
-
     @Override
     public KeyType getKeyType()
     {
