@@ -1396,17 +1396,12 @@ public class StringExpressionFactory
             m.put("list", Arrays.asList("a", "b", "c"));
 
             // CONSIDER: We may want to allow empty string to pass through the collection methods untouched
-            try
             {
                 StringExpression se = StringExpressionFactory.create(
                         "${a:first}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
 
                 String s = se.eval(m);
-                fail("Expected exception");
-            }
-            catch (IllegalArgumentException e)
-            {
-                // ok
+                assertEquals("A", s);
             }
 
             {

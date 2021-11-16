@@ -37,6 +37,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.DataType;
@@ -544,6 +545,23 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (dc != null)
             dataClassName = dc.getName();
         return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
+    }
+
+    @Override
+    public Map<String, ObjectProperty> getObjectProperties()
+    {
+        return getObjectProperties(getDataClass());
+    }
+
+    private Map<String, ObjectProperty> getObjectProperties(ExpDataClassImpl dataClass)
+    {
+        HashMap<String,ObjectProperty> ret = new HashMap<>(super.getObjectProperties());
+        var ti = null == dataClass ? null : dataClass.getTinfo();
+        if (null != ti)
+        {
+            ret.putAll(getObjectProperties(ti));
+        }
+        return ret;
     }
 
     @Nullable
