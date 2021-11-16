@@ -4,7 +4,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -13,7 +13,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
-public class StudyQCImportExportHelper implements QCStateImportExportHelper
+public class StudyQCImportExportHelper implements DataStateImportExportHelper
 {
     @Override
     public boolean matches(Container container)
@@ -59,7 +59,7 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
     }
 
     @Override
-    public boolean isQCStateInUse(Container container, DataState state)
+    public boolean isDataStateInUse(Container container, DataState state)
     {
         StudyQCStateHandler handler = new StudyQCStateHandler();
 
@@ -67,13 +67,13 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
     }
 
     @Override
-    public DataState insertQCState(User user, DataState state)
+    public DataState insertDataState(User user, DataState state)
     {
         return StudyManager.getInstance().insertQCState(user, state);
     }
 
     @Override
-    public DataState updateQCState(User user, DataState state)
+    public DataState updateDataState(User user, DataState state)
     {
         return DataStateManager.getInstance().updateState(user, state);
     }

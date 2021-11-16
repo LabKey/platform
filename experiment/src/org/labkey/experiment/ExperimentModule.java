@@ -120,6 +120,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeAndDataClassFolderImporter;
 import org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter;
@@ -428,7 +429,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
-            folderRegistry.addFactories(new SampleTypeAndDataClassFolderWriter.Factory(), new SampleTypeAndDataClassFolderImporter.Factory());
+            folderRegistry.addFactories(
+                    new SampleTypeAndDataClassFolderWriter.Factory(),
+                    new SampleTypeAndDataClassFolderImporter.Factory()
+            );
+            folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());

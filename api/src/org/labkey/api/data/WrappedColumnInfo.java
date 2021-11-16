@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -929,6 +930,20 @@ public class WrappedColumnInfo
         public void setIsRootDbSequence(boolean b)
         {
             throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior()
+                {
+                    return missingBehavior;
+                }
+            };
         }
 
         @Override

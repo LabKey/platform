@@ -213,10 +213,7 @@ public class DataIteratorContext
     @Nullable
     public Object getConfigParameter(Enum key)
     {
-        Object param = null;
-        if (null != getConfigParameters())
-            param = getConfigParameters().get(key);
-        return param;
+        return getConfigParameters().get(key);
     }
 
     public boolean getConfigParameterBoolean(Enum key)
