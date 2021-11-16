@@ -13,6 +13,7 @@ public class ProvenanceRecordingParams implements Serializable
     private GUID recordingId;
     private String name;
     private String description;
+    private String runName;
 
     private List<String> predecessorSteps = Collections.emptyList();
     private String inputObjectUriProperty = ProvenanceService.PROVENANCE_INPUT_PROPERTY;
@@ -59,6 +60,16 @@ public class ProvenanceRecordingParams implements Serializable
     public void setDescription(String description)
     {
         this.description = description;
+    }
+
+    public String getRunName()
+    {
+        return runName;
+    }
+
+    public void setRunName(String runName)
+    {
+        this.runName = runName;
     }
 
     public List<String> getPredecessorSteps()
