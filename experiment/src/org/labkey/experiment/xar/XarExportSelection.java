@@ -66,7 +66,8 @@ public class XarExportSelection implements Serializable
 
     public void addRuns(Collection<? extends ExpRun> runs)
     {
-        _runIds.addAll(runs.stream().map(ExpObject::getRowId).collect(Collectors.toSet()));
+        // Issue 44306 - be sure to retain the ordering of the runs as passed in the collection
+        _runIds.addAll(runs.stream().map(ExpObject::getRowId).collect(Collectors.toList()));
     }
 
     public void addDataIds(int... dataIds)
