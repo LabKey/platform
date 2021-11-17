@@ -431,7 +431,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
+            return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean());
         }
 
         @Override
@@ -10037,7 +10037,7 @@ public class AdminController extends SpringActionController
     {
         JSONObject res = new JSONObject();
 
-        AdminBean admin = new AdminBean(getUser());
+        AdminBean admin = new AdminBean();
         res.put("server", admin);
 
         final Map<String,Map<String,Object>> sets = new TreeMap<>();

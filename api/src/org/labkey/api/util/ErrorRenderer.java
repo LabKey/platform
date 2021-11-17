@@ -187,7 +187,7 @@ public class ErrorRenderer
 
                     out.println("<br><table>\n");
                     out.println("<tr><td colspan=2><b>core schema database configuration</b></td></tr>\n");
-                    out.println("<tr><td>Server URL</td><td>" + PageFlowUtil.filter(scope.getURL()) + "</td></tr>\n");
+                    out.println("<tr><td>Server URL</td><td>" + PageFlowUtil.filter(scope.getDatabaseUrl()) + "</td></tr>\n");
                     out.println("<tr><td>Product Name</td><td>" + PageFlowUtil.filter(scope.getDatabaseProductName()) + "</td></tr>\n");
                     out.println("<tr><td>Product Version</td><td>" + PageFlowUtil.filter(scope.getDatabaseProductVersion()) + "</td></tr>\n");
                     out.println("<tr><td>Driver Name</td><td>" + PageFlowUtil.filter(scope.getDriverName()) + "</td></tr>\n");

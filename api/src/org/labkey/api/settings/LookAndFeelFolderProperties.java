@@ -55,13 +55,11 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return LOOK_AND_FEEL_SET_NAME;
     }
 
-
     public boolean isPropertyInherited(Container c, String name)
     {
         String value = super.lookupStringValue(c, name, null);
         return null == value;
     }
-
 
     @Override
     protected String lookupStringValue(String name, @Nullable String defaultValue)

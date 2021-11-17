@@ -84,7 +84,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
-    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
+    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Theme</td>
