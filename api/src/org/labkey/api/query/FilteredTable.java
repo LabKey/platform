@@ -474,11 +474,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public String getSelectName()
     {
-        if (_filter.getWhereSQL(_rootTable).length() == 0)
+        if (_filter.isEmpty())
             return getFromTable().getSelectName();
         return null;
     }
-    
+
 
     @Override
     @NotNull

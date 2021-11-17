@@ -20,7 +20,7 @@ class SpecimenSchema extends StudyQuerySchema
 
     SpecimenSchema(StudyQuerySchema parent)
     {
-        super(new SchemaKey(parent.getSchemaPath(), "Specimens"), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
+        super(new SchemaKey(parent.getSchemaPath(), SPECIMENTS_SCHEMA_NAME), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
         _parentSchema = parent;
         setSessionParticipantGroup(parent.getSessionParticipantGroup());
     }

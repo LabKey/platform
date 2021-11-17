@@ -184,7 +184,7 @@ public class ParticipantTable extends BaseStudyTable
             if (dataset != null && dataset.canReadInternal(user))
             {
                 // Get the table and the two admin-configured columns
-                final DatasetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
+                final TableInfo datasetTable = dataset.getDatasetSchemaTableInfo(user);
                 final var aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
                 final var sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
 

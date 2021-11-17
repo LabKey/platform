@@ -76,7 +76,7 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                     {
                         if (dataset.getContainer() == targetStudyContainer)
                         {
-                            TableInfo tableInfo = dataset.getTableInfo(getUser(), false);
+                            TableInfo tableInfo = dataset.getTableInfo(getUser());
                             Filter datasetFilter = new SimpleFilter(FieldKey.fromParts(dataset.getKeyPropertyName()), id);
                             Map<String, Object> row = new TableSelector(tableInfo, datasetFilter, null).getMap();
                             if (row != null && !row.isEmpty())

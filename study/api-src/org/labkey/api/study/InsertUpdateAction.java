@@ -119,13 +119,15 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
-        if (isInsert() && !_ds.canInsert(getUser()))
+        if (isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+            if (!_ds.canInsert(getUser()))
+                throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
-        if (!isInsert() && !_ds.canUpdate(getUser()))
+        else // !isInsert()
         {
-            throw new UnauthorizedException("User does not have permission to edit this dataset");
+            if (!_ds.canUpdate(getUser()))
+                throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
 
         // we want to use the actual user schema table, since it implements UpdateService and permissions checks
@@ -282,13 +284,15 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         }
         final Container c = getContainer();
         final User user = getUser();
-        if (isInsert() && !_ds.canInsert(user))
+        if (isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+            if (!_ds.canInsert(user))
+                throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
-        if (!isInsert() && !_ds.canUpdate(user))
+        else // if (!isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to edit this dataset");
+            if (!_ds.canUpdate(user))
+                throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
         if (_ds.isPublishedData())
         {
@@ -365,7 +369,6 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         }
 
         return !errors.hasErrors();
-
     }
 
     @Override

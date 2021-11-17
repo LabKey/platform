@@ -400,12 +400,14 @@ public class DatasetImportRunnable implements Runnable
     {
         if (visitDatePropertyURI == null)
         {
-            TableInfo ti = _datasetDefinition.getTableInfo(user, false);
+            TableInfo ti = _datasetDefinition.getTableInfo(user);
             if (null != ti)
-            for (ColumnInfo col : ti.getColumns())
             {
-                if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
-                    visitDatePropertyURI = col.getPropertyURI();
+                for (ColumnInfo col : ti.getColumns())
+                {
+                    if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
+                        visitDatePropertyURI = col.getPropertyURI();
+                }
             }
             if (visitDatePropertyURI == null)
                 visitDatePropertyURI = DatasetDefinition.getVisitDateURI();
