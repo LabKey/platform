@@ -140,11 +140,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        var list = getRows(user, container, List.of(keys));
-        return list.isEmpty() ? null : list.get(0);
+        return (Map<String, Object>)(new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class));
     }
 
 
+    /* TODO for performance, NOTE need to return rows in order of input list
     @Override
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException
     {
@@ -160,6 +160,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                 .getArrayList(Map.class);
         return (List<Map<String, Object>>)result;
     }
+    */
 
 
     @Override
