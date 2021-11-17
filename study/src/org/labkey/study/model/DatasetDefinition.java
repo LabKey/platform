@@ -95,6 +95,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
@@ -312,6 +313,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
+        sub._study = substudy;
 
         // apply substudy dataset overrides
         String category = "dataset-overrides:" + getDatasetId();
@@ -650,7 +652,21 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         return StudySchema.getInstance().getSchema().getTable("studydatatemplate");
     }
-    
+
+
+    /**
+     * For consistency, now return the equivalent of
+     *    StudyUserSchema().createSchema().getSchema("Datasets").getTable(_dataset.getLabel());
+     *
+     * Internal study code can still use the DatasetSchemaTableInfo methods, however, we should try hard to
+     * remove usages of DatasetSchemaTableInfo.
+     */
+    @Override
+    public TableInfo getTableInfo(User user) throws UnauthorizedException
+    {
+        var sqs = StudyQuerySchema.createSchema(_study, user, null);
+        return sqs.getDatasetTable(this, null);
+    }
 
     /**
      * Get table info representing dataset.  This relies on the DatasetDefinition being removed from
@@ -659,22 +675,17 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      *
      * TODO convert usages of DatasetDefinition.getTableInfo() to use StudyQuerySchema.getTable()
      */
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user) throws UnauthorizedException
     {
-        return getTableInfo(user, true, false);
+        return getDatasetSchemaTableInfo(user, true, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
-        return getTableInfo(user, checkPermission, false);
+        return getDatasetSchemaTableInfo(user, checkPermission, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
@@ -976,7 +987,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     }
 
 
-    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class);
+    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class, RestrictedReadPermission.class);
 
     private void copyReadPerms(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> result)
     {
@@ -996,22 +1007,36 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return hasPermission(user, perm, null);
+        return hasPermissions(user, Set.of(perm), null);
     }
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
-        if (perm != ReadPermission.class && isEditProhibited(user, granted))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return granted.contains(perm);
+        return hasPermissions(user, Set.of(perm), contextualRoles);
     }
+
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    {
+        if (perms.isEmpty())
+            throw new IllegalStateException();
+        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
+        boolean editProhibited = isEditProhibited(user, granted);
+        boolean hasAdmin = getContainer().hasPermission(user, AdminPermission.class);
+
+        for (var perm : perms)
+        {
+            if (perm != ReadPermission.class && perm != RestrictedReadPermission.class && editProhibited)
+                return false;
+            if (!hasAdmin && !granted.contains(perm))
+                return false;
+        }
+        return true;
+    }
+
 
     private boolean isEditProhibited(UserPrincipal user, Set<Class<? extends Permission>> perms)
     {
-        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user, perms));
+        return getStudy().isDataspaceStudy();
     }
 
     @Override
@@ -1060,17 +1085,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     public boolean canUpdateDefinition(User user)
     {
         return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
-    }
-
-    public boolean canAccessPhi(User user, Set<Class<? extends Permission>> perms)
-    {
-        if (perms.contains(ReadPermission.class))
-        {
-            DatasetSchemaTableInfo table = getTableInfo(user, false);
-            if (null != table)
-                return table.canUserAccessPhi();
-        }
-        return false;
     }
 
     @Override
@@ -2297,7 +2311,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
-        TableInfo table = getTableInfo(user, false);
+        TableInfo table = getDatasetSchemaTableInfo(user);
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
@@ -2636,10 +2650,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u);
-        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
+        TableInfo queryTableInfo = getTableInfo(u);
 
-        TableInfo tInfo = getTableInfo(u, true);
+        DatasetSchemaTableInfo tInfo = getDatasetSchemaTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 

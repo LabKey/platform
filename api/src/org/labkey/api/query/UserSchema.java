@@ -322,6 +322,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return torq;
     }
 
+    protected void overlayTableMetadata(TableInfo table, String name, Collection<QueryException> errors)
+    {
+        table.overlayMetadata(name, this, errors);
+    }
+
     @Override
     @Nullable
     public final TableInfo getTable(String name)

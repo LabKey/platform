@@ -57,6 +57,9 @@
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -65,6 +68,7 @@
     StudyImpl study = bean.study;
     Container container = study.getContainer();
     User user = (User) request.getUserPrincipal();
+    StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, null);
     StudyManager manager = StudyManager.getInstance();
     String visitsLabel = manager.getVisitManager(study).getPluralLabel();
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
@@ -227,7 +231,8 @@
             if (!bean.showAll && !dataset.isShowByDefault())
                 continue;
 
-            boolean userCanRead = dataset.canRead(user);
+            TableInfo t = schema.getDatasetTable(dataset, null);
+            boolean userCanRead = t.hasPermission(user, ReadPermission.class);
 
             if (!userCanRead)
                 cantReadOneOrMoreDatasets = true;

@@ -91,7 +91,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         _datasetDefinition = datasetDefinition;
         this.user = user;
 
-        TableInfo table = datasetDefinition.getTableInfo(user, false);
+        TableInfo table = datasetDefinition.getTableInfo(user);
         needsQC = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
     }
 
@@ -146,7 +146,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         boolean isManagedKey = _datasetDefinition.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && _datasetDefinition.getKeyManagementType() != Dataset.KeyManagementType.None;
 
         TimepointType timetype = _datasetDefinition.getStudy().getTimepointType();
-        TableInfo table = _datasetDefinition.getTableInfo(user, false);
+        TableInfo table = _datasetDefinition.getTableInfo(user);
 
         ColumnInfo subjectCol = table.getColumn(_datasetDefinition.getStudy().getSubjectColumnName());
         String keyColumnName = _datasetDefinition.getKeyPropertyName();
@@ -478,7 +478,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             super(data, context);
             _datasetDefinition = datasetDefinition;
             this.user = user;
-            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
+            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user).getColumn("ParticipantID").getScale();
         }
 
         void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty, Integer indexContainer)

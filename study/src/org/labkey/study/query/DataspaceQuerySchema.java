@@ -25,7 +25,6 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.visualization.DataspaceVisualizationProvider;
 
@@ -60,7 +59,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
         {
             Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + project.getRowId());
             if (o instanceof List)
-                containerIds = (List)o;
+                containerIds = (List<GUID>)o;
         }
 
         _sharedStudyContainerFilter = containerIds;
@@ -80,6 +79,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 
 
     @Override
+    @NotNull
     public ContainerFilter getDefaultContainerFilter()
     {
         return new DataspaceContainerFilter(getContainer(), getUser(), _sharedStudyContainerFilter);
@@ -100,7 +100,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 
     @Nullable
     @Override
-    public VisualizationProvider createVisualizationProvider()
+    public DataspaceVisualizationProvider createVisualizationProvider()
     {
         return new DataspaceVisualizationProvider(this);
     }
