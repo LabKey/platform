@@ -2332,6 +2332,11 @@ public class DbScope
             {
                 for (Lock extraLock : extraLocks)
                 {
+                    // Clear the interrupted status of this thread so a previous, lingering interrupt won't prevent us
+                    // from acquiring a new lock - perhaps we should clear this at the start of every HTTP request
+                    // or background job that's using a thread pool?
+                    //noinspection ResultOfMethodCallIgnored
+                    Thread.interrupted();
                     try
                     {
                         boolean locked = extraLock.tryLock(_lockTimeout, _lockTimeoutUnit);
