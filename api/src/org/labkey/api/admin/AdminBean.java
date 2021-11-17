@@ -73,8 +73,6 @@ public class AdminBean
 
     public static String asserts = "disabled";
 
-    public final List<ActiveUser> active;
-
     @JsonIgnore
     public static final DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
@@ -95,10 +93,6 @@ public class AdminBean
                 propertyMap.put(key, getValue(m));
             });
 
-        // TODO: Remove -- for testing only
-        propertyMap.entrySet().stream()
-            .forEach(e -> System.out.println(e.getKey() + ": " + e.getValue()));
-
         //noinspection ConstantConditions,AssertWithSideEffects
         assert null != (asserts = "enabled");
 
@@ -106,7 +100,7 @@ public class AdminBean
         modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
     }
 
-    static @Nullable String getValue(Field field)
+    private static @Nullable String getValue(Field field)
     {
         try
         {
@@ -118,7 +112,7 @@ public class AdminBean
         }
     }
 
-    static @Nullable String getValue(Method method)
+    private static @Nullable String getValue(Method method)
     {
         try
         {
@@ -130,10 +124,9 @@ public class AdminBean
         }
     }
 
-    public AdminBean()
+    // No constructing for you!
+    private AdminBean()
     {
-        active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR).stream()
-            .map(p -> new ActiveUser(p.first, p.second)).collect(Collectors.toList());
     }
 
     public List<NavTree> getLinks(ViewContext ctx)
@@ -144,6 +137,13 @@ public class AdminBean
             links.addAll(headerLinkProvider.getLinks(ctx));
         }
         return links;
+    }
+
+    public static List<ActiveUser> getActiveUsers()
+    {
+        return UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR).stream()
+            .map(p -> new ActiveUser(p.first, p.second))
+            .collect(Collectors.toList());
     }
 
     public static Map<String, String> getPropertyMap()

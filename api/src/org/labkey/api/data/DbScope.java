@@ -1479,7 +1479,7 @@ public class DbScope
         return _rds;
     }
 
-    public String getSearchStringEscape()
+    public String getDatabaseSearchStringEscape()
     {
         return _escape;
     }

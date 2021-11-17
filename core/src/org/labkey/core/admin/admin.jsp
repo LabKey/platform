@@ -27,18 +27,15 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.core.admin.AdminController"%>
-<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.Collection"%>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
-    AdminBean bean = me.getModelBean();
     boolean devMode = AppProps.getInstance().isDevMode();
     int row = 0;
 %>
@@ -60,7 +57,7 @@
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
             <h3 class="header-title labkey-page-section-header">LabKey Server <%=h(ObjectUtils.defaultIfNull(AdminBean.releaseVersion, "Information"))%></h3>
-            <% for (NavTree link : bean.getLinks(getViewContext())) { %>
+            <% for (NavTree link : AdminBean.getLinks(getViewContext())) { %>
             <div class="header-link">
                 <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
             </div>
@@ -217,7 +214,7 @@
                 <tr><td class="labkey-column-header">User</td><td class="labkey-column-header">Last Activity</td></tr>
                 <%
                     int count = 0;
-                    for (var activeUser : bean.active)
+                    for (var activeUser : AdminBean.getActiveUsers())
                     {
                 %>
                 <tr class="<%=getShadeRowClass(count)%>"><td><%=h(activeUser.email)%></td><td><%=activeUser.minutes%> minutes ago</td></tr>
