@@ -8,29 +8,34 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.QCStateManager;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.xml.qcStates.StateTypeEnum;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
 import java.util.List;
 
-public class QCStateWriter extends BaseFolderWriter
+public class DataStateWriter extends BaseFolderWriter
 {
     public static final String QC_STATE_SETTINGS = "QC State Settings";
-    private static final String DEFAULT_SETTINGS_FILE = "quality_control_states.xml";
+    public static final String DATA_STATE_SETTINGS = "Sample Status and QC State Settings";
+    private static final String DEFAULT_SETTINGS_FILE = "data_states.xml";
 
     @Override
     public boolean show(Container c)
     {
-        QCStateImportExportHelper helper = getHelper(c);
+        DataStateImportExportHelper helper = getHelper(c);
         return helper != null;
     }
 
     @Override
     public String getDataType()
     {
+        if (SampleStatusService.get().supportsSampleStatus())
+            return DATA_STATE_SETTINGS;
         return QC_STATE_SETTINGS;
     }
 
@@ -43,11 +48,11 @@ public class QCStateWriter extends BaseFolderWriter
     @Override
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        QCStateImportExportHelper helper = getHelper(container);
+        DataStateImportExportHelper helper = getHelper(container);
 
         if (helper != null)
         {
-            List<DataState> qcStates = QCStateManager.getInstance().getStates(ctx.getContainer());
+            List<DataState> qcStates = DataStateManager.getInstance().getStates(ctx.getContainer());
 
             FolderDocument.Folder.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
             StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
@@ -63,6 +68,8 @@ public class QCStateWriter extends BaseFolderWriter
                     state.setName(qc.getLabel());
                     state.setDescription(qc.getDescription());
                     state.setPublic(qc.isPublicData());
+                    if (qc.getStateType() != null)
+                        state.setType(StateTypeEnum.Enum.forString(qc.getStateType()));
                 }
             }
             helper.write(container, ctx, qcXml);
@@ -73,13 +80,9 @@ public class QCStateWriter extends BaseFolderWriter
     }
 
     @Nullable
-    private QCStateImportExportHelper getHelper(Container c)
+    private DataStateImportExportHelper getHelper(Container c)
     {
-        QCStateImportExportHelper helper = QCStateImportExportHelper.getProvider(c);
-        if (helper != null)
-            return helper;
-        else
-            return null;
+        return DataStateImportExportHelper.getProvider(c);
     }
 
     public static class Factory implements FolderWriterFactory
@@ -87,7 +90,7 @@ public class QCStateWriter extends BaseFolderWriter
         @Override
         public FolderWriter create()
         {
-            return new QCStateWriter();
+            return new DataStateWriter();
         }
     }
 }

@@ -3,22 +3,24 @@ package org.labkey.api.qc.export;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractQCStateImporter
+public abstract class AbstractDataStateImporter
 {
-    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, QCStateImportExportHelper helper)
+    public static void importQCStates(ImportContext<?> ctx, StudyqcDocument doc, DataStateImportExportHelper helper) throws ImportException
     {
         StudyqcDocument.Studyqc qcXml = doc.getStudyqc();
         StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
 
-        // Remember all of the states that existed before we started importing
-        Map<String, DataState> prexistingStates = getExistingQCStates(ctx);
+        // Remember all the states that existed before we started importing
+        Map<String, DataState> preexistingStates = getExistingDataStates(ctx);
 
         if (states != null)
         {
@@ -31,7 +33,7 @@ public abstract class AbstractQCStateImporter
                 else
                 {
                     // Check if it exists, and remove it from the map if it already does
-                    DataState state = prexistingStates.remove(xmlState.getName());
+                    DataState state = preexistingStates.remove(xmlState.getName());
                     if (state == null)
                     {
                         // Insert a new record
@@ -41,30 +43,38 @@ public abstract class AbstractQCStateImporter
                         state.setLabel(xmlState.getName());
                         state.setDescription(xmlState.getDescription());
                         state.setPublicData(xmlState.getPublic());
+                        state.setStateType(xmlState.getType() == null ? null : xmlState.getType().toString());
 
-                        helper.insertQCState(ctx.getUser(), state);
+                        helper.insertDataState(ctx.getUser(), state);
                     }
                     else
                     {
                         // Update the existing QCState row in-place
                         state.setDescription(xmlState.getDescription());
                         state.setPublicData(xmlState.getPublic());
-                        helper.updateQCState(ctx.getUser(), state);
+                        String updatedType = xmlState.getType() == null ? null : xmlState.getType().toString();
+                        if ((state.getStateType() == null && updatedType != null) ||
+                                (state.getStateType() != null && updatedType == null) ||
+                                (state.getStateType() != null && !state.getStateType().equals(updatedType)))
+                        {
+                            throw new ImportException(String.format("Cannot change the type of state %s from %s to %s", state.getLabel(), state.getStateType(), updatedType));
+                        }
+                        helper.updateDataState(ctx.getUser(), state);
                     }
                 }
             }
         }
 
         // Clean up orphaned states if they don't seem to be used anymore
-        for (DataState orphanedState : prexistingStates.values())
+        for (DataState orphanedState : preexistingStates.values())
         {
-            if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
+            if (!helper.isDataStateInUse(ctx.getContainer(), orphanedState))
                 QCStateManager.getInstance().deleteState(orphanedState);
             else
-                ctx.getLogger().info("Retaining existing QCState because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
+                ctx.getLogger().info("Retaining existing Data State because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
         }
 
-        Map<String, DataState> finalStates = getExistingQCStates(ctx);
+        Map<String, DataState> finalStates = getExistingDataStates(ctx);
 
         // make the default qc state assignments for dataset inserts/updates
         String pipelineDefault = qcXml.getPipelineImportDefault();
@@ -84,13 +94,13 @@ public abstract class AbstractQCStateImporter
     }
 
     @NotNull
-    private static Map<String, DataState> getExistingQCStates(ImportContext<?> ctx)
+    private static Map<String, DataState> getExistingDataStates(ImportContext<?> ctx)
     {
-        Map<String, DataState> prexistingStates = new HashMap<>();
-        for (DataState s : QCStateManager.getInstance().getStates(ctx.getContainer()))
+        Map<String, DataState> preexistingStates = new HashMap<>();
+        for (DataState s : DataStateManager.getInstance().getStates(ctx.getContainer()))
         {
-            prexistingStates.put(s.getLabel(), s);
+            preexistingStates.put(s.getLabel(), s);
         }
-        return prexistingStates;
+        return preexistingStates;
     }
 }

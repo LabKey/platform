@@ -261,7 +261,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             if (null == pair.target || isAttachment)
                 convert.addColumn(pair.indexFrom);
             else
-                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, false);
+                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, pair.target.getRemapMissingBehavior());
         }
 
 

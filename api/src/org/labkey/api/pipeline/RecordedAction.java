@@ -61,6 +61,7 @@ public class RecordedAction
     private Date _startTime;
     private Date _endTime;
     private Integer _recordCount;
+    private String runName;
 
     // Provenance map (list of from and to lsid pairs)
     private Set<Pair<String,String>> _provenanceMap = new HashSet<>();
@@ -192,6 +193,16 @@ public class RecordedAction
     public void setName(String name)
     {
         _name = name;
+    }
+
+    public String getRunName()
+    {
+        return runName;
+    }
+
+    public void setRunName(String runName)
+    {
+        this.runName = runName;
     }
 
     public String getDescription()
