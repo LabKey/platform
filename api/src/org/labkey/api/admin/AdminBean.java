@@ -129,7 +129,7 @@ public class AdminBean
     {
     }
 
-    public List<NavTree> getLinks(ViewContext ctx)
+    public static List<NavTree> getLinks(ViewContext ctx)
     {
         List<NavTree> links = new ArrayList<>();
         for (AdminConsoleHeaderLinkProvider headerLinkProvider : AdminConsoleService.get().getAdminConsoleHeaderProviders())
