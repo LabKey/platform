@@ -52,7 +52,8 @@ import static org.labkey.api.settings.LookAndFeelProperties.THEME_NAME_PROP;
 // Handles all the properties that can be set at the project or site level
 public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {
-    boolean isRoot;
+    private final boolean isRoot;
+
     WriteableLookAndFeelProperties(Container c)
     {
         super(c);
@@ -92,8 +93,8 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void setHelpMenuEnabled(boolean enabled)
     {
         storeBooleanValue(HELP_MENU_ENABLED_PROP, enabled);
-
     }
+
     public void setDiscussionEnabled(boolean enabled)
     {
         storeBooleanValue(DISCUSSION_ENABLED_PROP, enabled);
@@ -186,5 +187,12 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         startupProps
                 .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
         writeable.save();
+    }
+
+    @Override
+    public void save()
+    {
+        super.save();
+        LookAndFeelProperties.clearCaches();
     }
 }

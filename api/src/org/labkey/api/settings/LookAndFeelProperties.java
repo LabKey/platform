@@ -17,10 +17,15 @@ package org.labkey.api.settings;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
+import org.labkey.api.admin.AdminBean;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
@@ -31,7 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
+    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
 
     protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
@@ -81,6 +86,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         _settingsContainer = getSettingsContainer(c);
     }
 
+    public static void clearCaches()
+    {
+        SHORT_NAME_CACHE.clear();
+    }
+
     @Override
     protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
@@ -98,9 +108,15 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
     }
 
-    public String getShortName()
+    public String getUnsubstitutedShortName()
     {
         return lookupStringValue(SYSTEM_SHORT_NAME_PROP, "LabKey Server");
+    }
+
+    public String getShortName()
+    {
+        return SHORT_NAME_CACHE.get(_settingsContainer, null,
+            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName()).eval(AdminBean.getPropertyMap()));
     }
 
     public String getThemeName()

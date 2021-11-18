@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
@@ -29,10 +31,10 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -57,7 +59,10 @@
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-<% if (c.isProject()) {%>
+<%
+    if (c.isProject())
+    {
+%>
 <tr>
     <td colspan=2>Security defaults</td>
 </tr>
@@ -69,11 +74,22 @@
     <td colspan=2>&nbsp;</td>
 </tr>
 <%
-   }
+    }
 
-   // If this is a folder then skip everything except default date & number formats
-   if (!folder)
-   {
+    // If this is a folder then skip everything except default date & number formats
+    if (!folder)
+    {
+        String shortNameHelp = "The header short name supports string substitution of specific server properties. For example, " +
+            "the value:<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>will currently result in this header text:<br><br><code>&nbsp;&nbsp;LabKey " + AdminBean.releaseVersion + "</code><br><br>" +
+            "The supported properties and their current values are listed in the table below.<br><br>" +
+            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
+            "<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>" +
+
+            AdminBean.getPropertyMap().entrySet().stream()
+                .map(e -> "<tr valign=top class=\"labkey-row\"><td>" + h(e.getKey()) + "</td><td>" + h(e.getValue()) + "</td></tr>\n")
+                .collect(Collectors.joining()) +
+
+            "</table>";
 %>
 <tr>
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
@@ -83,8 +99,8 @@
     <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
-    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
+    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, true, 350)%></td>
+    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Theme</td>
