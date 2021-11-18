@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -105,7 +106,9 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
                 }
             }
 
-			ArrayList<String> parts = FileUtil.normalizeSplit(name);
+            Path parts = Path.parse(name).normalize();
+            if (null == parts)
+                return null;
 			Container child = _container;
 			for (String part : parts)
 			{

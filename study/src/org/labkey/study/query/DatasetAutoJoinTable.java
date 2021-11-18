@@ -270,13 +270,11 @@ public class DatasetAutoJoinTable extends VirtualTable
         }
 
         @Override
-        public DatasetTableImpl getLookupTableInfo()
+        public TableInfo getLookupTableInfo()
         {
             try
             {
-                DatasetTableImpl ret = _schema.createDatasetTableInternal(dsd, getLookupContainerFilter());
-                ret.hideParticipantLookups();
-                return ret;
+                return _schema.getDatasetTableForLookup(dsd, getLookupContainerFilter());
             }
             catch (UnauthorizedException e)
             {
