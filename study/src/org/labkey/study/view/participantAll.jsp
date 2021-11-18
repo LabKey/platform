@@ -142,41 +142,44 @@
     final Map<Double, Integer> countKeysForSequence = new HashMap<>();
     final Set<Integer> datasetSet = new HashSet<>();
 
-    SQLFragment f = new SQLFragment();
-    String union = "";
-    for (var pair : datasets)
+    if (!datasets.isEmpty())
     {
-        DatasetDefinition dd = pair.getKey();
-        TableInfo t = pair.getValue();
-        String alias = "__x" + dd.getDatasetId() + "__";
-        ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
-        ColumnInfo seq = t.getColumn("SequenceNum");
-        f.append(union).append("SELECT ")
-                .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
-                .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
-                .append(dd.getDatasetId()).append(" as DatasetId,")
-                .append("COUNT(*) AS _RowCount");
-        f.append("\nFROM ").append(t.getFromSQL(alias));
-        f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
-        f.append("\nGROUP BY ").append(ptid.getValueSql(alias)).append(",").append(seq.getValueSql(alias));
-        union = "\n  UNION ALL\n";
-    }
-    f.append("\n ORDER BY 2");
+        SQLFragment f = new SQLFragment();
+        String union = "";
+        for (var pair : datasets)
+        {
+            DatasetDefinition dd = pair.getKey();
+            TableInfo t = pair.getValue();
+            String alias = "__x" + dd.getDatasetId() + "__";
+            ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
+            ColumnInfo seq = t.getColumn("SequenceNum");
+            f.append(union).append("SELECT ")
+                    .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
+                    .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
+                    .append(dd.getDatasetId()).append(" as DatasetId,")
+                    .append("COUNT(*) AS _RowCount");
+            f.append("\nFROM ").append(t.getFromSQL(alias));
+            f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
+            f.append("\nGROUP BY ").append(ptid.getValueSql(alias)).append(",").append(seq.getValueSql(alias));
+            union = "\n  UNION ALL\n";
+        }
+        f.append("\n ORDER BY 2");
 
-    new SqlSelector(dbSchema, f).forEach(rs -> {
-        String ptid = rs.getString(1);
-        double s = rs.getDouble(2);
-        Double sequenceNum = rs.wasNull() ? null : s;
-        int datasetId = rs.getInt(3);
-        int rowCount = ((Number) rs.getObject(4)).intValue();
-        Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
-        if (null != visitRowId && null != sequenceNum)
-            visitSequenceMap.put(visitRowId, sequenceNum);
-        datasetSet.add(datasetId);
-        Integer count = countKeysForSequence.get(sequenceNum);
-        if (null == count || count < rowCount)
-            countKeysForSequence.put(sequenceNum, rowCount);
-    });
+        new SqlSelector(dbSchema, f).forEach(rs -> {
+            String ptid = rs.getString(1);
+            double s = rs.getDouble(2);
+            Double sequenceNum = rs.wasNull() ? null : s;
+            int datasetId = rs.getInt(3);
+            int rowCount = ((Number) rs.getObject(4)).intValue();
+            Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
+            if (null != visitRowId && null != sequenceNum)
+                visitSequenceMap.put(visitRowId, sequenceNum);
+            datasetSet.add(datasetId);
+            Integer count = countKeysForSequence.get(sequenceNum);
+            if (null == count || count < rowCount)
+                countKeysForSequence.put(sequenceNum, rowCount);
+        });
+    }
 
     // Now we have a list of datasets with 1 or more rows and a visitMap to help with layout
     // get the data
