@@ -814,7 +814,10 @@ public abstract class UploadSamplesHelper
             }
             nameGen = sampletype.getNameGenerator();
             aliquotNameGen = sampletype.getAliquotNameGenerator();
-            nameState = nameGen.createState(true);
+            if (nameGen != null)
+                nameState = nameGen.createState(true);
+            else
+                nameState = null;
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             _container = sampletype.getContainer();
             _batchSize = batchSize;
@@ -886,10 +889,15 @@ public abstract class UploadSamplesHelper
                     }
                 }
 
-                generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);;
-
-                generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                if (nameGen != null)
+                {
+                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
+                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                }
+                else
+                    addRowError("Error creating naming pattern generator.");
             }
+
             catch (NameGenerator.DuplicateNameException dup)
             {
                 addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
@@ -906,7 +914,7 @@ public abstract class UploadSamplesHelper
                     if (sampletype.hasNameExpression())
                         addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                     else if (sampletype.hasNameAsIdCol())
-                        addRowError("Name is required for sample on row " + e.getRowNumber());
+                        addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
                     else
                         addRowError("All id columns are required for sample on row " + e.getRowNumber());
                 }

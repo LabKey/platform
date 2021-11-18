@@ -95,7 +95,7 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
                 HashSet<String> ptids = generatePtidHashSet(studyImpl);
 
                 //  Build up a HashMap of aliases
-                TableInfo aliasTableInfo = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId).getTableInfo(_user);
+                TableInfo aliasTableInfo = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId).getDatasetSchemaTableInfo(_user);
                 Map<String, Object>[] rows = new TableSelector(aliasTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName(), participantAliasSourceProperty, participantAliasProperty), null, null).getMapArray();
                 for (Map<String, Object> row : rows)
                 {

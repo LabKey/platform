@@ -144,6 +144,7 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -2987,7 +2988,7 @@ public class StudyController extends BaseStudyController
         {
             int datasetId = form.getDatasetId();
             StudyImpl study = getStudyThrowIfNull();
-            Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            DatasetDefinition dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (null == dataset)
                 throw new NotFoundException();
 
@@ -3005,7 +3006,7 @@ public class StudyController extends BaseStudyController
                     keys.add(Collections.singletonMap("lsid", lsid));
 
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
-                TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset, null);
+                TableInfo datasetTable = schema.getDatasetTable(dataset, null);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
@@ -4287,8 +4288,9 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
+            var sqs = StudyQuerySchema.createSchema(_study, getUser());
             Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
-            for (Dataset def : _study.getDatasets())
+            for (DatasetDefinition def : _study.getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4296,14 +4298,17 @@ public class StudyController extends BaseStudyController
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.shared = def.isShared();
-                data.inherited = ((DatasetDefinition)def).isInherited();
+                data.inherited = def.isInherited();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 if ("None".equals(data.status))
                     data.status = null;
-                TableInfo t = def.getTableInfo(getViewContext().getUser(), false, _study.isDataspaceStudy());
-                long rowCount = new TableSelector(t).getRowCount();
-                data.rowCount = rowCount;
-                data.empty = 0 == rowCount;
+                DatasetTable t = sqs.getDatasetTable(def, null);
+                if (null != t)
+                {
+                    long rowCount = new TableSelector(t).getRowCount();
+                    data.rowCount = rowCount;
+                    data.empty = 0 == rowCount;
+                }
                 bean.put(def.getDatasetId(), data);
             }
 

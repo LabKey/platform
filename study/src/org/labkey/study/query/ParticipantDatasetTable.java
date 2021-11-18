@@ -32,8 +32,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 
-import java.util.ArrayList;
-
 public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 {
     ColumnInfo _colParticipantId;
@@ -100,10 +98,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     try
                     {
-                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def, getContainerFilter());
-                        dsTable.hideParticipantLookups();
-                        dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
-                        return dsTable;
+                        return _userSchema.getDatasetTableForLookup(def, getContainerFilter());
                     }
                     catch (UnauthorizedException e)
                     {

@@ -1210,17 +1210,14 @@ public abstract class SqlDialect
                 return null;
             }
         }
-
     }
 
-
-    // All statement creation passes through these two methods.  We return our standard statement wrappers in most
+    // All statement creation passes through these two methods. We return our standard statement wrappers in most
     // cases, but dialects can return their own subclasses of StatementWrapper to work around JDBC driver bugs.
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         return new StatementWrapper(conn, stmt);
     }
-
 
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
@@ -1511,7 +1508,7 @@ public abstract class SqlDialect
     // Simple check. Subclasses can override to provide better checks.
     public boolean isRds(DbScope scope)
     {
-        return StringUtils.containsIgnoreCase(scope.getURL(), "rds.amazonaws.com");
+        return StringUtils.containsIgnoreCase(scope.getDatabaseUrl(), "rds.amazonaws.com");
     }
 
     public static final class MetadataParameterInfo

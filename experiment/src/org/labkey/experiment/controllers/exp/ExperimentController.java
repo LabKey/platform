@@ -3757,6 +3757,16 @@ public class ExperimentController extends SpringActionController
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
         @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            Map<String, String> renamedColumns = super.getRenamedColumns();
+            // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
+            renamedColumns.put("SampleId", "Name");
+            renamedColumns.put("Sample Id", "Name");
+            return renamedColumns;
+        }
+
+        @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;

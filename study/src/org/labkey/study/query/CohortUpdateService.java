@@ -70,11 +70,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user);
-        TableInfo queryTableInfo = querySchema.getTable("Cohort");
-        Map<String, Object> result = new TableSelector(queryTableInfo).getObject(keyFromMap(keys), Map.class);
-        return result;
+        return new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class);
     }
 
     @Override

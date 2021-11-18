@@ -77,7 +77,7 @@ public class StandardTableResolver implements TableResolver
     // parameter, see #43821
     public static String escapeName(DbScope scope, @NotNull String name)
     {
-        String escape = scope.getSearchStringEscape();
+        String escape = scope.getDatabaseSearchStringEscape();
 
         String ret = name.replace(escape, escape + escape);
         ret = ret.replace("_", escape + "_");

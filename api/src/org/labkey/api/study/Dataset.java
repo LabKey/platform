@@ -269,10 +269,6 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     TableInfo getTableInfo(User user) throws UnauthorizedException;
 
-    TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException;
-
-    TableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException;
-
     boolean isDemographicData();
 
     Date getModified();
@@ -390,7 +386,6 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
      * @param u user performing the update
      * @param lsid the lsid of the dataset row
      * @param data the data to be updated
-     * @param errors any errors during update will be added to this object
      */
     String updateDatasetRow(User u, String lsid, Map<String,Object> data) throws ValidationException;
 

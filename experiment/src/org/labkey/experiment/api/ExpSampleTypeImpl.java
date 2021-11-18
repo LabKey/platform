@@ -431,7 +431,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _nameGen;
     }
 
-    @Nullable
+    @NotNull
     public NameGenerator getAliquotNameGenerator()
     {
         if (_aliquotNameGen == null)
@@ -499,11 +499,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             // Failed to generate a name due to some part of the expression not in the row
             if (hasNameExpression())
-                throw new ExperimentException("Failed to generate name for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("Failed to generate name for sample on row " + e.getRowNumber(), e);
             else if (hasNameAsIdCol())
-                throw new ExperimentException("Name is required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("SampleID or Name is required for sample on row " + e.getRowNumber(), e);
             else
-                throw new ExperimentException("All id columns are required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("All id columns are required for sample on row " + e.getRowNumber(), e);
         }
     }
 
