@@ -45,6 +45,9 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -110,28 +113,26 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         Study study = getStudy();
 
         _ds = StudyService.get().getDataset(study.getContainer(), form.getDatasetId());
-        if (null == _ds)
+        TableInfo datasetTable = getQueryTable();
+        if (null == _ds || null == datasetTable)
         {
             redirectTypeNotFound(form.getDatasetId());
             return null;
         }
-        if (!_ds.canRead(getUser()))
+        if (!datasetTable.hasPermission(getUser(), ReadPermission.class))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
         if (isInsert())
         {
-            if (!_ds.canInsert(getUser()))
+            if (!datasetTable.hasPermission(getUser(), InsertPermission.class))
                 throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
         else // !isInsert()
         {
-            if (!_ds.canUpdate(getUser()))
+            if (!datasetTable.hasPermission(getUser(), UpdatePermission.class))
                 throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-
-        // we want to use the actual user schema table, since it implements UpdateService and permissions checks
-        TableInfo datasetTable = getQueryTable();
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
@@ -277,7 +278,8 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         int datasetId = form.getDatasetId();
         Study study = getStudy();
         _ds = StudyService.get().getDataset(study.getContainer(), datasetId);
-        if (null == _ds)
+        TableInfo datasetTable = getQueryTable();
+        if (null == _ds || null == datasetTable)
         {
             redirectTypeNotFound(form.getDatasetId());
             return false;
@@ -286,12 +288,12 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         final User user = getUser();
         if (isInsert())
         {
-            if (!_ds.canInsert(user))
+            if (!datasetTable.hasPermission(user, InsertPermission.class))
                 throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
         else // if (!isInsert())
         {
-            if (!_ds.canUpdate(user))
+            if (!datasetTable.hasPermission(user, UpdatePermission.class))
                 throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
         if (_ds.isPublishedData())
@@ -299,7 +301,6 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             throw new UnauthorizedException("This dataset comes from linked data. You cannot update it directly");
         }
 
-        TableInfo datasetTable = getQueryTable();
         QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
 
         if (errors.hasErrors())
