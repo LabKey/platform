@@ -262,9 +262,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
             {
                 try
                 {
-                    DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(_dataset, getLookupContainerFilter());
-                    dsTable.hideParticipantLookups();
-                    return dsTable;
+                    return _userSchema.getDatasetTableForLookup(_dataset, getLookupContainerFilter());
                 }
                 catch (UnauthorizedException e)
                 {

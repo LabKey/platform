@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -37,7 +38,7 @@ import java.util.Collections;
 // properties on a per-container basis and clear the entire cache on every change of look and feel settings.
 public class FolderSettingsCache
 {
-    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(10000, CacheManager.DAY, "Folder Settings", (c, argument) -> new FolderSettings(c));
+    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder Settings", (c, argument) -> new FolderSettings(c));
 
     public static String getDefaultDateFormat(Container c)
     {

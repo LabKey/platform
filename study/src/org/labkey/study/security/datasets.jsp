@@ -230,6 +230,10 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         else
         {
             possibleRoles.add(RoleManager.getRole(ReaderRole.class));
+            // minor hack since we don't have "isApplicableReaderRole()" method
+            var rdrr = RoleManager.getRole("org.labkey.niaid.permissions.RestrictedDatasetReaderRole");
+            if (null != rdrr)
+                possibleRoles.add(rdrr);
         }
     }
 

@@ -18,18 +18,25 @@ package org.labkey.study.visitmanager;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 /**
  * Avoid bookkeeping on study-managed tables for continuous-style studies, like EHRs.
@@ -56,30 +63,40 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    protected SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String statsSql, String alias, boolean showAll)
+    @Nullable
+    protected SQLFragment getVisitSummarySql(StudyQuerySchema sqs, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll)
     {
-        TableInfo studyData = showAll ?
-                StudySchema.getInstance().getTableInfoStudyData(getStudy(), user) :
-                StudySchema.getInstance().getTableInfoStudyDataVisible(getStudy(), user);
-        TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
+        String alias = "SD";
+        FilteredTable studyData = sqs.getStudyDatasetsUnion(showAll);
+        if (null == studyData)
+            return null;
+        ColumnInfo datasetId = studyData.getColumn("DatasetId");
+        if (null == datasetId)
+            datasetId = studyData.getColumn("Dataset");
+        ColumnInfo container = studyData.getColumn("Container");
+        ColumnInfo participant = studyData.getColumn("ParticipantId");
+        if (null == participant)
+            participant = studyData.getColumn(sqs.getSubjectColumnName());
+        ColumnInfo sequencenum = studyData.getColumn("SequenceNum");
+        assert null!=datasetId && null!=container && null!=participant && null!=sequencenum;
 
-        SQLFragment studyDataContainerFilter = new SQLFragment(alias + ".Container = ?", _study.getContainer());
-        if (_study.isDataspaceStudy())
-            studyDataContainerFilter = new DataspaceContainerFilter(user, _study).getSQLFragment(studyData.getSchema(), new SQLFragment(alias+".Container"),getStudy().getContainer());
+        String participantTableName = StudyService.get().getSubjectTableName(sqs.getContainer());
+        TableInfo participantTable = sqs.getTable(participantTableName);
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
 
-        SQLFragment keyCols = new SQLFragment("DatasetId");
+        SQLFragment keyCols = datasetId.getValueSql(alias);
+        SQLFragment selectCols = new SQLFragment(keyCols).append(", -1 as VisitId");
+        for (var stat : stats)
+            selectCols.append(",").append(stat.getSql(participant.getValueSql(alias)));
 
         if (cohortFilter == null)
         {
-            sql.append("SELECT ").append(keyCols).append(", -1 as visitId").append(statsSql);
+            sql.append("SELECT ").append(selectCols);
             sql.append("\nFROM ").append(studyData.getFromSQL(alias));
-            sql.append("\nWHERE ");
-            sql.append(studyDataContainerFilter);
             if (null != qcStates)
-                sql.append(" AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                sql.append("\nWHERE ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
             sql.append("\nGROUP BY ").append(keyCols);
             sql.append("\nORDER BY 1, 2");
         }
@@ -89,12 +106,13 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
             {
                 case PTID_CURRENT:
                 case PTID_INITIAL:
-                    sql.append("SELECT ").append(keyCols).append(", -1 as visitId").append(statsSql);
+                    sql.append("SELECT ").append(selectCols);
                     sql.append("\nFROM ").append(studyData.getFromSQL(alias))
-                            .append("\nJOIN ").append(participantTable.getFromSQL("P")).append(" ON (").append(alias).append(".ParticipantId = P.ParticipantId AND ").append(alias).append(".Container = P.Container)\n");
+                            .append("\nJOIN ").append(participantTable.getFromSQL("P")).append(" ON (")
+                            .append(participant.getValueSql(alias)).append(" = P.ParticipantId AND ")
+                            .append(container.getValueSql(alias)).append(" = P.Container)\n");
                     sql.append("\nWHERE ")
-                            .append(studyDataContainerFilter)
-                            .append(" AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                            .append(" P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
                             .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
                     sql.add(cohortFilter.getCohortId());
                     sql.append("\nGROUP BY ").append(keyCols);

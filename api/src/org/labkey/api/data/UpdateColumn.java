@@ -18,16 +18,20 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.StringExpression;
 
-/** Renders the edit link for a row in a grid */
-public class UpdateColumn extends UrlColumn
+/** marker interface to indicate that a DisplayColumn is for the edit link/indicator, not a data column */
+public interface UpdateColumn
 {
-    public UpdateColumn(StringExpression urlExpression)
+    /** Renders the edit link for a row in a grid */
+    class Impl extends UrlColumn implements UpdateColumn
     {
-        super(urlExpression, "edit");
-        setName("Update");
-        setGridHeaderClass("");
-        setWidth("0");
-        addDisplayClass("labkey-update");
+        public Impl(StringExpression urlExpression)
+        {
+            super(urlExpression, "edit");
+            setName("Update");
+            setGridHeaderClass("");
+            setWidth("0");
+            addDisplayClass("labkey-update");
+        }
     }
 }
 

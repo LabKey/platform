@@ -590,7 +590,7 @@ public class QueryController extends SpringActionController
 
                 sb.append(status);
                 sb.append("</td><td>");
-                sb.append(PageFlowUtil.filter(scope.getURL()));
+                sb.append(PageFlowUtil.filter(scope.getDatabaseUrl()));
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDatabaseName()));
                 sb.append("</td><td>");
@@ -1549,7 +1549,7 @@ public class QueryController extends SpringActionController
 
             sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
             sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getURL()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
             sb.append("</table>\n");
 
             out.print(sb);

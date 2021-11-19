@@ -842,6 +842,7 @@ public class StudyManager
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+        datasetDefinition.refreshDomain();
         return true;
     }
 
@@ -1850,7 +1851,7 @@ public class StudyManager
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
 
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
 
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
@@ -1881,7 +1882,7 @@ public class StudyManager
         List<VisitImpl> visits = new ArrayList<>();
 
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
 
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
@@ -1909,7 +1910,7 @@ public class StudyManager
     public List<Double> getUndefinedSequenceNumsForDataset(Container container, int datasetId)
     {
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
         Study visitStudy = getStudyForVisits(def.getStudy());
 
         SQLFragment sql = new SQLFragment();
@@ -2454,7 +2455,7 @@ public class StudyManager
 
     public List<String> getDatasetLSIDs(User user, DatasetDefinition def)
     {
-        TableInfo tInfo = def.getTableInfo(user, true);
+        TableInfo tInfo = def.getTableInfo(user);
         return new TableSelector(tInfo.getColumn("lsid")).getArrayList(String.class);
     }
 
@@ -2562,7 +2563,7 @@ public class StudyManager
 
     public long getNumDatasetRows(User user, Dataset dataset)
     {
-        TableInfo sdTable = dataset.getTableInfo(user, false);
+        TableInfo sdTable = dataset.getTableInfo(user);
         return new TableSelector(sdTable).getRowCount();
     }
 
@@ -3393,7 +3394,7 @@ public class StudyManager
                Map<String, String> columnMap)
             throws IOException
     {
-        TableInfo tinfo = def.getTableInfo(user, false);
+        TableInfo tinfo = def.getTableInfo(user);
 
         // We're going to lower-case the keys ourselves later,
         // so this needs to be case-insensitive
@@ -4261,7 +4262,7 @@ public class StudyManager
         body.append(keywords).append("\n");
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), RoleManager.getRole(ReaderRole.class));
-        TableInfo tableInfo = schema.createDatasetTableInternal(dsd, null);
+        TableInfo tableInfo = schema.getDatasetTable(dsd, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
         for (ColumnInfo column : columns.values())

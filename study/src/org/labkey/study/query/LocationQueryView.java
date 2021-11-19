@@ -105,7 +105,7 @@ public class LocationQueryView extends QueryView
 
             if (urlUpdate != null)
             {
-                UpdateColumn update = new UpdateColumn(urlUpdate) {
+                var update = new UpdateColumn.Impl(urlUpdate) {
                     @Override
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
