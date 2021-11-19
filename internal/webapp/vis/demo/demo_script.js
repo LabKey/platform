@@ -797,6 +797,48 @@ var barChart3 = new LABKEY.vis.BarPlot({
     data: barPlotData
 });
 
+var barChart4 = new LABKEY.vis.BarPlot({
+    renderTo: 'bar4',
+    rendererType: 'd3',
+    width: 900,
+    height: 500,
+    labels: {
+        main: {value: 'Example Bar Plot with Stacked Bars'},
+        yLeft: {value: 'Count'}
+    },
+    aes: {
+        color: 'x',
+        x: 'x',
+        xSub: 'y',
+        y: 'count'
+    },
+    scales : {
+        color: { scaleType: 'discrete', range: LABKEY.vis.Scale.DarkColorDiscrete() }
+    },
+    options: {
+        color: '#c0c0c0',
+        stacked: true,
+        clickFn: function(event, data) {
+            console.log(data);
+        }
+    },
+    data: [
+        {x: 'Available', y: 'Blood', count: 30},
+        {x: 'Available', y: 'DNA', count: 1},
+        {x: 'Available', y: 'Serum', count: 10},
+        {x: 'Available', y: 'Urine', count: 4},
+        {x: 'Consumed', y: 'Urine', count: 20},
+        {x: 'Locked', y: 'Blood', count: 13},
+        {x: 'Locked', y: 'DNA', count: 1},
+        {x: 'Locked', y: 'Urine', count: 3},
+        {x: 'No Status', y: 'DNA', count: 29},
+        {x: 'No Status', y: 'PBMC', count: 15},
+        {x: 'No Status', y: 'Plasma', count: 50},
+        {x: 'No Status', y: 'Serum', count: 49},
+        {x: 'No Status', y: 'Urine', count: 23},
+    ]
+});
+
 var pieChart = new LABKEY.vis.PieChart({
     renderTo: "pie",
     rendererType: 'd3',
@@ -1141,6 +1183,7 @@ statFnPlot.render();
 barChart.render();
 barChart2.render();
 barChart3.render();
+barChart4.render();
 leveyJenningsPlot.render();
 CUSUMPlot.render();
 survivalCurvePlot.render();

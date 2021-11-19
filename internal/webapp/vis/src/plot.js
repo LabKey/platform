@@ -1334,7 +1334,8 @@ boxPlot.render();
 
         var showCumulativeTotals = config.options && config.options.showCumulativeTotals;
         if (showCumulativeTotals && config.aes.xSub) {
-            throw new Error("Unable to render grouped bar chart with cumulative totals shown");
+            showCumulativeTotals = false;
+            console.error("Unable to render grouped bar chart with cumulative totals shown");
         }
 
         var aggregateData,
@@ -1342,7 +1343,8 @@ boxPlot.render();
                 subDimName = config.aes.xSub,
                 aggType = config.options.aggregateType,
                 measureName = config.aes.y,
-                includeTotal = config.options.showCumulativeTotals;
+                includeTotal = config.options.showCumulativeTotals,
+                stacked = config.options.stacked;
 
         aggregateData = LABKEY.vis.getAggregateData(config.data, dimName, subDimName, measureName, aggType, '[blank]', includeTotal);
         config.aes.y = 'value';
@@ -1367,10 +1369,15 @@ boxPlot.render();
         if (subDimName && !config.scales.xSub) {
             config.scales.xSub = { scaleType: 'discrete' };
         }
-        if (!config.scales.y) {
-            var domainMax = aggregateData.length == 0 ? 1 : null;
-            if (showCumulativeTotals)
+        if (!config.scales.y || !config.scales.y.scaleType) {
+            var domainMax = aggregateData.length === 0 ? 1 : null;
+            if (showCumulativeTotals) {
                 domainMax = aggregateData[aggregateData.length-1].total;
+            }
+            if (stacked) {
+                var groupTotals = LABKEY.vis.getAggregateData(aggregateData, 'subLabel', undefined, 'value', 'SUM');
+                domainMax = LABKEY.vis.Stat.MAX(groupTotals.map(function(d) { return d.value }));
+            }
 
             config.scales.y = {
                 scaleType: 'continuous',

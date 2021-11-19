@@ -2926,6 +2926,120 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderStackedBarPlotGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom), barWrappers, binWidth, barWidth, offsetWidth,
+                xCategories, xSubCategories, numXSubCategories, rects, hoverFn, heightFn,
+                xAcc, colorAcc, yAcc, yZero;
+
+        if (!geom.xSubScale || !geom.xSubAes) {
+            console.error('Stacked Bar Plots require xSubScale and xSubAes.');
+            return;
+        }
+
+        if (geom.xScale.scaleType !== scaleType.discrete || geom.xSubScale.scaleType !== scaleType.discrete) {
+            console.error('Stacked Bar Plots not supported for continuous data yet.');
+            return;
+        }
+
+        xCategories = geom.xScale.scale.domain();
+        xSubCategories = geom.xSubScale.scale.domain();
+        numXSubCategories = xSubCategories.length;
+
+        var pivotData = {};
+        data.forEach(function(d) {
+            if (!pivotData[d[geom.xSubAes.value]]) pivotData[d[geom.xSubAes.value]] = {};
+            pivotData[d[geom.xSubAes.value]][d[geom.xAes.value]] = d.value;
+        });
+        var pivotDataArr = [];
+        Object.keys(pivotData).forEach(function(key) {
+            pivotDataArr.push({
+                [geom.xAes.value]: key,
+                ...pivotData[key]
+            })
+        });
+        var stackData = d3.layout.stack()(xCategories.map(function(category) {
+            return pivotDataArr.map(function(d) {
+                var value = d[category] ?? 0;
+                return {
+                    [geom.xAes.value]: category,
+                    [geom.xSubAes.value]: d[geom.xAes.value],
+                    value: value,
+                    y: +value
+                };
+            });
+        }));
+        data = stackData.reduce(function(prev, current) { return prev.concat(current); }, []);
+
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / numXSubCategories;
+        barWidth = binWidth / 2;
+        offsetWidth = (binWidth / 4);
+
+        hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
+            return (d.subLabel !== undefined ? 'Category: ' + d.subLabel + '\n' : '')
+                    + (d.label !== undefined ? 'Subcategory: ' + d.label + '\n' : '')
+                    + 'Value: ' + geom.yAes.getValue(d);
+        };
+
+        xAcc = function(d) {
+            return geom.getXSub(d) - offsetWidth;
+        };
+
+        yAcc = function(d){
+            return geom.getY(d)
+        };
+
+        colorAcc = geom.fill;
+        if (geom.colorAes && geom.colorScale)
+        {
+            colorAcc = function(row) {
+                return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
+            };
+        }
+
+        yZero = {};
+        yZero[geom.yAes.value] = 0;
+
+        // group each bar segment with an a tag for hover
+        barWrappers = layer.selectAll('a.bar-individual').data(data);
+        barWrappers.exit().remove();
+        barWrappers.enter().append('a').attr('class', 'bar-individual');
+        barWrappers.append('title').text(hoverFn);
+
+        // add the bars
+        rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
+        rects.exit().remove();
+        heightFn = function(d) {
+            if (yAcc(d) === null || yAcc(d) === undefined) {
+                return 0;
+            }
+            return Math.abs(yAcc(d) - yAcc(yZero));
+        };
+        rects.enter().append('rect').attr('class', 'bar-rect')
+                .attr('x', function(d) {
+                    return xAcc(d);
+                })
+                .attr('y', function(d) {
+                    var verticalOffset = yAcc({ value: d.y0 });
+                    return verticalOffset - heightFn(d);
+                })
+                .attr('width', barWidth).attr('height', heightFn)
+                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
+                .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
+
+        if (geom.clickFn) {
+            // Improve discoverability of the click handler
+            barWrappers.attr('cursor', 'pointer');
+
+            barWrappers.on('click', function(data) {
+                geom.clickFn(d3.event, data, layer);
+            });
+        }
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
+        }
+    };
+
     var renderBarPlotGeom = function(data, geom) {
         var layer = getLayer.call(this, geom), barWrappers, grouped, xOffsetFn,
                 binWidth, barWidth, numXCategories, numXSubCategories, offsetWidth,
@@ -3448,6 +3562,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderDataspaceBoxPlotPathGeom: renderDataspaceBoxPlotPathGeom,
         renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom,
+        renderStackedBarPlotGeom: renderStackedBarPlotGeom,
         renderTimelinePlotGeom: renderTimelinePlotGeom,
         renderControlRangeGeom: renderControlRangeGeom,
         setLegendData: setLegendData
