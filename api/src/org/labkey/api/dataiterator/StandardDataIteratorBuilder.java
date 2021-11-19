@@ -98,7 +98,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
     /*
      * This is a way to indicate that SDIB should ignore the required constraint on a column.
-     * This can be used if the required column will provided by a later step in the DI.
+     * This can be used if the required column will be provided by a later step in the DI.
      */
     public void addDoNotRequireColumn(String name)
     {
