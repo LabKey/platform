@@ -255,6 +255,7 @@ public abstract class DefaultStudyDesignWriter
             String lookupColumnName = fk.getLookupColumnName();
             TableInfo lookupTableInfo = fk.getLookupTableInfo();
             if (null != lookupTableInfo && null != lookupColumnName &&
+                null != lookupTableInfo.getColumn(lookupColumnName) &&
                 lookupTableInfo.getColumn(lookupColumnName).getJdbcType().isNumeric() &&
                 (StudyQuerySchema.isDataspaceProjectTable(lookupTableInfo.getName()) ||
                     (includeFolderLevel && StudyQuerySchema.isDataspaceFolderTable(lookupTableInfo.getName()))))

@@ -21,6 +21,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
@@ -35,6 +36,7 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -47,6 +49,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,9 +105,11 @@ public class DatasetViewProvider implements DataViewProvider
 
             if (null != study)
             {
+                StudyQuerySchema sqs = StudyQuerySchema.createSchema((StudyImpl)study, user, null);
                 for (Dataset ds : study.getDatasets())
                 {
-                    if (ds.canRead(user))
+                    TableInfo t = sqs.getDatasetTable((DatasetDefinition)ds, null);
+                    if (t.hasPermission(user, ReadPermission.class))
                     {
                         DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), ds.getContainer());
 

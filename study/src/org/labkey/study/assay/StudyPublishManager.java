@@ -241,7 +241,7 @@ public class StudyPublishManager implements StudyPublishService
                         dataset.getKeyPropertyName() != null)
                 {
                     // Check to see if it already has the data rows that are being linked
-                    TableInfo tableInfo = dataset.getTableInfo(user, false);
+                    TableInfo tableInfo = ((DatasetDefinition)dataset).getDatasetSchemaTableInfo(user, false);
                     Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataset.getKeyPropertyName()), entry.getValue()));
                     long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
                     if (existingRowCount > 0)

@@ -33,7 +33,7 @@
     DatasetDefinition dataset = me.getModelBean();
     Study study = dataset.getStudy();
 
-    List<ColumnInfo> allCols = dataset.getTableInfo(getUser(), true).getColumns();
+    List<ColumnInfo> allCols = dataset.getTableInfo(getUser()).getColumns();
 
     List<ColumnInfo> systemColumns = new ArrayList<>();
     List<ColumnInfo> userColumns = new ArrayList<>();

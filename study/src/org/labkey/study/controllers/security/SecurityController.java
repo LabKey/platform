@@ -753,21 +753,18 @@ public class SecurityController extends SpringActionController
 
             JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
 
-            Pair<StudyImpl, ActionURL> pair = new Pair<>(study, returnUrl);
-            JspView<Pair<StudyImpl, ActionURL>> studyView = new JspView<>("/org/labkey/study/security/study.jsp", pair);
-            studyView.setTitle("Study Security");
-
-            JspView<Pair<StudyImpl, ActionURL>> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", pair);
-            dsView.setTitle("Per Dataset Permissions");
-
-            JspView<StudyImpl> siteView = new JspView<>("/org/labkey/study/security/locations.jsp", study);
-            siteView.setTitle("Restricted Dataset Permissions (per Location)");
-
             VBox v = new VBox();
             v.addView(studySecurityView);
+
             if (study.getSecurityType() == SecurityType.ADVANCED_READ || study.getSecurityType() == SecurityType.ADVANCED_WRITE)
             {
+                Pair<StudyImpl, ActionURL> pair = new Pair<>(study, returnUrl);
+                JspView<Pair<StudyImpl, ActionURL>> studyView = new JspView<>("/org/labkey/study/security/study.jsp", pair);
+                studyView.setTitle("Study Security");
                 v.addView(studyView);
+
+                JspView<Pair<StudyImpl, ActionURL>> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", pair);
+                dsView.setTitle("Per Dataset Permissions");
                 v.addView(dsView);
             }
 

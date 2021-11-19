@@ -19,9 +19,11 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -65,9 +67,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -103,8 +107,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENREQUEST_TABLENAME;
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
@@ -115,6 +121,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String EXPERIMENTAL_STUDY_SUBSCHEMAS = "StudySubSchemas";
 
     public static final String SCHEMA_NAME = "study";
+    public static final String DATASETS_SCHEMA_NAME = "Datasets";
+    public static final String DESIGN_SCHEMA_NAME = "Design";
+    public static final String SPECIMENTS_SCHEMA_NAME = "Specimens";
+
+
     public static final String SCHEMA_DESCRIPTION = "Contains all data related to the study, including subjects, cohorts, visits, datasets, specimens, etc.";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
@@ -146,7 +157,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
     // extensible study design tables
-    public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
     public static final String PRODUCT_TABLE_NAME = "Product";
     public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
     public static final String TREATMENT_TABLE_NAME = "Treatment";
@@ -248,20 +258,21 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     protected Set<String> getSubSchemaNames()
     {
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
-            return Collections.emptySet();
+            return Set.of();
+        var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
         if (null != SpecimenService.get())
-            return new LinkedHashSet<>(Arrays.asList("Datasets", "Design", "Specimens"));
-        return new LinkedHashSet<>(Arrays.asList("Datasets", "Design"));
+            ret.add(SPECIMENTS_SCHEMA_NAME);
+        return ret;
     }
 
     @Override
     public QuerySchema getSchema(String name)
     {
-        if (StringUtils.equalsIgnoreCase("Datasets",name))
+        if (StringUtils.equalsIgnoreCase(DATASETS_SCHEMA_NAME,name))
             return new DatasetSchema(this);
-        if (StringUtils.equalsIgnoreCase("Design",name))
+        if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase("Specimens",name))
+        if (StringUtils.equalsIgnoreCase(SPECIMENTS_SCHEMA_NAME,name))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -432,28 +443,64 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return null;
     }
 
+
     /*
-     * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
-     * UserSchema will call afterConstruct() for tables constructed the usual way
+     * There used to be a handy method called createDatasetTableInternal(), but it did not go through
+     * UserSchema.getTable().  That is probably a bad idea, so here is a similar method that returns
+     * a 100% constructed table info that is guaranteed to represent a dataset.
+     *
+     * This can return null in case of a race condition, or if the dataset name collides with a built-in table.
      */
-    public DatasetTableImpl createDatasetTableInternal(DatasetDefinition definition, ContainerFilter cf)
+    public DatasetTable getDatasetTable(DatasetDefinition definition, ContainerFilter cf)
     {
-        try
-        {
-            DatasetTableImpl ret = DatasetFactory.createDataset(this, cf, definition);
-            ret.afterConstruct();
-            return ret;
-        }
-        catch (UnauthorizedException e)
-        {
-            return null;
-        }
+        return getDatasetTable(definition, cf, false);
     }
+
+
+    public DatasetTable getDatasetTableForLookup(DatasetDefinition definition, ContainerFilter cf)
+    {
+        if (null == cf)
+            cf = getDefaultContainerFilter();
+        final ContainerFilter CF = cf;
+        String cacheKey = "//Datasets/NOPARTICIPANTLOOKUPS/" + cf.getCacheKey() + "/" + definition.getEntityId();
+        var dt = getCachedLookupTableInfo(cacheKey, () ->
+        {
+            TableInfo ret = getDatasetTable(definition, CF, true);
+            if (null == ret)
+                return null;
+            ((DatasetTableImpl)ret).hideParticipantLookups();
+            ret.setLocked(true);
+            return ret;
+        });
+        return (DatasetTable)dt;
+    }
+
+
+    private DatasetTable getDatasetTable(DatasetDefinition definition, ContainerFilter cf, boolean forWrite)
+    {
+        var ret = getTable(definition.getName(), cf, true, forWrite);
+        if (null == ret)
+            return null;
+        if (!(ret instanceof DatasetTable) || ((DatasetTableImpl)ret)._dsd.getDatasetId() != definition.getDatasetId())
+            ret = null;
+        if (null == ret && !definition.getName().equalsIgnoreCase(definition.getLabel()))
+        {
+            ret = getTable(definition.getLabel(), cf, true, forWrite);
+            if (!(ret instanceof DatasetTable) || ((DatasetTableImpl)ret)._dsd.getDatasetId() != definition.getDatasetId())
+                ret = null;
+        }
+        return (DatasetTable)ret;
+    }
+
 
     synchronized List<BigDecimal> getSequenceNumsForDataset(Dataset dsd)
     {
         if (null == _datasetSequenceMap)
-            _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
+        {
+            if (null == _study)
+                return List.of();
+            _datasetSequenceMap = StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
+        }
 
         return _datasetSequenceMap.get(dsd.getDatasetId());
     }
@@ -945,7 +992,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
                     if (null != aliasColumn && null != sourceColumn)
                     {
-                        FilteredTable aliasTable = new FilteredTable<>(datasetTable, this);
+                        FilteredTable<StudyQuerySchema> aliasTable = new FilteredTable<>(datasetTable, this);
 
                         // Note: Keep these columns in order... they are selected by ordinal since their column names vary
                         aliasTable.addWrapColumn(datasetTable.getColumn(study.getSubjectColumnName()));
@@ -972,6 +1019,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     }
 
     @Override
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (getStudy() != null)
@@ -1024,6 +1072,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return visit.getLabel();
     }
 
+    @Override
     public @NotNull Set<Role> getContextualRoles()
     {
         return null != _contextualRole ? Set.of(_contextualRole) : Set.of();
@@ -1057,7 +1106,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
     @Nullable
     @Override
-    public VisualizationProvider createVisualizationProvider()
+    public StudyVisualizationProvider createVisualizationProvider()
     {
         return new StudyVisualizationProvider(this);
     }
@@ -1098,6 +1147,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
     /** for tables that support container filter, the default container filter in this study */
     @Override
+    @NotNull
     public ContainerFilter getDefaultContainerFilter()
     {
         return ContainerFilter.current(getContainer());
@@ -1112,8 +1162,12 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (context == null)
             return;
 
+        var request = context.getRequest();
+        if (null == request)
+            return;
+
         // The session sticky participant filter only applies to the current container -- not across any child shared studies
-        ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(study.getContainer(), user, context.getRequest());
+        ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(study.getContainer(), user, request);
         if (group != null)
             setSessionParticipantGroup(group);
     }
@@ -1157,11 +1211,57 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         return false;
     }
 
-    public class TablePackage
+
+    /*
+     * The "StudyData" table does not implement per/row permissions, so we don't want to use it to summary stats
+     *
+     * This returns a writable FilteredTable so clauses may be added by caller
+     */
+    @Nullable
+    public FilteredTable<StudyQuerySchema> getStudyDatasetsUnion(boolean showAll)
     {
-        private TableInfo _tableInfo;
-        private Container _container;
-        private boolean _isProjectLevel;
+        Set<Container> containers = Objects.requireNonNull(getDefaultContainerFilter().getIds()).stream()
+                .map(ContainerManager::getForId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        var study = getStudy();
+        if (null == study)
+            return null;
+        var datasets = study.getDatasets();
+        if (null == datasets || datasets.isEmpty())
+            return null;
+        List<BaseStudyTable> bst = datasets.stream()
+                .filter(ds -> showAll || ds.isShowByDefault())
+                .map(ds -> (BaseStudyTable)getDatasetTable(ds, null)).filter(Objects::nonNull)
+                .filter(t -> t.hasPermission(getUser(), ReadPermission.class))
+                .collect(Collectors.toList());
+
+        if (bst.isEmpty())
+            return null;
+
+        // NOTE: we don't want VisitId/VisitRowId, this will get joined in by caller
+        CaseInsensitiveHashSet columnNames = new CaseInsensitiveHashSet("Container", "DatasetId", "SequenceNum", DatasetTableImpl.QCSTATE_ID_COLNAME, "ParticipantId", "CurrentCohortId", "InitialCohortId", study.getSubjectColumnName());
+        TableInfo unionTable = StudyServiceImpl.get().createUnionTable(this, bst, columnNames, containers, "StudyData", null, Map.of(), false, false);
+        var ft = new FilteredTable<>(unionTable, this);
+        String subjectColumnName = study.getSubjectColumnName();
+        ColumnInfo subjectColumn = null;
+        for (ColumnInfo col : ft.getRealTable().getColumns())
+        {
+            String name = col.getName();
+            if (name.equalsIgnoreCase(subjectColumnName))
+                subjectColumn = col;
+            ft.addWrapColumn(col);
+        }
+        if (null != subjectColumn && null == ft.getColumn("ParticipantId"))
+            ft.addWrapColumn("ParticipantId", subjectColumn).setHidden(true);
+        return ft;
+    }
+
+
+    public static class TablePackage
+    {
+        private final TableInfo _tableInfo;
+        private final Container _container;
+        private final boolean _isProjectLevel;
 
         public TablePackage(TableInfo tableInfo, Container container, boolean isProjectLevel)
         {
@@ -1249,7 +1349,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
         DatasetSchema(StudyQuerySchema parent)
         {
-            super(new SchemaKey(parent.getSchemaPath(), "Datasets"), "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
+            super(new SchemaKey(parent.getSchemaPath(), DATASETS_SCHEMA_NAME), "Contains all collected data related to the study (except specimens), including subjects, cohort assignments, datasets, etc.", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
             _parentSchema = parent;
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
@@ -1297,16 +1397,38 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             }
             return _tableNames;
         }
+
+        @Override
+        public TableInfo createTable(String name, ContainerFilter cf)
+        {
+            // check for datasets first
+            // Might be a dataset
+            DatasetDefinition dsd = getDatasetDefinitionByQueryName(name);
+
+            if (null != dsd)
+            {
+                try
+                {
+                    return DatasetFactory.createDataset(this, cf, dsd);
+                }
+                catch (UnauthorizedException e)
+                {
+                    return null;
+                }
+            }
+
+            return super.createTable(name, cf);
+        }
     }
 
 
-    private class DesignSchema extends StudyQuerySchema
+    private static class DesignSchema extends StudyQuerySchema
     {
         final StudyQuerySchema _parentSchema;
 
         DesignSchema(StudyQuerySchema parent)
         {
-            super(new SchemaKey(parent.getSchemaPath(), "Design"), "Contains all study design", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
+            super(new SchemaKey(parent.getSchemaPath(), DESIGN_SCHEMA_NAME), "Contains all study design", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
             _parentSchema = parent;
             setSessionParticipantGroup(parent.getSessionParticipantGroup());
         }
