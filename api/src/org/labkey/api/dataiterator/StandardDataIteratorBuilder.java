@@ -67,9 +67,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     boolean _builtInColumns = true;
     boolean _validate = true;
 
-
-
-    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext unused)
+    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         return new StandardDataIteratorBuilder(target, in, c, user);
     }
@@ -239,7 +237,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         //
         // check for unbound columns that are required
         //
-        if (_validate)
+        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation))
         {
             for (TranslateHelper pair : unusedCols.values())
             {

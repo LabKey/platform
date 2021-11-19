@@ -301,22 +301,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     {
         List<ColumnInfo> columns = new ArrayList<>();
 
-        // Need to include all required fields and their missing-value indicators
-        tinfo.getColumns().stream().filter(colInfo -> colInfo.isRequired() && colInfo.isUserEditable() && !colInfo.isHidden() && !colInfo.isReadOnly() ).forEach(required -> {
-            MutableColumnInfo wCol = WrappedColumnInfo.wrap(required);
-            wCol.setDisplayColumnFactory(ExportDataColumn::new);
-            columns.add(wCol);
-
-            // If the column is MV enabled, export the data in the indicator column as well
-            if (required.isMvEnabled())
-            {
-                ColumnInfo mvIndicator = tinfo.getColumn(required.getMvColumnName());
-                if (null == mvIndicator)
-                    ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + required.getMvColumnName()));
-                else
-                    columns.add(mvIndicator);
-            }
-        });
+        // Name
+        FieldKey nameFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Name.name());
+        ColumnInfo col = tinfo.getColumn(nameFieldKey);
+        MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+        wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+        columns.add(wrappedCol);
 
         // SampleState
         // substitute the Label value for the RowId lookup value

@@ -24,8 +24,10 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
@@ -136,9 +138,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
                     // process any sample type data files and data class files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            sampleTypeDataFiles, xarDir, true);
+                            sampleTypeDataFiles, xarDir, true, false);
                     importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir, true);
+                            dataClassDataFiles, xarDir, true, false);
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
@@ -233,7 +235,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired) throws IOException, SQLException
+    protected void importTsvData(ImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
@@ -274,6 +276,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                         log.error("Unable to get audit behavior for import. Default behavior will be used.");
                                     }
                                     options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
+                                    if (isUpdate)
+                                        options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
+
                                     context.setConfigParameters(options);
 
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);

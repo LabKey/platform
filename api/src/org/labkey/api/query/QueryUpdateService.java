@@ -92,7 +92,8 @@ public interface QueryUpdateService extends HasPermission
         PreserveEmptyString, // (Bool) When source field is an empty string, insert it instead of replacing with null
         // used by Dataspace currently
         TargetMultipleContainers,    // (Bool) allow multi container import
-        SkipTriggers        // (Bool) skip setup and firing of trigger scripts
+        SkipTriggers,         // (Bool) skip setup and firing of trigger scripts
+        SkipRequiredFieldValidation        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
     }
 
 
