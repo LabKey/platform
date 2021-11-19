@@ -47,6 +47,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
@@ -145,7 +146,7 @@
 
         if (datasetRow == null)
         {
-            if (dataset.canInsert(user))
+            if (datasetTable.hasPermission(user, InsertPermission.class))
             {
                 ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, getContainer());
                 addAction.addParameter("datasetId", datasetId);

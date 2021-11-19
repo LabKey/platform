@@ -1051,26 +1051,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return hasPermission(user, ReadPermission.class, null);
     }
 
-    @Override
-    @Deprecated
-    public boolean canUpdate(UserPrincipal user)
-    {
-        return hasPermission(user, UpdatePermission.class, null);
-    }
-
-    @Override
-    @Deprecated
-    public boolean canDelete(UserPrincipal user)
-    {
-        return hasPermission(user, DeletePermission.class, null);
-    }
-
-    @Override
-    @Deprecated
-    public boolean canInsert(UserPrincipal user)
-    {
-        return hasPermission(user, InsertPermission.class, null);
-    }
 
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)
