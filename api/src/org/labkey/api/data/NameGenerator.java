@@ -37,6 +37,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
@@ -54,6 +55,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -139,6 +141,82 @@ public class NameGenerator
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
     {
         this(nameExpression, parentTable, null);
+    }
+
+    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases)
+    {
+        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        return Pair.of(errorMessages, Collections.emptyList());
+    }
+
+    public static List<String> getMismatchedTagErrors(String nameExpression)
+    {
+        int start = 0;
+        int openIndex;
+        final String openTag = "${";
+        final char closeTag = '}';
+        List<String> errors = new ArrayList<>();
+        List<Integer> unmatchedOpen = new ArrayList<>();
+        List<Integer> unmatchedClosed = new ArrayList<>();
+        LinkedList<Integer> openIndexes = new LinkedList<>();
+
+        while (start < nameExpression.length() && (openIndex = nameExpression.indexOf(openTag, start)) >= 0)
+        {
+            openIndexes.clear();
+            openIndexes.push(openIndex);
+            int subInd = openIndex + 2;
+
+            while (subInd < nameExpression.length())
+            {
+                int nextOpen = nameExpression.indexOf(openTag, subInd);
+                int nextClose = nameExpression.indexOf(closeTag, subInd);
+
+                // no more opens or closes
+                if (nextOpen == -1 && nextClose == -1)
+                    break;
+
+                // more opens but no more closes, continue in order to pick up all the open indexes
+                if (nextOpen > 0 && nextClose == -1)
+                {
+                    openIndexes.add(nextOpen);
+                    subInd = nextOpen + 2;
+                }
+                else if (nextOpen == -1 || nextClose < nextOpen)
+                {
+                    if (openIndexes.isEmpty())
+                        unmatchedClosed.add(nextClose);
+                    else
+                    {
+                        openIndexes.pop();
+                        subInd = nextClose + 1;
+                    }
+                }
+                else if (nextClose > nextOpen)
+                {
+                    openIndexes.push(nextOpen);
+                    subInd = nextOpen + 2;
+                }
+
+                if (openIndexes.isEmpty())
+                    break;
+            }
+
+            if (!openIndexes.isEmpty())
+                unmatchedOpen.addAll(openIndexes.stream().map(index -> index+1).collect(Collectors.toList()));
+            start = subInd;
+        }
+        if (!unmatchedOpen.isEmpty())
+        {
+            if (unmatchedOpen.size() == 1)
+                errors.add("No closing brace found for the substitution pattern starting at position " + unmatchedOpen.get(0) + ".");
+            else
+                errors.add("No closing braces found for the substitution patterns starting at positions " + StringUtils.join(unmatchedOpen, ", ") + ".");
+        }
+        if (!unmatchedClosed.isEmpty())
+        {
+            errors.add("Unmatched closing brace found at position" + (unmatchedClosed.size() == 1 ? " " : "s ") + StringUtils.join(unmatchedClosed, ", ") + ".");
+        }
+        return errors;
     }
 
     public static Stream<String> parentNames(Object value, String parentColName)
@@ -965,11 +1043,9 @@ public class NameGenerator
 
                     _parsedExpression.add(part);
                     start = subInd;
-                    continue;
                 }
                 else
                     throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
-
             }
 
             if (start < _source.length())
@@ -1414,6 +1490,30 @@ public class NameGenerator
                 assertEquals("S100...0111", s);
             }
 
+        }
+
+        @Test
+        public void testNoMismatchedBraces()
+        {
+            assertEquals(0, getMismatchedTagErrors("Good-${genId}").size());
+            assertEquals(0, getMismatchedTagErrors("No-subs").size());
+            assertEquals(0, getMismatchedTagErrors("${genId}-Many-${batchCounter}").size());
+            assertEquals(0, getMismatchedTagErrors("${${AliquotedFrom}.:withCounter}").size());
+        }
+
+        @Test
+        public void testMismatchedOpeningBraces()
+        {
+            List<String> errors = getMismatchedTagErrors("One-${genId");
+            assertArrayEquals(new String[]{"No closing brace found for the substitution pattern starting at position 5."}, errors.toArray());
+            errors = getMismatchedTagErrors("${genId{-One");
+            assertArrayEquals(new String[]{"No closing brace found for the substitution pattern starting at position 1."}, errors.toArray());
+            errors = getMismatchedTagErrors("Bad-${genId ${genId");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 5, 13."}, errors.toArray());
+            errors = getMismatchedTagErrors("Bad-${${xyz");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 5, 7."}, errors.toArray());
+            errors = getMismatchedTagErrors("Mixed-${genId-${xyz}-${open");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 7, 22."}, errors.toArray());
         }
 
         @After
