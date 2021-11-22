@@ -3789,8 +3789,6 @@ public class ExperimentServiceImpl implements ExperimentService
         if (selectedRunIds.isEmpty())
             return;
 
-        UserSchema schema = QueryService.get().getUserSchema(user, container, "study");
-
         for (Integer runId : selectedRunIds)
         {
             try (DbScope.Transaction transaction = ensureTransaction())
@@ -3815,6 +3813,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
+                                // NOTE: these datasets come from various different containers
+                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
                                 TableInfo tableInfo = schema.getTable(dataset.getName());
                                 if (null == tableInfo || !dataset.hasPermission(user, DeletePermission.class))
                                 {
