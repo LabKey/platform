@@ -6,8 +6,6 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.exp.CompressedInputStreamXarSource;
-import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
@@ -15,7 +13,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +80,7 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
 
                     // process any sample status data files
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false);
+                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false, true);
                 }
                 else
                     log.info("No sample types XAR file to process.");

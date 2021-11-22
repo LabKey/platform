@@ -67,9 +67,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
     boolean _builtInColumns = true;
     boolean _validate = true;
 
-
-
-    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext unused)
+    public static StandardDataIteratorBuilder forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         return new StandardDataIteratorBuilder(target, in, c, user);
     }
@@ -98,7 +96,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
     /*
      * This is a way to indicate that SDIB should ignore the required constraint on a column.
-     * This can be used if the required column will provided by a later step in the DI.
+     * This can be used if the required column will be provided by a later step in the DI.
      */
     public void addDoNotRequireColumn(String name)
     {
@@ -239,7 +237,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         //
         // check for unbound columns that are required
         //
-        if (_validate)
+        if (_validate && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation))
         {
             for (TranslateHelper pair : unusedCols.values())
             {
