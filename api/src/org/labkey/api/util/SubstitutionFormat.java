@@ -25,8 +25,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,6 +76,12 @@ public class SubstitutionFormat
         {
             return value;
         }
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
+        }
     };
 
     static final SubstitutionFormat htmlEncode = new SubstitutionFormat("htmlEncode", "html")
@@ -83,6 +92,12 @@ public class SubstitutionFormat
             if (value == null)
                 return null;
             return PageFlowUtil.filter(value);
+        }
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
         }
     };
 
@@ -95,6 +110,13 @@ public class SubstitutionFormat
                 return null;
             return PageFlowUtil.jsString(String.valueOf(value));
         }
+
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
+        }
     };
 
     static final SubstitutionFormat urlEncode = new SubstitutionFormat("urlEncode", "path")
@@ -105,6 +127,13 @@ public class SubstitutionFormat
             if (value == null)
                 return null;
             return PageFlowUtil.encodePath(String.valueOf(value));
+        }
+
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
         }
     };
 
@@ -118,6 +147,13 @@ public class SubstitutionFormat
                 return null;
             return PageFlowUtil.encodeURIComponent(String.valueOf(value));
         }
+
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
+        }
     };
 
     // like javascript encodeURI
@@ -129,6 +165,13 @@ public class SubstitutionFormat
             if (value == null)
                 return null;
             return PageFlowUtil.encodeURI(String.valueOf(value));
+        }
+
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
         }
     };
 
@@ -145,6 +188,13 @@ public class SubstitutionFormat
 
             Collection<?> c = (Collection)value;
             return c.stream().findFirst().orElse(null);
+        }
+
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
         }
     };
 
@@ -178,6 +228,12 @@ public class SubstitutionFormat
             Collection<?> c = (Collection)value;
             return c.stream().reduce((a, b) -> b).orElse(null);
         }
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
+        }
     };
 
     static final SubstitutionFormat trim = new SubstitutionFormat("trim")
@@ -192,6 +248,12 @@ public class SubstitutionFormat
                 throw new IllegalArgumentException("Expected string: " + value);
 
             return ((String)value).trim();
+        }
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
         }
     };
 
@@ -344,6 +406,12 @@ public class SubstitutionFormat
             Map<String, Long> counts = SampleTypeService.get().incrementSampleCounts(date);
             return counts.get(_name);
         }
+
+        @Override
+        public boolean isFunctional()
+        {
+            return false;
+        }
     }
 
     public static SampleCountSubstitutionFormat dailySampleCount = new SampleCountSubstitutionFormat("dailySampleCount");
@@ -382,6 +450,68 @@ public class SubstitutionFormat
         return false;
     }
 
+    public boolean isFunctional() { return true; }
+
+    public int argumentCount() { return 1; }
+
+    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index)
+    {
+        SubstitutionFormat format = getFormat(formatName);
+        if (format == null)
+            return Collections.emptyList();
+
+        // if at the beginning of the naming pattern, we'll assume it is meant to be a literal
+        if (index <= 0)
+            return Collections.emptyList();
+
+        return validateSyntax(formatName, nameExpression, index, format.isFunctional(), format.argumentCount());
+    }
+
+    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index,  boolean isFunctional, int argumentCount)
+    {
+        // if at the beginning of the naming pattern, we'll assume it is meant to be a literal
+        if (index <= 0)
+            return Collections.emptyList();
+
+        if (isFunctional)
+            return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount);
+        else
+            return validateNonFunctionalSyntax(formatName, nameExpression, index);
+
+    }
+
+    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int index, int argumentCount)
+    {
+        List<String> messages = new ArrayList<>();
+        int start = index;
+        if (nameExpression.charAt(index-1) != ':')
+            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", formatName, start));
+        else
+            start = start-1;
+        if (argumentCount > 0)
+        {
+            int startParen = index + formatName.length();
+            if (startParen > nameExpression.length() || nameExpression.charAt(startParen) != '(')
+                messages.add(String.format("No starting parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
+            int endParen = nameExpression.indexOf(")", start);
+            if (endParen == -1)
+                messages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
+            if (startParen < nameExpression.length()-1 &&  nameExpression.charAt(startParen+1) != '\'')
+                messages.add(String.format("Value in parentheses starting at index %d should be enclosed in single quotes.", startParen));
+            else if (endParen > -1 &&  nameExpression.charAt(endParen-1) != '\'')
+                messages.add(String.format("No ending quote for the '%s' substitution pattern value starting at index %d.", formatName, start));
+        }
+        return messages;
+    }
+
+    public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start)
+    {
+        List<String> messages = new ArrayList<>();
+        if (start < 2 || !nameExpression.startsWith("${", start-2))
+            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by the string '${'.", formatName, start));
+        // missing ending brace check handled by general check for matching begin and end braces
+        return messages;
+    }
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();
 
     private static void register(SubstitutionFormat fmt)
@@ -416,5 +546,10 @@ public class SubstitutionFormat
     public static @Nullable SubstitutionFormat getFormat(String formatName)
     {
         return _map.get(formatName);
+    }
+
+    public static Collection<String> getFormatNames()
+    {
+        return _map.keySet();
     }
 }

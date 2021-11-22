@@ -92,6 +92,19 @@ public class NameGenerator
 
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
 
+    enum SubstitutionValue
+    {
+        genId,
+        randomId,
+        batchRandomId,
+        now,
+        Inputs,
+        DataInputs,
+        MaterialInputs,
+        AliquotedFrom,
+        withCounter
+    }
+
     private final TableInfo _parentTable;
 
     public FieldKeyStringExpression getParsedNameExpression()
@@ -146,10 +159,102 @@ public class NameGenerator
     public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
         return Pair.of(errorMessages, Collections.emptyList());
     }
 
-    public static List<String> getMismatchedTagErrors(String nameExpression)
+    static List<String> getSyntaxValidationMessages(String nameExpression)
+    {
+        // For each substitution format, find its location in the string
+        // validate punctuation and arguments.
+
+        List<String> messages = new ArrayList<>();
+        String lcExpression = nameExpression.toLowerCase();
+        SubstitutionFormat.getFormatNames().forEach(formatName -> {
+            String lcFormatName = formatName.toLowerCase();
+            int lcIndex = lcExpression.indexOf(lcFormatName);
+            messages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
+        });
+        for (SubstitutionValue subValue : SubstitutionValue.values())
+        {
+            String lcSub = subValue.name().toLowerCase();
+            int lcIndex = lcExpression.indexOf(lcSub);
+            if (lcIndex != -1)
+            {
+                switch (subValue)
+                {
+                    case genId, randomId, batchRandomId, now, AliquotedFrom -> messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
+                    case Inputs, DataInputs, MaterialInputs -> {
+                        // surrounded by ${} and with trailing "/"
+                        messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
+                        int slashIndex = lcIndex + subValue.name().length() + 1;
+                        if (slashIndex > nameExpression.length() || nameExpression.charAt(slashIndex) != '/')
+                            messages.add(String.format("Trailing slash not found for 'Inputs' substitution pattern starting at index %d.", lcIndex));
+
+                    }
+                    case withCounter -> {
+                        messages.addAll(validateWithCounterSyntax(nameExpression, lcIndex));
+                    }
+                }
+            }
+        }
+        return messages;
+    }
+
+    static List<String> validateWithCounterSyntax(String nameExpression, int index)
+    {
+        List<String> messages = new ArrayList<>();
+        int start = index;
+        if (nameExpression.charAt(index-1) != ':')
+            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", SubstitutionValue.withCounter.name(), start));
+        else
+            start = start-1;
+
+        int startParen = index + SubstitutionValue.withCounter.name().length();
+        if (startParen > nameExpression.length() || nameExpression.charAt(startParen) != '(')
+            return messages;
+
+        int endParen = nameExpression.indexOf(")", start);
+        if (endParen == -1)
+            messages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
+        else
+        {
+
+            int commaIndex = nameExpression.indexOf(",", start);
+            String startVal = null;
+            String format = null;
+            if (commaIndex > startParen && commaIndex < endParen)
+            {
+                // two arguments
+                startVal = nameExpression.substring(startParen+1, commaIndex).trim();
+                format = nameExpression.substring(commaIndex + 1, endParen).trim();
+            }
+            else
+            {
+                startVal = nameExpression.substring(startParen+1, endParen).trim();
+            }
+            // find the value of the first argument, if any, and validate it is an integer
+            if (!StringUtils.isEmpty(startVal))
+            {
+                try
+                {
+                    Integer.parseInt(startVal);
+                }
+                catch (NumberFormatException e)
+                {
+                    messages.add(String.format("Invalid starting value %s for 'withCounter' starting at position %d.", startVal, index));
+                }
+            }
+            if (!StringUtils.isEmpty(format))
+            {
+                if (format.charAt(0) != '\'' || format.charAt(format.length()-1) != '\'')
+                    messages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
+            }
+        }
+        return messages;
+    }
+
+    static List<String> getMismatchedTagErrors(String nameExpression)
     {
         int start = 0;
         int openIndex;
@@ -183,7 +288,7 @@ public class NameGenerator
                 }
                 else if (nextOpen == -1 || nextClose < nextOpen)
                 {
-                    if (openIndexes.isEmpty())
+                    if (openIndexes.isEmpty()) // Can this actually happen?
                         unmatchedClosed.add(nextClose);
                     else
                     {
