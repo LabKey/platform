@@ -42,6 +42,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -94,6 +95,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -933,6 +935,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
+                }
+                if (!StringUtils.isEmpty(sampleIdPattern))
+                {
+                    try
+                    {
+                        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(sampleIdPattern, st.getTinfo(), st.getImportAliasMap());
+                        ValidationException errors = new ValidationException();
+                        if (results.first != null && !results.first.isEmpty())
+                        {
+                            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
+                            return errors;
+                        }
+
+                    }
+                    catch (IOException e)
+                    {
+                        ;
+                    }
                 }
             }
 

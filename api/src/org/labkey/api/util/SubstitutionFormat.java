@@ -276,6 +276,7 @@ public class SubstitutionFormat
             return value;
         }
     }
+    static final SubstitutionFormat defaultValue = new DefaultSubstitutionFormat("");
 
     public static class JoinSubstitutionFormat extends SubstitutionFormat
     {
@@ -326,6 +327,9 @@ public class SubstitutionFormat
             return ss.collect(Collectors.joining(_sep, _prefix, _suffix));
         }
     }
+    static final SubstitutionFormat join = new JoinSubstitutionFormat("");
+    static final SubstitutionFormat prefix = new JoinSubstitutionFormat("", "", "");
+    static final SubstitutionFormat suffix = new JoinSubstitutionFormat("", "", "");
 
     public static class DateSubstitutionFormat extends SubstitutionFormat
     {
@@ -354,6 +358,9 @@ public class SubstitutionFormat
 
             return _format.format(temporal);
         }
+
+        @Override
+        public boolean argumentOptional() { return true; }
     }
 
     static final SubstitutionFormat date = new DateSubstitutionFormat(DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneId.systemDefault()));
@@ -380,6 +387,7 @@ public class SubstitutionFormat
             return _format.format(value);
         }
     }
+    static final SubstitutionFormat number = new NumberSubstitutionFormat(""); //used for validation only
 
     public static class SampleCountSubstitutionFormat extends SubstitutionFormat
     {
@@ -408,10 +416,7 @@ public class SubstitutionFormat
         }
 
         @Override
-        public boolean isFunctional()
-        {
-            return false;
-        }
+        public int argumentCount() { return 0; }
     }
 
     public static SampleCountSubstitutionFormat dailySampleCount = new SampleCountSubstitutionFormat("dailySampleCount");
@@ -450,7 +455,7 @@ public class SubstitutionFormat
         return false;
     }
 
-    public boolean isFunctional() { return true; }
+    public boolean argumentOptional() { return false; }
 
     public int argumentCount() { return 1; }
 
@@ -464,39 +469,48 @@ public class SubstitutionFormat
         if (index <= 0)
             return Collections.emptyList();
 
-        return validateSyntax(formatName, nameExpression, index, format.isFunctional(), format.argumentCount());
+        return validateSyntax(formatName, nameExpression, index, format);
     }
 
-    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index,  boolean isFunctional, int argumentCount)
+    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index, @NotNull SubstitutionFormat format)
     {
+        int argumentCount = format.argumentCount();
+        boolean isArgumentOptional = format.argumentOptional();
         // if at the beginning of the naming pattern, we'll assume it is meant to be a literal
         if (index <= 0)
             return Collections.emptyList();
 
-        if (isFunctional)
-            return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount);
-        else
-            return validateNonFunctionalSyntax(formatName, nameExpression, index);
-
+        return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount, isArgumentOptional);
     }
 
-    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int index, int argumentCount)
+    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int index, int argumentCount, boolean isArgumentOptional)
     {
         List<String> messages = new ArrayList<>();
         int start = index;
-        if (nameExpression.charAt(index-1) != ':')
-            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", formatName, start));
-        else
-            start = start-1;
+
+        /*
+            This check is too restrictive, for example ${SampleDate} would trigger 'date' check
+         */
+//        if (nameExpression.charAt(index-1) != ':')
+//            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", formatName, start));
+//        else
+//            start = start-1;
+
         if (argumentCount > 0)
         {
-            int startParen = index + formatName.length();
-            if (startParen > nameExpression.length() || nameExpression.charAt(startParen) != '(')
-                messages.add(String.format("No starting parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
+            int startParen = index + formatName.length() + 1;
+            boolean hasArg = nameExpression.length() >= startParen && nameExpression.charAt(startParen) == '(';
+            if (!hasArg)
+            {
+                if (!isArgumentOptional)
+                    messages.add(String.format("No starting parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
+                else
+                    return messages;
+            }
             int endParen = nameExpression.indexOf(")", start);
             if (endParen == -1)
                 messages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
-            if (startParen < nameExpression.length()-1 &&  nameExpression.charAt(startParen+1) != '\'')
+            if (startParen < nameExpression.length()-1 && nameExpression.charAt(startParen+1) != '\'')
                 messages.add(String.format("Value in parentheses starting at index %d should be enclosed in single quotes.", startParen));
             else if (endParen > -1 &&  nameExpression.charAt(endParen-1) != '\'')
                 messages.add(String.format("No ending quote for the '%s' substitution pattern value starting at index %d.", formatName, start));
@@ -540,6 +554,13 @@ public class SubstitutionFormat
         register(SubstitutionFormat.weeklySampleCount);
         register(SubstitutionFormat.monthlySampleCount);
         register(SubstitutionFormat.yearlySampleCount);
+
+        // with arguments, for validation purpose only
+        register(SubstitutionFormat.defaultValue);
+        register(SubstitutionFormat.number);
+        register(SubstitutionFormat.prefix);
+        register(SubstitutionFormat.suffix);
+        register(SubstitutionFormat.join);
     }
 
     // More lenient than SubstitutionFormat.valueOf(), returns null for non-match

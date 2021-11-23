@@ -102,7 +102,11 @@ public class NameGenerator
         DataInputs,
         MaterialInputs,
         AliquotedFrom,
-        withCounter
+        withCounter,
+        dailySampleCount, // sample counts can both be SubstitutionValue as well as modifiers
+        weeklySampleCount,
+        monthlySampleCount,
+        yearlySampleCount
     }
 
     private final TableInfo _parentTable;
@@ -172,8 +176,9 @@ public class NameGenerator
         String lcExpression = nameExpression.toLowerCase();
         SubstitutionFormat.getFormatNames().forEach(formatName -> {
             String lcFormatName = formatName.toLowerCase();
-            int lcIndex = lcExpression.indexOf(lcFormatName);
-            messages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
+            int lcIndex = lcExpression.indexOf(":" + lcFormatName);
+            if (lcIndex > -1)
+                messages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
         });
         for (SubstitutionValue subValue : SubstitutionValue.values())
         {
@@ -181,15 +186,35 @@ public class NameGenerator
             int lcIndex = lcExpression.indexOf(lcSub);
             if (lcIndex != -1)
             {
+                 /*
+                 * also check that the part is not preceded by an alphabetic letter
+                 * - "unknown" contains "now", but should by pass reserved key word check
+                 * - "DataInputs" contains "Input", but should by pass "Input" check
+                 */
+                if (lcIndex > 0)
+                {
+                    char preChar = lcExpression.charAt(lcIndex - 1);
+                    if (Character.isLetter(preChar))
+                        continue;
+                }
+                if (lcExpression.length() > (lcIndex + lcSub.length()))
+                {
+                    char postChar = lcExpression.charAt(lcIndex + lcSub.length());
+                    if (Character.isLetter(postChar))
+                        continue;
+                }
                 switch (subValue)
                 {
                     case genId, randomId, batchRandomId, now, AliquotedFrom -> messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
                     case Inputs, DataInputs, MaterialInputs -> {
                         // surrounded by ${} and with trailing "/"
                         messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
-                        int slashIndex = lcIndex + subValue.name().length() + 1;
-                        if (slashIndex > nameExpression.length() || nameExpression.charAt(slashIndex) != '/')
-                            messages.add(String.format("Trailing slash not found for 'Inputs' substitution pattern starting at index %d.", lcIndex));
+                        /*
+                         *  trailing / not required
+                         */
+//                        int slashIndex = lcIndex + subValue.name().length() + 1;
+//                        if (slashIndex > nameExpression.length() || nameExpression.charAt(slashIndex) != '/')
+//                            messages.add(String.format("Trailing slash not found for 'Inputs' substitution pattern starting at index %d.", lcIndex));
 
                     }
                     case withCounter -> {
