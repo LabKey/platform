@@ -36,11 +36,13 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
+import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.core.webdav.WebDavUploadHelper;
 import org.labkey.test.util.core.webdav.WebDavUrlFactory;
@@ -75,6 +77,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     {
         StudyVisitManagementTest init = (StudyVisitManagementTest) getCurrentTest();
         init.doSetup();
+        Log4jUtils.setLogLevel("org.labkey.core.admin.AdminController", ManagerPage.LoggingLevel.DEBUG);
+        Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
     }
 
     private void doSetup()
@@ -315,7 +319,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // Delete temporary folder to avoid 'AccessDeniedException' trying to unzip folder archive on Windows
         final Sardine webDav = WebDavUtils.beginSardine(PasswordUtil.getUsername());
         final WebDavUrlFactory urlFactory = WebDavUrlFactory.webDavUrlFactory(getCurrentContainerPath());
-        final String unzipFolder = urlFactory.getPath("unzip");
+        final String unzipFolder = urlFactory.getPath(".unzip");
         if(webDav.exists(unzipFolder))
         {
             webDav.delete(unzipFolder);
