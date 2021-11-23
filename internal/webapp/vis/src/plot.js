@@ -1374,7 +1374,7 @@ boxPlot.render();
             if (showCumulativeTotals) {
                 domainMax = aggregateData[aggregateData.length-1].total;
             }
-            if (stacked) {
+            if (stacked && aggregateData.length > 0) {
                 var groupTotals = LABKEY.vis.getAggregateData(aggregateData, 'subLabel', undefined, 'value', 'SUM');
                 domainMax = LABKEY.vis.Stat.MAX(groupTotals.map(function(d) { return d.value }));
             }

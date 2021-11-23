@@ -2972,7 +2972,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / numXSubCategories;
         barWidth = binWidth / 2;
-        offsetWidth = (binWidth / 4);
+        offsetWidth = binWidth / 4;
 
         hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
             return (d.subLabel !== undefined ? 'Category: ' + d.subLabel + '\n' : '')
