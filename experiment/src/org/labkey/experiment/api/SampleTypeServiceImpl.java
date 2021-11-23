@@ -599,7 +599,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
     }
 
-    private ValidationException getNamePatternValidationResult(String patten, ExpSampleTypeImpl st, Container container)
+    private @NotNull ValidationException getNamePatternValidationResult(String patten, ExpSampleTypeImpl st, Container container)
     {
         ValidationException errors = new ValidationException();
         try
@@ -611,6 +611,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         catch (IOException ignored)
         {
         }
+
+        return errors;
+    }
+
+    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    {
+        ValidationException errors = new ValidationException();
+        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.first != null && !results.first.isEmpty())
+            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
 
         return errors;
     }
@@ -672,24 +682,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
 
-//        if (!StringUtils.isEmpty(nameExpression))
-//        {
-//            ValidationException errors = getNamePatternValidationResult(nameExpression, st, c);
-//            if (errors != null && errors.hasErrors())
-//                throw new ExperimentException(errors.getMessage());
-//        }
+        if (!StringUtils.isEmpty(nameExpression))
+        {
+            ValidationException errors = getNamePatternValidationResult(nameExpression, properties, importAliases, c);
+            if (errors.hasErrors())
+                throw new ExperimentException(errors.getMessage());
+        }
 
         // Validate the aliquot name expression length
         int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
         if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
             throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
 
-//        if (!StringUtils.isEmpty(aliquotNameExpression))
-//        {
-//            ValidationException errors = getNamePatternValidationResult(aliquotNameExpression, st, c);
-//            if (errors != null && errors.hasErrors())
-//                throw new ExperimentException(errors.getMessage());
-//        }
+        if (!StringUtils.isEmpty(aliquotNameExpression))
+        {
+            ValidationException errors = getNamePatternValidationResult(aliquotNameExpression, properties, importAliases, c);
+            if (errors.hasErrors())
+                throw new ExperimentException(errors.getMessage());
+        }
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();

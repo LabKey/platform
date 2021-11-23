@@ -32,9 +32,11 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
@@ -139,18 +141,21 @@ public class NameGenerator
     private final List<String> _syntaxErrors = new ArrayList<>();
     private final List<String> _syntaxWarnings = new ArrayList<>();
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
+    private final List<GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, List<GWTPropertyDescriptor> domainProperties)
     {
         _parentTable = parentTable;
         _container = container;
         _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
         _validateSyntax = validateSyntax;
+        _domainProperties = domainProperties;
         initialize(importAliases);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
-        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false);
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -164,6 +169,7 @@ public class NameGenerator
         _parsedNameExpression = nameExpression;
         _container = container;
         _validateSyntax = false;
+        _domainProperties = null;
         initialize(null);
     }
 
@@ -182,6 +188,14 @@ public class NameGenerator
         return _syntaxWarnings;
     }
 
+    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    {
+        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
+        errorMessages.addAll(getTableFieldErrors(nameExpression, properties, importAliases, container));
+        return Pair.of(errorMessages, Collections.emptyList());
+    }
+
     public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
@@ -192,17 +206,14 @@ public class NameGenerator
 
     static List<String> getTableFieldErrors(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
-        // check invalid table field references
-        // fields that don't exist on table
-        // lookup fields that don't exist on lookup table
-        // invalid lineage inputs
-        // invalid lineage lookups
-        List<String> messages = new ArrayList<>();
-        // extract all substitutions
-        // get all first parts
-        // evaluate all
+        NameGenerator generator = new NameGenerator(nameExpression, parentTable, false, importAliases, container, null, null, true, null);
+        return generator.getSyntaxErrors();
 
-        NameGenerator generator = new NameGenerator(nameExpression, parentTable, false, importAliases, container, null, null, true);
+    }
+
+    static List<String> getTableFieldErrors(@NotNull String nameExpression, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    {
+        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
         return generator.getSyntaxErrors();
 
     }
@@ -443,6 +454,11 @@ public class NameGenerator
             substitutionValues.add(value.name());
         }
 
+        Map<String, GWTPropertyDescriptor> domainFields = new CaseInsensitiveHashMap<>();
+        if (_domainProperties != null && !_domainProperties.isEmpty())
+            _domainProperties.forEach(prop -> domainFields.put(prop.getName(), prop));
+        User user = User.getSearchUser();
+
         // check for all parts, including those in sub nested expressions
         List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
         for (StringExpressionFactory.StringPart part : parts)
@@ -474,14 +490,24 @@ public class NameGenerator
                             String fieldName = fieldParts.get(0);
                             if (!substitutionValues.contains(fieldName))
                             {
-                                ColumnInfo col = _parentTable.getColumn(fieldName);
-                                if (col == null)
+                                boolean isColPresent = false;
+                                if (_parentTable != null)
+                                {
+                                    ColumnInfo col = _parentTable.getColumn(fieldName);
+                                    isColPresent = col != null;
+                                }
+                                else if (!domainFields.isEmpty())
+                                {
+                                    GWTPropertyDescriptor col = domainFields.get(fieldName);
+                                    isColPresent = col != null;
+                                }
+
+                                if (!isColPresent)
                                     _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}");
                             }
                         }
                         continue;
                     }
-
 
                     boolean isLineageLookup = isLineageInput(fieldParts.get(0), importAliases);
 
@@ -515,6 +541,8 @@ public class NameGenerator
                             else
                                 throw new UnsupportedOperationException(errorMsg);
                         }
+
+                        continue;
                     }
                     else if (fieldParts.size() > 2)
                     {
@@ -527,7 +555,7 @@ public class NameGenerator
                             throw new UnsupportedOperationException(errorMsg);
                     }
 
-                    if (_parentTable == null)
+                    if (_parentTable == null && domainFields.isEmpty())
                     {
                         String errorMsg = "Parent table required for name expressions with lookups: " + fkTok;
                         if (_validateSyntax)
@@ -541,38 +569,78 @@ public class NameGenerator
         }
 
         // for each token with a lookup, get the lookup table and stash it for later
-        if (!lookups.isEmpty() && _parentTable != null)
+        if (!lookups.isEmpty())
         {
             Map<FieldKey, TableInfo> fieldKeyLookup = new HashMap<>();
             for (FieldKey fieldKey : lookups)
             {
                 List<String> fieldParts = fieldKey.getParts();
 
-                if (hasLineageLookup && fieldParts.size() == 3)
+                if (_exprHasLineageInputs && fieldParts.size() == 3)
                     continue;;
 
                 assert fieldParts.size() == 2;
 
                 // find column matching the root
                 String root = fieldParts.get(0);
-                ColumnInfo col = _parentTable.getColumn(root);
+                String lookupFieldName = fieldParts.get(1);
                 boolean lookupExist = false;
-                if (col != null)
+
+                if (_parentTable != null)
                 {
-                    ForeignKey fk = col.getFk();
-                    if (fk == null)
-                        continue;
+                    ColumnInfo col = _parentTable.getColumn(root);
+                    if (col != null)
+                    {
+                        ForeignKey fk = col.getFk();
+                        if (fk == null)
+                            continue;
 
-                    TableInfo lookupTable = fk.getLookupTableInfo();
-                    if (lookupTable == null)
-                        continue;
+                        TableInfo lookupTable = fk.getLookupTableInfo();
+                        if (lookupTable == null)
+                            continue;
 
-                    List<ColumnInfo> pkCols = lookupTable.getPkColumns();
-                    if (pkCols.size() != 1)
-                        continue;
+                        List<ColumnInfo> pkCols = lookupTable.getPkColumns();
+                        if (pkCols.size() != 1)
+                        {
+                            _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                            continue;
+                        }
 
-                    fieldKeyLookup.put(fieldKey, lookupTable);
-                    lookupExist = true;
+                        fieldKeyLookup.put(fieldKey, lookupTable);
+
+                        ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
+                        if (lookupCol != null)
+                            lookupExist = true;
+                    }
+                }
+                else if (_validateSyntax && !domainFields.isEmpty())
+                {
+                    GWTPropertyDescriptor col = domainFields.get(root);
+                    if (col != null)
+                    {
+                        UserSchema fkSchema = QueryService.get().getUserSchema(user, _container, col.getLookupSchema());
+
+                        if (fkSchema != null)
+                        {
+                            TableInfo lookupTable = fkSchema.getTable(col.getLookupQuery());
+                            if (lookupTable != null)
+                            {
+                                List<String> pkCols = lookupTable.getPkColumnNames();
+                                if (pkCols.size() != 1)
+                                {
+                                    _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                                    continue;
+                                }
+                                else
+                                {
+                                    ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
+                                    if (lookupCol != null)
+                                        lookupExist = true;
+                                }
+                            }
+                        }
+
+                    }
                 }
 
                 if (!lookupExist && _validateSyntax)
