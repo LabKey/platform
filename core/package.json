@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.9",
-    "@labkey/components": "2.94.0-fb-webpackExternals44226.4",
+    "@labkey/components": "2.96.0",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
