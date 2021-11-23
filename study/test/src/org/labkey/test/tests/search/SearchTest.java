@@ -425,11 +425,18 @@ public abstract class SearchTest extends StudyBaseTest
         issuesHelper.setIssueAssignmentList(null);
         clickButton("Save");
 
-        // Add Area
-        IssuesTest.addLookupValues(this, "issues", "area", Collections.singleton("Area51"));
+        try
+        {
+            // Add Area
+            IssuesTest.addLookupValues(getCurrentContainerPath(), "issues", "area", Collections.singleton("Area51"));
 
-        // Add Type
-        IssuesTest.addLookupValues(this, "issues", "type", Collections.singleton("UFO"));
+            // Add Type
+            IssuesTest.addLookupValues(getCurrentContainerPath(), "issues", "type", Collections.singleton("UFO"));
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
 
         // Create new issue.
         goToModule("Issues");
