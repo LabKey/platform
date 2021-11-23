@@ -51,9 +51,9 @@ import java.util.Map;
 public interface PipelineService extends PipelineStatusFile.StatusReader, PipelineStatusFile.StatusWriter
 {
     String MODULE_NAME = "Pipeline";
-    String UNZIP_DIR = "unzip";
+    String UNZIP_DIR = ".unzip"; // '.' prefix prevents search indexing
     String EXPORT_DIR = "export";
-    String CACHE_DIR = "cache";
+    String CACHE_DIR = ".cache";
 
     String PRIMARY_ROOT = "PRIMARY";
 

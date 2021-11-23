@@ -33,6 +33,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.categories.BVT;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
@@ -59,7 +60,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({Daily.class, Study.class})
+@Category({Daily.class, Study.class, BVT.class}) // TODO: remove BVT
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyVisitManagementTest extends BaseWebDriverTest
 {
