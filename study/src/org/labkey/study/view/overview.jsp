@@ -232,7 +232,7 @@
                 continue;
 
             TableInfo t = schema.getDatasetTable(dataset, null);
-            boolean userCanRead = t.hasPermission(user, ReadPermission.class);
+            boolean userCanRead = null != t && t.hasPermission(user, ReadPermission.class);
 
             if (!userCanRead)
                 cantReadOneOrMoreDatasets = true;
