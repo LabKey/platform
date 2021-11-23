@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.study;
 
+import com.github.sardine.Sardine;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,10 @@ import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.core.webdav.WebDavUploadHelper;
+import org.labkey.test.util.core.webdav.WebDavUrlFactory;
+import org.labkey.test.util.core.webdav.WebDavUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -86,7 +90,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testDeleteMultipleVisits()
+    public void testDeleteMultipleVisits() throws Exception
     {
         _containerHelper.createSubfolder(getProjectName(), "testDeleteMultipleVisits");
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
@@ -160,20 +164,20 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFailForUndefinedVisitsSpecimen()
+    public void testFailForUndefinedVisitsSpecimen() throws Exception
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
         testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, SPECIMEN_UNDEFINED_VISIT_MSG, 3);
     }
 
     @Test
-    public void testFailForUndefinedVisitsDataset()
+    public void testFailForUndefinedVisitsDataset() throws Exception
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsDataset");
         testFailForUndefinedVisits(DATASETS_ONLY_FOLDER_ARCHIVE, DATASET_UNDEFINED_VISIT_MSG, 11);
     }
 
-    private void testFailForUndefinedVisits(File archive, String errorMsgPrefix, int numExpectedErrors)
+    private void testFailForUndefinedVisits(File archive, String errorMsgPrefix, int numExpectedErrors) throws IOException
     {
         // first try importing the datasets only archive, expecting this to give an error
         importFolderArchiveWithFailureFlag(archive, true, 1, true);
@@ -306,8 +310,17 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         }
     }
 
-    private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError)
+    private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError) throws IOException
     {
+        // Delete temporary folder to avoid 'AccessDeniedException' trying to unzip folder archive on Windows
+        final Sardine webDav = WebDavUtils.beginSardine(PasswordUtil.getUsername());
+        final WebDavUrlFactory urlFactory = WebDavUrlFactory.webDavUrlFactory(getCurrentContainerPath());
+        final String unzipFolder = urlFactory.getPath("unzip");
+        if(webDav.exists(unzipFolder))
+        {
+            webDav.delete(unzipFolder);
+        }
+
         StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false);
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
