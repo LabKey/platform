@@ -599,6 +599,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
     }
 
+    private ValidationException getNamePatternValidationResult(String patten, ExpSampleTypeImpl st, Container container)
+    {
+        ValidationException errors = new ValidationException();
+        try
+        {
+            Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, st.getTinfo(), st.getImportAliasMap(), container);
+            if (results.first != null && !results.first.isEmpty())
+                results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
+        }
+        catch (IOException ignored)
+        {
+        }
+
+        return errors;
+    }
+
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
@@ -656,10 +672,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
 
+//        if (!StringUtils.isEmpty(nameExpression))
+//        {
+//            ValidationException errors = getNamePatternValidationResult(nameExpression, st, c);
+//            if (errors != null && errors.hasErrors())
+//                throw new ExperimentException(errors.getMessage());
+//        }
+
         // Validate the aliquot name expression length
         int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
         if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
             throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
+
+//        if (!StringUtils.isEmpty(aliquotNameExpression))
+//        {
+//            ValidationException errors = getNamePatternValidationResult(aliquotNameExpression, st, c);
+//            if (errors != null && errors.hasErrors())
+//                throw new ExperimentException(errors.getMessage());
+//        }
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
@@ -938,21 +968,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
                 if (!StringUtils.isEmpty(sampleIdPattern))
                 {
-                    try
-                    {
-                        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(sampleIdPattern, st.getTinfo(), st.getImportAliasMap());
-                        ValidationException errors = new ValidationException();
-                        if (results.first != null && !results.first.isEmpty())
-                        {
-                            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
-                            return errors;
-                        }
-
-                    }
-                    catch (IOException e)
-                    {
-                        ;
-                    }
+                    ValidationException errors = getNamePatternValidationResult(sampleIdPattern, st, container);
+                    if (errors != null && errors.hasErrors())
+                        return errors;
                 }
             }
 
@@ -961,6 +979,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
             {
                 st.setAliquotNameExpression(aliquotIdPattern);
+
+                if (!StringUtils.isEmpty(aliquotIdPattern))
+                {
+                    ValidationException errors = getNamePatternValidationResult(aliquotIdPattern, st, container);
+                    if (errors != null && errors.hasErrors())
+                        return errors;
+                }
             }
 
             st.setLabelColor(options.getLabelColor());

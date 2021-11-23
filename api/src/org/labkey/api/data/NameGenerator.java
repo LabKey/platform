@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -134,12 +135,22 @@ public class NameGenerator
 
     private final Container _container;
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+    private final boolean _validateSyntax;
+    private final List<String> _syntaxErrors = new ArrayList<>();
+    private final List<String> _syntaxWarnings = new ArrayList<>();
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
     {
         _parentTable = parentTable;
         _container = container;
         _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+        _validateSyntax = validateSyntax;
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -152,6 +163,7 @@ public class NameGenerator
         _parentTable = parentTable;
         _parsedNameExpression = nameExpression;
         _container = container;
+        _validateSyntax = false;
         initialize(null);
     }
 
@@ -160,11 +172,39 @@ public class NameGenerator
         this(nameExpression, parentTable, null);
     }
 
-    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases)
+    public List<String> getSyntaxErrors()
+    {
+        return _syntaxErrors;
+    }
+
+    public List<String> getSyntaxWarnings()
+    {
+        return _syntaxWarnings;
+    }
+
+    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
+        errorMessages.addAll(getTableFieldErrors(nameExpression, parentTable, importAliases, container));
         return Pair.of(errorMessages, Collections.emptyList());
+    }
+
+    static List<String> getTableFieldErrors(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    {
+        // check invalid table field references
+        // fields that don't exist on table
+        // lookup fields that don't exist on lookup table
+        // invalid lineage inputs
+        // invalid lineage lookups
+        List<String> messages = new ArrayList<>();
+        // extract all substitutions
+        // get all first parts
+        // evaluate all
+
+        NameGenerator generator = new NameGenerator(nameExpression, parentTable, false, importAliases, container, null, null, true);
+        return generator.getSyntaxErrors();
+
     }
 
     static List<String> getSyntaxValidationMessages(String nameExpression)
@@ -397,6 +437,11 @@ public class NameGenerator
         boolean hasLineageLookup = false;
         List<FieldKey> lookups = new ArrayList<>();
         Map<String, List<String>> lineageLookupFields = new CaseInsensitiveHashMap<>();
+        Set<String> substitutionValues = new CaseInsensitiveHashSet();
+        for (SubstitutionValue value : SubstitutionValue.values())
+        {
+            substitutionValues.add(value.name());
+        }
 
         // check for all parts, including those in sub nested expressions
         List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
@@ -423,7 +468,20 @@ public class NameGenerator
 
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
+                    {
+                        if (_validateSyntax)
+                        {
+                            String fieldName = fieldParts.get(0);
+                            if (!substitutionValues.contains(fieldName))
+                            {
+                                ColumnInfo col = _parentTable.getColumn(fieldName);
+                                if (col == null)
+                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}");
+                            }
+                        }
                         continue;
+                    }
+
 
                     boolean isLineageLookup = isLineageInput(fieldParts.get(0), importAliases);
 
@@ -450,17 +508,32 @@ public class NameGenerator
                             lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
                         }
                         else
-                            throw new UnsupportedOperationException("Only one level of lookup supported for lingeage input: " + fkTok);
+                        {
+                            String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok;
+                            if (_validateSyntax)
+                                _syntaxErrors.add(errorMsg);
+                            else
+                                throw new UnsupportedOperationException(errorMsg);
+                        }
                     }
                     else if (fieldParts.size() > 2)
                     {
                         // for now, we only support one level of lookup: ${ingredient/name}
                         // future versions could support multiple levels
-                        throw new UnsupportedOperationException("Only one level of lookup supported: " + fkTok);
+                        String errorMsg = "Only one level of lookup supported: " + fkTok;
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        else
+                            throw new UnsupportedOperationException(errorMsg);
                     }
 
                     if (_parentTable == null)
-                        throw new UnsupportedOperationException("Parent table required for name expressions with lookups: " + fkTok);
+                    {
+                        String errorMsg = "Parent table required for name expressions with lookups: " + fkTok;
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        throw new UnsupportedOperationException(errorMsg);
+                    }
 
                     lookups.add(fkTok);
                 }
@@ -475,7 +548,7 @@ public class NameGenerator
             {
                 List<String> fieldParts = fieldKey.getParts();
 
-                if (hasLineageLookup && fieldParts.size() <= 3)
+                if (hasLineageLookup && fieldParts.size() == 3)
                     continue;;
 
                 assert fieldParts.size() == 2;
@@ -483,6 +556,7 @@ public class NameGenerator
                 // find column matching the root
                 String root = fieldParts.get(0);
                 ColumnInfo col = _parentTable.getColumn(root);
+                boolean lookupExist = false;
                 if (col != null)
                 {
                     ForeignKey fk = col.getFk();
@@ -498,6 +572,12 @@ public class NameGenerator
                         continue;
 
                     fieldKeyLookup.put(fieldKey, lookupTable);
+                    lookupExist = true;
+                }
+
+                if (!lookupExist && _validateSyntax)
+                {
+                    _syntaxErrors.add("Look up field does not exist: " + fieldKey.toString());
                 }
             }
 
