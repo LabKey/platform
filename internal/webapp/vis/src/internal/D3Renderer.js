@@ -2952,20 +2952,21 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         });
         var pivotDataArr = [];
         Object.keys(pivotData).forEach(function(key) {
-            pivotDataArr.push({
-                [geom.xAes.value]: key,
-                ...pivotData[key]
-            })
+            var dataObj = pivotData[key];
+            dataObj[geom.xAes.value] = key;
+            pivotDataArr.push(dataObj);
         });
         var stackData = d3.layout.stack()(xCategories.map(function(category) {
             return pivotDataArr.map(function(d) {
-                var value = d[category] ?? 0;
-                return {
-                    [geom.xAes.value]: category,
-                    [geom.xSubAes.value]: d[geom.xAes.value],
-                    value: value,
-                    y: +value
-                };
+                var dataObj = {};
+                dataObj[geom.xAes.value] = category;
+                dataObj[geom.xSubAes.value] = d[geom.xAes.value];
+
+                var value = d[category] ? d[category] : 0;
+                dataObj['value'] = value;
+                dataObj['y'] = +value;
+
+                return dataObj;
             });
         }));
         data = stackData.reduce(function(prev, current) { return prev.concat(current); }, []);
