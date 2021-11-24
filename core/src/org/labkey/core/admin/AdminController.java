@@ -4714,7 +4714,7 @@ public class AdminController extends SpringActionController
                 IOException lastException = null;
 
                 // Directory creation sometimes fails on Windows. Retry for a couple of seconds.
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 20; i++)
                 {
                     try
                     {
