@@ -48,6 +48,7 @@ import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.core.webdav.WebDavUploadHelper;
 import org.labkey.test.util.core.webdav.WebDavUrlFactory;
 import org.labkey.test.util.core.webdav.WebDavUtils;
+import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +81,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         init.doSetup();
         Log4jUtils.setLogLevel("org.labkey.core.admin.AdminController", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
+
     }
 
     private void doSetup()
@@ -325,7 +327,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         {
             webDav.delete(unzipFolder);
         }
-
+        SearchAdminAPIHelper.waitForIndexer();
         StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false);
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
