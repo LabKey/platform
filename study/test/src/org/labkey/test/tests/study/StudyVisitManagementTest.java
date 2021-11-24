@@ -32,7 +32,6 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.BVT;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
@@ -57,7 +56,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({Daily.class, Study.class, BVT.class}) // TODO: remove BVT
+@Category({Daily.class, Study.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyVisitManagementTest extends BaseWebDriverTest
 {
@@ -95,7 +94,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testDeleteMultipleVisits() throws Exception
+    public void testDeleteMultipleVisits()
     {
         _containerHelper.createSubfolder(getProjectName(), "testDeleteMultipleVisits");
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
@@ -169,20 +168,20 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFailForUndefinedVisitsSpecimen() throws Exception
+    public void testFailForUndefinedVisitsSpecimen()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
         testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, SPECIMEN_UNDEFINED_VISIT_MSG, 3);
     }
 
     @Test
-    public void testFailForUndefinedVisitsDataset() throws Exception
+    public void testFailForUndefinedVisitsDataset()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsDataset");
         testFailForUndefinedVisits(DATASETS_ONLY_FOLDER_ARCHIVE, DATASET_UNDEFINED_VISIT_MSG, 11);
     }
 
-    private void testFailForUndefinedVisits(File archive, String errorMsgPrefix, int numExpectedErrors) throws IOException
+    private void testFailForUndefinedVisits(File archive, String errorMsgPrefix, int numExpectedErrors)
     {
         // first try importing the datasets only archive, expecting this to give an error
         importFolderArchiveWithFailureFlag(archive, true, 1, true);
@@ -315,7 +314,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         }
     }
 
-    private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError) throws IOException
+    private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError)
     {
         goToModule("FileContent");
         _fileBrowserHelper.uploadFile(archive, null, null, _fileBrowserHelper.fileIsPresent(archive.getName()));

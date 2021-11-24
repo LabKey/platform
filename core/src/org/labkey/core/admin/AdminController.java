@@ -4693,46 +4693,7 @@ public class AdminController extends SpringActionController
             try
             {
                 Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
-
-                if (Files.exists(pipelineUnzipDir))
-                {
-                    errors.reject("folderImport", "Pipeline import directory already exists.");
-                    return null;
-                }
-
-                if (!Files.isDirectory(pipelineUnzipDir.getParent()))
-                {
-                    errors.reject("folderImport", "Pipeline root is not a directory.");
-                    return null;
-                }
-                if (!Files.isWritable(pipelineUnzipDir.getParent()))
-                {
-                    errors.reject("folderImport", "Pipeline root is not writable.");
-                    return null;
-                }
-
-                IOException lastException = null;
-
-                // Directory creation sometimes fails on Windows. Retry for a couple of seconds.
-                for (int i = 0; i < 20; i++)
-                {
-                    try
-                    {
-                        Files.createDirectories(pipelineUnzipDir);
-                        lastException = null; // clear last exception
-                        break;
-                    }
-                    catch (IOException e)
-                    {
-                        lastException = e;
-                        LOG.warn("Failed to create pipeline import directory. Sleep and try to delete again. " + e.getMessage());
-                        try {Thread.sleep(500);} catch (InterruptedException x) {/* pass */}
-                    }
-                }
-                if (lastException != null)
-                {
-                    throw lastException;
-                }
+                Files.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
                 Files.createFile(pipelineUnzipFile);
                 try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
                 {
