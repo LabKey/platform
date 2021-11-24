@@ -98,16 +98,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
         ContextListener.addShutdownListener(pollingThread);
         pollingThread.start();
-
-        initCloudWatcher();
-    }
-
-    private void initCloudWatcher()
-    {
-        //Can't do Cloud module check here as it likely hasn't loaded yet.
-        CloudWatcherThread thread = new CloudWatcherThread("CloudWatcherPrimaryThread");
-        ContextListener.addShutdownListener(thread);
-        thread.start();
     }
 
     @Override
@@ -124,15 +114,15 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private void registerWithCloudService(Path path, @NotNull PathListenerManager plm, final CloudWatcherConfig config)
     {
-        CloudWatchService.get().registerCloudListener(path, config, (Path filePath, Runnable callback) -> {
-            LOG.debug("Processing watch event for filePath: " + FileUtil.getAbsolutePath(filePath)); //Strip off any user info that may be in path URI.
-            Path watchedPath = filePath.getParent();
-
-            CloudWatchEvent cwe = new CloudWatchEvent(filePath);
-
-            //TODO Could do a validation sanity check before firing event?
-            plm.fireEvents(cwe, watchedPath, callback);
-        });
+        CloudWatchService cws = CloudWatchService.get();
+        if (cws != null)
+        {
+            cws.registerCloudListener(path, config, plm);
+//
+//            (Path filePath, Runnable callback) -> {
+//                fireCloudWatchEvent(plm, filePath, callback);
+//            });
+        }
     }
 
     @Override
@@ -334,56 +324,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
     }
 
-    //This is really here to just shutdown all the Timers when the system shutsdown.
-    private class CloudWatcherThread extends BaseWatcherThread
-    {
-        protected CloudWatcherThread(String name)
-        {
-            super(name);
-        }
-
-        @Override
-        protected void watch() throws InterruptedException
-        {
-        }
-
-        @Override
-        protected void close()
-        {
-            LOG.info("Shutting down the CloudWatcher thread: " + this.getId());
-            CloudWatchService cws = CloudWatchService.get();
-            if (cws != null)
-                cws.close();
-        }
-    }
-
-    private static class CloudWatchEvent implements WatchEvent<Path>
-    {
-        private final Path cloudPath;
-        private CloudWatchEvent(Path path)
-        {
-            cloudPath = path;
-        }
-
-        @Override
-        public Kind<Path> kind()
-        {
-            return ENTRY_CREATE;
-        }
-
-        @Override
-        public int count()
-        {
-            return 1;
-        }
-
-        @Override
-        public Path context()
-        {
-            return cloudPath;
-        }
-    }
-
     private void handleDeletedDirectory(Path deletedDirectory)
     {
         PathListenerManager plm = _listenerMap.remove(deletedDirectory);
@@ -394,7 +334,8 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     }
 
     // Manages all the listeners associated with a specific path
-    private static class PathListenerManager
+    //REVIEW: Any reason to not make public?
+    public static class PathListenerManager
     {
         // CopyOnWriteArrayList is thread-safe for write and iteration, and reasonably efficient for small lists with high read/write ratio
         private final List<ListenerContext> _list = new CopyOnWriteArrayList<>();
@@ -455,7 +396,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
 
 
-        private void fireEvents(WatchEvent<Path> event, Path watchedPath, Runnable callback)
+        public void fireEvents(WatchEvent<Path> event, Path watchedPath, Runnable callback)
         {
             Kind<Path> kind = event.kind();
 
