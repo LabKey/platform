@@ -79,13 +79,15 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     {
         StudyVisitManagementTest init = (StudyVisitManagementTest) getCurrentTest();
         init.doSetup();
-        Log4jUtils.setLogLevel("org.labkey.core.admin.AdminController", ManagerPage.LoggingLevel.DEBUG);
-        Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
-
     }
 
     private void doSetup()
     {
+        Log4jUtils.setLogLevel("org.labkey.core.admin.AdminController", ManagerPage.LoggingLevel.DEBUG);
+        Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
+        SearchAdminAPIHelper.pauseCrawler(getDriver());
+        SearchAdminAPIHelper.waitForIndexerBackground();
+
         _containerHelper.createProject(getProjectName(), null);
     }
 
