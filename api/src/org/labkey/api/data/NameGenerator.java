@@ -141,9 +141,9 @@ public class NameGenerator
     private final List<String> _syntaxErrors = new ArrayList<>();
     private final List<String> _syntaxWarnings = new ArrayList<>();
 
-    private final List<GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
+    private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, List<GWTPropertyDescriptor> domainProperties)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, List<? extends GWTPropertyDescriptor> domainProperties)
     {
         _parentTable = parentTable;
         _container = container;
@@ -188,33 +188,18 @@ public class NameGenerator
         return _syntaxWarnings;
     }
 
-    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
-        errorMessages.addAll(getTableFieldErrors(nameExpression, properties, importAliases, container));
-        return Pair.of(errorMessages, Collections.emptyList());
+        List<String> warningMessages = getTableFieldWarnings(nameExpression, properties, importAliases, container);
+        return Pair.of(errorMessages, warningMessages);
     }
 
-    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
-    {
-        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
-        errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
-        errorMessages.addAll(getTableFieldErrors(nameExpression, parentTable, importAliases, container));
-        return Pair.of(errorMessages, Collections.emptyList());
-    }
-
-    static List<String> getTableFieldErrors(@NotNull String nameExpression, @Nullable TableInfo parentTable, @Nullable Map<String, String> importAliases, @NotNull Container container)
-    {
-        NameGenerator generator = new NameGenerator(nameExpression, parentTable, false, importAliases, container, null, null, true, null);
-        return generator.getSyntaxErrors();
-
-    }
-
-    static List<String> getTableFieldErrors(@NotNull String nameExpression, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static List<String> getTableFieldWarnings(@NotNull String nameExpression, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
-        return generator.getSyntaxErrors();
+        return generator.getSyntaxWarnings();
 
     }
 
@@ -503,7 +488,7 @@ public class NameGenerator
                                 }
 
                                 if (!isColPresent)
-                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}");
+                                    _syntaxWarnings.add("Invalid substitution token: ${" + token.toString() + "}");
                             }
                         }
                         continue;
@@ -537,7 +522,7 @@ public class NameGenerator
                         {
                             String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok;
                             if (_validateSyntax)
-                                _syntaxErrors.add(errorMsg);
+                                _syntaxWarnings.add(errorMsg);
                             else
                                 throw new UnsupportedOperationException(errorMsg);
                         }
@@ -550,7 +535,7 @@ public class NameGenerator
                         // future versions could support multiple levels
                         String errorMsg = "Only one level of lookup supported: " + fkTok;
                         if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
+                            _syntaxWarnings.add(errorMsg);
                         else
                             throw new UnsupportedOperationException(errorMsg);
                     }
@@ -559,7 +544,7 @@ public class NameGenerator
                     {
                         String errorMsg = "Parent table required for name expressions with lookups: " + fkTok;
                         if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
+                            _syntaxWarnings.add(errorMsg);
                         throw new UnsupportedOperationException(errorMsg);
                     }
 
@@ -602,7 +587,7 @@ public class NameGenerator
                         List<ColumnInfo> pkCols = lookupTable.getPkColumns();
                         if (pkCols.size() != 1)
                         {
-                            _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                            _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
                             continue;
                         }
 
@@ -628,7 +613,7 @@ public class NameGenerator
                                 List<String> pkCols = lookupTable.getPkColumnNames();
                                 if (pkCols.size() != 1)
                                 {
-                                    _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                                    _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
                                     continue;
                                 }
                                 else
@@ -645,7 +630,7 @@ public class NameGenerator
 
                 if (!lookupExist && _validateSyntax)
                 {
-                    _syntaxErrors.add("Look up field does not exist: " + fieldKey.toString());
+                    _syntaxWarnings.add("Look up field does not exist: " + fieldKey.toString());
                 }
             }
 

@@ -42,7 +42,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -95,7 +94,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -599,32 +597,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
     }
 
-    private @NotNull ValidationException getNamePatternValidationResult(String patten, ExpSampleTypeImpl st, Container container)
-    {
-        ValidationException errors = new ValidationException();
-        try
-        {
-            Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, st.getTinfo(), st.getImportAliasMap(), container);
-            if (results.first != null && !results.first.isEmpty())
-                results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
-        }
-        catch (IOException ignored)
-        {
-        }
-
-        return errors;
-    }
-
-    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
-    {
-        ValidationException errors = new ValidationException();
-        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
-        if (results.first != null && !results.first.isEmpty())
-            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
-
-        return errors;
-    }
-
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
@@ -682,24 +654,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
 
-        if (!StringUtils.isEmpty(nameExpression))
-        {
-            ValidationException errors = getNamePatternValidationResult(nameExpression, properties, importAliases, c);
-            if (errors.hasErrors())
-                throw new ExperimentException(errors.getMessage());
-        }
-
         // Validate the aliquot name expression length
         int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
         if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
             throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
-
-        if (!StringUtils.isEmpty(aliquotNameExpression))
-        {
-            ValidationException errors = getNamePatternValidationResult(aliquotNameExpression, properties, importAliases, c);
-            if (errors.hasErrors())
-                throw new ExperimentException(errors.getMessage());
-        }
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
@@ -976,12 +934,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     return errors;
                 }
-                if (!StringUtils.isEmpty(sampleIdPattern))
-                {
-                    ValidationException errors = getNamePatternValidationResult(sampleIdPattern, st, container);
-                    if (errors != null && errors.hasErrors())
-                        return errors;
-                }
             }
 
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
@@ -989,13 +941,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
             {
                 st.setAliquotNameExpression(aliquotIdPattern);
-
-                if (!StringUtils.isEmpty(aliquotIdPattern))
-                {
-                    ValidationException errors = getNamePatternValidationResult(aliquotIdPattern, st, container);
-                    if (errors != null && errors.hasErrors())
-                        return errors;
-                }
             }
 
             st.setLabelColor(options.getLabelColor());

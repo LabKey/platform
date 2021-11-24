@@ -29,6 +29,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -54,11 +55,13 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -322,6 +325,17 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings);
     }
 
+    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    {
+        ValidationException errors = new ValidationException();
+        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.first != null && !results.first.isEmpty())
+            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
+        if (results.second != null && !results.second.isEmpty())
+            results.second.forEach(error -> errors.addError(new SimpleValidationError(error)));
+        return errors;
+    }
+
     @Override
     public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
     {
@@ -428,6 +442,23 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             if (!ss.parentAliasHasCorrectFormat(trimmedValue))
                 throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
         });
+
+        List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
+
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), properties, aliasMap, container);
+            if (errors.hasErrors())
+                throw new IllegalArgumentException(errors.getMessage());
+        }
+
+        if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
+        {
+            ValidationException errors = getNamePatternValidationResult(options.getAliquotNameExpression(), properties, aliasMap, container);
+            if (errors.hasErrors())
+                throw new IllegalArgumentException(errors.getMessage());
+        }
+
     }
 
     @Override
