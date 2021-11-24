@@ -2969,7 +2969,11 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return dataObj;
             });
         }));
-        data = stackData.reduce(function(prev, current) { return prev.concat(current); }, []);
+        data = stackData.reduce(function(prev, current) {
+            prev.forEach(dataObj => dataObj.showValue = false);
+            current.forEach(dataObj => dataObj.showValue = true);
+            return prev.concat(current);
+        }, []);
 
         binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / numXSubCategories;
         barWidth = binWidth / 2;
@@ -3026,6 +3030,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('width', barWidth).attr('height', heightFn)
                 .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
                 .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
+
+        rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
+                .attr('text-anchor', 'middle')
+                .attr('x', function(d) {
+                    return xAcc(d) + (barWidth/2);
+                })
+                .attr('y', function(d) {
+                    var offset = geom.yAes.getValue(d) >=0 ? 4 : -15;
+                    var verticalOffset = yAcc({ value: d.y0 });
+                    return verticalOffset - heightFn(d) - offset;
+                })
+                .text(function(d) {
+                    if (d.showValue) {
+                        return geom.yAes.getValue(d) + d.y0;
+                    }
+                });
 
         if (geom.clickFn) {
             // Improve discoverability of the click handler
