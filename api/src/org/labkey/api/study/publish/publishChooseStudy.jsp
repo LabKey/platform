@@ -206,7 +206,7 @@
     {
 %>
     <span class="labkey-error" id="row-exceeded-msg" <%=!bean.getBatchIds().isEmpty() ? HtmlString.unsafe("style = 'display:none;'") : HtmlString.unsafe("")%>><h4>
-        The maximum number of rows (<%=AbstractPublishStartAction.MAX_ROWS_TO_LINK%>) that can be linked at one time has been exceeded. You can review this <%=new HelpTopic("publishAssayData#trouble").getSimpleLinkHtml("help topic")%> for more information on how to work around this limit.
+        The maximum number of rows, i.e. (<%=AbstractPublishStartAction.MAX_ROWS_TO_LINK%>), that can be linked at one time has been exceeded. You can review this <%=new HelpTopic("publishAssayData#trouble").getSimpleLinkHtml("help topic")%> for more information on how to work around this limit.
     </h4></span>
 <%
     }
