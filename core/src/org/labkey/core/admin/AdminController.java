@@ -4694,6 +4694,23 @@ public class AdminController extends SpringActionController
             {
                 Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
 
+                if (Files.exists(pipelineUnzipDir))
+                {
+                    errors.reject("folderImport", "Pipeline import directory already exists.");
+                    return null;
+                }
+
+                if (!Files.isDirectory(pipelineUnzipDir.getParent()))
+                {
+                    errors.reject("folderImport", "Pipeline root is not a directory.");
+                    return null;
+                }
+                if (!Files.isWritable(pipelineUnzipDir.getParent()))
+                {
+                    errors.reject("folderImport", "Pipeline root is not writable.");
+                    return null;
+                }
+
                 IOException lastException = null;
 
                 // Directory creation sometimes fails on Windows. Retry for a couple of seconds.
@@ -4701,7 +4718,7 @@ public class AdminController extends SpringActionController
                 {
                     try
                     {
-                        Files.createDirectories(pipelineUnzipFile.getParent());
+                        Files.createDirectories(pipelineUnzipDir);
                         lastException = null; // clear last exception
                         break;
                     }
