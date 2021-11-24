@@ -4693,7 +4693,29 @@ public class AdminController extends SpringActionController
             try
             {
                 Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
-                Files.createDirectories(pipelineUnzipFile.getParent());
+
+                IOException lastException = null;
+
+                // Directory creation sometimes fails on Windows. Retry for a couple of seconds.
+                for (int i = 0; i < 4; i++)
+                {
+                    try
+                    {
+                        Files.createDirectories(pipelineUnzipFile.getParent());
+                        lastException = null; // clear last exception
+                        break;
+                    }
+                    catch (IOException e)
+                    {
+                        lastException = e;
+                        LOG.warn("Failed to create pipeline import directory. Sleep and try to delete again. " + e.getMessage());
+                        try {Thread.sleep(500);} catch (InterruptedException x) {/* pass */}
+                    }
+                }
+                if (lastException != null)
+                {
+                    throw lastException;
+                }
                 Files.createFile(pipelineUnzipFile);
                 try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
                 {
