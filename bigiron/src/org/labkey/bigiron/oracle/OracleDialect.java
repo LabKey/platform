@@ -182,6 +182,29 @@ abstract class OracleDialect extends SimpleSqlDialect
         return StringUtils.join(args, " || ");
     }
 
+    @Override
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
+    {
+        return new SQLFragment("instr(").append(bigString).append(", ").append(littleString).append(")");
+    }
+
+    @Override
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
+    {
+        return new SQLFragment("instr(").append(bigString).append(", ").append(littleString).append(", ").append(startIndex).append(")");
+    }
+
+    @Override
+    public String getSubstringFunction(String s, String start, String length)
+    {
+        return "substr(" + s + ", " + start + ", " + length + ")";
+    }
+
+    @Override
+    public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
+    {
+        return new SQLFragment("substr(").append(s).append(", ").append(start).append(", ").append(length).append(")");
+    }
 
     @Override
     public SQLFragment concatenate(SQLFragment... args)

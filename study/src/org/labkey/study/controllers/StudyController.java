@@ -2427,6 +2427,7 @@ public class StudyController extends BaseStudyController
         private ImportDatasetForm _form = null;
         private StudyImpl _study = null;
         private DatasetDefinition _def = null;
+        private TableInfo _table = null;
 
         @Override
         protected void initRequest(ImportDatasetForm form) throws ServletException
@@ -2447,27 +2448,28 @@ public class StudyController extends BaseStudyController
             if (null == _def.getTypeURI())
                 return;
 
+
             User user = getUser();
             // Go through normal getTable() codepath to be sure all metadata is applied
-            TableInfo t = StudyQuerySchema.createSchema(_study, user).getTable(_def.getName(), null);
-            if (t == null)
+            _table = StudyQuerySchema.createSchema(_study, user).getDatasetTable(_def, null);
+            if (_table == null)
                 throw new NotFoundException("Dataset not found");
-            setTarget(t);
+            setTarget(_table);
 
-            if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
+            if (!_table.hasPermission(user, InsertPermission.class) && getUser().isGuest())
                 throw new UnauthorizedException();
         }
 
         @Override
         protected boolean canInsert(User user)
         {
-            return _def.canInsert(user);
+            return _table.hasPermission(user, InsertPermission.class);
         }
 
         @Override
         protected boolean canUpdate(User user)
         {
-            return _def.canUpdate(user);
+            return _table.hasPermission(user, UpdatePermission.class);
         }
 
         @Override
@@ -2988,11 +2990,14 @@ public class StudyController extends BaseStudyController
         {
             int datasetId = form.getDatasetId();
             StudyImpl study = getStudyThrowIfNull();
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
             DatasetDefinition dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-            if (null == dataset)
+            TableInfo datasetTable = null==dataset ? null : schema.getDatasetTable(dataset, null);
+
+            if (null == dataset || null == datasetTable)
                 throw new NotFoundException();
 
-            if (!dataset.canDelete(getUser()))
+            if (!datasetTable.hasPermission(getUser(), DeletePermission.class))
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
@@ -3004,9 +3009,6 @@ public class StudyController extends BaseStudyController
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
-
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
-                TableInfo datasetTable = schema.getDatasetTable(dataset, null);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
@@ -5339,7 +5341,7 @@ public class StudyController extends BaseStudyController
         @Override
         public Map<String, String> getAliases()
         {
-            return aliases;
+            return null == aliases ? Map.of() : aliases;
         }
 
         @Override
