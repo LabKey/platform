@@ -817,6 +817,7 @@ var barChart4 = new LABKEY.vis.BarPlot({
     },
     options: {
         color: '#c0c0c0',
+        showValues: true,
         stacked: true,
         clickFn: function(event, data) {
             console.log(data);
