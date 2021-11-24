@@ -148,7 +148,5 @@ public interface ContainerType extends Serializable
      */
     @NotNull
     Set<Container> getContainersFor(DataType dataType, Container currentContainer);
-
-
 }
 
