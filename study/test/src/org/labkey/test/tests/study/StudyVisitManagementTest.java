@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.study;
 
-import com.github.sardine.Sardine;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -44,10 +43,7 @@ import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Log4jUtils;
-import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.core.webdav.WebDavUploadHelper;
-import org.labkey.test.util.core.webdav.WebDavUrlFactory;
-import org.labkey.test.util.core.webdav.WebDavUtils;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
@@ -321,16 +317,11 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError) throws IOException
     {
-        // Delete temporary folder to avoid 'AccessDeniedException' trying to unzip folder archive on Windows
-        final Sardine webDav = WebDavUtils.beginSardine(PasswordUtil.getUsername());
-        final WebDavUrlFactory urlFactory = WebDavUrlFactory.webDavUrlFactory(getCurrentContainerPath());
-        final String unzipFolder = urlFactory.getPath(".unzip");
-        if(webDav.exists(unzipFolder))
-        {
-            webDav.delete(unzipFolder);
-        }
-        SearchAdminAPIHelper.waitForIndexer();
-        StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false);
+        goToModule("FileContent");
+        _fileBrowserHelper.uploadFile(archive, null, null, _fileBrowserHelper.fileIsPresent(archive.getName()));
+        _fileBrowserHelper.importFile(archive.getName(), "Import Folder");
+
+        StartImportPage importPage = new StartImportPage(getDriver());
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
         waitForElement(Locators.bodyTitle("Data Pipeline"));
