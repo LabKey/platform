@@ -5341,7 +5341,7 @@ public class StudyController extends BaseStudyController
         @Override
         public Map<String, String> getAliases()
         {
-            return aliases;
+            return null == aliases ? Map.of() : aliases;
         }
 
         @Override
