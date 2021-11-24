@@ -2970,8 +2970,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             });
         }));
         data = stackData.reduce(function(prev, current) {
-            prev.forEach(dataObj => dataObj.showValue = false);
-            current.forEach(dataObj => dataObj.showValue = true);
+            // keep track of which data points are from the last set, for the showValues case below
+            for (var index in prev) {
+                prev[index].showValue = false;
+            }
+            for (var index in current) {
+                current[index].showValue = true;
+            }
             return prev.concat(current);
         }, []);
 
