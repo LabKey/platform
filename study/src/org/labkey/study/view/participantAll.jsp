@@ -108,7 +108,7 @@
         if (!def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
             continue;
         TableInfo t = querySchema.getDatasetTableForLookup(def, null);
-        if (!t.hasPermission(user, ReadPermission.class))
+        if (null==t || !t.hasPermission(user, ReadPermission.class))
             continue;
         datasets.add(new Pair<>(def,t));
     }
@@ -199,7 +199,7 @@
 %>
 
 <%
-    if (!aliasMap.isEmpty())
+    if (null != aliasMap && !aliasMap.isEmpty())
     {
 %>
 <h3>Aliases:</h3>
