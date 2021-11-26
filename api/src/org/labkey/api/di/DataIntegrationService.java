@@ -5,6 +5,7 @@
 package org.labkey.api.di;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -47,6 +48,8 @@ public interface DataIntegrationService
 
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
+
+    boolean resetTransformState(Container c, User user, @NotNull String transformId);
 
     /** @return a pair with the total number of rows that were deleted across all tables in the ETL, and any error messages */
     Pair<Long, String> truncateTargets(Container c, User user, String transformId);
