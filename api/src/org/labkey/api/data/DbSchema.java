@@ -780,14 +780,19 @@ public class DbSchema
         TempTableInfo tTemplate = new TempTableInfo("cltmp", listColInfos, Collections.singletonList("RowId"));
         String tempTableName = tTemplate.getTempTableName();
 
-        String createTempTableSql =
-                "CREATE TABLE " + tempTableName + " ( " +
-                        "\tRowId INT NOT NULL,  \n" +
-                        "\tTableName VARCHAR(300) NOT NULL,\n" +
-                        "\tFirstPKColName VARCHAR(100) NULL,\n" +
-                        "\tFirstPKValue VARCHAR(100) NULL,\n" +
-                        "\tModuleName VARCHAR(50) NOT NULL,\n" +
-                        "\tOrphanedContainer VARCHAR(60) NULL) ;\n\n";
+        String createTempTableSql = "CREATE TABLE " + tempTableName +
+            """
+
+            (
+                RowId INT NOT NULL,
+                TableName VARCHAR(300) NOT NULL,
+                FirstPKColName VARCHAR(100) NULL,
+                FirstPKValue VARCHAR(100) NULL,
+                ModuleName VARCHAR(50) NOT NULL,
+                OrphanedContainer VARCHAR(60) NULL
+            );
+            
+            """;
 
         final StringBuilder sbOut = new StringBuilder();
 

@@ -1360,23 +1360,24 @@ public class Table
             aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
 
             String sql =
-                    "SELECT " +
-                        "CAST(COUNT(*) AS BIGINT) AS CountStar,\n" +
-                        "CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,\n" +
-                        "CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,\n" +
-                        "AVG(C.RowId) AS AvgRowId,\n" +
-                        "CAST(MIN(C.RowId) AS BIGINT) AS MinRowId,\n" +
-                        "CAST(MAX(C.RowId) AS BIGINT) AS MaxRowId,\n" +
-                        "CAST(COUNT(C.Parent) AS BIGINT) AS CountParent,\n" +
-                        "CAST(COUNT(DISTINCT C.Parent) AS BIGINT) AS CountDistinctParent,\n" +
-                        "CAST(COUNT(P.Parent) AS BIGINT) AS CountParent_fs_Parent,\n" +
-                        "CAST(SUM(C.SortOrder) AS BIGINT) AS SumSortOrder,\n" +
-                        "CAST(SUM(DISTINCT C.SortOrder) AS BIGINT) AS SumDistinctSortOrder,\n" +
-                        "CAST(COUNT(C.CreatedBy) AS BIGINT) AS CountCreatedBy,\n" +
-                        "MIN(C.Created) AS MinCreated,\n" +
-                        "MIN(C.Name) AS MinName\n" +
-                    "FROM core.Containers C\n" +
-                    "LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid\n";
+                """
+                SELECT CAST(COUNT(*) AS BIGINT) AS CountStar,
+                CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,
+                CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,
+                AVG(C.RowId) AS AvgRowId,
+                CAST(MIN(C.RowId) AS BIGINT) AS MinRowId,
+                CAST(MAX(C.RowId) AS BIGINT) AS MaxRowId,
+                CAST(COUNT(C.Parent) AS BIGINT) AS CountParent,
+                CAST(COUNT(DISTINCT C.Parent) AS BIGINT) AS CountDistinctParent,
+                CAST(COUNT(P.Parent) AS BIGINT) AS CountParent_fs_Parent,
+                CAST(SUM(C.SortOrder) AS BIGINT) AS SumSortOrder,
+                CAST(SUM(DISTINCT C.SortOrder) AS BIGINT) AS SumDistinctSortOrder,
+                CAST(COUNT(C.CreatedBy) AS BIGINT) AS CountCreatedBy,
+                MIN(C.Created) AS MinCreated,
+                MIN(C.Name) AS MinName
+                FROM core.Containers C
+                LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid
+                """;
             Map<String, Object> expected = new SqlSelector(tinfo.getSchema(), sql).getMap();
 
             verifyAggregates(expected, aggregateMap);
