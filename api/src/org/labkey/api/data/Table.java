@@ -546,8 +546,8 @@ public class Table
             }
 
             Object v = fields.get(key);
-            if (v instanceof String)
-                v = _trimRight((String) v);
+            if (v instanceof String s)
+                v = _trimRight(s);
             m.put(column.getName(), v);
         }
         return m;
