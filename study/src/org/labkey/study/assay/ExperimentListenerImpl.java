@@ -32,6 +32,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.view.UnauthorizedException;
@@ -75,7 +76,8 @@ public class ExperimentListenerImpl implements ExperimentListener
             {
                 for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
                 {
-                    if (!dataset.canDelete(user))
+                    TableInfo t = dataset.getTableInfo(user);
+                    if (null == t || !t.hasPermission(user, DeletePermission.class))
                     {
                         throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                     }

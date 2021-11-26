@@ -264,6 +264,12 @@ public class XarExporter
 
         addProtocol(protocol, true);
 
+        ExpRun replacedByRun = run.getReplacedByRun();
+        if (replacedByRun != null)
+        {
+            xRun.setReplacedByRunLSID(_relativizedLSIDs.relativize(replacedByRun.getLSID()));
+        }
+
         Set<Map.Entry<ExpData, String>> inputData = run.getDataInputs().entrySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
         if (inputData.size() > 0 && inputDefs == null)
