@@ -54,9 +54,11 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -136,7 +138,8 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canUpdate(getUser()));
+        var table = getTable();
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && null != table && table.hasPermission(getUser(), UpdatePermission.class));
 
         if (form.getVisitRowId() != 0)
         {
@@ -405,8 +408,9 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         User user = getUser();
-        boolean canInsert = _dataset.canInsert(user);
-        boolean canDelete = _dataset.canDelete(user);
+        var table = getTable();
+        boolean canInsert = null != table && table.hasPermission(user, InsertPermission.class);
+        boolean canDelete = null != table && table.hasPermission(user, DeletePermission.class);
         boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         ExpObject publishSource = _dataset.resolvePublishSource();

@@ -129,6 +129,8 @@ public class XarReader extends AbstractXarImporter
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
     private final Map<Integer, String> _runWorkflowTaskMap = new HashMap<>();
+    /** Retain replacement info so we can wire them up after all runs have been imported */
+    private final Map<Integer, String> _runReplacedByMap = new HashMap<>();
 
     private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
@@ -300,7 +302,7 @@ public class XarReader extends AbstractXarImporter
             throw new XarFormatException("Document failed schema validation\n"
                     + "The current schema for this _document can be found at " + ExperimentService.SCHEMA_LOCATION + " \n"
                     + "Validation errors found: \n"
-                    + errorSB.toString());
+                    + errorSB);
         }
     }
 
@@ -416,9 +418,11 @@ public class XarReader extends AbstractXarImporter
                 saveRunWorkflowTaskIds();
             }
 
+            resolveReplacedByRunLSIDs();
+
             transaction.commit();
         }
-        catch (SQLException e)
+        catch (SQLException | BatchValidationException e)
         {
             throw new XarFormatException(e);
         }
@@ -453,6 +457,29 @@ public class XarReader extends AbstractXarImporter
             catch (BatchValidationException e)
             {
                 throw new ExperimentException(e);
+            }
+        }
+    }
+
+    private void resolveReplacedByRunLSIDs() throws XarFormatException, BatchValidationException
+    {
+        for (Map.Entry<Integer, String> entry : _runReplacedByMap.entrySet())
+        {
+            String runLSID = LsidUtils.resolveLsidFromTemplate(entry.getValue(), _xarSource.getXarContext(), "ExperimentRun", "ExperimentRun");
+            ExpRunImpl replacedByRun = ExperimentServiceImpl.get().getExpRun(runLSID);
+            if (replacedByRun != null && replacedByRun.getContainer().equals(getContainer()))
+            {
+                ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(entry.getKey());
+                if (run == null)
+                {
+                    throw new XarFormatException("Could not find previously imported run with RowId " + entry.getKey());
+                }
+                run.setReplacedByRun(replacedByRun);
+                run.save(getUser());
+            }
+            else
+            {
+                getLog().warn("Could not resolve replacement run " + entry.getValue() + " so it will not be referenced.");
             }
         }
     }
@@ -610,7 +637,7 @@ public class XarReader extends AbstractXarImporter
         return materialSource;
     }
 
-    private ExpDataClass loadDataClass(DataClassType dataClassType) throws XarFormatException, ExperimentException
+    private ExpDataClass loadDataClass(DataClassType dataClassType) throws ExperimentException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
         ExpDataClass existingDataClass = ExperimentService.get().getDataClass(lsid);
@@ -1008,6 +1035,13 @@ public class XarReader extends AbstractXarImporter
 
                 if (workflowTaskLSID != null)
                     _runWorkflowTaskMap.put(run.getRowId(), workflowTaskLSID);
+
+                String replacedByLSID = a.getReplacedByRunLSID();
+                if (replacedByLSID != null)
+                    // Save for later so that we can resolve after everything's been imported
+                {
+                    _runReplacedByMap.put(impl.getRowId(), replacedByLSID);
+                }
             }
             catch (BatchValidationException x)
             {
@@ -2417,7 +2451,7 @@ public class XarReader extends AbstractXarImporter
                     }
                 }
 
-                OntologyManager.insertProperties(getContainer(), run.getLSID(), new ObjectProperty(parentLSID, getContainer(), propertyURI, stringValue, propertyType));
+                OntologyManager.insertProperties(getContainer(), getUser(), run.getLSID(), new ObjectProperty(parentLSID, getContainer(), propertyURI, stringValue, propertyType));
             }
             catch (Exception e)
             {

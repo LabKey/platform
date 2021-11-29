@@ -3,6 +3,7 @@ package org.labkey.api.audit;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
@@ -214,7 +215,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         if (oldRecordMap != null)
         {
-            Map<String, String> row = AbstractAuditTypeProvider.decodeFromDataMap(oldRecordMap);
+            Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(oldRecordMap));
             String label = getStatusLabel(row, container);
             if (label != null)
             {
@@ -234,7 +235,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         if (newRecordMap != null)
         {
-            Map<String, String> row = AbstractAuditTypeProvider.decodeFromDataMap(newRecordMap);
+            Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(newRecordMap));
             String label = getStatusLabel(row, container);
             if (label != null)
             {

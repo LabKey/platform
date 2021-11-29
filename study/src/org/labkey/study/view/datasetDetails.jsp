@@ -47,6 +47,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_DISPLAY" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -63,8 +65,9 @@
     Container c = getContainer();
     User user = getUser();
 
-    String queryName = dataset.getTableInfo(user).getName();
-    String schemaName = dataset.getTableInfo(user).getSchema().getQuerySchemaName();
+    TableInfo datasetTable = dataset.getTableInfo(user);
+    String queryName = datasetTable.getName();
+    String schemaName = datasetTable.getSchema().getQuerySchemaName();
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     Set<Class<? extends Permission>> permissions = SecurityManager.getPermissions(c.getPolicy(), user, Set.of());
@@ -122,7 +125,7 @@ if (permissions.contains(AdminPermission.class))
             .href(deleteDatasetURL)
             .usePost("Are you sure you want to delete this dataset? All related data and visitmap entries will also be deleted."));
     }
-    if (user.hasRootAdminPermission() || dataset.canDelete(user))
+    if (user.hasRootAdminPermission() || datasetTable.hasPermission(user, DeletePermission.class))
     {
         buttons.add(button("Delete All Rows").onClick("truncateTable();"));
     }
