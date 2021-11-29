@@ -1655,7 +1655,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         @Override
         public boolean canUserAccessPhi()
         {
-            throw new IllegalStateException("Should not be called on DatasetDefinition");
+            throw new IllegalStateException("Should not be called on DatasetSchemaTableInfo");
         }
 
         @Override
