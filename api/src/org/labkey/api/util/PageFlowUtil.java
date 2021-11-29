@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -886,7 +887,7 @@ public class PageFlowUtil
             String filename = file.getFileName().toString();
 
             // use the metadata to hint at the type for a faster lookup
-            metaData.add(Metadata.RESOURCE_NAME_KEY, filename);
+            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename); // TODO: Not sure RESOURCE_NAME_KEY is used
             metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
 
             return detector.detect(TikaInputStream.get(file), metaData);
