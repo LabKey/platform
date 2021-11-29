@@ -2932,7 +2932,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 xAcc, colorAcc, yAcc, yZero;
 
         if (!geom.xSubScale || !geom.xSubAes) {
-            console.error('Stacked Bar Plots require xSubScale and xSubAes.');
+            console.error('Stacked Bar Plots require xSub aes.');
             return;
         }
 
@@ -2969,13 +2969,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 return dataObj;
             });
         }));
-        data = stackData.reduce(function(prev, current) {
+        data = stackData.reduce(function(prev, current, index) {
             // keep track of which data points are from the last set, for the showValues case below
-            for (var index in prev) {
-                prev[index].showValue = false;
-            }
-            for (var index in current) {
-                current[index].showValue = true;
+            if (index === stackData.length - 1) {
+                prev.forEach(function(item) {
+                    item.showValue = false;
+                });
+                current.forEach(function(item) {
+                    item.showValue = true;
+                });
             }
             return prev.concat(current);
         }, []);
@@ -2999,8 +3001,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         };
 
         colorAcc = geom.fill;
-        if (geom.colorAes && geom.colorScale)
-        {
+        if (geom.colorAes && geom.colorScale) {
             colorAcc = function(row) {
                 return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
             };
@@ -3124,7 +3125,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // group each bar with an a tag for hover
         barWrappers = layer.selectAll('a.bar-individual').data(data);
         barWrappers.exit().remove();
-        barWrappers.enter().append('a').attr('class', 'bar-individual');
+        barWrappers.enter().append('a')
+                .attr('class', 'bar-individual');
         barWrappers.append('title').text(hoverFn);
 
         // add the bars and styling for the counts
@@ -3136,7 +3138,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return Math.abs(yAcc(d) - yAcc(yZero));
         };
-        rects.enter().append('rect').attr('class', 'bar-rect')
+        rects.enter().append('rect')
+                .attr('class', 'bar-rect')
                 .attr('x', xAcc)
                 .attr('y', function(d) {
                     if (yAcc(d) > yAcc(yZero)) {
@@ -3145,9 +3148,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         return yAcc(d); // positive value
                     }
                 })
-                .attr('width', barWidth).attr('height', heightFn)
-                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
-                .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
+                .attr('width', barWidth)
+                .attr('height', heightFn)
+                .attr('stroke', geom.color)
+                .attr('stroke-width', geom.lineWidth)
+                .attr('fill', colorAcc)
+                .attr('fill-opacity', geom.opacity);
 
         // For selenium testing
         rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
@@ -3192,12 +3198,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             barWrappers = layer.selectAll('a.bar-total').data(data);
             barWrappers.exit().remove();
-            barWrappers.enter().append('a').attr('class', 'bar-total');
+            barWrappers.enter().append('a')
+                    .attr('class', 'bar-total');
             barWrappers.append('title').text(hoverFn);
 
             rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
             rects.exit().remove();
-            rects.enter().append('rect').attr('class', 'bar-rect')
+            rects.enter().append('rect')
+                    .attr('class', 'bar-rect')
                     .attr('x', xAcc)
                     .attr('y', function(d) {
                         if (yAcc(d) > yAcc(yZero))
@@ -3205,9 +3213,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         else
                             return geom.yScale.scale(d.total);
                     })
-                    .attr('width', barWidth).attr('height', heightFn)
-                    .attr('stroke', geom.colorTotal).attr('stroke-width', geom.lineWidthTotal)
-                    .attr('fill', geom.fillTotal).attr('fill-opacity', geom.opacityTotal);
+                    .attr('width', barWidth)
+                    .attr('height', heightFn)
+                    .attr('stroke', geom.colorTotal)
+                    .attr('stroke-width', geom.lineWidthTotal)
+                    .attr('fill', geom.fillTotal)
+                    .attr('fill-opacity', geom.opacityTotal);
 
             // For selenium testing
             rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
