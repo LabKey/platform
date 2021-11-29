@@ -35,15 +35,12 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
-import org.labkey.test.pages.core.admin.logger.ManagerPage;
 import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.Log4jUtils;
 import org.labkey.test.util.core.webdav.WebDavUploadHelper;
-import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,11 +75,6 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void doSetup()
     {
-        Log4jUtils.setLogLevel("org.labkey.core.admin.AdminController", ManagerPage.LoggingLevel.DEBUG);
-        Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
-        SearchAdminAPIHelper.pauseCrawler(getDriver());
-        SearchAdminAPIHelper.waitForIndexerBackground();
-
         _containerHelper.createProject(getProjectName(), null);
     }
 
@@ -316,6 +308,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError)
     {
+        // Importing from folder management triggers sometimes triggers 'AccessDeniedException' on Windows
+        // Import from pipeline instead
         goToModule("FileContent");
         _fileBrowserHelper.uploadFile(archive, null, null, _fileBrowserHelper.fileIsPresent(archive.getName()));
         _fileBrowserHelper.importFile(archive.getName(), "Import Folder");
