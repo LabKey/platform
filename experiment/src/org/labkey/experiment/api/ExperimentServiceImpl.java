@@ -3811,12 +3811,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                if (!dataset.canDelete(user))
+                                // NOTE: these datasets come from various different containers
+                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                                TableInfo tableInfo = schema.getTable(dataset.getName());
+                                if (null == tableInfo || !dataset.hasPermission(user, DeletePermission.class))
                                 {
                                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                                 }
-                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                                TableInfo tableInfo = schema.getTable(dataset.getName());
 
                                 AssayProvider provider = AssayService.get().getProvider(protocol);
                                 if (provider != null)

@@ -16,9 +16,9 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.tika.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -197,27 +197,21 @@ public class DatasetImportRunnable implements Runnable
             {
                 is = _root.getInputStream(_fileName);
                 loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
-                if (useCutoff && loader instanceof TabLoader)
+                if (useCutoff)
                 {
-                    // UNDONE: shouldn't be tied to TabLoader
-                    ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
-                    {
-                        @Override
-                        public boolean accept(Map<String, Object> row)
-                        {
-                            Object o = row.get(visitDatePropertyURI);
+                    loader.setMapFilter(row -> {
+                        Object o = row.get(visitDatePropertyURI);
 
-                            // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
-                            if (!(o instanceof Date))
-                                return true;
+                        // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
+                        if (!(o instanceof Date))
+                            return true;
 
-                            // Allow rows after the cutoff date.
-                            if (((Date) o).compareTo(_replaceCutoff) > 0)
-                                return true;
+                        // Allow rows after the cutoff date.
+                        if (((Date) o).compareTo(_replaceCutoff) > 0)
+                            return true;
 
-                            skippedRowCount[0]++;
-                            return false;
-                        }
+                        skippedRowCount[0]++;
+                        return false;
                     });
                 }
             }

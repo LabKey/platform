@@ -2,8 +2,8 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="8.10.1"
-ext.mime4jVersion="0.8.3"
+ext.luceneVersion="8.11.0"
+ext.mime4jVersion="0.8.4"
 
 dependencies {
     external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
@@ -11,7 +11,7 @@ dependencies {
     external "org.apache.lucene:lucene-queryparser:${luceneVersion}"
 
     // tika-parsers.jar includes some simple text parsers plus adapters for many parsing libraries
-    external ("org.apache.tika:tika-parsers:${tikaVersion}") {
+    external ("org.apache.tika:tika-parsers-standard-package:${tikaVersion}") {
         transitive = false
     }
     // Additional parsing libraries (beyond POI, PDFBox, etc., which are already included in API) that we
@@ -20,11 +20,11 @@ dependencies {
     external "org.apache.commons:commons-compress:${commonsCompressVersion}"
     external "org.tukaani:xz:${tukaaniXZVersion}"         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
     external "org.apache.pdfbox:jempbox:1.8.16"
-    external "com.drewnoakes:metadata-extractor:2.8.1"
+    external "com.drewnoakes:metadata-extractor:2.16.0"
     external "org.apache.poi:poi-scratchpad:${poiVersion}"
     external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
     external "org.codelibs:jhighlight:1.0.3"
-    external "org.apache.commons:commons-csv:1.8"
+    external "org.apache.commons:commons-csv:1.9.0"
     external "org.apache.james:apache-mime4j-core:${mime4jVersion}"
     external "org.apache.james:apache-mime4j-dom:${mime4jVersion}"
     external "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
