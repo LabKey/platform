@@ -2,6 +2,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
@@ -186,7 +187,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     public Object getJsonValue(RenderContext ctx)
     {
         // issue: 44337. Doesn't seem to be a reason to return the object ID, even in the extended API response
-        return getJsonValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
+        return new JSONArray(getJsonValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.toList()));
     }
 
     @Override
