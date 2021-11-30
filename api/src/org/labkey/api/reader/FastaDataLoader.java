@@ -127,7 +127,7 @@ public class FastaDataLoader extends DataLoader
     }
 
     @Override
-    public CloseableIterator<Map<String, Object>> iterator()
+    protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         return _loader.iterator();
     }
@@ -143,7 +143,7 @@ public class FastaDataLoader extends DataLoader
     {
         public GenericFastaLoader(File fastaFile)
         {
-            super(fastaFile, new FastaIteratorElementFactory<Map<String, Object>>()
+            super(fastaFile, new FastaIteratorElementFactory<>()
             {
                 @Override
                 public Map<String, Object> createNext(String header, byte[] body)

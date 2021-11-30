@@ -321,26 +321,6 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
     @Deprecated
     boolean canRead(UserPrincipal user);
 
-    /**
-     * @return whether the user has permission to update the dataset
-     * @deprecated use DatasetTableImpl.hasPermission()
-     */
-    @Deprecated
-    boolean canUpdate(UserPrincipal user);
-
-    /**
-     * @return whether the user has permission to delete from the dataset
-     * @deprecated use DatasetTableImpl.hasPermission()
-     */
-    @Deprecated
-    boolean canDelete(UserPrincipal user);
-
-    /**
-     * @return whether the user has permission to insert rows into the dataset
-     * @deprecated use DatasetTableImpl.hasPermission()
-     */
-    @Deprecated
-    boolean canInsert(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete

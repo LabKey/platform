@@ -258,7 +258,7 @@ public class VisualizationServiceImpl implements VisualizationService
 
         try
         {
-            TableInfo t = q.getTable(null, false);
+            TableInfo t = q.getTable(null, true);
             if (!(t instanceof DatasetTable))
                 return false;
             return ((DatasetTable)t).getDataset().isDemographicData();
@@ -282,8 +282,8 @@ public class VisualizationServiceImpl implements VisualizationService
             QueryDefinition query = entry.getValue();
 
             List<QueryException> errors = new ArrayList<>();
-            TableInfo tableInfo = query.getTable(errors, false);
-            if (errors.isEmpty() && !_tableInfoMap.containsKey(query))
+            TableInfo tableInfo = query.getTable(errors, true);
+            if (errors.isEmpty() && null != tableInfo && !_tableInfoMap.containsKey(query))
                 _tableInfoMap.put(query, tableInfo);
 
             if (!_schemaVisualizationProviderMap.containsKey(query.getSchema().getName()))

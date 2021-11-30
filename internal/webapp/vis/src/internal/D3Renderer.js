@@ -2926,6 +2926,147 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderStackedBarPlotGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom), barWrappers, binWidth, barWidth, offsetWidth,
+                xCategories, xSubCategories, numXSubCategories, rects, hoverFn, heightFn,
+                xAcc, colorAcc, yAcc, yZero;
+
+        if (!geom.xSubScale || !geom.xSubAes) {
+            console.error('Stacked Bar Plots require xSub aes.');
+            return;
+        }
+
+        if (geom.xScale.scaleType !== scaleType.discrete || geom.xSubScale.scaleType !== scaleType.discrete) {
+            console.error('Stacked Bar Plots not supported for continuous data yet.');
+            return;
+        }
+
+        xCategories = geom.xScale.scale.domain();
+        xSubCategories = geom.xSubScale.scale.domain();
+        numXSubCategories = xSubCategories.length;
+
+        var pivotData = {};
+        data.forEach(function(d) {
+            if (!pivotData[d[geom.xSubAes.value]]) pivotData[d[geom.xSubAes.value]] = {};
+            pivotData[d[geom.xSubAes.value]][d[geom.xAes.value]] = d.value;
+        });
+        var pivotDataArr = [];
+        Object.keys(pivotData).forEach(function(key) {
+            var dataObj = pivotData[key];
+            dataObj[geom.xAes.value] = key;
+            pivotDataArr.push(dataObj);
+        });
+        var stackData = d3.layout.stack()(xCategories.map(function(category) {
+            return pivotDataArr.map(function(d) {
+                var dataObj = {};
+                dataObj[geom.xAes.value] = category;
+                dataObj[geom.xSubAes.value] = d[geom.xAes.value];
+
+                var value = d[category] ? d[category] : 0;
+                dataObj['value'] = value;
+                dataObj['y'] = +value;
+
+                return dataObj;
+            });
+        }));
+        data = stackData.reduce(function(prev, current, index) {
+            // keep track of which data points are from the last set, for the showValues case below
+            if (index === stackData.length - 1) {
+                prev.forEach(function(item) {
+                    item.showValue = false;
+                });
+                current.forEach(function(item) {
+                    item.showValue = true;
+                });
+            }
+            return prev.concat(current);
+        }, []);
+
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / numXSubCategories;
+        barWidth = binWidth / 2;
+        offsetWidth = binWidth / 4;
+
+        hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
+            return (d.subLabel !== undefined ? 'Category: ' + d.subLabel + '\n' : '')
+                    + (d.label !== undefined ? 'Subcategory: ' + d.label + '\n' : '')
+                    + 'Value: ' + geom.yAes.getValue(d);
+        };
+
+        xAcc = function(d) {
+            return geom.getXSub(d) - offsetWidth;
+        };
+
+        yAcc = function(d){
+            return geom.getY(d)
+        };
+
+        colorAcc = geom.fill;
+        if (geom.colorAes && geom.colorScale) {
+            colorAcc = function(row) {
+                return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
+            };
+        }
+
+        yZero = {};
+        yZero[geom.yAes.value] = 0;
+
+        // group each bar segment with an a tag for hover
+        barWrappers = layer.selectAll('a.bar-individual').data(data);
+        barWrappers.exit().remove();
+        barWrappers.enter().append('a').attr('class', 'bar-individual');
+        barWrappers.append('title').text(hoverFn);
+
+        // add the bars
+        rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
+        rects.exit().remove();
+        heightFn = function(d) {
+            if (yAcc(d) === null || yAcc(d) === undefined) {
+                return 0;
+            }
+            return Math.abs(yAcc(d) - yAcc(yZero));
+        };
+        rects.enter().append('rect').attr('class', 'bar-rect')
+                .attr('x', function(d) {
+                    return xAcc(d);
+                })
+                .attr('y', function(d) {
+                    var verticalOffset = yAcc({ value: d.y0 });
+                    return verticalOffset - heightFn(d);
+                })
+                .attr('width', barWidth).attr('height', heightFn)
+                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
+                .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
+
+        rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
+                .attr('text-anchor', 'middle')
+                .attr('x', function(d) {
+                    return xAcc(d) + (barWidth/2);
+                })
+                .attr('y', function(d) {
+                    var offset = geom.yAes.getValue(d) >=0 ? 4 : -15;
+                    var verticalOffset = yAcc({ value: d.y0 });
+                    return verticalOffset - heightFn(d) - offset;
+                })
+                .text(function(d) {
+                    if (d.showValue) {
+                        return geom.yAes.getValue(d) + d.y0;
+                    }
+                });
+
+        if (geom.clickFn) {
+            // Improve discoverability of the click handler
+            barWrappers.attr('cursor', 'pointer');
+
+            barWrappers.on('click', function(data) {
+                geom.clickFn(d3.event, data, layer);
+            });
+        }
+
+        if (plot.clipRect) {
+            applyClipRect.call(this, layer);
+        }
+    };
+
     var renderBarPlotGeom = function(data, geom) {
         var layer = getLayer.call(this, geom), barWrappers, grouped, xOffsetFn,
                 binWidth, barWidth, numXCategories, numXSubCategories, offsetWidth,
@@ -2984,7 +3125,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // group each bar with an a tag for hover
         barWrappers = layer.selectAll('a.bar-individual').data(data);
         barWrappers.exit().remove();
-        barWrappers.enter().append('a').attr('class', 'bar-individual');
+        barWrappers.enter().append('a')
+                .attr('class', 'bar-individual');
         barWrappers.append('title').text(hoverFn);
 
         // add the bars and styling for the counts
@@ -2996,7 +3138,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             return Math.abs(yAcc(d) - yAcc(yZero));
         };
-        rects.enter().append('rect').attr('class', 'bar-rect')
+        rects.enter().append('rect')
+                .attr('class', 'bar-rect')
                 .attr('x', xAcc)
                 .attr('y', function(d) {
                     if (yAcc(d) > yAcc(yZero)) {
@@ -3005,9 +3148,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         return yAcc(d); // positive value
                     }
                 })
-                .attr('width', barWidth).attr('height', heightFn)
-                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
-                .attr('fill', colorAcc).attr('fill-opacity', geom.opacity);
+                .attr('width', barWidth)
+                .attr('height', heightFn)
+                .attr('stroke', geom.color)
+                .attr('stroke-width', geom.lineWidth)
+                .attr('fill', colorAcc)
+                .attr('fill-opacity', geom.opacity);
 
         // For selenium testing
         rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
@@ -3052,12 +3198,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             barWrappers = layer.selectAll('a.bar-total').data(data);
             barWrappers.exit().remove();
-            barWrappers.enter().append('a').attr('class', 'bar-total');
+            barWrappers.enter().append('a')
+                    .attr('class', 'bar-total');
             barWrappers.append('title').text(hoverFn);
 
             rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
             rects.exit().remove();
-            rects.enter().append('rect').attr('class', 'bar-rect')
+            rects.enter().append('rect')
+                    .attr('class', 'bar-rect')
                     .attr('x', xAcc)
                     .attr('y', function(d) {
                         if (yAcc(d) > yAcc(yZero))
@@ -3065,9 +3213,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         else
                             return geom.yScale.scale(d.total);
                     })
-                    .attr('width', barWidth).attr('height', heightFn)
-                    .attr('stroke', geom.colorTotal).attr('stroke-width', geom.lineWidthTotal)
-                    .attr('fill', geom.fillTotal).attr('fill-opacity', geom.opacityTotal);
+                    .attr('width', barWidth)
+                    .attr('height', heightFn)
+                    .attr('stroke', geom.colorTotal)
+                    .attr('stroke-width', geom.lineWidthTotal)
+                    .attr('fill', geom.fillTotal)
+                    .attr('fill-opacity', geom.opacityTotal);
 
             // For selenium testing
             rects.enter().append("text").style('display', (geom.showValues ? 'block' : 'none'))
@@ -3448,6 +3599,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderDataspaceBoxPlotPathGeom: renderDataspaceBoxPlotPathGeom,
         renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom,
+        renderStackedBarPlotGeom: renderStackedBarPlotGeom,
         renderTimelinePlotGeom: renderTimelinePlotGeom,
         renderControlRangeGeom: renderControlRangeGeom,
         setLegendData: setLegendData

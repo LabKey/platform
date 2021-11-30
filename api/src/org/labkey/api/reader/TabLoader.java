@@ -28,11 +28,9 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
-import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.writer.PrintWriters;
 
@@ -55,12 +53,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
- * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>.  The iterator must be closed
- * (typically in a finally block) to close the underlying input source.  The iterator can be wrapped with a BeanIterator
- * (to provide beans) and/or a CloseableFilteredIterator (to filter the iterator).
+ * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>. The iterator must be closed
+ * (typically via try-with-resources or a finally block) to close the underlying input source. The iterator can be wrapped
+ * with a BeanIterator (to provide beans) and/or a CloseableFilteredIterator (to filter the iterator).
  * <p/>
  * NOTE: Column descriptors should not be changed in the midst of iterating; a single set of column descriptors is used
  * to key all the maps.
@@ -185,14 +184,13 @@ public class TabLoader extends DataLoader
     private TabBufferedReader _reader = null;
     private int _commentLines = 0;
     private char _chDelimiter = '\t';
-    private String _strDelimiter = new String(new char[]{_chDelimiter});
+    private String _strDelimiter = String.valueOf(_chDelimiter);
     private String _lineDelimiter = null;
 
     private String _strQuote = null;
     private String _strQuoteQuote = null;
     private boolean _parseQuotes = true;
     private boolean _unescapeBackslashes = true;
-    private Filter<Map<String, Object>> _mapFilter;
 
     // Infer whether there are headers
     public TabLoader(File inputFile)
@@ -422,7 +420,7 @@ public class TabLoader extends DataLoader
             {
                 if (_strQuote == null)
                 {
-                    _strQuote = new String(new char[] {chQuote});
+                    _strQuote = String.valueOf(chQuote);
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
@@ -510,20 +508,8 @@ public class TabLoader extends DataLoader
         return listParse.toArray(new String[listParse.size()]);
     }
 
-    @Deprecated // Just use a CloseableFilteredIterator.  TODO: Remove
-    public void setMapFilter(Filter<Map<String, Object>> mapFilter)
-    {
-        _mapFilter = mapFilter;
-    }
-
     @Override
-    public @NotNull CloseableIterator<Map<String, Object>> iterator()
-    {
-        return iterator(false);
-    }
-
-    @Override
-    public @NotNull CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
+    public @NotNull CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         TabLoaderIterator iter;
         try
@@ -536,10 +522,7 @@ public class TabLoader extends DataLoader
             throw new RuntimeException(e);
         }
 
-        if (null == _mapFilter)
-            return iter;
-        else
-            return new CloseableFilteredIterator<>(iter, _mapFilter);
+        return iter;
     }
 
 
@@ -552,7 +535,7 @@ public class TabLoader extends DataLoader
     public void setDelimiterCharacter(char delimiter)
     {
         _chDelimiter = delimiter;
-        _strDelimiter = new String(new char[]{_chDelimiter});
+        _strDelimiter = String.valueOf(_chDelimiter);
     }
 
     public void setDelimiters(@NotNull String field, @Nullable String line)
@@ -1110,6 +1093,11 @@ public class TabLoader extends DataLoader
                 assertEquals("Fred", row.get("Name"));
                 assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
+
+                List<Map<String, Object>> rows2 = loader.stream()
+                    .collect(Collectors.toList());
+
+                assertEquals(rows, rows2);
             }
         }
 
@@ -1165,7 +1153,7 @@ public class TabLoader extends DataLoader
         @Test
         public void testHash()
         {
-            /* NOTE hashes hard coded so we know if implementation has changed.  Uncomment this block to print out hashes to update code *
+            /* NOTE hashes are hard-coded so we know if implementation has changed. Uncomment this block to print out hashes to update code *
             TabLoader tl = new TabLoader(tsvData);
             DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
             while (it.hasNext())

@@ -59,8 +59,6 @@ public interface InventoryService
             "StorageComment"
     );
 
-    String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
-
     static void setInstance(InventoryService impl)
     {
         ServiceRegistry.get().registerService(InventoryService.class, impl);
@@ -87,9 +85,7 @@ public interface InventoryService
     static boolean isFreezerManagementEnabled(Container c)
     {
         Set<Module> moduleSet = c.getActiveModules();
-        return (moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"))
-                && (!moduleSet.contains(ModuleLoader.getInstance().getModule("Biologics"))
-                || ExperimentalFeatureService.get().isFeatureEnabled(InventoryService.EXPERIMENTAL_FM_BIOLOGICS)));
+        return moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"));
     }
 
 }

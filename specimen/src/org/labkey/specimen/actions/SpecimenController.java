@@ -52,6 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
@@ -156,6 +157,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -459,7 +461,7 @@ public class SpecimenController extends SpringActionController
                 if (participantCommentDatasetId != null && participantCommentDatasetId != -1)
                 {
                     Dataset ds = StudyService.get().getDataset(study.getContainer(), participantCommentDatasetId);
-                    if (ds != null && ds.canUpdate(getUser()))
+                    if (ds != null && ds.getTableInfo(getUser()).hasPermission(getUser(), UpdatePermission.class))
                     {
                         if (addSep)
                         {
@@ -477,7 +479,8 @@ public class SpecimenController extends SpringActionController
                 if (participantVisitCommentDatasetId != null && participantVisitCommentDatasetId != -1)
                 {
                     Dataset ds = StudyService.get().getDataset(study.getContainer(), participantVisitCommentDatasetId);
-                    if (ds != null && ds.canUpdate(getUser()))
+                    TableInfo table = null==ds ? null : ds.getTableInfo(getUser());
+                    if (null != table && table.hasPermission(getUser(), UpdatePermission.class))
                     {
                         if (addSep)
                         {
@@ -3744,7 +3747,7 @@ public class SpecimenController extends SpringActionController
                     message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
                     MailHelper.send(message, getUser(), getContainer());
                 }
-                catch (javax.mail.internet.AddressException | NullPointerException e)
+                catch (AddressException | NullPointerException e)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());      // Bad address; also InternetAddress constructor can throw null
                 }

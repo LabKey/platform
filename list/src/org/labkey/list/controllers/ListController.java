@@ -962,7 +962,7 @@ public class ListController extends SpringActionController
         @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), false);
             Integer[] IDs = new Integer[listIDs.size()];
             int i = 0;
             for(String s : listIDs)
