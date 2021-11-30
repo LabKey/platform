@@ -49,6 +49,9 @@ public class SelectRowsStreamHack
                 Command.Response response;
                 try
                 {
+                    // Execute the request when we're creating the DataIterator so that it can be reliably closed.
+                    // When we did it early as part of creating the DataIteratorBuilder, it could lead to a HTTP
+                    // connection leak. See issue 44390
                     response = cmd._execute(cn, container);
                 }
                 catch (CommandException | IOException e)
