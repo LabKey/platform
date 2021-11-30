@@ -273,6 +273,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             var extensionCol = new ExprColumn(this, colName, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
             addColumn(extensionCol);
             extensionCol.copyAttributesFrom(col);
+            // URLs are not included in the standard copy and need to be handled separately
+            extensionCol.copyURLFrom(col, null, null);
 
             if (col.isHidden())
                 extensionCol.setHidden(true);
