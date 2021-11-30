@@ -26,7 +26,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
@@ -37,8 +36,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PrincipalIdForeignKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -140,7 +137,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Group");
-                    col.setFk(new GroupForeignKey(userSchema));
+                    col.setFk(new PrincipalIdForeignKey(userSchema));
                     col.setDisplayColumnFactory(PrincipalUserDisplayColumn::new);
                 }
                 else if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
@@ -319,29 +316,6 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         public String getKindName()
         {
             return NAME;
-        }
-    }
-
-    public static class GroupForeignKey extends LookupForeignKey
-    {
-        private final UserSchema _userSchema;
-
-        public GroupForeignKey(UserSchema userSchema)
-        {
-            super("UserId", "Name");
-            _userSchema = userSchema;
-        }
-
-        @Override
-        public TableInfo getLookupTableInfo()
-        {
-            TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();
-            FilteredTable<UserSchema> ret = new FilteredTable<>(tinfoUsers, _userSchema);
-            ret.setContainerFilter(ContainerFilter.EVERYTHING);
-            ret.addWrapColumn(tinfoUsers.getColumn("UserId"));
-            ret.addColumn(ret.wrapColumn("Name", tinfoUsers.getColumn("Name")));
-            ret.setTitleColumn("Name");
-            return ret;
         }
     }
 
