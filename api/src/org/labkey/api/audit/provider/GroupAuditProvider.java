@@ -425,31 +425,5 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         {
             keys.add(_principalId.getFieldKey());
         }
-
-        @Override
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            Integer id = (Integer)getBoundColumn().getValue(ctx);
-            if (id != null)
-            {
-                UserPrincipal p = SecurityManager.getPrincipal(id);
-                if (p == null)
-                    return null;
-
-                if (p.getPrincipalType() == PrincipalType.GROUP)
-                {
-                    Group g = SecurityManager.getGroup(id);
-
-                    return g != null ? g.getName() : null;
-                }
-                else
-                {
-                    var loggedInUser = ctx.getViewContext().getUser();
-                    User u = UserManager.getUser(id);
-                    return u != null ? u.getDisplayName(loggedInUser) : p.getName();
-                }
-            }
-            return null;
-        }
     }
 }
