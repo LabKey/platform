@@ -41,12 +41,20 @@ public class SelectRowsStreamHack
 {
     public static DataIteratorBuilder go(Connection cn, String container, SelectRowsCommand cmd, Container targetContainer) throws IOException, CommandException
     {
-        final Command.Response response = cmd._execute(cn, container);
         return new DataIteratorBuilder()
         {
             @Override
             public DataIterator getDataIterator(DataIteratorContext context)
             {
+                Command.Response response;
+                try
+                {
+                    response = cmd._execute(cn, container);
+                }
+                catch (CommandException | IOException e)
+                {
+                    throw new RuntimeException("Failed to execute remote query", e);
+                }
                 try
                 {
                     final InputStream is = response.getInputStream();
