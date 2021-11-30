@@ -51,7 +51,7 @@
     "testResultsProcessor": "jest-teamcity-reporter"
   },
   "dependencies": {
-    "@labkey/api": "1.6.9",
+    "@labkey/api": "1.6.10",
     "@labkey/components": "2.100.0-fb-subfolder-perms.0",
     "@labkey/themes": "1.2.1"
   },
