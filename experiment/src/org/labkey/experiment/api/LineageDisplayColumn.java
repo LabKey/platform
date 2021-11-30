@@ -186,7 +186,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     public Object getJsonValue(RenderContext ctx)
     {
         // issue: 44337. Doesn't seem to be a reason to return the object ID, even in the extended API response
-        return getDisplayValue(ctx);
+        return getJsonValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
     }
 
     @Override
