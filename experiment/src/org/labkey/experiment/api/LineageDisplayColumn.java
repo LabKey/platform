@@ -183,6 +183,13 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        // issue: 44337. Doesn't seem to be a reason to return the object ID, even in the extended API response
+        return getDisplayValue(ctx);
+    }
+
+    @Override
     public List<String> getTsvFormattedValues(RenderContext ctx)
     {
         if (null == innerDisplayColumn)
