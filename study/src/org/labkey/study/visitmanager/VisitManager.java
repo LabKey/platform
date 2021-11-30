@@ -31,6 +31,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -206,7 +207,7 @@ public abstract class VisitManager
 
     protected abstract void updateVisitTable(User user, @Nullable Logger logger);
 
-    // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
+    // Produce appropriate SQL for getVisitSummary(). The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.
     @Nullable
     protected abstract SQLFragment getVisitSummarySql(StudyQuerySchema studyQuerySchema, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll);
@@ -224,7 +225,7 @@ public abstract class VisitManager
         if (null == sql || sql.isEmpty())
             return visitSummary;
 
-        try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
+        try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getScope(), sql, QueryLogging.noValidationNeededQueryLogging()).getResultSet(false, false))
         {
             while (rows.next())
             {
