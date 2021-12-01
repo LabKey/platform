@@ -393,6 +393,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 Domain domain = tinfo.getDomain();
                 if (domain != null)
                 {
+                    if (domain.getContainer() != null)
+                        resp.put("domainContainerPath", domain.getContainer().getPath());
+
                     if (kind.canEditDefinition(user, domain))
                     {
                         ActionURL editUrl = kind.urlEditDefinition(domain, getViewContext());

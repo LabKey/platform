@@ -6514,9 +6514,12 @@ public class ExperimentController extends SpringActionController
                     if (id == null)
                         throw new NotFoundException("Unable to resolve object: " + lsid);
 
-                    // ensure that the protocol output lineage is in the same container as the request
+                    // ensure the user has read permission in the seed container
                     if (!getContainer().equals(id.getContainer()))
-                        throw new ApiUsageException("Object requested must be in the same folder that the request originates: " + id.getContainer().getPath());
+                    {
+                        if (!id.getContainer().hasPermission(getUser(), ReadPermission.class))
+                            throw new UnauthorizedException("User does not have permission to read object: " + lsid);
+                    }
 
                     _seeds.add(id);
                 }
