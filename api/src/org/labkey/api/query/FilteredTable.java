@@ -45,9 +45,11 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
@@ -99,7 +101,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // strong
         assert !assertCheckedPermissions || hasPermission(getUserSchema().getUser(), ReadPermission.class) : "Caller should check TableInfo.hasPermission()";
         if (!hasPermission(getUserSchema().getUser(), ReadPermission.class))
-            throw new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
+        {
+            var uex = new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
+            ExceptionUtil.logExceptionToMothership(null==HttpView.getRootContext() ? null : HttpView.getRootContext().getRequest(), uex);
+            // allow disabling this throw via -DcheckReadBeforeExecute=false
+            if (!"false".equals(System.getProperty("checkReadBeforeExecute")))
+                throw uex;
+        }
     }
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
