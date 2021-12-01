@@ -25,6 +25,7 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
@@ -40,14 +41,16 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getSchema(), null, schema, cf);
         _colParticipantId = colParticipantId;
+        StudyQuerySchema sqs = getUserSchema();
         for (DatasetDefinition dataset : schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
-            if (!dataset.canRead(schema.getUser()))
+            var t = sqs.getDatasetTable(dataset, null);
+            if (null == t || !t.hasPermission(schema.getUser(), ReadPermission.class))
                 continue;
 
-            String name = dataset.getName();
+            String name = t.getName();
             if (name == null)
                 continue;
             // if not keyed by Participant/SequenceNum it is not a lookup

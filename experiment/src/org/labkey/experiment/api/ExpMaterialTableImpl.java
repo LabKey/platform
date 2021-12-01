@@ -211,6 +211,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SampleSet:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
+                // NOTE: populateColumns() overwrites this with a QueryForeignKey.  Can this be removed?
                 columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "LSID", "Name")
                 {
                     @Override
@@ -341,14 +342,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, "datastates", "RowId", "Label")
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
-                    }
-                });
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
+                        .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
             case RecomputeRollup:
@@ -613,14 +608,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
-        statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
-            }
-        });
+        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
+                .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))

@@ -109,7 +109,7 @@ public class DatasetViewProvider implements DataViewProvider
                 for (Dataset ds : study.getDatasets())
                 {
                     TableInfo t = sqs.getDatasetTable((DatasetDefinition)ds, null);
-                    if (t.hasPermission(user, ReadPermission.class))
+                    if (t != null && t.hasPermission(user, ReadPermission.class))
                     {
                         DefaultViewInfo view = new DefaultViewInfo(TYPE, ds.getEntityId(), ds.getLabel(), ds.getContainer());
 
