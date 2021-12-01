@@ -44,9 +44,9 @@ public class StudyCheckForReloadTest extends StudyBaseTest
     @LogMethod
     protected void doVerifySteps() throws IOException
     {
-        log("Copy files from \"unzip\" folder into parent folder");
+        log("Copy files from \".unzip\" folder into parent folder");
         File fileRoot = TestFileUtils.getDefaultFileRoot(getProjectName() + "/" + getFolderName());
-        File unzipDir = new File(fileRoot, "unzip");
+        File unzipDir = new File(fileRoot, ".unzip");
         FileUtils.copyDirectory(unzipDir, fileRoot);
 
         log("Create studyload.txt file");

@@ -308,7 +308,13 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError)
     {
-        StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false);
+        // Importing from folder management triggers sometimes triggers 'AccessDeniedException' on Windows
+        // Import from pipeline instead
+        goToModule("FileContent");
+        _fileBrowserHelper.uploadFile(archive, null, null, _fileBrowserHelper.fileIsPresent(archive.getName()));
+        _fileBrowserHelper.importFile(archive.getName(), "Import Folder");
+
+        StartImportPage importPage = new StartImportPage(getDriver());
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
         waitForElement(Locators.bodyTitle("Data Pipeline"));

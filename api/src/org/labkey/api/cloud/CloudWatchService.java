@@ -1,6 +1,7 @@
 package org.labkey.api.cloud;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.nio.file.Path;
@@ -18,7 +19,7 @@ public interface CloudWatchService
     }
 
     // Listeners are Path/ Store based. These are the notification processors.
-    void registerCloudListener(Path resolvedPath, CloudWatcherConfig config, BiConsumer<Path, Runnable> eventProcessor);
+    void registerCloudListener(Path resolvedPath, CloudWatcherConfig config, FileSystemWatcherImpl.PathListenerManager plm); // BiConsumer<Path, Runnable> eventProcessor);
     void unregisterCloudListener(int watcherConfigId);
 
     void close();
