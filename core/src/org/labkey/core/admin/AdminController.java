@@ -4693,7 +4693,7 @@ public class AdminController extends SpringActionController
             try
             {
                 Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
-                Files.createDirectories(pipelineUnzipFile.getParent());
+                Files.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
                 Files.createFile(pipelineUnzipFile);
                 try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
                 {
