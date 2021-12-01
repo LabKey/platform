@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.admin.ImportContext;
 
-public class TabContainerType extends NormalContainerType implements ContainerType
+public class TabContainerType extends NormalContainerType
 {
     public static final String NAME = "tab";
 
