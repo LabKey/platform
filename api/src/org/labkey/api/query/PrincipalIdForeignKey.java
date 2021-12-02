@@ -16,31 +16,13 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 
 public class PrincipalIdForeignKey extends LookupForeignKey
 {
     private final UserSchema _userSchema;
-
-    static public ColumnInfo initColumn(MutableColumnInfo column)
-    {
-        column.setFk(new PrincipalIdForeignKey(column.getParentTable().getUserSchema()));
-        column.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new UserIdRenderer(colInfo);
-            }
-        });
-        return column;
-    }
-
 
     public PrincipalIdForeignKey(UserSchema userSchema)
     {
@@ -52,7 +34,8 @@ public class PrincipalIdForeignKey extends LookupForeignKey
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable ret = new FilteredTable<>(tinfoUsersData, _userSchema);
+        FilteredTable<UserSchema> ret = new FilteredTable<>(tinfoUsersData, _userSchema);
+        ret.setContainerFilter(ContainerFilter.EVERYTHING);
         ret.addWrapColumn(tinfoUsersData.getColumn("UserId"));
         ret.addColumn(ret.wrapColumn("Name", tinfoUsersData.getColumn("Name")));
         ret.setTitleColumn("Name");
