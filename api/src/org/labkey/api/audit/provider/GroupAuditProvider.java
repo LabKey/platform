@@ -376,6 +376,10 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                         User u = UserManager.getUser(id);
                         if (u != null)
                         {
+                            // don't display anything for the non-user "guest"
+                            if (u.isGuest())
+                                return;
+
                             String displayText = PageFlowUtil.filter(u.getDisplayName(loggedInUser));
                             ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, id);
                             if (url != null)
@@ -403,35 +407,6 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         public void addQueryFieldKeys(Set<FieldKey> keys)
         {
             keys.add(_principalId.getFieldKey());
-        }
-
-        // This override is needed to handle the "guest" user (not be be confused with the Guests group),
-        // which does not have a representation in the core.principals table.  We could, instead hide
-        // the "guest" display value from the Member column in renderGridCellContents, but that also
-        // seems a little odd.
-        @Override
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            Integer id = (Integer)getBoundColumn().getValue(ctx);
-            if (id != null)
-            {
-                UserPrincipal p = SecurityManager.getPrincipal(id);
-                if (p != null)
-                {
-                    if (p.getPrincipalType() == PrincipalType.GROUP)
-                        return p.getName();
-                    else
-                    {
-                        var loggedInUser = ctx.getViewContext().getUser();
-                        User u = UserManager.getUser(id);
-                        if (u != null)
-                            return u.getDisplayName(loggedInUser);
-                        else
-                            return p.getName();
-                    }
-                }
-            }
-            return null;
         }
     }
 }
