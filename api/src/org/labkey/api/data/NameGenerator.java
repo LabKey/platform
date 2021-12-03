@@ -109,7 +109,14 @@ public class NameGenerator
         dailySampleCount, // sample counts can both be SubstitutionValue as well as modifiers
         weeklySampleCount,
         monthlySampleCount,
-        yearlySampleCount
+        yearlySampleCount,
+        schemaName,
+        schemaPath,
+        queryName,
+        dataRegionName,
+        containerPath,
+        contextPath,
+        selectionKey
     }
 
     private final TableInfo _parentTable;
@@ -143,11 +150,11 @@ public class NameGenerator
 
     private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, List<? extends GWTPropertyDescriptor> domainProperties)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
         _parentTable = parentTable;
         _container = container;
-        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
         initialize(importAliases);
@@ -188,19 +195,20 @@ public class NameGenerator
         return _syntaxWarnings;
     }
 
-    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
-        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
-        errorMessages.addAll(getSyntaxValidationMessages(nameExpression));
-        List<String> warningMessages = getTableFieldWarnings(nameExpression, properties, importAliases, container);
+//        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        List<String> warningMessages = getSyntaxValidationMessages(nameExpression);
+        Pair<List<String>, List<String>> fieldMessages = getTableFieldWarnings(nameExpression, properties, importAliases, container);
+        List<String> errorMessages = fieldMessages.first;
+        warningMessages.addAll(fieldMessages.second);
         return Pair.of(errorMessages, warningMessages);
     }
 
-    static List<String> getTableFieldWarnings(@NotNull String nameExpression, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static Pair<List<String>, List<String>>  getTableFieldWarnings(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
-        return generator.getSyntaxWarnings();
-
+        return Pair.of(generator.getSyntaxErrors(), generator.getSyntaxWarnings());
     }
 
     static List<String> getSyntaxValidationMessages(String nameExpression)
@@ -315,6 +323,7 @@ public class NameGenerator
         return messages;
     }
 
+    // TODO remove
     static List<String> getMismatchedTagErrors(String nameExpression)
     {
         int start = 0;
@@ -446,6 +455,9 @@ public class NameGenerator
 
         // check for all parts, including those in sub nested expressions
         List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
+        if (_validateSyntax && _parsedNameExpression instanceof NameGenerationExpression)
+            _syntaxErrors.addAll(((NameGenerationExpression) _parsedNameExpression).getSyntaxErrors());
+
         for (StringExpressionFactory.StringPart part : parts)
         {
             if (!part.isConstant())
@@ -522,7 +534,7 @@ public class NameGenerator
                         {
                             String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok;
                             if (_validateSyntax)
-                                _syntaxWarnings.add(errorMsg);
+                                _syntaxErrors.add(errorMsg);
                             else
                                 throw new UnsupportedOperationException(errorMsg);
                         }
@@ -535,7 +547,7 @@ public class NameGenerator
                         // future versions could support multiple levels
                         String errorMsg = "Only one level of lookup supported: " + fkTok;
                         if (_validateSyntax)
-                            _syntaxWarnings.add(errorMsg);
+                            _syntaxErrors.add(errorMsg);
                         else
                             throw new UnsupportedOperationException(errorMsg);
                     }
@@ -544,7 +556,7 @@ public class NameGenerator
                     {
                         String errorMsg = "Parent table required for name expressions with lookups: " + fkTok;
                         if (_validateSyntax)
-                            _syntaxWarnings.add(errorMsg);
+                            _syntaxErrors.add(errorMsg);
                         throw new UnsupportedOperationException(errorMsg);
                     }
 
@@ -624,7 +636,6 @@ public class NameGenerator
                                 }
                             }
                         }
-
                     }
                 }
 
@@ -1195,6 +1206,9 @@ public class NameGenerator
         private final Container _container;
         private Function<String, Long> _getNonConflictCountFn;
         private String _counterSeqPrefix;
+        private boolean _validateSyntax;
+
+        private final List<String> _syntaxErrors = new ArrayList<>();
 
         NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
         {
@@ -1202,26 +1216,32 @@ public class NameGenerator
             _container = container;
         }
 
-        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
         {
             this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
             _getNonConflictCountFn = getNonConflictCountFn;
             _counterSeqPrefix = counterSeqPrefix;
+            _validateSyntax = validateSyntax;
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null, false);
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null, false);
         }
         
-        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
+        }
+
+        public List<String> getSyntaxErrors()
+        {
+            return _syntaxErrors;
         }
 
         @Override
@@ -1293,7 +1313,13 @@ public class NameGenerator
                         break;
 
                     if (openCount < 0)
-                        throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
+                    {
+                        String errorMsg = "Illegal expression: open and close tags are not matched.";
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        else
+                            throw new IllegalArgumentException(errorMsg);
+                    }
                 }
 
                 if (openCount == 0)
@@ -1302,13 +1328,25 @@ public class NameGenerator
                     StringExpressionFactory.StringPart part = parsePart(sub);
 
                     if (part.hasSideEffects() && !_allowSideEffects)
-                        throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
+                    {
+                        String errorMsg = "Side-effecting expression part not allowed: " + sub;
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        else
+                            throw new IllegalArgumentException(errorMsg);
+                    }
 
                     _parsedExpression.add(part);
                     start = subInd;
                 }
                 else
-                    throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
+                {
+                    String errorMsg = "Illegal expression: open and close tags are not matched.";
+                    if (_validateSyntax)
+                        _syntaxErrors.add(errorMsg);
+                    else
+                        throw new IllegalArgumentException();
+                }
             }
 
             if (start < _source.length())

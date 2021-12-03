@@ -292,6 +292,16 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public Pair<List<String>, List<String>> validateNameExpressions(Container container, DataClassDomainKindProperties options, GWTDomain domainDesign)
+    {
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            return NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+        }
+        return null;
+    }
+
+    @Override
     public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);

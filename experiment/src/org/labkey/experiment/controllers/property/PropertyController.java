@@ -52,7 +52,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -248,7 +247,7 @@ public class PropertyController extends SpringActionController
         @Override
         public void validateForm(DomainApiForm form, Errors errors)
         {
-            form.validate(getContainer(), getUser());
+            form.validate(getContainer(), getUser(), false);
         }
 
         @Override
@@ -443,6 +442,46 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class ValidateNameExpressionsAction extends MutatingApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public void validateForm(DomainApiForm form, Errors errors)
+        {
+
+        }
+
+        @Override
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            Pair<List<String>, List<String>> results = form.validate(getContainer(), getUser(), true);
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            if (results != null)
+            {
+                resp.put("errors", results.first);
+                resp.put("warnings", results.second);
+            }
+            return resp;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
@@ -472,7 +511,7 @@ public class PropertyController extends SpringActionController
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
                 throw new IllegalArgumentException("DomainId and domainURI are required in updated domainDesign.");
 
-            form.validate(getContainer(), getUser());
+            form.validate(getContainer(), getUser(), false);
         }
 
         @Override
@@ -960,11 +999,11 @@ public class PropertyController extends SpringActionController
          * Method to validate form
          */
         @JsonIgnore
-        public void validate(Container container, User user)
+        public Pair<List<String>, List<String>> validate(Container container, User user, boolean validateNameExpressionOnly)
         {
             // Issue 39995: validate form options for non-template case
             if (getDomainGroup() != null)
-                return;
+                return null;
 
             String kindName = this.getKind() == null ? this.getDomainKind() : this.getKind();
             DomainKind kind = null;
@@ -985,18 +1024,24 @@ public class PropertyController extends SpringActionController
             //Name and description fields are supplied through the GWTDomain
             String name = null;
             Domain domain = null;
-            if (design != null)
-            {
-                name = StringUtils.trimToNull(design.getName());
-                domain = PropertyService.get().getDomain(container, design.getDomainURI());
-            }
-
 
             //TODO not a fan of doing this conversion in multiple locations
             ObjectMapper mapper = new ObjectMapper();
             Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
 
+            if (design != null)
+            {
+                if (validateNameExpressionOnly)
+                    return kind.validateNameExpressions(container, options, design);
+
+                name = StringUtils.trimToNull(design.getName());
+                domain = PropertyService.get().getDomain(container, design.getDomainURI());
+            }
+
+
             kind.validateOptions(container, user, options, name, domain, design);
+
+            return null;
         }
     }
 
