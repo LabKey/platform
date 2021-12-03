@@ -2240,9 +2240,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 continue;
             }
 
-            // ensure that the protocol output lineage is in the same container as the request
+            // ensure the user has read permission in the seed container
             if (c != null && !c.equals(seed.getContainer()))
-                throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + c.getPath() + "', got: " + seed.getContainer().getPath());
+            {
+                if (!seed.getContainer().hasPermission(user, ReadPermission.class))
+                    throw new UnauthorizedException("Lineage not available. User does not have permission to view " + seed.getName() + ".");
+            }
 
             if (!seedLsids.add(seed.getLSID()))
                 throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());

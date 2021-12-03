@@ -614,7 +614,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
                 throw new ValidationException("Unable to get a query definition from table or query: " + view.getSettings().getQueryName());
 
             List<QueryException> errors = new ArrayList<>();
-            TableInfo table = def.getTable(errors, false);
+            TableInfo table = def.getTable(errors, true);
 
             if (!errors.isEmpty())
             {

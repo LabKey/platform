@@ -1325,7 +1325,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         TableInfo _storage;
         TableInfo _template;
-        final PHI _maxAllowed;
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1354,7 +1353,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
-            _maxAllowed = ComplianceService.get().getMaxAllowedPhi(_container, user);
 
             // ParticipantId
 
@@ -1655,18 +1653,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public PHI getUserMaxAllowedPhiLevel()
-        {
-            return _maxAllowed;
-        }
-
-        /**
-         * Return true if the current user is allowed the maximum phi level set across all columns.
-         */
-        @Override
         public boolean canUserAccessPhi()
         {
-            return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
+            throw new IllegalStateException("Should not be called on DatasetSchemaTableInfo");
         }
 
         @Override

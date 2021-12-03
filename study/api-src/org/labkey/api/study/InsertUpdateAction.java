@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -113,12 +114,13 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         Study study = getStudy();
 
         _ds = StudyService.get().getDataset(study.getContainer(), form.getDatasetId());
-        TableInfo datasetTable = getQueryTable();
-        if (null == _ds || null == datasetTable)
+        if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());
             return null;
         }
+
+        TableInfo datasetTable = getQueryTable();
         if (!datasetTable.hasPermission(getUser(), ReadPermission.class))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
@@ -278,12 +280,13 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         int datasetId = form.getDatasetId();
         Study study = getStudy();
         _ds = StudyService.get().getDataset(study.getContainer(), datasetId);
-        TableInfo datasetTable = getQueryTable();
-        if (null == _ds || null == datasetTable)
+        if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());
             return false;
         }
+
+        TableInfo datasetTable = getQueryTable();
         final Container c = getContainer();
         final User user = getUser();
         if (isInsert())
@@ -402,6 +405,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         throw new RedirectException(PageFlowUtil.urlProvider(StudyUrls.class).getTypeNotFoundURL(getContainer(), datasetId));
     }
 
+    @NotNull
     TableInfo getQueryTable()
     {
         UserSchema schema = StudyService.get().getStudyQuerySchema(getStudy(), getUser());

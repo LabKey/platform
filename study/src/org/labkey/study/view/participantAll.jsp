@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.QueryLogging" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
@@ -73,7 +74,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -165,7 +165,7 @@
         }
         f.append("\n ORDER BY 2");
 
-        new SqlSelector(dbSchema, f).forEach(rs -> {
+        new SqlSelector(dbSchema.getScope(), f, QueryLogging.noValidationNeededQueryLogging()).forEach(rs -> {
             String ptid = rs.getString(1);
             double s = rs.getDouble(2);
             Double sequenceNum = rs.wasNull() ? null : s;
