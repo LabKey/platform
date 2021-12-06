@@ -25,6 +25,7 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
@@ -118,7 +119,8 @@ public class DatasetAutoJoinTable extends VirtualTable
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
-            if (!dataset.canRead(schema.getUser()))
+            var dstable = schema.getDatasetTable(dataset, null);
+            if (null == dstable || !dstable.hasPermission(schema.getUser(), ReadPermission.class))
                 continue;
 
             String name = _schema.decideTableName(dataset);
