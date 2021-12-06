@@ -197,10 +197,10 @@ public class NameGenerator
 
     public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
-//        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         List<String> warningMessages = getSyntaxValidationMessages(nameExpression);
         Pair<List<String>, List<String>> fieldMessages = getTableFieldWarnings(nameExpression, properties, importAliases, container);
-        List<String> errorMessages = fieldMessages.first;
+        errorMessages.addAll(fieldMessages.first);
         warningMessages.addAll(fieldMessages.second);
         return Pair.of(errorMessages, warningMessages);
     }
@@ -576,7 +576,7 @@ public class NameGenerator
                 if (_exprHasLineageInputs && fieldParts.size() == 3)
                     continue;;
 
-                assert fieldParts.size() == 2;
+                assert !_validateSyntax || fieldParts.size() == 2;
 
                 // find column matching the root
                 String root = fieldParts.get(0);
@@ -599,7 +599,8 @@ public class NameGenerator
                         List<ColumnInfo> pkCols = lookupTable.getPkColumns();
                         if (pkCols.size() != 1)
                         {
-                            _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
+                            if (_validateSyntax)
+                                _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
                             continue;
                         }
 
@@ -1314,11 +1315,9 @@ public class NameGenerator
 
                     if (openCount < 0)
                     {
-                        String errorMsg = "Illegal expression: open and close tags are not matched.";
-                        if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
-                        else
-                            throw new IllegalArgumentException(errorMsg);
+                        if (_validateSyntax) // unmatched {} are already checked previously
+                            return;
+                        throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
                     }
                 }
 
@@ -1329,11 +1328,9 @@ public class NameGenerator
 
                     if (part.hasSideEffects() && !_allowSideEffects)
                     {
-                        String errorMsg = "Side-effecting expression part not allowed: " + sub;
                         if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
-                        else
-                            throw new IllegalArgumentException(errorMsg);
+                            return;
+                        throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
                     }
 
                     _parsedExpression.add(part);
@@ -1341,11 +1338,9 @@ public class NameGenerator
                 }
                 else
                 {
-                    String errorMsg = "Illegal expression: open and close tags are not matched.";
                     if (_validateSyntax)
-                        _syntaxErrors.add(errorMsg);
-                    else
-                        throw new IllegalArgumentException();
+                        return;
+                    throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
                 }
             }
 
