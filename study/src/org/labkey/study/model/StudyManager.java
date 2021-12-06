@@ -1102,6 +1102,8 @@ public class StudyManager
             if (result.getRowId() == 0)
             {
                 createVisit(study, user, result, visits);
+                // Refresh existing visits to avoid constraint violation, see #44425
+                visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
                 created = true;
             }
         }
