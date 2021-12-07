@@ -535,7 +535,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
 
                 Metadata metadata = new Metadata();
-                metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName())); // TODO: Check this
+                metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
 
                 // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
