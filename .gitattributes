@@ -814,7 +814,6 @@ api/src/org/labkey/api/laboratory/NavItem.java -text
 api/src/org/labkey/api/laboratory/SettingsNavItem.java -text
 api/src/org/labkey/api/laboratory/SummaryNavItem.java -text
 api/src/org/labkey/api/laboratory/TabbedReportItem.java -text
-api/src/org/labkey/api/ldk/buttons/ShowEditUIButton.java -text
 api/src/org/labkey/api/ldk/table/AbstractTableCustomizer.java -text
 api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
 api/src/org/labkey/api/ldk/table/QueryCache.java -text
