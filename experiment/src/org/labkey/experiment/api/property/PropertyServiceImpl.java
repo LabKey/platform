@@ -85,6 +85,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
+
 public class PropertyServiceImpl implements PropertyService
 {
     private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
@@ -327,6 +329,37 @@ public class PropertyServiceImpl implements PropertyService
     public void deleteValidatorsAndFormats(Container c)
     {
         DomainPropertyManager.get().deleteAllValidatorsAndFormats(c);
+    }
+
+    @Override
+    public IPropertyValidator getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
+    {
+        List<? extends IPropertyValidator> validators = col.getValidators();
+        if (!validators.isEmpty())
+        {
+            String typeURI = createValidatorURI(type).toString();
+
+            for (IPropertyValidator validator : validators)
+            {
+                if (validator.getTypeURI().equals(typeURI))
+                    return validator;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator, boolean sorted)
+    {
+        String expression = "";
+        if (validator != null && validator.getExpressionValue() != null)
+            expression = validator.getExpressionValue();
+
+        String[] choices = expression.split("\\|");
+        if (sorted)
+            return Arrays.stream(choices).sorted().collect(Collectors.toList());
+
+        return Arrays.asList(choices);
     }
 
     @Override

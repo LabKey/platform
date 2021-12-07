@@ -78,7 +78,9 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         }
         catch (PatternSyntaxException se)
         {
-            String sb = "The regular expression validator: '" +
+            String sb = "The " +
+                getName() +
+                ": '" +
                 validator.getName() +
                 "' has a syntax error : " +
                 se.getMessage();
@@ -96,13 +98,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 
         try
         {
-            Pattern expression = (Pattern)validatorCache.get(RegExValidator.class, validator.getExpressionValue());
-            if (expression == null)
-            {
-                expression = Pattern.compile(validator.getExpressionValue());
-                // Cache the pattern so that it can be reused
-                validatorCache.put(RegExValidator.class, validator.getExpressionValue(), expression);
-            }
+            Pattern expression = getExpression(RegExValidator.class, validator, validatorCache);
             Matcher matcher = expression.matcher(String.valueOf(value));
             boolean failOnMatch = BooleanUtils.toBoolean(validator.getProperties().get(FAIL_ON_MATCH));
             boolean matched = matcher.matches();
@@ -119,5 +115,17 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
             errors.add(new SimpleValidationError(se.getMessage()));
         }
         return false;
+    }
+
+    protected Pattern getExpression(Class<? extends ValidatorKind> validatorClass, IPropertyValidator validator, ValidatorContext validatorCache)
+    {
+        Pattern expression = (Pattern)validatorCache.get(validatorClass, validator.getExpressionValue());
+        if (expression == null)
+        {
+            expression = Pattern.compile(validator.getExpressionValue());
+            // Cache the pattern so that it can be reused
+            validatorCache.put(validatorClass, validator.getExpressionValue(), expression);
+        }
+        return expression;
     }
 }

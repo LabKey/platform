@@ -26,7 +26,9 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -37,6 +39,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -652,7 +655,7 @@ public class DataColumn extends DisplayColumn
                 displayColumn.renderInputHtml(ctx, out, value);
             }
             else
-                renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+                renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -674,7 +677,11 @@ public class DataColumn extends DisplayColumn
             }
             else
             {
-                renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+                IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
+                if (textChoiceValidator != null)
+                    renderTextChoiceFormInput(ctx, out, formFieldName, value, strVal, disabledInput, textChoiceValidator);
+                else
+                    renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
             }
         }
 
@@ -696,7 +703,51 @@ public class DataColumn extends DisplayColumn
         return ctx.getForm() == null || col == null ? HtmlString.EMPTY_STRING : ctx.getErrors(col);
     }
 
-    protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    private void renderSelectFormInput(
+            RenderContext ctx, Writer out, String formFieldName, Object value, String strVal,
+            boolean disabledInput, NamedObjectList entryList
+    ) throws IOException
+    {
+        Select.SelectBuilder select = new Select.SelectBuilder()
+                .disabled(disabledInput)
+                .multiple("select.multiple".equalsIgnoreCase(_inputType))
+                .name(getInputPrefix() + formFieldName);
+
+        List<Option> options = new ArrayList<>();
+
+        // add empty option
+        options.add(new OptionBuilder().build());
+
+        for (NamedObject entry : entryList)
+        {
+            String entryName = entry.getName();
+            OptionBuilder option = new OptionBuilder()
+                    .selected(isSelectInputSelected(entryName, value, strVal))
+                    .value(entryName);
+
+            if (null != entry.getObject())
+                option.label(getSelectInputDisplayValue(entry));
+
+            options.add(option.build());
+        }
+
+        out.write(select.addOptions(options).toString());
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, value);
+    }
+
+    private void renderTextChoiceFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
+            throws IOException
+    {
+        NamedObjectList options = new NamedObjectList();
+        for (String choice : PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator, false))
+            options.put(new SimpleNamedObject(choice, choice));
+        renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, options);
+    }
+
+    protected void renderSelectFormInputFromFk(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         ForeignKey boundColumnFK = _boundColumn.getFk();
@@ -720,34 +771,7 @@ public class DataColumn extends DisplayColumn
         }
         else
         {
-            Select.SelectBuilder select = new Select.SelectBuilder()
-                    .disabled(disabledInput)
-                    .multiple("select.multiple".equalsIgnoreCase(_inputType))
-                    .name(getInputPrefix() + formFieldName);
-
-            List<Option> options = new ArrayList<>();
-
-            // add empty option
-            options.add(new OptionBuilder().build());
-
-            for (NamedObject entry : entryList)
-            {
-                String entryName = entry.getName();
-                OptionBuilder option = new OptionBuilder()
-                    .selected(isSelectInputSelected(entryName, value, strVal))
-                    .value(entryName);
-
-                if (null != entry.getObject())
-                    option.label(getSelectInputDisplayValue(entry));
-
-                options.add(option.build());
-            }
-
-            out.write(select.addOptions(options).toString());
-
-            // disabled inputs are not posted with the form, so we output a hidden form element:
-            if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, entryList);
         }
     }
 
