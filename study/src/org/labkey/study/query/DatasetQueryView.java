@@ -142,7 +142,8 @@ public class DatasetQueryView extends StudyQueryView
 
         // Only show link to edit if permission allows it
         var table = getTable();
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && null != table && table.hasPermission(getUser(), UpdatePermission.class));
+        var hasUpdatePermission = null != table && (table.hasPermission(getUser(), UpdatePermission.class) || table.hasPermission(getUser(), RestrictedUpdatePermission.class));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && hasUpdatePermission);
 
         if (form.getVisitRowId() != 0)
         {
