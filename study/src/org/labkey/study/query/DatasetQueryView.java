@@ -59,6 +59,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
 import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -423,7 +424,7 @@ public class DatasetQueryView extends StudyQueryView
         var table = getTable();
         boolean canImport = null != table && table.hasPermission(user, InsertPermission.class);
         boolean canInsert = canImport || (null != table && table.hasPermission(user, RestrictedInsertPermission.class));
-        boolean canDelete = null != table && table.hasPermission(user, DeletePermission.class);
+        boolean canDelete = null != table && (table.hasPermission(user, DeletePermission.class) || table.hasPermission(user, RestrictedDeletePermission.class));
         boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         ExpObject publishSource = _dataset.resolvePublishSource();
