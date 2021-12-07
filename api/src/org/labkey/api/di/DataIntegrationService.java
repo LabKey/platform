@@ -5,6 +5,7 @@
 package org.labkey.api.di;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -16,6 +17,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.remoteapi.Connection;
 
@@ -47,7 +49,10 @@ public interface DataIntegrationService
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 
-    Map<String, String> truncateTargets(Container c, User user, String transformId);
+    boolean resetTransformState(Container c, User user, @NotNull String transformId);
+
+    /** @return a pair with the total number of rows that were deleted across all tables in the ETL, and any error messages */
+    Pair<Long, String> truncateTargets(Container c, User user, String transformId);
 
     RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 

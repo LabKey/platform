@@ -1041,16 +1041,20 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
             DatasetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             // Check for permission before deciding to treat the request as a dataset
-            if (dsd != null && dsd.canReadInternal(getUser()))
+            if (dsd != null)
             {
-                // Issue 18787: if dataset name and label differ, use the name for the queryName
-                if (!settings.getQueryName().equals(dsd.getName()))
-                    settings.setQueryName(dsd.getName());
+                TableInfo t = getDatasetTable(dsd, null);
+                if (null != t && t.hasPermission(getUser(), ReadPermission.class))
+                {
+                    // Issue 18787: if dataset name and label differ, use the name for the queryName
+                    if (!settings.getQueryName().equals(t.getName()))
+                        settings.setQueryName(t.getName());
 
-                if (!(settings instanceof DatasetQuerySettings))
-                    settings = new DatasetQuerySettings(settings);
+                    if (!(settings instanceof DatasetQuerySettings))
+                        settings = new DatasetQuerySettings(settings);
 
-                return new DatasetQueryView(this, (DatasetQuerySettings)settings, errors);
+                    return new DatasetQueryView(this, (DatasetQuerySettings) settings, errors);
+                }
             }
         }
         return super.createView(context, settings, errors);

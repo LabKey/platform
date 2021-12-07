@@ -1534,8 +1534,8 @@ public class ProjectController extends SpringActionController
 
                 if (children.size() > 0)
                 {
-                    // if use has permissions to at least one child container, make sure that at least the parent name is shown
-                    // (even if the user doesn't have perm to that parent container)
+                    // If user has permissions to at least one child container, then make sure that at least the
+                    // parent name is shown (even if the user doesn't have permission in the parent container)
                     resultMap.put("name", container.getName());
                 }
             }
@@ -1571,7 +1571,7 @@ public class ProjectController extends SpringActionController
             for (Container child : parent.getChildren())
             {
                 List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
-                if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
+                if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
                 {
                     Map<String, Object> visibleChild = child.toJSON(user, _includeEffectivePermissions);
                     addModuleProperties(child, propertiesToSerialize, visibleChild);
