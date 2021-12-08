@@ -35,6 +35,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -47,6 +49,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -64,6 +67,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -87,7 +91,7 @@ import java.util.stream.Stream;
 
 import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
 
-public class PropertyServiceImpl implements PropertyService
+public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
     private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
@@ -614,5 +618,20 @@ public class PropertyServiceImpl implements PropertyService
         }
 
         return vocabularyDomainProperties;
+    }
+
+    @Override
+    public Map<String, Object> getUsageMetrics()
+    {
+        return Map.of(
+                "propertyValidators", Map.of(
+                        "byType", new SqlSelector(ExperimentService.get().getSchema(),
+                                new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
+                        ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
+                            x.put(m.get("typeuri").toString(), m.get("count"));
+                            return x;
+                        })
+                )
+        );
     }
 }

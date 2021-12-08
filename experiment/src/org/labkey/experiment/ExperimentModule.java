@@ -181,9 +181,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("property", PropertyController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
-        PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
         StorageProvisioner.setInstance(StorageProvisionerImpl.get());
+
+        PropertyServiceImpl propertyServiceImpl = new PropertyServiceImpl();
+        PropertyService.setInstance(propertyServiceImpl);
+        UsageMetricsService.get().registerUsageMetrics(getName(), propertyServiceImpl);
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -443,7 +446,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(MODULE_NAME, () -> {
+            svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> results = new HashMap<>();
                 if (AssayService.get() != null)
                 {
