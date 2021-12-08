@@ -1906,6 +1906,11 @@ public class ContainerManager
 
     public static void notifyContainerChange(String id, Property prop)
     {
+        notifyContainerChange(id, prop, null);
+    }
+
+    public static void notifyContainerChange(String id, Property prop, @Nullable User u)
+    {
         Container c = getForId(id);
         if (null != c)
         {
@@ -1913,7 +1918,7 @@ public class ContainerManager
             c = getForId(id);  // load a fresh container since the original might be stale.
             if (null != c)
             {
-                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, prop, null, null);
+                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, u, prop, null, null);
                 firePropertyChangeEvent(evt);
             }
         }
