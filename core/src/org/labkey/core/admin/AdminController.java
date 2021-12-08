@@ -10515,7 +10515,6 @@ public class AdminController extends SpringActionController
         {
             logger.info("Adjusting all Created and Modified timestamp fields in all tables by " + form.getHourDelta() + " hours.");
             DbScope scope = DbScope.getLabKeyScope();
-            // Use a different transaction kind to ensure a different DB connection is used
             try (DbScope.Transaction t = scope.ensureTransaction())
             {
                 ModuleLoader.getInstance().getModules().forEach(module -> {
