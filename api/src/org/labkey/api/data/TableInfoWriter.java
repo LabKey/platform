@@ -263,7 +263,10 @@ public class TableInfoWriter
 
         // Export scale only if column is a string
         if (column.isStringType())
+        {
             columnXml.setScale(column.getScale());
+            columnXml.setScannable(column.isScannable());
+        }
 
         var os = OntologyService.get();
         if (null != os)
