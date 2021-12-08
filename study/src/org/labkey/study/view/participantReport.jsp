@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -47,8 +46,8 @@
 
     // for testing
     boolean isPrint = getActionURL().getParameter("print") != null;
-    String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String filterRenderId = "participant-filter-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "participant-report-div-" + getRequestScopedUID();
+    String filterRenderId = "participant-filter-div-" + getRequestScopedUID();
 %>
 <style type="text/css" media="<%=h(isPrint ? "screen" : "print")%>">
     #headerpanel,

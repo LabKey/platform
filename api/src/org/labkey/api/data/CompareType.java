@@ -1477,10 +1477,10 @@ public abstract class CompareType
     {
         try
         {
-            if (v instanceof Date)
-                return (Date) v;
-            if (v instanceof Calendar)
-                return ((Calendar) v).getTime();
+            if (v instanceof Date d)
+                return d;
+            if (v instanceof Calendar cal)
+                return cal.getTime();
             String s = v.toString();
 
             // Support Long notation for dates

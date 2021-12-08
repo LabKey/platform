@@ -59,7 +59,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         String formFieldName = getFormFieldName(ctx);
         boolean disabledInput = isDisabledInput(ctx);
         String strVal = getStringValue(value, disabledInput);
-        String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
         StringBuilder sb = new StringBuilder();
         sb.append("<script type=\"text/javascript\">");
