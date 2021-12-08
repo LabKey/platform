@@ -548,6 +548,9 @@ public class PropertyServiceImpl implements PropertyService
         OntologyService os = OntologyService.get();
         if (null != os)
             os.parseXml(xProp,prop);
+
+        if (null != xProp.xgetScannable())
+            prop.setScannable(xProp.getScannable());
     }
 
     @Override

@@ -342,6 +342,7 @@ public class DomainUtil
         gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
         gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
         gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
+        gwtProp.setScannable(prop.isScannable());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())

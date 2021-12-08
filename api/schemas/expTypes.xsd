@@ -589,6 +589,7 @@
 					</xs:all>
 				</xs:complexType>
 			</xs:element>
+			<xs:element name="Scannable" type="boolean" minOccurs="0" maxOccurs="1" />
 		</xs:sequence>
     </xs:complexType>
 

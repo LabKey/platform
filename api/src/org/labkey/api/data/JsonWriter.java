@@ -150,6 +150,9 @@ public class JsonWriter
         boolean selectable = cinfo != null && !cinfo.isUnselectable();
         props.put("isSelectable", selectable);  //avoid double-negative boolean name
         props.put("selectable", selectable);    //avoid double-negative boolean name
+        boolean scannable = cinfo != null && !cinfo.isScannable();
+        props.put("isScannable", scannable);
+        props.put("scannable", scannable);
 
         // These fields are new and don't need to have the "is" prefix for backwards compatibility
         props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());

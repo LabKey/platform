@@ -675,6 +675,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public boolean isScannableField()
+    {
+        return delegate.isUniqueIdField() || delegate.isScannable();
+    }
+
+    @Override
     public String getFriendlyTypeName()
     {
         return delegate.getFriendlyTypeName();
@@ -810,5 +816,11 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     public String toString()
     {
         return ColumnInfo.toString(this);
+    }
+
+    @Override
+    public boolean isScannable()
+    {
+        return delegate.isScannable();
     }
 }

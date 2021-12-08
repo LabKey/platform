@@ -611,6 +611,18 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public void setScannable(boolean scannable)
+    {
+        edit().setScannable(scannable);
+    }
+
+    @Override
+    public boolean isScannable()
+    {
+        return _pd.isScannable();
+    }
+
+    @Override
     public void setPrincipalConceptCode(String code)
     {
         if (!StringUtils.equals(code, getPrincipalConceptCode()))
@@ -869,6 +881,7 @@ public class DomainPropertyImpl implements DomainProperty
         setMvEnabled(propSrc.isMvEnabled());
         setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
         setScale(propSrc.getScale());
+        setScannable(propSrc.isScannable());
 
         setPrincipalConceptCode(propSrc.getPrincipalConceptCode());
         setSourceOntology(propSrc.getSourceOntology());

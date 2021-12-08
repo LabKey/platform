@@ -487,6 +487,7 @@
       <column columnName="PrincipalConceptCode"/>
       <column columnName="ConceptSubtree"/>
       <column columnName="DerivationDataScope"/>
+      <column columnName="isScannable" />
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">

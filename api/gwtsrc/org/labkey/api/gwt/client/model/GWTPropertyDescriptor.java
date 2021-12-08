@@ -81,6 +81,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty derivationDataScope = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
+    private BooleanProperty scannable = new BooleanProperty(false);
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -498,6 +499,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.scale.set(value);
     }
 
+    public boolean isScannable()
+    {
+        return scannable.getBoolean();
+    }
+
+    public void setScannable(boolean scannable)
+    {
+        this.scannable.setBool(scannable);
+    }
+
     public String getPrincipalConceptCode() { return this.principalConceptCode.getString(); }
 
     public void setPrincipalConceptCode(String code) { this.principalConceptCode.set(code); }
@@ -657,6 +668,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (!equals(getDerivationDataScope(),that.getDerivationDataScope())) return false;
 
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
+        if (isScannable() != that.isScannable()) return false;
 
         return true;
     }
@@ -702,6 +714,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + principalConceptCode.hashCode();
         result = 31 * result + redactedText.hashCode();
         result = 31 * result + derivationDataScope.hashCode();
+        result = 31 * result + (scannable.getBoolean() != null ? scannable.getBoolean().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
