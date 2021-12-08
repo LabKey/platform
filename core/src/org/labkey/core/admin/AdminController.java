@@ -10465,6 +10465,100 @@ public class AdminController extends SpringActionController
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
+    {
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+
+        @Override
+        public void validateCommand(AdjustTimestampsForm form, Errors errors)
+        {
+            if (form.getHourDelta() == null || form.getHourDelta() == 0)
+                errors.reject(ERROR_MSG, "You must specify a non-zero value for 'Hour Delta'");
+        }
+
+        @Override
+        public ModelAndView getView(AdjustTimestampsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/adjustTimestamps.jsp", form, errors);
+        }
+
+        private void updateField(TableInfo tInfo, String fieldName, int delta)
+        {
+            SQLFragment sql = new SQLFragment();
+            DbSchema schema = tInfo.getSchema();
+
+            ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
+            if (col != null)
+            {
+                sql.append("UPDATE ").append(tInfo, "");
+                if (schema.getSqlDialect().isPostgreSQL())
+                    sql.append(String.format("SET %s = %s + interval '%d hour';\n", fieldName, fieldName, delta));
+                else
+                    sql.append(String.format("Set %s = DATEADD(hour, %d, %s);\n", fieldName, delta, fieldName));
+            }
+            if (!sql.isEmpty())
+            {
+                logger.info(String.format("Updating %s field table %s.%s", fieldName, schema.getName(), tInfo.getName()));
+                logger.info(sql.toDebugString());
+                int numRows = new SqlExecutor(schema).execute(sql);
+                logger.info(String.format("Updated %s field in %d rows for table %s.%s", fieldName, numRows, schema.getName(), tInfo.getName()));
+            }
+        }
+
+        @Override
+        public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
+        {
+            logger.info("Adjusting all Created and Modified timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            DbScope scope = DbScope.getLabKeyScope();
+            // Use a different transaction kind to ensure a different DB connection is used
+            try (DbScope.Transaction t = scope.ensureTransaction())
+            {
+                ModuleLoader.getInstance().getModules().forEach(module -> {
+                    logger.info("==> Beginning update of timestamps for module: " + module.getName());
+                    module.getSchemaNames().stream().sorted().forEach(schemaName -> {
+                        DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module); // Will these always be Module schemas ??
+                        schema.getTableNames().forEach(tableName -> {
+                            TableInfo tInfo = schema.getTable(tableName);
+                            if (tInfo.getTableType() == DatabaseTableType.TABLE)
+                            {
+                                updateField(tInfo, "Created", form.getHourDelta());
+                                updateField(tInfo, "Modified", form.getHourDelta());
+                            }
+                        });
+                    });
+                    logger.info("<== DONE updating timestamps for module: " + module.getName());
+                });
+                t.commit();
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
+        {
+            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+    }
+
+    public static class AdjustTimestampsForm
+    {
+        private Integer hourDelta;
+
+        public Integer getHourDelta()
+        {
+            return hourDelta;
+        }
+
+        public void setHourDelta(Integer hourDelta)
+        {
+            this.hourDelta = hourDelta;
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {
