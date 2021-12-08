@@ -135,43 +135,40 @@ public class JSONDataLoader extends DataLoader
                         case FIELD_NAME:
                             if (depth == 1)
                             {
-                                String fieldName = parser.getCurrentName();
-
-                                if (fieldName.equals("schemaName"))
+                                switch (parser.getCurrentName())
                                 {
-                                    tok = parser.nextToken();
-                                    if (tok == JsonToken.VALUE_STRING)
-                                    {
-                                        foundSchemaName = true;
-                                        if (foundQueryName)
-                                            return true;
+                                    case "schemaName" -> {
+                                        tok = parser.nextToken();
+                                        if (tok == JsonToken.VALUE_STRING)
+                                        {
+                                            foundSchemaName = true;
+                                            if (foundQueryName)
+                                                return true;
+                                        }
+                                        else
+                                            return false;
                                     }
-                                    else
-                                        return false;
-                                }
-                                else if (fieldName.equals("queryName"))
-                                {
-                                    tok = parser.nextToken();
-                                    if (tok == JsonToken.VALUE_STRING)
-                                    {
-                                        foundQueryName = true;
-                                        if (foundSchemaName)
-                                            return true;
+                                    case "queryName" -> {
+                                        tok = parser.nextToken();
+                                        if (tok == JsonToken.VALUE_STRING)
+                                        {
+                                            foundQueryName = true;
+                                            if (foundSchemaName)
+                                                return true;
+                                        }
+                                        else
+                                            return false;
                                     }
-                                    else
-                                        return false;
-                                }
-                                else if (fieldName.equals("metaData"))
-                                {
-                                    // value of metaData must be an object
-                                    tok = parser.nextToken();
-                                    return tok == JsonToken.START_OBJECT;
-                                }
-                                else if (fieldName.equals("rows"))
-                                {
-                                    // value of rows must be an array
-                                    tok = parser.nextToken();
-                                    return tok == JsonToken.START_ARRAY;
+                                    case "metaData" -> {
+                                        // value of metaData must be an object
+                                        tok = parser.nextToken();
+                                        return tok == JsonToken.START_OBJECT;
+                                    }
+                                    case "rows" -> {
+                                        // value of rows must be an array
+                                        tok = parser.nextToken();
+                                        return tok == JsonToken.START_ARRAY;
+                                    }
                                 }
                             }
                             break;
@@ -1031,12 +1028,8 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void fields() throws IOException
         {
-            JsonParser parser = createParser(
-                "[" +
-                    "{ \"fieldKey\": [\"A\"], \"type\": \"int\" }, " +
-                    "{ \"fieldKey\": [\"B\"], \"type\": \"unknown\" }, " +
-                    "{ \"fieldKey\": [\"C\"] } " +
-                "]"
+            JsonParser parser = createParser("""
+                    [{ "fieldKey": ["A"], "type": "int" }, { "fieldKey": ["B"], "type": "unknown" }, { "fieldKey": ["C"] } ]"""
             );
             ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser, null);
             assertEquals(3, cols.length);
@@ -1054,16 +1047,16 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void metadataContents() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"id\": \"test\",\n" +
-                    "  \"fields\": [\n" +
-                    "    { \"fieldKey\": [\"A\"], \"type\": \"int\" },\n" +
-                    "    { \"fieldKey\": [\"B\"], \"type\": \"unknown\" },\n" +
-                    "    { \"fieldKey\": [\"C\"] }\n" +
-                    "  ],\n" +
-                    "  \"other\": \"test\"\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "id": "test",
+                      "fields": [
+                        { "fieldKey": ["A"], "type": "int" },
+                        { "fieldKey": ["B"], "type": "unknown" },
+                        { "fieldKey": ["C"] }
+                      ],
+                      "other": "test"
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
@@ -1085,15 +1078,15 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void metadata() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"metaData\": {\n" +
-                    "    \"fields\": [\n" +
-                    "      { \"fieldKey\": [\"A\"], \"type\": \"int\" }\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"rows\": [ ]\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "metaData": {
+                        "fields": [
+                          { "fieldKey": ["A"], "type": "int" }
+                        ]
+                      },
+                      "rows": [ ]
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
@@ -1112,16 +1105,16 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void noMetadata() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"foo\": { },\n" +
-                    "  \"rows\": [ ],\n" +
-                    "  \"metaData\": {\n" +
-                    "    \"fields\": [\n" +
-                    "      { \"fieldKey\": [\"A\"], \"type\": \"int\" }\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "foo": { },
+                      "rows": [ ],
+                      "metaData": {
+                        "fields": [
+                          { "fieldKey": ["A"], "type": "int" }
+                        ]
+                      },
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
@@ -1136,15 +1129,15 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void noRows() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"foo\": { },\n" +
-                    "  \"metaData\": {\n" +
-                    "    \"fields\": [\n" +
-                    "      { \"fieldKey\": [\"A\"], \"type\": \"int\" }\n" +
-                    "    ]\n" +
-                    "  }\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "foo": { },
+                      "metaData": {
+                        "fields": [
+                          { "fieldKey": ["A"], "type": "int" }
+                        ]
+                      }
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
@@ -1176,13 +1169,13 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void row83() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"one\": true\n," +
-                    "  \"_labkeyurl_one\": \"http://...\",\n" +
-                    "  \"two\": \"TWO\"\n," +
-                    "  \"three\": 3\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "one": true
+                    ,  "_labkeyurl_one": "http://...",
+                      "two": "TWO"
+                    ,  "three": 3
+                    }"""
             );
 
             Map<String, Map<ColMapEntry, Object>> row = JSONDataLoader.parseRow(parser);
@@ -1201,20 +1194,20 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void row91() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"one\": {\n" +
-                    "    \"value\": true,\n" +
-                    "    \"displayValue\": \"yes\",\n" +
-                    "    \"url\": \"http://...\"\n" +
-                    "  },\n" +
-                    "  \"two\": {\n" +
-                    "    \"value\": \"TWO\"\n" +
-                    "  },\n" +
-                    "  \"three\": {\n" +
-                    "    \"value\": 3\n" +
-                    "  }\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "one": {
+                        "value": true,
+                        "displayValue": "yes",
+                        "url": "http://..."
+                      },
+                      "two": {
+                        "value": "TWO"
+                      },
+                      "three": {
+                        "value": 3
+                      }
+                    }"""
             );
 
             Map<String, Map<ColMapEntry, Object>> row = JSONDataLoader.parseRow(parser);
@@ -1236,15 +1229,15 @@ public class JSONDataLoader extends DataLoader
         public void row91_dataColumn() throws IOException
         {
             // Try to be sneaky by handling a 9.1 format row with a 'data' and 'links' column
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"links\": {\n" +
-                    "    \"value\": null\n" +
-                    "  },\n" +
-                    "  \"data\": {\n" +
-                    "    \"value\": \"sneaky\"\n" +
-                    "  }\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "links": {
+                        "value": null
+                      },
+                      "data": {
+                        "value": "sneaky"
+                      }
+                    }"""
             );
 
             Map<String, Map<ColMapEntry, Object>> row = JSONDataLoader.parseRow(parser);
@@ -1260,28 +1253,28 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void row13_2() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"links\": {\n" +
-                    "    \"details\": {\n" +
-                    "      \"title\": \"details\",\n" +
-                    "      \"href\": \"http://...\"\n" +
-                    "    }\n" +
-                    "  },\n" +
-                    "  \"data\": {\n" +
-                    "    \"one\": {\n" +
-                    "      \"value\": true,\n" +
-                    "      \"displayValue\": \"yes\",\n" +
-                    "      \"url\": \"http://...\"\n" +
-                    "    },\n" +
-                    "    \"two\": {\n" +
-                    "      \"value\": \"TWO\"\n" +
-                    "    },\n" +
-                    "    \"three\": {\n" +
-                    "      \"value\": 3\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "links": {
+                        "details": {
+                          "title": "details",
+                          "href": "http://..."
+                        }
+                      },
+                      "data": {
+                        "one": {
+                          "value": true,
+                          "displayValue": "yes",
+                          "url": "http://..."
+                        },
+                        "two": {
+                          "value": "TWO"
+                        },
+                        "three": {
+                          "value": 3
+                        }
+                      }
+                    }"""
             );
 
             Map<String, Map<ColMapEntry, Object>> row = JSONDataLoader.parseRow(parser);
@@ -1302,31 +1295,31 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void row91_threeRows() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"metaData\": {\n" +
-                    "    \"fields\": [ {\n" +
-                    "      \"fieldKey\": [\"A\"],\n" +
-                    "      \"type\": \"int\"\n" +
-                    "    } ]\n" +
-                    "  },\n" +
-                    "  \"rows\": [ {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 1\n" +
-                    "    }\n" +
-                    "  }, {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 2\n" +
-                    "    }\n" +
-                    "  }, {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 3\n" +
-                    "    },\n" +
-                    "    \"B\": {\n" +
-                    "      \"value\": \"ignored\"\n" +
-                    "    }\n" +
-                    "  } ]\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "metaData": {
+                        "fields": [ {
+                          "fieldKey": ["A"],
+                          "type": "int"
+                        } ]
+                      },
+                      "rows": [ {
+                        "A": {
+                          "value": 1
+                        }
+                      }, {
+                        "A": {
+                          "value": 2
+                        }
+                      }, {
+                        "A": {
+                          "value": 3
+                        },
+                        "B": {
+                          "value": "ignored"
+                        }
+                      } ]
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
@@ -1347,22 +1340,22 @@ public class JSONDataLoader extends DataLoader
         @Test
         public void row91_inferColumns() throws IOException
         {
-            JsonParser parser = createParser(
-                    "{\n" +
-                    "  \"rows\": [ {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 1\n" +
-                    "    }\n" +
-                    "  }, {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 2\n" +
-                    "    }\n" +
-                    "  }, {\n" +
-                    "    \"A\": {\n" +
-                    "      \"value\": 3\n" +
-                    "    }\n" +
-                    "  } ]\n" +
-                    "}"
+            JsonParser parser = createParser("""
+                    {
+                      "rows": [ {
+                        "A": {
+                          "value": 1
+                        }
+                      }, {
+                        "A": {
+                          "value": 2
+                        }
+                      }, {
+                        "A": {
+                          "value": 3
+                        }
+                      } ]
+                    }"""
             );
 
             JSONDataLoader loader = new JSONDataLoader(parser);
