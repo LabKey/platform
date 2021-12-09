@@ -742,8 +742,15 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         NamedObjectList options = new NamedObjectList();
-        for (String choice : PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator))
+        List<String> choices = PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator);
+
+        // if the already saved strVal is not in the current choice set, add it (as it seems wrong to remove a value that the user hasn't explicitly touched)
+        if (!choices.contains(strVal))
+            choices.add(strVal);
+
+        for (String choice : choices)
             options.put(new SimpleNamedObject(choice, choice));
+
         renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, options);
     }
 
