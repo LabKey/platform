@@ -18,6 +18,7 @@ package org.labkey.experiment.api.property;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -47,9 +48,15 @@ public class TextChoiceValidator extends RegExValidator implements ValidatorKind
     {
         assert value != null : "Shouldn't be validating a null value";
 
-        Pattern expression = getExpression(TextChoiceValidator.class, validator, validatorCache);
-        Matcher matcher = expression.matcher(String.valueOf(value));
-        if (matcher.matches())
+        List<String> validValues = (List<String>)validatorCache.get(TextChoiceValidator.class, validator.getExpressionValue());
+        if (validValues == null)
+        {
+            validValues = PropertyService.get().getTextChoiceValidatorOptions(validator);
+            // Cache the validValues so that it can be reused
+            validatorCache.put(TextChoiceValidator.class, validator.getExpressionValue(), validValues);
+        }
+
+        if (validValues.contains(value))
             return true;
 
         createErrorMessage(validator, field, value, errors);
