@@ -30,6 +30,8 @@ import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
 import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
@@ -636,5 +638,41 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                         })
                 )
         );
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testTextChoiceValidatorOptions()
+        {
+            PropertyServiceImpl service = new PropertyServiceImpl();
+            TextChoiceValidator validator = new TextChoiceValidator();
+            IPropertyValidator instance = validator.createInstance();
+
+            // empty expression
+            instance.setExpressionValue("");
+            List<String> choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(new ArrayList<>(), choices);
+
+            // filter empty option
+            instance.setExpressionValue("a||b");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b"), choices);
+
+            // remove duplicates
+            instance.setExpressionValue("A|A|a|a|A|A");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("A", "a"), choices);
+
+            // trim options
+            instance.setExpressionValue(" a|b | c ");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b", "c"), choices);
+
+            // sort options
+            instance.setExpressionValue("a|c|d|b");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b", "c", "d"), choices);
+        }
     }
 }

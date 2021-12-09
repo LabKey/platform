@@ -576,7 +576,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             LineageTest.class,
             OntologyManager.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class
+            UniqueValueCounterTestCase.class,
+            PropertyServiceImpl.TestCase.class
         );
     }
 
