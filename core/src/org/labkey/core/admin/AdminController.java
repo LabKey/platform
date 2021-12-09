@@ -10527,7 +10527,7 @@ public class AdminController extends SpringActionController
                 ModuleLoader.getInstance().getModules().forEach(module -> {
                     logger.info("==> Beginning update of timestamps for module: " + module.getName());
                     module.getSchemaNames().stream().sorted().forEach(schemaName -> {
-                        DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module); // Will these always be Module schemas ??
+                        DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                         schema.getTableNames().forEach(tableName -> {
                             TableInfo tInfo = schema.getTable(tableName);
                             if (tInfo.getTableType() == DatabaseTableType.TABLE)
