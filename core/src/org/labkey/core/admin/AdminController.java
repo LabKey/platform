@@ -3376,7 +3376,7 @@ public class AdminController extends SpringActionController
                     if (labkeyThread)
                     {
                         String threadInfo = thread.getName();
-                        String uri = ViewServlet.getRequestURL(thread);
+                        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
                         if (null != uri)
                             threadInfo += "; processing URL " + uri;
                         activeThreads.add(threadInfo);
