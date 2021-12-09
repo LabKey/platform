@@ -47,14 +47,14 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final V _nullMarker = (V)NULL_MARKER;
 
 
-    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, boolean saveCreationStackTrace)
+    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
         assert StringUtils.isNotBlank(debugName);
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
         _transactionStats = new Stats();
-        _stackTrace = saveCreationStackTrace ? Thread.currentThread().getStackTrace() : null;
+        _stackTrace = stackTrace;
     }
 
 
