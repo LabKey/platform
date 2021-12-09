@@ -110,7 +110,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "Eclipse Temurin 17 64-bit (x64) with HotSpot JVM";
+        return "Eclipse Temurin 17 64-bit with HotSpot JVM";
     }
 
     public static class TestCase extends Assert

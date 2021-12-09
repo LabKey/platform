@@ -93,7 +93,7 @@
     long warningSeconds = 10;
 
     HtmlString style = unsafe(duration > warningSeconds ? " style=\"color:red;\"" : "");
-    HtmlString warning = unsafe(duration > warningSeconds ? " - Warning: Server and database times differ by " + duration + " seconds!" : "");
+    HtmlString warning = unsafe(duration > warningSeconds ? " - Warning: Web and database server times differ by " + duration + " seconds!" : "");
 %>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
@@ -112,8 +112,8 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
