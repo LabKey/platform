@@ -20,8 +20,6 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.QueryReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -43,13 +41,13 @@
     String queryName = report.getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
     String viewName = report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
 
-    String renderId = "queryReport-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "queryReport-" + getRequestScopedUID();
     StringBuilder sb = new StringBuilder();
 
-    if (report instanceof QueryReport)
+    if (report instanceof QueryReport qr)
     {
         BindException errors = new NullSafeBindException(this, "form");
-        QueryView view = ((QueryReport)report).createQueryView(context, errors);
+        QueryView view = qr.createQueryView(context, errors);
 
         if (errors.hasErrors())
         {

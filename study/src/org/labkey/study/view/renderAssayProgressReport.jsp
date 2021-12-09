@@ -17,7 +17,6 @@
 %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -39,7 +38,7 @@
     JspView<AssayProgressReport.AssayReportBean> me = (JspView<AssayProgressReport.AssayReportBean>)HttpView.currentView();
     AssayProgressReport.AssayReportBean form = me.getModelBean();
     List<Map<String, String>> legend = AssayProgressReport.SpecimenStatus.serialize();
-    String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "participant-report-div-" + getRequestScopedUID();
     ObjectMapper jsonMapper = new ObjectMapper();
     List<Map<Object, Object>> assays = new ArrayList<>();
 

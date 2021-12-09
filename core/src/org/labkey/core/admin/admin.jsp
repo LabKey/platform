@@ -18,6 +18,8 @@
 <%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
@@ -27,10 +29,12 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.NavTree"%>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.Collection"%>
-<%@ page import="java.util.Date" %>
+<%@ page import="java.time.Duration" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -80,6 +84,16 @@
             <br/>
 <%
     row = 0;
+
+    LocalDateTime serverTime = LocalDateTime.now();
+    LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+    long duration = Duration.between(serverTime, databaseTime).toSeconds();
+
+    // Warn if greater than this many seconds
+    long warningSeconds = 10;
+
+    HtmlString style = unsafe(duration > warningSeconds ? " style=\"color:red;\"" : "");
+    HtmlString warning = unsafe(duration > warningSeconds ? " - Warning: Web and database server times differ by " + duration + " seconds!" : "");
 %>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
@@ -98,7 +112,8 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
