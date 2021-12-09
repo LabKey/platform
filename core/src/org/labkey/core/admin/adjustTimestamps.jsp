@@ -11,12 +11,28 @@
 <labkey:errors/>
 
 <labkey:form action="<%=urlFor(AdminController.AdjustSystemTimestampsAction.class)%>" method="post">
-   <p>
-       This form can be used to adjust the values for system-created timestamp fields (Created and Modified)
+   <h3>What Will Be Updated</h3>
+    <p>
+       This form will adjust the values for the following system-created timestamp fields:
+       <ul>
+            <li>Created</li>
+            <li>Modified</li>
+            <li>lastIndexed</li>
+            <li>diCreated</li>
+            <li>diModified</li>
+        </ul>
        for <b>all tables</b> in <b>all schemas</b> in <b>all modules</b>.  It is intended to be used to adjust
-       for data created using an incorrect timezone.
+       for data created using an incorrect timezone in conjunction with updating the server to use the correct timezone.
    </p>
+    <p>
+        We do not currently update the following system-created timestamp fields:
+        <ul>
+            <li>_ts</li>
+        </ul>
+    </p>
     <p>No audit log entries will be created for these changes.</p>
+    <br/>
+    <h3>Update</h3>
     <p>
         Enter the positive or negative integer corresponding to the number of <b>hours</b>
         by which to adjust all of the Created and Modified timestamp fields.

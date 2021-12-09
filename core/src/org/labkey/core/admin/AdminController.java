@@ -10487,33 +10487,40 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/adjustTimestamps.jsp", form, errors);
         }
 
-        private void updateField(TableInfo tInfo, String fieldName, int delta)
+        private void updateFields(TableInfo tInfo, Collection<String> fieldNames, int delta)
         {
             SQLFragment sql = new SQLFragment();
             DbSchema schema = tInfo.getSchema();
-
-            ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
-            if (col != null)
+            String comma = "";
+            List<String> updating = new ArrayList<>();
+            for (String fieldName: fieldNames)
             {
-                sql.append("UPDATE ").append(tInfo, "");
-                if (schema.getSqlDialect().isPostgreSQL())
-                    sql.append(String.format("SET %s = %s + interval '%d hour';\n", fieldName, fieldName, delta));
-                else
-                    sql.append(String.format("Set %s = DATEADD(hour, %d, %s);\n", fieldName, delta, fieldName));
-            }
+                ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
+                if (col != null && col.getJdbcType() == JdbcType.TIMESTAMP)
+                {
+                    updating.add(fieldName);
+                    if (sql.isEmpty())
+                        sql.append("UPDATE ").append(tInfo, "").append(" SET ");
+                    sql.append(comma)
+                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
+                    comma = ", ";
+                }
+            };
             if (!sql.isEmpty())
             {
-                logger.info(String.format("Updating %s field table %s.%s", fieldName, schema.getName(), tInfo.getName()));
-                logger.info(sql.toDebugString());
+                logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
+                logger.debug(sql.toDebugString());
                 int numRows = new SqlExecutor(schema).execute(sql);
-                logger.info(String.format("Updated %s field in %d rows for table %s.%s", fieldName, numRows, schema.getName(), tInfo.getName()));
+                logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
             }
+
         }
 
         @Override
         public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
         {
-            logger.info("Adjusting all Created and Modified timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            List<String> toUpdate = Arrays.asList("Created", "Modified", "lastIndexed", "diCreated", "diModified");
+            logger.info("Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
             DbScope scope = DbScope.getLabKeyScope();
             try (DbScope.Transaction t = scope.ensureTransaction())
             {
@@ -10525,8 +10532,7 @@ public class AdminController extends SpringActionController
                             TableInfo tInfo = schema.getTable(tableName);
                             if (tInfo.getTableType() == DatabaseTableType.TABLE)
                             {
-                                updateField(tInfo, "Created", form.getHourDelta());
-                                updateField(tInfo, "Modified", form.getHourDelta());
+                                updateFields(tInfo, toUpdate, form.getHourDelta());
                             }
                         });
                     });
