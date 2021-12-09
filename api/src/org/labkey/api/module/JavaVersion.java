@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false, null),
-    JAVA_16(16, false, true, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"),
+    JAVA_16(16, true, true, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"),
     JAVA_17(17, false, true, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/"),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/17/docs/api/java.base/");
 
@@ -110,7 +110,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "AdoptOpenJDK 16 64-bit (x64) with HotSpot JVM";
+        return "Eclipse Temurin 17 64-bit (x64) with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
