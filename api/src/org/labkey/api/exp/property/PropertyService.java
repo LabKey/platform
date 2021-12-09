@@ -125,7 +125,7 @@ public interface PropertyService
      */
     IPropertyValidator getValidatorForColumn(ColumnInfo col, PropertyValidatorType type);
 
-    List<String> getTextChoiceValidatorOptions(IPropertyValidator validator, boolean sorted);
+    List<String> getTextChoiceValidatorOptions(IPropertyValidator validator);
 
     @NotNull
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);

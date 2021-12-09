@@ -353,17 +353,20 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
-    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator, boolean sorted)
+    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator)
     {
         String expression = "";
         if (validator != null && validator.getExpressionValue() != null)
             expression = validator.getExpressionValue();
 
-        String[] choices = expression.split("\\|");
-        if (sorted)
-            return Arrays.stream(choices).sorted().collect(Collectors.toList());
+        // split expression, trim choices, and remove duplicates
+        String[] choiceTokens = expression.split("\\|");
+        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim).collect(Collectors.toSet());
 
-        return Arrays.asList(choices);
+        // remove empty strings and sort
+        return choiceSet.stream().filter(choice -> !"".equals(choice))
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     @Override

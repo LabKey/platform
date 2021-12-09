@@ -271,7 +271,7 @@ public class JsonWriter
 
             IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
             if (textChoiceValidator != null)
-                props.put("validValues", PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator, false));
+                props.put("validValues", PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
         }
         else
         {

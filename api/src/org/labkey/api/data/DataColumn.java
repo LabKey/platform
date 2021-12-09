@@ -742,7 +742,7 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         NamedObjectList options = new NamedObjectList();
-        for (String choice : PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator, false))
+        for (String choice : PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator))
             options.put(new SimpleNamedObject(choice, choice));
         renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, options);
     }
