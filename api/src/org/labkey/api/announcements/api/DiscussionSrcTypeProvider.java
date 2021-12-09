@@ -10,4 +10,12 @@ public interface DiscussionSrcTypeProvider
 {
     @Nullable
     ActionURL getThreadURL(Container container, User user, int announcementRowId, String discussionSrcIdentifier);
+
+    @Nullable
+    default String getEmailSubject(Container container, User user, int announcementRowId, String discussionSrcIdentifier, String body, String title, String parentBody)
+    {
+        return null;
+    };
+
+
 }
