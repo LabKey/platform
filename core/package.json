@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.10",
-    "@labkey/components": "2.102.0-fb-lksTextChoiceValidator.0",
+    "@labkey/components": "2.102.0-fb-lksTextChoiceValidator.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
