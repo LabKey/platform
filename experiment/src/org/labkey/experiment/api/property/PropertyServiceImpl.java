@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -366,7 +367,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim).collect(Collectors.toSet());
 
         // remove empty strings and sort
-        return choiceSet.stream().filter(choice -> !"".equals(choice))
+        return choiceSet.stream().filter(choice -> !StringUtils.isEmpty(choice))
                 .sorted()
                 .collect(Collectors.toList());
     }
