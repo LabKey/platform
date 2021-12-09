@@ -45,6 +45,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                         jsonData.selections = checked;
                 }
                 else {
+                    jsonData.allParticipants = true;
                     jsonData.selectAll = true;
                 }
 
