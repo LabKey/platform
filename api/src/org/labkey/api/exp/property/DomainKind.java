@@ -33,7 +33,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -340,7 +340,7 @@ abstract public class DomainKind<T>  implements Handler<String>
             throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 
-    public Pair<List<String>, List<String>> validateNameExpressions(Container container, T options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, T options, GWTDomain domainDesign)
     {
         return null;
     }

@@ -90,6 +90,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -393,6 +394,7 @@ public class PropertyController extends SpringActionController
      *      "domainDesign": {}
      *  }
      */
+
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainDetailsAction  extends ReadOnlyApiAction<DomainApiForm>
@@ -434,9 +436,16 @@ public class PropertyController extends SpringActionController
             {
                 domainKindDesign.setDomainDesign(gwtDomain);
                 domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
-                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
+                Object options = domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser());
+                domainKindDesign.setOptions(options);
+                if (form.isIncludeNamePreview())
+                {
+                    domain.getDomainKind().validateNameExpressions(getContainer(), options, domainKindDesign.getDomainDesign());
+//                    domainKindDesign.setPreviewNames();
+                }
                 return domainKindDesign;
             }
+
             return gwtDomain;
         }
     }
@@ -468,7 +477,7 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
-            Pair<List<String>, List<String>> results = form.validate(getContainer(), getUser(), true);
+            Tuple3<List<String>, List<String>, List<String>> results = form.validate(getContainer(), getUser(), true);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -476,6 +485,7 @@ public class PropertyController extends SpringActionController
             {
                 resp.put("errors", results.first);
                 resp.put("warnings", results.second);
+                resp.put("previews", results.third);
             }
             return resp;
         }
@@ -812,6 +822,7 @@ public class PropertyController extends SpringActionController
         private String queryName;
         private Integer domainId;
         private boolean includeWarnings;
+        private boolean includeNamePreview;
 
         public Integer getDomainId()
         {
@@ -999,7 +1010,7 @@ public class PropertyController extends SpringActionController
          * Method to validate form
          */
         @JsonIgnore
-        public Pair<List<String>, List<String>> validate(Container container, User user, boolean validateNameExpressionOnly)
+        public Tuple3<List<String>, List<String>, List<String>> validate(Container container, User user, boolean validateNameExpressionOnly)
         {
             // Issue 39995: validate form options for non-template case
             if (getDomainGroup() != null)
@@ -1043,6 +1054,17 @@ public class PropertyController extends SpringActionController
 
             return null;
         }
+
+        public boolean isIncludeNamePreview()
+        {
+            return includeNamePreview;
+        }
+
+        public void setIncludeNamePreview(boolean includeNamePreview)
+        {
+            this.includeNamePreview = includeNamePreview;
+        }
+
     }
 
     /**

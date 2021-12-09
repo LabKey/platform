@@ -40,7 +40,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
@@ -50,6 +49,8 @@ import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,26 +98,64 @@ public class NameGenerator
 
     enum SubstitutionValue
     {
-        genId,
-        randomId,
-        batchRandomId,
-        now,
-        Inputs,
-        DataInputs,
-        MaterialInputs,
-        AliquotedFrom,
-        withCounter,
-        dailySampleCount, // sample counts can both be SubstitutionValue as well as modifiers
-        weeklySampleCount,
-        monthlySampleCount,
-        yearlySampleCount,
-        schemaName,
-        schemaPath,
-        queryName,
-        dataRegionName,
-        containerPath,
-        contextPath,
-        selectionKey
+        AliquotedFrom("Sample112"),
+        DataInputs("Data101"),
+        Inputs("Parent101"),
+        MaterialInputs("Sample101"),
+        batchRandomId(3294),
+        containerPath("containerPathValue"),
+        contextPath("contextPathValue"),
+        dailySampleCount(14), // sample counts can both be SubstitutionValue as well as modifiers
+        dataRegionName("dataRegionNameValue"),
+        genId(1001),
+        monthlySampleCount(150),
+        now(null)
+                {
+                    @Override
+                    public Object getPreviewValue()
+                    {
+                        try
+                        {
+                            return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                        }
+                        catch (ParseException e)
+                        {
+                            return null;
+                        }
+                    }
+                },
+        queryName("queryNameValue"),
+        randomId(3294),
+        schemaName("schemaNameValue"),
+        schemaPath("schemaPathValue"),
+        selectionKey("selectionKeyValue"),
+        weeklySampleCount(25),
+        withCounter(null), // see CounterExpressionPart.getValue
+        yearlySampleCount(412);
+
+        private final Object _previewValue;
+
+        SubstitutionValue(Object previewValue)
+        {
+            _previewValue = previewValue;
+        }
+
+        public Object getPreviewValue()
+        {
+            return _previewValue;
+        }
+
+        public static Map<String, Object> getValuesMap()
+        {
+            Map<String, Object> values = new CaseInsensitiveHashMap<>();
+            for (SubstitutionValue substitutionValue : SubstitutionValue.values())
+            {
+                values.put(substitutionValue.name(), substitutionValue.getPreviewValue());
+            }
+
+            return values;
+        }
+
     }
 
     private final TableInfo _parentTable;
@@ -147,6 +186,7 @@ public class NameGenerator
     private final boolean _validateSyntax;
     private final List<String> _syntaxErrors = new ArrayList<>();
     private final List<String> _syntaxWarnings = new ArrayList<>();
+    private String _previewName;
 
     private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
 
@@ -195,23 +235,33 @@ public class NameGenerator
         return _syntaxWarnings;
     }
 
-    public static Pair<List<String>, List<String>> getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public String getPreviewName()
+    {
+        return _previewName;
+    }
+
+    public void setPreviewName(String previewName)
+    {
+        _previewName = previewName;
+    }
+
+    public static Tuple3<List<String>, List<String>, String> getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
-        List<String> warningMessages = getSyntaxValidationMessages(nameExpression);
-        Pair<List<String>, List<String>> fieldMessages = getTableFieldWarnings(nameExpression, properties, importAliases, container);
+        List<String> warningMessages = getReservedFieldWarningMessages(nameExpression);
+        Tuple3<List<String>, List<String>, String> fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
         errorMessages.addAll(fieldMessages.first);
         warningMessages.addAll(fieldMessages.second);
-        return Pair.of(errorMessages, warningMessages);
+        return new Tuple3<>(errorMessages, warningMessages, fieldMessages.third);
     }
 
-    static Pair<List<String>, List<String>>  getTableFieldWarnings(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static Tuple3<List<String>, List<String>, String> getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
-        return Pair.of(generator.getSyntaxErrors(), generator.getSyntaxWarnings());
+        return new Tuple3<>(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName());
     }
 
-    static List<String> getSyntaxValidationMessages(String nameExpression)
+    static List<String> getReservedFieldWarningMessages(String nameExpression)
     {
         // For each substitution format, find its location in the string
         // validate punctuation and arguments.
@@ -323,7 +373,6 @@ public class NameGenerator
         return messages;
     }
 
-    // TODO remove
     static List<String> getMismatchedTagErrors(String nameExpression)
     {
         int start = 0;
@@ -458,6 +507,10 @@ public class NameGenerator
         if (_validateSyntax && _parsedNameExpression instanceof NameGenerationExpression)
             _syntaxErrors.addAll(((NameGenerationExpression) _parsedNameExpression).getSyntaxErrors());
 
+        Map<String, Object> previewCtx = new CaseInsensitiveHashMap<>();
+        if (_validateSyntax)
+            previewCtx.putAll(SubstitutionValue.getValuesMap());
+
         for (StringExpressionFactory.StringPart part : parts)
         {
             if (!part.isConstant())
@@ -488,19 +541,29 @@ public class NameGenerator
                             if (!substitutionValues.contains(fieldName))
                             {
                                 boolean isColPresent = false;
+                                PropertyType pt = null;
                                 if (_parentTable != null)
                                 {
                                     ColumnInfo col = _parentTable.getColumn(fieldName);
                                     isColPresent = col != null;
+                                    if (isColPresent)
+                                        pt = col.getPropertyType();
                                 }
                                 else if (!domainFields.isEmpty())
                                 {
                                     GWTPropertyDescriptor col = domainFields.get(fieldName);
                                     isColPresent = col != null;
+                                    if (isColPresent)
+                                    {
+                                        if (col.getConceptURI() != null || col.getRangeURI() != null)
+                                            pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+                                    }
                                 }
 
                                 if (!isColPresent)
-                                    _syntaxWarnings.add("Invalid substitution token: ${" + token.toString() + "}");
+                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}");
+                                else if (pt != null)
+                                    previewCtx.put(fieldName, getNamePartPreviewValue(pt, fieldName));
                             }
                         }
                         continue;
@@ -513,7 +576,7 @@ public class NameGenerator
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
-                        hasLineageLookup = true;
+                        hasLineageLookup = true; //TODO validate lineage inputs, add preview values
                         if (isParentAlias && fieldParts.size() == 2)
                         {
                             // alias/lookup
@@ -583,6 +646,7 @@ public class NameGenerator
                 String lookupFieldName = fieldParts.get(1);
                 boolean lookupExist = false;
 
+                PropertyType pt = null;
                 if (_parentTable != null)
                 {
                     ColumnInfo col = _parentTable.getColumn(root);
@@ -600,7 +664,7 @@ public class NameGenerator
                         if (pkCols.size() != 1)
                         {
                             if (_validateSyntax)
-                                _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
+                                _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
                             continue;
                         }
 
@@ -608,7 +672,11 @@ public class NameGenerator
 
                         ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
                         if (lookupCol != null)
+                        {
                             lookupExist = true;
+                            pt = lookupCol.getPropertyType();
+                        }
+
                     }
                 }
                 else if (_validateSyntax && !domainFields.isEmpty())
@@ -626,24 +694,37 @@ public class NameGenerator
                                 List<String> pkCols = lookupTable.getPkColumnNames();
                                 if (pkCols.size() != 1)
                                 {
-                                    _syntaxWarnings.add("Look up field not supported on table with multiple PK fields: " + root);
+                                    _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
                                     continue;
                                 }
                                 else
                                 {
                                     ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
                                     if (lookupCol != null)
+                                    {
                                         lookupExist = true;
+                                        if (col.getConceptURI() != null || col.getRangeURI() != null)
+                                            pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+                                    }
+
                                 }
                             }
                         }
                     }
                 }
 
-                if (!lookupExist && _validateSyntax)
+                if (_validateSyntax)
                 {
-                    _syntaxWarnings.add("Look up field does not exist: " + fieldKey.toString());
+                    if (!lookupExist)
+                    {
+                        _syntaxErrors.add("Look up field does not exist: " + fieldKey.toString());
+                    }
+                    else if (pt != null)
+                    {
+                        previewCtx.put(lookupFieldName, getNamePartPreviewValue(pt, lookupFieldName));
+                    }
                 }
+
             }
 
             _exprLookups = fieldKeyLookup;
@@ -653,6 +734,13 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
         _expLineageLookupFields = lineageLookupFields;
+        if (_validateSyntax)
+            _previewName = _parsedNameExpression.eval(previewCtx);
+    }
+
+    public static Object getNamePartPreviewValue(PropertyType pt, @Nullable String prefix)
+    {
+        return pt.getPreviewValue(prefix);
     }
 
     public void generateNames(@NotNull State state,
@@ -1325,6 +1413,8 @@ public class NameGenerator
                 {
                     String sub = _source.substring(openIndex + 2, subInd - 1);
                     StringExpressionFactory.StringPart part = parsePart(sub);
+                    if (_validateSyntax)
+                        part.setPreviewMode(true);
 
                     if (part.hasSideEffects() && !_allowSideEffects)
                     {
@@ -1351,6 +1441,8 @@ public class NameGenerator
 
     public static class CounterExpressionPart extends StringExpressionFactory.StringPart
     {
+        private final static long WITH_COUNTER_PREVIEW_VALUE = 1;
+
         private final String _prefixExpression;
         private final Integer _startIndex;
 
@@ -1398,23 +1490,33 @@ public class NameGenerator
         public String getValue(Map map)
         {
             String prefix = _parsedNameExpression.eval(map);
-            if (!_counterSequences.containsKey(prefix))
+
+            long count;
+            if (isPreviewMode())
             {
-                long existingCount = -1;
+                count = _startIndex > WITH_COUNTER_PREVIEW_VALUE ? _startIndex : WITH_COUNTER_PREVIEW_VALUE;
+            }
+            else
+            {
+                if (!_counterSequences.containsKey(prefix))
+                {
+                    long existingCount = -1;
 
-                if (_getNonConflictCountFn != null)
-                    existingCount = _getNonConflictCountFn.apply(prefix);
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
 
-                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
-                long currentSeqMax = newSequence.current();
+                    DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
+                    long currentSeqMax = newSequence.current();
 
-                if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
-                    newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+                    if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
+                        newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
 
-                _counterSequences.put(prefix, newSequence);
+                    _counterSequences.put(prefix, newSequence);
+                }
+
+                count = _counterSequences.get(prefix).next();
             }
 
-            long count = _counterSequences.get(prefix).next();
 
             Object countStr;
             if (_counterFormat != null)

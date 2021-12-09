@@ -63,6 +63,7 @@ import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -327,27 +328,30 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Pair<List<String>, List<String>> validateNameExpressions(Container container, SampleTypeDomainKindProperties options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, SampleTypeDomainKindProperties options, GWTDomain domainDesign)
     {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
+        List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.first != null && !results.first.isEmpty())
                 results.first.forEach(error -> errors.add("Name Expression error: " + error));
             if (results.second != null && !results.second.isEmpty())
                 results.second.forEach(error -> warnings.add("Name Expression warning: " + error));
+            previewNames.add(results.third);
         }
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.first != null && !results.first.isEmpty())
                 results.first.forEach(error -> errors.add("Aliquot Name Expression error: " + error));
             if (results.second != null && !results.second.isEmpty())
                 results.second.forEach(error -> warnings.add("Aliquot Name Expression warning: " + error));
+            previewNames.add(results.third);
         }
-        return new Pair<>(errors, warnings);
+        return new Tuple3<>(errors, warnings, previewNames);
     }
 
     private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)

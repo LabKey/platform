@@ -55,6 +55,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -62,6 +63,7 @@ import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -292,11 +294,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Pair<List<String>, List<String>> validateNameExpressions(Container container, DataClassDomainKindProperties options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, DataClassDomainKindProperties options, GWTDomain domainDesign)
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            return NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            return new Tuple3<>(results.first, results.second, Collections.singletonList(results.third));
         }
         return null;
     }
