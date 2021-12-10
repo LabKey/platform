@@ -78,7 +78,9 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         }
         catch (PatternSyntaxException se)
         {
-            String sb = "The regular expression validator: '" +
+            String sb = "The " +
+                getName() +
+                ": '" +
                 validator.getName() +
                 "' has a syntax error : " +
                 se.getMessage();
