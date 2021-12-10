@@ -10541,6 +10541,7 @@ public class AdminController extends SpringActionController
                 });
                 t.commit();
             }
+            logger.info("DONE Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
             return true;
         }
 
