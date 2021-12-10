@@ -35,7 +35,6 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -43,8 +42,8 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="static java.lang.Boolean.TRUE" %>
 <%@ page import="java.util.LinkedList" %>
+<%@ page import="static java.lang.Boolean.TRUE" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
@@ -101,7 +100,7 @@
     initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
-    String renderId = "report-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "report-design-panel-" + getRequestScopedUID();
     ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> sharedScripts = new ArrayList<>();

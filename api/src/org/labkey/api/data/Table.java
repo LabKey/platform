@@ -64,6 +64,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -346,7 +348,7 @@ public class Table
     }
 
 
-    private static Map<Class, Getter> _getterMap = new HashMap<>(10);
+    private static final Map<Class<?>, Getter> _getterMap = new HashMap<>(20);
 
     enum Getter
     {
@@ -398,6 +400,26 @@ public class Table
             @Override
             Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
         },
+        LOCAL_DATE(LocalDate.class) {
+            @Override
+            Object getObject(ResultSet rs, int i) throws SQLException { return convert(rs.getDate(i)); }
+            @Override
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return convert(rs.getDate(columnLabel)); }
+            private LocalDate convert(@Nullable java.sql.Date sqlDate)
+            {
+                return null == sqlDate ? null : sqlDate.toLocalDate();
+            }
+        },
+        LOCAL_DATE_TIME(LocalDateTime.class) {
+            @Override
+            Object getObject(ResultSet rs, int i) throws SQLException { return convert(rs.getTimestamp(i)); }
+            @Override
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return convert(rs.getTimestamp(columnLabel)); }
+            private LocalDateTime convert(@Nullable Timestamp timestamp)
+            {
+                return null == timestamp ? null : timestamp.toLocalDateTime();
+            }
+        },
         OBJECT(Object.class) {
             @Override
             Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }
@@ -413,7 +435,7 @@ public class Table
             return getObject(rs, 1);
         }
 
-        Getter(Class c)
+        Getter(Class<?> c)
         {
             _getterMap.put(c, this);
         }
@@ -546,8 +568,8 @@ public class Table
             }
 
             Object v = fields.get(key);
-            if (v instanceof String)
-                v = _trimRight((String) v);
+            if (v instanceof String s)
+                v = _trimRight(s);
             m.put(column.getName(), v);
         }
         return m;
@@ -1360,23 +1382,24 @@ public class Table
             aggregateMap = new TableSelector(tinfo, Collections.emptyList(), null, null).getAggregates(aggregates);
 
             String sql =
-                    "SELECT " +
-                        "CAST(COUNT(*) AS BIGINT) AS CountStar,\n" +
-                        "CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,\n" +
-                        "CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,\n" +
-                        "AVG(C.RowId) AS AvgRowId,\n" +
-                        "CAST(MIN(C.RowId) AS BIGINT) AS MinRowId,\n" +
-                        "CAST(MAX(C.RowId) AS BIGINT) AS MaxRowId,\n" +
-                        "CAST(COUNT(C.Parent) AS BIGINT) AS CountParent,\n" +
-                        "CAST(COUNT(DISTINCT C.Parent) AS BIGINT) AS CountDistinctParent,\n" +
-                        "CAST(COUNT(P.Parent) AS BIGINT) AS CountParent_fs_Parent,\n" +
-                        "CAST(SUM(C.SortOrder) AS BIGINT) AS SumSortOrder,\n" +
-                        "CAST(SUM(DISTINCT C.SortOrder) AS BIGINT) AS SumDistinctSortOrder,\n" +
-                        "CAST(COUNT(C.CreatedBy) AS BIGINT) AS CountCreatedBy,\n" +
-                        "MIN(C.Created) AS MinCreated,\n" +
-                        "MIN(C.Name) AS MinName\n" +
-                    "FROM core.Containers C\n" +
-                    "LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid\n";
+                """
+                SELECT CAST(COUNT(*) AS BIGINT) AS CountStar,
+                CAST(COUNT(C.RowId) AS BIGINT) AS CountRowId,
+                CAST(SUM(C.RowId) AS BIGINT) AS SumRowId,
+                AVG(C.RowId) AS AvgRowId,
+                CAST(MIN(C.RowId) AS BIGINT) AS MinRowId,
+                CAST(MAX(C.RowId) AS BIGINT) AS MaxRowId,
+                CAST(COUNT(C.Parent) AS BIGINT) AS CountParent,
+                CAST(COUNT(DISTINCT C.Parent) AS BIGINT) AS CountDistinctParent,
+                CAST(COUNT(P.Parent) AS BIGINT) AS CountParent_fs_Parent,
+                CAST(SUM(C.SortOrder) AS BIGINT) AS SumSortOrder,
+                CAST(SUM(DISTINCT C.SortOrder) AS BIGINT) AS SumDistinctSortOrder,
+                CAST(COUNT(C.CreatedBy) AS BIGINT) AS CountCreatedBy,
+                MIN(C.Created) AS MinCreated,
+                MIN(C.Name) AS MinName
+                FROM core.Containers C
+                LEFT OUTER JOIN core.Containers P ON C.parent = P.entityid
+                """;
             Map<String, Object> expected = new SqlSelector(tinfo.getSchema(), sql).getMap();
 
             verifyAggregates(expected, aggregateMap);

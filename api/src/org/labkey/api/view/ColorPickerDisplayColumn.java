@@ -53,7 +53,7 @@ public class ColorPickerDisplayColumn extends DataColumn
         String name = getFormFieldName(ctx);
         renderHiddenFormInput(ctx, out, name, value);
 
-        String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
         out.write("<script type=\"text/javascript\">\n" +
                 "   LABKEY.requiresExt4Sandbox(function(){\n" +

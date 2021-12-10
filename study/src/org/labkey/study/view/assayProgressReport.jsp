@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -39,7 +38,7 @@
     JspView<ReportsController.ProgressReportForm> me = (JspView<ReportsController.ProgressReportForm>)HttpView.currentView();
     ReportsController.ProgressReportForm form = me.getModelBean();
 
-    String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "participant-report-div-" + getRequestScopedUID();
     ObjectMapper jsonMapper = new ObjectMapper();
 
     Map<String, Object> reportConfig = new HashMap<>();

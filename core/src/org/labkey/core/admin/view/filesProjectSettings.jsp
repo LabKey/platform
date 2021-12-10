@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -209,7 +208,7 @@
             {
                 for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
                 {
-                    String id = "cloudStore_" + UniqueID.getRequestScopedUID(getViewContext().getRequest());
+                    String id = "cloudStore_" + getRequestScopedUID();
         %>
         <tr>
             <td <%=text(storeInfo.isEnabled() ? "" : "class='labkey-disabled'")%>>

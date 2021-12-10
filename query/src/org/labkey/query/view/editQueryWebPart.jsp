@@ -16,7 +16,6 @@
  */
 %>
 
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -37,7 +36,7 @@
     Portal.WebPart part = me.getModelBean();
     ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
-    String renderId = "edit-query-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "edit-query-" + getRequestScopedUID();
 %>
 <div id="<%=h(renderId)%>"></div>
 <script type="text/javascript">
