@@ -21,8 +21,8 @@
             <li>diCreated</li>
             <li>diModified</li>
         </ul>
-       for <b>all tables</b> in <b>all schemas</b> in <b>all modules</b>.  It is intended to be used to adjust
-       for data created using an incorrect timezone in conjunction with updating the server to use the correct timezone.
+       for <b>all tables</b> in <b>all schemas</b> in <b>all modules</b>.  It is intended to be used in conjunction with
+       an update to the server (system and Tomcat) timezone properties to adjust for data created using an incorrect timezone.
    </p>
     <p>
         We do not currently update the following system-created timestamp fields:
