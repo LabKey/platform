@@ -10528,6 +10528,7 @@ public class AdminController extends SpringActionController
                     logger.info("==> Beginning update of timestamps for module: " + module.getName());
                     module.getSchemaNames().stream().sorted().forEach(schemaName -> {
                         DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
+                        scope.invalidateSchema(schema); // Issue 44452: assure we have a fresh set of tables to work from
                         schema.getTableNames().forEach(tableName -> {
                             TableInfo tInfo = schema.getTable(tableName);
                             if (tInfo.getTableType() == DatabaseTableType.TABLE)
