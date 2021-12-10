@@ -407,6 +407,10 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
             setupError("Missing required field SequenceNum");
 
+        if (!inputMap.containsKey(DatasetDefinition.getStudyBaseURI() + "ParticipantId"))
+            setupError(_datasetDefinition.getStudy().getSubjectColumnName() + " is not mapped correctly, ensure the dataset " +
+                    "design does not overwrite this column with a custom column.");
+
         it.setInput(ErrorIterator.wrap(input, context, false, setupError));
         DataIterator ret = LoggingDataIterator.wrap(it);
 
