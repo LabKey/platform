@@ -146,8 +146,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     jasper.setUriroot(jspJavaFileBuildDirectory.getParentFile().getParent() + "/jspWebappDir/webapp/");
                     jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
-                    jasper.setCompilerTargetVM("14");
-                    jasper.setCompilerSourceVM("14");
+                    jasper.setCompilerTargetVM("16");
+                    jasper.setCompilerSourceVM("16");
                     jasper.setCompile(false);
                     jasper.setListErrors(true);
 

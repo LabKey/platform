@@ -96,7 +96,7 @@ import static java.util.stream.Collectors.joining;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 20000, "Property maps");
+    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 40000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {

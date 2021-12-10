@@ -832,7 +832,7 @@ public class DataColumn extends DisplayColumn
     protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, @NotNull ActionURL autoCompleteURLPrefix)
             throws IOException
     {
-        String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
         StringBuilder sb = new StringBuilder();
 
         sb.append("<script type=\"text/javascript\">");

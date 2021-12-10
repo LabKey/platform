@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.survey.model.Survey" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -64,9 +63,9 @@
     boolean isAdmin = (project != null && project.hasPermission(getUser(), AdminPermission.class)) || getUser().hasRootAdminPermission();
     boolean canEdit = !locked && ((!submitted && getContainer().hasPermission(getUser(), InsertPermission.class)) || isAdmin);
 
-    String headerRenderId = "survey-header-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String formRenderId = "survey-form-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String footerRenderId = "survey-footer-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String headerRenderId = "survey-header-panel-" + getRequestScopedUID();
+    String formRenderId = "survey-form-panel-" + getRequestScopedUID();
+    String footerRenderId = "survey-footer-panel-" + getRequestScopedUID();
 %>
 
 <%

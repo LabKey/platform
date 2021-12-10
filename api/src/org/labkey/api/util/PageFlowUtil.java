@@ -887,7 +887,7 @@ public class PageFlowUtil
             String filename = file.getFileName().toString();
 
             // use the metadata to hint at the type for a faster lookup
-            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename); // TODO: Not sure RESOURCE_NAME_KEY is used
+            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
 
             return detector.detect(TikaInputStream.get(file), metaData);
