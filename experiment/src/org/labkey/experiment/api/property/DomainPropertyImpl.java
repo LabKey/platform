@@ -613,7 +613,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setScannable(boolean scannable)
     {
-        edit().setScannable(scannable);
+        if (scannable != isScannable())
+            edit().setScannable(scannable);
     }
 
     @Override

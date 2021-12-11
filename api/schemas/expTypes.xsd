@@ -589,7 +589,13 @@
 					</xs:all>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="Scannable" type="boolean" minOccurs="0" maxOccurs="1" />
+			<xs:element name="Scannable" type="boolean" minOccurs="0" maxOccurs="1" >
+				<xs:annotation>
+					<xs:documentation>
+						When true, includes field values as part Barcode searches.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 		</xs:sequence>
     </xs:complexType>
 

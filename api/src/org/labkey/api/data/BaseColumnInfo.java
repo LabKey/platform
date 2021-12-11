@@ -1133,6 +1133,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _isUserEditable = xmlCol.getIsUserEditable();
         if (xmlCol.isSetScale())
             _scale = xmlCol.getScale();
+        if (xmlCol.isSetScannable())
+            _scannable = xmlCol.getScannable();
         if (xmlCol.isSetDefaultValue())
             _defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())

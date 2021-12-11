@@ -261,7 +261,7 @@ public class TableInfoWriter
         if (PHI.NotPHI != column.getPHI())
             columnXml.setPhi(PHIType.Enum.forString(column.getPHI().toString()));
 
-        // Export scale only if column is a string
+        // Export string only settings
         if (column.isStringType())
         {
             columnXml.setScale(column.getScale());

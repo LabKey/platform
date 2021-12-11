@@ -146,6 +146,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setConceptImportColumn(s.getConceptImportColumn());
         setConceptLabelColumn(s.getConceptLabelColumn());
         setDerivationDataScope(s.getDerivationDataScope());
+        setScannable(s.isScannable());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
