@@ -59,7 +59,6 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
-        disableContainerFilterSelection();
     }
 
     @Override
@@ -105,4 +104,6 @@ public class ListQueryView extends QueryView
             }
         };
     }
+
+    // TODO: Figure out how to get details/edit columns to link the folder in the data row.
 }

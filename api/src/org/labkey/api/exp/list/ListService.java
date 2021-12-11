@@ -42,9 +42,10 @@ public interface ListService
     }
 
     Map<String, ListDefinition> getLists(Container container);
-    Map<String, ListDefinition> getLists(Container container, boolean includePicklists);
+    Map<String, ListDefinition> getLists(Container container, boolean includePicklists, boolean includeProjectAndShared);
     Map<String, ListDefinition> getLists(Container container, User user, boolean checkVisibility);
     boolean hasLists(Container container);
+    boolean hasLists(Container container, boolean includeProjectAndShared);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo, @Nullable ListDefinition.Category category);
     ListDefinition getList(Container container, int listId);

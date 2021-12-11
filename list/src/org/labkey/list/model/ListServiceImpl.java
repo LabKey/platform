@@ -38,7 +38,6 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.controllers.ListController;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -57,21 +56,21 @@ public class ListServiceImpl implements ListService
     }
 
     @Override
-    public Map<String, ListDefinition> getLists(Container container, boolean includePicklists)
+    public Map<String, ListDefinition> getLists(Container container, boolean includePicklists, boolean includeProjectAndShared)
     {
-        return getLists(container, null, false, includePicklists);
+        return getLists(container, null, false, includePicklists, includeProjectAndShared);
     }
 
     @Override
     public Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility)
     {
-        return getLists(container, user, checkVisibility, true);
+        return getLists(container, user, checkVisibility, true, true);
     }
 
-    private Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
+    private Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists, boolean includeProjectAndShared)
     {
         Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
-        for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists))
+        for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists, includeProjectAndShared))
         {
             ListDefinition list = new ListDefinitionImpl(def);
             ret.put(list.getName(), list);
@@ -83,6 +82,13 @@ public class ListServiceImpl implements ListService
     public boolean hasLists(Container container)
     {
         Collection<ListDef> lists = ListManager.get().getLists(container);
+        return !lists.isEmpty();
+    }
+
+    @Override
+    public boolean hasLists(Container container, boolean includeProjectAndShared)
+    {
+        Collection<ListDef> lists = ListManager.get().getLists(container, includeProjectAndShared);
         return !lists.isEmpty();
     }
 
