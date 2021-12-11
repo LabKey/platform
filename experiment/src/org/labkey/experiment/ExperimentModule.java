@@ -116,6 +116,7 @@ import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
+import org.labkey.experiment.api.property.TextChoiceValidator;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
@@ -180,9 +181,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("property", PropertyController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
-        PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
         StorageProvisioner.setInstance(StorageProvisionerImpl.get());
+
+        PropertyServiceImpl propertyServiceImpl = new PropertyServiceImpl();
+        PropertyService.setInstance(propertyServiceImpl);
+        UsageMetricsService.get().registerUsageMetrics(getName(), propertyServiceImpl);
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -202,6 +206,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
         PropertyService.get().registerValidatorKind(new LengthValidator());
+        PropertyService.get().registerValidatorKind(new TextChoiceValidator());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
@@ -441,7 +446,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(MODULE_NAME, () -> {
+            svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> results = new HashMap<>();
                 if (AssayService.get() != null)
                 {
@@ -572,7 +577,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             LineageTest.class,
             OntologyManager.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class
+            UniqueValueCounterTestCase.class,
+            PropertyServiceImpl.TestCase.class
         );
     }
 
