@@ -415,14 +415,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             if (p.getName().equalsIgnoreCase(_datasetDefinition.getStudy().getSubjectColumnName()))
             {
-                subjectIdConflict = true;
+                setupError(_datasetDefinition.getStudy().getSubjectColumnName() + " is a reserved name for this study. Remove " +
+                        "this column from " + _datasetDefinition.getName() + " dataset design and try again.");
                 break;
             }
         }
-
-        if (subjectIdConflict)
-            setupError(_datasetDefinition.getStudy().getSubjectColumnName() + " is a reserved name for this study. Remove " +
-                    "this column from " + _datasetDefinition.getName() + " dataset design and try again.");
 
         it.setInput(ErrorIterator.wrap(input, context, false, setupError));
         DataIterator ret = LoggingDataIterator.wrap(it);

@@ -4752,17 +4752,17 @@ public class StudyManager
                                         updateSql.append(" WHERE participantid IS NULL");
                                         int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
                                         if (rows > 0)
-                                            _log.info(dataset.getName() + " updated " + rows + " participantId rows.");
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
                                     }
                                     else
-                                    {   // set participantid to NA if it is null and doesn't match the above case. Only way known that it could
+                                    {   // set participantid to Unknown if it is null and doesn't match the above case. Only way known that it could
                                         // happen is if the above case was corrected before running this script, but should catch any other edge cases
                                         SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
                                         updateSql.append(" SET participantid = 'Unknown'");
                                         updateSql.append(" WHERE participantid IS NULL");
                                         int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
                                         if (rows > 0)
-                                            _log.info(dataset.getName() + " updated " + rows + " participantId rows.");
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
                                     }
                                 }
 
