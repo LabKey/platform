@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
@@ -55,6 +56,12 @@ public class FolderListWriter extends BaseFolderWriter
             if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
                 ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
         }
+    }
+
+    @Override
+    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
     }
 
     public static class Factory implements FolderWriterFactory

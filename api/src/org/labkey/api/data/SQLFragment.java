@@ -140,6 +140,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
+    @Override
     public boolean isEmpty()
     {
         return (null == sb || sb.length() == 0) && (sql == null || sql.length() == 0);
@@ -537,7 +538,7 @@ public class SQLFragment implements Appendable, CharSequence
     public String getFilterText()
     {
         String sql = getSQL().replaceFirst("WHERE ", "");
-        List params = getParams();
+        List<Object> params = getParams();
         for (Object param1 : params)
         {
             String param = param1.toString();
@@ -699,8 +700,7 @@ public class SQLFragment implements Appendable, CharSequence
             if (t.startsWith("-- </"))
                 indent = Math.max(0,indent-1);
 
-            for (int i=0 ; i<indent ; i++)
-                sb.append('\t');
+            sb.append("\t".repeat(Math.max(0, indent)));
 
             sb.append(line);
             sb.append('\n');
@@ -814,11 +814,10 @@ public class SQLFragment implements Appendable, CharSequence
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof SQLFragment))
+        if (!(obj instanceof SQLFragment other))
         {
             return false;
         }
-        SQLFragment other = (SQLFragment)obj;
         return getSQL().equals(other.getSQL()) && getParams().equals(other.getParams());
     }
 

@@ -70,6 +70,14 @@ public enum PropertyValidatorType
         {
             return true;
         }
+    },
+    TextChoice
+    {
+        @Override
+        public HelpPopup createHelpPopup()
+        {
+            return new HelpPopup("Text Choice Validator", "Text Choice validators allow you to specify a set of text values that are used to constrain values for a given domain field, like a light-weight lookup.");
+        }
     };
 
     public abstract HelpPopup createHelpPopup();

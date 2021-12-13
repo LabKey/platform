@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -31,7 +30,7 @@
 %>
 <%
     final String ID_PREFIX = "labkey_";
-    String panelDiv = ID_PREFIX + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String panelDiv = ID_PREFIX + getRequestScopedUID();
 
     MessageConfigService.EmailConfigForm bean = ((JspView <MessageConfigService.EmailConfigForm>)HttpView.currentView()).getModelBean();
 %>
