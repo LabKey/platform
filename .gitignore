@@ -18,7 +18,7 @@ core/resources/web/core/css
 */resources/web/gen
 */resources/views/gen
 
-/experiment/resources/credits/jars.txt
+experiment/resources/credits/jars.txt
 internal/resources/credits/jars.txt
 
 # Gradle
