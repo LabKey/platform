@@ -410,7 +410,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             setupError("Missing required field SequenceNum");
 
         // Issue 43909: Don't allow insert/update if subject id is overwritten with custom column (no longer allowed).
-        boolean subjectIdConflict = false;
         for (DomainProperty p : Objects.requireNonNull(_datasetDefinition.getDomain()).getProperties())
         {
             if (p.getName().equalsIgnoreCase(_datasetDefinition.getStudy().getSubjectColumnName()))

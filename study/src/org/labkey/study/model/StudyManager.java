@@ -4724,7 +4724,7 @@ public class StudyManager
         {
             if (!context.isNewInstall())
             {
-                _log.info("Ensuring study participantIds in all study datasets");
+                _log.info("Ensuring participantIds in all study datasets");
                 try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
                 {
                     // Iterate through all studies
