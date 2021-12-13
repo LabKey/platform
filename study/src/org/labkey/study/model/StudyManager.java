@@ -4758,7 +4758,7 @@ public class StudyManager
                                     {   // set participantid to NA if it is null and doesn't match the above case. Only way known that it could
                                         // happen is if the above case was corrected before running this script, but should catch any other edge cases
                                         SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
-                                        updateSql.append(" SET participantid = 'NA'");
+                                        updateSql.append(" SET participantid = 'Unknown'");
                                         updateSql.append(" WHERE participantid IS NULL");
                                         int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
                                         if (rows > 0)
