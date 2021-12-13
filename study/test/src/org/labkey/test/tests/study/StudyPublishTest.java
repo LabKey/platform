@@ -780,6 +780,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Wizard page 7 : Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
         waitForElement(Locator.css(".studyWizardListList"));
+        click(Locator.css(".studyWizardListList .x-grid3-hd-checker  div")); // de-select all
         for (String list : lists)
         {
             _extHelper.selectExtGridItem("name", list, -1, "studyWizardListList", true);
