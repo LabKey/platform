@@ -592,7 +592,7 @@
 			<xs:element name="Scannable" type="boolean" minOccurs="0" maxOccurs="1" >
 				<xs:annotation>
 					<xs:documentation>
-						When true, field's values are included as part of Barcode searches.
+						When true, field's values are included in Barcode searches.
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
