@@ -294,7 +294,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, DataClassDomainKindProperties options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {

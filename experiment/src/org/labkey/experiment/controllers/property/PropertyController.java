@@ -436,17 +436,45 @@ public class PropertyController extends SpringActionController
             {
                 domainKindDesign.setDomainDesign(gwtDomain);
                 domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
-                Object options = domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser());
-                domainKindDesign.setOptions(options);
-                if (form.isIncludeNamePreview())
-                {
-                    domain.getDomainKind().validateNameExpressions(getContainer(), options, domainKindDesign.getDomainDesign());
-//                    domainKindDesign.setPreviewNames();
-                }
+                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
                 return domainKindDesign;
             }
-
             return gwtDomain;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDomainNamePreviewsAction  extends ReadOnlyApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            String queryName = form.getQueryName();
+            String schemaName = form.getSchemaName();
+            Integer domainId = form.getDomainId();
+
+            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            if (null != domain && null != domain.getDomainKind())
+            {
+                List<String> previews = domain.getDomainKind().getDomainNamePreviews(gwtDomain, getContainer(), getUser());
+                resp.put("previews", previews);
+                return resp;
+
+            }
+
+            return resp;
         }
     }
 
@@ -822,7 +850,6 @@ public class PropertyController extends SpringActionController
         private String queryName;
         private Integer domainId;
         private boolean includeWarnings;
-        private boolean includeNamePreview;
 
         public Integer getDomainId()
         {
@@ -1043,7 +1070,7 @@ public class PropertyController extends SpringActionController
             if (design != null)
             {
                 if (validateNameExpressionOnly)
-                    return kind.validateNameExpressions(container, options, design);
+                    return kind.validateNameExpressions(options, design, container);
 
                 name = StringUtils.trimToNull(design.getName());
                 domain = PropertyService.get().getDomain(container, design.getDomainURI());
@@ -1054,17 +1081,6 @@ public class PropertyController extends SpringActionController
 
             return null;
         }
-
-        public boolean isIncludeNamePreview()
-        {
-            return includeNamePreview;
-        }
-
-        public void setIncludeNamePreview(boolean includeNamePreview)
-        {
-            this.includeNamePreview = includeNamePreview;
-        }
-
     }
 
     /**

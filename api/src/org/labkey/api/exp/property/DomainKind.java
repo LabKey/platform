@@ -340,8 +340,17 @@ abstract public class DomainKind<T>  implements Handler<String>
             throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, T options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(T options, GWTDomain domainDesign, Container container)
     {
+        return null;
+    }
+
+    public List<String> getDomainNamePreviews(GWTDomain gwtDomain, Container container, User user)
+    {
+        T options = getDomainKindProperties(gwtDomain, container, user);
+        Tuple3<List<String>, List<String>, List<String>> results = validateNameExpressions(options, gwtDomain, container);
+        if (results != null)
+            return results.third;
         return null;
     }
 }

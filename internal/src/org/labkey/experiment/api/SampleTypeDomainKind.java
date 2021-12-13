@@ -328,7 +328,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(Container container, SampleTypeDomainKindProperties options, GWTDomain domainDesign)
+    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain domainDesign, Container container)
     {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -342,6 +342,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 results.second.forEach(error -> warnings.add("Name Expression warning: " + error));
             previewNames.add(results.third);
         }
+        else
+            previewNames.add(null);
+
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
             Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
