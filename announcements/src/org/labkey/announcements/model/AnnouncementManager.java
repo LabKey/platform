@@ -535,6 +535,18 @@ public class AnnouncementManager
                 String references = messageId + " <" + parent.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
 
                 List<Integer> memberList = a.getMemberListIds();
+                DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
+                if (typeProvider != null)
+                {
+                    AnnouncementModel annParent = AnnouncementManager.getAnnouncement(c, a.getParent());
+
+                    Integer threadAuthor = null;
+                    if (annParent != null)
+                        threadAuthor = annParent.getCreatedBy();
+
+                    memberList = typeProvider.getMemberList(c, user, a.getRowId(), a.getDiscussionSrcIdentifier(), a.getCreatedBy(), memberList, a.getParent(), threadAuthor);
+                    recipients = typeProvider.getRecipients(recipients, a.getCreatedBy());
+                }
 
                 for (User recipient : recipients)
                 {
