@@ -527,6 +527,22 @@ public class AnnouncementManager
             IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
             Set<User> recipients = sel.getNotificationUsers(a);
 
+            DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
+            if (typeProvider != null)
+            {
+                for (User u : typeProvider.getNotebookAuthors(c, user, a.getDiscussionSrcIdentifier()))
+                {
+                    Integer pref = sel.createEmailPrefsMap(c).get(u).getApplicablePreference(a).getEmailOptionId();
+                    if (EmailOption.MESSAGES_MINE.getValue() == pref && u.isActive())
+                        recipients.add(u);
+                }
+
+                User createdByUser = UserManager.getUser(a.getCreatedBy());
+                Integer createdByPref = sel.createEmailPrefsMap(c).get(createdByUser).getApplicablePreference(a).getEmailOptionId();
+                if (EmailOption.MESSAGES_MINE.getValue() == createdByPref)
+                    recipients.remove(createdByUser);
+            }
+
             if (!recipients.isEmpty())
             {
                 BulkEmailer emailer = new BulkEmailer(user);
@@ -535,18 +551,6 @@ public class AnnouncementManager
                 String references = messageId + " <" + parent.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
 
                 List<Integer> memberList = a.getMemberListIds();
-                DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
-                if (typeProvider != null)
-                {
-                    AnnouncementModel annParent = AnnouncementManager.getAnnouncement(c, a.getParent());
-
-                    Integer threadAuthor = null;
-                    if (annParent != null)
-                        threadAuthor = annParent.getCreatedBy();
-
-                    memberList = typeProvider.getMemberList(c, user, a.getRowId(), a.getDiscussionSrcIdentifier(), a.getCreatedBy(), memberList, a.getParent(), threadAuthor);
-                    recipients = typeProvider.getRecipients(recipients, a.getCreatedBy());
-                }
 
                 for (User recipient : recipients)
                 {

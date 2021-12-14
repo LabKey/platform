@@ -53,7 +53,7 @@ public abstract class EmailPrefsSelector
 
 
     // Get all settings from the database, add the default values, and create map of User -> PreferencePicker
-    private Map<User, PreferencePicker> createEmailPrefsMap(Container c)
+    public Map<User, PreferencePicker> createEmailPrefsMap(Container c)
     {
         int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
         Collection<? extends UserPreference> upArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
@@ -158,7 +158,7 @@ public abstract class EmailPrefsSelector
     }
 
 
-    private static class PreferencePicker
+    public static class PreferencePicker
     {
         private final Container _c;
         // srcIdentifier -> UserPreference map for all of this user's preferences
