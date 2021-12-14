@@ -1755,7 +1755,17 @@ public class ExperimentController extends SpringActionController
             expService.getRunOutputsQueries().forEach(queryForm ->
                     registeredOutputsView.addView(getQueryView(queryForm, expRun.getRowId())));
 
-            return new VBox(toggleView, inputsView, registeredInputsView, outputsView, registeredOutputsView, applicationsView);
+            var vBox = new VBox();
+            vBox.addView(toggleView);
+            vBox.addView(inputsView);
+            if (!registeredInputsView.isEmpty())
+                vBox.addView(registeredInputsView);
+            vBox.addView(outputsView);
+            if (!registeredOutputsView.isEmpty())
+                vBox.addView(registeredOutputsView);
+            vBox.addView(applicationsView);
+
+            return vBox;
         }
 
         private QueryView getQueryView(QueryForm queryForm, int runId)
