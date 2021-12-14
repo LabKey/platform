@@ -189,6 +189,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -4715,6 +4716,76 @@ public class StudyManager
                 StudyDesignManager mgr = StudyDesignManager.get();
                 StudyManager.getInstance().getAllStudies()
                     .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
+            }
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void ensureParticipantIds(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                _log.info("Ensuring participantIds in all study datasets");
+                try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+                {
+                    // Iterate through all studies
+                    Set<? extends StudyImpl> studies = StudyManager.getInstance().getAllStudies();
+                    for (StudyImpl study : studies)
+                    {
+                        String subjectColName = study.getSubjectColumnName();
+
+                        // Iterate datasets
+                        List<DatasetDefinition> datasets = study.getDatasets();
+                        for (DatasetDefinition dataset : datasets)
+                        {
+                            Domain dom = dataset.getDomain();
+                            if (null != dom)
+                            {
+                                // If subject id renamed then try to correct
+                                if (!subjectColName.equalsIgnoreCase("ParticipantId"))
+                                {
+                                    // Try to correct datasets with subject id overwritten with custom column
+                                    List<? extends DomainProperty> dupeId = dom.getProperties().stream().filter(d -> d.getName().equalsIgnoreCase(subjectColName)).collect(Collectors.toList());
+                                    if (dupeId.size() > 0)
+                                    {
+                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
+                                        updateSql.append(" SET participantid = ").append(subjectColName);
+                                        updateSql.append(" WHERE participantid IS NULL");
+                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
+                                        if (rows > 0)
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
+                                    }
+                                    else
+                                    {   // set participantid to Unknown if it is null and doesn't match the above case. Only way known that it could
+                                        // happen is if the above case was corrected before running this script, but should catch any other edge cases
+                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
+                                        updateSql.append(" SET participantid = 'Unknown'");
+                                        updateSql.append(" WHERE participantid IS NULL");
+                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
+                                        if (rows > 0)
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
+                                    }
+                                }
+
+                                SQLFragment constraintSql = new SQLFragment("ALTER TABLE studydataset.").append(dom.getStorageTableName());
+                                if (StudySchema.getInstance().getSqlDialect().isPostgreSQL())
+                                {
+                                    constraintSql.append(" ALTER COLUMN participantid SET NOT NULL");
+                                }
+                                else
+                                {
+                                    // Adding not null constraint avoids having to drop indexes to re-declare column as not null
+                                    constraintSql.append(" WITH CHECK ADD CONSTRAINT ").append(dom.getStorageTableName()).append("_participantid_not_null");
+                                    constraintSql.append(" CHECK (participantid IS NOT NULL);");
+                                }
+
+                                new SqlExecutor(StudySchema.getInstance().getScope()).execute(constraintSql);
+                            }
+                        }
+
+                    }
+
+                    transaction.commit();
+                }
             }
         }
     }
