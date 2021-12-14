@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.Level;
+import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -206,8 +207,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String nameExpression = _dataClass.getNameExpression();
                 c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
-                c.setDescription(desc);
 
                 // shut off this field in insert and update views if user-specified names are not allowed
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
@@ -304,6 +303,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
+        String nameExpression = _dataClass.getNameExpression();
+        if (!StringUtils.isEmpty(nameExpression))
+        {
+            String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), _dataClass.getName(), getUserSchema().getUser());
+            String nameDesc = ExpMaterialTableImpl.appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
+            nameCol.setDescription(nameDesc);
+        }
 
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);

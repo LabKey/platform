@@ -163,13 +163,19 @@ public class DomainUtil
     }
 
     @Nullable
-    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer)
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*for sample type and dataclass*/)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
         if (null == dd)
             return null;
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-        return getDomainDescriptor(domainContainer, user, domain);
+        return getDomainDescriptor(domainContainer, user, domain, skipPKCol);
+    }
+
+    @Nullable
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer)
+    {
+        return getDomainDescriptor(user, typeURI, domainContainer, false);
     }
 
     @NotNull
@@ -180,6 +186,12 @@ public class DomainUtil
 
     @NotNull
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain)
+    {
+        return getDomainDescriptor(container, user, domain, false);
+    }
+
+    @NotNull
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain, boolean skipPKCols)
     {
         GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
 
@@ -197,16 +209,16 @@ public class DomainUtil
 
         Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
-        //get PK columns
-        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
-        Map<String, Object> pkColMap;
-        if (null != tableInfo && null != tableInfo.getPkColumns())
+        Map<String, Object> pkColMap = new HashMap<>();
+        if (!skipPKCols)
         {
-            pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
-        }
-        else
-        {
-            pkColMap = new HashMap<>();
+            //get PK columns
+            TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
+
+            if (null != tableInfo && null != tableInfo.getPkColumns())
+            {
+                pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+            }
         }
 
         for (DomainProperty prop : properties)

@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -40,12 +41,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
@@ -310,5 +313,22 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
 
         int maxSize = new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Integer.class);
         return prop.getScale() < maxSize;
+    }
+
+    @Override
+    public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
+    {
+        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
+        GWTDomain gwtDomain = DomainUtil.getDomainDescriptor(user, domainURI, container, true);
+        Domain domain = PropertyService.get().getDomain(container, gwtDomain.getDomainURI());
+        if (null != domain && null != domain.getDomainKind())
+        {
+            T options = getDomainKindProperties(gwtDomain, container, user);
+            Tuple3<List<String>, List<String>, List<String>> results = validateNameExpressions(options, gwtDomain, container);
+            if (results != null)
+                return results.third;
+        }
+
+        return null;
     }
 }

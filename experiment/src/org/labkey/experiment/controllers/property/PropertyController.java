@@ -464,16 +464,11 @@ public class PropertyController extends SpringActionController
 
             GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
-            if (null != domain && null != domain.getDomainKind())
-            {
-                List<String> previews = domain.getDomainKind().getDomainNamePreviews(gwtDomain, getContainer(), getUser());
-                resp.put("previews", previews);
-                return resp;
-
-            }
-
+            List<String> previews = domain.getDomainKind().getDomainNamePreviews(schemaName, queryName, getContainer(), getUser());
+            resp.put("previews", previews);
             return resp;
         }
     }

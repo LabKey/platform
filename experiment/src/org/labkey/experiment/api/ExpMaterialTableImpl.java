@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -504,7 +505,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var nameExpression = st.getNameExpression();
                 nameCol.setNameExpression(nameExpression);
                 nameCol.setNullable(true);
-                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression);
+                String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), st.getName(), getUserSchema().getUser());
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
                 nameCol.setDescription(desc);
             }
             else
@@ -670,17 +672,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _ss == null ? null : _ss.getDomain();
     }
 
-    public static String appendNameExpressionDescription(String currentDescription, String nameExpression)
+    public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {
         if (nameExpression == null)
             return currentDescription;
 
         StringBuilder sb = new StringBuilder();
-        if (currentDescription != null && !currentDescription.isEmpty())
-            sb.append(currentDescription).append("\n");
+        if (currentDescription != null && !currentDescription.isEmpty()) {
+            sb.append(currentDescription);
+            if (!currentDescription.endsWith("."))
+                sb.append(".");
+            sb.append("\n");
+        }
 
-        sb.append("If not provided, a unique name will be generated from the expression:\n");
+        sb.append("\nIf not provided, a unique name will be generated from the expression:\n");
         sb.append(nameExpression);
+        sb.append(".");
+        if (!StringUtils.isEmpty(nameExpressionPreview))
+        {
+            sb.append("\nExample name that will be generated from the current pattern: \n");
+            sb.append(nameExpressionPreview);
+        }
+
         return sb.toString();
     }
 

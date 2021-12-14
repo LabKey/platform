@@ -345,12 +345,8 @@ abstract public class DomainKind<T>  implements Handler<String>
         return null;
     }
 
-    public List<String> getDomainNamePreviews(GWTDomain gwtDomain, Container container, User user)
+    public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
     {
-        T options = getDomainKindProperties(gwtDomain, container, user);
-        Tuple3<List<String>, List<String>, List<String>> results = validateNameExpressions(options, gwtDomain, container);
-        if (results != null)
-            return results.third;
         return null;
     }
 }
