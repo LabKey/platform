@@ -1,27 +1,101 @@
-import org.labkey.gradle.util.BuildUtils
 import org.labkey.gradle.task.ServerSideJS
 import org.labkey.gradle.util.GroupNames
+import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
 
 plugins {
-   id 'org.labkey.build.module'
+    id 'org.labkey.build.module'
 }
 
 project.tasks.register("serverSideJS", ServerSideJS) {
-   ServerSideJS task ->
-      task.group = GroupNames.CODE_GENERATION
-      task.description ="Concatenate javascript files for use on the server side"
+    ServerSideJS task ->
+        task.group = GroupNames.CODE_GENERATION
+        task.description = "Concatenate javascript files for use on the server side"
 }
 project.tasks.processModuleResources.dependsOn(project.tasks.serverSideJS)
 
 dependencies {
-   external "org.graalvm.sdk:graal-sdk:${graalVersion}"
-   external "org.graalvm.js:js:${graalVersion}"
-   external "org.graalvm.js:js-scriptengine:${graalVersion}"
-   external 'radeox:radeox:1.0-b2'
-   external "org.apache.commons:commons-math3:${commonsMath3Version}"
-   implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-   jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-   external "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}"
+    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
+            "Commons File Upload",
+            "Apache",
+            "http://jakarta.apache.org/commons/fileupload/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parses HTTP multipart/form-data POSTs"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-math3:${commonsMath3Version}",
+            "Commons Math",
+            "Apache",
+            "http://commons.apache.org/math/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Lightweight, self-contained mathematics and statistics components"
+        )
+    )
+
+    //TODO should we add a variable for the version here?
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            'radeox:radeox:1.0-b2',
+            "Radeox",
+            "Radeox",
+            "http://www.radeox.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Wiki renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graalvm.sdk:graal-sdk:${graalVersion}",
+            "GraalJS",
+            "GraalJS",
+            "https://github.com/graalvm/graaljs",
+            "Universal Permissive License",
+            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
+            "Server-side JavaScript evaluation"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graalvm.js:js:${graalVersion}",
+            "GraalJS",
+            "GraalJS",
+            "https://github.com/graalvm/graaljs",
+            "Universal Permissive License",
+            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
+            "Server-side JavaScript evaluation"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graalvm.js:js-scriptengine:${graalVersion}",
+            "GraalJS",
+            "GraalJS",
+            "https://github.com/graalvm/graaljs",
+            "Universal Permissive License",
+            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
+            "Server-side JavaScript evaluation"
+        )
+    )
 }
 
 BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
