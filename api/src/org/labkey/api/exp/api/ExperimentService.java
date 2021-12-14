@@ -64,6 +64,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -791,6 +792,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
+
+    Set<QueryForm> getRunInputsQueries();
+
+    Set<QueryForm> getRunOutputsQueries();
+
+    void registerRunInputsViewProvider(Set<QueryForm> queryForms);
+
+    void registerRunOutputsViewProvider(Set<QueryForm> views);
 
     class XarExportOptions
     {

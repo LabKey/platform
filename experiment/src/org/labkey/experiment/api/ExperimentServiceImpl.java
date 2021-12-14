@@ -50,6 +50,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -96,6 +97,7 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -214,6 +216,8 @@ public class ExperimentServiceImpl implements ExperimentService
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
+    private final Set<QueryForm> _runInputsQueryForms = new ConcurrentHashSet<>();
+    private final Set<QueryForm> _runOutputsQueryForms = new ConcurrentHashSet<>();
 
     private Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
@@ -7708,6 +7712,30 @@ public class ExperimentServiceImpl implements ExperimentService
     public boolean useUXDomainDesigner()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
+    }
+
+    @Override
+    public void registerRunInputsViewProvider(Set<QueryForm> queryForms)
+    {
+        _runInputsQueryForms.addAll(queryForms);
+    }
+
+    @Override
+    public void registerRunOutputsViewProvider(Set<QueryForm> queryForms)
+    {
+        _runOutputsQueryForms.addAll(queryForms);
+    }
+
+    @Override
+    public Set<QueryForm> getRunInputsQueries()
+    {
+        return _runInputsQueryForms;
+    }
+
+    @Override
+    public Set<QueryForm> getRunOutputsQueries()
+    {
+        return _runOutputsQueryForms;
     }
 
     public static class TestCase extends Assert

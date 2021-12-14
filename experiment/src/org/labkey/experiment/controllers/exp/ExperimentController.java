@@ -1745,9 +1745,35 @@ public class ExperimentController extends SpringActionController
             runMaterialOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             HBox inputsView = new HBox(runDataInputsView, runMaterialInputsView);
-            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredInputsView = new HBox();
 
-            return new VBox(toggleView, inputsView, outputsView, applicationsView);
+            var expService = ExperimentService.get();
+            expService.getRunInputsQueries().forEach(queryForm ->
+                    registeredInputsView.addView(getQueryView(queryForm, expRun.getRowId())));
+            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredOutputsView = new HBox();
+            expService.getRunOutputsQueries().forEach(queryForm ->
+                    registeredOutputsView.addView(getQueryView(queryForm, expRun.getRowId())));
+
+            return new VBox(toggleView, inputsView, registeredInputsView, outputsView, registeredOutputsView, applicationsView);
+        }
+
+        private QueryView getQueryView(QueryForm queryForm, int runId)
+        {
+            queryForm.setViewContext(getViewContext());
+            queryForm.getQuerySettings().setBaseFilter(new SimpleFilter(FieldKey.fromParts("RunId"), runId));
+            var queryFormView  = queryForm.getQueryView();
+
+            queryFormView.setTitle(queryForm.getDataRegionName());
+            queryFormView.setShowPagination(false);
+            queryFormView.setShowBorders(true);
+            queryFormView.setShadeAlternatingRows(true);
+            queryFormView.setShowPagination(false);
+            queryFormView.disableContainerFilterSelection();
+            queryFormView.setFrame(WebPartView.FrameType.TITLE);
+            queryFormView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+
+            return queryFormView;
         }
     }
 
