@@ -355,7 +355,13 @@ public class DomainUtil
             gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
-            gpv.setProperties(new HashMap<>(pv.getProperties()));
+
+            Map<String, String> properties = new HashMap<>(pv.getProperties());
+            // add in the TextChoice validValues here so that the client side code doesn't have to do the same
+            // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
+            if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
+                properties.put("validValues", StringUtils.join(PropertyService.get().getTextChoiceValidatorOptions(pv), "|"));
+            gpv.setProperties(properties);
 
             validators.add(gpv);
         }
