@@ -1,8 +1,8 @@
 {table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-antlr-3.5.2.jar|ANTLR|3.5.2|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
-eigenbase-properties-1.1.2.jar|Mondrian|3.5.0|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.eclipse.org/legal/epl-v10.html}|mbellew|Part of Mondrian distribution
-eigenbase-resgen-1.3.1.jar|Mondrian|3.5.0|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Part of Mondrian distribution
-mondrian-3.10.0.1-130.jar|Mondrian|3.5.0|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.eclipse.org/legal/epl-v10.html}|mbellew|Part of Mondrian distribution
-olap4j-1.2.0.jar|Mondrian|3.5.0|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Part of Mondrian distribution
+Filename|Component|Source|License|Purpose
+antlr-3.5.2.jar|ANTLR|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|Query language parsing
+eigenbase-properties-1.1.2.jar|Mondrian|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.eclipse.org/legal/epl-v10.html}|Part of Mondrian distribution
+eigenbase-resgen-1.3.1.jar|Mondrian|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.apache.org/licenses/LICENSE-2.0}|Part of Mondrian distribution
+mondrian-3.10.0.1-130.jar|Mondrian|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.eclipse.org/legal/epl-v10.html}|Part of Mondrian distribution
+olap4j-1.2.0.jar|Mondrian|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|Part of Mondrian distribution
 {table}

@@ -1,3 +1,5 @@
+import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
 
 plugins {
     id 'org.labkey.build.module'
@@ -9,22 +11,99 @@ configurations {
 
 dependencies {
    antlr "org.antlr:antlr:${antlrVersion}"
-   external "org.antlr:antlr:${antlrVersion}"
-   external "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}"
-   external "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}"
-   external "pentaho:mondrian:${mondrianVersion}",
-           {
-              // exclude these because they cause interference with the tomcat versions
-              exclude group: "javax.servlet", module:"jsp-api"
-              exclude group: "javax.servlet", module:"servlet-api"
-               // exclude this because it brings older version of log4j
-              exclude group: "log4j", module:"log4j"
-           }
-
-    external "org.olap4j:olap4j:${olap4jVersion}"
     jspImplementation "org.olap4j:olap4j:${olap4jVersion}"
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-}
+
+//   external "org.antlr:antlr:${antlrVersion}"
+//   external "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}"
+//   external "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}"
+//   external "pentaho:mondrian:${mondrianVersion}",
+//           {
+//              // exclude these because they cause interference with the tomcat versions
+//              exclude group: "javax.servlet", module:"jsp-api"
+//              exclude group: "javax.servlet", module:"servlet-api"
+//               // exclude this because it brings older version of log4j
+//              exclude group: "log4j", module:"log4j"
+//           }
+//
+//    external "org.olap4j:olap4j:${olap4jVersion}"
+
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.antlr:antlr:${antlrVersion}",
+            "ANTLR",
+            "ANTLR",
+            "http://www.antlr.org/",
+            "BSD",
+            "http://www.antlr.org/license.html",
+            "Query language parsing"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}",
+            "Mondrian",
+            "Pentaho",
+            "http://mondrian.pentaho.com/",
+            "Eclipse Public License - v 1.0",
+            "http://www.eclipse.org/legal/epl-v10.html",
+            "Part of Mondrian distribution"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}",
+            "Mondrian",
+            "Pentaho",
+            "http://mondrian.pentaho.com/",
+            "Eclipse Public License - v 1.0",
+            "http://www.apache.org/licenses/LICENSE-2.0",
+            "Part of Mondrian distribution"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "pentaho:mondrian:${mondrianVersion}",
+            "Mondrian",
+            "Pentaho",
+            "http://mondrian.pentaho.com/",
+            "Eclipse Public License - v 1.0",
+            "http://www.eclipse.org/legal/epl-v10.html",
+            "Part of Mondrian distribution"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.olap4j:olap4j:${olap4jVersion}",
+            "Mondrian",
+            "Pentaho",
+            "http://mondrian.pentaho.com/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Part of Mondrian distribution",
+
+        ),
+        {
+            // exclude these because they cause interference with the tomcat versions
+            exclude group: "javax.servlet", module:"jsp-api"
+            exclude group: "javax.servlet", module:"servlet-api"
+            // exclude this because it brings older version of log4j
+            exclude group: "log4j", module:"log4j"
+        }
+    )
+
+
+    }
 
 sourceSets {
     main {
