@@ -305,12 +305,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         else
             setDescription("Contains one row per registered data in the " + _dataClass.getName() + " data class");
 
-        if (_dataClass.getContainer().equals(getContainer()))
-        {
-            setContainerFilter(new ContainerFilter.CurrentPlusExtras(getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getContainer()));
-        }
-
-
         TableInfo extTable = _dataClass.getTinfo();
 
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
