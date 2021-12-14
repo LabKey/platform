@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -633,7 +634,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
                 di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
-                        .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer())));
+                        .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                        .addExtraPropsFn(() -> {
+                            if (c != null)
+                                return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
+                            else
+                                return Collections.emptyMap();
+                        })
+                );
             }
             else
             {

@@ -15,6 +15,9 @@ public interface NameExpressionOptionService
 {
     String NAME_EXPRESSION_REQUIRED_MSG = "A Naming Pattern is required because manually specifying a name has been disabled for this folder.";
 
+    String FOLDER_PREFIX_TOKEN = "folderPrefix";            // name expression substitution token for a configured prefix
+    String FOLDER_PREFIX_EXPRESSION = "${" + FOLDER_PREFIX_TOKEN + "}";
+
     NameExpressionOptionService NO_OP_IMPL = new NoOpService();
 
     @NotNull

@@ -80,6 +80,7 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -709,6 +710,7 @@ public abstract class UploadSamplesHelper
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
+        final Container container;
 
         public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in, Container container)
         {
@@ -716,6 +718,7 @@ public abstract class UploadSamplesHelper
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
+            this.container = container;
         }
 
         @Override
@@ -776,7 +779,13 @@ public abstract class UploadSamplesHelper
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
-                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()));
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()))
+                    .addExtraPropsFn(() -> {
+                        if (container != null)
+                            return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                        else
+                            return Collections.emptyMap();
+                    });
 
             return LoggingDataIterator.wrap(names);
         }
@@ -796,6 +805,7 @@ public abstract class UploadSamplesHelper
         Map<String, String> importAliasMap = null;
         boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
         Set<String> _existingNames = null;
+        List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
         String generatedName = null;
         String generatedLsid = null;
@@ -807,6 +817,12 @@ public abstract class UploadSamplesHelper
             try
             {
                 this.importAliasMap = sampletype.getImportAliasMap();
+                _extraPropsFns.add(() -> {
+                    if (this.importAliasMap != null)
+                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);
+                    else
+                        return Collections.emptyMap();
+                });
             }
             catch (IOException e)
             {
@@ -834,6 +850,12 @@ public abstract class UploadSamplesHelper
         _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
         {
             _allowUserSpecifiedNames = allowUserSpecifiedNames;
+            return this;
+        }
+
+        _GenerateNamesDataIterator addExtraPropsFn(Supplier<Map<String, Object>> extraProps)
+        {
+            _extraPropsFns.add(extraProps);
             return this;
         }
 
@@ -865,13 +887,6 @@ public abstract class UploadSamplesHelper
 
             try
             {
-                Supplier<Map<String, Object>> extraPropsFn = () -> {
-                    if (importAliasMap != null)
-                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
-                    else
-                        return Collections.emptyMap();
-                };
-
                 Object currNameObj = map.get("Name");
                 if (currNameObj != null && !_allowUserSpecifiedNames)
                 {
@@ -891,7 +906,7 @@ public abstract class UploadSamplesHelper
 
                 if (nameGen != null)
                 {
-                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
+                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
                     generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
                 }
                 else
