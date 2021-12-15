@@ -169,6 +169,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         return context ->
         {
             DataIterator di = dib.getDataIterator(context);
+            if (null == di)
+                return null;           // Can happen if context has errors
+
             assert !di.supportsGetExistingRecord();
             if (di.supportsGetExistingRecord())
                 return di;

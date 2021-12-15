@@ -16,6 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
@@ -66,7 +67,9 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _created = toTime("created", created, properties);
         _modifiedBy = modifiedBy;
         _modified = toTime("modified", modified, properties);
-        assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
+        // Make sure the "execute URL" container is supplied as a GUID, not a path, since paths are not stable. Also,
+        // the GUID should match either the container ID or the resource ID (if present).
+        assert !(_executeUrl instanceof ActionURL) || ((ActionURL)_executeUrl).getExtraPath().equals(_containerId) || (null != properties && ((ActionURL)_executeUrl).getExtraPath().equals(properties.get(SearchService.PROPERTY.securableResourceId.toString())));
         if (null != properties)
             _properties = new HashMap<>(properties);
     }
