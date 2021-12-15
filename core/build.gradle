@@ -44,7 +44,6 @@ dependencies {
         )
     )
 
-    //TODO should we add a variable for the version here?
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(

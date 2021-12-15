@@ -14,21 +14,6 @@ dependencies {
     jspImplementation "org.olap4j:olap4j:${olap4jVersion}"
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
-//   external "org.antlr:antlr:${antlrVersion}"
-//   external "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}"
-//   external "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}"
-//   external "pentaho:mondrian:${mondrianVersion}",
-//           {
-//              // exclude these because they cause interference with the tomcat versions
-//              exclude group: "javax.servlet", module:"jsp-api"
-//              exclude group: "javax.servlet", module:"servlet-api"
-//               // exclude this because it brings older version of log4j
-//              exclude group: "log4j", module:"log4j"
-//           }
-//
-//    external "org.olap4j:olap4j:${olap4jVersion}"
-
-
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -62,8 +47,8 @@ dependencies {
             "Mondrian",
             "Pentaho",
             "http://mondrian.pentaho.com/",
-            "Eclipse Public License - v 1.0",
-            "http://www.apache.org/licenses/LICENSE-2.0",
+            ExternalDependency.APACHE_2_LICENSE_NAME,  //From Maven
+            ExternalDependency.APACHE_2_LICENSE_URL,   //From Maven
             "Part of Mondrian distribution"
         )
     )
@@ -101,9 +86,7 @@ dependencies {
             exclude group: "log4j", module:"log4j"
         }
     )
-
-
-    }
+}
 
 sourceSets {
     main {
