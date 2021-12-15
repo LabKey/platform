@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.103.0-fb-44329-assay-xar-path.3"
+    "@labkey/components": "2.103.0-fb-44329-assay-xar-path.4"
   },
   "devDependencies": {
     "@labkey/build": "4.0.1"
