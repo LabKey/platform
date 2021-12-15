@@ -35,23 +35,25 @@ import java.util.Set;
 
 /**
  * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
- * as themselves.
+ * as themselves.  This class can be used to grant a user a contextual role for the duration of a request.
+ * This should not be first tool to reach for.  It is usually better to find a way to provide the additional contextual
+ * roles in a more limited scope.
  *
  * User: adam
  * Date: 11/9/11
  */
-public class WrappedImpersonatingContext implements ImpersonationContext
+public class WrappedImpersonationContext implements ImpersonationContext
 {
     final ImpersonationContext delegate;
     final Set<Role> additionalRoles;
 
-    public WrappedImpersonatingContext(ImpersonationContext delegate)
+    public WrappedImpersonationContext(ImpersonationContext delegate)
     {
         this.delegate = delegate;
         additionalRoles = Set.of();
     }
 
-    public WrappedImpersonatingContext(ImpersonationContext delegate, Role additionalRole)
+    public WrappedImpersonationContext(ImpersonationContext delegate, Role additionalRole)
     {
         this.delegate = delegate;
         additionalRoles = Set.of(additionalRole);
