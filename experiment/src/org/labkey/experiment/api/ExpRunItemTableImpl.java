@@ -148,7 +148,6 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     protected String getExpNameExpressionPreview(String schemaName, String queryName, User user)
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, getContainer(), user);
-//        GWTDomain gwtDomain = DomainUtil.getDomainDescriptor(user, domainURI, getContainer());
         Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
         if (domain != null && domain.getDomainKind() != null)
         {

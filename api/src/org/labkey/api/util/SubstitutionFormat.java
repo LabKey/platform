@@ -483,22 +483,13 @@ public class SubstitutionFormat
         return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount, isArgumentOptional);
     }
 
-    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int index, int argumentCount, boolean isArgumentOptional)
+    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int start, int argumentCount, boolean isArgumentOptional)
     {
         List<String> messages = new ArrayList<>();
-        int start = index;
-
-        /*
-            This check is too restrictive, for example ${SampleDate} would trigger 'date' check
-         */
-//        if (nameExpression.charAt(index-1) != ':')
-//            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", formatName, start));
-//        else
-//            start = start-1;
 
         if (argumentCount > 0)
         {
-            int startParen = index + formatName.length() + 1;
+            int startParen = start + formatName.length() + 1;
             boolean hasArg = nameExpression.length() >= startParen && nameExpression.charAt(startParen) == '(';
             if (!hasArg)
             {

@@ -363,8 +363,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
         if (results.first != null && !results.first.isEmpty())
             results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
-//        if (results.second != null && !results.second.isEmpty())
-//            results.second.forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
     }
 

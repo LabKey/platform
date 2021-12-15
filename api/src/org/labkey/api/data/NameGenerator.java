@@ -306,13 +306,6 @@ public class NameGenerator
                     case Inputs, DataInputs, MaterialInputs -> {
                         // surrounded by ${} and with trailing "/"
                         messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
-                        /*
-                         *  trailing / not required
-                         */
-//                        int slashIndex = lcIndex + subValue.name().length() + 1;
-//                        if (slashIndex > nameExpression.length() || nameExpression.charAt(slashIndex) != '/')
-//                            messages.add(String.format("Trailing slash not found for 'Inputs' substitution pattern starting at index %d.", lcIndex));
-
                     }
                     case withCounter -> {
                         messages.addAll(validateWithCounterSyntax(nameExpression, lcIndex));
