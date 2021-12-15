@@ -1,9 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-commons-fileupload-1.4.jar|Commons File Upload|1.4|{link:Apache|http://jakarta.apache.org/commons/fileupload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Parses HTTP multipart/form-data POSTs
-commons-math3-3.6.1.jar|Commons Math|3.6.1|{link:Apache|http://commons.apache.org/math/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Lightweight, self-contained mathematics and statistics components
-radeox-1.0-b2.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Wiki renderer
-graal-sdk-20.0.0.jar|GraalJS|20.0.0|{link:GraalJS|https://github.com/graalvm/graaljs}|{link:Universal Permissive License|https://github.com/graalvm/graaljs/blob/master/LICENSE}|matthewb|Server-side JavaScript evaluation
-js-20.0.0.jar|GraalJS|20.0.0|{link:GraalJS|https://github.com/graalvm/graaljs}|{link:Universal Permissive License|https://github.com/graalvm/graaljs/blob/master/LICENSE}|matthewb|Server-side JavaScript evaluation
-js-scriptengine-20.0.0.jar|GraalJS|20.0.0|{link:GraalJS|https://github.com/graalvm/graaljs}|{link:Universal Permissive License|https://github.com/graalvm/graaljs/blob/master/LICENSE}|matthewb|Server-side JavaScript evaluation
-{table}
