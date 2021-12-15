@@ -18,7 +18,11 @@ core/resources/web/core/css
 */resources/web/gen
 */resources/views/gen
 
+bigiron/resources/credits/jars.txt
+core/resources/credits/jars.txt
 internal/resources/credits/jars.txt
+query/resources/credits/jars.txt
+search/resources/credits/jars.txt
 
 # Gradle
 */.gradle
