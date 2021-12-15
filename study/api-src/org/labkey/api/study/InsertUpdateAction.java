@@ -133,7 +133,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
         // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
-        if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDatasetId()))
+        if (!study.isManualCohortAssignment() && Objects.equals(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
             final List<? extends Cohort> cohorts = CohortService.get().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
