@@ -494,7 +494,7 @@ public class NameGenerator
             case "name":
             case "lsid":
             case "description":
-                return "lookup" + lookupField;
+                return "parent" + lookupField;
             case "created":
             case "modified":
                 try
@@ -540,7 +540,10 @@ public class NameGenerator
                 {
                     if (domainProperty.getName().equalsIgnoreCase(lookupField))
                     {
-                        return getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
+                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
+                        if (result instanceof String)
+                            return "parent" + result;
+                        return result;
                     }
                 }
             }
