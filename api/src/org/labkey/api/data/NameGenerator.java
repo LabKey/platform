@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -32,6 +33,8 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -478,6 +481,76 @@ public class NameGenerator
                 || (importAliases != null && importAliases.containsKey(sTok));
     }
 
+    private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
+    {
+        boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
+        boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
+        switch (lookupField)
+        {
+            case "rowid":
+            case "createdby":
+            case "modifiedby":
+                return 1005;
+            case "name":
+            case "lsid":
+            case "description":
+                return "lookup" + lookupField;
+            case "created":
+            case "modified":
+                try
+                {
+                    return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                }
+                catch (ParseException e)
+                {
+                    return null;
+                }
+        }
+
+        List<ExpObject> dataTypes = new ArrayList<>();
+        if (isMaterial)
+        {
+            if (inputDataType != null)
+                dataTypes.add(SampleTypeService.get().getSampleType(_container, user, inputDataType));
+            else
+                dataTypes.addAll(SampleTypeService.get().getSampleTypes(_container, user, true));
+        }
+        if (isData)
+        {
+            if (inputDataType != null)
+                dataTypes.add(ExperimentService.get().getDataClass(_container, user, inputDataType));
+            else
+                dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
+        }
+        for (ExpObject dataType : dataTypes)
+        {
+            Domain domain = null;
+            if (dataType instanceof ExpSampleType)
+            {
+                domain = ((ExpSampleType)dataType).getDomain();
+            }
+            else if (dataType instanceof ExpDataClass)
+            {
+                domain = ((ExpDataClass)dataType).getDomain();
+            }
+            if (domain != null)
+            {
+                List<? extends DomainProperty> domainProperties = domain.getProperties();
+                for (DomainProperty domainProperty : domainProperties)
+                {
+                    if (domainProperty.getName().equalsIgnoreCase(lookupField))
+                    {
+                        return getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
+                    }
+                }
+            }
+
+        }
+
+        _syntaxErrors.add("Lineage look up field does not exist: " + fkTok.toString());
+        return null;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any lineage input tokens
@@ -576,22 +649,31 @@ public class NameGenerator
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
-                        hasLineageLookup = true; //TODO validate lineage inputs, add preview values
+                        Object lookupValuePreview = null;
+                        hasLineageLookup = true;
                         if (isParentAlias && fieldParts.size() == 2)
                         {
+                            String lookupField = fieldParts.get(1);
                             // alias/lookup
                             String dataTypeToken = importAliases.get(alias);
                             lineageLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
+
+                            String[] inputParts = dataTypeToken.split("/");
+                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, inputParts[0], inputParts[1], lookupField, user);
                         }
                         else if (fieldParts.size() == 2)
                         {
                             // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
                             lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
+
+                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
                         }
                         else if (fieldParts.size() == 3)
                         {
                             // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
                             lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
+
+                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(3), fieldParts.get(2), user);
                         }
                         else
                         {
@@ -601,6 +683,9 @@ public class NameGenerator
                             else
                                 throw new UnsupportedOperationException(errorMsg);
                         }
+
+                        if (lookupValuePreview != null)
+                            previewCtx.put(fkTok.toString(), lookupValuePreview);
 
                         continue;
                     }
@@ -636,7 +721,7 @@ public class NameGenerator
             {
                 List<String> fieldParts = fieldKey.getParts();
 
-                if (_exprHasLineageInputs && fieldParts.size() == 3)
+                if (hasLineageInputs && fieldParts.size() == 3)
                     continue;;
 
                 assert !_validateSyntax || fieldParts.size() == 2;
@@ -703,8 +788,8 @@ public class NameGenerator
                                     if (lookupCol != null)
                                     {
                                         lookupExist = true;
-                                        if (col.getConceptURI() != null || col.getRangeURI() != null)
-                                            pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+                                        if (lookupCol.getConceptURI() != null || lookupCol.getRangeURI() != null)
+                                            pt = PropertyType.getFromURI(lookupCol.getConceptURI(), lookupCol.getRangeURI(), null);
                                     }
 
                                 }
@@ -721,7 +806,7 @@ public class NameGenerator
                     }
                     else if (pt != null)
                     {
-                        previewCtx.put(lookupFieldName, getNamePartPreviewValue(pt, lookupFieldName));
+                        previewCtx.put(fieldKey.toString(), getNamePartPreviewValue(pt, lookupFieldName));
                     }
                 }
 
@@ -734,7 +819,7 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
         _expLineageLookupFields = lineageLookupFields;
-        if (_validateSyntax)
+        if (_validateSyntax && _syntaxErrors.isEmpty())
             _previewName = _parsedNameExpression.eval(previewCtx);
     }
 
