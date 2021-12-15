@@ -15,14 +15,18 @@
  */
 package org.labkey.api.data;
 
+import org.apache.tomcat.util.buf.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by davebradlee on 9/15/14.
@@ -129,12 +133,23 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     {
         if (!_queryLogging.isEmpty())
         {
+            List<ColumnInfo> missingColumns = new ArrayList<>();
             for (ColumnInfo dataLoggingColumn : _queryLogging.getDataLoggingColumns())
             {
                 Object obj = getObject(dataLoggingColumn.getAlias());
-                if (null == obj)
-                    throw new UnauthorizedException("Unable to read expected data logging column for " + dataLoggingColumn.getFieldKey() + " with alias " + dataLoggingColumn.getAlias());
-                _dataLoggingValues.add(obj);
+                if (null != obj)
+                    _dataLoggingValues.add(obj);
+                else
+                    missingColumns.add(dataLoggingColumn);
+            }
+
+            if (!missingColumns.isEmpty())
+            {
+                throw new IllegalStateException("Unable to read expected data logging column(s) for " +
+                        StringUtils.join(missingColumns.stream().map(c -> "\"" + c.getFieldKey().toString() + "\"").collect(Collectors.toList()), ';') +
+                        " with alias(es) " +
+                        StringUtils.join(missingColumns.stream().map(c -> "\"" + c.getAlias() + "\"").collect(Collectors.toList()), ';')
+                );
             }
         }
     }
