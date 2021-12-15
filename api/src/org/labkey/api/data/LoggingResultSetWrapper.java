@@ -15,10 +15,9 @@
  */
 package org.labkey.api.data;
 
-import org.apache.tomcat.util.buf.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
