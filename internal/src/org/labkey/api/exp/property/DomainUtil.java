@@ -258,6 +258,14 @@ public class DomainUtil
             TemplateInfo t = domain.getTemplateInfo();
             d.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
         }
+
+        // if not set via domain kind, provide the public schemaName and queryName for the domain
+        if (d.getSchemaName() == null && d.getQueryName() == null && tableInfo != null)
+        {
+            d.setSchemaName(tableInfo.getPublicSchemaName());
+            d.setQueryName(tableInfo.getPublicName());
+        }
+
         return d;
     }
 
