@@ -504,17 +504,31 @@ public class NameGenerator
         if (isMaterial)
         {
             if (inputDataType != null)
-                dataTypes.add(SampleTypeService.get().getSampleType(_container, user, inputDataType));
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(_container, user, inputDataType);
+                if (sampleType != null)
+                    dataTypes.add(sampleType);
+            }
             else
                 dataTypes.addAll(SampleTypeService.get().getSampleTypes(_container, user, true));
         }
         if (isData)
         {
             if (inputDataType != null)
-                dataTypes.add(ExperimentService.get().getDataClass(_container, user, inputDataType));
+            {
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(_container, user, inputDataType);
+                if (dataClass != null)
+                    dataTypes.add(dataClass);
+            }
             else
                 dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
         }
+        if (inputDataType != null && dataTypes.isEmpty())
+        {
+            _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+            return null;
+        }
+
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
@@ -543,7 +557,7 @@ public class NameGenerator
 
         }
 
-        _syntaxErrors.add("Lineage look up field does not exist: " + fkTok.toString());
+        _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
         return null;
     }
 
@@ -573,8 +587,6 @@ public class NameGenerator
 
         // check for all parts, including those in sub nested expressions
         List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
-        if (_validateSyntax && _parsedNameExpression instanceof NameGenerationExpression)
-            _syntaxErrors.addAll(((NameGenerationExpression) _parsedNameExpression).getSyntaxErrors());
 
         Map<String, Object> previewCtx = new CaseInsensitiveHashMap<>();
         if (_validateSyntax)
@@ -630,7 +642,7 @@ public class NameGenerator
                                 }
 
                                 if (!isColPresent)
-                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}");
+                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}.");
                                 else if (pt != null)
                                     previewCtx.put(fieldName, getNamePartPreviewValue(pt, fieldName));
                             }
@@ -657,23 +669,25 @@ public class NameGenerator
                             String[] inputParts = dataTypeToken.split("/");
                             lookupValuePreview = getLineageLookupTokenPreview(fkTok, inputParts[0], inputParts[1], lookupField, user);
                         }
-                        else if (fieldParts.size() == 2)
+                        else if (!isParentAlias && fieldParts.size() <= 3)
                         {
-                            // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
-                            lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
+                            if (fieldParts.size() == 2)
+                            {
+                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
+                                lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
-                        }
-                        else if (fieldParts.size() == 3)
-                        {
-                            // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
-                            lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
-
-                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(3), fieldParts.get(2), user);
+                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
+                            }
+                            else if (fieldParts.size() == 3)
+                            {
+                                // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
+                                lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
+                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(1), fieldParts.get(2), user);
+                            }
                         }
                         else
                         {
-                            String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok;
+                            String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -689,7 +703,7 @@ public class NameGenerator
                     {
                         // for now, we only support one level of lookup: ${ingredient/name}
                         // future versions could support multiple levels
-                        String errorMsg = "Only one level of lookup supported: " + fkTok;
+                        String errorMsg = "Only one level of lookup supported: " + fkTok + ".";
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
                         else
@@ -698,16 +712,20 @@ public class NameGenerator
 
                     if (_parentTable == null && domainFields.isEmpty())
                     {
-                        String errorMsg = "Parent table required for name expressions with lookups: " + fkTok;
+                        String errorMsg = "Parent table required for name expressions with lookups: " + fkTok + ".";
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
-                        throw new UnsupportedOperationException(errorMsg);
+                        else
+                            throw new UnsupportedOperationException(errorMsg);
                     }
 
                     lookups.add(fkTok);
                 }
             }
         }
+
+        if (!_syntaxErrors.isEmpty())
+            return;
 
         // for each token with a lookup, get the lookup table and stash it for later
         if (!lookups.isEmpty())
@@ -720,7 +738,7 @@ public class NameGenerator
                 if (hasLineageInputs && fieldParts.size() == 3)
                     continue;;
 
-                assert !_validateSyntax || fieldParts.size() == 2;
+                assert _validateSyntax || fieldParts.size() == 2;
 
                 // find column matching the root
                 String root = fieldParts.get(0);
@@ -1993,6 +2011,41 @@ public class NameGenerator
             assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 5, 7."}, errors.toArray());
             errors = getMismatchedTagErrors("Mixed-${genId-${xyz}-${open");
             assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 7, 22."}, errors.toArray());
+        }
+
+        private void assertNameError(String expression, String errorMsg, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        {
+            Container c = JunitUtil.getTestContainer();
+            List<String> errors = getValidationMessages(expression, fields, importAliases, c).first;
+            assertEquals(errorMsg, String.join(" ", errors));
+        }
+
+        private void assertNameError(String expression, String errorMsg, @Nullable Map<String, String> importAliases)
+        {
+            assertNameError(expression, errorMsg, importAliases, null);
+        }
+
+        private void assertNameError(String expression, String errorMsg)
+        {
+            assertNameError(expression, errorMsg, null);
+        }
+
+        @Test
+        public void testNameExpressionErrors()
+        {
+            assertNameError("One-${genId", "No closing brace found for the substitution pattern starting at position 5.");
+
+            assertNameError("One-${A/B/C}", "Only one level of lookup supported: A/B/C. Parent table required for name expressions with lookups: A/B/C.");
+
+            assertNameError("S-${parentAlias/a/b}", "Only one level of lookup supported for lineage input: parentAlias/a/b.", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+
+            assertNameError("S-${Inputs/a/b/d}", "Only one level of lookup supported for lineage input: Inputs/a/b/d.", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+
+            assertNameError("S-${FieldA}-${FieldB}", "Invalid substitution token: ${FieldA}. Invalid substitution token: ${FieldB}.");
+
+            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor("FieldA", "http://www.w3.org/2001/XMLSchema#string");
+            List<GWTPropertyDescriptor> fields = Collections.singletonList(descriptor);
+            assertNameError("S-${FieldA}-${FieldB}", "Invalid substitution token: ${FieldB}.", null, fields);
         }
 
         @After
