@@ -530,13 +530,15 @@ public class AnnouncementManager
             DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
             if (typeProvider != null)
             {
-                for (User u : typeProvider.getNotebookAuthors(c, user, a.getDiscussionSrcIdentifier()))
+                for (User u : typeProvider.getRecipients(c, user, a.getDiscussionSrcIdentifier()))
                 {
                     Integer pref = sel.createEmailPrefsMap(c).get(u).getApplicablePreference(a).getEmailOptionId();
+                    // Skip if user is inactive
                     if (EmailOption.MESSAGES_MINE.getValue() == pref && u.isActive())
                         recipients.add(u);
                 }
 
+                // Only add extra recipient if their email setting is 'My conversations'
                 User createdByUser = UserManager.getUser(a.getCreatedBy());
                 Integer createdByPref = sel.createEmailPrefsMap(c).get(createdByUser).getApplicablePreference(a).getEmailOptionId();
                 if (EmailOption.MESSAGES_MINE.getValue() == createdByPref)
@@ -1182,10 +1184,8 @@ public class AnnouncementManager
             {
                 if (notificationBean == null)
                     return null;
-                if (notificationBean.messageSubject != null)
-                    return notificationBean.messageSubject;
 
-                return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
+                return notificationBean.messageSubject;
             });
 
             replacements.add("attachments", String.class, "Attachments for this message", ContentType.HTML, c -> attachments);
@@ -1305,8 +1305,11 @@ public class AnnouncementManager
                 AnnouncementModel annParent = AnnouncementManager.getAnnouncement(c, a.getParent());
                 if (annParent != null)
                     parentBody = annParent.getBody();
-                String emailSubject = typeProvider.getEmailSubject(c, UserManager.getUser(a.getCreatedBy()), a.getRowId(), a.getDiscussionSrcIdentifier(), a.getBody(), a.getTitle(), parentBody);
-                this.messageSubject = emailSubject;
+                this.messageSubject = typeProvider.getEmailSubject(c, UserManager.getUser(a.getCreatedBy()), a.getRowId(), a.getDiscussionSrcIdentifier(), a.getBody(), a.getTitle(), parentBody);
+            }
+            else
+            {
+                this.messageSubject = StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle());
             }
 
             this.recipient = recipient;

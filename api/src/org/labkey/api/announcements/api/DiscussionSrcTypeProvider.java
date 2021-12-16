@@ -19,7 +19,7 @@ public interface DiscussionSrcTypeProvider
         return null;
     };
 
-    default Set<User> getNotebookAuthors(Container container, User user, String discussionSrcIdentifier)
+    default Set<User> getRecipients(Container container, User user, String discussionSrcIdentifier)
     {
         return new HashSet<>();
     }
