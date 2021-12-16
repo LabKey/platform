@@ -7714,12 +7714,20 @@ public class ExperimentServiceImpl implements ExperimentService
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
     }
 
+    /*
+    * this is used to register a query view in experiment-ShowRunText.view and this expects
+    * the query to have RunId column
+    * */
     @Override
     public void registerRunInputsViewProvider(Set<QueryForm> queryForms)
     {
         _runInputsQueryForms.addAll(queryForms);
     }
 
+    /*
+     * this is used to register a query view in experiment-ShowRunText.view and this expects
+     * the query to have RunId column
+     * */
     @Override
     public void registerRunOutputsViewProvider(Set<QueryForm> queryForms)
     {
@@ -7729,13 +7737,13 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public Set<QueryForm> getRunInputsQueries()
     {
-        return _runInputsQueryForms;
+        return Collections.unmodifiableSet(_runInputsQueryForms);
     }
 
     @Override
     public Set<QueryForm> getRunOutputsQueries()
     {
-        return _runOutputsQueryForms;
+        return Collections.unmodifiableSet(_runOutputsQueryForms);
     }
 
     public static class TestCase extends Assert
