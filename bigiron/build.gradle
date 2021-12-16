@@ -1,11 +1,37 @@
+import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
+
 plugins {
     id 'org.labkey.build.module'
 }
 
 dependencies {
-    external "net.sourceforge.jtds:jtds:${jtdsVersion}" // MS SQLServer JDBC Driver
-    external ("mysql:mysql-connector-java:${mysqlDriverVersion}")
-    {
-        exclude group: "com.google.protobuf", module: "protobuf-java" // We haven't needed this in the past...
-    }
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.sourceforge.jtds:jtds:${jtdsVersion}", // MS SQLServer JDBC Driver
+            "jTDS JDBC Driver",
+            "SourceForge",
+            "http://jtds.sourceforge.net",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            "http://jtds.sourceforge.net/license.html",
+            "Connect with Microsoft SQL Server database servers"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "mysql:mysql-connector-java:${mysqlDriverVersion}",
+            "MySQL JDBC Driver",
+            "MySQL",
+            "http://www.mysql.com/downloads/connector/j",
+            "GPL v2",
+            "http://www.gnu.org/licenses/gpl-2.0.html with Universal FOSS Exception https://oss.oracle.com/licenses/universal-foss-exception/",
+            "Connect with MySQL database servers"
+        ),
+        {
+            exclude group: "com.google.protobuf", module: "protobuf-java" // We haven't needed this in the past...
+        }
+    )
 }
