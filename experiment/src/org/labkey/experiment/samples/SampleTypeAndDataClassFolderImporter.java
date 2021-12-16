@@ -79,7 +79,8 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
         if (xarDir != null)
         {
-            Path xarDirPath = FileUtil.getPath(ctx.getContainer(), FileUtil.createUri(xarDir.getLocation()));
+            // #44384 Generate a relative Path object for the folder's VirtualFile
+            Path xarDirPath = Path.of(xarDir.getLocation());
             Path typesXarFile = null;
             Path runsXarFile = null;
             Map<String, String> sampleTypeDataFiles = new HashMap<>();

@@ -956,6 +956,8 @@ public class StatementUtils
             // wrap in a function with a single ROW() constructor argument
             SQLFragment fn = new SQLFragment();
             String fnName = _dialect.getGlobalTempTablePrefix() + "fn_" + GUID.makeHash();
+            TempTableTracker.track(fnName, fn);
+
             String typeName = fnName + "type";
             fn.append("CREATE TYPE ").append(typeName).append(" AS (");
             // TODO d.execute() doesn't handle temp schema
