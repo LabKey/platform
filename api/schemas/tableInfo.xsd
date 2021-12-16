@@ -961,6 +961,8 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="queryExpr" type="xs:string" minOccurs="0" maxOccurs="1">
+            </xs:element>
         </xs:all>
 		<xs:attribute name="columnName" type="xs:string" use="required">
 			<xs:annotation>
