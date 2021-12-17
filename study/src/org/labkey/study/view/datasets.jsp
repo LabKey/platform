@@ -29,6 +29,10 @@
 <%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     StudyManager manager = StudyManager.getInstance();
@@ -47,13 +51,16 @@
         return;
     }
 
+    StudyQuerySchema sqs = StudyQuerySchema.createSchema((StudyImpl)study, user);
+
     List<DatasetDefinition> userDatasets = new ArrayList<>();
     for (DatasetDefinition dataset : datasets)
     {
         if (!dataset.isShowByDefault())
             continue;
 
-        if (dataset.canRead(getUser()))
+        var t = sqs.getDatasetTable(dataset, null);
+        if (null != t && t.hasPermission(getUser(), ReadPermission.class))
             userDatasets.add(dataset);
     }
 
@@ -87,7 +94,7 @@
         List<DOM.Renderable> tds = new ArrayList<>();
         //Print a column header if necessary
         Dataset firstDataset = datasets.get(startIndex);
-        if (!equal(category, firstDataset.getCategory()))
+        if (!StringUtils.equals(category, firstDataset.getCategory()))
         {
             category = firstDataset.getCategory();
             // don't need extra padding (labkey-announcement-title) on first row
@@ -102,7 +109,7 @@
 
         for (Dataset dataset : datasets.subList(startIndex, endIndex))
         {
-            if (!equal(category, dataset.getCategory()))
+            if (!StringUtils.equals(category, dataset.getCategory()))
             {
                 category = dataset.getCategory();
                 tds.add(TR(TD(cl("labkey-announcement-title"), SPAN(category == null ? "Uncategorized" : category))));
@@ -114,16 +121,5 @@
         }
 
         TABLE(tds.toArray()).appendTo(out);
-    }
-
-    boolean equal(String s1, String s2)
-    {
-        if ((s1 == null) != (s2 == null))
-            return false;
-
-        if (null == s1)
-            return true;
-
-        return s1.equals(s2);
     }
 %>
