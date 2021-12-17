@@ -679,7 +679,7 @@ ended very recently. --%>
                         updateField(createdEl, status.created);
                         updateField(modifiedEl, status.modified);
                         updateField(emailEl, status.email);
-                        updateField(infoEl, status.info);
+                        updateField(infoEl, status.info ?? "");
                         updateField(descriptionEl, status.description);
                         updateField(queuePosition, status.queuePosition);
                         updateStatus(active, status.status, status.hadError);

@@ -846,6 +846,9 @@ public class XarExporter
         xProp.setMeasure(domainProp.isMeasure());
         xProp.setDimension(domainProp.isDimension());
         xProp.setRecommendedVariable(domainProp.isRecommendedVariable());
+
+        if (domainProp.isScannable())
+            xProp.setScannable(domainProp.isScannable());
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)
