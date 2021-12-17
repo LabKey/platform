@@ -65,6 +65,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _conceptURI;
     protected String _rangeURI;
     protected PropertyType _propertyType;
+    protected boolean _scannable = false;
 
     // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
     // in its constructor:
@@ -174,6 +175,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._conceptImportColumn = _conceptImportColumn;
         to._conceptLabelColumn = _conceptLabelColumn;
         to._derivationDataScope = _derivationDataScope;
+        to._scannable = _scannable;
     }
 
     @Override
@@ -524,6 +526,15 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return STORAGE_UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
     }
 
+    /**
+     * Check indicating if field is scannable: isUniqueId field OR isScannable
+     */
+    @Override
+    public boolean isScannableField()
+    {
+        return isUniqueIdField() || isScannable();
+    }
+
     public static boolean inferIsMeasure(String name, String label, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
     {
         if (label != null)
@@ -863,6 +874,18 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     {
         assert _checkLocked();
         _scale = scale;
+    }
+
+    @Override
+    public boolean isScannable()
+    {
+        return _scannable;
+    }
+
+    @Override
+    public void setScannable(boolean scannable)
+    {
+        _scannable = scannable;
     }
 
     @Override
