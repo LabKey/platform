@@ -164,7 +164,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.018;
+        return 21.019;
     }
 
     @Nullable
@@ -495,6 +495,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
+                results.put("scannableColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
                 results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
                 results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +

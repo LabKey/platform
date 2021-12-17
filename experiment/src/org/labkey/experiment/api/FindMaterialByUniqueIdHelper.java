@@ -48,7 +48,7 @@ public class FindMaterialByUniqueIdHelper
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isUniqueIdField).collect(Collectors.toList());
+            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
             _numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {

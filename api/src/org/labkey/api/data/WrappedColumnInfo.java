@@ -989,6 +989,13 @@ public class WrappedColumnInfo
         {
             throw new java.lang.UnsupportedOperationException();
         }
+
+        @Override
+        public void setScannable(boolean scannable)
+        {
+            checkLocked();
+            throw new UnsupportedOperationException();
+        }
     }
 
 

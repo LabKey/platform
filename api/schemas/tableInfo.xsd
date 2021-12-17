@@ -961,6 +961,13 @@
                     </xs:all>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="scannable" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Indicates that column is used as a searchable value within the application contexts.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
 		<xs:attribute name="columnName" type="xs:string" use="required">
 			<xs:annotation>
