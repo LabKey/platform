@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -54,7 +55,8 @@ public class SQLFragment implements Appendable, CharSequence
 
     private final List<Object> tempTokens = new ArrayList<>();      // Hold refs to ensure they're not GC'd
 
-    private Map<Object,CTE> commonTableExpressionsMap = null;
+    // use ordered map to make sql generation more deterministic (see collectCommonTableExpressions())
+    private LinkedHashMap<Object,CTE> commonTableExpressionsMap = null;
 
     private class CTE implements Cloneable
     {
@@ -177,18 +179,37 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
+    private List<SQLFragment.CTE> collectCommonTableExpressions()
+    {
+        List<SQLFragment.CTE> list = new ArrayList<>();
+        _collectCommonTableExpressions(list);
+        return list;
+    }
+
+    private void _collectCommonTableExpressions(List<SQLFragment.CTE> list)
+    {
+        if (null != commonTableExpressionsMap)
+        {
+            commonTableExpressionsMap.values().forEach(cte -> cte.sqlf._collectCommonTableExpressions(list));
+            list.addAll(commonTableExpressionsMap.values());
+        }
+    }
+
+
     public String getSQL()
     {
         if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
             return null != sb ? sb.toString() : null != sql ? sql : "";
 
-        boolean recursive = commonTableExpressionsMap.values().stream()
+        List<SQLFragment.CTE> commonTableExpressions = collectCommonTableExpressions();
+
+        boolean recursive = commonTableExpressions.stream()
                 .anyMatch(cte -> cte.recursive);
         StringBuilder ret = new StringBuilder("WITH" + (recursive ? " RECURSIVE" : ""));
 
         // generate final aliases for each CTE */
         AliasManager am = new AliasManager((SqlDialect)null);
-        List<Pair<String,CTE>> ctes = commonTableExpressionsMap.values().stream()
+        List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
                 .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
                 .collect(Collectors.toList());
 
@@ -198,17 +219,22 @@ public class SQLFragment implements Appendable, CharSequence
             String alias = p.first;
             CTE cte = p.second;
             SQLFragment expr = cte.sqlf;
-            if (null != expr.commonTableExpressionsMap && !expr.commonTableExpressionsMap.isEmpty())
-                throw new IllegalStateException("nested common table expressions are not supported");
-            String sql = replaceCteTokens(alias, expr.getSQL(), ctes);
+            String sql = expr._getOwnSql(alias, ctes);
             ret.append(comma).append(alias).append(" AS (").append(sql).append(")");
             comma = "\n,/*CTE*/\n\t";
         }
         ret.append("\n");
 
-        String select = null != sb ? sb.toString() : null != this.sql ? this.sql : "";
+        String select = _getOwnSql( null, ctes );
         ret.append(replaceCteTokens(null, select, ctes));
         return ret.toString();
+    }
+
+
+    private String _getOwnSql(String alias, List<Pair<String,CTE>> ctes)
+    {
+        String ownSql = null != sb ? sb.toString() : null != this.sql ? this.sql : "";
+        return replaceCteTokens(alias, ownSql, ctes);
     }
 
 
@@ -254,40 +280,31 @@ public class SQLFragment implements Appendable, CharSequence
         return JdbcUtil.format(this);
     }
 
+
     public List<Object> getParams()
     {
-        List<Object> ret;
+        var ctes = collectCommonTableExpressions();
+        List<Object> ret = new ArrayList<>();
 
-        if (null == commonTableExpressionsMap || commonTableExpressionsMap.isEmpty())
-            ret = params == null ? Collections.emptyList() : params;
-        else
-        {
-            ret = new ArrayList<>();
-            for (Map.Entry<Object,CTE> e : commonTableExpressionsMap.entrySet())
-            {
-                if (null != e.getValue().sqlf.params)
-                    ret.addAll(e.getValue().sqlf.params);
-            }
-            if (null != params)
-                ret.addAll(params);
-        }
+        for (var cte : ctes)
+            ret.addAll(cte.sqlf.getParamsNoCTEs());
+        ret.addAll(getParamsNoCTEs());
         return Collections.unmodifiableList(ret);
     }
 
+
     public List<Pair<SQLFragment, Integer>> getParamsWithFragments()
     {
-        List<Pair<SQLFragment, Integer>> ret;
-        ret = new ArrayList<>();
-        if (null != commonTableExpressionsMap)
+        var ctes = collectCommonTableExpressions();
+        List<Pair<SQLFragment, Integer>> ret = new ArrayList<>();
+
+        for (CTE cte : ctes)
         {
-            for (CTE cte : commonTableExpressionsMap.values())
+            if (null != cte.sqlf && null != cte.sqlf.params)
             {
-                if (null != cte.sqlf && null != cte.sqlf.params)
+                for (int i = 0; i < cte.sqlf.params.size(); i++)
                 {
-                    for (int i = 0; i < cte.sqlf.params.size(); i++)
-                    {
-                        ret.add(new Pair<>(cte.sqlf, i));
-                    }
+                    ret.add(new Pair<>(cte.sqlf, i));
                 }
             }
         }
@@ -715,18 +732,8 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-
-    public static class TestCase extends Assert
+    public static class UnitTestCase extends Assert
     {
-        @Test
-        public void params()
-        {
-            // append(SQLFragment)
-            // toString() w/ params
-            // prettyprint()
-        }
-
-
         @Test
         public void cte()
         {
@@ -809,7 +816,116 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM cte3 _3",
                 union.getSQL());
         }
+
+        @Test
+        public void nested_cte()
+        {
+            // one-level cte using cteToken (CTE fragment 'a' does not contain a CTE)
+            {
+                SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
+                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", a.toDebugString());
+                SQLFragment b = new SQLFragment();
+                String cteToken = b.addCommonTableExpression(new Object(), "CTE", a);
+                b.append("SELECT * FROM ").append(cteToken).append(" WHERE p=?").add("parameterTWO");
+                assertEquals("WITH\n/*CTE*/\n" +
+                                "\tCTE AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)\n" +
+                                "SELECT * FROM CTE WHERE p='parameterTWO'",
+                        b.toDebugString());
+                assertEquals("parameterONE", b.getParams().get(0));
+            }
+
+            // two-level cte using cteTokens (CTE fragment 'b' contains a CTE of fragment a)
+            {
+                SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
+                assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", a.toDebugString());
+                SQLFragment b = new SQLFragment();
+                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
+                SQLFragment c = new SQLFragment();
+                String cteTokenB = c.addCommonTableExpression(new Object(), "_B_", b);
+                c.append("SELECT * FROM ").append(cteTokenB).append(" WHERE i=?").add(3);
+                assertEquals("WITH\n" +
+                                "/*CTE*/\n" +
+                                "\t_A_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)\n" +
+                                ",/*CTE*/\n" +
+                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterTWO')\n" +
+                                "SELECT * FROM _B_ WHERE i=3",
+                        c.toDebugString());
+                List<Object> params = c.getParams();
+                assertEquals(3, params.size());
+                assertEquals("parameterONE", params.get(0));
+                assertEquals("parameterTWO", params.get(1));
+                assertEquals(3, params.get(2));
+            }
+
+            // Same as previous but top-level query has both a nested and non-nested CTE
+            {
+                SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
+                SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
+                SQLFragment b = new SQLFragment();
+                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
+                SQLFragment c = new SQLFragment();
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(new Object(), "_A2_", a2);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                assertEquals("WITH\n" +
+                                "/*CTE*/\n" +
+                                "\t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
+                                ",/*CTE*/\n" +
+                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')\n" +
+                                ",/*CTE*/\n" +
+                                "\t_A2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)\n" +
+                                "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
+                        c.toDebugString());
+                List<Object> params = c.getParams();
+                assertEquals(4, params.size());
+                assertEquals("parameterAone", params.get(0));
+                assertEquals("parameterB", params.get(1));
+                assertEquals("parameterAtwo", params.get(2));
+                assertEquals(4, params.get(3));
+            }
+
+            // Same as previous but two of the CTEs are the same and should be collapsed (e.g. imagine a container filter implemented with a CTE)
+            // TODO, we only collapse CTEs that are siblings
+            {
+                SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
+                SQLFragment b = new SQLFragment();
+                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "_A_", cf);
+                b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
+                SQLFragment c = new SQLFragment();
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
+                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "_A2_", cf);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                assertEquals("WITH\n" +
+                                "/*CTE*/\n" +
+                                "\t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
+                                ",/*CTE*/\n" +
+                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')\n" +
+                                ",/*CTE*/\n" +
+                                "\t_A2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
+                                "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
+                        c.toDebugString());
+                List<Object> params = c.getParams();
+                assertEquals(4, params.size());
+                assertEquals("parameterAone", params.get(0));
+                assertEquals("parameterB", params.get(1));
+                assertEquals("parameterAone", params.get(2));
+                assertEquals(4, params.get(3));
+            }
+        }
     }
+
+
+    public static class IntegrationTestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            // try some Dialect stuff and CTE executed against core schema
+        }
+    }
+
 
     @Override
     public boolean equals(Object obj)
