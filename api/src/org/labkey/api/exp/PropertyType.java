@@ -591,7 +591,7 @@ public enum PropertyType
         {
             try
             {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
             }
             catch (ParseException e)
             {
@@ -645,7 +645,7 @@ public enum PropertyType
         {
             try
             {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
             }
             catch (ParseException e)
             {
@@ -696,7 +696,7 @@ public enum PropertyType
         {
             try
             {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("20210428").getTime();
+                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28").getTime();
             }
             catch (ParseException e)
             {

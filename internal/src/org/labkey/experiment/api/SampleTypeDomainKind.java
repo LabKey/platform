@@ -29,6 +29,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -328,41 +329,43 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain domainDesign, Container container)
     {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         List<String> previewNames = new ArrayList<>();
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
-            if (results.first != null && !results.first.isEmpty())
-                results.first.forEach(error -> errors.add("Name Expression error: " + error));
-            if (results.second != null && !results.second.isEmpty())
-                results.second.forEach(error -> warnings.add("Name Expression warning: " + error));
-            previewNames.add(results.third);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Name Expression error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Name Expression warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
         }
         else
             previewNames.add(null);
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
-            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
-            if (results.first != null && !results.first.isEmpty())
-                results.first.forEach(error -> errors.add("Aliquot Name Expression error: " + error));
-            if (results.second != null && !results.second.isEmpty())
-                results.second.forEach(error -> warnings.add("Aliquot Name Expression warning: " + error));
-            previewNames.add(results.third);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Aliquot Name Expression error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Aliquot Name Expression warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
         }
-        return new Tuple3<>(errors, warnings, previewNames);
+        return new NameExpressionValidationResult(errors, warnings, previewNames);
     }
 
     private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
-        if (results.first != null && !results.first.isEmpty())
-            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.errors() != null && !results.errors().isEmpty())
+            results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
     }
 

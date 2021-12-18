@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -43,6 +42,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
@@ -119,7 +119,7 @@ public class NameGenerator
                     {
                         try
                         {
-                            return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                            return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
                         }
                         catch (ParseException e)
                         {
@@ -248,34 +248,40 @@ public class NameGenerator
         _previewName = previewName;
     }
 
-    public static Tuple3<List<String>, List<String>, String> getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static NameExpressionValidationResult getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
-        List<String> warningMessages = getReservedFieldWarningMessages(nameExpression);
-        Tuple3<List<String>, List<String>, String> fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
-        errorMessages.addAll(fieldMessages.first);
-        warningMessages.addAll(fieldMessages.second);
-        return new Tuple3<>(errorMessages, warningMessages, fieldMessages.third);
+        Pair<List<String>, List<String>> reservedFieldResults = getReservedFieldValidationResults(nameExpression);
+        errorMessages.addAll(reservedFieldResults.first);
+        List<String> warningMessages = new ArrayList<>(reservedFieldResults.second);
+        if (!errorMessages.isEmpty())
+            return new NameExpressionValidationResult(errorMessages, warningMessages, null);
+
+        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
+        errorMessages.addAll(fieldMessages.errors());
+        warningMessages.addAll(fieldMessages.warnings());
+        return new NameExpressionValidationResult(errorMessages, warningMessages, fieldMessages.previews());
     }
 
-    static Tuple3<List<String>, List<String>, String> getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
-        return new Tuple3<>(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName());
+        return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
     }
 
-    static List<String> getReservedFieldWarningMessages(String nameExpression)
+    static Pair<List<String>, List<String>> getReservedFieldValidationResults(String nameExpression)
     {
         // For each substitution format, find its location in the string
         // validate punctuation and arguments.
 
-        List<String> messages = new ArrayList<>();
+        List<String> warningMessages = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
         String lcExpression = nameExpression.toLowerCase();
         SubstitutionFormat.getFormatNames().forEach(formatName -> {
             String lcFormatName = formatName.toLowerCase();
             int lcIndex = lcExpression.indexOf(":" + lcFormatName);
             if (lcIndex > -1)
-                messages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
+                errorMessages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
         });
         for (SubstitutionValue subValue : SubstitutionValue.values())
         {
@@ -302,36 +308,50 @@ public class NameGenerator
                 }
                 switch (subValue)
                 {
-                    case genId, randomId, batchRandomId, now, AliquotedFrom -> messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
+                    case genId, randomId, batchRandomId, now, AliquotedFrom -> warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
                     case Inputs, DataInputs, MaterialInputs -> {
                         // surrounded by ${} and with trailing "/"
-                        messages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
+                        warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
                     }
                     case withCounter -> {
-                        messages.addAll(validateWithCounterSyntax(nameExpression, lcIndex));
+                        Pair<List<String>, List<String>> withCounterResults = validateWithCounterSyntax(nameExpression, lcIndex);
+                        errorMessages.addAll(withCounterResults.first);
+                        warningMessages.addAll(withCounterResults.second);
                     }
                 }
             }
         }
-        return messages;
+        return new Pair<>(errorMessages, warningMessages);
     }
 
-    static List<String> validateWithCounterSyntax(String nameExpression, int index)
+    static Pair<List<String>, List<String>> validateWithCounterSyntax(String nameExpression, int index)
     {
-        List<String> messages = new ArrayList<>();
+        List<String> warningMessages = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
         int start = index;
+
+        // check withCount is inside ${}
+        String prevStr = nameExpression.substring(0, index);
+        int prevOpenCount = StringUtils.countMatches(prevStr, "${");
+        int prevCloseCount = StringUtils.countMatches(prevStr, "}");
+        String postStr = nameExpression.substring(index);
+        int postOpenCount = StringUtils.countMatches(postStr, "${");
+        int postCloseCount = StringUtils.countMatches(postStr, "}");
+        if ((prevOpenCount - prevCloseCount) != 1 || (postCloseCount - postOpenCount) != 1)
+            warningMessages.add(String.format("The '%s' substitution pattern starting at position %d should be enclosed in ${}.", SubstitutionValue.withCounter.name(), start));
+
         if (nameExpression.charAt(index-1) != ':')
-            messages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", SubstitutionValue.withCounter.name(), start));
+            warningMessages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", SubstitutionValue.withCounter.name(), start));
         else
             start = start-1;
 
         int startParen = index + SubstitutionValue.withCounter.name().length();
-        if (startParen > nameExpression.length() || nameExpression.charAt(startParen) != '(')
-            return messages;
+        if (startParen >= nameExpression.length() || nameExpression.charAt(startParen) != '(')
+            return new Pair<>(errorMessages, warningMessages);
 
         int endParen = nameExpression.indexOf(")", start);
         if (endParen == -1)
-            messages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
+            errorMessages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
         else
         {
 
@@ -357,16 +377,16 @@ public class NameGenerator
                 }
                 catch (NumberFormatException e)
                 {
-                    messages.add(String.format("Invalid starting value %s for 'withCounter' starting at position %d.", startVal, index));
+                    errorMessages.add(String.format("Invalid starting value %s for 'withCounter' starting at position %d.", startVal, index));
                 }
             }
             if (!StringUtils.isEmpty(format))
             {
                 if (format.charAt(0) != '\'' || format.charAt(format.length()-1) != '\'')
-                    messages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
+                    errorMessages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
             }
         }
-        return messages;
+        return new Pair<>(errorMessages, warningMessages);
     }
 
     static List<String> getMismatchedTagErrors(String nameExpression)
@@ -492,7 +512,7 @@ public class NameGenerator
             case "modified":
                 try
                 {
-                    return new SimpleDateFormat("yyyy/MM/dd").parse("20210428");
+                    return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
                 }
                 catch (ParseException e)
                 {
@@ -2013,39 +2033,144 @@ public class NameGenerator
             assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 7, 22."}, errors.toArray());
         }
 
-        private void assertNameError(String expression, String errorMsg, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             Container c = JunitUtil.getTestContainer();
-            List<String> errors = getValidationMessages(expression, fields, importAliases, c).first;
-            assertEquals(errorMsg, String.join(" ", errors));
+            NameExpressionValidationResult results = getValidationMessages(expression, fields, importAliases, c);
+            assertEquals(expectedResult, results);
         }
 
-        private void assertNameError(String expression, String errorMsg, @Nullable Map<String, String> importAliases)
+        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg, @Nullable Map<String, String> importAliases)
         {
-            assertNameError(expression, errorMsg, importAliases, null);
+            validateNameResult(expression, errorMsg, importAliases, null);
         }
 
-        private void assertNameError(String expression, String errorMsg)
+        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg)
         {
-            assertNameError(expression, errorMsg, null);
+            validateNameResult(expression, errorMsg, null);
+        }
+
+        private NameExpressionValidationResult withErrors(String... errors)
+        {
+            List<String> errorsList = new ArrayList<>();
+            Collections.addAll(errorsList, errors);
+            return new NameExpressionValidationResult(errorsList, Collections.emptyList(), null);
+        }
+
+        private NameExpressionValidationResult withWarnings(String preview, String... warnings)
+        {
+            List<String> warningsList = new ArrayList<>();
+            Collections.addAll(warningsList, warnings);
+            return new NameExpressionValidationResult(Collections.emptyList(), warningsList, Collections.singletonList(preview));
         }
 
         @Test
-        public void testNameExpressionErrors()
+        public void testNameExpressionTokenFieldErrors()
         {
-            assertNameError("One-${genId", "No closing brace found for the substitution pattern starting at position 5.");
+            validateNameResult("One-${genId", withErrors("No closing brace found for the substitution pattern starting at position 5."));
 
-            assertNameError("One-${A/B/C}", "Only one level of lookup supported: A/B/C. Parent table required for name expressions with lookups: A/B/C.");
-
-            assertNameError("S-${parentAlias/a/b}", "Only one level of lookup supported for lineage input: parentAlias/a/b.", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
-
-            assertNameError("S-${Inputs/a/b/d}", "Only one level of lookup supported for lineage input: Inputs/a/b/d.", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
-
-            assertNameError("S-${FieldA}-${FieldB}", "Invalid substitution token: ${FieldA}. Invalid substitution token: ${FieldB}.");
+            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldA}.", "Invalid substitution token: ${FieldB}."));
 
             GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor("FieldA", "http://www.w3.org/2001/XMLSchema#string");
             List<GWTPropertyDescriptor> fields = Collections.singletonList(descriptor);
-            assertNameError("S-${FieldA}-${FieldB}", "Invalid substitution token: ${FieldB}.", null, fields);
+            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+        }
+
+        @Test
+        public void testNameExpressionLookupFieldErrors()
+        {
+            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup supported: A/B/C.", "Parent table required for name expressions with lookups: A/B/C."));
+
+            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+
+            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup supported for lineage input: Inputs/a/b/d."));
+        }
+
+        @Test
+        public void testNameExpressionSubstitutionFormatErrors()
+        {
+            validateNameResult("${genId:number}", withErrors("No starting parentheses found for the 'number' substitution pattern starting at index 7.",
+                    "No ending parentheses found for the 'number' substitution pattern starting at index 7."));
+
+            validateNameResult("${genId:number(000)}", withErrors("Value in parentheses starting at index 14 should be enclosed in single quotes."));
+
+            validateNameResult("${genId:number(}", withErrors("No ending parentheses found for the 'number' substitution pattern starting at index 7.",
+                    "Value in parentheses starting at index 14 should be enclosed in single quotes."));
+
+            validateNameResult("${genId:number('000)}", withErrors("No ending quote for the 'number' substitution pattern value starting at index 7."));
+        }
+
+        @Test
+        public void testNameExpressionReservedTokenWarnings()
+        {
+            validateNameResult("S-genId", withWarnings("S-genId", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'.",
+                    "The 'now' substitution pattern starting at position 8 should be preceded by the string '${'."));
+
+            validateNameResult("S-Inputs", withWarnings("S-Inputs", "The 'Inputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+        }
+
+        @Test
+        public void testNameExpressionWithCounterSyntax()
+        {
+            validateNameResult("${AliquotedFrom}-:withCounter", withWarnings("Sample112-:withCounter", "The 'withCounter' substitution pattern starting at position 18 should be enclosed in ${}."));
+
+            validateNameResult("${genId}-${AliquotedFrom}-:withCounter}", withWarnings("1001-Sample112-:withCounter}", "The 'withCounter' substitution pattern starting at position 27 should be enclosed in ${}."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(}", withErrors("No ending parentheses found for the 'withCounter' substitution pattern starting at index 19."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(abc)}", withErrors("Invalid starting value abc for 'withCounter' starting at position 20."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
+        }
+
+        private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        {
+            validateNameResult(expression, new NameExpressionValidationResult(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(preview)), importAliases, fields);
+        }
+
+        private void verifyPreview(String expression, String preview)
+        {
+            verifyPreview(expression, preview, null, null);
+        }
+
+        @Test
+        public void testNameExpressionPreviews()
+        {
+            // tokens can be substring, examples:  now in snow, genId in genIdentification
+            verifyPreview("S-snow-genIdentification", "S-snow-genIdentification");
+
+            // with reserved field
+            verifyPreview("S-${genId}", "S-1001");
+            verifyPreview("S-${weeklySampleCount:number('00000')}", "S-00025");
+            verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
+            verifyPreview("S-${AliquotedFrom}", "S-Sample112");
+
+            // withCounter
+            verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
+            verifyPreview("${${AliquotedFrom}-:withCounter(123)}", "Sample112-123");
+            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000')}", "Sample112-011");
+
+            // with table columns
+            GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");
+            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("FieldInt", "http://www.w3.org/2001/XMLSchema#int");
+            GWTPropertyDescriptor dateField = new GWTPropertyDescriptor("FieldDate", "http://www.w3.org/2001/XMLSchema#date");
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            fields.add(stringField);
+            fields.add(intField);
+            fields.add(dateField);
+            verifyPreview("S-${FieldStr}-${FieldInt:number('00000')}", "S-FieldStrValue-00003", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
+            verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
+
+            // with input
+            verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 
         @After

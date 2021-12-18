@@ -25,6 +25,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -324,9 +325,9 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         if (null != domain && null != domain.getDomainKind())
         {
             T options = getDomainKindProperties(gwtDomain, container, user);
-            Tuple3<List<String>, List<String>, List<String>> results = validateNameExpressions(options, gwtDomain, container);
+            NameExpressionValidationResult results = validateNameExpressions(options, gwtDomain, container);
             if (results != null)
-                return results.third;
+                return results.previews();
         }
 
         return null;

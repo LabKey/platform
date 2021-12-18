@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -340,7 +341,7 @@ abstract public class DomainKind<T>  implements Handler<String>
             throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(T options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain domainDesign, Container container)
     {
         return null;
     }

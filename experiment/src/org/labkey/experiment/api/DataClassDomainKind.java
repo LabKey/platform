@@ -25,6 +25,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -285,21 +286,20 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
     {
         ValidationException errors = new ValidationException();
-        Pair<List<String>, List<String>> results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
-        if (results.first != null && !results.first.isEmpty())
-            results.first.forEach(error -> errors.addError(new SimpleValidationError(error)));
-        if (results.second != null && !results.second.isEmpty())
-            results.second.forEach(error -> errors.addError(new SimpleValidationError(error)));
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.errors() != null && !results.errors().isEmpty())
+            results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
+        if (results.warnings() != null && !results.warnings().isEmpty())
+            results.warnings().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
     }
 
     @Override
-    public Tuple3<List<String>, List<String>, List<String>> validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
+    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            Tuple3<List<String>, List<String>, String> results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
-            return new Tuple3<>(results.first, results.second, Collections.singletonList(results.third));
+            return NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
         }
         return null;
     }

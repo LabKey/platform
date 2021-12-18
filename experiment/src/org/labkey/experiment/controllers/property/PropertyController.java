@@ -44,6 +44,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -500,15 +501,15 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
-            Tuple3<List<String>, List<String>, List<String>> results = form.validate(getContainer(), getUser(), true);
+            NameExpressionValidationResult results = form.validate(getContainer(), getUser(), true);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             if (results != null)
             {
-                resp.put("errors", results.first);
-                resp.put("warnings", results.second);
-                resp.put("previews", results.third);
+                resp.put("errors", results.errors());
+                resp.put("warnings", results.warnings());
+                resp.put("previews", results.previews());
             }
             return resp;
         }
@@ -1032,7 +1033,7 @@ public class PropertyController extends SpringActionController
          * Method to validate form
          */
         @JsonIgnore
-        public Tuple3<List<String>, List<String>, List<String>> validate(Container container, User user, boolean validateNameExpressionOnly)
+        public NameExpressionValidationResult validate(Container container, User user, boolean validateNameExpressionOnly)
         {
             // Issue 39995: validate form options for non-template case
             if (getDomainGroup() != null)
