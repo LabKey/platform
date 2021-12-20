@@ -50,7 +50,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -100,6 +99,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -216,8 +216,9 @@ public class ExperimentServiceImpl implements ExperimentService
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
-    private final Set<QueryForm> _runInputsQueryForms = new ConcurrentHashSet<>();
-    private final Set<QueryForm> _runOutputsQueryForms = new ConcurrentHashSet<>();
+
+    private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
+    private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
 
     private Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
@@ -3180,7 +3181,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void verifyRunEdges(ExpRunImpl run)
+    public void verifyRunEdges(ExpRun run)
     {
         syncRunEdges(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer(), false, true, null);
     }
@@ -7719,9 +7720,9 @@ public class ExperimentServiceImpl implements ExperimentService
     * the query to have RunId column
     * */
     @Override
-    public void registerRunInputsViewProvider(Set<QueryForm> queryForms)
+    public void registerRunInputsViewProvider(@NotNull QueryViewProvider<ExpRun> provider)
     {
-        _runInputsQueryForms.addAll(queryForms);
+        _runInputsQueryViews.add(provider);
     }
 
     /*
@@ -7729,21 +7730,21 @@ public class ExperimentServiceImpl implements ExperimentService
      * the query to have RunId column
      * */
     @Override
-    public void registerRunOutputsViewProvider(Set<QueryForm> queryForms)
+    public void registerRunOutputsViewProvider(@NotNull QueryViewProvider<ExpRun> provider)
     {
-        _runOutputsQueryForms.addAll(queryForms);
+        _runOutputsQueryViews.add(provider);
     }
 
     @Override
-    public Set<QueryForm> getRunInputsQueries()
+    public List<QueryViewProvider<ExpRun>> getRunInputsViewProviders()
     {
-        return Collections.unmodifiableSet(_runInputsQueryForms);
+        return Collections.unmodifiableList(_runInputsQueryViews);
     }
 
     @Override
-    public Set<QueryForm> getRunOutputsQueries()
+    public List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders()
     {
-        return Collections.unmodifiableSet(_runOutputsQueryForms);
+        return Collections.unmodifiableList(_runOutputsQueryViews);
     }
 
     public static class TestCase extends Assert

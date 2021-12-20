@@ -62,6 +62,7 @@ import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Identifiable;
@@ -1456,7 +1457,7 @@ public class ExperimentController extends SpringActionController
             String focus = form.getFocus();
             String focusType = form.getFocusType();
 
-            ExpRunImpl experimentRun = form.lookupRun();
+            ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
 
             ExperimentRunGraph.RunGraphFiles files;
@@ -1499,7 +1500,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
-            _experimentRun = form.lookupRun();
+            _experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), _experimentRun, getViewContext());
 
             VBox vbox = new VBox();
@@ -1748,12 +1749,24 @@ public class ExperimentController extends SpringActionController
             HBox registeredInputsView = new HBox();
 
             var expService = ExperimentService.get();
-            expService.getRunInputsQueries().forEach(queryForm ->
-                    registeredInputsView.addView(getQueryView(queryForm, expRun.getRowId())));
+            expService.getRunInputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredInputsView.addView(queryView);
+                }
+            });
             HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
             HBox registeredOutputsView = new HBox();
-            expService.getRunOutputsQueries().forEach(queryForm ->
-                    registeredOutputsView.addView(getQueryView(queryForm, expRun.getRowId())));
+            expService.getRunOutputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredOutputsView.addView(queryView);
+                }
+            });
 
             var vBox = new VBox();
             vBox.addView(toggleView);
@@ -1766,24 +1779,6 @@ public class ExperimentController extends SpringActionController
             vBox.addView(applicationsView);
 
             return vBox;
-        }
-
-        private QueryView getQueryView(QueryForm queryForm, int runId)
-        {
-            queryForm.setViewContext(getViewContext());
-            queryForm.getQuerySettings().setBaseFilter(new SimpleFilter(FieldKey.fromParts("RunId"), runId));
-            var queryFormView  = queryForm.getQueryView();
-
-            queryFormView.setTitle(queryForm.getDataRegionName());
-            queryFormView.setShowPagination(false);
-            queryFormView.setShowBorders(true);
-            queryFormView.setShadeAlternatingRows(true);
-            queryFormView.setShowPagination(false);
-            queryFormView.disableContainerFilterSelection();
-            queryFormView.setFrame(WebPartView.FrameType.TITLE);
-            queryFormView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-
-            return queryFormView;
         }
     }
 
@@ -6588,7 +6583,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 
@@ -6627,7 +6622,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 
