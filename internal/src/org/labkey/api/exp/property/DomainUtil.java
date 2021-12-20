@@ -163,7 +163,7 @@ public class DomainUtil
     }
 
     @Nullable
-    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*for sample type and dataclass*/)
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*skip querying for tableInfo for sample type and dataclass name previews*/)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
         if (null == dd)

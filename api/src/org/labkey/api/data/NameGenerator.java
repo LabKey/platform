@@ -97,6 +97,23 @@ public class NameGenerator
     public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
 
+    public static Date PREVIEW_DATE_VALUE;
+    public static Date PREVIEW_MODIFIED_DATE_VALUE;
+
+    static
+    {
+        try
+        {
+            PREVIEW_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
+            PREVIEW_MODIFIED_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/05/11");
+        }
+        catch (ParseException e)
+        {
+            PREVIEW_DATE_VALUE = null;
+            PREVIEW_MODIFIED_DATE_VALUE = null;
+        }
+    }
+
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
 
     enum SubstitutionValue
@@ -117,14 +134,7 @@ public class NameGenerator
                     @Override
                     public Object getPreviewValue()
                     {
-                        try
-                        {
-                            return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
-                        }
-                        catch (ParseException e)
-                        {
-                            return null;
-                        }
+                        return PREVIEW_DATE_VALUE;
                     }
                 },
         queryName("queryNameValue"),
@@ -291,8 +301,8 @@ public class NameGenerator
             {
                  /*
                  * also check that the part is not preceded by an alphabetic letter
-                 * - "unknown" contains "now", but should by pass reserved key word check
-                 * - "DataInputs" contains "Input", but should by pass "Input" check
+                 * - "unknown" contains "now", but should bypass reserved key word check
+                 * - "DataInputs" contains "Input", but should bypass "Input" check
                  */
                 if (lcIndex > 0)
                 {
@@ -306,18 +316,16 @@ public class NameGenerator
                     if (Character.isLetter(postChar))
                         continue;
                 }
-                switch (subValue)
+
+                if (subValue.equals(SubstitutionValue.withCounter))
                 {
-                    case genId, randomId, batchRandomId, now, AliquotedFrom -> warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
-                    case Inputs, DataInputs, MaterialInputs -> {
-                        // surrounded by ${} and with trailing "/"
-                        warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
-                    }
-                    case withCounter -> {
-                        Pair<List<String>, List<String>> withCounterResults = validateWithCounterSyntax(nameExpression, lcIndex);
-                        errorMessages.addAll(withCounterResults.first);
-                        warningMessages.addAll(withCounterResults.second);
-                    }
+                    Pair<List<String>, List<String>> withCounterResults = validateWithCounterSyntax(nameExpression, lcIndex);
+                    errorMessages.addAll(withCounterResults.first);
+                    warningMessages.addAll(withCounterResults.second);
+                }
+                else
+                {
+                    warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
                 }
             }
         }
@@ -509,15 +517,9 @@ public class NameGenerator
             case "description":
                 return "parent" + lookupField;
             case "created":
+                return PREVIEW_DATE_VALUE;
             case "modified":
-                try
-                {
-                    return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
-                }
-                catch (ParseException e)
-                {
-                    return null;
-                }
+                return PREVIEW_MODIFIED_DATE_VALUE;
         }
 
         List<ExpObject> dataTypes = new ArrayList<>();
@@ -707,7 +709,7 @@ public class NameGenerator
                         }
                         else
                         {
-                            String errorMsg = "Only one level of lookup supported for lineage input: " + fkTok + ".";
+                            String errorMsg = "Only one level of lookup is supported for lineage input: " + fkTok + ".";
                             if (_validateSyntax)
                                 _syntaxErrors.add(errorMsg);
                             else
@@ -723,7 +725,7 @@ public class NameGenerator
                     {
                         // for now, we only support one level of lookup: ${ingredient/name}
                         // future versions could support multiple levels
-                        String errorMsg = "Only one level of lookup supported: " + fkTok + ".";
+                        String errorMsg = "Only one level of lookup is supported: " + fkTok + ".";
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
                         else
@@ -732,7 +734,7 @@ public class NameGenerator
 
                     if (_parentTable == null && domainFields.isEmpty())
                     {
-                        String errorMsg = "Parent table required for name expressions with lookups: " + fkTok + ".";
+                        String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
                         if (_validateSyntax)
                             _syntaxErrors.add(errorMsg);
                         else
@@ -783,7 +785,7 @@ public class NameGenerator
                         if (pkCols.size() != 1)
                         {
                             if (_validateSyntax)
-                                _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                                _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root);
                             continue;
                         }
 
@@ -836,7 +838,7 @@ public class NameGenerator
                 {
                     if (!lookupExist)
                     {
-                        _syntaxErrors.add("Look up field does not exist: " + fieldKey.toString());
+                        _syntaxErrors.add("Lookup field does not exist: " + fieldKey.toString());
                     }
                     else if (pt != null)
                     {
@@ -2081,9 +2083,9 @@ public class NameGenerator
         {
             validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup supported: A/B/C.", "Parent table required for name expressions with lookups: A/B/C."));
 
-            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
-            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup supported for lineage input: Inputs/a/b/d."));
+            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
         }
 
         @Test

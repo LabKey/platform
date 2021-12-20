@@ -690,7 +690,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         sb.append(".");
         if (!StringUtils.isEmpty(nameExpressionPreview))
         {
-            sb.append("\nExample name that will be generated from the current pattern: \n");
+            sb.append("\nExample of name that will be generated from the current pattern: \n");
             sb.append(nameExpressionPreview);
         }
 

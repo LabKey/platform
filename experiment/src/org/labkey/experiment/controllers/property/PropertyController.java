@@ -487,18 +487,6 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        protected ObjectMapper createResponseObjectMapper()
-        {
-            return this.createRequestObjectMapper();
-        }
-
-        @Override
-        public void validateForm(DomainApiForm form, Errors errors)
-        {
-
-        }
-
-        @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
             NameExpressionValidationResult results = form.validate(getContainer(), getUser(), true);
@@ -1029,11 +1017,8 @@ public class PropertyController extends SpringActionController
             return Collections.unmodifiableMap(optionsProperties);
         }
 
-        /**
-         * Method to validate form
-         */
         @JsonIgnore
-        public NameExpressionValidationResult validate(Container container, User user, boolean validateNameExpressionOnly)
+        public @Nullable NameExpressionValidationResult validate(Container container, User user, boolean validateNameExpressionOnly)
         {
             // Issue 39995: validate form options for non-template case
             if (getDomainGroup() != null)

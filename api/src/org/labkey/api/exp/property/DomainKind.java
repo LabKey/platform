@@ -346,6 +346,14 @@ abstract public class DomainKind<T>  implements Handler<String>
         return null;
     }
 
+    /**
+     * @param schemaName
+     * @param queryName
+     * @param container
+     * @param user
+     * @return  Return preview name(s) based on the name expression configured for the designer. For DataClass, up to one preview names is returned.
+     * For samples, up to 2 names can be returned, with the 1st one being the sample preview name and the 2nd being the aliquot preview name.
+     */
     public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
     {
         return null;

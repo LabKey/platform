@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -589,14 +590,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            try
-            {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
-            }
-            catch (ParseException e)
-            {
-                return null;
-            }
+            return NameGenerator.PREVIEW_DATE_VALUE;
         }
     },
     DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, CellType.NUMERIC, Date.class)
@@ -643,14 +637,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            try
-            {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
-            }
-            catch (ParseException e)
-            {
-                return null;
-            }
+            return NameGenerator.PREVIEW_DATE_VALUE;
         }
     },
     TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, Date.class)
@@ -694,14 +681,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            try
-            {
-                return new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28").getTime();
-            }
-            catch (ParseException e)
-            {
-                return null;
-            }
+            return NameGenerator.PREVIEW_DATE_VALUE;
         }
     },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)

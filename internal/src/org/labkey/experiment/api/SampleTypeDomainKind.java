@@ -478,20 +478,23 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
 
+        String errorMsg = "";
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
             ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), properties, aliasMap, container);
             if (errors.hasErrors())
-                throw new IllegalArgumentException("Invalid Name Expression:" + errors.getMessage());
+                errorMsg += "Invalid Name Expression:" + errors.getMessage();
         }
 
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
         {
             ValidationException errors = getNamePatternValidationResult(options.getAliquotNameExpression(), properties, aliasMap, container);
             if (errors.hasErrors())
-                throw new IllegalArgumentException("Invalid Aliquot Name Expression:" + errors.getMessage());
+                errorMsg += "Invalid Aliquot Name Expression:" + errors.getMessage();
         }
 
+        if (StringUtils.isNotBlank(errorMsg))
+            throw new IllegalArgumentException(errorMsg);
     }
 
     @Override
