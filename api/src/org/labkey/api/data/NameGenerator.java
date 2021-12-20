@@ -785,7 +785,7 @@ public class NameGenerator
                         if (pkCols.size() != 1)
                         {
                             if (_validateSyntax)
-                                _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root);
+                                _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root + ".");
                             continue;
                         }
 
@@ -815,7 +815,7 @@ public class NameGenerator
                                 List<String> pkCols = lookupTable.getPkColumnNames();
                                 if (pkCols.size() != 1)
                                 {
-                                    _syntaxErrors.add("Look up field not supported on table with multiple PK fields: " + root);
+                                    _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root + ". ");
                                     continue;
                                 }
                                 else
