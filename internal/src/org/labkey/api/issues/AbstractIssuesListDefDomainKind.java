@@ -49,6 +49,8 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -378,5 +380,12 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                 }
             }
         }
+    }
+
+    @Override
+    public TableInfo getTableInfo(User user, Container container, String name)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, container, IssuesSchema.SCHEMA_NAME);
+        return schema.getTable(name);
     }
 }
