@@ -198,7 +198,7 @@ public class DomainUtil
         Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
         //get PK columns
-        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
+        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain);
         Map<String, Object> pkColMap;
         if (null != tableInfo && null != tableInfo.getPkColumns())
         {
