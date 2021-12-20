@@ -1734,6 +1734,9 @@ public class OntologyManager
         if (!Objects.equals(pdIn.getConceptSubtree(), pd.getConceptSubtree()))
             colDiffs.add("ConceptSubtree");
 
+        if (pdIn.isScannable() != pd.isScannable())
+            colDiffs.add("Scannable");
+
         return colDiffs;
     }
 
@@ -2507,7 +2510,7 @@ public class OntologyManager
             "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
             "sourceontology,conceptimportcolumn,conceptlabelcolumn,principalconceptcode,conceptsubtree," +
             "recommendedvariable,derivationdatascope,storagecolumnname,facetingbehaviortype,phi,redactedText," +
-            "excludefromshifting,mvindicatorstoragecolumnname,defaultscale";
+            "excludefromshifting,mvindicatorstoragecolumnname,defaultscale,scannable";
     static final String[] parametersArray = parameters.split(",");
 
     static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists) throws SQLException
@@ -2872,6 +2875,7 @@ public class OntologyManager
         p.setRedactedText(pd.getRedactedText());
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
         p.setDefaultValueTypeEnum(pd.getDefaultValueTypeEnum());
+        p.setScannable(pd.isScannable());
     }
 
     @TestWhen(TestWhen.When.BVT)
@@ -2885,7 +2889,7 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(10, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,DerivationDataScope,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode").size());
+            assertEquals(11, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,DerivationDataScope,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode,scannable").size());
             assertEquals(4, getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size());
             assertEquals(11, getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size());
             assertEquals(10, ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size());

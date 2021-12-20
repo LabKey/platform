@@ -325,7 +325,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         if (col instanceof BaseColumnInfo)
-        {
+        {//TODO why are we doing this? most of the props are the same in both methods
             setExtraAttributesFrom((BaseColumnInfo) col);
             return;
         }
@@ -406,6 +406,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptLabelColumn(col.getConceptLabelColumn());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
     /*
@@ -486,6 +487,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setPrincipalConceptCode(col.getPrincipalConceptCode());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
 
@@ -1131,6 +1133,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _isUserEditable = xmlCol.getIsUserEditable();
         if (xmlCol.isSetScale())
             _scale = xmlCol.getScale();
+        if (xmlCol.isSetScannable())
+            _scannable = xmlCol.getScannable();
         if (xmlCol.isSetDefaultValue())
             _defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())

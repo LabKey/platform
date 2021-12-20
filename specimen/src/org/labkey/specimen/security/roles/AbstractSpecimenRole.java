@@ -44,12 +44,15 @@ public class AbstractSpecimenRole extends AbstractRole
 
     private boolean branchContainsStudy(Container container)
     {
-        if (null != StudyService.get().getStudy(container))
+        StudyService ss = StudyService.get();
+        if (null != ss && null != ss.getStudy(container))
             return true;
 
         for (Container child : container.getChildren())
         {
-            if (branchContainsStudy(child))
+            // Issue 44437 - don't bother recursing into workbook children for perf reasons since they're not used
+            // for studies
+            if (!child.isWorkbook() && branchContainsStudy(child))
                 return true;
         }
 

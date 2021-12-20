@@ -127,6 +127,11 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     boolean isUniqueIdField();
 
+    /**
+     * Check indicating if field is UniqueId or is marked as Scannable
+     */
+    boolean isScannableField();
+
     default String getFriendlyTypeName()
     {
         return getFriendlyTypeName(getJavaClass());
@@ -186,6 +191,11 @@ public interface ColumnRenderProperties extends ImportAliasable
      * Only used for decimal values. This is the total number of digits in the value
      */
     int getPrecision();
+
+    /**
+     * Field value can be used as a barcode, similar to UniqueId type -- w/o requirement of being unique.
+     */
+    boolean isScannable();
 
         /* Properties loaded by OntologyService */
 
