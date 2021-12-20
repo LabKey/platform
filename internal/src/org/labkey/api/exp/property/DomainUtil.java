@@ -354,6 +354,7 @@ public class DomainUtil
         gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
         gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
         gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
+        gwtProp.setScannable(prop.isScannable());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())
@@ -490,6 +491,8 @@ public class DomainUtil
             gwtProp.setExcludeFromShifting(columnXml.getExcludeFromShifting());
         if (columnXml.isSetScale())
             gwtProp.setScale(columnXml.getScale());
+        if (columnXml.isSetScannable())
+            gwtProp.setScannable(columnXml.getScannable());
 
         return gwtProp;
     }
@@ -910,6 +913,9 @@ public class DomainUtil
 
         if (from.getDefaultValueType() != null)
             to.setDefaultValueType(from.getDefaultValueType().toString());
+
+        if (from.isScannable())
+            to.setScannable(from.isScannable());
     }
 
     @SuppressWarnings("unchecked")

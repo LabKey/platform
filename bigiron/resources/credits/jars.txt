@@ -1,5 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-jtds-1.3.1.jar|jTDS JDBC Driver|1.3.1|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server database servers
-mysql-connector-java-8.0.27.jar|MySQL JDBC Driver|8.0.27|{link:MySQL|http://www.mysql.com/downloads/connector/j}|{link:GPL v2|http://www.gnu.org/licenses/gpl-2.0.html} with {link:Universal FOSS Exception|https://oss.oracle.com/licenses/universal-foss-exception/}|adam|Connect with MySQL database servers
-{table}

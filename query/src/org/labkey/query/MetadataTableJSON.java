@@ -481,6 +481,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     removeColumn(xmlTable, xmlColumn);
                 }
             }
+
+            if (metadataColumnJSON.isScannable() != rawColumnInfo.isScannable())
+            {
+                xmlColumn.setScannable(metadataColumnJSON.isScannable());
+            }
         }
 
         // Yank out the columns that were in the metadata that aren't in the list from the client
