@@ -53,7 +53,9 @@ public class FindMaterialByUniqueIdHelper
             for (ColumnInfo col : uniqueIdCols)
             {
                query.append(unionAll);
-               query.append("(SELECT RowId, ").append(dialect.getVarcharCast(new SQLFragment(dialect.quoteIdentifier(col.getName())))).append(" AS ").append(UNIQUE_ID_COL_NAME);
+               query.append("(SELECT RowId, ")
+                       .append("CAST (").append(dialect.quoteIdentifier(col.getName())).append(" AS VARCHAR)")
+                       .append(" AS ").append(UNIQUE_ID_COL_NAME);
                query.append(" FROM samples.").append(dialect.quoteIdentifier(tableInfo.getName()));
                unionAll = ") UNION ALL\n";
             }
