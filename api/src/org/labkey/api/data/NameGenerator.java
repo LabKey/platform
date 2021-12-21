@@ -2081,7 +2081,7 @@ public class NameGenerator
         @Test
         public void testNameExpressionLookupFieldErrors()
         {
-            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup supported: A/B/C.", "Parent table required for name expressions with lookups: A/B/C."));
+            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C.", "Parent table is required for name expressions with lookups: A/B/C."));
 
             validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
