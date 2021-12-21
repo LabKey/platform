@@ -526,25 +526,6 @@ public class AnnouncementManager
             // Send a notification email to everyone on the member list.
             IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
             Set<User> recipients = sel.getNotificationUsers(a);
-
-            DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
-            if (typeProvider != null)
-            {
-                for (User u : typeProvider.getRecipients(c, user, a.getDiscussionSrcIdentifier()))
-                {
-                    Integer pref = sel.createEmailPrefsMap(c).get(u).getApplicablePreference(a).getEmailOptionId();
-                    // Skip if user is inactive
-                    if (EmailOption.MESSAGES_MINE.getValue() == pref && u.isActive())
-                        recipients.add(u);
-                }
-
-                // Only add extra recipient if their email setting is 'My conversations'
-                User createdByUser = UserManager.getUser(a.getCreatedBy());
-                Integer createdByPref = sel.createEmailPrefsMap(c).get(createdByUser).getApplicablePreference(a).getEmailOptionId();
-                if (EmailOption.MESSAGES_MINE.getValue() == createdByPref)
-                    recipients.remove(createdByUser);
-            }
-
             if (!recipients.isEmpty())
             {
                 BulkEmailer emailer = new BulkEmailer(user);

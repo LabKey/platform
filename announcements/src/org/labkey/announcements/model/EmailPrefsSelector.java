@@ -20,9 +20,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 
@@ -118,10 +121,20 @@ public abstract class EmailPrefsSelector
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
         int emailPreference = up.getEmailOptionId();
 
+        DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+        Set<User> extraRecipients = new HashSet<>();
+        if (typeProvider != null)
+        {
+            extraRecipients = typeProvider.getRecipients(_c, user, ann.getDiscussionSrcIdentifier());
+        }
+
         if (EmailOption.MESSAGES_MINE.getValue() == emailPreference)
         {
             // Skip if preference is MINE and this is a new message  TODO: notify message creator?
             if (null == ann)
+                return false;
+
+            if (typeProvider != null && ann.getCreatedBy() == user.getUserId())
                 return false;
 
             Set<User> authors = ann.getAuthors();
@@ -129,7 +142,17 @@ public abstract class EmailPrefsSelector
             if (!authors.contains(user))   // TODO: notify message creator?
             {
                 List<Integer> memberList = ann.getMemberListIds();
-                if (!memberList.contains(user.getUserId()))
+                if (!memberList.contains(user.getUserId()) && !extraRecipients.contains(user))
+                    return false;
+            }
+        }
+        else if (EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue() == emailPreference)
+        {
+            Set<User> authors = ann.getAuthors();
+            if (!authors.contains(user))
+            {
+                List<Integer> memberList = ann.getMemberListIds();
+                if (!memberList.contains(user.getUserId()) && !extraRecipients.contains(user))
                     return false;
             }
         }
