@@ -1338,6 +1338,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("name", getName());
         containerProps.put("path", getPath());
         containerProps.put("parentPath", parent==null ? null : parent.getPath());
+        containerProps.put("title", getTitle());
 
         if (this.hasPermission(user, ReadPermission.class))
         {
@@ -1365,9 +1366,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("folderType", getFolderType().getName());
             containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
             containerProps.put("parentId", parent==null ? null : parent.getId());
-
-            if (null != getTitle())
-                containerProps.put("title", getTitle());
         }
         else
         {
