@@ -59,7 +59,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class QuerySettings
 {
     public static final String URL_PARAMETER_PREFIX = "param.";
-    private static final String parseError = "Could not parse parameter '%s' with value '%s'";
+
+    // Don't echo the user-provided value. See #44528.
+    private static final String parseError = "Could not parse parameter '%s'";
 
     private String _schemaName;
     private String _queryName;
@@ -178,7 +180,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name(), showRowsParam), ex);
+                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name()), ex);
             }
         }
     }
@@ -240,7 +242,7 @@ public class QuerySettings
             }
             catch (ConversionException e)
             {
-                throw new BadRequestException(String.format(parseError, "ignoreFilter", ignoreFilter), e);
+                throw new BadRequestException(String.format(parseError, "ignoreFilter"), e);
             }
 
             String reportId = _getParameter(param(QueryParam.reportId));
@@ -267,7 +269,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "offset", offsetParam), nfe);
+                    throw new BadRequestException(String.format(parseError, "offset"), nfe);
                 }
             }
 
@@ -287,7 +289,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "maxRows", maxRowsParam), nfe);
+                    throw new BadRequestException(String.format(parseError, "maxRows"), nfe);
                 }
             }
         }
@@ -297,7 +299,7 @@ public class QuerySettings
         {
             // fail fast
             if (null == ContainerFilter.getType(containerFilterNameParam))
-                throw new BadRequestException(String.format(parseError, "containerFilterName", containerFilterNameParam));
+                throw new BadRequestException(String.format(parseError, "containerFilterName"));
 
             setContainerFilterName(containerFilterNameParam);
         }
@@ -325,7 +327,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(String.format(parseError, ActionURL.Param.returnUrl, returnURL), use);
+                throw new BadRequestException(String.format(parseError, ActionURL.Param.returnUrl), use);
             }
         }
 
@@ -358,7 +360,7 @@ public class QuerySettings
             }
             catch (ConversionException e)
             {
-                throw new BadRequestException(String.format(parseError, "allowHeaderLock", allowHeaderLock), e);
+                throw new BadRequestException(String.format(parseError, "allowHeaderLock"), e);
             }
         }
     }
