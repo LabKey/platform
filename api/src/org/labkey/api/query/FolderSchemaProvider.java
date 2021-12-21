@@ -30,7 +30,10 @@ import org.labkey.api.util.Path;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 {
@@ -42,6 +45,9 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
     static public class FolderSchema extends UserSchema implements QuerySchema.ContainerSchema
     {
         QuerySchema _fallback;
+
+        /** Cache created schemas to leverage their caching of queries and tables */
+        private final Map<String, QuerySchema> _cache = new HashMap<>();
 
         /**
          * @param fallback schema to look in first, before checking for child folders.
@@ -91,8 +97,13 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 			return null;
 		}
 
-		@Override
+        @Override
         public QuerySchema getSchema(String name)
+        {
+            return _cache.computeIfAbsent(name, _schemaCreator);
+        }
+
+        private final Function<String, QuerySchema> _schemaCreator = (name) ->
         {
             if (_restricted)
                 return null;
@@ -129,7 +140,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             }
 
             return new FolderSchema(name, _user, child, fallback);
-        }
+        };
 
         @Override
         public <R, P> R accept(SchemaTreeVisitor<R, P> visitor, SchemaTreeVisitor.Path path, P param)
