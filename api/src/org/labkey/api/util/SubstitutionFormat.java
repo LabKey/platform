@@ -509,17 +509,22 @@ public class SubstitutionFormat
         return messages;
     }
 
-    public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start, String noun)
+    public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start, String noun, boolean allowLookup)
     {
         List<String> messages = new ArrayList<>();
         if (start < 2 || !nameExpression.startsWith("${", start-2))
+        {
+            if (allowLookup && nameExpression.startsWith("/", start-1))
+                return messages;
+
             messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
+        }
         // missing ending brace check handled by general check for matching begin and end braces
         return messages;
     }
     public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start)
     {
-        return validateNonFunctionalSyntax(formatName, nameExpression, start, "substitution pattern");
+        return validateNonFunctionalSyntax(formatName, nameExpression, start, "substitution pattern", false);
     }
 
     private final static Map<String, SubstitutionFormat> _map = new CaseInsensitiveHashMap<>();

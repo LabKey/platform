@@ -315,7 +315,7 @@ public class NameGenerator
                         continue;
                 }
 
-                warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subField, nameExpression, lcIndex, "field"));
+                warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subField, nameExpression, lcIndex, "field", true));
             }
         }
 
