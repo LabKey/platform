@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.10",
-    "@labkey/components": "2.105.0-fb-numScanOption.0",
+    "@labkey/components": "2.108.0-fb-numScanOption.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
