@@ -143,6 +143,12 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         return getKindName();
     }
 
+    @Override
+    public boolean allowTextChoiceProperties()
+    {
+        return false;
+    }
+
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
     {
         return Collections.emptySet();

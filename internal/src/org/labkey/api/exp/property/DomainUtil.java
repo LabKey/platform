@@ -210,10 +210,11 @@ public class DomainUtil
         Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
         Map<String, Object> pkColMap = new HashMap<>();
+        TableInfo tableInfo = null;
         if (!skipPKCols)
         {
             //get PK columns
-            TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
+            tableInfo = domainKind.getTableInfo(user, container, domain);
 
             if (null != tableInfo && null != tableInfo.getPkColumns())
             {
@@ -270,6 +271,14 @@ public class DomainUtil
             TemplateInfo t = domain.getTemplateInfo();
             d.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
         }
+
+        // if not set via domain kind, provide the public schemaName and queryName for the domain
+        if (d.getSchemaName() == null && d.getQueryName() == null && tableInfo != null)
+        {
+            d.setSchemaName(tableInfo.getPublicSchemaName());
+            d.setQueryName(tableInfo.getPublicName());
+        }
+
         return d;
     }
 
@@ -290,6 +299,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -304,6 +314,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -368,7 +379,13 @@ public class DomainUtil
             gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
-            gpv.setProperties(new HashMap<>(pv.getProperties()));
+
+            Map<String, String> properties = new HashMap<>(pv.getProperties());
+            // add in the TextChoice validValues here so that the client side code doesn't have to do the same
+            // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
+            if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
+                properties.put("validValues", StringUtils.join(PropertyService.get().getTextChoiceValidatorOptions(pv), "|"));
+            gpv.setProperties(properties);
 
             validators.add(gpv);
         }

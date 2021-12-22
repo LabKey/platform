@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.7.1-fb-validateNamingPatten.4",
-    "@labkey/components": "2.108.0-fb-validateNamingPatten.3",
+    "@labkey/components": "2.109.0-fb-validateNamingPatten.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
