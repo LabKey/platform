@@ -1619,6 +1619,9 @@ public class NameGenerator
             }
             else
             {
+                if (StringUtils.isEmpty(prefix))
+                    return null;
+
                 if (!_counterSequences.containsKey(prefix))
                 {
                     long existingCount = -1;
