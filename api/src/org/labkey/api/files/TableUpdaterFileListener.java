@@ -203,13 +203,13 @@ public class TableUpdaterFileListener implements FileListener
     }
 
     @Override
-    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
-        fileMoved(src.toPath(), dest.toPath(), user, container);
+        return fileMoved(src.toPath(), dest.toPath(), user, container);
     }
 
     @Override
-    public void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
     {
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
@@ -295,7 +295,9 @@ public class TableUpdaterFileListener implements FileListener
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
             LOG.info("Updated " + childRowsUpdated + " child paths in " + _table + " rows for move from " + src + " to " + dest);
+            return childRowsUpdated;
         }
+        return 0;
     }
 
     @NotNull

@@ -286,6 +286,7 @@ public class AdminController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         AdminController.class,
         FilesSiteSettingsAction.class,
+        UpdateFilePathsAction.class,
         FileListAction.class
     );
 
