@@ -338,11 +338,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
-                results.errors().forEach(error -> errors.add("Name Expression error: " + error));
+                results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
-                results.warnings().forEach(error -> warnings.add("Name Expression warning: " + error));
+                results.warnings().forEach(error -> warnings.add("Name Pattern warning: " + error));
             if (results.previews() != null)
                 previewNames.addAll(results.previews());
+            else
+                previewNames.add(null);
         }
         else
             previewNames.add(null);
@@ -351,11 +353,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
-                results.errors().forEach(error -> errors.add("Aliquot Name Expression error: " + error));
+                results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
-                results.warnings().forEach(error -> warnings.add("Aliquot Name Expression warning: " + error));
+                results.warnings().forEach(error -> warnings.add("Aliquot Name Pattern warning: " + error));
             if (results.previews() != null)
                 previewNames.addAll(results.previews());
+            else
+                previewNames.add(null);
         }
         return new NameExpressionValidationResult(errors, warnings, previewNames);
     }

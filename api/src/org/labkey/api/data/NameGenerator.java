@@ -267,6 +267,8 @@ public class NameGenerator
         if (!errorMessages.isEmpty())
             return new NameExpressionValidationResult(errorMessages, warningMessages, null);
 
+        warningMessages.addAll(getFieldMissingBracesWarnings(nameExpression, properties, importAliases));
+
         NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
         errorMessages.addAll(fieldMessages.errors());
         warningMessages.addAll(fieldMessages.warnings());
@@ -277,6 +279,48 @@ public class NameGenerator
     {
         NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
         return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
+    }
+
+    static List<String> getFieldMissingBracesWarnings(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases)
+    {
+        Set<String> substitutionFields = new CaseInsensitiveHashSet();
+        if (importAliases != null)
+            substitutionFields.addAll(importAliases.keySet());
+
+        if (properties != null)
+            properties.forEach(field -> substitutionFields.add(field.getName()));
+
+        if (substitutionFields.isEmpty())
+            return Collections.emptyList();
+
+        List<String> warningMessages = new ArrayList<>();
+        String lcExpression = nameExpression.toLowerCase();
+        for (String subField : substitutionFields)
+        {
+            String lcSub = subField.toLowerCase();
+            int lcIndex = lcExpression.indexOf(lcSub);
+
+            if (lcIndex != -1)
+            {
+                if (lcIndex > 0)
+                {
+                    char preChar = lcExpression.charAt(lcIndex - 1);
+                    if (Character.isLetter(preChar))
+                        continue;
+                }
+                if (lcExpression.length() > (lcIndex + lcSub.length()))
+                {
+                    char postChar = lcExpression.charAt(lcIndex + lcSub.length());
+                    if (Character.isLetter(postChar))
+                        continue;
+                }
+
+                warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subField, nameExpression, lcIndex, "field"));
+            }
+        }
+
+        return warningMessages;
+
     }
 
     static Pair<List<String>, List<String>> getReservedFieldValidationResults(String nameExpression)
@@ -2119,6 +2163,24 @@ public class NameGenerator
 
             validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
         }
+
+        @Test
+        public void testNameExpressionAbsentFieldBraceWarnings()
+        {
+            GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");
+            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("FieldInt", "http://www.w3.org/2001/XMLSchema#int");
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            fields.add(stringField);
+            fields.add(intField);
+
+            Map<String, String> importAliases = Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA");
+
+            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldstr' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-FieldStr")), null, fields);
+
+            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldint' field starting at position 14 should be preceded by the string '${'."), Collections.singletonList("S-FieldStrValue-FieldInt")), null, fields);
+
+            validateNameResult("S-parentAlias", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'parentalias' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-parentAlias")), importAliases, null);
+         }
 
         @Test
         public void testNameExpressionWithCounterSyntax()

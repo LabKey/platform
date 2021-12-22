@@ -55,16 +55,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -289,8 +287,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
         if (results.errors() != null && !results.errors().isEmpty())
             results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
-        if (results.warnings() != null && !results.warnings().isEmpty())
-            results.warnings().forEach(error -> errors.addError(new SimpleValidationError(error)));
         return errors;
     }
 
@@ -299,7 +295,19 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            return NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            List<String> errors = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
+            List<String> previewNames = new ArrayList<>();
+
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Name Pattern warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
+
+            return new NameExpressionValidationResult(errors, warnings, previewNames);
         }
         return null;
     }
