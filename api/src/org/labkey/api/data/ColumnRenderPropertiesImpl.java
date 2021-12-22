@@ -49,6 +49,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
 {
     public static final String STORAGE_UNIQUE_ID_CONCEPT_URI = "http://www.labkey.org/types#storageUniqueId";
     public static final String STORAGE_UNIQUE_ID_SEQUENCE_PREFIX = "org.labkey.api.StorageUniqueId";
+    public static final String TEXT_CHOICE_CONCEPT_URI = "http://www.labkey.org/types#textChoice";
 
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;

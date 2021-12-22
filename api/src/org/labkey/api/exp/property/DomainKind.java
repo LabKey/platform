@@ -256,6 +256,11 @@ abstract public class DomainKind<T>  implements Handler<String>
         return null;
     }
 
+    public TableInfo getTableInfo(User user, Container container, Domain domain)
+    {
+        return getTableInfo(user, container, domain.getName());
+    }
+
     /** Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and
      * cached. Use this to decorate the SchemaTableInfo with additional meta data, for example.
      *
@@ -296,6 +301,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowFileLinkProperties() { return false; }
     public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
+    public boolean allowTextChoiceProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
 

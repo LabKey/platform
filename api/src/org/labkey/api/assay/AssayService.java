@@ -22,6 +22,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -232,4 +233,9 @@ public interface AssayService
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
     <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
+
+    /**
+     * Returns the TableInfo for the given assay domain based on the assay domain ID.
+     */
+    TableInfo getTableInfoForDomainId(User user, Container container, int domainId);
 }
