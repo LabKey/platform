@@ -150,4 +150,10 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
         JSONObject args = options != null ? options.toJSONObject() : null;
         return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings);
     }
+
+    @Override
+    public boolean allowTextChoiceProperties()
+    {
+        return false;
+    }
 }

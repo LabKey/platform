@@ -28,8 +28,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -40,6 +44,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -138,6 +143,20 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         ret.setConceptURI("http://www.labkey.org/exp/xml#" + alias);
         ret.setPropertyURI("http://www.labkey.org/exp/xml#" + alias);
         return ret;
+    }
+
+    protected String getExpNameExpressionPreview(String schemaName, String queryName, User user)
+    {
+        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, getContainer(), user);
+        Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+        if (domain != null && domain.getDomainKind() != null)
+        {
+            List<String> previews = domain.getDomainKind().getDomainNamePreviews(schemaName, queryName, getContainer(), user);
+            if (previews != null && !previews.isEmpty())
+               return previews.get(0);
+        }
+
+        return null;
     }
 
 

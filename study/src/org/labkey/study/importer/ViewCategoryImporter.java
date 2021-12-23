@@ -15,17 +15,18 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.study.Study;
+import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.xml.viewCategory.CategoriesDocument;
@@ -59,14 +60,13 @@ public class ViewCategoryImporter implements InternalStudyImporter
         if (!isValidForImportArchive(ctx, root))
             return;
 
-        StudyImpl study = ctx.getStudyImpl();
         try
         {
             XmlObject xml = root.getXmlBean(ViewCategoryWriter.FILE_NAME);
             if (xml instanceof CategoriesDocument)
             {
                 xml.validate(XmlBeansUtil.getDefaultParseOptions());
-                process(study, ctx, xml);
+                process(ctx.getContainer(), ctx.getUser(), ctx.getLogger(), xml);
             }
         }
         catch (XmlException x)
@@ -88,11 +88,11 @@ public class ViewCategoryImporter implements InternalStudyImporter
         }
     }
 
-    public void process(StudyImpl study, StudyImportContext ctx, XmlObject xmlObject) throws Exception
+    private void process(Container c, User user, Logger logger, XmlObject xmlObject) throws Exception
     {
         if (xmlObject instanceof CategoriesDocument)
         {
-            ctx.getLogger().info("Loading " + getDescription());
+            logger.info("Loading " + getDescription());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -113,16 +113,16 @@ public class ViewCategoryImporter implements InternalStudyImporter
                         else
                             parts = new String[]{type.getLabel()};
 
-                        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(ctx.getContainer(), ctx.getUser(), parts);
+                        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(c, user, parts);
 
                         category.setDisplayOrder(type.getDisplayOrder());
-                        ViewCategoryManager.getInstance().saveCategory(ctx.getContainer(), ctx.getUser(), category);
+                        ViewCategoryManager.getInstance().saveCategory(c, user, category);
                     }
                 }
                 transaction.commit();
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            logger.info("Done importing " + getDescription());
         }
     }
 }
