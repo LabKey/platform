@@ -151,4 +151,7 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     {
         return ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
     }
+
+    boolean isScannable();
+    void setScannable(boolean scannable);
 }

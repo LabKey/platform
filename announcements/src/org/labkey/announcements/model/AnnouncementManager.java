@@ -29,6 +29,8 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -524,6 +526,24 @@ public class AnnouncementManager
             // Send a notification email to everyone on the member list.
             IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
             Set<User> recipients = sel.getNotificationUsers(a);
+
+            DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
+            if (typeProvider != null)
+            {
+                for (User u : typeProvider.getRecipients(c, user, a.getDiscussionSrcIdentifier()))
+                {
+                    Integer pref = sel.createEmailPrefsMap(c).get(u).getApplicablePreference(a).getEmailOptionId();
+                    // Skip if user is inactive
+                    if (EmailOption.MESSAGES_MINE.getValue() == pref && u.isActive())
+                        recipients.add(u);
+                }
+
+                // Only add extra recipient if their email setting is 'My conversations'
+                User createdByUser = UserManager.getUser(a.getCreatedBy());
+                Integer createdByPref = sel.createEmailPrefsMap(c).get(createdByUser).getApplicablePreference(a).getEmailOptionId();
+                if (EmailOption.MESSAGES_MINE.getValue() == createdByPref)
+                    recipients.remove(createdByUser);
+            }
 
             if (!recipients.isEmpty())
             {
@@ -1164,7 +1184,8 @@ public class AnnouncementManager
             {
                 if (notificationBean == null)
                     return null;
-                return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
+
+                return notificationBean.messageSubject;
             });
 
             replacements.add("attachments", String.class, "Attachments for this message", ContentType.HTML, c -> attachments);
@@ -1257,6 +1278,7 @@ public class AnnouncementManager
         private final User recipient;
         private final ActionURL threadURL;
         private final ActionURL threadParentURL;
+        private String messageSubject;
         private final String boardPath;
         private final ActionURL boardURL;
         private final String siteURL;
@@ -1276,6 +1298,18 @@ public class AnnouncementManager
                                      User recipient, Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
+            DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
+            if (typeProvider != null)
+            {
+                String parentBody = null;
+                AnnouncementModel annParent = AnnouncementManager.getAnnouncement(c, a.getParent());
+                if (annParent != null)
+                    parentBody = annParent.getBody();
+                this.messageSubject = typeProvider.getEmailSubject(c, UserManager.getUser(a.getCreatedBy()), a.getRowId(), a.getDiscussionSrcIdentifier(), a.getBody(), a.getTitle(), parentBody);
+            }
+            if (this.messageSubject == null)
+                this.messageSubject = StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle());
+
             this.recipient = recipient;
             this.threadURL = AnnouncementsController.getThreadURL(c, recipient, a);
             this.threadParentURL = AnnouncementsController.getThreadURL(c, recipient, parent);

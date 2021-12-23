@@ -15,7 +15,9 @@
  */
 package org.labkey.api.reports.model;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +28,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -33,12 +36,14 @@ import java.util.List;
  * Date: Oct 12, 2011
  * Time: 7:23:43 PM
  */
-public class ViewCategory extends Entity implements Comparable
+public class ViewCategory extends Entity implements Comparable<ViewCategory>
 {
     private int _rowId;
     private String _label;
     private int _displayOrder;
     private Integer _parentId;
+
+    public static final Comparator<ViewCategory> HIERARCHY_COMPARATOR = new HierarchyComparator();
 
     public ViewCategory()
     {
@@ -139,7 +144,6 @@ public class ViewCategory extends Entity implements Comparable
         o.put("label", getLabel());
         o.put("displayOrder", getDisplayOrder());
 
-
         o.put("created", getCreated());
         o.put("modified", getModified());
 
@@ -214,13 +218,58 @@ public class ViewCategory extends Entity implements Comparable
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@NotNull ViewCategory vc)
     {
-        if (o == null || getClass() != o.getClass()) return -1;
+        return Integer.compare(getDisplayOrder(), vc.getDisplayOrder());
+    }
 
-        final ViewCategory vc = (ViewCategory) o;
+    // Sorts ViewCategories in hierarchy display order -- categories by display order then by label (alphabetical) with
+    // subcategories nested just below their parent category
+    private static final class HierarchyComparator implements Comparator<ViewCategory>
+    {
+        @Override
+        public int compare(ViewCategory vc1, ViewCategory vc2)
+        {
+            int parentDisplayOrder = Integer.compare(parentDisplayOrder(vc1), parentDisplayOrder(vc2));
 
-        return ((Integer) getDisplayOrder()).compareTo(vc.getDisplayOrder());
+            if (0 != parentDisplayOrder)
+                return parentDisplayOrder;
+
+            int parentLabel = ObjectUtils.compare(parentLabel(vc1), parentLabel(vc2));
+
+            if (0 != parentLabel)
+                return parentLabel;
+
+            // If parent display order and parent label are equal then we have a subcategory plus its parent or one
+            // of its siblings. The parent is always "less than" its subcategories (gets listed before them).
+
+            if (vc1.getParent() == null)
+                return -1;
+
+            if (vc2.getParent() == null)
+                return 1;
+
+            // Two subcategories -- order by display order then label
+
+            int subcategoryOrder = Integer.compare(vc1.getDisplayOrder(), vc2.getDisplayOrder());
+
+            if (0 != subcategoryOrder)
+                return subcategoryOrder;
+
+            return ObjectUtils.compare(vc1.getLabel(), vc2.getLabel());
+        }
+
+        private int parentDisplayOrder(ViewCategory vc)
+        {
+            ViewCategory parent = vc.getParentCategory();
+            return parent == null ? vc.getDisplayOrder() : parent.getDisplayOrder();
+        }
+
+        private String parentLabel(ViewCategory vc)
+        {
+            ViewCategory parent = vc.getParentCategory();
+            return parent == null ? vc.getLabel() : parent.getLabel();
+        }
     }
 }
 

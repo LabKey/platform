@@ -812,7 +812,6 @@ api/src/org/labkey/api/laboratory/NavItem.java -text
 api/src/org/labkey/api/laboratory/SettingsNavItem.java -text
 api/src/org/labkey/api/laboratory/SummaryNavItem.java -text
 api/src/org/labkey/api/laboratory/TabbedReportItem.java -text
-api/src/org/labkey/api/ldk/buttons/ShowEditUIButton.java -text
 api/src/org/labkey/api/ldk/table/AbstractTableCustomizer.java -text
 api/src/org/labkey/api/ldk/table/ButtonConfigFactory.java -text
 api/src/org/labkey/api/ldk/table/QueryCache.java -text
@@ -1996,7 +1995,6 @@ core/src/org/labkey/core/project/FolderNavigationForm.java -text
 core/src/org/labkey/core/project/menuProjectNav.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
-core/src/org/labkey/core/qc/QcStateWriter.java -text
 core/src/org/labkey/core/query/ApiKeysTableInfo.java -text
 core/src/org/labkey/core/query/AttachmentAuditProvider.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
@@ -3342,7 +3340,6 @@ study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/security/datasets.jsp -text
 study/src/org/labkey/study/security/importExport.jsp -text
-study/src/org/labkey/study/security/locations.jsp -text
 study/src/org/labkey/study/security/permissions/StudyPermissionExporter.java -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text

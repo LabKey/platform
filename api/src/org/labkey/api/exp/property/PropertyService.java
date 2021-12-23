@@ -21,12 +21,14 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -117,6 +119,13 @@ public interface PropertyService
     void deleteValidatorsAndFormats(Container c, int propertyDescriptorId);
 
     void deleteValidatorsAndFormats(Container c);
+
+    /**
+     * Get the first property validator of a given type from the ColumnInfo.
+     */
+    IPropertyValidator getValidatorForColumn(ColumnInfo col, PropertyValidatorType type);
+
+    List<String> getTextChoiceValidatorOptions(IPropertyValidator validator);
 
     @NotNull
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);

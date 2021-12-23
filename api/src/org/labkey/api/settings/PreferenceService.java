@@ -37,7 +37,7 @@ public class PreferenceService
     private static final String PREFERENCE_SERVICE_MAP_KEY = "PreferenceServiceMap";
     private static final PreferenceService _instance = new PreferenceService();
 
-    private final Map<String, Map<String, String>> _nullPreferenceMap = Collections.synchronizedMap(new HashMap<String, Map<String, String>>());
+    private final Map<String, Map<String, String>> _nullPreferenceMap = Collections.synchronizedMap(new HashMap<>());
 
     public static PreferenceService get()
     {

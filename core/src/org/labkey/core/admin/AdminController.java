@@ -10465,6 +10465,107 @@ public class AdminController extends SpringActionController
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
+    {
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+
+        @Override
+        public void validateCommand(AdjustTimestampsForm form, Errors errors)
+        {
+            if (form.getHourDelta() == null || form.getHourDelta() == 0)
+                errors.reject(ERROR_MSG, "You must specify a non-zero value for 'Hour Delta'");
+        }
+
+        @Override
+        public ModelAndView getView(AdjustTimestampsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/adjustTimestamps.jsp", form, errors);
+        }
+
+        private void updateFields(TableInfo tInfo, Collection<String> fieldNames, int delta)
+        {
+            SQLFragment sql = new SQLFragment();
+            DbSchema schema = tInfo.getSchema();
+            String comma = "";
+            List<String> updating = new ArrayList<>();
+            for (String fieldName: fieldNames)
+            {
+                ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
+                if (col != null && col.getJdbcType() == JdbcType.TIMESTAMP)
+                {
+                    updating.add(fieldName);
+                    if (sql.isEmpty())
+                        sql.append("UPDATE ").append(tInfo, "").append(" SET ");
+                    sql.append(comma)
+                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
+                    comma = ", ";
+                }
+            };
+            if (!sql.isEmpty())
+            {
+                logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
+                logger.debug(sql.toDebugString());
+                int numRows = new SqlExecutor(schema).execute(sql);
+                logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
+            }
+
+        }
+
+        @Override
+        public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
+        {
+            List<String> toUpdate = Arrays.asList("Created", "Modified", "lastIndexed", "diCreated", "diModified");
+            logger.info("Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            DbScope scope = DbScope.getLabKeyScope();
+            try (DbScope.Transaction t = scope.ensureTransaction())
+            {
+                ModuleLoader.getInstance().getModules().forEach(module -> {
+                    logger.info("==> Beginning update of timestamps for module: " + module.getName());
+                    module.getSchemaNames().stream().sorted().forEach(schemaName -> {
+                        DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
+                        scope.invalidateSchema(schema); // Issue 44452: assure we have a fresh set of tables to work from
+                        schema.getTableNames().forEach(tableName -> {
+                            TableInfo tInfo = schema.getTable(tableName);
+                            if (tInfo.getTableType() == DatabaseTableType.TABLE)
+                            {
+                                updateFields(tInfo, toUpdate, form.getHourDelta());
+                            }
+                        });
+                    });
+                    logger.info("<== DONE updating timestamps for module: " + module.getName());
+                });
+                t.commit();
+            }
+            logger.info("DONE Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
+        {
+            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+    }
+
+    public static class AdjustTimestampsForm
+    {
+        private Integer hourDelta;
+
+        public Integer getHourDelta()
+        {
+            return hourDelta;
+        }
+
+        public void setHourDelta(Integer hourDelta)
+        {
+            this.hourDelta = hourDelta;
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {

@@ -56,15 +56,15 @@ export const App: FC<any> = memo(props => {
     }, [])
 
     const onSubmit = useCallback(() => {
-        const cont = assayPickerSelection.container ?? getServerContext().container.path;
+        const container = assayPickerSelection.container ?? getServerContext().container.path;
         if (assayPickerSelection.tab === AssayPickerTabs.XAR_IMPORT_TAB
             && assayPickerSelection.file) {
             uploadXarFile(assayPickerSelection.file, assayPickerSelection.container).then(() => {
-                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', getServerContext().container.path);
+                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', container);
             })
         }
         else {
-            window.location.href = ActionURL.buildURL('assay', 'designer', cont, {
+            window.location.href = ActionURL.buildURL('assay', 'designer', container, {
                 'providerName': assayPickerSelection.provider.name,
                 'returnUrl': returnUrl
             });

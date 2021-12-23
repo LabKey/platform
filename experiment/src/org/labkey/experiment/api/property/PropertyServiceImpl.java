@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -30,11 +31,15 @@ import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
 import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -47,6 +52,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -64,6 +70,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -85,7 +92,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class PropertyServiceImpl implements PropertyService
+import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidatorURI;
+
+public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
     private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
@@ -330,6 +339,40 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
+    public IPropertyValidator getValidatorForColumn(ColumnInfo col, org.labkey.api.gwt.client.model.PropertyValidatorType type)
+    {
+        List<? extends IPropertyValidator> validators = col.getValidators();
+        if (!validators.isEmpty())
+        {
+            String typeURI = createValidatorURI(type).toString();
+
+            for (IPropertyValidator validator : validators)
+            {
+                if (validator.getTypeURI().equals(typeURI))
+                    return validator;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<String> getTextChoiceValidatorOptions(IPropertyValidator validator)
+    {
+        String expression = "";
+        if (validator != null && validator.getExpressionValue() != null)
+            expression = validator.getExpressionValue();
+
+        // split expression, trim choices, and remove duplicates
+        String[] choiceTokens = expression.split("\\|");
+        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim).collect(Collectors.toSet());
+
+        // remove empty strings and sort
+        return choiceSet.stream().filter(choice -> !StringUtils.isEmpty(choice))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public @NotNull List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc)
     {
         return DomainPropertyManager.get().getConditionalFormats(desc);
@@ -548,6 +591,9 @@ public class PropertyServiceImpl implements PropertyService
         OntologyService os = OntologyService.get();
         if (null != os)
             os.parseXml(xProp,prop);
+
+        if (null != xProp.xgetScannable())
+            prop.setScannable(xProp.getScannable());
     }
 
     @Override
@@ -581,5 +627,56 @@ public class PropertyServiceImpl implements PropertyService
         }
 
         return vocabularyDomainProperties;
+    }
+
+    @Override
+    public Map<String, Object> getUsageMetrics()
+    {
+        return Map.of(
+                "propertyValidators", Map.of(
+                        "byType", new SqlSelector(ExperimentService.get().getSchema(),
+                                new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
+                        ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
+                            x.put(m.get("typeuri").toString(), m.get("count"));
+                            return x;
+                        })
+                )
+        );
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testTextChoiceValidatorOptions()
+        {
+            PropertyServiceImpl service = new PropertyServiceImpl();
+            TextChoiceValidator validator = new TextChoiceValidator();
+            IPropertyValidator instance = validator.createInstance();
+
+            // empty expression
+            instance.setExpressionValue("");
+            List<String> choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(new ArrayList<>(), choices);
+
+            // filter empty option
+            instance.setExpressionValue("a||b");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b"), choices);
+
+            // remove duplicates
+            instance.setExpressionValue("A|A|a|a|A|A");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("A", "a"), choices);
+
+            // trim options
+            instance.setExpressionValue(" a|b | c ");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b", "c"), choices);
+
+            // sort options
+            instance.setExpressionValue("a|c|d|b");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "b", "c", "d"), choices);
+        }
     }
 }
