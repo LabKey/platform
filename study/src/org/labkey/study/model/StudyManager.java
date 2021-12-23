@@ -3718,6 +3718,7 @@ public class StudyManager
         private Domain domain;
         private List<? extends DomainProperty> propsToDelete = Collections.emptyList();
         private boolean dirty = true;
+        private boolean initialized = false;
     }
 
     private _DatasetDomainChange createDomainChange(String domainURI, String domainName, DatasetDefinitionEntry def, boolean existingDomainsOnly)
@@ -3750,7 +3751,7 @@ public class StudyManager
             _DatasetDomainChange domainChange = domainChangeMap.computeIfAbsent(ipd.domainURI, (k) ->
                     createDomainChange(ipd.domainURI, ipd.domainName, datasetDefEntryMap.get(ipd.domainName), existingDomainsOnly));
 
-            if (domainChange == null)
+            if (domainChange == null || domainChange.initialized)
                 continue;
 
             Domain d = domainChange.domain;
@@ -3803,6 +3804,9 @@ public class StudyManager
                 }
             }
         }
+
+        // set the initialized state of all the domainChange objects, so we don't repeat on another pass
+        domainChangeMap.values().forEach(dc -> dc.initialized = true);
     }
 
     private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
