@@ -3642,7 +3642,6 @@ public class StudyManager
                                 try
                                 {
                                     newDomain.save(user);
-                                    domainChange.dirty =false;
                                 }
                                 catch (ChangePropertyDescriptorException ex)
                                 {
@@ -3664,6 +3663,7 @@ public class StudyManager
         if (allowDomainUpdates)
         {
             // generate dataset domain changes for new datasets
+            domainChangeMap.clear();
             buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
 
             // now that we actually have datasets, create/update the domains
@@ -3685,14 +3685,11 @@ public class StudyManager
             for (DomainProperty p : domainChange.propsToDelete)
             {
                 p.delete();
-                domainChange.dirty = true;
             }
 
             try
             {
-                // no need to save the domain twice
-                if (domainChange.dirty)
-                    domainChange.domain.save(user);
+                domainChange.domain.save(user);
             }
             catch (ChangePropertyDescriptorException ex)
             {
@@ -3717,8 +3714,6 @@ public class StudyManager
 
         private Domain domain;
         private List<? extends DomainProperty> propsToDelete = Collections.emptyList();
-        private boolean dirty = true;
-        private boolean initialized = false;
     }
 
     private _DatasetDomainChange createDomainChange(String domainURI, String domainName, DatasetDefinitionEntry def, boolean existingDomainsOnly)
@@ -3751,7 +3746,7 @@ public class StudyManager
             _DatasetDomainChange domainChange = domainChangeMap.computeIfAbsent(ipd.domainURI, (k) ->
                     createDomainChange(ipd.domainURI, ipd.domainName, datasetDefEntryMap.get(ipd.domainName), existingDomainsOnly));
 
-            if (domainChange == null || domainChange.initialized)
+            if (domainChange == null)
                 continue;
 
             Domain d = domainChange.domain;
@@ -3804,9 +3799,6 @@ public class StudyManager
                 }
             }
         }
-
-        // set the initialized state of all the domainChange objects, so we don't repeat on another pass
-        domainChangeMap.values().forEach(dc -> dc.initialized = true);
     }
 
     private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
