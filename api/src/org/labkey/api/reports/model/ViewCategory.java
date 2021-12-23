@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -234,7 +235,7 @@ public class ViewCategory extends Entity implements Comparable<ViewCategory>
             if (0 != parentDisplayOrder)
                 return parentDisplayOrder;
 
-            int parentLabel = parentLabel(vc1).compareTo(parentLabel(vc2));
+            int parentLabel = ObjectUtils.compare(parentLabel(vc1), parentLabel(vc2));
 
             if (0 != parentLabel)
                 return parentLabel;
@@ -255,7 +256,7 @@ public class ViewCategory extends Entity implements Comparable<ViewCategory>
             if (0 != subcategoryOrder)
                 return subcategoryOrder;
 
-            return vc1.getLabel().compareTo(vc2.getLabel());
+            return ObjectUtils.compare(vc1.getLabel(), vc2.getLabel());
         }
 
         private int parentDisplayOrder(ViewCategory vc)
