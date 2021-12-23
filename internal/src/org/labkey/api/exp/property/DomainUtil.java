@@ -163,13 +163,19 @@ public class DomainUtil
     }
 
     @Nullable
-    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer)
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer, boolean skipPKCol /*skip querying for tableInfo for sample type and dataclass name previews*/)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
         if (null == dd)
             return null;
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-        return getDomainDescriptor(domainContainer, user, domain);
+        return getDomainDescriptor(domainContainer, user, domain, skipPKCol);
+    }
+
+    @Nullable
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(User user, String typeURI, Container domainContainer)
+    {
+        return getDomainDescriptor(user, typeURI, domainContainer, false);
     }
 
     @NotNull
@@ -180,6 +186,12 @@ public class DomainUtil
 
     @NotNull
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain)
+    {
+        return getDomainDescriptor(container, user, domain, false);
+    }
+
+    @NotNull
+    public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain, boolean skipPKCols)
     {
         GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
 
@@ -197,16 +209,17 @@ public class DomainUtil
 
         Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
-        //get PK columns
-        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
-        Map<String, Object> pkColMap;
-        if (null != tableInfo && null != tableInfo.getPkColumns())
+        Map<String, Object> pkColMap = new HashMap<>();
+        TableInfo tableInfo = null;
+        if (!skipPKCols)
         {
-            pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
-        }
-        else
-        {
-            pkColMap = new HashMap<>();
+            //get PK columns
+            tableInfo = domainKind.getTableInfo(user, container, domain);
+
+            if (null != tableInfo && null != tableInfo.getPkColumns())
+            {
+                pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+            }
         }
 
         for (DomainProperty prop : properties)
@@ -258,6 +271,14 @@ public class DomainUtil
             TemplateInfo t = domain.getTemplateInfo();
             d.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
         }
+
+        // if not set via domain kind, provide the public schemaName and queryName for the domain
+        if (d.getSchemaName() == null && d.getQueryName() == null && tableInfo != null)
+        {
+            d.setSchemaName(tableInfo.getPublicSchemaName());
+            d.setQueryName(tableInfo.getPublicName());
+        }
+
         return d;
     }
 
@@ -278,6 +299,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -292,6 +314,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -356,7 +379,13 @@ public class DomainUtil
             gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
-            gpv.setProperties(new HashMap<>(pv.getProperties()));
+
+            Map<String, String> properties = new HashMap<>(pv.getProperties());
+            // add in the TextChoice validValues here so that the client side code doesn't have to do the same
+            // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
+            if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
+                properties.put("validValues", StringUtils.join(PropertyService.get().getTextChoiceValidatorOptions(pv), "|"));
+            gpv.setProperties(properties);
 
             validators.add(gpv);
         }
