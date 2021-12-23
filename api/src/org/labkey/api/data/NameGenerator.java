@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -31,12 +32,17 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
@@ -46,6 +52,8 @@ import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,6 +62,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -88,7 +97,79 @@ public class NameGenerator
     public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
 
+    public static Date PREVIEW_DATE_VALUE;
+    public static Date PREVIEW_MODIFIED_DATE_VALUE;
+
+    static
+    {
+        try
+        {
+            PREVIEW_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
+            PREVIEW_MODIFIED_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/05/11");
+        }
+        catch (ParseException e)
+        {
+            PREVIEW_DATE_VALUE = null;
+            PREVIEW_MODIFIED_DATE_VALUE = null;
+        }
+    }
+
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
+
+    enum SubstitutionValue
+    {
+        AliquotedFrom("Sample112"),
+        DataInputs("Data101"),
+        Inputs("Parent101"),
+        MaterialInputs("Sample101"),
+        batchRandomId(3294),
+        containerPath("containerPathValue"),
+        contextPath("contextPathValue"),
+        dailySampleCount(14), // sample counts can both be SubstitutionValue as well as modifiers
+        dataRegionName("dataRegionNameValue"),
+        genId(1001),
+        monthlySampleCount(150),
+        now(null)
+                {
+                    @Override
+                    public Object getPreviewValue()
+                    {
+                        return PREVIEW_DATE_VALUE;
+                    }
+                },
+        queryName("queryNameValue"),
+        randomId(3294),
+        schemaName("schemaNameValue"),
+        schemaPath("schemaPathValue"),
+        selectionKey("selectionKeyValue"),
+        weeklySampleCount(25),
+        withCounter(null), // see CounterExpressionPart.getValue
+        yearlySampleCount(412);
+
+        private final Object _previewValue;
+
+        SubstitutionValue(Object previewValue)
+        {
+            _previewValue = previewValue;
+        }
+
+        public Object getPreviewValue()
+        {
+            return _previewValue;
+        }
+
+        public static Map<String, Object> getValuesMap()
+        {
+            Map<String, Object> values = new CaseInsensitiveHashMap<>();
+            for (SubstitutionValue substitutionValue : SubstitutionValue.values())
+            {
+                values.put(substitutionValue.name(), substitutionValue.getPreviewValue());
+            }
+
+            return values;
+        }
+
+    }
 
     private final TableInfo _parentTable;
 
@@ -115,12 +196,26 @@ public class NameGenerator
 
     private final Container _container;
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+    private final boolean _validateSyntax;
+    private final List<String> _syntaxErrors = new ArrayList<>();
+    private final List<String> _syntaxWarnings = new ArrayList<>();
+    private String _previewName;
+
+    private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
         _parentTable = parentTable;
         _container = container;
-        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
+        _validateSyntax = validateSyntax;
+        _domainProperties = domainProperties;
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -133,12 +228,287 @@ public class NameGenerator
         _parentTable = parentTable;
         _parsedNameExpression = nameExpression;
         _container = container;
+        _validateSyntax = false;
+        _domainProperties = null;
         initialize(null);
     }
 
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
     {
         this(nameExpression, parentTable, null);
+    }
+
+    public List<String> getSyntaxErrors()
+    {
+        return _syntaxErrors;
+    }
+
+    public List<String> getSyntaxWarnings()
+    {
+        return _syntaxWarnings;
+    }
+
+    public String getPreviewName()
+    {
+        return _previewName;
+    }
+
+    public void setPreviewName(String previewName)
+    {
+        _previewName = previewName;
+    }
+
+    public static NameExpressionValidationResult getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    {
+        List<String> errorMessages = getMismatchedTagErrors(nameExpression);
+        Pair<List<String>, List<String>> reservedFieldResults = getReservedFieldValidationResults(nameExpression);
+        errorMessages.addAll(reservedFieldResults.first);
+        List<String> warningMessages = new ArrayList<>(reservedFieldResults.second);
+        if (!errorMessages.isEmpty())
+            return new NameExpressionValidationResult(errorMessages, warningMessages, null);
+
+        warningMessages.addAll(getFieldMissingBracesWarnings(nameExpression, properties, importAliases));
+
+        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
+        errorMessages.addAll(fieldMessages.errors());
+        warningMessages.addAll(fieldMessages.warnings());
+        return new NameExpressionValidationResult(errorMessages, warningMessages, fieldMessages.previews());
+    }
+
+    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    {
+        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
+        return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
+    }
+
+    static List<String> getFieldMissingBracesWarnings(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases)
+    {
+        Set<String> substitutionFields = new CaseInsensitiveHashSet();
+        if (importAliases != null)
+            substitutionFields.addAll(importAliases.keySet());
+
+        if (properties != null)
+            properties.forEach(field -> substitutionFields.add(field.getName()));
+
+        if (substitutionFields.isEmpty())
+            return Collections.emptyList();
+
+        List<String> warningMessages = new ArrayList<>();
+        String lcExpression = nameExpression.toLowerCase();
+        for (String subField : substitutionFields)
+        {
+            String lcSub = subField.toLowerCase();
+            int lcIndex = lcExpression.indexOf(lcSub);
+
+            if (lcIndex != -1)
+            {
+                if (lcIndex > 0)
+                {
+                    char preChar = lcExpression.charAt(lcIndex - 1);
+                    if (Character.isLetter(preChar))
+                        continue;
+                }
+                if (lcExpression.length() > (lcIndex + lcSub.length()))
+                {
+                    char postChar = lcExpression.charAt(lcIndex + lcSub.length());
+                    if (Character.isLetter(postChar))
+                        continue;
+                }
+
+                warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subField, nameExpression, lcIndex, "field", true));
+            }
+        }
+
+        return warningMessages;
+
+    }
+
+    static Pair<List<String>, List<String>> getReservedFieldValidationResults(String nameExpression)
+    {
+        // For each substitution format, find its location in the string
+        // validate punctuation and arguments.
+
+        List<String> warningMessages = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+        String lcExpression = nameExpression.toLowerCase();
+        SubstitutionFormat.getFormatNames().forEach(formatName -> {
+            String lcFormatName = formatName.toLowerCase();
+            int lcIndex = lcExpression.indexOf(":" + lcFormatName);
+            if (lcIndex > -1)
+                errorMessages.addAll(SubstitutionFormat.validateSyntax(formatName, nameExpression, lcIndex));
+        });
+        for (SubstitutionValue subValue : SubstitutionValue.values())
+        {
+            String lcSub = subValue.name().toLowerCase();
+            int lcIndex = lcExpression.indexOf(lcSub);
+            if (lcIndex != -1)
+            {
+                 /*
+                 * also check that the part is not preceded by an alphabetic letter
+                 * - "unknown" contains "now", but should bypass reserved key word check
+                 * - "DataInputs" contains "Input", but should bypass "Input" check
+                 */
+                if (lcIndex > 0)
+                {
+                    char preChar = lcExpression.charAt(lcIndex - 1);
+                    if (Character.isLetter(preChar))
+                        continue;
+                }
+                if (lcExpression.length() > (lcIndex + lcSub.length()))
+                {
+                    char postChar = lcExpression.charAt(lcIndex + lcSub.length());
+                    if (Character.isLetter(postChar))
+                        continue;
+                }
+
+                if (subValue.equals(SubstitutionValue.withCounter))
+                {
+                    Pair<List<String>, List<String>> withCounterResults = validateWithCounterSyntax(nameExpression, lcIndex);
+                    errorMessages.addAll(withCounterResults.first);
+                    warningMessages.addAll(withCounterResults.second);
+                }
+                else
+                {
+                    warningMessages.addAll(SubstitutionFormat.validateNonFunctionalSyntax(subValue.name(), nameExpression, lcIndex));
+                }
+            }
+        }
+        return new Pair<>(errorMessages, warningMessages);
+    }
+
+    static Pair<List<String>, List<String>> validateWithCounterSyntax(String nameExpression, int index)
+    {
+        List<String> warningMessages = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+        int start = index;
+
+        // check withCount is inside ${}
+        String prevStr = nameExpression.substring(0, index);
+        int prevOpenCount = StringUtils.countMatches(prevStr, "${");
+        int prevCloseCount = StringUtils.countMatches(prevStr, "}");
+        String postStr = nameExpression.substring(index);
+        int postOpenCount = StringUtils.countMatches(postStr, "${");
+        int postCloseCount = StringUtils.countMatches(postStr, "}");
+        if ((prevOpenCount - prevCloseCount) != 1 || (postCloseCount - postOpenCount) != 1)
+            warningMessages.add(String.format("The '%s' substitution pattern starting at position %d should be enclosed in ${}.", SubstitutionValue.withCounter.name(), start));
+
+        if (nameExpression.charAt(index-1) != ':')
+            warningMessages.add(String.format("The '%s' substitution pattern starting at position %d should be preceded by a colon.", SubstitutionValue.withCounter.name(), start));
+        else
+            start = start-1;
+
+        int startParen = index + SubstitutionValue.withCounter.name().length();
+        if (startParen >= nameExpression.length() || nameExpression.charAt(startParen) != '(')
+            return new Pair<>(errorMessages, warningMessages);
+
+        int endParen = nameExpression.indexOf(")", start);
+        if (endParen == -1)
+            errorMessages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", SubstitutionValue.withCounter.name(), start));
+        else
+        {
+
+            int commaIndex = nameExpression.indexOf(",", start);
+            String startVal = null;
+            String format = null;
+            if (commaIndex > startParen && commaIndex < endParen)
+            {
+                // two arguments
+                startVal = nameExpression.substring(startParen+1, commaIndex).trim();
+                format = nameExpression.substring(commaIndex + 1, endParen).trim();
+            }
+            else
+            {
+                startVal = nameExpression.substring(startParen+1, endParen).trim();
+            }
+            // find the value of the first argument, if any, and validate it is an integer
+            if (!StringUtils.isEmpty(startVal))
+            {
+                try
+                {
+                    Integer.parseInt(startVal);
+                }
+                catch (NumberFormatException e)
+                {
+                    errorMessages.add(String.format("Invalid starting value %s for 'withCounter' starting at position %d.", startVal, index));
+                }
+            }
+            if (!StringUtils.isEmpty(format))
+            {
+                if (format.charAt(0) != '\'' || format.charAt(format.length()-1) != '\'')
+                    errorMessages.add(String.format("Format string starting at position %d for 'withCounter' substitution pattern should be enclosed in single quotes.", commaIndex + 1));
+            }
+        }
+        return new Pair<>(errorMessages, warningMessages);
+    }
+
+    static List<String> getMismatchedTagErrors(String nameExpression)
+    {
+        int start = 0;
+        int openIndex;
+        final String openTag = "${";
+        final char closeTag = '}';
+        List<String> errors = new ArrayList<>();
+        List<Integer> unmatchedOpen = new ArrayList<>();
+        List<Integer> unmatchedClosed = new ArrayList<>();
+        LinkedList<Integer> openIndexes = new LinkedList<>();
+
+        while (start < nameExpression.length() && (openIndex = nameExpression.indexOf(openTag, start)) >= 0)
+        {
+            openIndexes.clear();
+            openIndexes.push(openIndex);
+            int subInd = openIndex + 2;
+
+            while (subInd < nameExpression.length())
+            {
+                int nextOpen = nameExpression.indexOf(openTag, subInd);
+                int nextClose = nameExpression.indexOf(closeTag, subInd);
+
+                // no more opens or closes
+                if (nextOpen == -1 && nextClose == -1)
+                    break;
+
+                // more opens but no more closes, continue in order to pick up all the open indexes
+                if (nextOpen > 0 && nextClose == -1)
+                {
+                    openIndexes.add(nextOpen);
+                    subInd = nextOpen + 2;
+                }
+                else if (nextOpen == -1 || nextClose < nextOpen)
+                {
+                    if (openIndexes.isEmpty()) // Can this actually happen?
+                        unmatchedClosed.add(nextClose);
+                    else
+                    {
+                        openIndexes.pop();
+                        subInd = nextClose + 1;
+                    }
+                }
+                else if (nextClose > nextOpen)
+                {
+                    openIndexes.push(nextOpen);
+                    subInd = nextOpen + 2;
+                }
+
+                if (openIndexes.isEmpty())
+                    break;
+            }
+
+            if (!openIndexes.isEmpty())
+                unmatchedOpen.addAll(openIndexes.stream().map(index -> index+1).collect(Collectors.toList()));
+            start = subInd;
+        }
+        if (!unmatchedOpen.isEmpty())
+        {
+            if (unmatchedOpen.size() == 1)
+                errors.add("No closing brace found for the substitution pattern starting at position " + unmatchedOpen.get(0) + ".");
+            else
+                errors.add("No closing braces found for the substitution patterns starting at positions " + StringUtils.join(unmatchedOpen, ", ") + ".");
+        }
+        if (!unmatchedClosed.isEmpty())
+        {
+            errors.add("Unmatched closing brace found at position" + (unmatchedClosed.size() == 1 ? " " : "s ") + StringUtils.join(unmatchedClosed, ", ") + ".");
+        }
+        return errors;
     }
 
     public static Stream<String> parentNames(Object value, String parentColName)
@@ -176,6 +546,87 @@ public class NameGenerator
                 || (importAliases != null && importAliases.containsKey(sTok));
     }
 
+    private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
+    {
+        boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
+        boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
+        switch (lookupField)
+        {
+            case "rowid":
+            case "createdby":
+            case "modifiedby":
+                return 1005;
+            case "name":
+            case "lsid":
+            case "description":
+                return "parent" + lookupField;
+            case "created":
+                return PREVIEW_DATE_VALUE;
+            case "modified":
+                return PREVIEW_MODIFIED_DATE_VALUE;
+        }
+
+        List<ExpObject> dataTypes = new ArrayList<>();
+        if (isMaterial)
+        {
+            if (inputDataType != null)
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(_container, user, inputDataType);
+                if (sampleType != null)
+                    dataTypes.add(sampleType);
+            }
+            else
+                dataTypes.addAll(SampleTypeService.get().getSampleTypes(_container, user, true));
+        }
+        if (isData)
+        {
+            if (inputDataType != null)
+            {
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(_container, user, inputDataType);
+                if (dataClass != null)
+                    dataTypes.add(dataClass);
+            }
+            else
+                dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
+        }
+        if (inputDataType != null && dataTypes.isEmpty())
+        {
+            _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+            return null;
+        }
+
+        for (ExpObject dataType : dataTypes)
+        {
+            Domain domain = null;
+            if (dataType instanceof ExpSampleType)
+            {
+                domain = ((ExpSampleType)dataType).getDomain();
+            }
+            else if (dataType instanceof ExpDataClass)
+            {
+                domain = ((ExpDataClass)dataType).getDomain();
+            }
+            if (domain != null)
+            {
+                List<? extends DomainProperty> domainProperties = domain.getProperties();
+                for (DomainProperty domainProperty : domainProperties)
+                {
+                    if (domainProperty.getName().equalsIgnoreCase(lookupField))
+                    {
+                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
+                        if (result instanceof String)
+                            return "parent" + result;
+                        return result;
+                    }
+                }
+            }
+
+        }
+
+        _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
+        return null;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any lineage input tokens
@@ -189,9 +640,24 @@ public class NameGenerator
         boolean hasLineageLookup = false;
         List<FieldKey> lookups = new ArrayList<>();
         Map<String, List<String>> lineageLookupFields = new CaseInsensitiveHashMap<>();
+        Set<String> substitutionValues = new CaseInsensitiveHashSet();
+        for (SubstitutionValue value : SubstitutionValue.values())
+        {
+            substitutionValues.add(value.name());
+        }
+
+        Map<String, GWTPropertyDescriptor> domainFields = new CaseInsensitiveHashMap<>();
+        if (_domainProperties != null && !_domainProperties.isEmpty())
+            _domainProperties.forEach(prop -> domainFields.put(prop.getName(), prop));
+        User user = User.getSearchUser();
 
         // check for all parts, including those in sub nested expressions
         List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
+
+        Map<String, Object> previewCtx = new CaseInsensitiveHashMap<>();
+        if (_validateSyntax)
+            previewCtx.putAll(SubstitutionValue.getValuesMap());
+
         for (StringExpressionFactory.StringPart part : parts)
         {
             if (!part.isConstant())
@@ -215,7 +681,40 @@ public class NameGenerator
 
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
+                    {
+                        if (_validateSyntax)
+                        {
+                            String fieldName = fieldParts.get(0);
+                            if (!substitutionValues.contains(fieldName))
+                            {
+                                boolean isColPresent = false;
+                                PropertyType pt = null;
+                                if (_parentTable != null)
+                                {
+                                    ColumnInfo col = _parentTable.getColumn(fieldName);
+                                    isColPresent = col != null;
+                                    if (isColPresent)
+                                        pt = col.getPropertyType();
+                                }
+                                else if (!domainFields.isEmpty())
+                                {
+                                    GWTPropertyDescriptor col = domainFields.get(fieldName);
+                                    isColPresent = col != null;
+                                    if (isColPresent)
+                                    {
+                                        if (col.getConceptURI() != null || col.getRangeURI() != null)
+                                            pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+                                    }
+                                }
+
+                                if (!isColPresent)
+                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}.");
+                                else if (pt != null)
+                                    previewCtx.put(fieldName, getNamePartPreviewValue(pt, fieldName));
+                            }
+                        }
                         continue;
+                    }
 
                     boolean isLineageLookup = isLineageInput(fieldParts.get(0), importAliases);
 
@@ -224,73 +723,173 @@ public class NameGenerator
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
+                        Object lookupValuePreview = null;
                         hasLineageLookup = true;
                         if (isParentAlias && fieldParts.size() == 2)
                         {
+                            String lookupField = fieldParts.get(1);
                             // alias/lookup
                             String dataTypeToken = importAliases.get(alias);
                             lineageLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
+
+                            String[] inputParts = dataTypeToken.split("/");
+                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, inputParts[0], inputParts[1], lookupField, user);
                         }
-                        else if (fieldParts.size() == 2)
+                        else if (!isParentAlias && fieldParts.size() <= 3)
                         {
-                            // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
-                            lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
-                        }
-                        else if (fieldParts.size() == 3)
-                        {
-                            // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
-                            lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
+                            if (fieldParts.size() == 2)
+                            {
+                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
+                                lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
+
+                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
+                            }
+                            else if (fieldParts.size() == 3)
+                            {
+                                // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
+                                lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
+                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(1), fieldParts.get(2), user);
+                            }
                         }
                         else
-                            throw new UnsupportedOperationException("Only one level of lookup supported for lingeage input: " + fkTok);
+                        {
+                            String errorMsg = "Only one level of lookup is supported for lineage input: " + fkTok + ".";
+                            if (_validateSyntax)
+                                _syntaxErrors.add(errorMsg);
+                            else
+                                throw new UnsupportedOperationException(errorMsg);
+                        }
+
+                        if (lookupValuePreview != null)
+                            previewCtx.put(fkTok.toString(), lookupValuePreview);
+
+                        continue;
                     }
                     else if (fieldParts.size() > 2)
                     {
                         // for now, we only support one level of lookup: ${ingredient/name}
                         // future versions could support multiple levels
-                        throw new UnsupportedOperationException("Only one level of lookup supported: " + fkTok);
+                        String errorMsg = "Only one level of lookup is supported: " + fkTok + ".";
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        else
+                            throw new UnsupportedOperationException(errorMsg);
                     }
 
-                    if (_parentTable == null)
-                        throw new UnsupportedOperationException("Parent table required for name expressions with lookups: " + fkTok);
+                    if (_parentTable == null && domainFields.isEmpty())
+                    {
+                        String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
+                        if (_validateSyntax)
+                            _syntaxErrors.add(errorMsg);
+                        else
+                            throw new UnsupportedOperationException(errorMsg);
+                    }
 
                     lookups.add(fkTok);
                 }
             }
         }
 
+        if (!_syntaxErrors.isEmpty())
+            return;
+
         // for each token with a lookup, get the lookup table and stash it for later
-        if (!lookups.isEmpty() && _parentTable != null)
+        if (!lookups.isEmpty())
         {
             Map<FieldKey, TableInfo> fieldKeyLookup = new HashMap<>();
             for (FieldKey fieldKey : lookups)
             {
                 List<String> fieldParts = fieldKey.getParts();
 
-                if (hasLineageLookup && fieldParts.size() <= 3)
+                if (hasLineageInputs && fieldParts.size() == 3)
                     continue;;
 
-                assert fieldParts.size() == 2;
+                assert _validateSyntax || fieldParts.size() == 2;
 
                 // find column matching the root
                 String root = fieldParts.get(0);
-                ColumnInfo col = _parentTable.getColumn(root);
-                if (col != null)
+                String lookupFieldName = fieldParts.get(1);
+                boolean lookupExist = false;
+
+                PropertyType pt = null;
+                if (_parentTable != null)
                 {
-                    ForeignKey fk = col.getFk();
-                    if (fk == null)
-                        continue;
+                    ColumnInfo col = _parentTable.getColumn(root);
+                    if (col != null)
+                    {
+                        ForeignKey fk = col.getFk();
+                        if (fk == null)
+                            continue;
 
-                    TableInfo lookupTable = fk.getLookupTableInfo();
-                    if (lookupTable == null)
-                        continue;
+                        TableInfo lookupTable = fk.getLookupTableInfo();
+                        if (lookupTable == null)
+                            continue;
 
-                    List<ColumnInfo> pkCols = lookupTable.getPkColumns();
-                    if (pkCols.size() != 1)
-                        continue;
+                        List<ColumnInfo> pkCols = lookupTable.getPkColumns();
+                        if (pkCols.size() != 1)
+                        {
+                            if (_validateSyntax)
+                                _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root + ".");
+                            continue;
+                        }
 
-                    fieldKeyLookup.put(fieldKey, lookupTable);
+                        fieldKeyLookup.put(fieldKey, lookupTable);
+
+                        ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
+                        if (lookupCol != null)
+                        {
+                            lookupExist = true;
+                            pt = lookupCol.getPropertyType();
+                        }
+
+                    }
                 }
+                else if (_validateSyntax && !domainFields.isEmpty())
+                {
+                    GWTPropertyDescriptor col = domainFields.get(root);
+                    if (col != null)
+                    {
+                        UserSchema fkSchema = QueryService.get().getUserSchema(user, _container, col.getLookupSchema());
+
+                        if (fkSchema != null)
+                        {
+                            TableInfo lookupTable = fkSchema.getTable(col.getLookupQuery());
+                            if (lookupTable != null)
+                            {
+                                List<String> pkCols = lookupTable.getPkColumnNames();
+                                if (pkCols.size() != 1)
+                                {
+                                    _syntaxErrors.add("Lookup field not supported on table with multiple primary key fields: " + root + ". ");
+                                    continue;
+                                }
+                                else
+                                {
+                                    ColumnInfo lookupCol = lookupTable.getColumn(lookupFieldName);
+                                    if (lookupCol != null)
+                                    {
+                                        lookupExist = true;
+                                        if (lookupCol.getConceptURI() != null || lookupCol.getRangeURI() != null)
+                                            pt = PropertyType.getFromURI(lookupCol.getConceptURI(), lookupCol.getRangeURI(), null);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (_validateSyntax)
+                {
+                    if (!lookupExist)
+                    {
+                        _syntaxErrors.add("Lookup field does not exist: " + fieldKey.toString());
+                    }
+                    else if (pt != null)
+                    {
+                        previewCtx.put(fieldKey.toString(), getNamePartPreviewValue(pt, lookupFieldName));
+                    }
+                }
+
             }
 
             _exprLookups = fieldKeyLookup;
@@ -300,6 +899,13 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
         _expLineageLookupFields = lineageLookupFields;
+        if (_validateSyntax && _syntaxErrors.isEmpty())
+            _previewName = _parsedNameExpression.eval(previewCtx);
+    }
+
+    public static Object getNamePartPreviewValue(PropertyType pt, @Nullable String prefix)
+    {
+        return pt.getPreviewValue(prefix);
     }
 
     public void generateNames(@NotNull State state,
@@ -859,6 +1465,9 @@ public class NameGenerator
         private final Container _container;
         private Function<String, Long> _getNonConflictCountFn;
         private String _counterSeqPrefix;
+        private boolean _validateSyntax;
+
+        private final List<String> _syntaxErrors = new ArrayList<>();
 
         NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
         {
@@ -866,26 +1475,32 @@ public class NameGenerator
             _container = container;
         }
 
-        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
         {
             this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
             _getNonConflictCountFn = getNonConflictCountFn;
             _counterSeqPrefix = counterSeqPrefix;
+            _validateSyntax = validateSyntax;
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null, false);
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null, false);
         }
         
-        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
+        }
+
+        public List<String> getSyntaxErrors()
+        {
+            return _syntaxErrors;
         }
 
         @Override
@@ -957,24 +1572,36 @@ public class NameGenerator
                         break;
 
                     if (openCount < 0)
+                    {
+                        if (_validateSyntax) // unmatched {} are already checked previously
+                            return;
                         throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
+                    }
                 }
 
                 if (openCount == 0)
                 {
                     String sub = _source.substring(openIndex + 2, subInd - 1);
                     StringExpressionFactory.StringPart part = parsePart(sub);
+                    if (_validateSyntax)
+                        part.setPreviewMode(true);
 
                     if (part.hasSideEffects() && !_allowSideEffects)
+                    {
+                        if (_validateSyntax)
+                            return;
                         throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
+                    }
 
                     _parsedExpression.add(part);
                     start = subInd;
-                    continue;
                 }
                 else
+                {
+                    if (_validateSyntax)
+                        return;
                     throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
-
+                }
             }
 
             if (start < _source.length())
@@ -984,6 +1611,8 @@ public class NameGenerator
 
     public static class CounterExpressionPart extends StringExpressionFactory.StringPart
     {
+        private final static long WITH_COUNTER_PREVIEW_VALUE = 1;
+
         private final String _prefixExpression;
         private final Integer _startIndex;
 
@@ -1031,23 +1660,36 @@ public class NameGenerator
         public String getValue(Map map)
         {
             String prefix = _parsedNameExpression.eval(map);
-            if (!_counterSequences.containsKey(prefix))
+
+            long count;
+            if (isPreviewMode())
             {
-                long existingCount = -1;
+                count = _startIndex > WITH_COUNTER_PREVIEW_VALUE ? _startIndex : WITH_COUNTER_PREVIEW_VALUE;
+            }
+            else
+            {
+                if (StringUtils.isEmpty(prefix))
+                    return null;
 
-                if (_getNonConflictCountFn != null)
-                    existingCount = _getNonConflictCountFn.apply(prefix);
+                if (!_counterSequences.containsKey(prefix))
+                {
+                    long existingCount = -1;
 
-                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
-                long currentSeqMax = newSequence.current();
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
 
-                if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
-                    newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+                    DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
+                    long currentSeqMax = newSequence.current();
 
-                _counterSequences.put(prefix, newSequence);
+                    if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
+                        newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+
+                    _counterSequences.put(prefix, newSequence);
+                }
+
+                count = _counterSequences.get(prefix).next();
             }
 
-            long count = _counterSequences.get(prefix).next();
 
             Object countStr;
             if (_counterFormat != null)
@@ -1419,6 +2061,188 @@ public class NameGenerator
                 assertEquals("S100...0111", s);
             }
 
+        }
+
+        @Test
+        public void testNoMismatchedBraces()
+        {
+            assertEquals(0, getMismatchedTagErrors("Good-${genId}").size());
+            assertEquals(0, getMismatchedTagErrors("No-subs").size());
+            assertEquals(0, getMismatchedTagErrors("${genId}-Many-${batchCounter}").size());
+            assertEquals(0, getMismatchedTagErrors("${${AliquotedFrom}.:withCounter}").size());
+        }
+
+        @Test
+        public void testMismatchedOpeningBraces()
+        {
+            List<String> errors = getMismatchedTagErrors("One-${genId");
+            assertArrayEquals(new String[]{"No closing brace found for the substitution pattern starting at position 5."}, errors.toArray());
+            errors = getMismatchedTagErrors("${genId{-One");
+            assertArrayEquals(new String[]{"No closing brace found for the substitution pattern starting at position 1."}, errors.toArray());
+            errors = getMismatchedTagErrors("Bad-${genId ${genId");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 5, 13."}, errors.toArray());
+            errors = getMismatchedTagErrors("Bad-${${xyz");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 5, 7."}, errors.toArray());
+            errors = getMismatchedTagErrors("Mixed-${genId-${xyz}-${open");
+            assertArrayEquals(new String[]{"No closing braces found for the substitution patterns starting at positions 7, 22."}, errors.toArray());
+        }
+
+        private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        {
+            Container c = JunitUtil.getTestContainer();
+            NameExpressionValidationResult results = getValidationMessages(expression, fields, importAliases, c);
+            assertEquals(expectedResult, results);
+        }
+
+        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg, @Nullable Map<String, String> importAliases)
+        {
+            validateNameResult(expression, errorMsg, importAliases, null);
+        }
+
+        private void validateNameResult(String expression, NameExpressionValidationResult errorMsg)
+        {
+            validateNameResult(expression, errorMsg, null);
+        }
+
+        private NameExpressionValidationResult withErrors(String... errors)
+        {
+            List<String> errorsList = new ArrayList<>();
+            Collections.addAll(errorsList, errors);
+            return new NameExpressionValidationResult(errorsList, Collections.emptyList(), null);
+        }
+
+        private NameExpressionValidationResult withWarnings(String preview, String... warnings)
+        {
+            List<String> warningsList = new ArrayList<>();
+            Collections.addAll(warningsList, warnings);
+            return new NameExpressionValidationResult(Collections.emptyList(), warningsList, Collections.singletonList(preview));
+        }
+
+        @Test
+        public void testNameExpressionTokenFieldErrors()
+        {
+            validateNameResult("One-${genId", withErrors("No closing brace found for the substitution pattern starting at position 5."));
+
+            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldA}.", "Invalid substitution token: ${FieldB}."));
+
+            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor("FieldA", "http://www.w3.org/2001/XMLSchema#string");
+            List<GWTPropertyDescriptor> fields = Collections.singletonList(descriptor);
+            validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+        }
+
+        @Test
+        public void testNameExpressionLookupFieldErrors()
+        {
+            validateNameResult("One-${A/B/C}", withErrors("Only one level of lookup is supported: A/B/C.", "Parent table is required for name expressions with lookups: A/B/C."));
+
+            validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
+
+            validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
+        }
+
+        @Test
+        public void testNameExpressionSubstitutionFormatErrors()
+        {
+            validateNameResult("${genId:number}", withErrors("No starting parentheses found for the 'number' substitution pattern starting at index 7.",
+                    "No ending parentheses found for the 'number' substitution pattern starting at index 7."));
+
+            validateNameResult("${genId:number(000)}", withErrors("Value in parentheses starting at index 14 should be enclosed in single quotes."));
+
+            validateNameResult("${genId:number(}", withErrors("No ending parentheses found for the 'number' substitution pattern starting at index 7.",
+                    "Value in parentheses starting at index 14 should be enclosed in single quotes."));
+
+            validateNameResult("${genId:number('000)}", withErrors("No ending quote for the 'number' substitution pattern value starting at index 7."));
+        }
+
+        @Test
+        public void testNameExpressionReservedTokenWarnings()
+        {
+            validateNameResult("S-genId", withWarnings("S-genId", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("S-genId-now-001", withWarnings("S-genId-now-001", "The 'genId' substitution pattern starting at position 2 should be preceded by the string '${'.",
+                    "The 'now' substitution pattern starting at position 8 should be preceded by the string '${'."));
+
+            validateNameResult("S-Inputs", withWarnings("S-Inputs", "The 'Inputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
+
+            validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+        }
+
+        @Test
+        public void testNameExpressionAbsentFieldBraceWarnings()
+        {
+            GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");
+            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("FieldInt", "http://www.w3.org/2001/XMLSchema#int");
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            fields.add(stringField);
+            fields.add(intField);
+
+            Map<String, String> importAliases = Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA");
+
+            validateNameResult("S-FieldStr", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldstr' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-FieldStr")), null, fields);
+
+            validateNameResult("S-${FieldStr}-FieldInt", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'fieldint' field starting at position 14 should be preceded by the string '${'."), Collections.singletonList("S-FieldStrValue-FieldInt")), null, fields);
+
+            validateNameResult("S-parentAlias", new NameExpressionValidationResult(Collections.emptyList(), Collections.singletonList("The 'parentalias' field starting at position 2 should be preceded by the string '${'."), Collections.singletonList("S-parentAlias")), importAliases, null);
+         }
+
+        @Test
+        public void testNameExpressionWithCounterSyntax()
+        {
+            validateNameResult("${AliquotedFrom}-:withCounter", withWarnings("Sample112-:withCounter", "The 'withCounter' substitution pattern starting at position 18 should be enclosed in ${}."));
+
+            validateNameResult("${genId}-${AliquotedFrom}-:withCounter}", withWarnings("1001-Sample112-:withCounter}", "The 'withCounter' substitution pattern starting at position 27 should be enclosed in ${}."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(}", withErrors("No ending parentheses found for the 'withCounter' substitution pattern starting at index 19."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(abc)}", withErrors("Invalid starting value abc for 'withCounter' starting at position 20."));
+
+            validateNameResult("${${AliquotedFrom}-:withCounter(100, 000)}", withErrors("Format string starting at position 36 for 'withCounter' substitution pattern should be enclosed in single quotes."));
+        }
+
+        private void verifyPreview(String expression, String preview, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
+        {
+            validateNameResult(expression, new NameExpressionValidationResult(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(preview)), importAliases, fields);
+        }
+
+        private void verifyPreview(String expression, String preview)
+        {
+            verifyPreview(expression, preview, null, null);
+        }
+
+        @Test
+        public void testNameExpressionPreviews()
+        {
+            // tokens can be substring, examples:  now in snow, genId in genIdentification
+            verifyPreview("S-snow-genIdentification", "S-snow-genIdentification");
+
+            // with reserved field
+            verifyPreview("S-${genId}", "S-1001");
+            verifyPreview("S-${weeklySampleCount:number('00000')}", "S-00025");
+            verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
+            verifyPreview("S-${AliquotedFrom}", "S-Sample112");
+
+            // withCounter
+            verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
+            verifyPreview("${${AliquotedFrom}-:withCounter(123)}", "Sample112-123");
+            verifyPreview("${${AliquotedFrom}-:withCounter(11, '000')}", "Sample112-011");
+
+            // with table columns
+            GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");
+            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("FieldInt", "http://www.w3.org/2001/XMLSchema#int");
+            GWTPropertyDescriptor dateField = new GWTPropertyDescriptor("FieldDate", "http://www.w3.org/2001/XMLSchema#date");
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            fields.add(stringField);
+            fields.add(intField);
+            fields.add(dateField);
+            verifyPreview("S-${FieldStr}-${FieldInt:number('00000')}", "S-FieldStrValue-00003", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
+            verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
+
+            // with input
+            verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 
         @After

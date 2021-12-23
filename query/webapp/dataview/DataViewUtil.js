@@ -540,7 +540,8 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                         var store = data.view.getStore();
                         this.updateDisplayOrder(store);
                         this.categoriesSyncSaveAndLoad(store);
-                    }
+                    },
+                    scope: this
                 }
             },
             listeners : {

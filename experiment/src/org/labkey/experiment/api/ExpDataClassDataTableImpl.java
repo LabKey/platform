@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
+import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -118,7 +119,7 @@ import java.util.function.Supplier;
  */
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
-    private @NotNull ExpDataClassImpl _dataClass;
+    private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     @Override
@@ -207,8 +208,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String nameExpression = _dataClass.getNameExpression();
                 c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
-                c.setDescription(desc);
 
                 // shut off this field in insert and update views if user-specified names are not allowed
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
@@ -305,6 +304,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
+        String nameExpression = _dataClass.getNameExpression();
+        if (!StringUtils.isEmpty(nameExpression))
+        {
+            String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), _dataClass.getName(), getUserSchema().getUser());
+            String nameDesc = ExpMaterialTableImpl.appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
+            nameCol.setDescription(nameDesc);
+        }
 
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
@@ -618,7 +625,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step0, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
             DataIterator di;
 
             // Generate names
