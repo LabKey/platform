@@ -25,6 +25,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameExpressionValidationResult;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -37,6 +39,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -46,6 +49,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -57,6 +61,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -274,6 +279,50 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public boolean canDeleteDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    {
+        ValidationException errors = new ValidationException();
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.errors() != null && !results.errors().isEmpty())
+            results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
+        return errors;
+    }
+
+    @Override
+    public NameExpressionValidationResult validateNameExpressions(DataClassDomainKindProperties options, GWTDomain domainDesign, Container container)
+    {
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            List<String> errors = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
+            List<String> previewNames = new ArrayList<>();
+
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), null, container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Name Pattern warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
+
+            return new NameExpressionValidationResult(errors, warnings, previewNames);
+        }
+        return null;
+    }
+
+    @Override
+    public void validateOptions(Container container, User user, DataClassDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    {
+        super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), updatedDomainDesign.getFields(), null, container);
+            if (errors.hasErrors())
+                throw new IllegalArgumentException(errors.getMessage());
+        }
+
     }
 
     @Override

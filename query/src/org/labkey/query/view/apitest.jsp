@@ -31,14 +31,13 @@
     }
 %>
 <%
-    JspView me = (JspView) HttpView.currentView();
     ActionURL defGetUrl = new ActionURL(QueryController.SelectRowsAction.class, getContainer());
-    String schemaName = HttpView.currentRequest().getParameter("schemaName");
+    String schemaName = getViewContext().getRequest().getParameter("schemaName");
     if (schemaName == null)
         schemaName = "**schema**";
     defGetUrl.addParameter("schemaName", schemaName);
 
-    String queryName = HttpView.currentRequest().getParameter("query.queryName");
+    String queryName = getViewContext().getRequest().getParameter("query.queryName");
     if (queryName == null)
         queryName = "**query**";
     defGetUrl.addParameter("query.queryName", queryName);
