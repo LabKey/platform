@@ -161,18 +161,19 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
     }
 
     @Override
-    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
-        fileMoved(src.toPath(), dest.toPath(), user, container);
+        return fileMoved(src.toPath(), dest.toPath(), user, container);
     }
 
     @Override
-    public void fileMoved(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
     {
         if (AppProps.getInstance().isWebfilesRootEnabled() && container != null)
         {
             invalidateCache(container.getParsedPath(), true);
         }
+        return 0;
     }
 
     @Override

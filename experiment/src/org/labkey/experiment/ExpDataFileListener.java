@@ -42,13 +42,13 @@ public class ExpDataFileListener extends TableUpdaterFileListener
     }
 
     @Override
-    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
-        fileMoved(src.toPath(), dest.toPath(), user, container);
+        return fileMoved(src.toPath(), dest.toPath(), user, container);
     }
 
     @Override
-    public void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container c)
+    public int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container c)
     {
         ExpData data = ExperimentService.get().getExpDataByURL(src, c);
 
@@ -62,13 +62,15 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             data = ExperimentService.get().createData(c, UPLOADED_FILE);
         }
 
+        int extra = 0;
         if (data != null && src.equals(data.getFilePath()) && !src.equals(dest))
         {
             // The file has been renamed, so rename the exp.data row if its name matches
             data.setName(FileUtil.getFileName(dest));
             data.save(user);
+            extra = 1;
         }
 
-        super.fileMoved(src, dest, user, c);
+        return super.fileMoved(src, dest, user, c) + extra;
     }
 }
