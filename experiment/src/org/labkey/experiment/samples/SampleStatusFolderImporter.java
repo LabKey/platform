@@ -46,7 +46,8 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
 
         if (xarDir != null)
         {
-            Path xarDirPath = FileUtil.getPath(ctx.getContainer(), FileUtil.createUri(xarDir.getLocation()));
+            // #44384 Generate a relative Path object for the folder's VirtualFile
+            Path xarDirPath = Path.of(xarDir.getLocation());
             Path typesXarFile = null;
             Map<String, String> sampleStatusDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();
