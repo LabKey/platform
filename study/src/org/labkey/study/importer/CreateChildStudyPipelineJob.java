@@ -410,7 +410,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
 
-            // missing values, qc states, and view categories
+            // missing values and qc states
             new MissingValueImporterFactory().create().process(null, importContext, studyDir);
             new StudyQcStatesImporter().process(importContext, studyDir, errors);
 
