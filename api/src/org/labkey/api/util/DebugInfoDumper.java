@@ -238,7 +238,7 @@ public class DebugInfoDumper
     public static synchronized void dumpThreads(LoggerWriter logWriter)
     {
         logWriter.debug("*********************************************");
-        logWriter.debug("Starting thread dump - " + LocalDateTime.now().toString());
+        logWriter.debug("Starting thread dump - " + LocalDateTime.now());
         long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
         long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
         logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
@@ -264,9 +264,9 @@ public class DebugInfoDumper
                 threadInfo.append(spids);
             }
             logWriter.debug(threadInfo.toString());
-            String uri = ViewServlet.getRequestURL(thread);
+            ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
             if (null != uri)
-                logWriter.debug(uri);
+                logWriter.debug(uri.toString());
             for (StackTraceElement stackTraceElement : stackTraces.get(thread))
             {
                 logWriter.debug("\t" + stackTraceElement.toString());
