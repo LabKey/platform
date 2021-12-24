@@ -90,7 +90,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
                 new StudyDatasetData(),
                 new StudyDatasetDefinition(),
                 new AssayScheduleWriter(),
-                new ViewCategoryWriter(),
                 new CohortWriter(),
                 new ParticipantCommentWriter(),
                 new ParticipantGroupWriter(),
@@ -112,7 +111,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
     {
         return Arrays.asList(
             new AssayScheduleImporter(),
-            new ViewCategoryImporter(),
             new CohortImporter(),
             new DatasetDefinitionImporter(),
             new DatasetCohortAssigner(),

@@ -138,6 +138,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         _loggerGetter = loggerGetter;
     }
 
+    @Override
     public VirtualFile getRoot()
     {
         if (_root == null)
