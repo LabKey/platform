@@ -43,6 +43,12 @@ public class TextChoiceValidator extends RegExValidator implements ValidatorKind
     }
 
     @Override
+    public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
+    {
+        return true;
+    }
+
+    @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache)
     {

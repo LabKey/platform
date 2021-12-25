@@ -773,7 +773,7 @@ public abstract class UploadSamplesHelper
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
             dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid

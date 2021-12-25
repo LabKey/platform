@@ -45,4 +45,10 @@ public class DefaultAssayDomainKind extends AssayDomainKind
     {
         return getAssayReservedPropertyNames();
     }
+
+    @Override
+    public boolean allowTextChoiceProperties()
+    {
+        return false;
+    }
 }

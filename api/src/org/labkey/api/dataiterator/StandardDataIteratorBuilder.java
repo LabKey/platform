@@ -269,7 +269,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         DataIterator validateInput = convert;
         if (null != OntologyService.get())
-            validateInput = OntologyService.get().getConceptLookupDataIteratorBuilder(DataIteratorBuilder.wrap(convert), _target).getDataIterator(context);
+            validateInput = OntologyService.get().getConceptLookupDataIteratorBuilder(convert, _target).getDataIterator(context);
 
 
         //

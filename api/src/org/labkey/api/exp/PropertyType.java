@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.OntologyManager.PropertyRow;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.DateUtil;
@@ -97,6 +98,12 @@ public enum PropertyType
         {
             return property.floatValue == null ? null : property.floatValue.intValue() != 0 ? Boolean.TRUE : Boolean.FALSE;
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return Boolean.TRUE;
+        }
     },
     STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 4000, "text", CellType.STRING, String.class)
     {
@@ -138,6 +145,12 @@ public enum PropertyType
         {
             return property.getStringValue();
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
+        }
     },
     MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 4000, "textarea", CellType.STRING, String.class)
     {
@@ -178,6 +191,12 @@ public enum PropertyType
         protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
         }
     },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, CellType.STRING, Identifiable.class)
@@ -231,6 +250,12 @@ public enum PropertyType
             else
                 return property.getStringValue();
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
+        }
     },
     INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
     {
@@ -279,6 +304,12 @@ public enum PropertyType
         {
             return property.floatValue == null ? null : property.floatValue.intValue();
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return Integer.valueOf(3);
+        }
     },
     BIGINT("http://www.w3.org/2001/XMLSchema#long", "Long", 'f', JdbcType.BIGINT, 10, null, CellType.NUMERIC, Long.class, Long.TYPE)
     {
@@ -326,6 +357,12 @@ public enum PropertyType
         protected Object getValue(ObjectProperty property)
         {
             return property.floatValue == null ? null : property.floatValue.longValue();
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return Integer.valueOf(3);
         }
     },
     BINARY("http://www.w3.org/2001/XMLSchema#binary", "Binary", 'f', JdbcType.BINARY, 10, null, CellType.NUMERIC, ByteBuffer.class)
@@ -419,6 +456,12 @@ public enum PropertyType
             String value = property.getStringValue();
             return value == null ? null : new File(value);
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
+        }
     },
     /** Stored in the database as a BLOB using AttachmentService */
     ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", CellType.STRING, File.class)
@@ -467,6 +510,12 @@ public enum PropertyType
         protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
         }
     },
     DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, CellType.NUMERIC, Date.class)
@@ -536,6 +585,13 @@ public enum PropertyType
         {
             return property.dateTimeValue;
         }
+
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return NameGenerator.PREVIEW_DATE_VALUE;
+        }
     },
     DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, CellType.NUMERIC, Date.class)
     {
@@ -577,6 +633,12 @@ public enum PropertyType
         {
             return property.dateTimeValue;
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return NameGenerator.PREVIEW_DATE_VALUE;
+        }
     },
     TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, Date.class)
     {
@@ -614,6 +676,12 @@ public enum PropertyType
         protected Object getValue(ObjectProperty property)
         {
             return property.dateTimeValue;
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return NameGenerator.PREVIEW_DATE_VALUE;
         }
     },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
@@ -663,6 +731,12 @@ public enum PropertyType
         {
             return property.floatValue;
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return 12.34;
+        }
     },
     FLOAT("http://www.w3.org/2001/XMLSchema#float", "Float", 'f', JdbcType.REAL, 20, null, CellType.NUMERIC, Float.class, Float.TYPE)
     {
@@ -711,6 +785,12 @@ public enum PropertyType
         {
             return property.floatValue;
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return 12.34;
+        }
     },
     DECIMAL("http://www.w3.org/2001/XMLSchema#decimal", "Decimal", 'f', JdbcType.DECIMAL, 20, null, CellType.NUMERIC, BigDecimal.class)
     {
@@ -757,6 +837,12 @@ public enum PropertyType
         {
             return property.floatValue;
         }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return 12.34;
+        }
     },
     XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 4000, null, CellType.STRING, null)
     {
@@ -797,6 +883,12 @@ public enum PropertyType
         protected Object getValue(ObjectProperty property)
         {
             return property.getStringValue();
+        }
+
+        @Override
+        public Object getPreviewValue(@Nullable String prefix)
+        {
+            return prefix + "Value";
         }
     };
 
@@ -886,6 +978,10 @@ public enum PropertyType
     abstract protected void init(PropertyRow row, Object value);
     abstract protected void setValue(ObjectProperty property, Object value);
     abstract protected Object getValue(ObjectProperty property);
+    public Object getPreviewValue(@Nullable String prefix)
+    {
+        return getValue(null);
+    }
 
     static
     {
