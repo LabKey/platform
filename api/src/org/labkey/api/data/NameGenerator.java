@@ -144,7 +144,8 @@ public class NameGenerator
         selectionKey("selectionKeyValue"),
         weeklySampleCount(25),
         withCounter(null), // see CounterExpressionPart.getValue
-        yearlySampleCount(412);
+        yearlySampleCount(412),
+        folderPrefix("folderPrefixValue");
 
         private final Object _previewValue;
 
