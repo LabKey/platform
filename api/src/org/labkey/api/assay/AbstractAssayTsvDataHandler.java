@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -980,16 +981,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (o instanceof String && remappableLookup.containsKey(pd))
                 {
                     TableInfo lookupTable = remappableLookup.get(pd);
-                    Object remapped = cache.remap(lookupTable, (String)o);
-                    if (remapped == null)
+                    try
                     {
-                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                        Object remapped = cache.remap(lookupTable, (String)o);
+                        if (remapped == null)
+                        {
+                            errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
+                        }
+                        else if (o != remapped)
+                        {
+                            o = remapped;
+                            map.put(pd.getName(), remapped);
+                            iter.set(map);
+                        }
                     }
-                    else if (o != remapped)
+                    catch (ConversionException e)
                     {
-                        o = remapped;
-                        map.put(pd.getName(), remapped);
-                        iter.set(map);
+                        errors.add(new PropertyValidationError(e.getMessage(), pd.getName()));
                     }
                 }
 
