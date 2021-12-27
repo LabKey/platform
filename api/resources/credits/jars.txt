@@ -40,7 +40,7 @@ log4j-api-2.17.0.jar|Log4j|2.17.0|{link:Apache|https://logging.apache.org/log4j/
 log4j-core-2.17.0.jar|Log4j|2.17.0|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 log4j-1.2-api-2.17.0.jar|Log4j|2.17.0|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV files
-pdfbox-2.0.24.jar|Apache PDFBox®|2.0.24|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
+pdfbox-2.0.25.jar|Apache PDFBox®|2.0.25|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
 poi-4.1.2.jar|Apache POI|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-4.1.2.jar|Apache POI OOXML|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|klum|Provide polling file watcher for cifs file systems
@@ -57,7 +57,7 @@ spring-tx-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.spr
 spring-web-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-webmvc-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
-tika-core-2.1.0.jar|Tika|2.1.0|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
+tika-core-2.2.1.jar|Tika|2.2.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
 validation-api-1.1.0.Final.jar|Bean Validation API (JSR 303)|1.1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xercesImpl-2.12.1.jar|Xerces|2.12.1|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
 xmlbeans-3.0.1.jar|XMLBeans|3.0.1|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
