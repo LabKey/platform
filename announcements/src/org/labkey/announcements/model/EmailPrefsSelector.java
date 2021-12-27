@@ -128,28 +128,18 @@ public abstract class EmailPrefsSelector
             extraRecipients = typeProvider.getRecipients(_c, user, ann.getDiscussionSrcIdentifier());
         }
 
-        if (EmailOption.MESSAGES_MINE.getValue() == emailPreference)
+        if (EmailOption.MESSAGES_MINE.getValue() == emailPreference || EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue() == emailPreference)
         {
             // Skip if preference is MINE and this is a new message  TODO: notify message creator?
             if (null == ann)
                 return false;
 
-            if (typeProvider != null && ann.getCreatedBy() == user.getUserId())
+            if (EmailOption.MESSAGES_MINE.getValue() == emailPreference && typeProvider != null && ann.getCreatedBy() == user.getUserId())
                 return false;
 
             Set<User> authors = ann.getAuthors();
 
             if (!authors.contains(user))   // TODO: notify message creator?
-            {
-                List<Integer> memberList = ann.getMemberListIds();
-                if (!memberList.contains(user.getUserId()) && !extraRecipients.contains(user))
-                    return false;
-            }
-        }
-        else if (EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue() == emailPreference)
-        {
-            Set<User> authors = ann.getAuthors();
-            if (!authors.contains(user))
             {
                 List<Integer> memberList = ann.getMemberListIds();
                 if (!memberList.contains(user.getUserId()) && !extraRecipients.contains(user))
