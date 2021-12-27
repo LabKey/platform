@@ -144,7 +144,8 @@ public class NameGenerator
         selectionKey("selectionKeyValue"),
         weeklySampleCount(25),
         withCounter(null), // see CounterExpressionPart.getValue
-        yearlySampleCount(412);
+        yearlySampleCount(412),
+        folderPrefix("folderPrefixValue");
 
         private final Object _previewValue;
 
@@ -911,7 +912,7 @@ public class NameGenerator
     public void generateNames(@NotNull State state,
                               @NotNull List<Map<String, Object>> maps,
                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                              @Nullable Supplier<Map<String, Object>> extraPropsFn,
+                              @Nullable List<Supplier<Map<String, Object>>> extraPropsFns,
                               boolean skipDuplicates)
             throws NameGenerationException
     {
@@ -921,7 +922,7 @@ public class NameGenerator
             Map<String, Object> map = li.next();
             try
             {
-                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn, null);
+                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFns, null);
                 map.put("name", name);
             }
             catch (DuplicateNameException dup)
@@ -954,16 +955,16 @@ public class NameGenerator
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable Supplier<Map<String, Object>> extraPropsFn) throws NameGenerationException
+                               @Nullable List<Supplier<Map<String, Object>>> extraPropsFns) throws NameGenerationException
     {
-        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, null);
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, null);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression) throws NameGenerationException
+                               @Nullable List<Supplier<Map<String, Object>>> extraPropsFns, @Nullable FieldKeyStringExpression altExpression) throws NameGenerationException
     {
-        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
     }
 
 
@@ -998,7 +999,7 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression)
+        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable List<Supplier<Map<String, Object>>> extraPropsFns, @Nullable FieldKeyStringExpression altExpression)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -1008,7 +1009,7 @@ public class NameGenerator
             String name;
             try
             {
-                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
+                name = genName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
             }
             catch (IllegalArgumentException e)
             {
@@ -1030,7 +1031,7 @@ public class NameGenerator
         private String genName(@NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas,
                                @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable Supplier<Map<String, Object>> extraPropsFn,
+                               @Nullable List<Supplier<Map<String, Object>>> extraPropsFns,
                                @Nullable FieldKeyStringExpression altExpression)
                 throws IllegalArgumentException
         {
@@ -1050,12 +1051,17 @@ public class NameGenerator
                 sampleCounts = getSampleCountsFunction.apply(null);
             }
 
-            // Always execute the extraPropsFn, if available, to increment the ${genId} counter in the non-QueryUpdateService code path.
+            // Always execute the extraPropsFns, if available, to increment the ${genId} counter in the non-QueryUpdateService code path.
             // The DataClass and SampleType DataIterators increment the genId value using SimpleTranslator.addSequenceColumn()
-            Map<String, Object> extraProps = null;
-            if (extraPropsFn != null)
+            Map<String, Object> extraProps = new HashMap<>();
+            if (extraPropsFns != null)
             {
-                extraProps = extraPropsFn.get();
+                for (Supplier<Map<String, Object>> fn : extraPropsFns)
+                {
+                    Map<String, Object> props = fn.get();
+                    if (props != null)
+                        extraProps.putAll(props);
+                }
             }
 
             // If a name is already provided, just use it as is
