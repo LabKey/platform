@@ -5,14 +5,14 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="8.11.0"
+ext.luceneVersion="9.0.0"
 ext.mime4jVersion="0.8.4"
 
 dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.lucene:lucene-analyzers-common:${luceneVersion}",
+            "org.apache.lucene:lucene-analysis-common:${luceneVersion}",
             "Lucene Analyzers",
             "Apache",
             "http://lucene.apache.org/java/docs/",
@@ -100,7 +100,7 @@ dependencies {
             "org.apache.pdfbox:jempbox:1.8.16",
             "jempbox",
             "Apache",
-            "https://pdfbox.apache.org/1.8/dependencies.htm/",
+            "https://pdfbox.apache.org/2.0/dependencies.html",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "PDFBox dependency"
