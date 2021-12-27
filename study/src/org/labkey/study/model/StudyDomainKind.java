@@ -70,4 +70,10 @@ public class StudyDomainKind extends BaseStudyDomainKind
         return "This page lets administrators define custom study properties that are accessible throughout this project. Adding a field makes it available " +
                 "in all studies in the project; removing a field deletes it and all the data it contains from all studies in the project.";
     }
+
+    @Override
+    public boolean allowTextChoiceProperties()
+    {
+        return false;
+    }
 }

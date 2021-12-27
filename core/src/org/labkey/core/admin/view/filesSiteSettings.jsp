@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.core.admin.FileListAction" %>
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
+<%@ page import="org.labkey.core.admin.UpdateFilePathsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -45,7 +46,7 @@
 <labkey:errors/>
 <labkey:form action="<%=urlFor(FilesSiteSettingsAction.class)%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
-    <table width="80%">
+    <table class="lk-fields-table" style="width: 80%">
         <tr><td colspan="2"><h4>Site-Level File Root</h4></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
 
@@ -59,7 +60,8 @@
             </td></tr>
         <% } else { %>
         <tr><td colspan="2">When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
-            If the root is changed, all files will be automatically moved to the new location.</td></tr>
+            If the root is changed, all files will be automatically moved to the new location. If files have been moved through other means, it is also
+            possible to <a href="<%= h(new ActionURL(UpdateFilePathsAction.class, getContainer())) %>">update paths stored in the database</a>.</td></tr>
         <% } %>
         <tr><td>&nbsp;</td></tr>
         

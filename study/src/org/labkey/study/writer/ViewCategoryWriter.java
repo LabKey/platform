@@ -47,6 +47,9 @@ public class ViewCategoryWriter implements InternalStudyWriter
 
         if (!categories.isEmpty())
         {
+            // Export in "hierarchy" order
+            categories.sort(ViewCategory.HIERARCHY_COMPARATOR);
+
             CategoriesDocument doc = CategoriesDocument.Factory.newInstance();
             ViewCategoryType categoryType = doc.addNewCategories();
 

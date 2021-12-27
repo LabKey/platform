@@ -174,7 +174,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             try
             {
-                return _nameGenerator.generateName(_state, context, null, parentSamples, _genIdFn);
+                return _nameGenerator.generateName(_state, context, null, parentSamples, List.of(_genIdFn));
             }
             catch (NameGenerator.NameGenerationException e)
             {

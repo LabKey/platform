@@ -270,13 +270,18 @@ public interface FileContentService
         if (!FileUtil.hasCloudScheme(created))
             fireFileCreateEvent(created.toFile(), user, container);
     }
-    /** Notifies all registered FileListeners that a file or directory has moved */
-    void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
-    default void fireFileMoveEvent(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
+    /**
+     * Notifies all registered FileListeners that a file or directory has moved
+     * @return number of rows updated across all listeners
+     */
+    int fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    default int fireFileMoveEvent(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
     {
         if (!FileUtil.hasCloudScheme(src) && !FileUtil.hasCloudScheme(dest))
-            fireFileMoveEvent(src.toFile(), dest.toFile(), user, container);
+            return fireFileMoveEvent(src.toFile(), dest.toFile(), user, container);
+        return 0;
     }
+
     /** Add a listener that will be notified when files are created or are moved */
     void addFileListener(FileListener listener);
 

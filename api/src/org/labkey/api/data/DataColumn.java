@@ -745,7 +745,7 @@ public class DataColumn extends DisplayColumn
         List<String> choices = PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator);
 
         // if the already saved strVal is not in the current choice set, add it (as it seems wrong to remove a value that the user hasn't explicitly touched)
-        if (!choices.contains(strVal))
+        if (!StringUtils.isEmpty(strVal) && !choices.contains(strVal))
             choices.add(strVal);
 
         for (String choice : choices)

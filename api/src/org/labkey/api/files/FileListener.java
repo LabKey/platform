@@ -56,11 +56,12 @@ public interface FileListener
      * @param user if available, the user who initiated the move
      * @param container if available, the container in which the move was initiated
      */
-    void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
-    default void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
+    int fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    default int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
     {
         if (!FileUtil.hasCloudScheme(src) && !FileUtil.hasCloudScheme(dest))
-            fileMoved(src.toFile(), dest.toFile(), user, container);
+            return fileMoved(src.toFile(), dest.toFile(), user, container);
+        return 0;
     }
 
     /**

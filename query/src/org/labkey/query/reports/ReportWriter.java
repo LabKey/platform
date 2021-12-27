@@ -29,7 +29,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.ExportDirType;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -58,15 +57,7 @@ public class ReportWriter extends BaseFolderWriter
             Set<String> reportsToExport = ((FolderExportContext)ctx).getReportIds();
             if (reportsToExport != null)
             {
-                Iterator it = reports.iterator();
-                while (it.hasNext())
-                {
-                    Object reportObj = it.next();
-                    if(!reportsToExport.contains(((Report)reportObj).getDescriptor().getEntityId()))
-                    {
-                        it.remove();
-                    }
-                }
+                reports.removeIf(reportObj -> !reportsToExport.contains(reportObj.getDescriptor().getEntityId()));
             }
         }
 

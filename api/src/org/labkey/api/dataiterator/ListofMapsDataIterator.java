@@ -160,13 +160,11 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     {
         super.debugLogInfo(sb);
 
-        _cols.stream().forEach(p -> {
-            sb.append("    " + p.getName() + "\n");
-        });
+        _cols.forEach(p -> sb.append("    ").append(p.getName()).append("\n"));
 
         if (_rows != null)
         {
-            sb.append("    rows: " + _rows.size());
+            sb.append("    rows: ").append(_rows.size());
         }
     }
 
