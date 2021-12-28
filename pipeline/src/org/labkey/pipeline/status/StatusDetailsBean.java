@@ -2,15 +2,23 @@ package org.labkey.pipeline.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.emory.mathcs.backport.java.util.Collections;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -44,6 +52,7 @@ public class StatusDetailsBean
     public final String modified;
     public final String email;
     public final String status;
+    public final Container container;
     public final String description;
     public final String info;
     public final boolean active;
@@ -75,6 +84,7 @@ public class StatusDetailsBean
         this.modified = DateUtil.formatDateTime(c, psf.getModified());
         this.email = psf.getEmail();
         this.status = psf.getStatus();
+        this.container = psf.lookupContainer();
         this.description = psf.getDescription();
         this.info = psf.getInfo();
         this.active = psf.isActive();
@@ -168,6 +178,7 @@ public class StatusDetailsBean
     // skipping offset characters and closing the PrintWriter when complete.
     private static long transferTo(StringBuilder out, Path p, long offset) throws IOException
     {
+        //TODO
         // Pipeline log files are written in platform default encoding.
         // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
         // Use platform default encoding when reading the log file.
