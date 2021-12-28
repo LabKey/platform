@@ -265,4 +265,53 @@ public class StatusDetailsBean
         }
     }
 
+    public @Nullable URLHelper getWebDavUrl()
+    {
+        if (filePath == null)
+        {
+            return null;
+        }
+
+        Path logFile = Path.of(filePath);
+
+        if (container == null)
+        {
+            return null;
+        }
+
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (!root.isUnderRoot(logFile))
+        {
+            return null;
+        }
+
+        // TODO: if this the best cloud-aware way to test whether this file exists?
+        if (!Files.exists(logFile))
+        {
+            return null;
+        }
+
+        String relPath = root.relativePath(logFile);
+        if (relPath == null)
+        {
+            return null;
+        }
+
+        if (!FileContentService.get().isCloudRoot(container))
+        {
+            relPath = org.labkey.api.util.Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+        }
+        else
+        {
+            // Do not encode path from S3 folder.  It is already encoded.
+            relPath = org.labkey.api.util.Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+        }
+
+        return new ResourceURL(AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath);
+    }
 }
