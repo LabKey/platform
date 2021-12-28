@@ -11,7 +11,8 @@ import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.NelderMeadSimplex;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.PowellOptimizer;
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.SimplexOptimizer;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
@@ -24,7 +25,7 @@ import org.labkey.api.data.statistics.StatsService;
  */
 public class FourParameterSimplex extends ParameterCurveFit implements MultivariateFunction
 {
-    Logger _log = Logger.getLogger(FourParameterSimplex.class);
+    private static final Logger _log = LogManager.getLogger(FourParameterSimplex.class);
 
     private static final double REL_TOLERANCE = 1.0e-10;            // relative convergence factor
     private static final double ABS_TOLERANCE = 1.0e-20;            // absolute convergence factor

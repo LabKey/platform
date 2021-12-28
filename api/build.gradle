@@ -58,7 +58,6 @@ List caching = [
 List logging = [
         "org.apache.logging.log4j:log4j-core:${log4j2Version}",
         "org.apache.logging.log4j:log4j-api:${log4j2Version}",
-        "org.apache.logging.log4j:log4j-1.2-api:${log4j2Version}",
         "commons-logging:commons-logging:${commonsLoggingVersion}"
 ]
 

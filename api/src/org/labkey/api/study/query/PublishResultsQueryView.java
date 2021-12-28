@@ -17,7 +17,8 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.ActionButton;
@@ -95,7 +96,7 @@ import java.util.stream.Collectors;
  */
 public class PublishResultsQueryView extends QueryView
 {
-    private static final Logger LOG = Logger.getLogger(PublishResultsQueryView.class);
+    private static final Logger LOG = LogManager.getLogger(PublishResultsQueryView.class);
 
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
