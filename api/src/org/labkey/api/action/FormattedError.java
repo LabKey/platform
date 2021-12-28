@@ -24,6 +24,7 @@ import org.labkey.api.view.ViewContext;
  * User: Matthew
  * Date: Feb 5, 2009
  */
+@Deprecated // Will be removed soon. HTML messages are problematic, see #44194.
 public class FormattedError extends LabKeyError
 {
     public FormattedError(String message)
