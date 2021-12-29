@@ -41,6 +41,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.qc.QCStateManager;
@@ -58,6 +59,9 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
+import org.labkey.api.security.permissions.RestrictedInsertPermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
@@ -139,7 +143,8 @@ public class DatasetQueryView extends StudyQueryView
 
         // Only show link to edit if permission allows it
         var table = getTable();
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && null != table && table.hasPermission(getUser(), UpdatePermission.class));
+        var hasUpdatePermission = null != table && (table.hasPermission(getUser(), UpdatePermission.class) || table.hasPermission(getUser(), RestrictedUpdatePermission.class));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && hasUpdatePermission);
 
         if (form.getVisitRowId() != 0)
         {
@@ -241,12 +246,21 @@ public class DatasetQueryView extends StudyQueryView
         return view;
     }
 
+    /** This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
+     * table.hasPermission(UpdatePermission) is false.
+      * @return
+     */
+    protected boolean allowQueryTableUpdateURLOverride()
+    {
+        if (super.allowQueryTableUpdateURLOverride())
+            return true;
+        TableInfo table = getTable();
+        return null != table && table.hasPermission(getUser(), RestrictedUpdatePermission.class);
+    }
 
     @Override
     protected @Nullable DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
     {
-        return super.createUpdateColumn(urlUpdate, table);
-        /*
         final DatasetTableImpl dtable = (DatasetTableImpl)table;
         final FieldKey subject = dtable.getColumn(dtable.getDataset().getStudy().getSubjectColumnName()).getFieldKey();
 
@@ -285,7 +299,6 @@ public class DatasetQueryView extends StudyQueryView
                 return super.getLinkTarget();
             }
         };
-    */
     }
 
     private boolean hasUsefulDetailsPage()
@@ -409,8 +422,9 @@ public class DatasetQueryView extends StudyQueryView
 
         User user = getUser();
         var table = getTable();
-        boolean canInsert = null != table && table.hasPermission(user, InsertPermission.class);
-        boolean canDelete = null != table && table.hasPermission(user, DeletePermission.class);
+        boolean canImport = null != table && table.hasPermission(user, InsertPermission.class);
+        boolean canInsert = canImport || (null != table && table.hasPermission(user, RestrictedInsertPermission.class));
+        boolean canDelete = null != table && (table.hasPermission(user, DeletePermission.class) || table.hasPermission(user, RestrictedDeletePermission.class));
         boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         ExpObject publishSource = _dataset.resolvePublishSource();
@@ -422,6 +436,10 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (canInsert)
                 {
+                    // don't show import button if user only had RestrictedInsertPermission
+                    if (!canImport)
+                        setShowImportDataButton(false);
+
                     // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionButton insertButton = createInsertMenuButton();
                     if (insertButton != null)

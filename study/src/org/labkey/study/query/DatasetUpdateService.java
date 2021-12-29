@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -38,21 +37,16 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -111,6 +105,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
+    private Set<Role> _contextualRoles = Set.of();
 
     /** Mapping for MV column names */
     private Map<String, String> _columnMapping = Collections.emptyMap();
@@ -347,7 +342,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
 
-    private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
+    @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
     {
         String columnName = _dataset.getStudy().getSubjectColumnName();
         Object participant = row.get(columnName);
@@ -422,17 +417,17 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> updateRows(User user, final Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
-        if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
-        {
-            PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
-            PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
-            setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
-        }
+            List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+            if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
+            {
+                PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
+                PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
+                setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
+            }
 
-        resyncStudy(user, container);
-        return result;
-    }
+            resyncStudy(user, container);
+            return result;
+        }
 
     private void resyncStudy(User user, Container container)
     {

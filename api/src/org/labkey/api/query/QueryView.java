@@ -832,7 +832,7 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasInsertURLOverride() && table.allowQueryTableURLOverrides();
     }
 
-    private boolean allowQueryTableUpdateURLOverride()
+    protected boolean allowQueryTableUpdateURLOverride()
     {
         TableInfo table = getTable();
         return table != null && table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
