@@ -18,7 +18,8 @@ package org.labkey.api.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
@@ -36,7 +37,7 @@ import org.labkey.api.view.HttpView;
  */
 public class ReturnUrlForm
 {
-    public static Logger LOG = Logger.getLogger(ReturnUrlForm.class);
+    public static final Logger LOG = LogManager.getLogger(ReturnUrlForm.class);
 
     private ReturnURLString _returnUrl;
     private ReturnURLString _cancelUrl;

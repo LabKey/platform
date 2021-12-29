@@ -1,6 +1,7 @@
 package org.labkey.api.query.column;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -22,7 +23,7 @@ public class ContainerIdColumnInfoTransformer implements ConceptURIColumnInfoTra
     {
         if (column.getJdbcType() != JdbcType.GUID && column.getJdbcType() != JdbcType.VARCHAR)
         {
-            Logger.getLogger(UserIdColumnInfoTransformer.class).warn("Column is not of type GUID: " + column.getName());
+            LogManager.getLogger(UserIdColumnInfoTransformer.class).warn("Column is not of type GUID: " + column.getName());
             return column;
         }
 
@@ -42,5 +43,4 @@ public class ContainerIdColumnInfoTransformer implements ConceptURIColumnInfoTra
         }
         return column;
     }
-
 }
