@@ -43,6 +43,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -79,6 +80,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 
 /**
  * User: jgarms
@@ -637,6 +640,7 @@ public class DomainUtil
             d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
+        Map<DomainProperty, List<Map<String, Object>>> textChoiceValueUpdates = new HashMap<>();
 
         // and now update properties
         for (GWTPropertyDescriptor pd : update.getFields())
@@ -665,7 +669,9 @@ public class DomainUtil
 
             if (old == null)
                 continue;
-            updatePropertyValidators(p, old, pd);
+            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
+            if (propTextChoiceValueUpdates != null)
+                textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
             if (old.equals(pd))
                 continue;
 
@@ -714,6 +720,13 @@ public class DomainUtil
                 catch (ExperimentException e)
                 {
                     validationException.addError(new SimpleValidationError(e.getMessage() == null ? e.toString() : e.getMessage()));
+                }
+
+                // Text Choice validator updates to existing / in use values
+                for (Map.Entry<DomainProperty, List<Map<String, Object>>> entry : textChoiceValueUpdates.entrySet())
+                {
+                    for (Map<String, Object> valueUpdate : entry.getValue())
+                        updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
                 }
             }
         }
@@ -936,9 +949,11 @@ public class DomainUtil
     }
 
     @SuppressWarnings("unchecked")
-    private static void updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
+    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
+        List<Map<String, Object>> valueUpdates = new ArrayList<>();
+
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
@@ -950,6 +965,12 @@ public class DomainUtil
 
                 _copyValidator(pv, v);
                 dp.addValidator(pv);
+            }
+
+            if (v.getExtraProperties() != null && v.getExtraProperties().containsKey("valueUpdates"))
+            {
+                if (v.getExtraProperties().get("valueUpdates").size() > 0)
+                    valueUpdates.add(v.getExtraProperties().get("valueUpdates"));
             }
         }
 
@@ -972,6 +993,48 @@ public class DomainUtil
             // deal with removed validators
             for (GWTPropertyValidator gpv : deleted)
                 dp.removeValidator(gpv.getRowId());
+
+            return valueUpdates;
+        }
+
+        return null;
+    }
+
+    private static void updateTextChoiceValueRows(Domain domain, User user, String propName, Map<String, Object> valueUpdates, ValidationException errors)
+    {
+        if (domain != null && domain.getDomainKind() != null)
+        {
+            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain);
+            if (domainTable != null && domainTable.getUpdateService() != null)
+            {
+                // we need to make all of the row updates for this domain property at one time to prevent the
+                // double mapping if one choice value want from a -> b and another from b -> c
+                // (not sure why someone would do that though)
+                List<Map<String, Object>> rows = new ArrayList<>();
+
+                for (Map.Entry<String, Object> entry : valueUpdates.entrySet())
+                {
+                    // query for the row PKs of domain rows that have the original text choice value
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(propName), entry.getKey());
+                    List<Map<String, Object>> valueRows = new TableSelector(domainTable, domainTable.getPkColumns(), filter, null).getMapCollection().stream().toList();
+
+                    // put the updated property value into the row map as well
+                    for (Map<String, Object> valueRow : valueRows)
+                        valueRow.put(propName, entry.getValue());
+
+                    rows.addAll(valueRows);
+                }
+
+                try
+                {
+                    // use update rows, to get auditing, to map the text choice value to the updated value
+                    domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                }
+                catch (Exception e)
+                {
+                    errors.addError(new PropertyValidationError(e.getMessage(), propName));
+                }
+            }
         }
     }
 
