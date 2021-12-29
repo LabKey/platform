@@ -1008,7 +1008,7 @@ public class DomainUtil
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
                 // we need to make all of the row updates for this domain property at one time to prevent the
-                // double mapping if one choice value want from a -> b and another from b -> c
+                // double mapping if one choice value was changed from a -> b and another from b -> c
                 // (not sure why someone would do that though)
                 List<Map<String, Object>> rows = new ArrayList<>();
 
