@@ -31,7 +31,7 @@
         //the intent of this is to allow custom login pages to supply an element where id=returnUrl, which will always redirect the user after login
         var returnUrlElement = document.getElementById('returnUrl');
 
-        setSubmitting(true, '');
+        setSubmitting(true, {msg: ''});
 
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
@@ -47,21 +47,22 @@
                 urlhash: document.getElementById('urlhash').value
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                setSubmitting(false, '');
+                setSubmitting(false, {msg: ''});
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
             }, this),
             failure: LABKEY.Utils.getCallbackWrapper(function(response, request) {
-                let message;
-                if (response && response.exception) {
-                    message = response.exception;
+                let error;
+                if (response && response.errors) {
+                    error = response.errors[0];
                 }
                 else {
-                    message = request && request.readyState === 4 && request.status === 0 ? 'Login failed. The server may be offline.' : 'Login failed.';
+                    let message = request && request.readyState === 4 && request.status === 0 ? 'Login failed. The server may be offline.' : 'Login failed.';
+                    error = {msg: message};
                 }
 
-                setSubmitting(false, message);
+                setSubmitting(false, error);
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }
@@ -69,7 +70,7 @@
         });
     }
 
-    function setSubmitting(isSubmitting, errorMsg) {
+    function setSubmitting(isSubmitting, error) {
         // no-op if already submitting
         if (submitting && isSubmitting) {
             return;
@@ -77,7 +78,7 @@
         // and if we are in the delay, re-queue this call to setSubmitting
         else if (delay) {
             setTimeout(function() {
-                setSubmitting(isSubmitting, errorMsg);
+                setSubmitting(isSubmitting, error);
             }, DELAY_MS);
             return;
         }
@@ -97,7 +98,7 @@
             msgEl[0].hidden = !submitting;
         }
 
-        _setErrors(errorMsg);
+        _setErrors(error);
     }
 
     function _toggleDelay() {
@@ -109,10 +110,11 @@
         }
     }
 
-    function _setErrors(text) {
+    function _setErrors(error) {
         var el = document.getElementById('errors');
         if (el) {
-            el.innerHTML = text;
+            el.innerHTML = LABKEY.Utils.encodeHtml(error.msg) +
+                (error.adviceText && error.adviceHref ? ' <a href="' + LABKEY.Utils.encodeHtml(error.adviceHref) + '">' + LABKEY.Utils.encodeHtml(error.adviceText) + '</a>' : '');
         }
     }
 
@@ -131,8 +133,8 @@
                 window.location = LABKEY.ActionURL.getParameter("returnUrl")
             },
             failure: LABKEY.Utils.getCallbackWrapper(function (response) {
-                if (response && response.exception) {
-                    _setErrors(response.exception);
+                if (response && response.errors) {
+                    _setErrors(response.errors[0]);
                 }
             }, this)
         });
