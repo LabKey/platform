@@ -162,7 +162,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     {
         if (typeName == null)
         {
-            _log.error("createDescriptorInstace : typeName cannot be null");
+            _log.error("createDescriptorInstance : typeName cannot be null");
             return null;
         }
         Class clazz = _descriptors.get(typeName);
