@@ -88,7 +88,6 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             internalImporters.add(new ParticipantCommentImporter());
             internalImporters.add(new ParticipantGroupImporter());
             internalImporters.add(new ProtocolDocumentImporter());
-            internalImporters.add(new ViewCategoryImporter());
             internalImporters.add(new StudyViewsImporter());
 
             // TreatmentVisitMap needs to import after cohort info is loaded (issue 19947)
