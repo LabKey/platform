@@ -100,7 +100,7 @@ public class DbSequenceManager
     }
 
 
-    private static @Nullable Integer getRowId(Container c, String name, int id)
+    public static @Nullable Integer getRowId(Container c, String name, int id)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());

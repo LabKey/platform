@@ -97,6 +97,16 @@ public class NameGenerator
     public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
 
+    /**
+     *
+     * Examples:
+     *  ${genId:minValue(100)}
+     *  ${genId:minValue('100')}
+     *
+     */
+    public static final String GENID_WITH_START_IND_REGEX = ".*\\$\\{genId:minValue\\('?(\\d*)?'?\\)}.*";
+    public static final Pattern GENID_WITH_START_IND_PATTERN = Pattern.compile(GENID_WITH_START_IND_REGEX);
+
     public static Date PREVIEW_DATE_VALUE;
     public static Date PREVIEW_MODIFIED_DATE_VALUE;
 
@@ -907,6 +917,31 @@ public class NameGenerator
     public static Object getNamePartPreviewValue(PropertyType pt, @Nullable String prefix)
     {
         return pt.getPreviewValue(prefix);
+    }
+
+    public static long getGenIdStartValue(@Nullable String nameExpression)
+    {
+        long startInd = 0;
+        if (StringUtils.isEmpty(nameExpression))
+            return startInd;
+
+        Matcher genIdMatcher = GENID_WITH_START_IND_PATTERN.matcher(nameExpression);
+        if (genIdMatcher.find())
+        {
+            String startIndStr = genIdMatcher.group(1);
+            if (!StringUtils.isEmpty(startIndStr))
+            {
+                try
+                {
+                    startInd = Integer.valueOf(startIndStr);
+                }
+                catch (NumberFormatException e)
+                {
+                    // ignore illegal startInd
+                }
+            }
+        }
+        return startInd;
     }
 
     public void generateNames(@NotNull State state,
@@ -2153,6 +2188,10 @@ public class NameGenerator
                     "Value in parentheses starting at index 14 should be enclosed in single quotes."));
 
             validateNameResult("${genId:number('000)}", withErrors("No ending quote for the 'number' substitution pattern value starting at index 7."));
+
+            validateNameResult("${genId:minValue}", withErrors("Name Pattern error: No starting parentheses found for the 'minValue' substitution pattern starting at index 7. Name Pattern error: No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
+
+            validateNameResult("${genId:minValue(}", withErrors("Name Pattern error: No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
         }
 
         @Test
@@ -2220,6 +2259,9 @@ public class NameGenerator
 
             // with reserved field
             verifyPreview("S-${genId}", "S-1001");
+            verifyPreview("S-${genId:minValue(100)}", "S-1001");
+            verifyPreview("S-${genId:minValue(2000)}", "S-2000");
+            verifyPreview("S-${genId:minValue('10000')}", "S-10000");
             verifyPreview("S-${weeklySampleCount:number('00000')}", "S-00025");
             verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
             verifyPreview("S-${AliquotedFrom}", "S-Sample112");
@@ -2238,6 +2280,9 @@ public class NameGenerator
             fields.add(intField);
             fields.add(dateField);
             verifyPreview("S-${FieldStr}-${FieldInt:number('00000')}", "S-FieldStrValue-00003", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldInt:minValue(1234)}", "S-FieldStrValue-1234", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldInt:minValue('5678')}", "S-FieldStrValue-5678", null, fields);
+
             verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
 
