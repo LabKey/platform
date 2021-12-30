@@ -29,7 +29,12 @@ import org.labkey.api.data.PropertyStore;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -44,6 +49,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
@@ -61,11 +67,24 @@ public class Encryption
     private static final String SALT_KEY = "Salt";
     private static final SecureRandom SR = new SecureRandom();
 
+    static
+    {
+        WarningService.get().register(new WarningProvider() {
+            @Override
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+            {
+                int count = DECRYPTION_EXCEPTIONS.get();
+
+                if (count > 0)
+                    warnings.add(HtmlString.of("On " + StringUtilsLabKey.pluralize(count, "attempt") + " the server failed to decrypt encrypted content using the " + MASTER_ENCRYPTION_KEY_CHANGED +
+                        " An administrator should change the encryption key back to the previous value or be prepared to re-enter and re-save all saved credentials."));
+            }
+        });
+    }
 
     private Encryption()
     {
     }
-
 
     // Generate an array of random bytes of the specified length using SecureRandom
     private static byte[] generateRandomBytes(int byteCount)
@@ -227,6 +246,7 @@ public class Encryption
             {
                 // For now, assume that BadPaddingException means the key has been changed and all other
                 // exceptions are coding issues. That might change in the future...
+                DECRYPTION_EXCEPTIONS.incrementAndGet();
                 throw new DecryptionException("Could not decrypt this content using the " + _keySource, e);
             }
             catch (Exception e)
@@ -236,6 +256,8 @@ public class Encryption
         }
     }
 
+    private static final String MASTER_ENCRYPTION_KEY_CHANGED = "currently configured MasterEncryptionKey; has the key changed in " + AppProps.getInstance().getWebappConfigurationFilename() + "?";
+    private static final AtomicInteger DECRYPTION_EXCEPTIONS = new AtomicInteger(0);
 
     public static class DecryptionException extends ConfigurationException
     {
@@ -253,7 +275,7 @@ public class Encryption
     public static Algorithm getAES128()
     {
         if (isMasterEncryptionPassPhraseSpecified())
-            return new AES(getMasterEncryptionPassPhrase(), 128, "currently configured MasterEncryptionKey; has the key changed in " + AppProps.getInstance().getWebappConfigurationFilename() + "?");
+            return new AES(getMasterEncryptionPassPhrase(), 128, MASTER_ENCRYPTION_KEY_CHANGED);
         else
             throw new IllegalStateException("MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + "; this method should not be called");
     }
