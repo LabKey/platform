@@ -66,9 +66,12 @@ public class Encryption
     private static final String CATEGORY = "Encryption";
     private static final String SALT_KEY = "Salt";
     private static final SecureRandom SR = new SecureRandom();
+    private static final String ENCRYPTION_PASS_PHRASE;
 
     static
     {
+        ENCRYPTION_PASS_PHRASE = loadEncryptionPassPhrase();
+
         WarningService.get().register(new WarningProvider() {
             @Override
             public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
@@ -143,7 +146,7 @@ public class Encryption
     private static final String ENCRYPTION_KEY_PARAMETER_NAME = "EncryptionKey";
     private static final String OLD_ENCRYPTION_KEY_PARAMETER_NAME = "MasterEncryptionKey";
 
-    private static @Nullable String getEncryptionPassPhrase()
+    private static @Nullable String loadEncryptionPassPhrase()
     {
         ServletContext context = ModuleLoader.getServletContext();
 
@@ -163,6 +166,10 @@ public class Encryption
             return null;
     }
 
+    public static @Nullable String getEncryptionPassPhrase()
+    {
+        return ENCRYPTION_PASS_PHRASE;
+    }
 
     public static boolean isEncryptionPassPhraseSpecified()
     {
