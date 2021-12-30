@@ -29,6 +29,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
@@ -218,7 +219,7 @@ public class DomainUtil
         if (!skipPKCols)
         {
             //get PK columns
-            tableInfo = domainKind.getTableInfo(user, container, domain);
+            tableInfo = domainKind.getTableInfo(user, container, domain, null);
 
             if (null != tableInfo && null != tableInfo.getPkColumns())
             {
@@ -1005,7 +1006,8 @@ public class DomainUtil
     {
         if (domain != null && domain.getDomainKind() != null)
         {
-            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain);
+            // using ContainerFilter.EVERYTHING to account for /Shared domains
+            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.EVERYTHING);
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
                 // we need to make all of the row updates for this domain property at one time to prevent the
@@ -1020,7 +1022,10 @@ public class DomainUtil
                     // filter out aliquots for sample type domain
                     if (domain.getDomainKind() instanceof SampleTypeDomainKind)
                         filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
-                    List<Map<String, Object>> valueRows = new TableSelector(domainTable, domainTable.getPkColumns(), filter, null).getMapCollection().stream().toList();
+                    List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
+                    if (domainTable.getContainerFieldKey() != null)
+                        columns.add(domainTable.getColumn(domainTable.getContainerFieldKey()));
+                    List<Map<String, Object>> valueRows = new TableSelector(domainTable, columns, filter, null).getMapCollection().stream().toList();
 
                     // put the updated property value into the row map as well
                     for (Map<String, Object> valueRow : valueRows)
@@ -1036,8 +1041,20 @@ public class DomainUtil
 
                 try
                 {
-                    // use update rows, to get auditing, to map the text choice value to the updated value
-                    domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                    // use update rows against each distinct row container to map the text choice value to the updated value,
+                    // using each row container so that the audit events end up in the right container
+                    if (domainTable.getContainerFieldKey() != null)
+                    {
+                        String containerFieldName = domainTable.getContainerFieldKey().getName();
+                        Set<String> rowContainers = rows.stream().map((row) -> (String) row.get(containerFieldName)).collect(Collectors.toSet());
+                        for (String rowContainer : rowContainers)
+                        {
+                            List<Map<String, Object>> containerRows = rows.stream().filter((row) -> row.get(containerFieldName).equals(rowContainer)).collect(Collectors.toList());
+                            domainTable.getUpdateService().updateRows(user, ContainerManager.getForId(rowContainer), containerRows, containerRows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                        }
+                    }
+                    else
+                        domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
                 }
                 catch (Exception e)
                 {
