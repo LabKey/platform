@@ -1024,7 +1024,12 @@ public class DomainUtil
 
                     // put the updated property value into the row map as well
                     for (Map<String, Object> valueRow : valueRows)
+                    {
                         valueRow.put(propName, entry.getValue());
+
+                        // remove extra "_row" value (from ResultSetDataIterator) if it exists
+                        valueRow.remove("_row");
+                    }
 
                     rows.addAll(valueRows);
                 }
