@@ -37,7 +37,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     {
         super("Encrypted Properties");
 
-        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+        if (Encryption.isEncryptionPassPhraseSpecified())
             _preferredPropertyEncryption = PropertyEncryption.AES128;
         else
             _preferredPropertyEncryption = PropertyEncryption.NoKey;

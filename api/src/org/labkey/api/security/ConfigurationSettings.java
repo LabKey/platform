@@ -27,7 +27,7 @@ public class ConfigurationSettings
 
         if (null != encryptedPropertiesJson)
         {
-            if (Encryption.isMasterEncryptionPassPhraseSpecified())
+            if (Encryption.isEncryptionPassPhraseSpecified())
             {
                 try
                 {
@@ -40,7 +40,7 @@ public class ConfigurationSettings
             }
             else
             {
-                LOG.warn("Encrypted properties can't be read: master encryption key has not been set in " + AppProps.getInstance().getWebappConfigurationFilename() + "!");
+                LOG.warn("Encrypted properties can't be read: encryption key has not been set in " + AppProps.getInstance().getWebappConfigurationFilename() + "!");
             }
         }
 

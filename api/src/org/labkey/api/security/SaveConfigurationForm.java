@@ -62,7 +62,7 @@ public abstract class SaveConfigurationForm
 
     protected String encodeEncryptedProperties(JSONObject map)
     {
-        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+        if (Encryption.isEncryptionPassPhraseSpecified())
         {
             return Base64.encodeBase64String(AES.get().encrypt(map.toString()));
         }

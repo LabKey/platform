@@ -89,7 +89,7 @@ public enum PropertyEncryption
                 return "Test";
             }
         },
-    /** No master encryption key was specified in labkey.xml, so throw ConfigurationException */
+    /** No encryption key was specified in labkey.xml, so throw ConfigurationException */
     NoKey
         {
             @NotNull
