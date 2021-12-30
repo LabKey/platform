@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -752,7 +753,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
 
     @Override
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -762,7 +763,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return DatasetFactory.createDataset(schema, null, dsd);
+        return DatasetFactory.createDataset(schema, cf, dsd);
     }
 
     @Override

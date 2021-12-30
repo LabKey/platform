@@ -31,10 +31,6 @@ import java.util.Map;
 */
 public class GWTPropertyValidator implements Serializable, IsSerializable
 {
-    public static final String TYPE_REGEX = "regex";
-    public static final String TYPE_RANGE = "range";
-    public static final String TYPE_LOOKUP = "lookup";
-
     private int _rowId;
     private String _name;
     private PropertyValidatorType _type;
@@ -43,7 +39,8 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
     private String _errorMessage;
     private boolean _isNew;
 
-    private Map<String, String> _properties = new HashMap<String, String>();
+    private Map<String, String> _properties = new HashMap<>();
+    private Map<String, Map<String, Object>> _extraProperties = new HashMap<>();
 
     public GWTPropertyValidator()
     {
@@ -140,6 +137,16 @@ public class GWTPropertyValidator implements Serializable, IsSerializable
     public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
+    }
+
+    public Map<String, Map<String, Object>> getExtraProperties()
+    {
+        return _extraProperties;
+    }
+
+    public void setExtraProperties(Map<String, Map<String, Object>> extraProperties)
+    {
+        _extraProperties = extraProperties;
     }
 
     public boolean isNew()
