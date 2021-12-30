@@ -395,14 +395,14 @@ public class AssayManager implements AssayService
         return null;
     }
 
-    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId) {
+    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf) {
         for (ExpProtocol protocol : getAssayProtocols(container))
         {
             AssayProvider provider = getProvider(protocol);
             AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
             for (String tableName : schema.getTableNames())
             {
-                TableInfo table = schema.getTable(tableName, null, true, true);
+                TableInfo table = schema.getTable(tableName, cf, true, true);
                 if (table != null && table.getDomain() != null && table.getDomain().getTypeId() == domainId)
                     return table;
             }

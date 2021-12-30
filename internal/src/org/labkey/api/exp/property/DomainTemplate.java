@@ -451,7 +451,7 @@ public class DomainTemplate
 
         // NOTE: Unfortunately, there currently is no direct mapping from domain->table.
         // NOTE: Getting the TableInfo for the Domain only works for some domain kinds.
-        TableInfo table = kind.getTableInfo(u, c, domainName);
+        TableInfo table = kind.getTableInfo(u, c, domainName, null);
         if (table == null)
             throw new IllegalStateException();
 
