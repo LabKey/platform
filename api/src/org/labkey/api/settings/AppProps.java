@@ -207,15 +207,6 @@ public interface AppProps
     String getAdministratorContactEmail(boolean includeAppAdmins);
 
     /**
-     * HTML to display when a user might need to contact a site administrator (e.g., for user creation problems, inactive user, etc.).
-     * Currently hard-coded to return "Please contact a system administrator" with a mailto: link to getAdministratorContactEmail().
-     * We may want to make this admin-configurable in the future.
-     *
-     * @return HTML to display on error pages
-     */
-    String getAdministratorContactHTML();
-
-    /**
      * Whether to use the newer, and preferred, container-relative style of URLs of the form
      * /contextPath/container/controller-action.view, or the older controller-relative style like
      * /contextPath/controller/container/action.view

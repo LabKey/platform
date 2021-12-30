@@ -23,8 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithLink;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -598,7 +598,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
+                errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
         },
         LoginDisabled
@@ -623,7 +623,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
+                errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
         },
         UserCreationNotAllowed
@@ -631,7 +631,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
+                errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
         },
         PasswordExpired
@@ -659,6 +659,14 @@ public class AuthenticationManager
         public boolean requiresRedirect()
         {
             return false;
+        }
+    }
+
+    private static final class ContactAnAdministratorError extends LabKeyErrorWithLink
+    {
+        public ContactAnAdministratorError(String message, String adviceTextSuffix)
+        {
+            super(message, "Please contact a system administrator " + adviceTextSuffix, "mailto:" + AppProps.getInstance().getAdministratorContactEmail(true));
         }
     }
 
