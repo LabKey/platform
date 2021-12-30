@@ -68,7 +68,7 @@ public abstract class SaveConfigurationForm
         }
         else
         {
-            throw new ConfigurationException("Can't save this configuration: MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
+            throw new ConfigurationException("Can't save this configuration: EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
         }
     }
 }

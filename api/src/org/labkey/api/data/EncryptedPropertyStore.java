@@ -24,7 +24,7 @@ import org.labkey.api.util.ConfigurationException;
 
 /**
  * A PropertyStore that encrypts its contents when writing to the database, and automatically decrypts on read. Uses
- * the MasterEncryptionKey, stored as a property in labkey.xml (or its equivalent deployment descriptor).
+ * the EncryptionKey, stored as a property in labkey.xml (or its equivalent deployment descriptor).
  *
  * User: adam
  * Date: 10/11/13
@@ -47,7 +47,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore
     protected void validateStore()
     {
         if (PropertyEncryption.AES128 != _preferredPropertyEncryption)
-            throw new ConfigurationException("Attempting to use the encrypted property store, but MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
+            throw new ConfigurationException("Attempting to use the encrypted property store, but EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
                 "Edit " + AppProps.getInstance().getWebappConfigurationFilename() + " and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
     }
 
