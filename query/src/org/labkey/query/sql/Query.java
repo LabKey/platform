@@ -894,11 +894,11 @@ public class Query
             if (null == cf && null != cfType)
                 cf = cfType.create(resolvedSchema);
 
-            if (resolvedSchema instanceof UserSchema)
+            if (resolvedSchema instanceof UserSchema userSchema)
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
+                t = userSchema._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
             {
@@ -928,13 +928,12 @@ public class Query
             throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 		}
 
-        if (t instanceof TableInfo)
+        if (t instanceof TableInfo tableInfo)
         {
-            TableInfo tableInfo = (TableInfo)t;
             // I don't see why Query is being roped into helping with this??? Can't this be handled on the LinkedSchema side?
             TableType tableType = lookupMetadataTable(tableInfo.getName());
-            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
-                tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
+            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema userSchema)
+                tableInfo.overlayMetadata(Collections.singletonList(tableType), userSchema, _parseErrors);
             _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
             String name = ((TableInfo) t).getName();
@@ -1151,7 +1150,9 @@ public class Query
             @Override
             public Map<String, Object> next()
             {
-                return _rowMapFactory.getRowMap(data[i++]);
+                // Leave this in place: javac complains without this cast. IntelliJ disagrees.
+                //noinspection RedundantCast
+                return _rowMapFactory.getRowMap((Object[])data[i++]);
             }
 
             @Override

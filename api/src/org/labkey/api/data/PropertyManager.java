@@ -701,7 +701,7 @@ public class PropertyManager
             PropertyStore normal = getNormalStore();
             PropertyStore encrypted = getEncryptedStore();
 
-            // Test should still pass whether MasterEncryptionKey is specified or not
+            // Test should still pass whether EncryptionKey is specified or not
             if (ENCRYPTED_STORE.getPreferredPropertyEncryption() == PropertyEncryption.NoKey)
             {
                 // Just test the normal property store
