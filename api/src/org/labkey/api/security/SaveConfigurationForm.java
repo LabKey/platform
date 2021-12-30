@@ -62,13 +62,13 @@ public abstract class SaveConfigurationForm
 
     protected String encodeEncryptedProperties(JSONObject map)
     {
-        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+        if (Encryption.isEncryptionPassPhraseSpecified())
         {
             return Base64.encodeBase64String(AES.get().encrypt(map.toString()));
         }
         else
         {
-            throw new ConfigurationException("Can't save this configuration: MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
+            throw new ConfigurationException("Can't save this configuration: EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
         }
     }
 }
