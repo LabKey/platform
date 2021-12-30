@@ -67,6 +67,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
+import org.labkey.experiment.api.SampleTypeDomainKind;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -1016,6 +1017,9 @@ public class DomainUtil
                 {
                     // query for the row PKs of domain rows that have the original text choice value
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(propName), entry.getKey());
+                    // filter out aliquots for sample type domain
+                    if (domain.getDomainKind() instanceof SampleTypeDomainKind)
+                        filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
                     List<Map<String, Object>> valueRows = new TableSelector(domainTable, domainTable.getPkColumns(), filter, null).getMapCollection().stream().toList();
 
                     // put the updated property value into the row map as well
