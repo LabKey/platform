@@ -18,29 +18,40 @@ package org.labkey.study.importer;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderImportFactory;
+import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImporter;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.study.StudySchema;
-import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
 import org.labkey.study.xml.viewCategory.ViewCategoryType;
-import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: klum
  * Date: Oct 21, 2011
  */
-public class ViewCategoryImporter implements InternalStudyImporter
+public class ViewCategoryImporter implements FolderImporter<Folder>
 {
     @Override
     public String getDescription()
@@ -49,20 +60,20 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
-    public String getDataType() { return StudyArchiveDataTypes.VIEW_CATEGORIES; }
+    public String getDataType() { return FolderArchiveDataTypes.VIEW_CATEGORIES; }
 
     @Override
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(@Nullable PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (!isValidForImportArchive(ctx, root))
+        if (!isValidForImportArchive(ctx))
             return;
 
         try
         {
-            XmlObject xml = root.getXmlBean(ViewCategoryWriter.FILE_NAME);
+            XmlObject xml = getXmlBean(ctx);
             if (xml instanceof CategoriesDocument)
             {
                 xml.validate(XmlBeansUtil.getDefaultParseOptions());
@@ -76,15 +87,36 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root)
+    public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
+    {
+        return getXmlBean(ctx) != null;
+    }
+
+    private @Nullable XmlObject getXmlBean(ImportContext<Folder> ctx) throws ImportException
     {
         try
         {
-            return root != null && root.getXmlBean(ViewCategoryWriter.FILE_NAME) != null;
+            // New archives export the category xml file at the root with a "categories" element in folder.xml
+            if (ctx.getXml() != null)
+            {
+                FolderDocument.Folder.Categories categories = ctx.getXml().getCategories();
+
+                if (null != categories)
+                {
+                    String filename = categories.getFile();
+
+                    if (null != filename)
+                        return ctx.getRoot().getXmlBean(filename);
+                }
+            }
+
+            // Backward compatibility: old archives (pre-21.11) exported view_categories.xml in the study folder
+            VirtualFile study = ctx.getDir("study");
+            return null != study ? study.getXmlBean(ViewCategoryWriter.FILE_NAME) : null;
         }
         catch (IOException e)
         {
-            return false;
+            return null;
         }
     }
 
@@ -123,6 +155,21 @@ public class ViewCategoryImporter implements InternalStudyImporter
             }
 
             logger.info("Done importing " + getDescription());
+        }
+    }
+
+    @Override
+    public @NotNull Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
+    {
+        return Collections.emptyList();
+    }
+
+    public static class Factory extends AbstractFolderImportFactory
+    {
+        @Override
+        public FolderImporter<Folder> create()
+        {
+            return new ViewCategoryImporter();
         }
     }
 }

@@ -89,7 +89,7 @@ public enum PropertyEncryption
                 return "Test";
             }
         },
-    /** No master encryption key was specified in labkey.xml, so throw ConfigurationException */
+    /** No encryption key was specified in labkey.xml, so throw ConfigurationException */
     NoKey
         {
             @NotNull
@@ -115,7 +115,7 @@ public enum PropertyEncryption
 
             private ConfigurationException getConfigurationException()
             {
-                return new ConfigurationException("Attempting to save encrypted properties but MasterEncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
+                return new ConfigurationException("Attempting to save encrypted properties but EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + ".",
                         "Edit " + AppProps.getInstance().getWebappConfigurationFilename() + " and provide a suitable encryption key. See the server configuration documentation on labkey.org.");
             }
         },

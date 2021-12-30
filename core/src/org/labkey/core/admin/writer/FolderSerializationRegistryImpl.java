@@ -72,8 +72,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
 
     private List<FolderImporterFactory> getSortedFactories()
     {
-        List<FolderImporterFactory> factories = new ArrayList<>();
-        factories.addAll(IMPORTER_FACTORIES);
+        List<FolderImporterFactory> factories = new ArrayList<>(IMPORTER_FACTORIES);
 
         // sort the factories by priority in ascending order
         factories.sort(Comparator.comparingInt(FolderImporterFactory::getPriority));
