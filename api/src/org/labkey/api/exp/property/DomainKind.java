@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NameExpressionValidationResult;
@@ -253,14 +254,14 @@ abstract public class DomainKind<T>  implements Handler<String>
         return false;
     }
 
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         return null;
     }
 
-    public TableInfo getTableInfo(User user, Container container, Domain domain)
+    public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
     {
-        return getTableInfo(user, container, domain.getName());
+        return getTableInfo(user, container, domain.getName(), cf);
     }
 
     /** Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and

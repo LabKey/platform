@@ -544,12 +544,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return result;
     }
 
-    @Override
-    public String getAdministratorContactHTML()
-    {
-        return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail(true)) + "\">contact a system administrator</a>";
-    }
-
     @NotNull
     @Override
     public String getReleaseVersion()
