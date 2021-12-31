@@ -19,7 +19,6 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -69,7 +68,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -84,7 +82,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -164,7 +161,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.019;
+        return 22.000;
     }
 
     @Nullable
