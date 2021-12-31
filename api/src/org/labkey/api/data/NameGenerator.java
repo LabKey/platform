@@ -98,11 +98,9 @@ public class NameGenerator
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
 
     /**
-     *
      * Examples:
      *  ${genId:minValue(100)}
      *  ${genId:minValue('100')}
-     *
      */
     public static final String GENID_WITH_START_IND_REGEX = ".*\\$\\{genId:minValue\\('?(\\d*)?'?\\)}.*";
     public static final Pattern GENID_WITH_START_IND_PATTERN = Pattern.compile(GENID_WITH_START_IND_REGEX);
