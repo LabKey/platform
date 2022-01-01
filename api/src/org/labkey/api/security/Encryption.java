@@ -258,7 +258,11 @@ public class Encryption
             {
                 // For now, assume that BadPaddingException means the key has been changed and all other
                 // exceptions are coding issues. That might change in the future...
-                DECRYPTION_EXCEPTIONS.incrementAndGet();
+
+                // Track all decryption exceptions that aren't caused by TestCase (below)
+                if (ENCRYPTION_KEY_CHANGED.equals(_keySource))
+                    DECRYPTION_EXCEPTIONS.incrementAndGet();
+
                 throw new DecryptionException("Could not decrypt this content using the " + _keySource, e);
             }
             catch (Exception e)
@@ -346,10 +350,10 @@ public class Encryption
             test(algorithm, algorithm);
         }
 
-        private void test(Algorithm encryptAlgorithm, Algorithm decrytAlgorithm)
+        private void test(Algorithm encryptAlgorithm, Algorithm decryptAlgorithm)
         {
             for (String test : new String[]{"foo", "bar", "this is some text I want to encrypt"})
-                assertEquals(test, decrytAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
+                assertEquals(test, decryptAlgorithm.decrypt(encryptAlgorithm.encrypt(test)));
         }
     }
 }
