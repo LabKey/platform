@@ -2187,9 +2187,9 @@ public class NameGenerator
 
             validateNameResult("${genId:number('000)}", withErrors("No ending quote for the 'number' substitution pattern value starting at index 7."));
 
-            validateNameResult("${genId:minValue}", withErrors("Name Pattern error: No starting parentheses found for the 'minValue' substitution pattern starting at index 7.", "Name Pattern error: No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
+            validateNameResult("${genId:minValue}", withErrors("No starting parentheses found for the 'minValue' substitution pattern starting at index 7.", "No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
 
-            validateNameResult("${genId:minValue(}", withErrors("Name Pattern error: No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
+            validateNameResult("${genId:minValue(}", withErrors("No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
         }
 
         @Test
