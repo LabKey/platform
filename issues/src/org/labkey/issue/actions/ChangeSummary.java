@@ -31,6 +31,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
@@ -57,10 +58,9 @@ import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.CustomColumn;
-import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
-import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -76,8 +76,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.api.action.SpringActionController.getActionName;
-
 /**
  * Created by klum on 5/10/2016.
  */
@@ -85,14 +83,14 @@ public class ChangeSummary
 {
     private static final Logger _log = LogManager.getLogger(ChangeSummary.class);
 
-    private final Issue.Comment _comment;
+    private final IssueObject.CommentObject _comment;
     private final String _textChanges;
     private final String _summary;
 
     private final IssueListDef _issueListDef;
-    private final Issue _issue;
-    private final Issue _prevIssue;
-    private final Class<? extends Controller> _action;
+    private final IssueObject _issue;
+    private final IssueObject _prevIssue;
+    private final Issue.action _action;
     private final Map<String, Object> _issueProperties;
 
     private static final Set<String> _standardFields = new CaseInsensitiveHashSet();
@@ -111,8 +109,8 @@ public class ChangeSummary
         _standardFields.add("Folder");
     }
 
-    private ChangeSummary(IssueListDef issueListDef, Issue issue, Issue prevIssue, Issue.Comment comment,
-                          String textChanges, String summary, Class<? extends Controller> action, Map<String, Object> issueProperties)
+    private ChangeSummary(IssueListDef issueListDef, IssueObject issue, IssueObject prevIssue, IssueObject.CommentObject comment,
+                          String textChanges, String summary, Issue.action action, Map<String, Object> issueProperties)
     {
         _issueListDef = issueListDef;
         _issue = issue;
@@ -124,7 +122,7 @@ public class ChangeSummary
         _issueProperties = issueProperties;
     }
 
-    public Issue.Comment getComment()
+    public IssueObject.CommentObject getComment()
     {
         return _comment;
     }
@@ -139,10 +137,10 @@ public class ChangeSummary
         return _summary;
     }
 
-    static public ChangeSummary createChangeSummary(ViewContext context, IssueListDef issueListDef, Issue issue, Issue previous, @Nullable Issue duplicateOf,
+    static public ChangeSummary createChangeSummary(ViewContext context, IssueListDef issueListDef, IssueObject issue, IssueObject previous, @Nullable IssueObject duplicateOf,
                                                     Container container,
                                                     User user,
-                                                    Class<? extends Controller> action,
+                                                    Issue.action action,
                                                     String comment,
                                                     CustomColumnConfiguration ccc)
     {
@@ -151,11 +149,11 @@ public class ChangeSummary
         String summary = null;
         Map<String, Object> issueProperties = new HashMap<>();
 
-        if (!action.equals(IssuesController.InsertAction.class) && !action.equals(IssuesController.UpdateAction.class))
+        if (Issue.action.insert != action && Issue.action.update != action)
         {
-            summary = getActionName(action).toLowerCase();
+            summary = action.name();
 
-            if (action.equals(IssuesController.ResolveAction.class))
+            if (Issue.action.resolve == action)
             {
                 if (issue.getResolution() != null)
                 {
@@ -177,8 +175,8 @@ public class ChangeSummary
             // Keep track of whether this issue is new
             boolean newIssue = previous.getIssueId() == 0;
 
-            String prevPriStringVal = previous.getProperty(Issue.Prop.priority);
-            String priStringVal = issue.getProperty(Issue.Prop.priority);
+            String prevPriStringVal = previous.getProperty(IssueObject.Prop.priority);
+            String priStringVal = issue.getProperty(IssueObject.Prop.priority);
 
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
@@ -189,10 +187,10 @@ public class ChangeSummary
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
                     ccc, newIssue, container);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getProperty(Issue.Prop.type), issue.getProperty(Issue.Prop.type), ccc, newIssue, container);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(Issue.Prop.area), issue.getProperty(Issue.Prop.area), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getProperty(IssueObject.Prop.type), issue.getProperty(IssueObject.Prop.type), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(IssueObject.Prop.area), issue.getProperty(IssueObject.Prop.area), ccc, newIssue, container);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Priority", prevPriStringVal, priStringVal, ccc, newIssue, container);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(Issue.Prop.milestone), issue.getProperty(Issue.Prop.milestone), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(IssueObject.Prop.milestone), issue.getProperty(IssueObject.Prop.milestone), ccc, newIssue, container);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", previous.getRelated(), issue.getRelated(), ccc, newIssue, container);
 
             Map<String, Object> oldProps = previous.getProperties();
@@ -306,10 +304,10 @@ public class ChangeSummary
         }
     }
 
-    public static Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
+    public static IssueObject relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
     {
         StringBuilder sb = new StringBuilder();
-        Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueId);
+        IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueId);
         if (null != relatedIssue)
         {
             Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
@@ -342,7 +340,7 @@ public class ChangeSummary
         // Skip the email if no comment and no public fields have changed, #17304
         String fieldChanges = getTextChanges();
 
-        if (fieldChanges.isEmpty() && comment.isEmpty())
+        if (fieldChanges.isEmpty() && StringUtils.isEmpty(comment))
             return;
 
         final Set<User> allAddresses = getUsersToEmail(container, user, _issue, _prevIssue, _action);
@@ -356,7 +354,7 @@ public class ChangeSummary
             String to = recipient.getEmail();
             try
             {
-                Issue.Comment lastComment = _issue.getLastComment();
+                IssueObject.CommentObject lastComment = _issue.getLastComment();
                 String messageId = "<" + _issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
                 String references = messageId + " <" + _issue.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
@@ -396,7 +394,7 @@ public class ChangeSummary
                             "view " + IssueManager.getEntryTypeNames(container, _issueListDef.getName()).singularName,
                             new ActionURL(IssuesController.DetailsAction.class,container).addParameter("issueId", _issue.getIssueId()).getLocalURIString(false),
                             "issue:" + _issue.getIssueId(),
-                            Issue.class.getName());
+                            IssueObject.class.getName());
 
                     if (notification != null)
                     {
@@ -445,7 +443,7 @@ public class ChangeSummary
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private static Set<User> getUsersToEmail(Container c, User user, Issue issue, Issue prevIssue, Class<? extends Controller> action)
+    private static Set<User> getUsersToEmail(Container c, User user, IssueObject issue, IssueObject prevIssue, Issue.action action)
     {
         final Set<User> emailUsers = new HashSet<>();
         int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
@@ -453,7 +451,7 @@ public class ChangeSummary
         int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
-        if (IssuesController.InsertAction.class.equals(action))
+        if (Issue.action.insert == action)
         {
             if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
                 safeAddEmailUsers(emailUsers, UserManager.getUser(issue.getAssignedTo()));

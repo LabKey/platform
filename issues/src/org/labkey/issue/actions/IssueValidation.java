@@ -28,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -39,11 +40,9 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.issue.CustomColumnConfiguration;
-import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
-import org.springframework.validation.BindException;
+import org.labkey.issue.model.IssueObject;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -59,20 +58,20 @@ import java.util.TreeSet;
 public class IssueValidation
 {
     public static void validateRequiredFields(@Nullable IssueListDef issueListDef, @Nullable CustomColumnConfiguration customColumnConfiguration,
-                                              IssuesController.IssuesForm form, User user, Errors errors)
+                                              Issue issue, User user, Errors errors)
     {
         String requiredFields = "";
-        final Map<String, String> newFields = form.getStrings();
+        final Map<String, Object> newFields = issue.getProperties();
         MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
 
         // handle custom field types
         if (issueListDef != null)
         {
             TableInfo tableInfo = issueListDef.createTable(user);
-            for (Map.Entry<String, String> entry : newFields.entrySet())
+            for (Map.Entry<String, Object> entry : newFields.entrySet())
             {
                 // special case the assigned to field if the status is closed
-                if (entry.getKey().equalsIgnoreCase("assignedTo") && Issue.statusCLOSED.equals(form.getBean().getStatus()))
+                if (entry.getKey().equalsIgnoreCase("assignedTo") && IssueObject.statusCLOSED.equals(issue.getStatus()))
                     continue;
 
                 ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
@@ -97,15 +96,15 @@ public class IssueValidation
             }
         }
         if (newFields.containsKey("comment"))
-            validateRequired(user, "comment", newFields.get("comment"), requiredFields, customColumnConfiguration, requiredErrors);
+            validateRequired(user, "comment", String.valueOf(newFields.get("comment")), requiredFields, customColumnConfiguration, requiredErrors);
 
         // When resolving Duplicate, the 'duplicate' field should be set.
         if ("Duplicate".equals(newFields.get("resolution")))
-            validateRequired(user, "duplicate", newFields.get("duplicate"), "duplicate", customColumnConfiguration, requiredErrors);
+            validateRequired(user, "duplicate", String.valueOf(newFields.get("duplicate")), "duplicate", customColumnConfiguration, requiredErrors);
 
         // when resolving, a resolution is always required
         if (newFields.containsKey("resolution"))
-            validateRequired(user, "resolution", newFields.get("resolution"), "resolution", customColumnConfiguration, requiredErrors);
+            validateRequired(user, "resolution", String.valueOf(newFields.get("resolution")), "resolution", customColumnConfiguration, requiredErrors);
 
         errors.addAllErrors(requiredErrors);
     }
@@ -139,15 +138,15 @@ public class IssueValidation
         }
     }
 
-    public static void validateNotifyList(IssuesController.IssuesForm form, Errors errors)
+    public static void validateNotifyList(IssueObject issue, Errors errors)
     {
-        Issue.getNotifyListEmail(form.getNotifyList(), errors);
+        IssueObject.getNotifyListEmail(issue.getNotifyList(), errors);
     }
 
-    public static void validateAssignedTo(IssuesController.IssuesForm form, Container container, Errors errors)
+    public static void validateAssignedTo(Issue issue, Container container, Errors errors)
     {
         // here we check that the user is a valid assignee
-        Integer userId = form.getBean().getAssignedTo();
+        Integer userId = issue.getAssignedTo();
 
         if (userId != null)
         {
@@ -158,22 +157,7 @@ public class IssueValidation
         }
     }
 
-    private static final int MAX_STRING_FIELD_LENGTH = 200;
-    public static void validateStringFields(IssuesController.IssuesForm form, CustomColumnConfiguration ccc, Errors errors)
-    {
-        final Map<String, String> fields = form.getStrings();
-            String lengthError = " cannot be longer than " + MAX_STRING_FIELD_LENGTH + " characters.";
-
-        for (int i = 1; i <= 5; i++)
-        {
-            String name = "string" + i;
-
-            if (fields.containsKey(name) && fields.get(name).length() > MAX_STRING_FIELD_LENGTH)
-                errors.reject(SpringActionController.ERROR_MSG, ccc.getCaption(name) + lengthError);
-        }
-    }
-
-    public static void relatedIssueHandler(Issue issue, User user, BindException errors)
+    public static void relatedIssueHandler(IssueObject issue, User user, Errors errors)
     {
         String textInput = issue.getRelated();
         Set<Integer> newRelatedIssues = new TreeSet<>();
@@ -198,7 +182,7 @@ public class IssueValidation
 
                 // only need to verify that the related issue exists without regard to folder permissions (issue:27483), so just query
                 // the issues.issues table directly.
-                Issue related = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(relatedId, Issue.class);
+                IssueObject related = new TableSelector(IssuesSchema.getInstance().getTableInfoIssues()).getObject(relatedId, IssueObject.class);
                 if (related == null)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
@@ -209,7 +193,7 @@ public class IssueValidation
         }
 
         // Fetch from IssueManager to make sure the related issues are populated
-        Issue originalIssue = IssueManager.getIssue(null, user, issue.getIssueId());
+        IssueObject originalIssue = IssueManager.getIssue(null, user, issue.getIssueId());
         Set<Integer> originalRelatedIssues = originalIssue == null ? Collections.emptySet() : originalIssue.getRelatedIssues();
 
         // Only check permissions if
@@ -217,7 +201,7 @@ public class IssueValidation
         {
             for (Integer relatedId : newRelatedIssues)
             {
-                Issue related = IssueManager.getIssue(null, user, relatedId);
+                IssueObject related = IssueManager.getIssue(null, user, relatedId);
                 if (related == null || !related.lookupContainer().hasPermission(user, ReadPermission.class))
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
@@ -230,7 +214,7 @@ public class IssueValidation
             {
                 if (!newRelatedIssues.contains(originalRelatedId))
                 {
-                    Issue related = IssueManager.getIssue(null, user, originalRelatedId);
+                    IssueObject related = IssueManager.getIssue(null, user, originalRelatedId);
                     if (null != related)
                     {
                       related = ChangeSummary.relatedIssueCommentHandler(originalIssue.getIssueId(), related.getIssueId(), user, true );
@@ -244,16 +228,17 @@ public class IssueValidation
         issue.setRelatedIssues(newRelatedIssues);
     }
 
-    public static void validateComments(IssuesController.IssuesForm form, Errors errors)
+    public static void validateComments(Issue issue, Errors errors)
     {
-        if (!ViewServlet.validChars(form.getComment()))
+        String comment = String.valueOf(issue.getProperties().get("comment"));
+        if (!ViewServlet.validChars(comment))
             errors.reject(SpringActionController.ERROR_MSG, "Comment has invalid characters");
     }
 
     /**
      * Throw an exception if user does not have permission to update issue
      */
-    public static void requiresInsertPermission(User user, Issue issue, Container c)
+    public static void requiresInsertPermission(User user, IssueObject issue, Container c)
     {
         if (!hasInsertPermission(user, issue, c))
             throw new UnauthorizedException();
@@ -262,7 +247,7 @@ public class IssueValidation
     /**
      * Throw an exception if user does not have permission to update issue
      */
-    public static void requiresUpdatePermission(User user, Issue issue, Container c)
+    public static void requiresUpdatePermission(User user, IssueObject issue, Container c)
     {
         if (!hasUpdatePermission(user, issue, c))
             throw new UnauthorizedException();
@@ -271,7 +256,7 @@ public class IssueValidation
     /**
      * Does this user have permission to update this issue?
      */
-    public static boolean hasInsertPermission(User user, Issue issue, Container c)
+    public static boolean hasInsertPermission(User user, IssueObject issue, Container c)
     {
         return c.hasPermission(user, InsertPermission.class, getContextualRoles(user, issue, c));
     }
@@ -279,12 +264,12 @@ public class IssueValidation
     /**
      * Does this user have permission to update this issue?
      */
-    public static boolean hasUpdatePermission(User user, Issue issue, Container c)
+    public static boolean hasUpdatePermission(User user, IssueObject issue, Container c)
     {
         return c.hasPermission(user, UpdatePermission.class, getContextualRoles(user, issue, c));
     }
 
-    private static Set<Role> getContextualRoles(User user, Issue issue, Container c)
+    private static Set<Role> getContextualRoles(User user, IssueObject issue, Container c)
     {
         // we can't support AuthorRoles until we address issue: 36942
 /*

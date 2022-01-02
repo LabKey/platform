@@ -55,7 +55,6 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -75,9 +74,8 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.IssuesController;
-import org.labkey.issue.model.Issue;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
@@ -735,7 +733,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             if (issueId != null)
             {
-                Issue issue = IssueManager.getIssue(_container, _user, issueId);
+                IssueObject issue = IssueManager.getIssue(_container, _user, issueId);
                 if (issue != null)
                 {
                     Object value = issue.getProperties().get(_propName);
@@ -777,7 +775,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
             String issueDefName = ctx.get(FieldKey.fromParts("IssueDefName"), String.class);
             Integer assignedTo = ctx.get(FieldKey.fromParts("AssignedTo"), Integer.class);
-            Issue issue = null;
+            IssueObject issue = null;
             boolean hasAssignedTo = false;
 
             if (issueId != null)
