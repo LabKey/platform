@@ -304,6 +304,7 @@ public class NameGenerator
 
         List<String> warningMessages = new ArrayList<>();
         String lcExpression = nameExpression.toLowerCase();
+        String allFieldsLc = StringUtils.join(substitutionFields, "\n").toLowerCase();
         for (String subField : substitutionFields)
         {
             String lcSub = subField.toLowerCase();
@@ -316,6 +317,20 @@ public class NameGenerator
                     char preChar = lcExpression.charAt(lcIndex - 1);
                     if (Character.isLetter(preChar))
                         continue;
+                    else
+                    {
+                        // Check if expression is substring of another expression, which is enclosed by ${}.
+                        // If both 'Exp Name' and 'Name' fields are present, ${Exp Name} should by pass check on 'Name' field.
+                        if (StringUtils.countMatches(allFieldsLc, lcSub) >= 2)
+                        {
+                            String prevStr = nameExpression.substring(0, lcIndex);
+                            int prevOpenCount = StringUtils.countMatches(prevStr, "${");
+                            int prevCloseCount = StringUtils.countMatches(prevStr, "}");
+                            if ((prevOpenCount - prevCloseCount) == 1)
+                                continue;
+                        }
+
+                    }
                 }
                 if (lcExpression.length() > (lcIndex + lcSub.length()))
                 {
