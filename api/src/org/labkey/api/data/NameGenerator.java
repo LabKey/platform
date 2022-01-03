@@ -548,11 +548,14 @@ public class NameGenerator
     public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString();
+        Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
+        if (importAliases != null)
+            aliasesInsensitive.putAll(importAliases);
 
         return INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok)
-                || (importAliases != null && importAliases.containsKey(sTok));
+                || aliasesInsensitive.containsKey(sTok);
     }
 
     private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
@@ -665,10 +668,21 @@ public class NameGenerator
 
         Map<String, Object> previewCtx = new CaseInsensitiveHashMap<>();
         if (_validateSyntax)
+        {
             previewCtx.putAll(SubstitutionValue.getValuesMap());
+            if (importAliases != null)
+            {
+                for (String alias : importAliases.keySet())
+                {
+                    previewCtx.put(alias, SubstitutionValue.Inputs.getPreviewValue());
+                }
+            }
+        }
+
 
         for (StringExpressionFactory.StringPart part : parts)
         {
+            boolean isLineagePart = false;
             if (!part.isConstant())
             {
                 Object token = part.getToken();
@@ -681,7 +695,10 @@ public class NameGenerator
 
                 String sTok = token.toString().toLowerCase();
                 if (isLineageInput(sTok, importAliases))
+                {
+                    isLineagePart = true;
                     hasLineageInputs = true;
+                }
 
                 if (token instanceof FieldKey)
                 {
@@ -694,7 +711,7 @@ public class NameGenerator
                         if (_validateSyntax)
                         {
                             String fieldName = fieldParts.get(0);
-                            if (!substitutionValues.contains(fieldName))
+                            if (!substitutionValues.contains(fieldName) && !isLineagePart)
                             {
                                 boolean isColPresent = false;
                                 PropertyType pt = null;
@@ -2285,7 +2302,9 @@ public class NameGenerator
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
 
             // with input
+            verifyPreview("S-${Inputs}", "S-Parent101");
             verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 
