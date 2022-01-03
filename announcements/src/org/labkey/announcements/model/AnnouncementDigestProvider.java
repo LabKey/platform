@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -27,6 +29,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
@@ -225,7 +228,20 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                     threadURL = AnnouncementsController.getThreadURL(dailyDigestBean.c, previousThread, ann.getRowId());
                     sb.append("<tr><td>&nbsp;</td></tr><tr style=\"background:#F4F4F4;\"><td colspan=\"2\" style=\"border: solid 1px #808080\">");
-                    sb.append(PageFlowUtil.filter(ann.getTitle())).append("</td></tr>");
+                    DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+                    if (typeProvider != null)
+                    {
+                        String parentBody = null;
+                        AnnouncementModel annParent = AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getParent());
+                        if (annParent != null)
+                            parentBody = annParent.getBody();
+                        String emailSubject = typeProvider.getEmailSubject(ann.lookupContainer(), UserManager.getUser(ann.getCreatedBy()), ann.getRowId(), ann.getDiscussionSrcIdentifier(), ann.getBody(), ann.getTitle(), parentBody);
+                        sb.append(PageFlowUtil.filter(emailSubject)).append("</td></tr>");
+                    }
+                    else
+                    {
+                        sb.append(PageFlowUtil.filter(ann.getTitle())).append("</td></tr>");
+                    }
                 }
 
                 int attachmentCount = ann.getAttachments().size();
