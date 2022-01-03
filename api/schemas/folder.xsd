@@ -44,6 +44,17 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="categories" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that contains category definitions.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="qcStates" minOccurs="0">
                     <xs:complexType>
                         <xs:attribute name="showPrivateDataByDefault" type="xs:boolean">

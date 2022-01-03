@@ -37,7 +37,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
-import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;

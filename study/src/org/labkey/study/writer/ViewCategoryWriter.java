@@ -15,10 +15,16 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.ImportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.StudyImpl;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
 import org.labkey.study.xml.viewCategory.ViewCategoryType;
@@ -30,18 +36,18 @@ import java.util.List;
  * Date: Oct 21, 2011
  * Time: 2:48:09 PM
  */
-public class ViewCategoryWriter implements InternalStudyWriter
+public class ViewCategoryWriter extends BaseFolderWriter
 {
     public static final String FILE_NAME = "view_categories.xml";
 
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.VIEW_CATEGORIES;
+        return FolderArchiveDataTypes.VIEW_CATEGORIES;
     }
 
     @Override
-    public void write(StudyImpl object, StudyExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Container object, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
     {
         List<ViewCategory> categories = ViewCategoryManager.getInstance().getAllCategories(ctx.getContainer());
 
@@ -60,7 +66,19 @@ public class ViewCategoryWriter implements InternalStudyWriter
                 if (category.getParentCategory() != null)
                     ct.setParent(category.getParentCategory().getLabel());
             }
+
             vf.saveXmlBean(FILE_NAME, doc);
+            Folder.Categories categoriesElement = ctx.getXml().addNewCategories();
+            categoriesElement.setFile(FILE_NAME);
+        }
+    }
+
+    public static class Factory implements FolderWriterFactory
+    {
+        @Override
+        public FolderWriter create()
+        {
+            return new ViewCategoryWriter();
         }
     }
 }

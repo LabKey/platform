@@ -644,6 +644,10 @@ public class DataColumn extends DisplayColumn
                 out.write(PageFlowUtil.filter(strVal));
             }
         }
+        else if (_inputType.toLowerCase().startsWith("disabled"))
+        {
+            renderTextFormInput(ctx, out, formFieldName, value, strVal, true);
+        }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))

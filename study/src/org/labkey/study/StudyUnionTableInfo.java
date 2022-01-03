@@ -61,6 +61,7 @@ public class StudyUnionTableInfo extends VirtualTable
             "sourcelsid",
             "_key",
             "_visitdate",
+            "_visitday",
             "qcstate",
             "participantsequencenum"
     };
@@ -129,7 +130,7 @@ public class StudyUnionTableInfo extends VirtualTable
             // Add all of the standard dataset columns
             for (String column : unionColumns)
             {
-                if ("_visitdate".equalsIgnoreCase(column))
+                if ("_visitdate".equalsIgnoreCase(column) || "_visitday".equalsIgnoreCase(column))
                     continue;
 
                 ColumnInfo ci = ti.getColumn(column);
@@ -213,6 +214,8 @@ public class StudyUnionTableInfo extends VirtualTable
                     sqlf.append("CAST(NULL as VARCHAR)");
                 else if ("_visitdate".equalsIgnoreCase(column) || "modified".equalsIgnoreCase(column) || "created".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL AS " + getSchema().getSqlDialect().getDefaultDateTimeDataType() + ")");
+                else if ("_visitday".equalsIgnoreCase(column))
+                    sqlf.append(NullColumnInfo.nullValue(JdbcType.INTEGER.name()));
                 else if ("container".equalsIgnoreCase(column))
                     sqlf.append("CAST('" + _study.getContainer().getId() + "' AS " + getSqlDialect().getGuidType() + ")");
                 else
