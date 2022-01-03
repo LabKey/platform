@@ -573,7 +573,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         long current = seq.current();
         if (newSeqValue < current)
         {
-            if (getSamples(container).isEmpty())
+            if (!hasSamples(container))
             {
                 seq.setSequenceValue(newSeqValue);
             }
@@ -582,6 +582,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
         else
             seq.ensureMinimum(newSeqValue);
+    }
+
+    private boolean hasSamples(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
     }
 
     @Override

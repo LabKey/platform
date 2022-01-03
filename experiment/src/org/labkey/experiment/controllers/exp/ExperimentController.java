@@ -7110,7 +7110,7 @@ public class ExperimentController extends SpringActionController
             String kindName = form.getKindName();
 
             if (form.getRowId() == null || StringUtils.isEmpty(kindName))
-                errors.reject(ERROR_REQUIRED, "RowId or KindName must be provided");
+                errors.reject(ERROR_REQUIRED, "RowId and KindName must be provided");
 
             if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
                 errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
