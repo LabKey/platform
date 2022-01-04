@@ -1,7 +1,6 @@
 package org.labkey.issue;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -13,6 +12,7 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class IssueServiceImpl implements IssueService
 {
@@ -163,7 +165,7 @@ public class IssueServiceImpl implements IssueService
         catch (IOException x)
         {
             String message = x.getMessage() == null ? x.toString() : x.getMessage();
-            errors.reject(SpringActionController.ERROR_MSG, message);
+            errors.reject(ERROR_MSG, message);
 
             return null;
         }
@@ -177,9 +179,102 @@ public class IssueServiceImpl implements IssueService
     }
 
     @Override
-    public void validateIssue(Container container, User user, IssueBuilder builder, Errors errors)
+    public void validateIssue(Container container, User user, Issue issue, Issue.action action, Errors errors)
     {
+        // Fetch the default
+        IssueListDef defaultIssueListDef = IssueManager.getDefaultIssueListDef(container);
+        IssueListDef issueListDef = getIssueListDef(container, issue);
+        IssueObject issueObject = new IssueObject(issue);
 
+        if (action == null)
+        {
+            errors.reject(ERROR_MSG, "Action must be specified : (update, resolve, close, reopen)");
+            return;
+        }
+
+        IssueObject prevIssue = null;
+        if (action != Issue.action.insert)
+        {
+            prevIssue = IssueManager.getIssue(container, user, issueObject.getIssueId());
+            if (prevIssue == null)
+            {
+                errors.reject(ERROR_MSG, "The specified issue does not exist, id : " + issueObject.getIssueId());
+                return;
+            }
+            // if issue definition isn't provided get it from the issue being updated
+            if (issueListDef == null)
+                issueListDef = IssueManager.getIssueListDef(container, prevIssue.getIssueDefId());
+        }
+        else
+        {
+            if (issueListDef == null && defaultIssueListDef == null)
+            {
+                errors.reject(ERROR_MSG, "IssueDefName or IssueDefId is required when creating new issues");
+                return;
+            }
+        }
+
+        if (issueListDef == null && defaultIssueListDef == null)
+        {
+            errors.reject(ERROR_MSG, "No valid issue list def could be found");
+            return;
+        }
+
+        // set the issueListDefId (from the default issue list) if it wasn't explicitly specified
+        if (issueListDef == null)
+        {
+            issueObject.setIssueDefId(defaultIssueListDef.getRowId());
+        }
+
+        if (action == Issue.action.reopen)
+        {
+            // clear resolution, resolvedBy, and duplicate fields
+            issueObject.beforeReOpen(container);
+        }
+
+        if (action == Issue.action.resolve)
+        {
+            //IssueObject issue = form.getBean();
+            String resolution = issueObject.getResolution() != null ? issueObject.getResolution() : "Fixed";
+
+            if (resolution.equals("Duplicate") &&
+                    issueObject.getDuplicate() != null &&
+                    !issueObject.getDuplicate().equals(prevIssue.getDuplicate()))
+            {
+                if (issueObject.getDuplicate() == issueObject.getIssueId())
+                {
+                    errors.reject(ERROR_MSG, "An issue may not be a duplicate of itself");
+                    return;
+                }
+                IssueObject duplicateOf = IssueManager.getIssue(null, user, issueObject.getDuplicate());
+                if (duplicateOf == null || duplicateOf.lookupContainer() == null)
+                {
+                    errors.reject(ERROR_MSG, "Duplicate issue '" + issueObject.getDuplicate().intValue() + "' not found");
+                    return;
+                }
+                if (!duplicateOf.lookupContainer().hasPermission(user, ReadPermission.class))
+                {
+                    errors.reject(ERROR_MSG, "User does not have Read permission for duplicate issue '" + issueObject.getDuplicate().intValue() + "'");
+                    return;
+                }
+            }
+        }
+
+        if (action == Issue.action.insert)
+            IssueValidation.requiresInsertPermission(user, issueObject, container);
+        else
+            IssueValidation.requiresUpdatePermission(user, issueObject, container);
+
+        CustomColumnConfiguration ccc = new IssuesController.CustomColumnConfigurationImpl(container, user, issueListDef);
+        IssueValidation.validateRequiredFields(issueListDef, ccc, issueObject, user, errors);
+        IssueValidation.validateNotifyList(issueObject, errors);
+        // don't validate the assigned to field if we are in the process
+        // of closing it and we are assigning it to the guest user (otherwise validate)
+        if (action != Issue.action.close || UserManager.getGuestUser().getUserId() != issueObject.getAssignedTo())
+        {
+            IssueValidation.validateAssignedTo(issueObject, container, errors);
+        }
+        IssueValidation.validateComments(issueObject, errors);
     }
 
     /**
@@ -203,7 +298,7 @@ public class IssueServiceImpl implements IssueService
     }
 
     @Nullable
-    public IssueListDef getIssueListDef(Container c, Issue issue)
+    public static IssueListDef getIssueListDef(Container c, Issue issue)
     {
         IssueListDef issueListDef = null;
         if (issue.getIssueDefId() != null)

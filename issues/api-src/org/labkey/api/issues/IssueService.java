@@ -27,7 +27,7 @@ public interface IssueService
     @Nullable
     Issue saveIssue(ViewContext context, Issue issue, Issue.action action, Errors errors);
 
-    void validateIssue(Container container, User user, IssueBuilder builder, Errors errors);
+    void validateIssue(Container container, User user, Issue issue, Issue.action action, Errors errors);
 
     public static class IssueBuilder
     {
