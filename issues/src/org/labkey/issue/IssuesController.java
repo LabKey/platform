@@ -688,9 +688,22 @@ public class IssuesController extends SpringActionController
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
 
+        // used for form binding
         public void setIssues(JSONArray issues)
         {
             _issues = issues;
+        }
+
+        public JSONArray getIssues()
+        {
+            if (_issues == null)
+            {
+                if (getJsonObject().containsKey("issues"))
+                {
+                    _issues = getJsonObject().getJSONArray("issues");
+                }
+            }
+            return _issues;
         }
 
         /**
@@ -701,9 +714,10 @@ public class IssuesController extends SpringActionController
             if (_issueForms == null)
             {
                 _issueForms = new ArrayList<>();
-                if (_issues != null)
+                JSONArray issues = getIssues();
+                if (issues != null)
                 {
-                    for (JSONObject rec : _issues.toJSONObjectArray())
+                    for (JSONObject rec : issues.toJSONObjectArray())
                     {
                         IssuesForm form = new IssuesForm();
                         Map<String, String> stringMap = new CaseInsensitiveHashMap<>();
@@ -844,167 +858,20 @@ public class IssuesController extends SpringActionController
                     }
 
                     Issue newIssue = IssueService.get().saveIssue(getViewContext(), issue, action, attachmentFiles, errors);
-                    newIssueIds.add(newIssue.getIssueId());
-
-/*
-                    IssueListDef issueListDef = issuesForm.getIssueListDef(getContainer());
-                    if (issueListDef != null)
-                    {
-                        CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
-                        Issue.action action = getAction(issuesForm);
-                        IssueObject issue = issuesForm.getBean();
-                        IssueObject prevIssue = new IssueObject();
-                        if (action != Issue.action.insert && issuesForm.getIssueId() != 0)
-                        {
-                            prevIssue = IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId());
-                            issuesForm.setOldValues(prevIssue);
-                        }
-                        IssueObject duplicateOf = null;
-                        String resolution = issue.getResolution() != null ? issue.getResolution() : "Fixed";
-
-                        switch (action)
-                        {
-                            case insert:
-                                // for new issues, the original is always the default.
-                                issue.open(getContainer(), getUser());
-                                prevIssue.open(getContainer(), getUser());
-                                break;
-                            case update:
-                                issue.change(getUser());
-                                break;
-                            case resolve:
-                                if (resolution.equals("Duplicate") &&
-                                    issue.getDuplicate() != null &&
-                                    !issue.getDuplicate().equals(prevIssue.getDuplicate()))
-                                {
-                                    duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
-                                }
-                                issue.beforeResolve(getContainer(), getUser());
-                                issue.resolve(getUser());
-                                break;
-                            case reopen:
-                                issue.open(getContainer(), getUser());
-                                break;
-                            case close:
-                                issue.close(getUser());
-                                break;
-                        }
-
-                        // validate any related issue values
-                        IssueValidation.relatedIssueHandler(issue, getUser(), errors);
-                        if (errors.hasErrors())
-                            return null;
-
-                        if (action == Issue.action.insert)
-                            IssueValidation.requiresInsertPermission(getUser(), issue, getContainer());
-                        else
-                            IssueValidation.requiresUpdatePermission(getUser(), issue, getContainer());
-
-                        // bind the user schema table to the form bean so we can get typed properties
-                        UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                        TableInfo table = userSchema.getTable(issueListDef.getName());
-                        issuesForm.setTable(table);
-                        issue.setProperties(issuesForm.getTypedColumns());
-
-                        // convert from email addresses & display names to userids before we hit the database
-                        issue.parseNotifyList(issue.getNotifyList());
-
-                        ChangeSummary changeSummary = ChangeSummary.createChangeSummary(getViewContext(), issueListDef,
-                                issue, prevIssue, null, getContainer(), getUser(), Issue.action.insert, issuesForm.getComment(), ccc);
-                        IssueManager.saveIssue(getUser(), getContainer(), issue);
-                        newIssues.add(issue);
-                        newIssueIds.add(issue.getIssueId());
-
-                        // handle attachments, the attachment value is a | delimited array of file names
-                        String attachments = issuesForm.get("attachment");
-                        if (!StringUtils.isBlank(attachments))
-                        {
-                            List<AttachmentFile> attachmentFiles = new ArrayList<>();
-                            for (String name : attachments.split("\\|"))
-                            {
-                                if (attachmentMap.containsKey(name.trim()))
-                                {
-                                    MultipartFile file = attachmentMap.get(name.trim());
-                                    if (!file.isEmpty())
-                                    {
-                                        attachmentFiles.add(new SpringAttachmentFile(file));
-                                    }
-                                }
-                            }
-
-                            if (!attachmentFiles.isEmpty())
-                                AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), attachmentFiles, getUser());
-                        }
-
-                        // update the duplicate issue
-                        if (duplicateOf != null)
-                        {
-                            duplicateOf.addComment(getUser(), HtmlString.unsafe("<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>"));
-                            IssueManager.saveIssue(getUser(), getContainer(), duplicateOf);
-                        }
-
-                        final String assignedTo = UserManager.getDisplayName(issue.getAssignedTo(), getUser());
-                        String change;
-                        if (action == Issue.action.insert)
-                        {
-                            if (assignedTo != null)
-                                change = "opened and assigned to " + assignedTo;
-                            else
-                                change = "opened";
-                        }
-                        else
-                            change = action == Issue.action.reopen ? "reopened" : action.name() + "d";
-
-                        if ("resolved".equalsIgnoreCase(change))
-                        {
-                            change += " as " + resolution; // Issue 12273
-                        }
-                        changeSummary.sendUpdateEmail(getContainer(), getUser(), issuesForm.getComment(),
-                                new DetailsAction(issue, getViewContext()).getURL(), change, getAttachmentFileList());
-                    }
-*/
+                    if (!errors.hasErrors())
+                        newIssueIds.add(newIssue.getIssueId());
                 }
 
-/*
-                // link up any related issues
-                int idx = 0;
-                Map<Integer, IssueObject> relatedIssuesToSave = new HashMap<>();
-                for (IssuesForm issuesForm : form.getIssueForms())
+                if (!errors.hasErrors())
                 {
-                    int related = NumberUtils.toInt(issuesForm.get("relatedIssue"), -1);
-                    if (related != -1)
-                    {
-                        // stash everything away so we only have to do one save
-                        if (!relatedIssuesToSave.containsKey(idx))
-                            relatedIssuesToSave.put(idx, newIssues.get(idx));
-                        if (!relatedIssuesToSave.containsKey(related))
-                            relatedIssuesToSave.put(related, newIssues.get(related));
+                    transaction.commit();
 
-                        IssueObject current = relatedIssuesToSave.get(idx);
-                        IssueObject relatedIssue = relatedIssuesToSave.get(related);
-
-                        if (current != null && relatedIssue != null)
-                        {
-                            addRelatedIssue(current, relatedIssue.getIssueId());
-                            addRelatedIssue(relatedIssue, current.getIssueId());
-                        }
-                    }
-                    idx++;
+                    ApiSimpleResponse response = new ApiSimpleResponse();
+                    response.put("issues", newIssueIds);
+                    response.put("success", !errors.hasErrors());
+                    return response;
                 }
-
-                // save any related issues
-                for (IssueObject issue : relatedIssuesToSave.values())
-                {
-                    IssueManager.saveIssue(getUser(), getContainer(), issue);
-                }
-                transaction.commit();
-*/
-                transaction.commit();
-
-                ApiSimpleResponse response = new ApiSimpleResponse();
-                response.put("issues", newIssueIds);
-                response.put("success", true);
-                return response;
+                return null;
             }
         }
     }
@@ -2293,7 +2160,6 @@ public class IssuesController extends SpringActionController
         {
             Map<String, Class> map = new LinkedHashMap<>();
             map.put("action", String.class);
-            //map.put("comment", String.class);
             map.put("callbackURL", String.class);
             return map;
         }
