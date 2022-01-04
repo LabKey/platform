@@ -74,6 +74,13 @@ public class DbSequenceManager
         return getPreallocatingSequence(c, name, 0, 100);
     }
 
+    public static void invalidatePreallocatingSequence(Container c, String name, int id)
+    {
+        String key = c.getId() + "/" + name + "/" + id;
+        _sequences.remove(key);
+    }
+
+
     public static DbSequence getPreallocatingSequence(Container c, String name, int id, int batchSize)
     {
         String key = c.getId() + "/" + name + "/" + id;

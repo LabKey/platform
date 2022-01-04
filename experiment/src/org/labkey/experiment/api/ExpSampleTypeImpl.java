@@ -569,13 +569,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
         long current = seq.current();
         if (newSeqValue < current)
         {
             if (!hasSamples(container))
             {
                 seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
             }
             else
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");

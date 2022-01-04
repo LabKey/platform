@@ -396,13 +396,14 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.get(c, SEQUENCE_PREFIX, getRowId());
         long current = seq.current();
         if (newSeqValue < current)
         {
             if (getDatas().isEmpty())
             {
                 seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(c, SEQUENCE_PREFIX, getRowId());
             }
             else
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing data.");
