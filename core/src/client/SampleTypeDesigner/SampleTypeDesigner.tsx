@@ -147,6 +147,8 @@ export class App extends React.PureComponent<any, State> {
             return <LoadingSpinner/>
         }
 
+        const isUpdate = !!this.getRowIdParam();
+
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <SampleTypeDesigner
@@ -158,6 +160,7 @@ export class App extends React.PureComponent<any, State> {
                     useTheme={true}
                     showLinkToStudy={true}
                     successBsStyle={'primary'}
+                    showGenIdBanner={isUpdate}
                 />
             </BeforeUnload>
         )

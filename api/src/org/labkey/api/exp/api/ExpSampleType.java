@@ -221,4 +221,8 @@ public interface ExpSampleType extends ExpObject
     void setCategory(String category);
 
     boolean isMedia();
+
+    long getCurrentGenId();
+
+    void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException;
 }
