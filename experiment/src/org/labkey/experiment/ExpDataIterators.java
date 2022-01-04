@@ -855,12 +855,12 @@ public class ExpDataIterators
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+                                    _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType, _context.isAllowImportLookupByAlternateKey());
                         }
                         else
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
+                                    _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType, _context.isAllowImportLookupByAlternateKey());
                         }
 
                         if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated

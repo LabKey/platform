@@ -195,7 +195,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             ExpMaterial m;
             try
             {
-                m = ExperimentService.get().findExpMaterial(container, user, null, null, sampleName, cache, materialCache);
+                m = ExperimentService.get().findExpMaterial(container, user, null, null, sampleName, cache, materialCache, true);
             }
             catch (ValidationException e)
             {

@@ -1452,17 +1452,51 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ExpData findExpData(Container c, User user,
-                            @NotNull ExpDataClass dataClass,
-                            @NotNull String dataClassName, String dataName,
-                            RemapCache cache, Map<Integer, ExpData> dataCache)
+                               @NotNull ExpDataClass dataClass,
+                               @NotNull String dataClassName, String dataName,
+                               RemapCache cache, Map<Integer, ExpData> dataCache,
+                               boolean allowImportLookupByAlternateKey)
             throws ValidationException
     {
+        ExpData data;
+
+        if (allowImportLookupByAlternateKey)
+        {
+            try
+            {
+                data = findExpDataByName(c, user, dataClass, dataClassName, dataName, cache, dataCache);
+                if (data != null)
+                    return data;
+                // didn't find it by name, try interpreting as a rowId instead
+                return findExpDataByRowId(dataClass, dataName, dataCache);
+            }
+            catch (ValidationException e)
+            {
+                data = findExpDataByRowId(dataClass, dataName, dataCache);
+                if (data == null)
+                    throw e; // throw this since it is most likely the intent was to supply the name rather than the rowId
+                else
+                    return data;
+            }
+        }
+
+        data = findExpDataByRowId(dataClass, dataName, dataCache);
+        if (data != null)
+            return data;
+        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Either dataName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+        return findExpDataByName(c, user, dataClass, dataClassName, dataName, cache, dataCache);
+    }
+
+    private @Nullable ExpData findExpDataByRowId(ExpDataClass dataClass, String dataName,  Map<Integer, ExpData> dataCache)
+    {
+        ExpData data = null;
         try
         {
             Integer rowId = ConvertHelper.convert(dataName, Integer.class);
 
             // first attempt to resolve by rowId
-            ExpData data = dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+            data = dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
             if (data != null)
                 return data;
         }
@@ -1470,9 +1504,14 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             // ignore
         }
+        return data;
+    }
 
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-        // Either dataName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+    private @Nullable ExpData findExpDataByName(Container c, User user,
+                                                @NotNull ExpDataClass dataClass,
+                                                @NotNull String dataClassName, String dataName,
+                                                RemapCache cache, Map<Integer, ExpData> dataCache) throws ValidationException
+    {
         try
         {
             Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
@@ -1488,25 +1527,59 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache, boolean allowImportLookupByAlternateKey)
             throws ValidationException
     {
+        ExpMaterial material;
+        if (allowImportLookupByAlternateKey) {
+            // first try to lookup using the name
+            try
+            {
+                material = findExpMaterialByName(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
+                if (material != null)
+                    return material;
+
+                // didn't find it by name, try interpreting as a rowId instead
+                return findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
+            }
+            catch (ValidationException ve)
+            {
+                // problem finding by name, so try interpreting as a rowId
+                material = findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
+                if (material == null)
+                    throw ve; // throw this since it is most likely the intent was to supply the name rather than the rowId
+                else
+                    return material;
+            }
+        }
+        else
+        {
+            material = findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
+            if (material != null)
+                return material;
+            // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+            // Either sampleName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+            return findExpMaterialByName(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
+        }
+    }
+
+    private @Nullable ExpMaterial findExpMaterialByRowId(Container c, User user, ExpSampleType sampleType, String sampleName, Map<Integer, ExpMaterial> materialCache)
+    {
+        ExpMaterial material = null;
         try
         {
             Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
-
-            // first attempt to resolve by rowId
-            ExpMaterial material = materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
-            if (material != null)
-                return material;
+            material = materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
         }
         catch (ConversionException e1)
         {
             // ignore
         }
+        return material;
+    }
 
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-        // Either sampleName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+    private @Nullable ExpMaterial findExpMaterialByName(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache) throws ValidationException
+    {
         try
         {
             Integer rowId = (sampleTypeName == null) ?
@@ -1518,15 +1591,15 @@ public class ExperimentServiceImpl implements ExperimentService
 
             return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
         }
-        catch (ConversionException e2)
+        catch (ConversionException e)
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+            sb.append("Failed to resolve '").append( sampleName).append("' into a sample.");
             if (sampleTypeName == null)
             {
                 sb.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
             }
-            sb.append(" " + e2.getMessage());
+            sb.append(" ").append(e.getMessage());
             throw new ValidationException(sb.toString());
         }
     }

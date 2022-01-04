@@ -361,6 +361,7 @@ public abstract class UploadSamplesHelper
      *                will be incorporated into the resolved inputs and outputs
      * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate the parent should be removed.
+     * @param allowImportLookupByAlternateKey if true, we attempt to find the inputs and outpus by interpreting the values as names first, then ids
      * @throws ExperimentException
      */
     @NotNull
@@ -372,7 +373,8 @@ public abstract class UploadSamplesHelper
                                                                                        Map<String, ExpSampleType> sampleTypes,
                                                                                        Map<String, ExpDataClass> dataClasses,
                                                                                        @Nullable String aliquotedFrom,
-                                                                                       String dataType /*sample type or source type name*/)
+                                                                                       String dataType, /*sample type or source type name*/
+                                                                                       boolean allowImportLookupByAlternateKey)
             throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
@@ -393,7 +395,7 @@ public abstract class UploadSamplesHelper
             if (sampleType == null)
                 throw new ValidationException("Invalid sample type: " + dataType);
 
-            aliquotParent = findMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+            aliquotParent = findMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap, allowImportLookupByAlternateKey);
 
             if (aliquotParent == null)
             {
@@ -425,7 +427,7 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, null, null, entityName, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, null, null, entityName, cache, materialMap, allowImportLookupByAlternateKey);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -458,7 +460,7 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap, allowImportLookupByAlternateKey);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -474,7 +476,7 @@ public abstract class UploadSamplesHelper
 
                     if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap, allowImportLookupByAlternateKey);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
@@ -508,7 +510,7 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap, allowImportLookupByAlternateKey);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
@@ -529,7 +531,7 @@ public abstract class UploadSamplesHelper
 
                     if (!isEmptyEntity)
                     {
-                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap, allowImportLookupByAlternateKey);
                         if (data != null)
                             childData.put(data, dataRole(data, user));
                         else
@@ -632,16 +634,16 @@ public abstract class UploadSamplesHelper
     }
 
 
-    private static ExpMaterial findMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+    private static ExpMaterial findMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache, boolean allowImportLookupByAlternateKey)
             throws ValidationException
     {
-        return ExperimentService.get().findExpMaterial(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
+        return ExperimentService.get().findExpMaterial(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache, allowImportLookupByAlternateKey);
     }
 
-    private static ExpData findData(Container c, User user, @NotNull ExpDataClass dataClass, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
+    private static ExpData findData(Container c, User user, @NotNull ExpDataClass dataClass, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache, boolean allowImportLookupByAlternateKey)
             throws ValidationException
     {
-        return ExperimentService.get().findExpData(c, user, dataClass, dataClassName, dataName, cache, dataCache);
+        return ExperimentService.get().findExpData(c, user, dataClass, dataClassName, dataName, cache, dataCache, allowImportLookupByAlternateKey);
     }
 
     /* this might be generally useful

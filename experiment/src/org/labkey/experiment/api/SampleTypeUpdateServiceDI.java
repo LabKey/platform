@@ -253,7 +253,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
+        // insertRows with lineage is pretty good at deadlocking against itself, so use retry loop
 
         DbScope scope = getSchema().getDbSchema().getScope();
         List<Map<String, Object>> results = scope.executeWithRetry(transaction ->

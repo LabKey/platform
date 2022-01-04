@@ -299,13 +299,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable ExpData findExpData(Container c, User user,
                                   @NotNull ExpDataClass dataClass,
                                   @NotNull String dataClassName, String dataName,
-                                  RemapCache cache, Map<Integer, ExpData> dataCache)
+                                  RemapCache cache, Map<Integer, ExpData> dataCache,
+                                  boolean allowImportLookupByAlternateKey)
             throws ValidationException;
 
     @Nullable ExpMaterial findExpMaterial(Container c, User user,
                                           ExpSampleType sampleType,
                                           String sampleTypeName, String sampleName,
-                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache,
+                                          boolean allowImportLookupByAlternateKey)
             throws ValidationException;
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);

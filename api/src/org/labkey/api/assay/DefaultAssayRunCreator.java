@@ -875,7 +875,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                                      @NotNull Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), null, null, sampleName, cache, materialCache);
+        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), null, null, sampleName, cache, materialCache, true);
         if (material == null)
         {
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;

@@ -1232,8 +1232,8 @@ public class NameGenerator
             try
             {
                 ExpObject parentObject = isMaterialParent ?
-                        ExperimentService.get().findExpMaterial(_container, user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache)
-                        : ExperimentService.get().findExpData(_container, user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache);
+                        ExperimentService.get().findExpMaterial(_container, user, (ExpSampleType) parentObjectType, parentTypeName, parentName, renameCache, materialCache, true)
+                        : ExperimentService.get().findExpData(_container, user, (ExpDataClass) parentObjectType, parentTypeName, parentName, renameCache, dataCache, true);
 
                 if (parentObject == null)
                     throw new RuntimeValidationException("Unable to find parent " + parentName);
