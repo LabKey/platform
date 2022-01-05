@@ -275,13 +275,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
 
-            if (_pkColumnLookupMap != null)
-            {
-                Object v = fetch(_pkColumnLookupMap, k);
-                if (v != null)
-                    return v;
-            }
-
             for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : maps)
             {
                 Object v = fetch(triple, k);
@@ -292,6 +285,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (_titleColumnLookupMap != null)
             {
                 Object v = fetch(_titleColumnLookupMap, String.valueOf(k));
+                if (v != null)
+                    return v;
+            }
+
+            if (_pkColumnLookupMap != null)
+            {
+                Object v = fetch(_pkColumnLookupMap, k);
                 if (v != null)
                     return v;
             }
