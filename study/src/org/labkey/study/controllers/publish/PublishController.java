@@ -309,13 +309,13 @@ public class PublishController extends SpringActionController
 
         public AutoLinkPipelineJob(ViewBackgroundInfo info, @NotNull PipeRoot pipeRoot, AutoLinkRunForm form)
         {
-            super(null, info, pipeRoot);
+            super("AutoLinkToStudy", info, pipeRoot);
             _targetStudyContainer = form.getTargetStudy();
             _protocolId = form.getProtocol().getRowId();
             _runIds = form.getRunId();
             _autoLinkCategory = form.getAutoLinkCategory();
 
-            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")));
+            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")).toPath());
         }
 
         @Override
