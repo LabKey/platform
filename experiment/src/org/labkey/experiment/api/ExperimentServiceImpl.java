@@ -1462,6 +1462,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (allowImportLookupByAlternateKey)
         {
+            // Issue 40302, Issue 44568: Unable to use samples or data class with integer like names as material or data input
             try
             {
                 data = findExpDataByName(c, user, dataClass, dataClassName, dataName, cache, dataCache);
@@ -1480,12 +1481,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
         }
 
-        data = findExpDataByRowId(dataClass, dataName, dataCache);
-        if (data != null)
-            return data;
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-        // Either dataName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
-        return findExpDataByName(c, user, dataClass, dataClassName, dataName, cache, dataCache);
+        return findExpDataByRowId(dataClass, dataName, dataCache);
     }
 
     private @Nullable ExpData findExpDataByRowId(ExpDataClass dataClass, String dataName,  Map<Integer, ExpData> dataCache)
@@ -1532,7 +1528,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         ExpMaterial material;
         if (allowImportLookupByAlternateKey) {
-            // first try to lookup using the name
+            // Issue 40302, Issue 44568: first try to lookup using the name
             try
             {
                 material = findExpMaterialByName(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
@@ -1554,12 +1550,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         else
         {
-            material = findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
-            if (material != null)
-                return material;
-            // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-            // Either sampleName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
-            return findExpMaterialByName(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
+            return findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
         }
     }
 
