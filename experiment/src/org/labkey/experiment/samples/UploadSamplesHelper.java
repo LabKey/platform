@@ -92,6 +92,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.ExpSampleType.CURRENT_SAMPLE_TYPE_NAME;
 
 public abstract class UploadSamplesHelper
 {
@@ -787,7 +788,8 @@ public abstract class UploadSamplesHelper
                             return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
                         else
                             return Collections.emptyMap();
-                    });
+                    })
+                    .addExtraPropsFn(() -> Map.of(CURRENT_SAMPLE_TYPE_NAME, this.sampletype.getName()));
 
             return LoggingDataIterator.wrap(names);
         }

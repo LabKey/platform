@@ -822,6 +822,7 @@ public class ExpDataIterators
                     Set<String> lsids = new LinkedHashSet<>();
                     lsids.addAll(_parentNames.keySet());
                     lsids.addAll(_aliquotParents.keySet());
+                    ExperimentService service =  ExperimentService.get();
                     for (String lsid : lsids)
                     {
                         Set<Pair<String, String>> parentNames = _parentNames.containsKey(lsid) ? _parentNames.get(lsid) : Collections.emptySet();
@@ -831,7 +832,7 @@ public class ExpDataIterators
                         String dataType = null;
                         if (_isSample)
                         {
-                            ExpMaterial m = ExperimentService.get().getExpMaterial(lsid);
+                            ExpMaterial m = service.getExpMaterial(lsid);
                             if (m != null)
                             {
                                 materialCache.put(m.getRowId(), m);
@@ -841,7 +842,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            ExpData d = ExperimentService.get().getExpData(lsid);
+                            ExpData d = service.getExpData(lsid);
                             if (d != null)
                             {
                                 dataCache.put(d.getRowId(), d);

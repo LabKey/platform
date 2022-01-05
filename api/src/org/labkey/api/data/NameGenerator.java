@@ -77,6 +77,8 @@ import java.util.stream.Stream;
 
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.ExpSampleType.ALIQUOTED_FROM_FIELD_NAME;
+import static org.labkey.api.exp.api.ExpSampleType.CURRENT_SAMPLE_TYPE_NAME;
 import static org.labkey.api.util.SubstitutionFormat.dailySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.monthlySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.weeklySampleCount;
@@ -668,7 +670,10 @@ public class NameGenerator
                 for (SubstitutionFormat format : formats)
                 {
                     if (format == dailySampleCount || format == weeklySampleCount || format == monthlySampleCount || format == yearlySampleCount)
+                    {
                         hasSampleCounterFormat = true;
+                        break;
+                    }
                 }
 
                 String sTok = token.toString().toLowerCase();
@@ -1346,6 +1351,25 @@ public class NameGenerator
                             addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
                             addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
+                    }
+                    // Issue 44568: We will pass through a rowId when creating aliquots via insertRows.
+                    // We need to find the corresponding material so we can use its name in the name we generate instead of its rowId.
+                    else if (parts[0].equalsIgnoreCase(ALIQUOTED_FROM_FIELD_NAME))
+                    {
+                        User user = User.getSearchUser();
+                        ExpSampleType parentObjectType = _sampleTypes.computeIfAbsent((String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), (name) -> SampleTypeService.get().getSampleType(_container, user, name));
+                        ExpMaterial material = null;
+                        String strValue = value.toString();
+                        try
+                        {
+                            material = ExperimentService.get().findExpMaterial(_container, user,  parentObjectType, (String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), strValue, renameCache, materialCache, true);
+                        }
+                        catch (ValidationException e)
+                        {
+                            // if we haven't been able to find a sample using either the name or rowId, we'll use the value originally provided
+                        }
+                        if (material != null && !material.getName().equals(strValue)) // replace supplied value with the name of the material we found.
+                            ctx.put(ALIQUOTED_FROM_FIELD_NAME, material.getName());
                     }
                 }
 
