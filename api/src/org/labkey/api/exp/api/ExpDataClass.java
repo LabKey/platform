@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -93,4 +94,8 @@ public interface ExpDataClass extends ExpObject
     void save(User user);
 
     Function<String, Long> getMaxDataCounterFunction();
+
+    long getCurrentGenId();
+
+    void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException;
 }

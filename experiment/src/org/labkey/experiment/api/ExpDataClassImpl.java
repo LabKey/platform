@@ -18,9 +18,10 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -34,7 +35,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -47,8 +47,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,8 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 /**
  * User: kevink
@@ -379,6 +375,42 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public Function<String, Long> getMaxDataCounterFunction()
     {
         return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData());
+    }
+
+    public long getMinGenId()
+    {
+        return NameGenerator.getGenIdStartValue(_object.getNameExpression());
+    }
+
+    @Override
+    public long getCurrentGenId()
+    {
+        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        if (null == seqRowId)
+            return 0;
+
+        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        return seq.current();
+    }
+
+    @Override
+    public void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException
+    {
+        DbSequence seq = DbSequenceManager.get(c, SEQUENCE_PREFIX, getRowId());
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if (getDatas().isEmpty())
+            {
+                seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(c, SEQUENCE_PREFIX, getRowId());
+            }
+            else
+                throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing data.");
+        }
+        else
+            seq.ensureMinimum(newSeqValue);
+
     }
 
 }

@@ -97,6 +97,14 @@ public class NameGenerator
     public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
     public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
 
+    /**
+     * Examples:
+     *  ${genId:minValue(100)}
+     *  ${genId:minValue('100')}
+     */
+    public static final String GENID_WITH_START_IND_REGEX = ".*\\$\\{genId:minValue\\('?(\\d*)?'?\\)}.*";
+    public static final Pattern GENID_WITH_START_IND_PATTERN = Pattern.compile(GENID_WITH_START_IND_REGEX);
+
     public static Date PREVIEW_DATE_VALUE;
     public static Date PREVIEW_MODIFIED_DATE_VALUE;
 
@@ -296,6 +304,7 @@ public class NameGenerator
 
         List<String> warningMessages = new ArrayList<>();
         String lcExpression = nameExpression.toLowerCase();
+        String allFieldsLc = StringUtils.join(substitutionFields, "\n").toLowerCase();
         for (String subField : substitutionFields)
         {
             String lcSub = subField.toLowerCase();
@@ -308,6 +317,20 @@ public class NameGenerator
                     char preChar = lcExpression.charAt(lcIndex - 1);
                     if (Character.isLetter(preChar))
                         continue;
+                    else
+                    {
+                        // Check if expression is substring of another expression, which is enclosed by ${}.
+                        // If both 'Exp Name' and 'Name' fields are present, ${Exp Name} should by pass check on 'Name' field.
+                        if (StringUtils.countMatches(allFieldsLc, lcSub) >= 2)
+                        {
+                            String prevStr = nameExpression.substring(0, lcIndex);
+                            int prevOpenCount = StringUtils.countMatches(prevStr, "${");
+                            int prevCloseCount = StringUtils.countMatches(prevStr, "}");
+                            if ((prevOpenCount - prevCloseCount) == 1)
+                                continue;
+                        }
+
+                    }
                 }
                 if (lcExpression.length() > (lcIndex + lcSub.length()))
                 {
@@ -540,11 +563,14 @@ public class NameGenerator
     public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString();
+        Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
+        if (importAliases != null)
+            aliasesInsensitive.putAll(importAliases);
 
         return INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
                 || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok)
-                || (importAliases != null && importAliases.containsKey(sTok));
+                || aliasesInsensitive.containsKey(sTok);
     }
 
     private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
@@ -657,10 +683,21 @@ public class NameGenerator
 
         Map<String, Object> previewCtx = new CaseInsensitiveHashMap<>();
         if (_validateSyntax)
+        {
             previewCtx.putAll(SubstitutionValue.getValuesMap());
+            if (importAliases != null)
+            {
+                for (String alias : importAliases.keySet())
+                {
+                    previewCtx.put(alias, SubstitutionValue.Inputs.getPreviewValue());
+                }
+            }
+        }
+
 
         for (StringExpressionFactory.StringPart part : parts)
         {
+            boolean isLineagePart = false;
             if (!part.isConstant())
             {
                 Object token = part.getToken();
@@ -673,7 +710,10 @@ public class NameGenerator
 
                 String sTok = token.toString().toLowerCase();
                 if (isLineageInput(sTok, importAliases))
+                {
+                    isLineagePart = true;
                     hasLineageInputs = true;
+                }
 
                 if (token instanceof FieldKey)
                 {
@@ -686,7 +726,7 @@ public class NameGenerator
                         if (_validateSyntax)
                         {
                             String fieldName = fieldParts.get(0);
-                            if (!substitutionValues.contains(fieldName))
+                            if (!substitutionValues.contains(fieldName) && !isLineagePart)
                             {
                                 boolean isColPresent = false;
                                 PropertyType pt = null;
@@ -907,6 +947,31 @@ public class NameGenerator
     public static Object getNamePartPreviewValue(PropertyType pt, @Nullable String prefix)
     {
         return pt.getPreviewValue(prefix);
+    }
+
+    public static long getGenIdStartValue(@Nullable String nameExpression)
+    {
+        long startInd = 0;
+        if (StringUtils.isEmpty(nameExpression))
+            return startInd;
+
+        Matcher genIdMatcher = GENID_WITH_START_IND_PATTERN.matcher(nameExpression);
+        if (genIdMatcher.find())
+        {
+            String startIndStr = genIdMatcher.group(1);
+            if (!StringUtils.isEmpty(startIndStr))
+            {
+                try
+                {
+                    startInd = Integer.valueOf(startIndStr);
+                }
+                catch (NumberFormatException e)
+                {
+                    // ignore illegal startInd
+                }
+            }
+        }
+        return startInd;
     }
 
     public void generateNames(@NotNull State state,
@@ -2153,6 +2218,10 @@ public class NameGenerator
                     "Value in parentheses starting at index 14 should be enclosed in single quotes."));
 
             validateNameResult("${genId:number('000)}", withErrors("No ending quote for the 'number' substitution pattern value starting at index 7."));
+
+            validateNameResult("${genId:minValue}", withErrors("No starting parentheses found for the 'minValue' substitution pattern starting at index 7.", "No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
+
+            validateNameResult("${genId:minValue(}", withErrors("No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
         }
 
         @Test
@@ -2220,6 +2289,9 @@ public class NameGenerator
 
             // with reserved field
             verifyPreview("S-${genId}", "S-1001");
+            verifyPreview("S-${genId:minValue(100)}", "S-1001");
+            verifyPreview("S-${genId:minValue(2000)}", "S-2000");
+            verifyPreview("S-${genId:minValue('10000')}", "S-10000");
             verifyPreview("S-${weeklySampleCount:number('00000')}", "S-00025");
             verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
             verifyPreview("S-${AliquotedFrom}", "S-Sample112");
@@ -2238,11 +2310,16 @@ public class NameGenerator
             fields.add(intField);
             fields.add(dateField);
             verifyPreview("S-${FieldStr}-${FieldInt:number('00000')}", "S-FieldStrValue-00003", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldInt:minValue(1234)}", "S-FieldStrValue-1234", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldInt:minValue('5678')}", "S-FieldStrValue-5678", null, fields);
+
             verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
 
             // with input
+            verifyPreview("S-${Inputs}", "S-Parent101");
             verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
 

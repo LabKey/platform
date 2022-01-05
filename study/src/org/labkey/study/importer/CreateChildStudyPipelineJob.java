@@ -99,7 +99,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
-        super(context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
+        super("CreateChildStudy", context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
 
         _form = form;
         _destFolderCreated = destFolderCreated;

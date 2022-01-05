@@ -352,6 +352,16 @@ public class StringExpressionFactory
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
                 }
+                else if ((rest.startsWith("minValue('") && rest.endsWith("')")
+                    || (rest.startsWith("minValue(") && rest.endsWith(")"))))
+                {
+                    String param = "";
+                    if (rest.startsWith("minValue('") && rest.endsWith("')"))
+                        param = rest.substring("minValue('".length(), rest.length() - "')".length());
+                    else if (rest.startsWith("minValue(") && rest.endsWith(")"))
+                        param = rest.substring("minValue(".length(), rest.length() - ")".length());
+                    format = new SubstitutionFormat.MinValueSubstitutionFormat(param);
+                }
                 else if (rest.startsWith("number('") && rest.endsWith("')"))
                 {
                     // TODO: Without a format string parameter, use container default number format

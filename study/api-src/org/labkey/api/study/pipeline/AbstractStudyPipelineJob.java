@@ -54,9 +54,9 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
     // For serialization
     protected AbstractStudyPipelineJob() {}
 
-    public AbstractStudyPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root)
+    public AbstractStudyPipelineJob(String provider, Container source, Container destination, User user, ActionURL url, PipeRoot root)
     {
-        super(null, new ViewBackgroundInfo(source, user, url), root);
+        super(provider, new ViewBackgroundInfo(source, user, url), root);
 
         setDstContainer(destination);
 

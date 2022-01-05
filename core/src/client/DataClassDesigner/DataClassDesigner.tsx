@@ -88,6 +88,9 @@ export class App extends React.Component<any, State> {
             return <LoadingSpinner/>
         }
 
+        const { rowId, name } = ActionURL.getParameters();
+        const isUpdate = !!(rowId || name);
+
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <DataClassDesigner
@@ -96,6 +99,7 @@ export class App extends React.Component<any, State> {
                     onComplete={this.onComplete}
                     onChange={this.onChange}
                     successBsStyle={'primary'}
+                    showGenIdBanner={isUpdate}
                 />
             </BeforeUnload>
         )
