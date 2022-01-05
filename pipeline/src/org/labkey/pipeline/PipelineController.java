@@ -1710,7 +1710,7 @@ public class PipelineController extends SpringActionController
         @Nullable
         public ActionURL urlBrowse(@Nullable PipelineStatusFile sf, @Nullable URLHelper returnUrl)
         {
-            if (sf == null)
+            if (sf == null || sf.getFilePath() == null)
                 return null;
 
             File logFile = new File(sf.getFilePath());
