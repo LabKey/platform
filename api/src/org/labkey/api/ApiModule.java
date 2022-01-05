@@ -131,6 +131,8 @@ public class ApiModule extends CodeOnlyModule
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
+        PropertyManager.registerEncryptionMigrationHandler();
+        AuthenticationManager.registerEncryptionMigrationHandler();
     }
 
     @Override

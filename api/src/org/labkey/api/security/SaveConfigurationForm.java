@@ -3,7 +3,6 @@ package org.labkey.api.security;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.data.AES;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 
@@ -64,7 +63,7 @@ public abstract class SaveConfigurationForm
     {
         if (Encryption.isEncryptionPassPhraseSpecified())
         {
-            return Base64.encodeBase64String(AES.get().encrypt(map.toString()));
+            return Base64.encodeBase64String(Encryption.getAES128().encrypt(map.toString()));
         }
         else
         {

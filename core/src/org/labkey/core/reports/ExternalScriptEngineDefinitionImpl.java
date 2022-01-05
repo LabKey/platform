@@ -28,7 +28,6 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
@@ -525,7 +524,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         return _dockerImageConfig;
     }
 
-
     @Override
     public void setDockerImageConfig(String dockerImageConfig)
     {
@@ -547,6 +545,5 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker R - " + getName(), DOCKER_R_IMAGE_TYPE, "", null));
             }
         }
-
     }
 }

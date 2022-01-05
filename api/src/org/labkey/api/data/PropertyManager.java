@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
@@ -148,6 +149,11 @@ public class PropertyManager
         ENCRYPTED_STORE.deleteProperties(c);
     }
 
+    // Register a handler so encrypted store can migrate property values whenever encryption key changes
+    public static void registerEncryptionMigrationHandler()
+    {
+        EncryptionMigrationHandler.registerHandler(ENCRYPTED_STORE);
+    }
 
     /**
      * This is designed to coalesce up the container hierarchy, returning the first non-null value
@@ -593,7 +599,7 @@ public class PropertyManager
 
     /**
      * In general, callers should always go through PropertyMap.delete(). This is exposed here for cases
-     * where we can't create a PropertyMap because we fail to decrypt the values previously store, and need
+     * where we can't create a PropertyMap because we fail to decrypt the values previously stored, and need
      * a direct way to delete the properties. See issue 18938
      */
     public static void deleteSetDirectly(User user, String objectId, String category, AbstractPropertyStore store)
@@ -685,7 +691,6 @@ public class PropertyManager
         }
     }
 
-
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
@@ -755,7 +760,6 @@ public class PropertyManager
                 testPropertyStore(encrypted);
             }
         }
-
 
         private void testPropertyStore(final PropertyStore store)
         {
