@@ -1455,12 +1455,12 @@ public class ExperimentServiceImpl implements ExperimentService
                                @NotNull ExpDataClass dataClass,
                                @NotNull String dataClassName, String dataName,
                                RemapCache cache, Map<Integer, ExpData> dataCache,
-                               boolean allowImportLookupByAlternateKey)
+                               boolean resolveByNameFirst)
             throws ValidationException
     {
         ExpData data;
 
-        if (allowImportLookupByAlternateKey)
+        if (resolveByNameFirst)
         {
             // Issue 40302, Issue 44568: Unable to use samples or data class with integer like names as material or data input
             try
@@ -1481,7 +1481,12 @@ public class ExperimentServiceImpl implements ExperimentService
             }
         }
 
-        return findExpDataByRowId(dataClass, dataName, dataCache);
+        data = findExpDataByRowId(dataClass, dataName, dataCache);
+        if (data != null)
+            return data;
+        // If not found by rowId, we look up by name so we can support an insertRows call with rows
+        // that reference other data objects in the same import as parents.
+        return findExpDataByName(c, user, dataClass, dataClassName, dataName, cache, dataCache);
     }
 
     private @Nullable ExpData findExpDataByRowId(ExpDataClass dataClass, String dataName,  Map<Integer, ExpData> dataCache)
@@ -1523,11 +1528,11 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache, boolean allowImportLookupByAlternateKey)
+    public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache, boolean resolveByNameFirst)
             throws ValidationException
     {
         ExpMaterial material;
-        if (allowImportLookupByAlternateKey) {
+        if (resolveByNameFirst) {
             // Issue 40302, Issue 44568: first try to lookup using the name
             try
             {
@@ -1550,7 +1555,12 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         else
         {
-            return findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
+            material = findExpMaterialByRowId(c, user, sampleType, sampleName, materialCache);
+            if (material != null)
+                return material;
+            // If not found by rowId, we look up by name so we can support an insertRows call with rows
+            // that reference other data objects in the same import as parents
+            return findExpMaterialByName(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
         }
     }
 
