@@ -1286,20 +1286,25 @@ public class NameGenerator
                 Object value = rowMap.get(ALIQUOTED_FROM_FIELD_NAME);
                 if (value != null)
                 {
-                    User user = User.getSearchUser();
-                    ExpSampleType parentObjectType = _sampleTypes.computeIfAbsent((String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), (name) -> SampleTypeService.get().getSampleType(_container, user, name));
-                    ExpMaterial material = null;
-                    String strValue = value.toString();
-                    try
+                    String strValue = value.toString().trim();
+                    // if the value isn't an integer, it can't be a rowId, so we don't need to disambiguate
+                    if (StringUtils.isNumeric(strValue))
                     {
-                        material = ExperimentService.get().findExpMaterial(_container, user, parentObjectType, (String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), strValue, renameCache, materialCache, true);
+                        User user = User.getSearchUser();
+                        ExpSampleType parentObjectType = _sampleTypes.computeIfAbsent((String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), (name) -> SampleTypeService.get().getSampleType(_container, user, name));
+                        ExpMaterial material = null;
+
+                        try
+                        {
+                            material = ExperimentService.get().findExpMaterial(_container, user, parentObjectType, (String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), strValue, renameCache, materialCache, true);
+                        }
+                        catch (ValidationException e)
+                        {
+                            // if we haven't been able to find a sample using either the name or rowId, we'll use the value originally provided
+                        }
+                        if (material != null && !material.getName().equals(strValue)) // replace supplied value with the name of the material we found.
+                            ctx.put(ALIQUOTED_FROM_FIELD_NAME, material.getName());
                     }
-                    catch (ValidationException e)
-                    {
-                        // if we haven't been able to find a sample using either the name or rowId, we'll use the value originally provided
-                    }
-                    if (material != null && !material.getName().equals(strValue)) // replace supplied value with the name of the material we found.
-                        ctx.put(ALIQUOTED_FROM_FIELD_NAME, material.getName());
                 }
             }
 
