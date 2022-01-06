@@ -64,11 +64,11 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql96Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql_10_Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 13.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 14.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -92,16 +92,16 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx);
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
-        Connection conn = md.getConnection();
-        Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
-        PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
-
-        PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt(), serverType);
+        PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt());
 
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
-        PostgreSql96Dialect dialect = psv.getDialect();
+        PostgreSql_10_Dialect dialect = psv.getDialect();
+
+        Connection conn = md.getConnection();
+        Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
+        PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
         dialect.setServerType(serverType);
 
         if (logWarnings)
@@ -130,10 +130,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 9.6
-        PostgreSql96Dialect conforming = new PostgreSql96Dialect();
+        // PostgreSQL dialects are nearly identical, so just test 10.x
+        PostgreSql_10_Dialect conforming = new PostgreSql_10_Dialect();
         conforming.setStandardConformingStrings(true);
-        PostgreSql96Dialect nonconforming = new PostgreSql96Dialect();
+        PostgreSql_10_Dialect nonconforming = new PostgreSql_10_Dialect();
         nonconforming.setStandardConformingStrings(false);
 
         return PageFlowUtil.set(
@@ -149,14 +149,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 9.6 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 9.6, null, connectionUrl);
-
-            // 9.7, 9.8, and 9.9 are bad as well - these versions never existed
-            badVersion("PostgreSQL", 9.7, 10.0, null, connectionUrl);
+            // < 10.0 should result in bad version number exception. Note: versions 9.7, 9.8, and 9.9 never existed.
+            badVersion("PostgreSQL", 0.0, 10.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 9.6, 9.7, "", connectionUrl, null, PostgreSql96Dialect.class);
             good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
@@ -189,7 +185,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                 "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql96Dialect();
+            SqlDialect dialect = new PostgreSql_10_Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
@@ -210,7 +206,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql96Dialect();
+                    return new PostgreSql_10_Dialect();
                 }
 
                 @NotNull

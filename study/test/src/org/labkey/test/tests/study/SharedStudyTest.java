@@ -33,7 +33,6 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
-import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
@@ -109,7 +108,10 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         DatasetDesignerPage datasetDesignerPage = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDesignerPage.setIsDemographicData(true);
-        datasetDesignerPage.shareDemographics("Share by PandaId");
+        datasetDesignerPage.openAdvancedDatasetSettings()
+                .setDatasetId(SHARED_DEMOGRAPHICS_ID)
+                .shareDemographics("Share by PandaId")
+                .clickApply();
         datasetDesignerPage.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
         // leave the 'visits' column unmapped, make sure it doesn't have a value/only has a placeholder
         // (this dataset doesn't have a meaningful visit field)
@@ -298,7 +300,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertTextPresent("over 6 visits. Data is present for 6 Pandas.");
 
         // verfiy that published study description has correct dataset
-        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
         // verify dataset has correct participants
@@ -392,25 +394,36 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testShadowingSharedDataset()
     {
-        final String datasetName = "Shadowing Dataset";
+        final String folderName = "ShadowingDataset Folder";
+        final String folderPath = getProjectName() + "/" + folderName;
+        final String shadowId = "11001";
+        final String shadowedDataset = "Shadowed Dataset";
+        final String shadowingDataset = "Shadowing Dataset";
 
-        _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
+        _containerHelper.createSubfolder(getProjectName(), folderName, "Study");
         createDefaultStudy();
 
-        ManageDatasetsPage datasetsPage = goToManageStudy()
-            .goToManageStudy()
-            .manageDatasets();
-        assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
-        datasetsPage.clickCreateNewDataset()
-            .setName(datasetName)
+        // Server doesn't let you create a dataset that collides with an existing shared dataset.
+        DatasetDesignerPage datasetDesigner = _studyHelper.defineDataset(shadowingDataset, folderPath, SHARED_DEMOGRAPHICS_ID);
+        final List<String> errors = datasetDesigner.clickSaveExpectingErrors();
+        checker().verifyEquals("Dataset id error",
+            List.of("A Dataset already exists with the datasetId \"" + SHARED_DEMOGRAPHICS_ID + "\"."), errors);
+
+        datasetDesigner.openAdvancedDatasetSettings()
+            .setDatasetId(shadowId)
+            .clickApply()
             .clickSave();
 
-        // Default dataset ID will overlap shared demographics (5001)
+        // Server doesn't prevent you from creating a shared dataset that collides with a dataset ID
+        _studyHelper.defineDataset(shadowedDataset, getProjectName(), shadowId)
+            .clickSave();
 
-        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        // Go to Manage Datasets
+        beginAt(WebTestHelper.buildURL("study", folderPath, "manageTypes"));
         assertTextPresent("WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.");
-        assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+
+        clickAndWait(Locator.linkWithText(shadowId));
+        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", shadowedDataset));
     }
 
     @Test
@@ -487,7 +500,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), mixed_group, PARTICIPANT_NOUN_SINGULAR, ptids);
 
         clickTab("Overview");
-        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
         DataRegionTable dataset = new DataRegionTable("Dataset", this);
@@ -512,7 +525,7 @@ public class SharedStudyTest extends BaseWebDriverTest
             assertElementNotPresent(Locator.css("li.ptid"));
 
             clickTab("Overview");
-            clickAndWait(Locator.linkWithText("1 dataset"));
+            clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
             clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
             DataRegionTable dataset = new DataRegionTable("Dataset", this);
@@ -543,7 +556,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
             clickTab("Overview");
 
-            clickAndWait(Locator.linkWithText("1 dataset"));
+            clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
             clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
             DataRegionTable dataset = new DataRegionTable("Dataset", this);

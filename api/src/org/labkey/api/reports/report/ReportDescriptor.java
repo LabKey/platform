@@ -509,6 +509,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         descriptor.setReportName(getReportName());
         descriptor.setReportKey(getReportKey());
         descriptor.setHidden(isHidden());
+        descriptor.setDisplayOrder(getDisplayOrder());
 
         ViewCategory category = getCategory(c);
 

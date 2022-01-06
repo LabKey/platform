@@ -23,3 +23,9 @@ SELECT core.fn_dropifexists('TestTable3', 'test', 'VIEW', NULL);
 SELECT core.fn_dropifexists('Containers2', 'test', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ContainerAliases2', 'test', 'VIEW', NULL);
 SELECT core.fn_dropifexists('Users2', 'test', 'VIEW', NULL);
+
+-- dropifexists() doesn't like tables with % or \
+DROP VIEW IF EXISTS test."a$b";
+DROP VIEW IF EXISTS test."a_b";
+DROP VIEW IF EXISTS test."a%b";
+DROP VIEW IF EXISTS test."a\b";

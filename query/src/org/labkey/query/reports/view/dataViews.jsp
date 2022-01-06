@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -44,7 +43,7 @@
     if (properties.containsKey("manageView"))
         manageView = BooleanUtils.toBoolean(properties.get("manageView"));
 
-    String renderId = "dataviews-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "dataviews-panel-" + getRequestScopedUID();
 %>
 <div id="<%=h(renderId)%>" class="dvc"></div>
 <script type="text/javascript">

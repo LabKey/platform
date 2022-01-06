@@ -21,8 +21,10 @@
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.publish.AbstractPublishStartAction" %>
 <%@ page import="org.labkey.api.study.publish.PublishBean" %>
 <%@ page import="org.labkey.api.study.publish.StudyPublishService" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
@@ -39,6 +41,7 @@
 <%
     JspView<PublishBean> me = (JspView<PublishBean>) HttpView.currentView();
     PublishBean bean = me.getModelBean();
+    boolean exceedsMaxRows = bean.getIds().size() > AbstractPublishStartAction.MAX_ROWS_TO_LINK;
     boolean unambiguous = !bean.isInsufficientPermissions() && !bean.isNullStudies() && bean.getStudies().size() == 1;
     Study firstStudy = null;
     Container firstStudyContainer = null;
@@ -101,11 +104,18 @@
     .form-group {
         display: flex !important;
     }
+
+    #chooseStudyError {
+        color: #a94442;
+        margin-bottom: 15px;
+        margin-left: 270px;
+    }
 </style>
 <script type="application/javascript">
 
     (function($){
 
+        var exceedsMaxRow = <%=exceedsMaxRows%>;
         toggleStudies = function(){
             var studySelect = $("select[id='targetStudy']");
             var studySelectLabel = $("label[for='targetStudy']");
@@ -121,7 +131,28 @@
             }
         };
 
+        // invoked when the auto link checkbox is changed, if the number of rows has been exceeded we only allow
+        // the auto link route and show/hide the max rows error message.
+        toggleAutoLink = function() {
+            if (exceedsMaxRow) {
+                let errorMsg = $("span[id='row-exceeded-msg']");
+                if ($("input[id='autoLink']").prop('checked')){
+                    errorMsg.hide();
+                    $("a[id='next-btn']").removeClass('labkey-disabled-button');
+                }
+                else {
+                    errorMsg.show();
+                    $("a[id='next-btn']").addClass('labkey-disabled-button');
+                }
+            }
+        };
+
         handleNext = function(){
+            if ($("#autoLinkCategory").val() !== undefined && $("#autoLinkCategory").val().length > 200) {
+                let errorMessageDiv = $('#chooseStudyError');
+                errorMessageDiv.text("Linked Dataset Category name must be shorter than 200 characters.");
+                return;
+            }
 
             var autoLink = $("input[id='autoLink']");
             if (autoLink.prop('checked')){
@@ -171,6 +202,15 @@
 </script>
 
 <%
+    if (exceedsMaxRows)
+    {
+%>
+    <span class="labkey-error" id="row-exceeded-msg" <%=!bean.getBatchIds().isEmpty() ? HtmlString.unsafe("style = 'display:none;'") : HtmlString.unsafe("")%>><h4>
+        The maximum number of rows, i.e. (<%=AbstractPublishStartAction.MAX_ROWS_TO_LINK%>), that can be linked at one time has been exceeded. You can review this <%=new HelpTopic("publishAssayData#trouble").getSimpleLinkHtml("help topic")%> for more information on how to work around this limit.
+    </h4></span>
+<%
+    }
+
     if (bean.getStudies().size() > 1)
     {
 %>
@@ -185,6 +225,7 @@
     }
 %>
 
+<div id="chooseStudyError"> </div>
 <labkey:form method="POST" id="linkForm" layout="horizontal" action="<%=postURL%>">
     <%
         if (unambiguous)
@@ -209,7 +250,7 @@
                     bean.getBatchNoun() + " data missing valid subject IDs and timepoints will be ignored.";
     %>
     <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoLink" forceSmallContext="true"
-                  contextContent="<%= autoLinkTip %>"/>
+                  contextContent="<%= autoLinkTip %>" checked="<%=exceedsMaxRows%>" onChange="toggleAutoLink()"/>
     <%
         }
     %>
@@ -217,8 +258,8 @@
     <%
         if (!autoLinkEnabled)
         {
-            String autoLinkCategoryTip = "Specify the desired category for the Assay Dataset that will be created (or appended to) in the target study when rows are linked. " +
-                    "If the category you specify does not exist, it will be created. If the Assay Dataset already exists, this setting will not overwrite a previously assigned category. " +
+            String autoLinkCategoryTip = "Specify the desired category for the Dataset that will be created (or appended to) in the target study when rows are linked. " +
+                    "If the category you specify does not exist, it will be created. If the Dataset already exists, this setting will not overwrite a previously assigned category. " +
                     "Leave blank to use the default category of \"Uncategorized\".";
     %>
     <labkey:input type="text" label="Specify Linked Dataset Category" className="form-control" name="autoLinkCategory" id="autoLinkCategory" contextContent="<%= autoLinkCategoryTip %>" forceSmallContext="true"/>
@@ -226,7 +267,7 @@
         }
     %>
 
-    <labkey:button text="Next" onclick="handleNext();" submit="false"/>
+    <labkey:button text="Next" onclick="handleNext();" id="next-btn" submit="false" enabled="<%=!exceedsMaxRows || !bean.getBatchIds().isEmpty()%>"/>
     <labkey:button text="Cancel" href="<%=bean.getReturnURL()%>"/>
 
     <%

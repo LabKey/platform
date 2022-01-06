@@ -22,7 +22,6 @@ import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.StudyManager;
@@ -80,9 +79,9 @@ public class StudyFolderType extends MultiPortalFolderType
     }
 
     @Override
-    public HelpTopic getHelpTopic()
+    public String getHelpTopic()
     {
-        return new HelpTopic("study");
+        return "study";
     }
 
     @Override

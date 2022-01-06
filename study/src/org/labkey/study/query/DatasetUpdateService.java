@@ -39,16 +39,14 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
-import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -107,6 +105,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
+    private Set<Role> _contextualRoles = Set.of();
 
     /** Mapping for MV column names */
     private Map<String, String> _columnMapping = Collections.emptyMap();
@@ -131,13 +130,32 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
     }
 
+
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        String lsid = keyFromMap(keys);
-        return _dataset.getDatasetRow(user, lsid);
+        return (Map<String, Object>)(new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class));
     }
+
+
+    /* TODO for performance, NOTE need to return rows in order of input list
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+        ArrayList<String> lsids = new ArrayList<>(keys.size());
+        for (var m : keys)
+            lsids.add(keyFromMap(m));
+        var result = (List)(new TableSelector(getQueryTable(),
+                    TableSelector.ALL_COLUMNS,
+                    new SimpleFilter(new FieldKey(null,"lsid"), lsids, CompareType.IN),
+                    null))
+                .getArrayList(Map.class);
+        return (List<Map<String, Object>>)result;
+    }
+    */
 
 
     @Override
@@ -324,7 +342,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
 
-    private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
+    @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
     {
         String columnName = _dataset.getStudy().getSubjectColumnName();
         Object participant = row.get(columnName);
@@ -399,17 +417,17 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> updateRows(User user, final Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
-        if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
-        {
-            PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
-            PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
-            setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
-        }
+            List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+            if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
+            {
+                PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
+                PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
+                setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
+            }
 
-        resyncStudy(user, container);
-        return result;
-    }
+            resyncStudy(user, container);
+            return result;
+        }
 
     private void resyncStudy(User user, Container container)
     {
@@ -442,19 +460,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // Update will delete old and insert, so covering aliases, like insert, is needed
         aliasColumns(_columnMapping, row);
 
-        BatchValidationException errors = new BatchValidationException();
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = _dataset.updateDatasetRow(user, lsid, row, errors);
+        String newLsid = _dataset.updateDatasetRow(user, lsid, row);
         //update the lsid and return
         row.put("lsid", newLsid);
-        if(errors.hasErrors())
-        {
-            ValidationException error = new ValidationException();
-            errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
-            throw error;
-        }
 
         row = getRow(user, container, row);
 

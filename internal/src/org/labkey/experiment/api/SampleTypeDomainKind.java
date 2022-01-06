@@ -24,14 +24,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameExpressionValidationResult;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
@@ -44,6 +48,8 @@ import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -51,11 +57,15 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -64,6 +74,7 @@ import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -96,9 +107,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotedFrom");
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
-        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
+        RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("AliquotVolume");
+        RESERVED_NAMES.add("AliquotUnit");
         RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -315,6 +330,51 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public NameExpressionValidationResult validateNameExpressions(SampleTypeDomainKindProperties options, GWTDomain domainDesign, Container container)
+    {
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        List<String> previewNames = new ArrayList<>();
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Name Pattern warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
+            else
+                previewNames.add(null);
+        }
+        else
+            previewNames.add(null);
+
+        if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
+        {
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(options.getAliquotNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
+            if (results.errors() != null && !results.errors().isEmpty())
+                results.errors().forEach(error -> errors.add("Aliquot Name Pattern error: " + error));
+            if (results.warnings() != null && !results.warnings().isEmpty())
+                results.warnings().forEach(error -> warnings.add("Aliquot Name Pattern warning: " + error));
+            if (results.previews() != null)
+                previewNames.addAll(results.previews());
+            else
+                previewNames.add(null);
+        }
+        return new NameExpressionValidationResult(errors, warnings, previewNames);
+    }
+
+    private @NotNull ValidationException getNamePatternValidationResult(String patten, List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, Container container)
+    {
+        ValidationException errors = new ValidationException();
+        NameExpressionValidationResult results = NameGenerator.getValidationMessages(patten, properties, importAliases, container);
+        if (results.errors() != null && !results.errors().isEmpty())
+            results.errors().forEach(error -> errors.addError(new SimpleValidationError(error)));
+        return errors;
+    }
+
+    @Override
     public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
     {
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
@@ -351,6 +411,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
+        int aliquotNameExpMax = materialSourceTI.getColumn("AliquotNameExpression").getScale();
+        if (StringUtils.isNotBlank(options.getAliquotNameExpression()) && options.getAliquotNameExpression().length() > aliquotNameExpMax)
+            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + nameExpMax + " characters.");
+
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
             throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
@@ -358,6 +422,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int metricUnitMax = materialSourceTI.getColumn("MetricUnit").getScale();
         if (StringUtils.isNotBlank(options.getMetricUnit()) && options.getMetricUnit().length() > metricUnitMax)
             throw new IllegalArgumentException("Value for Metric Unit field may not exceed " + metricUnitMax + " characters.");
+
+        int categoryMax = materialSourceTI.getColumn("Category").getScale();
+        if (StringUtils.isNotBlank(options.getCategory()) && options.getCategory().length() > categoryMax)
+            throw new IllegalArgumentException("Value for Category field may not exceed " + categoryMax + " characters.");
 
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
@@ -412,6 +480,26 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             if (!ss.parentAliasHasCorrectFormat(trimmedValue))
                 throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
         });
+
+        List<? extends GWTPropertyDescriptor> properties = updatedDomainDesign.getFields();
+
+        String errorMsg = "";
+        if (StringUtils.isNotBlank(options.getNameExpression()))
+        {
+            ValidationException errors = getNamePatternValidationResult(options.getNameExpression(), properties, aliasMap, container);
+            if (errors.hasErrors())
+                errorMsg += "Invalid Name Expression:" + errors.getMessage();
+        }
+
+        if (StringUtils.isNotBlank(options.getAliquotNameExpression()))
+        {
+            ValidationException errors = getNamePatternValidationResult(options.getAliquotNameExpression(), properties, aliasMap, container);
+            if (errors.hasErrors())
+                errorMsg += "Invalid Aliquot Name Expression:" + errors.getMessage();
+        }
+
+        if (StringUtils.isNotBlank(errorMsg))
+            throw new IllegalArgumentException(errorMsg);
     }
 
     @Override
@@ -430,9 +518,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int idCol3 = -1;
         int parentCol = -1;
         String nameExpression = null;
+        String aliquotNameExpression = null;
         String labelColor = null;
         String metricUnit = null;
         Container autoLinkTargetContainer = null;
+        String autoLinkCategory = null;
+        String category = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -444,16 +535,19 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
             parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
-            nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            nameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getNameExpression()));
+            aliquotNameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getAliquotNameExpression()));
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
+            autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
+            category = StringUtils.trimToNull(arguments.getCategory());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category);
         }
         catch (SQLException e)
         {
@@ -477,10 +571,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         UserSchema schema = new SamplesSchema(user, container);
-        return schema.getTable(name, null);
+        return schema.getTable(name, cf);
     }
 
     @Override
@@ -516,5 +610,29 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     {
         ExpSampleType sampleType = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
         return new SampleTypeDomainKindProperties(sampleType);
+    }
+
+    @Override
+    public boolean hasNullValues(Domain domain, DomainProperty prop)
+    {
+        SQLFragment allRowsSQL = new SQLFragment();
+        SQLFragment nonBlankRowsSQL = new SQLFragment();
+
+        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
+        {
+            // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
+            String table = domain.getStorageTableName();
+            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
+                    .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
+                    .append(") AND RootMaterialLSID IS NULL");
+
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
+            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
+            return totalRows != nonBlankRows;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

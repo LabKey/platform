@@ -50,6 +50,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -126,6 +129,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return _object.detailsURL();
     }
 
+    @Override
+    public ActionURL detailsURL(Container container, boolean checkForOverride)
+    {
+        return _object.detailsURL(container, checkForOverride);
+    }
 
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
@@ -172,9 +180,87 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public void setRootMaterialLSID(String lsid)
+    {
+        _object.setRootMaterialLSID(lsid);
+    }
+
+    @Override
     public String getAliquotedFromLSID()
     {
         return _object.getAliquotedFromLSID();
+    }
+
+    @Override
+    public void setAliquotedFromLSID(String lsid)
+    {
+        _object.setAliquotedFromLSID(lsid);
+    }
+
+    public Integer getSampleStateId()
+    {
+        return _object.getSampleState();
+    }
+
+    @Override
+    public void setSampleStateId(Integer stateId)
+    {
+        _object.setSampleState(stateId);
+    }
+
+    @Override
+    public DataState getSampleState()
+    {
+        if (getSampleStateId() == null)
+            return null;
+        return DataStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
+    }
+
+
+    @Override
+    public String getStateLabel()
+    {
+        DataState state = getSampleState();
+        if (state == null)
+            return null;
+        return state.getLabel();
+    }
+
+    @Override
+    public boolean isRecomputeRollup()
+    {
+        return _object.isRecomputeRollup();
+    }
+
+    @Override
+    public int getAliquotCount()
+    {
+        return _object.getAliquotCount();
+    }
+
+    @Override
+    public double getAliquotVolume()
+    {
+        return _object.getAliquotVolume();
+    }
+
+    @Override
+    public String getAliquotUnit()
+    {
+        return _object.getAliquotUnit();
+    }
+
+    @Override
+    public boolean isOperationPermitted(SampleTypeService.SampleOperations operation)
+    {
+        return SampleStatusService.get().isOperationPermitted(getSampleState(), operation);
+    }
+
+    @Override
+    public String getNameAndStatus()
+    {
+        String statusLabel = getStateLabel();
+        return getName() + (statusLabel == null ? "" : " (status: " + statusLabel + ")");
     }
 
     @Override
@@ -243,7 +329,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType());
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType(), false, false);
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
@@ -478,31 +564,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
-            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
-            {
-                for (ColumnInfo c : ti.getColumns())
-                {
-                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
-                        continue;
-                    if (c.isMvIndicatorColumn())
-                        continue;
-                    Object value = c.getValue(rs);
-                    String mvIndicator = null;
-                    if (null != c.getMvColumnName())
-                    {
-                        ColumnInfo mv = ti.getColumn(c.getMvColumnName());
-                        mvIndicator = null==mv ? null : (String)mv.getValue(rs);
-                    }
-                    if (null == value && null == mvIndicator)
-                        continue;
-                    if (null != mvIndicator)
-                        value = null;
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
-                    if (null != mvIndicator)
-                        prop.setMvIndicator(mvIndicator);
-                    ret.put(c.getPropertyURI(), prop);
-                }
-            });
+            ret.putAll(getObjectProperties(ti));
         }
         return ret;
     }

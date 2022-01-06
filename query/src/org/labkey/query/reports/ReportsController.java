@@ -127,7 +127,6 @@ import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
@@ -789,7 +788,7 @@ public class ReportsController extends SpringActionController
                 return new AjaxScriptReportView(null, form, Mode.create);
             else
             {
-                HtmlStringBuilder sb = HtmlStringBuilder.of("");
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
 
                 for (ValidationError error : reportErrors)
                     sb.append(error.getMessage()).append(HtmlString.unsafe("<br>"));
@@ -1586,7 +1585,7 @@ public class ReportsController extends SpringActionController
             this.uploadFileName = fileName;
         }
 
-        public static HelpTopic getHelpTopic() { return new HelpTopic("thumbnails"); }
+        public static String getHelpTopic() { return "thumbnails"; }
     }
 
     public static ActionURL getCreateAttachmentReportURL(Container c, ActionURL returnURL)
@@ -1614,7 +1613,7 @@ public class ReportsController extends SpringActionController
     {
         protected void initialize(F form) throws Exception
         {
-            setHelpTopic(new HelpTopic("staticReports"));
+            setHelpTopic("staticReports");
 
             // we can share if we own the report.  if we don't
             // own the report then we'll disable the checkbox
@@ -2309,7 +2308,7 @@ public class ReportsController extends SpringActionController
                 WebPartView view = factory.getWebPartView(getViewContext(), part);
 
                 setTitle("Manage Views");
-                setHelpTopic(new HelpTopic("manageViews"));
+                setHelpTopic("manageViews");
                 view.setTitle("Manage Views");
                 view.setIsWebPart(false);
 

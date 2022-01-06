@@ -35,10 +35,8 @@ import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -235,10 +233,13 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         List<PipelineJob> result = new ArrayList<>();
         if (location.equals(locationDefault))
         {
-            for (PipelineJob job : _pending)
-                result.add(job);
-            for (PipelineJob job : _running)
-                result.add(job);
+            synchronized (this)
+            {
+                for (PipelineJob job : _pending)
+                    result.add(job);
+                for (PipelineJob job : _running)
+                    result.add(job);
+            }
         }
         return result;
     }
@@ -263,25 +264,19 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
     @Override
     @NotNull
-    public Map<String, Integer> getQueuePositions()
+    public synchronized  Map<String, Integer> getQueuePositions()
     {
         Map<String, Integer> result = new HashMap<>();
-        synchronized (_running)
+        for (PipelineJob pipelineJob : _running)
         {
-            for (PipelineJob pipelineJob : _running)
-            {
-                result.put(pipelineJob.getJobGUID(), 1);
-            }
+            result.put(pipelineJob.getJobGUID(), 1);
         }
         int position = _running.isEmpty() ? 0 : 1;
-        synchronized (_pending)
+        for (PipelineJob pipelineJob : _pending)
         {
-            for (PipelineJob pipelineJob : _pending)
+            if (!result.containsKey(pipelineJob.getJobGUID()))
             {
-                if (!result.containsKey(pipelineJob.getJobGUID()))
-                {
-                    result.put(pipelineJob.getJobGUID(), ++position);
-                }
+                result.put(pipelineJob.getJobGUID(), ++position);
             }
         }
         return result;

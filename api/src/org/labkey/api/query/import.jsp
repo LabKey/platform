@@ -233,6 +233,16 @@
                     case Ext4.form.Action.CONNECT_FAILURE:
                         if (action.result && (action.result.errors || action.result.exception))
                             serverInvalid(action.result);
+                        else if (action.response && action.response.responseText) {
+                            var msg;
+                            try {
+                                msg = JSON.parse(action.response.responseText)
+                            }
+                            catch (e) {
+                                msg = {exception: "Server Error: " + action.response.responseText}
+                            }
+                            serverInvalid(msg);
+                        }
                         else
                             Ext4.Msg.alert('Failure', 'Ajax communication failed');
                         break;
@@ -472,7 +482,7 @@
                         name: 'file',
                         buttonText: 'Browse',
                         emptyText: 'Select a file to upload',
-                        clearOnSubmit: false
+                        clearOnSubmit: true
                     },
                     {
                         hideEmptyLabel: false,

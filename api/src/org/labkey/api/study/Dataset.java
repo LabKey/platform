@@ -35,8 +35,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -210,18 +209,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     @Override
                     public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
                     {
-                        ActionURL url;
-                        // When the sample management module is enabled in the sample type's container, we want to link into the application
-                        if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("sampleManagement")))
-                        {
-                            url = new ActionURL("sampleManager", "app", container);
-                            url.setFragment("/samples/" + sourceObject.getName());
-                        }
-                        else
-                        {
-                            url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL((ExpSampleType) sourceObject);
-                        }
-                        return url;
+                        return PageFlowUtil.urlProvider(ExperimentUrls.class, true).getShowSampleTypeURL((ExpSampleType) sourceObject, container);
                     }
                 };
 
@@ -281,10 +269,6 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     TableInfo getTableInfo(User user) throws UnauthorizedException;
 
-    TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException;
-
-    TableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException;
-
     boolean isDemographicData();
 
     Date getModified();
@@ -332,23 +316,11 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     /**
      * @return whether the user has permission to read rows from this dataset
+     * @deprecated use DatasetTableImpl.hasPermission()
      */
+    @Deprecated
     boolean canRead(UserPrincipal user);
 
-    /**
-     * @return whether the user has permission to update the dataset
-     */
-    boolean canUpdate(UserPrincipal user);
-
-    /**
-     * @return whether the user has permission to delete from the dataset
-     */
-    boolean canDelete(UserPrincipal user);
-
-    /**
-     * @return whether the user has permission to insert rows into the dataset
-     */
-    boolean canInsert(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete
@@ -394,9 +366,8 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
      * @param u user performing the update
      * @param lsid the lsid of the dataset row
      * @param data the data to be updated
-     * @param errors any errors during update will be added to this object
      */
-    String updateDatasetRow(User u, String lsid, Map<String,Object> data, BatchValidationException errors);
+    String updateDatasetRow(User u, String lsid, Map<String,Object> data) throws ValidationException;
 
     /**
      * Fetches a single row from a dataset given an LSID

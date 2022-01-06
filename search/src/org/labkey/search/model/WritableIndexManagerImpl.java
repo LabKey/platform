@@ -187,12 +187,12 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (AlreadyClosedException e)
         {
-            if (e.getCause() instanceof IOException && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            if (e.getCause() instanceof IOException && e.getCause().getMessage() != null && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
             {
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
             else
-                throw e;
+                throw e;  //TODO Should we just ignore this --  it is typically caused by either the server shutting down or the index being deleted.
         }
         catch (Throwable e)
         {

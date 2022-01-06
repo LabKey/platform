@@ -34,7 +34,8 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -57,6 +58,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -66,7 +68,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     final private DatasetDefinition _datasetDefinition;
     final User user;
     boolean needsQC;
-    QCState defaultQC;
+    DataState defaultQC;
     List<String> lsids = null;
     DatasetDefinition.CheckForDuplicates checkDuplicates = DatasetDefinition.CheckForDuplicates.never;
     boolean allowImportManagedKeys = false;
@@ -77,7 +79,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
     ValidationException setupError = null;
 
-    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, DataState defaultQC, StudyImportContext studyImportContext)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
@@ -91,7 +93,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         _datasetDefinition = datasetDefinition;
         this.user = user;
 
-        TableInfo table = datasetDefinition.getTableInfo(user, false);
+        TableInfo table = datasetDefinition.getTableInfo(user);
         needsQC = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
     }
 
@@ -137,7 +139,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (null != contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates))
             checkDuplicates = (DatasetDefinition.CheckForDuplicates)contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates);
         if (null != contextConfig.get(DatasetUpdateService.Config.DefaultQCState))
-            defaultQC = (QCState)contextConfig.get(DatasetUpdateService.Config.DefaultQCState);
+            defaultQC = (DataState)contextConfig.get(DatasetUpdateService.Config.DefaultQCState);
         if (null != contextConfig.get(DatasetUpdateService.Config.StudyImportMaps))
             _tableIdMapMap = (Map)contextConfig.get(DatasetUpdateService.Config.StudyImportMaps);
 
@@ -146,7 +148,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         boolean isManagedKey = _datasetDefinition.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && _datasetDefinition.getKeyManagementType() != Dataset.KeyManagementType.None;
 
         TimepointType timetype = _datasetDefinition.getStudy().getTimepointType();
-        TableInfo table = _datasetDefinition.getTableInfo(user, false);
+        TableInfo table = _datasetDefinition.getTableInfo(user);
 
         ColumnInfo subjectCol = table.getColumn(_datasetDefinition.getStudy().getSubjectColumnName());
         String keyColumnName = _datasetDefinition.getKeyPropertyName();
@@ -231,7 +233,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None)
                 {
                     // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
-                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null, null != match.getMvColumnName());
+                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null, null != match.getMvColumnName() ? SimpleTranslator.RemapMissingBehavior.OriginalValue : null);
                 }
                 else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
@@ -407,6 +409,17 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
             setupError("Missing required field SequenceNum");
 
+        // Issue 43909: Don't allow insert/update if subject id is overwritten with custom column (no longer allowed).
+        for (DomainProperty p : Objects.requireNonNull(_datasetDefinition.getDomain()).getProperties())
+        {
+            if (p.getName().equalsIgnoreCase(_datasetDefinition.getStudy().getSubjectColumnName()))
+            {
+                setupError(_datasetDefinition.getStudy().getSubjectColumnName() + " is a reserved name for this study. Remove " +
+                        "this column from " + _datasetDefinition.getName() + " dataset design and try again.");
+                break;
+            }
+        }
+
         it.setInput(ErrorIterator.wrap(input, context, false, setupError));
         DataIterator ret = LoggingDataIterator.wrap(it);
 
@@ -478,7 +491,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             super(data, context);
             _datasetDefinition = datasetDefinition;
             this.user = user;
-            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
+            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user).getColumn("ParticipantID").getScale();
         }
 
         void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty, Integer indexContainer)
@@ -583,7 +596,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return null == o ? "" : o.toString();
         }
 
-        int addQCStateColumn(int index, String uri, QCState defaultQCState)
+        int addQCStateColumn(int index, String uri, DataState defaultQCState)
         {
             var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
@@ -765,17 +778,17 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             boolean _autoCreate = true;
             int _indexInputQCState = -1;
-            QCState _defaultQCState;
-            Map<String, QCState> _qcLabels;
+            DataState _defaultQCState;
+            Map<String, DataState> _qcLabels;
             Set<String> notFound = new CaseInsensitiveHashSet();
 
-            QCStateColumn(int index, QCState defaultQCState)
+            QCStateColumn(int index, DataState defaultQCState)
             {
                 _indexInputQCState = index;
                 _defaultQCState = defaultQCState;
 
                 _qcLabels = new CaseInsensitiveHashMap<>();
-                for (QCState state : QCStateManager.getInstance().getQCStates(_datasetDefinition.getContainer()))
+                for (DataState state : QCStateManager.getInstance().getStates(_datasetDefinition.getContainer()))
                     _qcLabels.put(state.getLabel(), state);
             }
 
@@ -787,7 +800,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
                 if (currentStateLabel != null)
                 {
-                    QCState state = _qcLabels.get(currentStateLabel);
+                    DataState state = _qcLabels.get(currentStateLabel);
                     if (null == state)
                     {
                         if (!_autoCreate)
@@ -799,7 +812,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                         else
                         {
 
-                            QCState newState = new QCState();
+                            DataState newState = new DataState();
                             // default to public data:
                             newState.setPublicData(true);
                             newState.setLabel(currentStateLabel);

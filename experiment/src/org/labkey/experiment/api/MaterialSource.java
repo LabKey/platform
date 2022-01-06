@@ -44,11 +44,15 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _parentCol;
 
     private String _nameExpression;
+    private String _aliquotNameExpression;
     private String _labelColor;
     private String _metricUnit;
     private Container _autoLinkTargetContainer;
+    private String _autoLinkCategory;
 
     private String _materialParentImportAliasMap;
+
+    private String _category;
 
     public String getMaterialLSIDPrefix()
     {
@@ -128,6 +132,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         _nameExpression = nameExpression;
     }
 
+    public String getAliquotNameExpression()
+    {
+        return _aliquotNameExpression;
+    }
+
+    public void setAliquotNameExpression(String aliquotNameExpression)
+    {
+        _aliquotNameExpression = aliquotNameExpression;
+    }
+
     public String getLabelColor()
     {
         return _labelColor;
@@ -158,6 +172,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         _autoLinkTargetContainer = autoLinkTargetContainer;
     }
 
+    public String getAutoLinkCategory()
+    {
+        return _autoLinkCategory;
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        _autoLinkCategory = autoLinkCategory;
+    }
+
     public String getMaterialParentImportAliasMap()
     {
         return _materialParentImportAliasMap;
@@ -166,6 +190,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setMaterialParentImportAliasMap(String materialParentImportAliasMap)
     {
         _materialParentImportAliasMap = materialParentImportAliasMap;
+    }
+
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    public void setCategory(String category)
+    {
+        _category = category;
     }
 
     @Override

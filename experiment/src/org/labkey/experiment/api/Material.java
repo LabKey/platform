@@ -16,11 +16,11 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.material table.
@@ -31,6 +31,13 @@ public class Material extends RunItem
 {
     private String rootMaterialLSID;
     private String aliquotedFromLSID;
+    private Integer sampleState;
+
+    // aliquot rollup columns
+    private Boolean recomputeRollup;
+    private Integer aliquotCount;
+    private Double aliquotVolume;
+    private String aliquotUnit;
 
     public Material()
     {
@@ -57,12 +64,65 @@ public class Material extends RunItem
         this.aliquotedFromLSID = aliquotedFromLSID;
     }
 
+    public Integer getSampleState()
+    {
+        return sampleState;
+    }
+
+    public void setSampleState(Integer sampleState)
+    {
+        this.sampleState = sampleState;
+    }
+
+    public Boolean isRecomputeRollup()
+    {
+        return recomputeRollup;
+    }
+
+    public Integer getAliquotCount()
+    {
+        return aliquotCount;
+    }
+
+    public Double getAliquotVolume()
+    {
+        return aliquotVolume;
+    }
+
+    public String getAliquotUnit()
+    {
+        return aliquotUnit;
+    }
+
+    public void setRecomputeRollup(Boolean recomputeRollup)
+    {
+        this.recomputeRollup = recomputeRollup;
+    }
+
+    public void setAliquotCount(Integer aliquotCount)
+    {
+        this.aliquotCount = aliquotCount;
+    }
+
+    public void setAliquotVolume(Double aliquotVolume)
+    {
+        this.aliquotVolume = aliquotVolume;
+    }
+
+    public void setAliquotUnit(String aliquotUnit)
+    {
+        this.aliquotUnit = aliquotUnit;
+    }
+
     @Override
     public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+        return detailsURL(getContainer(), false);
+    }
+
+    public ActionURL detailsURL(Container container, boolean checkForOverride)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class, checkForOverride).getMaterialDetailsURL(container, getRowId());
     }
 
     public boolean equals(Object o)

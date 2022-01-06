@@ -43,9 +43,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <code>AbstractFileAnalysisProtocol</code>
@@ -136,19 +140,30 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public String getBaseName(File file)
     {
+        return getBaseName(file.toPath());
+    }
+
+    public String getBaseName(Path file)
+    {
         FileType ft = findInputType(file);
         if (ft == null)
-            return file.getName();
+            return file.getFileName().toString();
 
         return ft.getBaseName(file);
     }
 
     public File getAnalysisDir(File dirData, PipeRoot root)
     {
-        return getFactory().getAnalysisDir(dirData, getName(), root);
+        return getFactory().getAnalysisDir(dirData.toPath(), getName(), root).toFile();
     }
 
+    @Deprecated //Prefer Path version
     public File getParametersFile(File dirData, PipeRoot root)
+    {
+        return getParametersFile(dirData.toPath(), root).toFile();
+    }
+
+    public Path getParametersFile(Path dirData, PipeRoot root)
     {
         return getFactory().getParametersFile(dirData, getName(), root);
     }
@@ -159,14 +174,26 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         save(getFactory().getProtocolFile(root, getName(), false), null, null);
     }
 
+    @Deprecated //Prefer Path version
     public void saveInstance(File file, Container c) throws IOException
+    {
+        saveInstance(file.toPath(), c);
+    }
+
+    public void saveInstance(Path file, Container c) throws IOException
     {
         Map<String, String> addParams = new HashMap<>();
         addParams.put(PipelineJob.PIPELINE_EMAIL_ADDRESS_PARAM, email);
         save(file, null, addParams);
     }
 
+    @Deprecated //Prefer the Path based version
     protected void save(File file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
+    {
+        save(file.toPath(), addParams, instanceParams);
+    }
+
+    protected void save(Path file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
     {
         if (xml == null || xml.length() == 0)
         {
@@ -176,7 +203,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
 
         ParamParser parser = getFactory().createParamParser();
-        parser.parse(new ReaderInputStream(new StringReader(xml)));
+        parser.parse(new ReaderInputStream(new StringReader(xml), Charset.defaultCharset()));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
@@ -186,9 +213,18 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 throw new IllegalArgumentException("Line " + err.getLine() + ": " + err.getMessage());
         }
 
-        File dir = file.getParentFile();
-        if (!dir.exists() && !dir.mkdirs())
-            throw new IOException("Failed to create directory '" + dir + "'.");
+        Path dir = file.getParent();
+        if (!Files.exists(dir))
+        {
+            try
+            {
+                Files.createDirectories(dir);
+            }
+            catch (IOException e)
+            {
+                throw new IOException("Failed to create directory '" + dir + "'.");
+            }
+        }
 
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM, getName());
         parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_DESCRIPTION_PARAM, getDescription());
@@ -218,7 +254,13 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
     }
 
+    @Deprecated  //Prefer the Path version
     public FileType findInputType(File file)
+    {
+        return findInputType(file.toPath());
+    }
+
+    public FileType findInputType(Path file)
     {
         for (FileType type : getInputTypes())
         {
@@ -233,7 +275,17 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     @Override
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
+    @Deprecated //Prefer Path version
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
                                           PipeRoot root, List<File> filesInput,
                                           File fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
+
+    //TODO convert existing File based versions to Path, then make this abstract
+    public JOB createPipelineJob(ViewBackgroundInfo info,
+                                          PipeRoot root, List<Path> filesInput,
+                                          Path fileParameters, @Nullable Map<String, String> variableMap) throws IOException
+    {
+        return createPipelineJob(info, root, filesInput.stream().map(Path::toFile).collect(Collectors.toList()), fileParameters.toFile(), variableMap);
+    }
+
 }

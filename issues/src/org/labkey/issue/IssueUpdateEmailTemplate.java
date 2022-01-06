@@ -22,6 +22,7 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.model.Issue;
@@ -43,11 +44,15 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
             "^itemName^ #^issueId^, \"^title^,\" has been ^action^";
+
+    // issue 43992 - add HTML line breaks to preserve original formatting, issue update emails no longer include
+    // a plain text version unless the --text/html--boundary-- boundary is specified in the template
+    //
     protected static final String DEFAULT_BODY =
-            "You can review this ^itemNameLowerCase^ here: ^detailsURL^\n" +
-                    "Modified by: ^user^\n" +
-                    "^modifiedFields^\n" +
-                    "^comment^\n" +
+            "You can review this ^itemNameLowerCase^ here: ^detailsURL^<br>\n" +
+                    "Modified by: ^user^<br>\n" +
+                    "^modifiedFields^<br>\n" +
+                    "^comment^<br>\n" +
                     "^attachments^";
     private final List<ReplacementParam<?>> _replacements = new ArrayList<>();
     private final List<ReplacementParam<?>> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
@@ -62,12 +67,12 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
     public IssueUpdateEmailTemplate()
     {
-        super("Issue update", "Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.Plain, Scope.SiteOrFolder);
+        super("Issue update", "Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.HTML, Scope.SiteOrFolder);
 
         Replacements replacements = new Replacements(_replacements);
 
         replacements.add("issueId", Integer.class, "Unique id for the issue", ContentType.Plain, c -> _newIssue == null ? null : _newIssue.getIssueId());
-        replacements.add("detailsURL", String.class, "URL to get the details view for the issue", ContentType.Plain, c -> _detailsURL == null ? null : _detailsURL.getURIString());
+        replacements.add("detailsURL", String.class, "URL to get the details view for the issue", ContentType.HTML, c -> _detailsURL == null ? null : PageFlowUtil.filter(_detailsURL.getURIString(), true, true));
         replacements.add("action", String.class, "Description of the type of action, like 'opened' or 'resolved'", ContentType.Plain, c -> _change);
         replacements.add("itemName", String.class, "Potentially customized singular item name, typically 'Issue'", ContentType.Plain, c -> getEntryTypeName(c, _newIssue).singularName);
         replacements.add("itemNameLowerCase", String.class, "Potentially customized singular item name in lower case, typically 'issue'", ContentType.Plain, c -> getEntryTypeName(c, _newIssue).singularName.toLowerCase());

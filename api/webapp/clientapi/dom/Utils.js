@@ -70,7 +70,7 @@ LABKEY.Utils = new function(impl, $) {
         }
         var html = [
             '<div class="modal-header">',
-                (!disableCloseBtn ? '<button type="button" class="close" data-dismiss="modal">&times;</button>' : ''),
+                (!disableCloseBtn && supportsModal() ? '<button type="button" class="close" data-dismiss="modal">&times;</button>' : ''),
                 '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
             '</div>',
             '<div class="modal-body">'
@@ -93,12 +93,17 @@ LABKEY.Utils = new function(impl, $) {
             modal.modal({backdrop: 'static'});
         }
 
-        showModal('lk-utils-modal')
+        showModal()
     };
 
-    var showModal = function(divId) {
-        var modal = $('#' + divId);
-        if (LABKEY.Utils.isFunction(modal.modal)) {
+    var supportsModal = function() {
+        var modal = $('#lk-utils-modal');
+        return LABKEY.Utils.isFunction(modal.modal);
+    }
+
+    var showModal = function() {
+        var modal = $('#lk-utils-modal');
+        if (supportsModal()) {
             modal.modal('show');
         } else {
             $('body').append('<div id="lk-utils-modal-backdrop" class="fade modal-backdrop in"></div>');

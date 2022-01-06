@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -36,6 +37,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -57,8 +59,10 @@ import org.labkey.issue.view.IssuesWebPartFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -79,7 +83,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public Double getSchemaVersion()
     {
-        return 21.000;
+        return 22.000;
     }
 
     @Override
@@ -145,6 +149,19 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
             ss.addResourceResolver("issue", IssueManager.getSearchResolver());
             ss.addDocumentProvider(this);
             ss.addSearchResultTemplate(new IssuesController.IssueSearchResultTemplate());
+        }
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (svc != null)
+        {
+            svc.registerUsageMetrics(getName(), () -> {
+                Map<String, Object> metric = new HashMap<>();
+
+                metric.put("issueDefCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issueListDef").getObject(Long.class));
+                metric.put("issuesCount", new SqlSelector(IssuesSchema.getInstance().getSchema(), "SELECT COUNT(*) FROM issues.issues").getObject(Long.class));
+
+                return metric;
+            });
         }
     }
 

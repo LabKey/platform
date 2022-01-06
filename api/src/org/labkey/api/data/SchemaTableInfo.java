@@ -18,7 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
@@ -39,9 +39,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-
-import org.labkey.api.query.column.BuiltInColumnTypes;
-
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -73,7 +70,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A thin wrapper over a table in the real underlying database. Includes JDBC-provided metadata and configuration
@@ -90,8 +86,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     private String _name;
     private String _description;
-    private String _title = null;
-    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
+    private String _title;
+    private int _cacheSize = CacheManager.DEFAULT_CACHE_SIZE;
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
     private DetailsURL _importURL;
@@ -215,7 +211,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public String getMetaDataName()
+    public String getMetaDataName() // TODO: Mark @NotNull?
     {
         return _metaDataName;
     }
@@ -388,12 +384,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             sep = "+','+";
         }
 
-        String cacheKey = "selectArray:" + pkColumnSelect;
-        NamedObjectList list = (NamedObjectList) DbCache.get(this, cacheKey);
-
-        if (null != list)
-            return list;
-
         String titleColumn = getTitleColumn();
 
         final NamedObjectList newList = new NamedObjectList();
@@ -401,17 +391,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
         new SqlSelector(_parentSchema, sql).forEach(rs -> newList.put(new SimpleNamedObject(rs.getString(1), rs.getString(2))));
 
-        DbCache.put(this, cacheKey, newList, getSelectListTimeout());
-
         return newList;
-    }
-
-
-    private long _selectListTimeout = TimeUnit.MINUTES.toMillis(1);
-
-    private long getSelectListTimeout()
-    {
-        return _selectListTimeout;
     }
 
     @Override

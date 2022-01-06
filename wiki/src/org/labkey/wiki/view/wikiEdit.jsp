@@ -34,6 +34,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
+        dependencies.add("internal/jQuery");
         dependencies.add("tiny_mce/tiny_mce.js");
         dependencies.add("wiki/internal/wikiEdit.js");
     }

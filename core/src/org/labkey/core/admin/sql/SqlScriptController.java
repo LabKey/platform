@@ -16,8 +16,8 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -54,7 +54,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -115,7 +114,8 @@ public class SqlScriptController extends SpringActionController
             JSONObject result = new JSONObject();
             JSONArray modulesJSON = new JSONArray();
 
-            String currentlyUpgradingModule = SqlScriptRunner.getCurrentModuleName();
+            SqlScriptRunner runner = ModuleLoader.getInstance().getUpgradeScriptRunner();
+            String currentlyUpgradingModule = runner.getCurrentModuleName();
             result.put("currentlyUpgradingModule", currentlyUpgradingModule);
 
             for (Module module : ModuleLoader.getInstance().getModules())
@@ -130,7 +130,7 @@ public class SqlScriptController extends SpringActionController
                 if (module.getName().equals(currentlyUpgradingModule))
                 {
                     moduleJSON.put("currentlyUpgrading", true);
-                    List<SqlScript> sqlScripts = SqlScriptRunner.getRunningScripts(currentlyUpgradingModule);
+                    List<SqlScript> sqlScripts = runner.getRunningScripts(currentlyUpgradingModule);
                     for (SqlScript sqlScript : sqlScripts)
                     {
                         JSONObject scriptJSON = new JSONObject();
@@ -213,7 +213,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+            setHelpTopic("sqlScripts#admin");
 
             StringBuilder html = new StringBuilder("<table>");
 
@@ -372,7 +372,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+            setHelpTopic("sqlScripts#admin");
 
             ArrayList<SqlScript> scriptsWithErrors = new ArrayList<>();
             Map<SqlScript, String> errorMessages = new HashMap<>();
@@ -489,7 +489,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public final ModelAndView getView(K form, BindException errors)
         {
-            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+            setHelpTopic("sqlScripts#admin");
 
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
@@ -899,7 +899,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors) throws IOException
         {
-            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+            setHelpTopic("sqlScripts#admin");
 
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -1348,6 +1348,7 @@ public class SqlScriptController extends SpringActionController
     {
         private Method _method;
         private ModuleContext _ctx;
+        private UpgradeCode _code;
 
         @Override
         public void validateCommand(UpgradeCodeForm form, Errors errors)
@@ -1359,8 +1360,8 @@ public class SqlScriptController extends SpringActionController
             }
             else
             {
-                UpgradeCode code = module.getUpgradeCode();
-                if (null == code)
+                _code = module.getUpgradeCode();
+                if (null == _code)
                 {
                     errors.reject(ERROR_MSG, "Module doesn't have UpgradeCode");
                 }
@@ -1368,7 +1369,7 @@ public class SqlScriptController extends SpringActionController
                 {
                     try
                     {
-                        _method = code.getClass().getDeclaredMethod(form.getMethod(), ModuleContext.class);
+                        _method = _code.getClass().getDeclaredMethod(form.getMethod(), ModuleContext.class);
                         _ctx = ModuleLoader.getInstance().getModuleContext(form.getModule());
                         if (null == _ctx)
                             errors.reject(ERROR_MSG, "ModuleContext not found");
@@ -1390,16 +1391,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeCodeForm form, BindException errors) throws Exception
         {
-            try
-            {
-                ModuleLoader.getInstance().setUpgradeUser(getUser());
-                LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
-                _method.invoke(null, _ctx);
-            }
-            finally
-            {
-                ModuleLoader.getInstance().setUpgradeUser(null);
-            }
+            LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
+            _method.invoke(_code, _ctx);
             return true;
         }
 

@@ -103,13 +103,11 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -138,7 +136,6 @@ import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController.AdminDeletePasswordAction;
 import org.labkey.core.security.SecurityController.AdminResetPasswordAction;
-import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -800,12 +797,12 @@ public class UserController extends SpringActionController
         {
             if (getContainer().isRoot())
             {
-                setHelpTopic(new HelpTopic("manageUsers"));
+                setHelpTopic("manageUsers");
                 root.addChild("Site Users");
             }
             else
             {
-                setHelpTopic(new HelpTopic("manageProjectMembers"));
+                setHelpTopic("manageProjectMembers");
                 root.addChild("Project Users");
             }
         }
@@ -1407,7 +1404,7 @@ public class UserController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UserAccessAction extends QueryViewAction<UserAccessForm, QueryView>
     {
-        private boolean _showNavTrail;
+        private boolean _showNavTrail = false;
         private Integer _userId;
 
         public UserAccessAction()
@@ -1440,12 +1437,12 @@ public class UserController extends SpringActionController
                     }
                     else
                     {
-                        throw new NotFoundException();
+                        throw new NotFoundException("An existing user with that email address was not found");
                     }
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    throw new NotFoundException();
+                    throw new NotFoundException("Invalid email address");
                 }
             }
 
@@ -1466,10 +1463,13 @@ public class UserController extends SpringActionController
             if (form.getRenderInHomeTemplate())
             {
                 _showNavTrail = true;
-                return view;
+            }
+            else
+            {
+                getPageConfig().setTemplate(PageConfig.Template.Print);
             }
 
-            return new PrintTemplate(getViewContext(), view, getPageConfig());
+            return view;
         }
 
         @Override
@@ -2385,11 +2385,10 @@ public class UserController extends SpringActionController
         static final String DEFAULT_BODY =
                 "The email address associated with your account on the ^organizationName^ ^siteShortName^ Web Site has been updated, " +
                 "from ^oldEmailAddress^ to ^newEmailAddress^.\n\n" +
-                "If you did not request this change, please contact the server administrator immediately.  Otherwise, no further action " +
+                "If you did not request this change, please contact the server administrator immediately. Otherwise, no further action " +
                 "is required, and you may use the new email address when logging into the server going forward.";
         String _oldEmailAddress;
         String _newEmailAddress;
-        List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public ChangeAddressEmailTemplate()

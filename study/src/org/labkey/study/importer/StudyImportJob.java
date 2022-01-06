@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -41,6 +42,7 @@ import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: adam
@@ -51,8 +53,8 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 {
     private static final transient Logger LOG = LogManager.getLogger(StudyImportJob.class);
 
-    private final StudyImportContext _ctx;
-    private final VirtualFile _root;
+    private StudyImportContext _ctx;
+    private VirtualFile _root;
     private final BindException _errors;          // TODO: do we need to save error messages
     private final boolean _reload;
     private final String _originalFilename;
@@ -72,20 +74,17 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     }
 
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
-    public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
+    public StudyImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
     {
-        super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = new FileSystemFile(studyXml.getParentFile());
+        super("StudyImport", new ViewBackgroundInfo(c, user, url), pipeRoot);
         _originalFilename = originalFilename;
-        setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load"), getPipeRoot()));
+        String baseLogFileName = StudyPipeline.getLogFilename(studyXml.getParent().resolve("study_load"));
+        setupLocalDirectoryAndJobLog(pipeRoot, StudyModule.MODULE_NAME, baseLogFileName);
         _errors = errors;
 
-        _ctx = new StudyImportContext(user, c, studyXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
-        _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
-        _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
-        _ctx.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
-        _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
-        _ctx.setActivity(options.getActivity());
+        Path importRoot = studyXml.getParent();
+        _root = new FileSystemFile(importRoot);
+        _ctx = generateImportContext(user, c, studyXml, options, _root);
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);
@@ -94,6 +93,44 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
         for (String message : options.getMessages())
             _ctx.getLogger().info(message);
+    }
+
+    private static ImportOptions cloneImportOptions(StudyImportContext ctx)
+    {
+        ImportOptions newOptions = new ImportOptions(ctx.getContainer().getId(), ctx.getUser().getUserId());
+
+        newOptions.setSkipQueryValidation(ctx.isSkipQueryValidation());
+        newOptions.setCreateSharedDatasets(ctx.isCreateSharedDatasets());
+        newOptions.setFailForUndefinedVisits(ctx.isFailForUndefinedVisits());
+        newOptions.setIncludeSubfolders(ctx.isIncludeSubfolders());
+        newOptions.setActivity(ctx.getActivity());
+
+        return newOptions;
+    }
+
+    private StudyImportContext generateImportContext(User user, Container c, Path studyXml, ImportOptions options, VirtualFile root)
+    {
+        StudyImportContext context = new StudyImportContext.Builder(user, c)
+                .withStudyXml(studyXml)
+                .withDataTypes(options.getDataTypes())
+                .withLogger(new PipelineJobLoggerGetter(this))
+                .withRoot(root)
+                .build();
+        context.setSkipQueryValidation(options.isSkipQueryValidation());
+        context.setCreateSharedDatasets(options.isCreateSharedDatasets());
+        context.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
+        context.setIncludeSubfolders(options.isIncludeSubfolders());
+        context.setActivity(options.getActivity());
+
+        return context;
+    }
+
+    @Override
+    public void updateWorkingRoot(Path newRoot)
+    {
+        VirtualFile vfRoot = new FileSystemFile(newRoot);
+        _ctx = generateImportContext(getUser(), getContainer(), newRoot.resolve(getOriginalFilename()), cloneImportOptions(_ctx), vfRoot);
+        _root = vfRoot;
     }
 
     @Override
@@ -158,6 +195,12 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
     @Override
     public File getSpecimenArchive() throws ImportException
+    {
+        return getSpecimenArchivePath().toFile();
+    }
+
+    @Override
+    public Path getSpecimenArchivePath() throws ImportException
     {
         return _ctx.getSpecimenArchive(_root);
     }

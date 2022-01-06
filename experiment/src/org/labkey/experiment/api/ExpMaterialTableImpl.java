@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -28,6 +29,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -44,6 +46,7 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -52,6 +55,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -62,6 +66,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -83,7 +88,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
@@ -104,7 +108,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -195,35 +198,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setHidden(false);
                 return columnInfo;
             }
-            case AliquotCount:
-            {
-                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
-                String materialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".LSID";
-
-                SQLFragment sql = new SQLFragment("(CASE WHEN ")
-                        .append(rootMaterialLSIDField)
-                        .append(" IS NOT NULL THEN NULL") // child aliquot count is only needed for 'root' samples
-                        .append(" ELSE (SELECT COUNT(*) FROM ")
-                        .append(ExperimentService.get().getTinfoMaterial(), "aliquotMaterial")
-                        .append(" WHERE aliquotMaterial.RootMaterialLSID = ")
-                        .append(materialLSIDField)
-                        .append(") END)");
-
-                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.INTEGER);
-                columnInfo.setLabel("Aliquots Created Count");
-                columnInfo.setDescription("Total number of aliquots, of all generations, created from a root sample");
-                columnInfo.setUserEditable(false);
-                columnInfo.setReadOnly(true);
-                columnInfo.setHidden(false);
-                return columnInfo;
-            }
             case Name:
-                return wrapColumn(alias, _rootTable.getColumn("Name"));
+                var nameCol = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                // shut off this field in insert and update views if user specified names are not allowed
+                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                {
+                    nameCol.setShownInInsertView(false);
+                    nameCol.setShownInUpdateView(false);
+                }
+                return nameCol;
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case SampleSet:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
+                // NOTE: populateColumns() overwrites this with a QueryForeignKey.  Can this be removed?
                 columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "LSID", "Name")
                 {
                     @Override
@@ -344,6 +333,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
 
+            case SampleState:
+            {
+                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+                var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
+                ret.setLabel("Status");
+                ret.setHidden(!statusEnabled);
+                ret.setShownInDetailsView(statusEnabled);
+                ret.setShownInInsertView(statusEnabled);
+                ret.setShownInUpdateView(statusEnabled);
+                ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
+                        .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
+                return ret;
+            }
+            case RecomputeRollup:
+                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            case AliquotCount:
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
+                ret.setLabel("Aliquots Created Count");
+                return ret;
+            }
+            case AliquotVolume:
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
+                ret.setLabel("Aliquot Total Volume");
+                return ret;
+            }
+            case AliquotUnit:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -486,7 +505,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var nameExpression = st.getNameExpression();
                 nameCol.setNameExpression(nameExpression);
                 nameCol.setNullable(true);
-                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression);
+                String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), st.getName(), getUserSchema().getUser());
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
                 nameCol.setDescription(desc);
             }
             else
@@ -564,8 +584,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInDetailsView(false);
         aliquotParentLSID.setShownInUpdateView(false);
 
-        addColumn(Column.IsAliquot);
-        addColumn(Column.AliquotCount);
+        if (st == null || !st.isMedia())
+            addColumn(Column.IsAliquot);
 
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
@@ -580,13 +600,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         addColumn(ExpMaterialTable.Column.Flag);
+
+        var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
+        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+        statusColInfo.setShownInDetailsView(statusEnabled);
+        statusColInfo.setShownInInsertView(statusEnabled);
+        statusColInfo.setShownInUpdateView(statusEnabled);
+        statusColInfo.setHidden(!statusEnabled);
+        statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
+        if (statusEnabled)
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
+        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
+                .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
+
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null)
+            if (InventoryService.get() != null && !st.isMedia())
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());
@@ -595,6 +628,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
+
 
         addVocabularyDomains();
         addColumn(Column.Properties);
@@ -638,17 +672,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _ss == null ? null : _ss.getDomain();
     }
 
-    public static String appendNameExpressionDescription(String currentDescription, String nameExpression)
+    public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {
         if (nameExpression == null)
             return currentDescription;
 
         StringBuilder sb = new StringBuilder();
-        if (currentDescription != null && !currentDescription.isEmpty())
-            sb.append(currentDescription).append("\n");
+        if (currentDescription != null && !currentDescription.isEmpty()) {
+            sb.append(currentDescription);
+            if (!currentDescription.endsWith("."))
+                sb.append(".");
+            sb.append("\n");
+        }
 
-        sb.append("If not provided, a unique name will be generated from the expression:\n");
+        sb.append("\nIf not provided, a unique name will be generated from the expression:\n");
         sb.append(nameExpression);
+        sb.append(".");
+        if (!StringUtils.isEmpty(nameExpressionPreview))
+        {
+            sb.append("\nExample of name that will be generated from the current pattern: \n");
+            sb.append(nameExpressionPreview);
+        }
+
         return sb.toString();
     }
 

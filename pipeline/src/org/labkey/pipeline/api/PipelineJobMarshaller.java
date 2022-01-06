@@ -41,6 +41,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -141,7 +142,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         }
         catch (Exception e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
     }
@@ -157,11 +158,11 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         }
         catch (Exception e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
     }
 
-    private static final Logger LOG = LogManager.getLogger(PipelineJobMarshaller.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineJobMarshaller.class, "Serializes and deserializes pipeline jobs to JSON");
 
     public static class TestCase extends PipelineJob.TestSerialization
     {

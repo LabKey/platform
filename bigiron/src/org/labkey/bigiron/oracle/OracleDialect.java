@@ -18,7 +18,6 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -28,14 +27,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.BaseJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
-import org.labkey.api.data.dialect.ConnectionHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.dialect.TableResolver;
@@ -64,9 +62,9 @@ abstract class OracleDialect extends SimpleSqlDialect
     private static final Map<DbScope, ConnectionPool> META_DATA_CONNECTION_POOLS = new ConcurrentHashMap<>();
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
         {
-            return new BaseJdbcMetaDataLocator(scope, schemaName, tableName, new ConnectionHandler()
+            return new StandardJdbcMetaDataLocator(scope, schemaName, schemaNamePattern, tableName, tableNamePattern)
             {
                 @Override
                 public Connection getConnection()
@@ -81,25 +79,12 @@ abstract class OracleDialect extends SimpleSqlDialect
                         throw new RuntimeSQLException(e);
                     }
                 }
-
-                @Override
-                public void releaseConnection(Connection conn)
-                {
-                    try
-                    {
-                        conn.close();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
-                }
-            });
+            };
         }
     };
 
     @Override
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return TABLE_RESOLVER;
     }
@@ -197,6 +182,29 @@ abstract class OracleDialect extends SimpleSqlDialect
         return StringUtils.join(args, " || ");
     }
 
+    @Override
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
+    {
+        return new SQLFragment("instr(").append(bigString).append(", ").append(littleString).append(")");
+    }
+
+    @Override
+    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
+    {
+        return new SQLFragment("instr(").append(bigString).append(", ").append(littleString).append(", ").append(startIndex).append(")");
+    }
+
+    @Override
+    public String getSubstringFunction(String s, String start, String length)
+    {
+        return "substr(" + s + ", " + start + ", " + length + ")";
+    }
+
+    @Override
+    public SQLFragment getSubstringFunction(SQLFragment s, SQLFragment start, SQLFragment length)
+    {
+        return new SQLFragment("substr(").append(s).append(", ").append(start).append(", ").append(length).append(")");
+    }
 
     @Override
     public SQLFragment concatenate(SQLFragment... args)

@@ -8,7 +8,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.AbstractPublishStartAction;
 import org.labkey.api.study.publish.PublishStartForm;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
@@ -34,6 +33,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         private String _containerFilterName;
         private boolean _sampleTypeIds;
         private Integer _rowId;
+        private boolean _isAutoLinkEnabled;
 
         @Override
         public String getDataRegionSelectionKey()
@@ -55,7 +55,12 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         @Override
         public boolean isAutoLinkEnabled()
         {
-            return false; // ToDo for Rosaline in SampleType followup story
+            return _isAutoLinkEnabled;
+        }
+
+        public void setAutoLinkEnabled(boolean autoLinkEnabled)
+        {
+            _isAutoLinkEnabled = autoLinkEnabled;
         }
 
         public void setContainerFilterName(String containerFilterName)
@@ -114,6 +119,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         {
             _ids = getCheckboxIds(getViewContext());
             _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getUser(), form.getRowId());
+            form.setAutoLinkEnabled(_sampleType.getAutoLinkCategory() != null);
         }
         return _ids;
     }
@@ -140,7 +146,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     public void addNavTrail(NavTree root)
     {
-        setHelpTopic(new HelpTopic("linkSampleData"));
+        setHelpTopic("linkSampleData");
         root.addChild("Sample Types", ExperimentUrls.get().getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));

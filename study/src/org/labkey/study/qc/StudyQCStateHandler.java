@@ -15,11 +15,12 @@
  */
 package org.labkey.study.qc;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateHandler;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.study.StudySchema;
@@ -28,10 +29,11 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.List;
+import java.util.Map;
 
-public class StudyQCStateHandler implements QCStateHandler<StudyController.ManageQCStatesForm>
+public class StudyQCStateHandler implements DataStateHandler<StudyController.ManageQCStatesForm>
 {
-    protected List<QCState> _states = null;
+    protected List<DataState> _states = null;
     public static final String HANDLER_NAME = "StudyQCStateHandler";
 
     @Override
@@ -41,23 +43,27 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
     }
 
     @Override
-    public List<QCState> getQCStates(Container container)
+    public List<DataState> getStates(Container container)
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
 
         if (_states == null)
-            _states = QCStateManager.getInstance().getQCStates(study.getContainer());
+            _states = QCStateManager.getInstance().getStates(study.getContainer());
         return _states;
     }
 
     @Override
-    public boolean isQCStateInUse(Container container, QCState state)
+    public boolean isStateInUse(Container container, DataState state)
     {
-        StudyImpl study = StudyController.getStudyThrowIfNull(container);
+        StudyImpl study = StudyController.getStudy(container);
+        if (study == null)
+            return false;
 
         if (StudyManager.safeIntegersEqual(study.getDefaultPublishDataQCState(), state.getRowId()) ||
                 StudyManager.safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
-                StudyManager.safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
+                StudyManager.safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()) ||
+                !state.isQCState() // retain all sample statuses, even if not attached to a sample
+        )
         {
             return true;
         }
@@ -72,13 +78,13 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
     }
 
     @Override
-    public void updateQcState(Container container, StudyController.ManageQCStatesForm form, User user)
+    public void updateState(Container container, StudyController.ManageQCStatesForm form, User user)
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
 
-        if (!QCStateHandler.nullSafeEqual(study.getDefaultPublishDataQCState(), form.getDefaultPublishDataQCState()) ||
-                !QCStateHandler.nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
-                !QCStateHandler.nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
+        if (!DataStateHandler.nullSafeEqual(study.getDefaultPublishDataQCState(), form.getDefaultPublishDataQCState()) ||
+                !DataStateHandler.nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
+                !DataStateHandler.nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
                 study.isBlankQCStatePublic() != form.isBlankQCStatePublic() ||
                 study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
         {
@@ -93,9 +99,15 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
     }
 
     @Override
-    public boolean isBlankQCStatePublic(Container container)
+    public boolean isBlankStatePublic(Container container)
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
         return study.isBlankQCStatePublic();
+    }
+
+    @Override
+    public @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates)
+    {
+        return null;
     }
 }

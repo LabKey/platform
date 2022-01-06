@@ -86,7 +86,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -126,6 +125,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class PipelineController extends SpringActionController
@@ -133,11 +133,6 @@ public class PipelineController extends SpringActionController
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
 
     public enum Params { path, rootset, overrideRoot }
-
-    private static HelpTopic getHelpTopic(String topic)
-    {
-        return new HelpTopic(topic);
-    }
 
     public PipelineController()
     {
@@ -148,7 +143,7 @@ public class PipelineController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig p = super.defaultPageConfig();
-        p.setHelpTopic(getHelpTopic("pipeline"));
+        p.setHelpTopic("pipeline");
         return p;
     }
 
@@ -299,7 +294,7 @@ public class PipelineController extends SpringActionController
         @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
-            setHelpTopic(getHelpTopic("pipelineSetup"));
+            setHelpTopic("pipelineSetup");
 
             if (getViewContext().getRequest().getParameter(Params.overrideRoot.toString()) == null && !reshow)
             {
@@ -416,7 +411,7 @@ public class PipelineController extends SpringActionController
             BrowseWebPart wp = new BrowseWebPart(path);
             wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
+            setHelpTopic("fileSharing");
             return wp;
         }
 
@@ -515,13 +510,15 @@ public class PipelineController extends SpringActionController
             if (relativePath.startsWith("/"))
                 relativePath = relativePath.substring(1);
 
-            if (pr.isCloudRoot() && null != pr.getCloudStoreName())
-            {
-                if (relativePath.startsWith(pr.getCloudStoreName()))
-                    relativePath = relativePath.replace(pr.getCloudStoreName(), "");
-                if (relativePath.startsWith("//"))
-                    relativePath = relativePath.substring(1);
-            }
+//            if (pr.isCloudRoot() && null != pr.getCloudStoreName())
+//            {
+                  //TODO: Not sure if this is needed for something, but it causes an error when there is a folder that
+                  // starts with the Store name. Leaving commented out for now, will remove at later date if no issues arise.
+//                if (relativePath.startsWith(pr.getCloudStoreName() + "/")) //
+//                    relativePath = relativePath.replace(pr.getCloudStoreName(), "");
+//                if (relativePath.startsWith("//"))
+//                    relativePath = relativePath.substring(1);
+//            }
 
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
             // S3-backed storage may not have an entry for the root if there are no children, see issue 38377
@@ -1191,10 +1188,10 @@ public class PipelineController extends SpringActionController
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
-            File folderFile = form.getValidatedSingleFile(c);
+            java.nio.file.Path folderPath = form.getValidatedSinglePath(c);
 
             ActionURL url = new ActionURL(StartFolderImportAction.class, getContainer());
-            url.addParameter("filePath", folderFile.getAbsolutePath());
+            url.addParameter("filePath", folderPath.toAbsolutePath().toString());
             url.addParameter("validateQueries", true);
             url.addParameter("createSharedDatasets", true);
             return url;
@@ -1222,7 +1219,7 @@ public class PipelineController extends SpringActionController
     public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
     {
         private String _navTrail = "Import Folder";
-        private File _archiveFile;
+        private java.nio.file.Path _archiveFile;
         private List<Container> _importContainers = new ArrayList<>();
 
         @Override
@@ -1239,7 +1236,7 @@ public class PipelineController extends SpringActionController
             }
             else
             {
-                _archiveFile = PipelineManager.validateFolderImportFilePath(form.getFilePath(), currentPipelineRoot, errors);
+                _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
 
                 // Be sure that the set of folder to apply the import to match the setting to enable/disable them
                 if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().size() == 0))
@@ -1300,6 +1297,10 @@ public class PipelineController extends SpringActionController
                 _navTrail = "Import Study";
             _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
 
+            // Remove as part of Issue #43835
+            PipeRoot root = getPipelineRoot(getContainer());
+            form.setCloudRoot(null != root && root.isCloudRoot());
+
             return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }
 
@@ -1308,14 +1309,14 @@ public class PipelineController extends SpringActionController
         {
             User user = getUser();
             boolean success = true;
-            Map<Container, File> containerArchiveXmlMap = new HashMap<>();
+            Map<Container, java.nio.file.Path> containerArchiveXmlMap = new HashMap<>();
 
-            if (_archiveFile.exists())
+            if (Files.exists(_archiveFile))
             {
                 // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
                 for (Container container : _importContainers)
                 {
-                    File archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
+                    java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
                     if (errors.hasErrors())
                         return false;
 
@@ -1346,21 +1347,30 @@ public class PipelineController extends SpringActionController
             {
                 PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
                 if (pipelineRoot != null)
-                    pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                    pipelineRoot.deleteImportDirectory(null);
             }
 
             return success;
         }
 
-        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, File archiveXml, boolean asStudy, BindException errors)
+        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, java.nio.file.Path archiveXml, boolean asStudy, BindException errors)
         {
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
             ActionURL url = getViewContext().getActionURL();
 
             if (asStudy)
-                return StudyService.get().runStudyImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
+            {
+                StudyService ss = StudyService.get();
+                if (ss == null)
+                {
+                    errors.reject(ERROR_MSG, "Study import failed, Study service not enabled.");
+                    return false;
+                }
+
+                return ss.runStudyImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), errors, pipelineRoot, options);
+            }
             else
-                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getName(), errors, pipelineRoot, options);
+                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), errors, pipelineRoot, options);
         }
 
         @Override
@@ -1398,6 +1408,7 @@ public class PipelineController extends SpringActionController
         private boolean _createSharedDatasets;
         private boolean _specificImportOptions;
         private boolean _applyToMultipleFolders;
+        private boolean _isCloudRoot; // Remove as part of Issue #43835
         private boolean _failForUndefinedVisits;
         private Set<String> _dataTypes;
         private List<Integer> _folderRowIds;
@@ -1510,6 +1521,16 @@ public class PipelineController extends SpringActionController
         public void setFromTemplateSourceFolder(boolean fromTemplateSourceFolder)
         {
             _fromTemplateSourceFolder = fromTemplateSourceFolder;
+        }
+
+        public boolean isCloudRoot()
+        {
+            return _isCloudRoot;
+        }
+
+        public void setCloudRoot(boolean isCloudRoot)
+        {
+            _isCloudRoot = isCloudRoot;
         }
     }
 
@@ -1689,7 +1710,7 @@ public class PipelineController extends SpringActionController
         @Nullable
         public ActionURL urlBrowse(@Nullable PipelineStatusFile sf, @Nullable URLHelper returnUrl)
         {
-            if (sf == null)
+            if (sf == null || sf.getFilePath() == null)
                 return null;
 
             File logFile = new File(sf.getFilePath());
@@ -1733,7 +1754,7 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
+        public ActionURL urlStartFolderImport(Container container, @NotNull java.nio.file.Path archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
             if (asStudy)
@@ -1756,9 +1777,9 @@ public class PipelineController extends SpringActionController
             return url;
         }
 
-        private ActionURL addStartImportParameters(ActionURL url, @NotNull File file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
+        private ActionURL addStartImportParameters(ActionURL url, @NotNull java.nio.file.Path file, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
-            url.addParameter("filePath", file.getAbsolutePath());
+            url.addParameter("filePath", file.toAbsolutePath().toString());
             url.addParameter("validateQueries", options == null || !options.isSkipQueryValidation());
             url.addParameter("createSharedDatasets", options == null || options.isCreateSharedDatasets());
             if (options != null)
@@ -1772,9 +1793,9 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL statusDetails(Container container)
+        public ActionURL statusDetails(Container container, int jobRowId)
         {
-            return new ActionURL(StatusController.DetailsAction.class, container);
+            return new ActionURL(StatusController.DetailsAction.class, container).addParameter("rowId", jobRowId);
         }
 
         @Override

@@ -59,7 +59,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -68,8 +67,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
@@ -96,7 +95,9 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -139,6 +140,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.query.QueryService.AuditAction.DELETE;
@@ -311,6 +313,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
+        sub._study = substudy;
 
         // apply substudy dataset overrides
         String category = "dataset-overrides:" + getDatasetId();
@@ -649,35 +652,46 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         return StudySchema.getInstance().getSchema().getTable("studydatatemplate");
     }
-    
+
+
+    /**
+     * For consistency, now return the equivalent of
+     *    StudyUserSchema().createSchema().getSchema("Datasets").getTable(_dataset.getLabel());
+     *
+     * Internal study code can still use the DatasetSchemaTableInfo methods, however, we should try hard to
+     * remove usages of DatasetSchemaTableInfo.
+     */
+    @Override
+    public TableInfo getTableInfo(User user) throws UnauthorizedException
+    {
+        var sqs = StudyQuerySchema.createSchema(_study, user, null);
+        return sqs.getDatasetTable(this, null);
+    }
 
     /**
      * Get table info representing dataset.  This relies on the DatasetDefinition being removed from
      * the cache if the dataset type changes.
      * see StudyManager.importDatasetTSV()
+     *
+     * TODO convert usages of DatasetDefinition.getTableInfo() to use StudyQuerySchema.getTable()
      */
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user) throws UnauthorizedException
     {
-        return getTableInfo(user, true, false);
+        return getDatasetSchemaTableInfo(user, true, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
-        return getTableInfo(user, checkPermission, false);
+        return getDatasetSchemaTableInfo(user, checkPermission, false);
     }
 
-
-    @Override
-    public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
+    public DatasetSchemaTableInfo getDatasetSchemaTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
             throw new IllegalArgumentException("user cannot be null");
 
-        if (checkPermission && !canRead(user))
+        if (checkPermission && !canReadInternal(user))
         {
             throw new UnauthorizedException();
         }
@@ -788,7 +802,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try (Transaction transaction = schema.getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             CPUTimer time = new CPUTimer("purge");
             time.start();
@@ -918,6 +932,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
+        return getPermissions(user, null);
+    }
+
+    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @Nullable Set<Role> contextualRoles)
+    {
         Set<Class<? extends Permission>> result = new HashSet<>();
 
         //if the study security type is basic read or basic write, use the container's policy instead of the
@@ -927,18 +946,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
                 SecurityPolicyManager.getPolicy(getContainer()) : SecurityPolicyManager.getPolicy(getStudy());
 
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(studyPolicy, user, contextualRoles);
+
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
-        if (studyPolicy.hasPermission(user, ReadPermission.class) ||
-            (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityPolicyManager.getPolicy(this).hasPermission(user, ReadPermission.class)))
+        copyReadPerms(studyPermissions, result);
+        if (studyPermissions.contains(ReadSomePermission.class))
         {
-            result.add(ReadPermission.class);
+            Set<Class<? extends Permission>> datasetPermissions = SecurityPolicyManager.getPolicy(this).getOwnPermissions(user);
+            copyReadPerms(datasetPermissions, result);
+        }
 
-            // a dataspace study always has read-only datasets, you cannot edit no matter who you are
-            if (_study.isDataspaceStudy())
-                return result;
-
+        if (result.contains(ReadPermission.class))
+        {
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
@@ -951,16 +972,26 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 copyEditPerms(studyPolicy, user, result);
                 // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
                 // so check for a custom security policy even if they have UpdatePermission on the study's policy
-                if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                if (studyPermissions.contains(ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, Set.of()));
+                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, contextualRoles));
                 }
             }
         }
 
+        if (isEditProhibited(user, result))
+            result.retainAll(READ_PERMS);
         return result;
+    }
+
+
+    private static final Collection<Class<? extends Permission>> READ_PERMS = List.of(ReadPermission.class, RestrictedReadPermission.class);
+
+    private void copyReadPerms(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> result)
+    {
+        READ_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
     private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
@@ -971,44 +1002,55 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
+    /** @deprecated use DatasetTableImpl.hasPermission()! */
     @Override
+    @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (perm != ReadPermission.class && isEditProhibited(user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(perm);
+        return hasPermissions(user, Set.of(perm), null);
     }
 
-    private boolean isEditProhibited(UserPrincipal user)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user));
+        return hasPermissions(user, Set.of(perm), contextualRoles);
+    }
+
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    {
+        if (perms.isEmpty())
+            throw new IllegalStateException();
+        Set<Class<? extends Permission>> granted = getPermissions(user, contextualRoles);
+        boolean editProhibited = isEditProhibited(user, granted);
+        boolean hasAdmin = getContainer().hasPermission(user, AdminPermission.class);
+
+        for (var perm : perms)
+        {
+            if (perm != ReadPermission.class && perm != RestrictedReadPermission.class && editProhibited)
+                return false;
+            if (!hasAdmin && !granted.contains(perm))
+                return false;
+        }
+        return true;
+    }
+
+
+    private boolean isEditProhibited(UserPrincipal user, Set<Class<? extends Permission>> perms)
+    {
+        return getStudy().isDataspaceStudy();
     }
 
     @Override
+    @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class);
+        return hasPermission(user, ReadPermission.class, null);
     }
 
-    @Override
-    public boolean canUpdate(UserPrincipal user)
+    public boolean canReadInternal(UserPrincipal user)
     {
-        return hasPermission(user, UpdatePermission.class);
+        return hasPermission(user, ReadPermission.class, null);
     }
 
-    @Override
-    public boolean canDelete(UserPrincipal user)
-    {
-        return hasPermission(user, DeletePermission.class);
-    }
-
-    @Override
-    public boolean canInsert(UserPrincipal user)
-    {
-        return hasPermission(user, InsertPermission.class);
-    }
 
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)
@@ -1023,17 +1065,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     public boolean canUpdateDefinition(User user)
     {
         return getContainer().hasPermission(user, AdminPermission.class) && getDefinitionContainer().getId().equals(getContainer().getId());
-    }
-
-    public boolean canAccessPhi(User user)
-    {
-        if (canRead(user))
-        {
-            DatasetSchemaTableInfo table = getTableInfo(user);
-            if (null != table)
-                return table.canUserAccessPhi();
-        }
-        return false;
     }
 
     @Override
@@ -1233,6 +1264,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return null == _description ? "The study dataset " + getName() : _description;
     }
 
+    /** @return the lock object used to synchronize domain loading */
+    public Lock getDomainLoadingLock()
+    {
+        return _lock;
+    }
+
     private static class AutoCompleteDisplayColumnFactory implements DisplayColumnFactory
     {
         private final ActionURL _completionBase;
@@ -1288,7 +1325,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         TableInfo _storage;
         TableInfo _template;
-        final PHI _maxAllowed;
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1317,7 +1353,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
-            _maxAllowed = ComplianceService.get().getMaxAllowedPhi(_container, user);
 
             // ParticipantId
 
@@ -1494,7 +1529,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user, true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user);
                     return schema.getTable("Datasets");
                 }
             };
@@ -1618,18 +1653,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public PHI getUserMaxAllowedPhiLevel()
-        {
-            return _maxAllowed;
-        }
-
-        /**
-         * Return true if the current user is allowed the maximum phi level set across all columns.
-         */
-        @Override
         public boolean canUserAccessPhi()
         {
-            return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
+            throw new IllegalStateException("Should not be called on DatasetSchemaTableInfo");
         }
 
         @Override
@@ -2131,13 +2157,22 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
     }
 
+    private Transaction ensureTransaction()
+    {
+        // Make sure a transaction is active. If caller set one up, use a no-op version so that we can handle error
+        // situations without trashing the transaction call stack
+        DbScope scope = StudyService.get().getDatasetSchema().getScope();
+        return scope.isTransactionActive() ? DbScope.NO_OP_TRANSACTION : scope.ensureTransaction();
+    }
+
     private List<String> insertData(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
         ArrayList<String> lsids = new ArrayList<>();
         Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
 
         context.putConfigParameter(DatasetUpdateService.Config.KeyList, lsids);
-        try (Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+
+        try (Transaction transaction = ensureTransaction())
         {
             long start = System.currentTimeMillis();
             {
@@ -2245,7 +2280,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
-        TableInfo table = getTableInfo(user, false);
+        TableInfo table = getDatasetSchemaTableInfo(user);
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
@@ -2584,10 +2619,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     {
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u, true);
-        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
+        TableInfo queryTableInfo = getTableInfo(u);
 
-        TableInfo tInfo = getTableInfo(u, true);
+        DatasetSchemaTableInfo tInfo = getDatasetSchemaTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 
@@ -2637,28 +2671,29 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
 
     @Override
-    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, BatchValidationException errors)
+    public String updateDatasetRow(User u, String lsid, Map<String, Object> data) throws ValidationException
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
 
-        QCState defaultQCState = null;
+        DataState defaultQCState = null;
         Integer defaultQcStateId = getStudy().getDefaultDirectEntryQCState();
         if (defaultQcStateId != null)
-             defaultQCState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), defaultQcStateId.intValue());
+             defaultQCState = DataStateManager.getInstance().getStateForRowId(getContainer(), defaultQcStateId.intValue());
 
         String managedKey = null;
         if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
             managedKey = getKeyPropertyName();
 
-        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             Map<String, Object> oldData = getDatasetRow(u, lsid);
 
             if (oldData == null)
             {
                 // No old record found, so we can't update
-                errors.addRowError(new ValidationException("Record not found with lsid: " + lsid));
-                return null;
+                ValidationException error = new ValidationException();
+                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
+                throw error;
             }
 
             Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
@@ -2686,13 +2721,16 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
+            BatchValidationException errors = new BatchValidationException();
             List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
+                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true, true);
 
             if (errors.hasErrors())
             {
                 // Update failed
-                return null;
+                ValidationException error = new ValidationException();
+                errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
+                throw error;
             }
 
             // lsid is not in the updated map by default since it is not editable,
@@ -2760,7 +2798,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
-        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);

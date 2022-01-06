@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
@@ -73,6 +74,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     protected boolean _restricted = false;      // restricted schemas will return null from getSchema()
     protected final Collection<UserSchemaCustomizer> _schemaCustomizers;
     private boolean hasRegisteredSchemaLinks = false;
+
+    protected java.util.function.Predicate<TableInfo> _getTableAcceptor = (t) -> true;
 
     public UserSchema(@NotNull String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
@@ -113,7 +116,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         _restricted = restricted;
     }
 
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         User user = getUser();
         if (user == null)
@@ -224,6 +227,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
+
+
     private boolean validateTableInfo(TableInfo t)
     {
         if (null == t)
@@ -287,10 +292,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 table.overlayMetadata(name, this, errors);
             }
             afterConstruct(table);
+            fireAfterConstruct(table);
             if (!forWrite)
                 table.setLocked(true);
-            fireAfterConstruct(table);
-            if (null != cacheKey)
+            /* last chance thumbs-up thumbs-down for returning this table, e.g. Study does not return tables that don't have read permission */
+            if (!_getTableAcceptor.test(table))
+                table = null;
+            if (null != table && null != cacheKey)
                 tableInfoCache.put(cacheKey, table);
             torq = table;
         }
@@ -312,6 +320,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         MemTracker.getInstance().put(torq);
         return torq;
+    }
+
+    protected void overlayTableMetadata(TableInfo table, String name, Collection<QueryException> errors)
+    {
+        table.overlayMetadata(name, this, errors);
     }
 
     @Override
@@ -875,5 +888,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             tableInfoCache.put(key,ret);
         }
         return ret;
+    }
+
+
+    public interface HasContextualRoles
+    {
+        @NotNull Set<Role> getContextualRoles();
     }
 }

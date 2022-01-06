@@ -93,7 +93,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -131,6 +130,9 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -202,7 +204,7 @@ public class ListController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
-        return config.setHelpTopic(new HelpTopic("lists"));
+        return config.setHelpTopic("lists");
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -960,7 +962,7 @@ public class ListController extends SpringActionController
         @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), false);
             Integer[] IDs = new Integer[listIDs.size()];
             int i = 0;
             for(String s : listIDs)
@@ -974,9 +976,26 @@ public class ListController extends SpringActionController
             ctx.setListIds(IDs);
             ListWriter writer = new ListWriter();
 
-            try (ZipFile zip = new ZipFile(response, FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip")))
+            // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+            // Same pattern as ExportFolderAction
+            Path tempDir = FileUtil.getTempDirectory().toPath();
+            String filename = FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip");
+
+            try (ZipFile zip = new ZipFile(tempDir, filename))
             {
                 writer.write(c, getUser(), zip, ctx);
+            }
+
+            Path tempZipFile = tempDir.resolve(filename);
+
+            // No exceptions, so stream the resulting zip file to the browser and delete it
+            try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), filename))
+            {
+                Files.copy(tempZipFile, os);
+            }
+            finally
+            {
+                Files.delete(tempZipFile);
             }
         }
     }

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -87,12 +88,12 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.premium.PremiumService;
-import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractDeleteDataStateAction;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageQCStatesForm;
-import org.labkey.api.qc.DeleteQCStateForm;
-import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -128,7 +129,6 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -162,6 +162,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -187,6 +188,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -484,8 +486,8 @@ public class CoreController extends SpringActionController
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
                 MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
-                boolean canInline = mime.canInline() && mime != MimeMap.MimeType.HTML;
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, !canInline || form.getInline() == null || !form.getInline().booleanValue());
+                boolean canInline = mime != null && mime.canInline() && mime != MimeMap.MimeType.HTML;
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), !canInline || form.getInline() == null || !form.getInline().booleanValue());
             }
             return null;
         }
@@ -1849,51 +1851,90 @@ public class CoreController extends SpringActionController
             if (null == registry)
                 throw new RuntimeException();
 
-            ImportContext folderImportCtx = getFolderImportContext(form);
-            boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
-
-            List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
+            List<FolderImporter<?>> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
                 registeredImporters.sort(new ImporterAlphaComparator());
 
-            List<Map<String, Object>> selectableImporters = new ArrayList<>();
-            for (FolderImporter importer : registeredImporters)
-            {
-                if (importer.getDataType() != null)
-                {
-                    Map<String, Object> importerMap = new HashMap<>();
-                    importerMap.put("dataType", importer.getDataType());
-                    importerMap.put("description", importer.getDescription());
-                    importerMap.put("isValidForImportArchive", isZipArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
-
-                    ImportContext ctx = getImporterSpecificImportContext(form, importer, folderImportCtx);
-                    Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
-                    if (childrenDataTypes != null)
-                    {
-                        List<Map<String, Object>> childrenProps = new ArrayList<>();
-                        for (Map.Entry<String, Boolean> entry : childrenDataTypes.entrySet())
-                        {
-                            Map<String, Object> props = new HashMap<>();
-                            props.put("dataType", entry.getKey());
-                            props.put("isValidForImportArchive", isZipArchive || entry.getValue());
-                            childrenProps.add(props);
-                        }
-                        importerMap.put("children", childrenProps);
-                    }
-
-                    selectableImporters.add(importerMap);
-                }
-            }
+            List<Map<String, Object>> selectableImporters = isCloudArchive(form) ?
+                    getCloudArchiveImporters(form, registeredImporters) :
+                    getSelectableImporters(form, registeredImporters);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("importers", selectableImporters);
             return response;
         }
+
+        private static final String DATATYPE_KEY = "dataType";
+        private static final String DESCRIPTION_KEY = "description";
+        private static final String IS_VALID_FOR_ARCHIVE_KEY = "isValidForImportArchive";
+
+        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        {
+            return getSelectableImporters(form, registeredImporters, true, null);
+        }
+
+        private boolean isCloudArchive(FolderImporterForm form)
+        {
+            return FileUtil.hasCloudScheme(form.getArchiveFilePath());
+        }
+
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        {
+            ImportContext folderImportCtx = getFolderImportContext(form);
+            boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
+
+            return getSelectableImporters(form, registeredImporters, isZipArchive, folderImportCtx);
+        }
+
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        {
+            List<Map<String, Object>> selectableImporters = new ArrayList<>();
+            for (FolderImporter<?> importer : registeredImporters)
+            {
+                if (importer.getDataType() != null)
+                {
+                    selectableImporters.add(getImporterProps(form, importer, isZipOrCloudArchive, folderImportCtx));
+                }
+            }
+
+            return selectableImporters;
+        }
+
+        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter<?> importer, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        {
+            Map<String, Object> importerMap = new HashMap<>();
+            importerMap.put(DATATYPE_KEY, importer.getDataType());
+            importerMap.put(DESCRIPTION_KEY, importer.getDescription());
+            importerMap.put(IS_VALID_FOR_ARCHIVE_KEY, isZipOrCloudArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
+
+            ImportContext ctx = isZipOrCloudArchive ? folderImportCtx : getImporterSpecificImportContext(form, importer, folderImportCtx);
+            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
+            if (childrenDataTypes != null)
+            {
+                importerMap.put("children", getChildProps(childrenDataTypes, isZipOrCloudArchive));
+            }
+
+            return importerMap;
+        }
+
+        private List<Map<String, Object>> getChildProps(Map<String, Boolean> childrenDataTypes, boolean isZipArchive)
+        {
+            List<Map<String, Object>> childrenProps = new ArrayList<>();
+            for (Map.Entry<String, Boolean> entry : childrenDataTypes.entrySet())
+            {
+                Map<String, Object> props = new HashMap<>();
+                props.put(DATATYPE_KEY, entry.getKey());
+                props.put(IS_VALID_FOR_ARCHIVE_KEY, isZipArchive || entry.getValue());
+                childrenProps.add(props);
+            }
+
+            return childrenProps;
+        }
     }
 
-    private ImportContext getImporterSpecificImportContext(FolderImporterForm form, FolderImporter importer, ImportContext defaultCtx) throws IOException
+    private ImportContext<?> getImporterSpecificImportContext(FolderImporterForm form, FolderImporter<?> importer, ImportContext<?> defaultCtx) throws IOException
     {
-        ImportContext ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
+        ImportContext<?> ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
         return ctx != null ? ctx : defaultCtx;
     }
 
@@ -1925,10 +1966,10 @@ public class CoreController extends SpringActionController
     {
         if (archiveFilePath != null)
         {
-            File archiveFile = new File(archiveFilePath);
-            if (archiveFile.exists() && archiveFile.isFile())
+            java.nio.file.Path archiveFile = FileUtil.stringToPath(getContainer(), archiveFilePath);
+            if (Files.exists(archiveFile) && Files.isRegularFile(archiveFile))
             {
-                return new FileSystemFile(archiveFile.getParentFile());
+                return new FileSystemFile(archiveFile.getParent());
             }
         }
 
@@ -2183,7 +2224,7 @@ public class CoreController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
+            setHelpTopic("configureScripting");
             urlProvider(AdminUrls.class).addAdminNavTrail(root, "Views and Scripting Configuration", getClass(), getContainer());
         }
     }
@@ -2378,6 +2419,32 @@ public class CoreController extends SpringActionController
         }
     }
 
+    @RequiresLogin
+    public class WebSocketConnectionAction extends MutatingApiAction<WebSocketConnectionForm>
+    {
+        @Override
+        public Object execute(WebSocketConnectionForm form, BindException errors)
+        {
+            WebSocketConnectionManager.getInstance().incrementCounter(form.isConnected());
+            return success();
+        }
+    }
+
+    public static class WebSocketConnectionForm
+    {
+        private boolean _connected;
+
+        public boolean isConnected()
+        {
+            return _connected;
+        }
+
+        public void setConnected(boolean connected)
+        {
+            _connected = connected;
+        }
+    }
+
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ScriptEnginesDeleteAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
@@ -2458,7 +2525,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
+    public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultQCState;
 
@@ -2494,7 +2561,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandlerAbstract)
+        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
         {
             CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
 
@@ -2514,7 +2581,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
+        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel");
         }
@@ -2549,22 +2616,22 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
+    public class DeleteQCStateAction extends AbstractDeleteDataStateAction
     {
         public DeleteQCStateAction()
         {
             super();
-            _qcStateHandler = new CoreQCStateHandler();
+            _dataStateHandler = new CoreQCStateHandler();
         }
 
         @Override
-        public QCStateHandler getQCStateHandler()
+        public DataStateHandler getDataStateHandler()
         {
-            return _qcStateHandler;
+            return _dataStateHandler;
         }
 
         @Override
-        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        public ActionURL getSuccessURL(DeleteDataStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)

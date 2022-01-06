@@ -28,7 +28,6 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -58,10 +57,10 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
@@ -1265,7 +1264,7 @@ public class SecurityController extends SpringActionController
         private boolean _skipProfile;
         private String _provider = null;
 
-        private final HtmlStringBuilder _message = HtmlStringBuilder.of("");
+        private final HtmlStringBuilder _message = HtmlStringBuilder.of();
 
         @SuppressWarnings("unused")
         public void setProvider(String provider)
@@ -1373,11 +1372,11 @@ public class SecurityController extends SpringActionController
                     final ValidEmail emailToClone = new ValidEmail(cloneUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
-                        errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(emailToClone) + ": User email does not exist in the system"));
+                        errors.addError(new LabKeyError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
                 }
                 catch (InvalidEmailException e)
                 {
-                    errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(cloneUser.trim()) + ": Invalid email address"));
+                    errors.addError(new LabKeyError("Failed to clone user permissions " + cloneUser.trim() + ": Invalid email address"));
                 }
             }
 
@@ -1391,7 +1390,7 @@ public class SecurityController extends SpringActionController
             {
                 // Ignore lines of all whitespace, otherwise show an error.
                 if (!"".equals(rawEmail.trim()))
-                    errors.addError(new FormattedError("Failed to create user " + PageFlowUtil.filter(rawEmail.trim()) + ": Invalid email address"));
+                    errors.addError(new LabKeyError("Failed to create user " + rawEmail.trim() + ": Invalid email address"));
             }
 
             List<Pair<String, String>> extraParams = new ArrayList<>();
@@ -1418,7 +1417,7 @@ public class SecurityController extends SpringActionController
                 else if (userToClone != null)
                 {
                     if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
-                        errors.addError(new FormattedError(userToClone.getEmail() + " cannot be cloned.  Only site administrators can clone users with site administration permissions."));
+                        errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
                     else
                         clonePermissions(userToClone, email);
                 }

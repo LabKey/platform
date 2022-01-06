@@ -44,6 +44,17 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="categories" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that contains category definitions.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="qcStates" minOccurs="0">
                     <xs:complexType>
                         <xs:attribute name="showPrivateDataByDefault" type="xs:boolean">
@@ -118,6 +129,22 @@
                 <xs:annotation>
                     <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
                         Indicates the default number format. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="extraDateParsingPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the extra date parsing pattern. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="extraDateTimeParsingPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the extra date-time parsing pattern. See
                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
                     </xs:documentation>
                 </xs:annotation>

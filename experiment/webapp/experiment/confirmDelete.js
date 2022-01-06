@@ -7,22 +7,26 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
         msg: "Loading ..."
     });
     Ext4.Ajax.request({
-        url: LABKEY.ActionURL.buildURL('experiment', "getMaterialDeleteConfirmationData.api", LABKEY.containerPath, {
-            dataRegionSelectionKey: selectionKey
+        url: LABKEY.ActionURL.buildURL('experiment', "getMaterialOperationConfirmationData.api", LABKEY.containerPath, {
+            dataRegionSelectionKey: selectionKey,
+            sampleOperation: 'Delete',
         }),
         method: "GET",
         success: LABKEY.Utils.getCallbackWrapper(function(response) {
             loadingMsg.hide();
             if (response.success) {
-                var numCanDelete = response.data.canDelete.length;
-                var numCannotDelete = response.data.cannotDelete.length;
+                var numCanDelete = response.data.allowed.length;
+                var numCannotDelete = response.data.notAllowed.length;
                 var associatedDatasets = response.data.associatedDatasets;
                 var associatedDatasetsLength = associatedDatasets.length;
                 var canDeleteNoun = numCanDelete === 1 ? nounSingular : nounPlural;
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
-                var dependencyText = "derived sample or assay data dependencies";
+                var sampleStatusEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('samplemanagement') > -1;
+                var dependencyText = sampleStatusEnabled ?
+                        "derived sample or assay data dependencies or status that prevents deletion"
+                        : "derived sample or assay data dependencies";
                 var text;
                 if (totalNum === 0) {
                     text = "Either no " + nounPlural + " are selected for deletion or the selected " + nounPlural + " are no longer valid."
@@ -87,7 +91,7 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                             Ext4.Msg.hide();
                         }
                         else if (btn === 'ok') {
-                            const canDelete = response.data.canDelete;
+                            const canDelete = response.data.allowed;
                             Ext4.Ajax.request({
                                 url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
                                 method: 'POST',

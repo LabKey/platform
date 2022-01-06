@@ -47,7 +47,7 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Route"));
     }
 
-    public static StudyTreatmentProductTable create(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
+    public static StudyTreatmentProductTable create(Domain domain, StudyQuerySchema schema, @Nullable ContainerFilter filter)
     {
         TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
         if (null == storageTableInfo)
@@ -57,7 +57,7 @@ public class StudyTreatmentProductTable extends DefaultStudyDesignTable
         return new StudyTreatmentProductTable(domain, storageTableInfo, schema, filter);
     }
 
-    private StudyTreatmentProductTable(Domain domain, TableInfo storageTableInfo, UserSchema schema, @Nullable ContainerFilter filter)
+    private StudyTreatmentProductTable(Domain domain, TableInfo storageTableInfo, StudyQuerySchema schema, @Nullable ContainerFilter filter)
     {
          super(domain, storageTableInfo, schema, filter);
 

@@ -112,7 +112,7 @@
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
                                             <constructor-arg index="0" value="append"/>
-                                            <constructor-arg index="1" value="Merge"/>
+                                            <constructor-arg index="1" value="Append"/>
                                         </bean>
                                         <bean class="org.labkey.api.formSchema.Option">
                                             <constructor-arg index="0" value="replace"/>
@@ -120,7 +120,7 @@
                                         </bean>
                                     </list>
                                 </constructor-arg>
-                                <constructor-arg index="5" value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
+                                <constructor-arg index="5" value="Choose Append to add new records to an existing dataset (uniqueness rules apply), Replace to replace existing values."/>
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">

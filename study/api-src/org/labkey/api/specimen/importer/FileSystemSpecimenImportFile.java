@@ -16,6 +16,7 @@
 
 package org.labkey.api.specimen.importer;
 
+import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.util.Filter;
@@ -23,7 +24,6 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Map;
 
@@ -62,7 +62,7 @@ public class FileSystemSpecimenImportFile implements SpecimenImportFile
     @Override
     public TabLoader getDataLoader() throws IOException
     {
-        Reader reader = new InputStreamReader(getInputStream());
+        Reader reader = Readers.getReader(getInputStream());
         TabLoader loader = new TabLoader(reader, true, null, true);   // Close on complete
         loader.setInferTypes(false);
 

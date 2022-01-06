@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
@@ -31,6 +32,7 @@ import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskId;
@@ -509,84 +511,12 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
-    // CONSIDER: Move to ScriptTaskImpl -- it's the only usage of this method
-    protected void writeTaskInfo(File file, RecordedAction action) throws IOException
-    {
-        List<String> columns = Arrays.asList("Name", "Value");
-        RowMapFactory<Object> factory = new RowMapFactory<>(columns);
-        List<Map<String, Object>> rows = new ArrayList<>();
-
-        // Job information
-        rows.add(factory.getRowMap("provider", getJob().getProvider()));
-        rows.add(factory.getRowMap("description", getJob().getDescription()));
-        //rows.add(factory.getRowMap("taskPipelineId", getJob().getTaskPipelineId()));
-        rows.add(factory.getRowMap("jobGUID", getJob().getJobGUID()));
-        rows.add(factory.getRowMap("parentGUID", getJob().getParentGUID()));
-        rows.add(factory.getRowMap("splitJob", getJob().isSplitJob()));
-
-        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl()));
-        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath()));
-        rows.add(factory.getRowMap("containerPath", getJob().getContainer().getPath()));
-        rows.add(factory.getRowMap("containerId", getJob().getContainer().getEntityId()));
-        rows.add(factory.getRowMap("user", getJob().getUser().getEmail()));
-
-        PipeRoot pipeRoot = getJob().getPipeRoot();
-        rows.add(factory.getRowMap("pipeRoot", getJob().getPipeRoot().getRootPath()));
-
-        // FileAnalysisJobSupport properties
-        FileAnalysisJobSupport support = getJobSupport();
-        rows.add(factory.getRowMap("protocol", support.getProtocolName()));
-        rows.add(factory.getRowMap("baseName", support.getBaseName()));
-        rows.add(factory.getRowMap("joinedBaseName", support.getJoinedBaseName()));
-        rows.add(factory.getRowMap("analysisDirectory", rewritePath(support.getAnalysisDirectory().toString())));
-        rows.add(factory.getRowMap("dataDirectory", rewritePath(support.getDataDirectory().toString())));
-
-        // Task information
-        rows.add(factory.getRowMap("taskId", _factory.getId()));
-
-        // Write out the known inputs to this task
-        for (RecordedAction.DataFile inputFile : action.getInputs())
-        {
-            String role = inputFile.getRole();
-            if (role == null)
-                continue;
-
-            URI uri = inputFile.getURI();
-            File f = new File(uri);
-            if (f.exists())
-            {
-                String inputPath = _wd.getRelativePath(f);
-                rows.add(factory.getRowMap(role, inputPath));
-            }
-        }
-
-        for (Map.Entry<String, TaskPath> entry : _factory.getOutputPaths().entrySet())
-        {
-            String key = entry.getKey();
-            TaskPath path = entry.getValue();
-
-            // CONSIDER: Include the TaskPath information (optional, etc.)
-
-            String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
-            for (String outputPath : outputPaths)
-            {
-                rows.add(factory.getRowMap(key, outputPath, path.getType().getDefaultSuffix()));
-            }
-        }
-
-        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows))
-        {
-            tsvWriter.setHeaderRowVisible(false);
-            tsvWriter.write(file);
-        }
-    }
-
     /**
      * The parameter replacement map created as the task is run and used
      * to replace tokens the script or the command line before executing it.
      * The replaced paths will be resolved to paths in the work directory.
      */
-    protected Map<String, String> createReplacements(@Nullable File scriptFile, String apiKey) throws IOException
+    protected Map<String, String> createReplacements(@Nullable File scriptFile, @Nullable String apiKey, @Nullable Container container) throws IOException
     {
         Map<String, String> replacements = new HashMap<>();
 
@@ -660,7 +590,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
         }
 
-        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, apiKey, replacements);
+        DefaultDataTransformer.addStandardParameters(null, container, scriptFile, apiKey, replacements);
 
         return replacements;
     }
@@ -675,7 +605,16 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
-        try (TransformSession session = SecurityManager.createTransformSession(getJob().getUser()))
+        TransformSession session = null;
+        Container container = null;
+        if (PipelineJobService.get().isWebServer())
+        {
+            // We're inside of the web server so we have access to the DB and can set up a transform session, among
+            // other resources
+            session = SecurityManager.createTransformSession(getJob().getUser());
+            container = getJob().getContainer();
+        }
+        try
         {
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
             
@@ -702,7 +641,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (getJobSupport().getParametersFile() != null)
                 _wd.inputFile(getJobSupport().getParametersFile(), true);
 
-            if (!runCommand(action, session.getApiKey()))
+            if (!runCommand(action, session == null ? null : session.getApiKey(), container))
                 return new RecordedActionSet();
 
             // Read output parameters file, record output parameters, and discard it.
@@ -733,6 +672,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         finally
         {
             _wd = null;
+            if (session != null)
+            {
+                session.close();
+            }
         }
     }
 
@@ -741,13 +684,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * @param action The recorded action.
      * @param apiKey API key to use for the duration of the command execution
      * @return true if the task was run, false otherwise.
-     * @throws IOException
-     * @throws PipelineJobException
      */
     // TODO: Add task and job version information to the recorded action.
-    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, @Nullable String apiKey, @Nullable Container container) throws IOException, PipelineJobException
     {
-        Map<String, String> replacements = createReplacements(null, apiKey);
+        Map<String, String> replacements = container == null ? Collections.emptyMap() : createReplacements(null, apiKey, container);
 
         ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);

@@ -15,9 +15,11 @@
  */
 package org.labkey.api.data.dialect;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
+import org.labkey.api.data.TableInfo;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -34,9 +36,33 @@ public class StandardTableResolver implements TableResolver
     }
 
     @Override
-    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
     {
-        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
+        return new StandardJdbcMetaDataLocator(scope, schemaName, schemaNamePattern, tableName, tableNamePattern);
+    }
+
+    @Override
+    public JdbcMetaDataLocator getAllSchemasLocator(DbScope scope) throws SQLException
+    {
+        return getJdbcMetaDataLocator(scope, null, "%", null, "%");
+    }
+
+    @Override
+    public JdbcMetaDataLocator getAllTablesLocator(DbScope scope, String schemaName) throws SQLException
+    {
+        return getJdbcMetaDataLocator(scope, schemaName, escapeName(scope, schemaName), null, "%");
+    }
+
+    @Override
+    public JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, String tableName) throws SQLException
+    {
+        return getJdbcMetaDataLocator(scope, schemaName, escapeName(scope, schemaName), tableName, escapeName(scope, tableName));
+    }
+
+    @Override
+    public JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, TableInfo tableInfo) throws SQLException
+    {
+        return getSingleTableLocator(scope, schemaName, tableInfo.getMetaDataName());
     }
 
     private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();
@@ -45,5 +71,18 @@ public class StandardTableResolver implements TableResolver
     public ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
     {
         return STANDARD_RESOLVER;
+    }
+
+    // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
+    // parameter, see #43821
+    public static String escapeName(DbScope scope, @NotNull String name)
+    {
+        String escape = scope.getDatabaseSearchStringEscape();
+
+        String ret = name.replace(escape, escape + escape);
+        ret = ret.replace("_", escape + "_");
+        ret = ret.replace("%", escape + "%");
+
+        return ret;
     }
 }

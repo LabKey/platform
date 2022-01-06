@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +62,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -114,7 +116,8 @@ import java.util.function.Supplier;
  */
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
-    private @NotNull ExpDataClassImpl _dataClass;
+    private final @NotNull ExpDataClassImpl _dataClass;
+    public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     @Override
     protected ContainerFilter getDefaultContainerFilter()
@@ -202,8 +205,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 String nameExpression = _dataClass.getNameExpression();
                 c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
-                c.setDescription(desc);
+
+                // shut off this field in insert and update views if user-specified names are not allowed
+                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                {
+                    c.setShownInInsertView(false);
+                    c.setShownInUpdateView(false);
+                }
                 return c;
             }
 
@@ -293,6 +301,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
+        String nameExpression = _dataClass.getNameExpression();
+        if (!StringUtils.isEmpty(nameExpression))
+        {
+            String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), _dataClass.getName(), getUserSchema().getUser());
+            String nameDesc = ExpMaterialTableImpl.appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
+            nameCol.setDescription(nameDesc);
+        }
 
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
@@ -428,6 +444,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         TableInfo provisioned = _dataClass.getTinfo();
 
         // all columns from exp.data except lsid
@@ -585,7 +602,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
-            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
+            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize, _dataClass.getMinGenId());
 
             // Ensure we have a dataClass column and it is of the right value
             // use materialized classId so that parameter binding works for both exp.data as well as materialized table
@@ -605,7 +622,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(step0, _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
             DataIterator di;
 
             // Generate names
@@ -620,7 +637,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
-                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this));
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
+                        .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                        .addExtraPropsFn(() -> {
+                            if (c != null)
+                                return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
+                            else
+                                return Collections.emptyMap();
+                        })
+                );
             }
             else
             {

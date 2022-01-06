@@ -73,6 +73,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
@@ -80,9 +81,11 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -90,11 +93,13 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -111,8 +116,10 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
@@ -153,7 +160,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -177,11 +183,12 @@ import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
-    private static final Logger LOG = LogManager.getLogger(ExperimentServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
     private Cache<String, ExpProtocolImpl> protocolCache;
 
@@ -631,11 +638,21 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
-        if (materials.isEmpty())
+        if (materials == null || materials.isEmpty())
             return null;
         if (materials.size() > 1)
             throw new IllegalArgumentException("Expected 0 or 1 samples, got: " + materials.size());
         return materials.get(0);
+    }
+
+    public List<Integer> findIdsNotPermittedForOperation(List<? extends ExpMaterial> candidates, SampleTypeService.SampleOperations operation)
+    {
+        if (!SampleStatusService.get().supportsSampleStatus())
+            return Collections.emptyList();
+
+        return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
+                .stream()
+                .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
     @Override
@@ -646,6 +663,19 @@ public class ExperimentServiceImpl implements ExperimentService
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
 
         final List<ExpMaterialImpl> materials = new ArrayList<>(rowids.size());
+        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
+
+        return materials;
+    }
+
+    @Override
+    @NotNull
+    public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
+    {
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
+        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
+
+        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
         selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
 
         return materials;
@@ -964,8 +994,6 @@ public class ExperimentServiceImpl implements ExperimentService
         Cache<String, ExpProtocolImpl> c = getProtocolCache();
         c.remove(getCacheKey(p.getLSID()));
         c.remove("ROWID/" + p.getRowId());
-        //TODO I don't think we're using a DbCache for protocols...
-        DbCache.remove(getTinfoProtocol(), getCacheKey(p.getLSID()));
     }
 
 
@@ -997,6 +1025,9 @@ public class ExperimentServiceImpl implements ExperimentService
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
         protocol.setOutputMaterialType("Material");
+        // the default for runs
+        if (ExperimentRun.equals(type))
+            protocol.setStatus(ExpProtocol.Status.Active);
         return new ExpProtocolImpl(protocol);
     }
 
@@ -1187,6 +1218,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
+    }
+
+    @Override
+    public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new SampleStatusTable(expSchema, containerFilter);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -2203,9 +2240,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 continue;
             }
 
-            // ensure that the protocol output lineage is in the same container as the request
+            // ensure the user has read permission in the seed container
             if (c != null && !c.equals(seed.getContainer()))
-                throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + c.getPath() + "', got: " + seed.getContainer().getPath());
+            {
+                if (!seed.getContainer().hasPermission(user, ReadPermission.class))
+                    throw new UnauthorizedException("Lineage not available. User does not have permission to view " + seed.getName() + ".");
+            }
 
             if (!seedLsids.add(seed.getLSID()))
                 throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
@@ -3580,6 +3620,22 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(ProtocolApplication.class);
     }
 
+    @Override
+    @NotNull
+    public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsByObjectId(Container container, String objectId)
+    {
+        String likeFilter = "%:" + objectId;
+        final SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(" WHERE LSID LIKE ? AND RunId IN (SELECT RowId FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE Container = ?)");
+        sql.add(likeFilter);
+        sql.add(container);
+        List<ProtocolApplication> apps = new SqlSelector(getExpSchema(), sql).getArrayList(org.labkey.experiment.api.ProtocolApplication.class);
+        return ExpProtocolApplicationImpl.fromProtocolApplications(apps);
+    }
+
     public List<ProtocolAction> getProtocolActions(int parentProtocolRowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ParentProtocolId"), parentProtocolRowId);
@@ -3758,12 +3814,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                if (!dataset.canDelete(user))
+                                // NOTE: these datasets come from various different containers
+                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                                TableInfo tableInfo = schema.getTable(dataset.getName());
+                                if (null == tableInfo || !dataset.hasPermission(user, DeletePermission.class))
                                 {
                                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                                 }
-                                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                                TableInfo tableInfo = schema.getTable(dataset.getName());
 
                                 AssayProvider provider = AssayService.get().getProvider(protocol);
                                 if (provider != null)
@@ -4092,24 +4149,23 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedDeleteObjects(List<Integer> deleteRequest, List<Integer> cannotDelete, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, List<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
     {
-        // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from the deleteRequest set.
-        deleteRequest.removeAll(cannotDelete);
-        List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-        List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
+        List<Integer> permittedIds = new ArrayList<>(requestIds);
+        permittedIds.removeAll(notPermittedIds);
+        List<Map<String, Object>> allowedRows = new ArrayList<>();
+        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
             Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
-            if (deleteRequest.contains(dataObject.getRowId()))
-                canDeleteRows.add(rowMap);
+            if (permittedIds.contains(dataObject.getRowId()))
+                allowedRows.add(rowMap);
             else
-                cannotDeleteRows.add(rowMap);
+                notAllowedRows.add(rowMap);
         });
 
-
         Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-        partitionedIds.put("canDelete", canDeleteRows);
-        partitionedIds.put("cannotDelete", cannotDeleteRows);
+        partitionedIds.put("allowed", allowedRows);
+        partitionedIds.put("notAllowed", notAllowedRows);
         return partitionedIds;
     }
 
@@ -4117,7 +4173,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
      * and warn user
      */
-    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<ExpMaterialImpl> allMaterials, Set<Integer> deletable, User user, Container container)
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<? extends ExpMaterial> allMaterials, Set<Integer> deletable, User user, Container container)
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
@@ -4176,6 +4232,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /**
+     * TODO move to SampleTypeService
      * Delete samples by rowId. When <code>stDeleteFrom</code> SampleType is provided,
      * the samples must all be members of the SampleType.  When <code>stSampleType</code> is
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE}.
@@ -4183,9 +4240,11 @@ public class ExperimentServiceImpl implements ExperimentService
     public void deleteMaterialByRowIds(User user, Container container,
                                        Collection<Integer> selectedMaterialIds,
                                        boolean deleteRunsUsingMaterials,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                       @Nullable ExpSampleType stDeleteFrom,
+                                       boolean ignoreStatus,
+                                       boolean isTruncate)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, isTruncate);
     }
 
     /**
@@ -4196,10 +4255,12 @@ public class ExperimentServiceImpl implements ExperimentService
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
      */
     private void deleteMaterialByRowIds(User user, Container container,
-                                       Collection<Integer> selectedMaterialIds,
-                                       boolean deleteRunsUsingMaterials,
-                                       boolean deleteFromAllSampleTypes,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                        Collection<Integer> selectedMaterialIds,
+                                        boolean deleteRunsUsingMaterials,
+                                        boolean deleteFromAllSampleTypes,
+                                        @Nullable ExpSampleType stDeleteFrom,
+                                        boolean ignoreStatus,
+                                        boolean isTruncate)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4223,6 +4284,11 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
+            boolean isAliquotRollupSupported = InventoryService.get() != null
+                    && container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Inventory"));
+
+            Map<ExpSampleType, Set<String>> sampleTypeAliquotParents = new HashMap<>();
+
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
@@ -4230,6 +4296,9 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
+
+                if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
+                    throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                 if (null == stDeleteFrom)
                 {
@@ -4257,6 +4326,14 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
+
+                if (isAliquotRollupSupported && !isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                {
+                    ExpSampleType sampleType = material.getSampleType();
+                    sampleTypeAliquotParents.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                            .add(material.getRootMaterialLSID());
+                }
+
             }
 
             try (Timing ignored = MiniProfiler.step("beforeDelete"))
@@ -4355,6 +4432,29 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
                 lsidFragFrag.append(lsidInFrag);
                 OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+            }
+
+            // recalculate rollup
+            if (!isTruncate && isAliquotRollupSupported)
+            {
+                try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
+                {
+                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeParents: sampleTypeAliquotParents.entrySet())
+                    {
+                        ExpSampleType parentSampleType = sampleTypeParents.getKey();
+                        Set<String> parentLsids = sampleTypeParents.getValue();
+
+                        List<ExpMaterialImpl> parentSamples = getExpMaterialsByLsid(parentLsids);
+                        Set<Integer> parentSampleIds = new HashSet<>();
+                        parentSamples.forEach(p -> parentSampleIds.add(p.getRowId()));
+
+                        InventoryService.get().recomputeSamplesRollup(parentSampleIds, parentSampleType.getMetricUnit(), container);
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
 
             // On successful commit, start task to remove items from search index
@@ -4796,7 +4896,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, true, null);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null, true, true);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
@@ -4973,7 +5073,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private boolean checkRunsMatch(Set<String> lsids, List<ExpRunImpl> runs)
     {
-        return runs.stream().allMatch(r -> lsids.contains(r.getLSID()));
+        return lsids.size() == runs.size() && runs.stream().allMatch(r -> lsids.contains(r.getLSID()));
     }
 
     @Override
@@ -6405,7 +6505,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         rec._protApp._object.getActivityDate(),
                         runId,
                         rec._protApp._object.getActionSequence(),
-                        rec._protApp._object.getLSID()));
+                        rec._protApp._object.getLSID(),
+                        rec._protApp.getEntityId() != null ? rec._protApp.getEntityId().toString() : GUID.makeGUID()));
             }
         }
 
@@ -6542,11 +6643,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
+            Set<String> parentLsids = new HashSet<>();
+            TableInfo tableInfo = getTinfoMaterial();
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
+                    parentLsids.add(StringUtils.isEmpty(parent.getRootMaterialLSID()) ?  parent.getLSID() : parent.getRootMaterialLSID());
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
                     // Use cache to double check detemine subaliquots's root
@@ -6554,7 +6658,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
-                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
                                 append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
                         String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
@@ -6569,9 +6673,19 @@ public class ExperimentServiceImpl implements ExperimentService
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
                         
-                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                        new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
+            }
+
+            // mark aliquot parents RecomputeRollup=true
+            if (!parentLsids.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
+                        append(" SET RecomputeRollup = ? WHERE LSID ");
+                sql.add(true);
+                sql.appendInClause(parentLsids, tableInfo.getSqlDialect());
+                new SqlExecutor(tableInfo.getSchema()).execute(sql);
             }
         }
         
@@ -6629,8 +6743,8 @@ public class ExperimentServiceImpl implements ExperimentService
             if (!params.isEmpty())
             {
                 String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoProtocolApplication().toString() +
-                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid)" +
-                        " VALUES (?,?,?,?,?,?,?)";
+                        " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
+                        " VALUES (?,?,?,?,?,?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
             }
         }
@@ -6915,11 +7029,24 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
         ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
         if (app == null)
             return null;
+        return new ExpProtocolApplicationImpl(app);
+    }
+
+    @Override
+    public @Nullable ExpProtocolApplicationImpl getExpProtocolApplicationFromEntityId(String entityId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+        TableInfo table = getTinfoProtocolApplication();
+        ProtocolApplication app = new TableSelector(table, filter, null).getObject(ProtocolApplication.class);
+
+        if (app == null)
+            return null;
+
         return new ExpProtocolApplicationImpl(app);
     }
 
@@ -6941,7 +7068,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         DataClassDomainKindProperties options = new DataClassDomainKindProperties();
         options.setDescription(description);
-        options.setNameExpression(nameExpression);
+        options.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
         options.setSampleType(sampleTypeId);
         options.setCategory(category);
         return createDataClass(c, u, name, options, properties, indices, templateInfo);
@@ -7000,8 +7127,21 @@ public class ExperimentServiceImpl implements ExperimentService
         bean.setLSID(lsid.toString());
         if (options != null)
         {
+            String nameExpression = options.getNameExpression();
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
+            if (!svc.allowUserSpecifiedNames(c))
+            {
+                if (nameExpression == null)
+                    throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+            }
+
+            if (svc.getExpressionPrefix(c) != null)
+            {
+                // automatically apply the configured prefix to the name expression
+                nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
+            }
             bean.setDescription(options.getDescription());
-            bean.setNameExpression(options.getNameExpression());
+            bean.setNameExpression(StringUtilsLabKey.replaceBadCharacters(nameExpression));
             bean.setMaterialSourceId(options.getSampleType());
             bean.setCategory(options.getCategory());
         }
@@ -7040,6 +7180,14 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
             dataClass.setCategory(options.getCategory());
+
+            if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
+            {
+                ValidationException errors = new ValidationException();
+                errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+
+                return errors;
+            }
         }
 
         ValidationException errors;

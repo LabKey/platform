@@ -98,17 +98,27 @@ public class ExperimentPipelineProvider extends PipelineProvider
 
         String actionId = createActionId(ExperimentController.ImportXarFileAction.class, "Import Experiment");
         addAction(actionId, ExperimentController.ImportXarFileAction.class, "Import Experiment",
-                directory, directory.listFiles(new XarFilenameFilter()), true, true, includeAll);
+                directory, directory.listPaths(new XarFilenameFilter()), true, true, includeAll);
     }
 
     private static class XarFilenameFilter extends FileEntryFilter
     {
         @Override
+        public boolean accept(Path p)
+        {
+            return accept(p.getFileName().toString().toLowerCase());
+        }
+
+        private boolean accept(String lowerCase)
+        {
+            return lowerCase.endsWith(".xar.xml") ||
+                    lowerCase.endsWith(".xar");
+        }
+
+        @Override
         public boolean accept(File f)
         {
-            String lowerCase = f.getName().toLowerCase();
-            return lowerCase.endsWith(".xar.xml") ||
-                   lowerCase.endsWith(".xar");
+            return accept(f.getName().toLowerCase());
         }
     }
 

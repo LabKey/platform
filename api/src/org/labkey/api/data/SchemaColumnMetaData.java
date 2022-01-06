@@ -58,7 +58,8 @@ public class SchemaColumnMetaData
     private boolean _hasDefaultTitleColumn = true;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _uniqueIndices;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
-    private static Logger _log = LogManager.getLogger(SchemaColumnMetaData.class);
+
+    private static final Logger _log = LogManager.getLogger(SchemaColumnMetaData.class);
 
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {
@@ -181,7 +182,7 @@ public class SchemaColumnMetaData
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getSingleTableLocator(scope, schemaName, ti))
         {
             JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
                 (dbmd, locator1) -> dbmd.getPrimaryKeys(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName()));
@@ -238,7 +239,7 @@ public class SchemaColumnMetaData
         }
         else
         {
-            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, ti.getMetaDataName()))
+            try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getSingleTableLocator(scope, schemaName, ti))
             {
                 JdbcMetaDataSelector uqSelector = new JdbcMetaDataSelector(locator,
                         ((dbmd, l) -> {

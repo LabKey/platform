@@ -112,7 +112,7 @@ public class DefaultStudyDesignImporter
             final String tableName = tableXml.getTableName();
 
             // get the domain of the table we are updating
-            StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser());
             TableInfo table = schema.getTable(tableName);
 
             if (table != null)
@@ -417,7 +417,7 @@ public class DefaultStudyDesignImporter
                 ContainerFilter currentFilter = null;
                 try {
 
-                    if (_tableInfo instanceof ContainerFilterable)
+                    if (_tableInfo instanceof ContainerFilterable && _tableInfo.supportsContainerFilter())
                     {
                         currentFilter = _tableInfo.getContainerFilter();
                         ((ContainerFilterable)_tableInfo).setContainerFilter(ContainerFilter.Type.Project.create(_tableInfo.getUserSchema()));

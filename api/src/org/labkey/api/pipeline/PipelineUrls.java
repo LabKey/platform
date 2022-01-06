@@ -24,6 +24,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * <code>PipelineUrls</code> a UrlProvider for the pipeline UI.
@@ -41,11 +42,11 @@ public interface PipelineUrls extends UrlProvider
 
     ActionURL urlActions(Container container);
 
-    ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
+    ActionURL urlStartFolderImport(Container container, @NotNull Path archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
 
     ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl);
 
-    ActionURL statusDetails(Container container);
+    ActionURL statusDetails(Container container, int jobRowId);
 
     ActionURL statusList(Container container);
 }

@@ -87,6 +87,10 @@ public interface ContainerType extends Serializable
      */
     boolean isInFolderNav();
 
+    /**
+     * @return Indication if containers of this type should be included in API responses.
+     */
+    boolean includeInAPIResponse();
 
     /**
      * @return indication of whether this container can be converted to a tab or not (if, for example, a folder type is updated)
@@ -144,7 +148,5 @@ public interface ContainerType extends Serializable
      */
     @NotNull
     Set<Container> getContainersFor(DataType dataType, Container currentContainer);
-
-
 }
 

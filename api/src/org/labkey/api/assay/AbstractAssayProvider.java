@@ -84,7 +84,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationException.SEVERITY;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -207,7 +206,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable ViewCategory datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    public ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         try
         {
@@ -689,7 +688,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
+    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status)
             throws ExperimentException
     {
         String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
@@ -699,6 +698,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setLSID(protocolLsid);
         protocol.setMaxInputMaterialPerInstance(1);
         protocol.setMaxInputDataPerInstance(1);
+        protocol.setStatus(status);
 
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }

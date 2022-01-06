@@ -16,9 +16,9 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
-import org.apache.tika.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -27,8 +27,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -149,8 +149,8 @@ public class DatasetImportRunnable implements Runnable
 
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
-        QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                QCStateManager.getInstance().getQCStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+        DataState defaultQCState = _study.getDefaultPipelineQCState() != null ?
+                DataStateManager.getInstance().getStateForRowId(_study.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
         List<String> validateErrors = new ArrayList<>();
         validate(validateErrors);
@@ -197,27 +197,21 @@ public class DatasetImportRunnable implements Runnable
             {
                 is = _root.getInputStream(_fileName);
                 loader = DataLoaderService.get().createLoader(_fileName, null, is, true, _studyImportContext.getContainer(), TabLoader.TSV_FILE_TYPE);
-                if (useCutoff && loader instanceof TabLoader)
+                if (useCutoff)
                 {
-                    // UNDONE: shouldn't be tied to TabLoader
-                    ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
-                    {
-                        @Override
-                        public boolean accept(Map<String, Object> row)
-                        {
-                            Object o = row.get(visitDatePropertyURI);
+                    loader.setMapFilter(row -> {
+                        Object o = row.get(visitDatePropertyURI);
 
-                            // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
-                            if (!(o instanceof Date))
-                                return true;
+                        // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
+                        if (!(o instanceof Date))
+                            return true;
 
-                            // Allow rows after the cutoff date.
-                            if (((Date) o).compareTo(_replaceCutoff) > 0)
-                                return true;
+                        // Allow rows after the cutoff date.
+                        if (((Date) o).compareTo(_replaceCutoff) > 0)
+                            return true;
 
-                            skippedRowCount[0]++;
-                            return false;
-                        }
+                        skippedRowCount[0]++;
+                        return false;
                     });
                 }
             }
@@ -400,12 +394,14 @@ public class DatasetImportRunnable implements Runnable
     {
         if (visitDatePropertyURI == null)
         {
-            TableInfo ti = _datasetDefinition.getTableInfo(user, false);
+            TableInfo ti = _datasetDefinition.getTableInfo(user);
             if (null != ti)
-            for (ColumnInfo col : ti.getColumns())
             {
-                if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
-                    visitDatePropertyURI = col.getPropertyURI();
+                for (ColumnInfo col : ti.getColumns())
+                {
+                    if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
+                        visitDatePropertyURI = col.getPropertyURI();
+                }
             }
             if (visitDatePropertyURI == null)
                 visitDatePropertyURI = DatasetDefinition.getVisitDateURI();

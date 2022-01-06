@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -198,7 +197,7 @@ public class DbSchema
     {
         final Map<String, SchemaTableInfoFactory> schemaTableInfoFactoryMap = new CaseInsensitiveHashMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, "%"))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getTableResolver().getAllTablesLocator(scope, schemaName))
         {
             new TableMetaDataLoader(locator, ignoreTemp)
             {
@@ -240,7 +239,7 @@ public class DbSchema
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
-            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, (dbmd, locator) -> dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), locator.getTableTypes()));
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, (dbmd, locator) -> dbmd.getTables(locator.getCatalogName(), locator.getSchemaNamePattern(), locator.getTableNamePattern(), locator.getTableTypes()));
 
             selector.forEach(rs -> {
                 String tableName = rs.getString("TABLE_NAME").trim();
@@ -591,69 +590,6 @@ public class DbSchema
         }
     }
 
-    public static class CachingTestCase extends Assert
-    {
-        @Test
-        public void testCaching()
-        {
-            TestSchema test = TestSchema.getInstance();
-            DbSchema testSchema = test.getSchema();
-            TableInfo testTable = test.getTableInfoTestTable();
-            TestContext ctx = TestContext.get();
-
-            assertNotNull(testTable);
-            DbCache.clear(testTable);
-
-            Map<String, Object> m = new HashMap<>();
-            m.put("DatetimeNotNull", new Date());
-            m.put("BitNotNull", Boolean.TRUE);
-            m.put("Text", "Added by Caching Test Suite");
-            m.put("IntNotNull", 0);
-            m.put("Container", JunitUtil.getTestContainer());
-            m = Table.insert(ctx.getUser(), testTable, m);
-            Integer rowId1 = ((Integer) m.get("RowId"));
-
-            String key = "RowId" + rowId1;
-            DbCache.put(testTable, key, m);
-            Map m2 = (Map) DbCache.get(testTable, key);
-            assertEquals(m, m2);
-
-            //Does cache get cleared on delete
-            Table.delete(testTable, rowId1);
-            m2 = (Map) DbCache.get(testTable, key);
-            assertNull(m2);
-
-            //Does cache get cleared on insert
-            m.remove("RowId");
-            m = Table.insert(ctx.getUser(), testTable, m);
-            int rowId2 = ((Integer) m.get("RowId"));
-            key = "RowId" + rowId2;
-            DbCache.put(testTable, key, m);
-            m.remove("RowId");
-            m = Table.insert(ctx.getUser(), testTable, m);
-            int rowId3 = ((Integer) m.get("RowId"));
-            m2 = (Map) DbCache.get(testTable, key);
-            assertNull(m2);
-
-            //Make sure things are not inserted in transaction
-            m.remove("RowId");
-            String key2;
-            try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
-            {
-                m = Table.insert(ctx.getUser(), testTable, m);
-                int rowId4 = ((Integer) m.get("RowId"));
-                key2 = "RowId" + rowId4;
-                DbCache.put(testTable, key2, m);
-            }
-            m2 = (Map) DbCache.get(testTable, key2);
-            assertNull(m2);
-
-            // Clean up
-            Table.delete(testTable, rowId2);
-            Table.delete(testTable, rowId3);
-        }
-    }
-
     public static class DDLMethodsTestCase extends Assert
     {
         private final TestSchema test = TestSchema.getInstance();
@@ -844,14 +780,19 @@ public class DbSchema
         TempTableInfo tTemplate = new TempTableInfo("cltmp", listColInfos, Collections.singletonList("RowId"));
         String tempTableName = tTemplate.getTempTableName();
 
-        String createTempTableSql =
-                "CREATE TABLE " + tempTableName + " ( " +
-                        "\tRowId INT NOT NULL,  \n" +
-                        "\tTableName VARCHAR(300) NOT NULL,\n" +
-                        "\tFirstPKColName VARCHAR(100) NULL,\n" +
-                        "\tFirstPKValue VARCHAR(100) NULL,\n" +
-                        "\tModuleName VARCHAR(50) NOT NULL,\n" +
-                        "\tOrphanedContainer VARCHAR(60) NULL) ;\n\n";
+        String createTempTableSql = "CREATE TABLE " + tempTableName +
+            """
+
+            (
+                RowId INT NOT NULL,
+                TableName VARCHAR(300) NOT NULL,
+                FirstPKColName VARCHAR(100) NULL,
+                FirstPKValue VARCHAR(100) NULL,
+                ModuleName VARCHAR(50) NOT NULL,
+                OrphanedContainer VARCHAR(60) NULL
+            );
+            
+            """;
 
         final StringBuilder sbOut = new StringBuilder();
 

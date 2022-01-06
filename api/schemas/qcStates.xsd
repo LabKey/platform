@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-            targetNamespace="http://labkey.org/study/xml/qcStates"
-            elementFormDefault="qualified" attributeFormDefault="unqualified">
+           xmlns:qc="http://labkey.org/study/xml/qcStates"
+           targetNamespace="http://labkey.org/study/xml/qcStates"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
 
 	<xs:annotation>
         <xs:documentation xml:lang="en">
@@ -11,7 +13,7 @@
 	<xs:element name="studyqc">
 		<xs:complexType>
 			<xs:all>
-                <xs:element name="showPrivateDataByDefault" type="xs:boolean">
+                <xs:element name="showPrivateDataByDefault" type="xs:boolean" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
                             This setting determines whether users see non-public data by default. Users can
@@ -19,7 +21,7 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                <xs:element name="blankQCStatePublic" type="xs:boolean" default="false">
+                <xs:element name="blankQCStatePublic" type="xs:boolean" default="false" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
                             This setting determines whether users see non-public data by default for data
@@ -56,22 +58,28 @@
 									<xs:attribute name="name" type="xs:string" use="required">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 The name of the dataset.
+                                                 The name of the data state.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
 									<xs:attribute name="description" type="xs:string">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 Each dataset can belong to one category. Datasets are grouped together
-                                                 by category in the UI.
+                                                 The description of this data state.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
 									<xs:attribute name="public" type="xs:boolean" default="false">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                 Indicates whether this dataset contains demographic data.
+                                                 Indicates whether data in this data state is publicly available or not.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="type" type="qc:stateTypeEnum">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                The type of the data state.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>
@@ -82,5 +90,13 @@
 				</xs:element>
 			</xs:all>
 		</xs:complexType>
-	</xs:element>
+    </xs:element>
+
+    <xs:simpleType name="stateTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Available"/>
+            <xs:enumeration value="Consumed"/>
+            <xs:enumeration value="Locked"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

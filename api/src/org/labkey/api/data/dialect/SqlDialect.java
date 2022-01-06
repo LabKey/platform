@@ -128,7 +128,9 @@ public abstract class SqlDialect
 
     protected abstract @NotNull Set<String> getReservedWords();
 
-    protected String getOtherDatabaseThreads()
+    public static final String SEPARATOR_BANNER = "******** Other thread info *********";
+
+    public String getOtherDatabaseThreads()
     {
         StringBuilder sb = new StringBuilder();
 
@@ -187,6 +189,12 @@ public abstract class SqlDialect
                 }
             }
         }
+
+        if (sb.length() > 0)
+        {
+            sb.insert(0, SEPARATOR_BANNER + "\n\n");
+        }
+
         return sb.toString();
     }
 
@@ -910,7 +918,7 @@ public abstract class SqlDialect
 
     private static final TableResolver STANDARD_TABLE_RESOLVER = new StandardTableResolver();
 
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return STANDARD_TABLE_RESOLVER;
     }
@@ -918,11 +926,6 @@ public abstract class SqlDialect
     public final void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException
     {
         getTableResolver().addTableInfoFactories(map, scope, schemaName);
-    }
-
-    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String requestedTableName) throws SQLException
-    {
-        return getTableResolver().getJdbcMetaDataLocator(scope, schemaName, requestedTableName);
     }
 
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
@@ -1194,16 +1197,27 @@ public abstract class SqlDialect
                 return null;
             }
         }
+
+        public Long getMaxWaitMillis()
+        {
+            try
+            {
+                return callGetter("getMaxWaitMillis");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max wait (ms) from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
     }
 
-
-    // All statement creation passes through these two methods.  We return our standard statement wrappers in most
+    // All statement creation passes through these two methods. We return our standard statement wrappers in most
     // cases, but dialects can return their own subclasses of StatementWrapper to work around JDBC driver bugs.
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         return new StatementWrapper(conn, stmt);
     }
-
 
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
@@ -1494,7 +1508,7 @@ public abstract class SqlDialect
     // Simple check. Subclasses can override to provide better checks.
     public boolean isRds(DbScope scope)
     {
-        return StringUtils.containsIgnoreCase(scope.getURL(), "rds.amazonaws.com");
+        return StringUtils.containsIgnoreCase(scope.getDatabaseUrl(), "rds.amazonaws.com");
     }
 
     public static final class MetadataParameterInfo
@@ -1626,4 +1640,9 @@ public abstract class SqlDialect
     // Does this driver allow stmt.executeBatch() to be called on different thread?
     // Seems to work reliably for postgres but not mssql
     public boolean allowAsynchronousExecute() { return false; }
+
+    public boolean shouldTest()
+    {
+        return true;
+    }
 }

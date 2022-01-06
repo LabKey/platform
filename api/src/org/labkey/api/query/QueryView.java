@@ -832,7 +832,7 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasInsertURLOverride() && table.allowQueryTableURLOverrides();
     }
 
-    private boolean allowQueryTableUpdateURLOverride()
+    protected boolean allowQueryTableUpdateURLOverride()
     {
         TableInfo table = getTable();
         return table != null && table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
@@ -2460,7 +2460,9 @@ public class QueryView extends WebPartView<Object>
             for (ColumnInfo columnInfo : t.getColumns())
             {
                 FieldKey fieldKey = columnInfo.getFieldKey();
-                if (includeCols.contains(fieldKey) || columnInfo.isUserEditable())
+                // Issue 43760: "isUserEditable" does not mean what you think it means. UniqueIdFields must be marked as "UserEditable"
+                // in order to show up in a details view, but then that makes them show up in the export, where they shouldn't.  Booo.
+                if (includeCols.contains(fieldKey) || (columnInfo.isUserEditable() && !columnInfo.isUniqueIdField()))
                 {
                     fieldKeys.add(fieldKey);
                 }
@@ -2960,24 +2962,33 @@ public class QueryView extends WebPartView<Object>
             if (urlDetails != null && urlDetails != AbstractTableInfo.LINK_DISABLER)
             {
                 // We'll decide at render time if we have enough columns in the results to make the DetailsColumn visible
-                ret.add(createDetailsColumn(urlDetails, table));
+                DisplayColumn dc = createDetailsColumn(urlDetails, table);
+                if (null != dc)
+                    ret.add(dc);
             }
         }
 
         if (_showUpdateColumn && (canUpdate() || allowQueryTableUpdateURLOverride()))
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
-
             if (urlUpdate != null)
             {
-                ret.add(0, new UpdateColumn(urlUpdate));
+                DisplayColumn dc = createUpdateColumn(urlUpdate, table);
+                if (null != dc)
+                    ret.add(0, dc);
             }
         }
     }
 
+    @Nullable
     protected DisplayColumn createDetailsColumn(StringExpression urlDetails, TableInfo table)
     {
         return new DetailsColumn(urlDetails, table);
+    }
+
+    protected DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
+    {
+        return new UpdateColumn.Impl(urlUpdate);
     }
 
     public QueryDefinition getQueryDef()

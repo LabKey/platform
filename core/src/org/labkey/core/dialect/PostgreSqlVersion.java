@@ -17,20 +17,19 @@ import java.util.stream.Collectors;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_96(96, true, true, PostgreSql96Dialect::new),
     POSTGRESQL_10(100, false, true, PostgreSql_10_Dialect::new),
     POSTGRESQL_11(110, false, true, PostgreSql_11_Dialect::new),
     POSTGRESQL_12(120, false, true, PostgreSql_12_Dialect::new),
     POSTGRESQL_13(130, false, true, PostgreSql_13_Dialect::new),
-    POSTGRESQL_14(140, false, false, PostgreSql_14_Dialect::new),
+    POSTGRESQL_14(140, false, true, PostgreSql_14_Dialect::new),
     POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_14_Dialect::new);
 
     private final int _version;
     private final boolean _deprecated;
     private final boolean _tested;
-    private final Supplier<? extends PostgreSql96Dialect> _dialectFactory;
+    private final Supplier<? extends PostgreSql_10_Dialect> _dialectFactory;
 
-    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql96Dialect> dialectFactory)
+    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql_10_Dialect> dialectFactory)
     {
         _version = version;
         _deprecated = deprecated;
@@ -49,7 +48,7 @@ public enum PostgreSqlVersion
         return _tested;
     }
 
-    public PostgreSql96Dialect getDialect()
+    public PostgreSql_10_Dialect getDialect()
     {
         return _dialectFactory.get();
     }
@@ -62,11 +61,6 @@ public enum PostgreSqlVersion
         .map(v->v._version)
         .max(Comparator.naturalOrder())
         .orElseThrow();
-
-    static @NotNull PostgreSqlVersion get(int version, PostgreSqlServerType type)
-    {
-        return get(PostgreSqlServerType.LabKey == type ? MAX_KNOWN_VERSION : version);
-    }
 
     static @NotNull PostgreSqlVersion get(int version)
     {
@@ -89,7 +83,6 @@ public enum PostgreSqlVersion
         public void test()
         {
             // Good
-            test(96, POSTGRESQL_96);
             test(100, POSTGRESQL_10);
             test(110, POSTGRESQL_11);
             test(120, POSTGRESQL_12);
@@ -111,8 +104,10 @@ public enum PostgreSqlVersion
             test(93, POSTGRESQL_UNSUPPORTED);
             test(94, POSTGRESQL_UNSUPPORTED);
             test(95, POSTGRESQL_UNSUPPORTED);
+            test(96, POSTGRESQL_UNSUPPORTED);
             test(97, POSTGRESQL_UNSUPPORTED);
             test(98, POSTGRESQL_UNSUPPORTED);
+            test(99, POSTGRESQL_UNSUPPORTED);
         }
 
         private void test(int version, PostgreSqlVersion expectedVersion)

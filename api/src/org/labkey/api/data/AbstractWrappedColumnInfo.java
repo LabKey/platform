@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -456,6 +457,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior()
+    {
+        return delegate.getRemapMissingBehavior();
+    }
+
+    @Override
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         throw new UnsupportedOperationException("NYI");
@@ -668,6 +675,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public boolean isScannableField()
+    {
+        return delegate.isUniqueIdField() || delegate.isScannable();
+    }
+
+    @Override
     public String getFriendlyTypeName()
     {
         return delegate.getFriendlyTypeName();
@@ -803,5 +816,11 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     public String toString()
     {
         return ColumnInfo.toString(this);
+    }
+
+    @Override
+    public boolean isScannable()
+    {
+        return delegate.isScannable();
     }
 }

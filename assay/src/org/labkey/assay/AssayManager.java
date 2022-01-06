@@ -23,6 +23,7 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayHeaderLinkProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultsHeaderProvider;
 import org.labkey.api.assay.AssaySchema;
@@ -39,6 +40,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -141,8 +143,12 @@ public class AssayManager implements AssayService
 
     public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol) throws ExperimentException
     {
+        ExpProtocol.Status status = ExpProtocol.Status.Active;
+        if (newProtocol.getStatus() != null)
+            status = ExpProtocol.Status.valueOf(newProtocol.getStatus());
+
         return getProvider(newProtocol.getProviderName()).createAssayDefinition(user, container, newProtocol.getName(),
-                newProtocol.getDescription());
+                newProtocol.getDescription(), status);
     }
 
     @Override
@@ -386,6 +392,22 @@ public class AssayManager implements AssayService
                     return protocol;
             }
         }
+        return null;
+    }
+
+    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf) {
+        for (ExpProtocol protocol : getAssayProtocols(container))
+        {
+            AssayProvider provider = getProvider(protocol);
+            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+            for (String tableName : schema.getTableNames())
+            {
+                TableInfo table = schema.getTable(tableName, cf, true, true);
+                if (table != null && table.getDomain() != null && table.getDomain().getTypeId() == domainId)
+                    return table;
+            }
+        }
+
         return null;
     }
 

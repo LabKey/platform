@@ -203,7 +203,10 @@ function onSaveFailure_formSubmit(form, action)
             if (action.result.errors)
             {
                 for (var prop in action.result.errors)
-                    msg += action.result.errors[prop] + "<br/>";
+
+                    // Don't double print form and general exception if the same
+                    if (action.result.errors[prop] !== msg)
+                        msg += action.result.errors[prop] + "<br/>";
             }
 
             Ext4.Msg.show({title: 'Failure', msg: msg, buttons: Ext4.Msg.OK, icon: Ext4.Msg.ERROR});

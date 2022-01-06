@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -24,6 +25,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}
@@ -90,4 +92,10 @@ public interface ExpDataClass extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    Function<String, Long> getMaxDataCounterFunction();
+
+    long getCurrentGenId();
+
+    void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException;
 }

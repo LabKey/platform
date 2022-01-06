@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
@@ -112,10 +111,13 @@ var testMothershipReport = function(type, level, title) {
             else {
                 reportStr = 'An error occurred generating the sample report.';
             }
-            var sampleTab = window.open('about:blank', '_blank');
-            sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level +'</span><br/><br/>');
-            sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
-            sampleTab.document.close();
+            // Use setTimeout() because Safari doesn't let you call window.open in an async callback
+            setTimeout(() => {
+                var sampleTab = window.open('about:blank', '_blank');
+                sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level + '</span><br/><br/>');
+                sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
+                sampleTab.document.close();
+            });
         })
     });
 };
@@ -336,7 +338,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure API Keys (<%=new HelpTopic("configAdmin#apiKey").getSimpleLinkHtml("more info...")%>)</td>
+    <td colspan=2>Configure API Keys (<%=helpLink("configAdmin#apiKey", "more info...")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>

@@ -186,7 +186,7 @@ public class SpecimenManagerNew
         SQLFragment sqlPtidFilter = new SQLFragment();
         if (study.isAncillaryStudy())
         {
-/*            StudyQuerySchema sourceStudySchema = StudyQuerySchema.createSchema(study.getSourceStudy(), null, false);
+/*            StudyQuerySchema sourceStudySchema = StudyQuerySchema.createSchema(study.getSourceStudy());
             SpecimenWrapTable sourceStudyTableInfo = (SpecimenWrapTable)sourceStudySchema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
             tableInfoSpecimenWrap.setUnionTable(sourceStudyTableInfo);
 

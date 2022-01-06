@@ -45,7 +45,7 @@
     ActionURL urlView = kind != null ? kind.urlShowData(d, getViewContext()) : null;
     ActionURL urlEdit = kind != null ? kind.urlEditDefinition(d, getViewContext()) : null;
 
-    TableInfo table = kind != null ? kind.getTableInfo(getUser(), getContainer(), d.getName()) : null;
+    TableInfo table = kind != null ? kind.getTableInfo(getUser(), getContainer(), d.getName(), null) : null;
     ActionURL urlSchemaBrowser = table != null ? PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), table.getPublicSchemaName(), table.getPublicName()) : null;
 
 %>

@@ -20,11 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.visualization.DataspaceVisualizationProvider;
 
@@ -43,9 +43,14 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 
     private List<GUID> _sharedStudyContainerFilter;
 
-    public DataspaceQuerySchema(@NotNull StudyImpl study, User user, boolean mustCheckPermissions)
+    public DataspaceQuerySchema(@NotNull StudyImpl study, User user)
     {
-        super(study, user, mustCheckPermissions);
+        this(study, user, null);
+    }
+
+    public DataspaceQuerySchema(@NotNull StudyImpl study, User user, @Nullable Role contextualRole)
+    {
+        super(study, user, contextualRole);
 
         Container project = study.getContainer().getProject();
         List<GUID> containerIds = null;
@@ -54,7 +59,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
         {
             Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + project.getRowId());
             if (o instanceof List)
-                containerIds = (List)o;
+                containerIds = (List<GUID>)o;
         }
 
         _sharedStudyContainerFilter = containerIds;
@@ -74,6 +79,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 
 
     @Override
+    @NotNull
     public ContainerFilter getDefaultContainerFilter()
     {
         return new DataspaceContainerFilter(getContainer(), getUser(), _sharedStudyContainerFilter);
@@ -94,7 +100,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
 
     @Nullable
     @Override
-    public VisualizationProvider createVisualizationProvider()
+    public DataspaceVisualizationProvider createVisualizationProvider()
     {
         return new DataspaceVisualizationProvider(this);
     }

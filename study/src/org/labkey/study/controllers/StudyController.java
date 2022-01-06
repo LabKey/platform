@@ -69,6 +69,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -80,13 +81,13 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractDeleteDataStateAction;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageQCStatesForm;
-import org.labkey.api.qc.DeleteQCStateForm;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -120,6 +121,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -127,6 +129,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -141,6 +144,7 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
+import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
@@ -156,7 +160,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -230,6 +233,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -626,7 +630,7 @@ public class StudyController extends BaseStudyController
             bean.stats = form.getVisitStatistics();
             bean.showSpecimens = SpecimenService.get() != null;
 
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
             if (!bean.showCohorts)
@@ -917,7 +921,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
 
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showStates(getContainer()))
             {
                 String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
                 String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
@@ -962,7 +966,7 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("User does not have read permission on this report.");
             }
-            else if (report == null && !def.canRead(getUser()))
+            else if (report == null && (null==table || !table.hasPermission(getUser(),ReadPermission.class)))
             {
                 return new HtmlView("User does not have read permission on this dataset.");
             }
@@ -1561,6 +1565,35 @@ public class StudyController extends BaseStudyController
             setHelpTopic("manageStudy");
             _addManageStudy(root);
             root.addChild("Study Properties");
+        }
+
+        @Override
+        public void validateForm(TableViewForm form, Errors errors)
+        {
+            // Issue 43898: Validate that the subject column name is not a user defined field in one of the datasets
+            String subjectColName = form.get("SubjectColumnName");
+            if (null != subjectColName)
+            {
+                Study study = StudyService.get().getStudy(getContainer());
+                if (null != study)
+                {
+                    for (Dataset dataset : study.getDatasets())
+                    {
+                        Domain domain = dataset.getDomain();
+                        if (null != domain)
+                        {
+                            for (DomainProperty property : domain.getProperties())
+                            {
+                                if (property.getName().equalsIgnoreCase(subjectColName))
+                                {
+                                    errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ". ");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         @Override
@@ -2394,6 +2427,7 @@ public class StudyController extends BaseStudyController
         private ImportDatasetForm _form = null;
         private StudyImpl _study = null;
         private DatasetDefinition _def = null;
+        private TableInfo _table = null;
 
         @Override
         protected void initRequest(ImportDatasetForm form) throws ServletException
@@ -2414,27 +2448,28 @@ public class StudyController extends BaseStudyController
             if (null == _def.getTypeURI())
                 return;
 
+
             User user = getUser();
             // Go through normal getTable() codepath to be sure all metadata is applied
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
-            if (t == null)
+            _table = StudyQuerySchema.createSchema(_study, user).getDatasetTable(_def, null);
+            if (_table == null)
                 throw new NotFoundException("Dataset not found");
-            setTarget(t);
+            setTarget(_table);
 
-            if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
+            if (!_table.hasPermission(user, InsertPermission.class) && getUser().isGuest())
                 throw new UnauthorizedException();
         }
 
         @Override
         protected boolean canInsert(User user)
         {
-            return _def.canInsert(user);
+            return _table.hasPermission(user, InsertPermission.class);
         }
 
         @Override
         protected boolean canUpdate(User user)
         {
-            return _def.canUpdate(user);
+            return _table.hasPermission(user, UpdatePermission.class);
         }
 
         @Override
@@ -2557,7 +2592,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
+            setHelpTopic("DatasetBulkDefinition");
             _addNavTrailDatasetAdmin(root);
             root.addChild("Bulk Import");
         }
@@ -2765,13 +2800,13 @@ public class StudyController extends BaseStudyController
 
             if (def != null)
             {
-                final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
+                final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
                 DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
                     //requiresLogin();
-                    view.addView(new HtmlView("User does not have read permission on this dataset."));
+                    view.addView(new HtmlView(HtmlString.of("User does not have read permission on this dataset.")));
                 }
                 else
                 {
@@ -2818,72 +2853,78 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(DeletePermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
+        private DatasetDefinition _def;
+        private Collection<String> _allLsids;
+        private MultiValuedMap<String,Pair<String,Integer>> _sourceLsidToLsidPair;
+        private Integer _sourceRowId = null;
+
         @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
-        }
-
-        @Override
-        public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
-        {
-            final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
-            if (def == null)
-                throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
-
-            Collection<String> allLsids;
-            if (!form.isDeleteAllData())
+            _def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), target.getDatasetId());
+            if (_def == null)
+                throw new IllegalArgumentException("Could not find a dataset definition for id: " + target.getDatasetId());
+            if (!target.isDeleteAllData())
             {
-                allLsids = DataRegionSelection.getSelected(getViewContext(), true);
+                _allLsids = DataRegionSelection.getSelected(getViewContext(), true);
 
-                if (allLsids.isEmpty())
+                if (_allLsids.isEmpty())
                 {
                     errors.reject("deletePublishedRows", "No rows were selected");
-                    return false;
                 }
             }
             else
             {
-                allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
+                _allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), _def);
             }
 
-            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
-
             // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
-            MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
-            List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
-            Integer sourceRowId = null;
+            _sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
+            List<Integer> rowIds = new ArrayList<>();
+            List<Map<String,Object>> data = _def.getDatasetRows(getUser(), _allLsids);
+
             for (Map<String,Object> row : data)
             {
                 String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
                 String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
                 Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
+                rowIds.add(rowId);
                 if (sourceLSID != null && datasetRowLsid != null)
-                {
-                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
-                }
+                    _sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
 
-                if (sourceRowId == null && rowId != null)
-                    sourceRowId = rowId;
+                if (_sourceRowId == null && rowId != null)
+                    _sourceRowId = rowId;
             }
 
-            Dataset.PublishSource publishSource = def.getPublishSource();
+            String errorMsg = StudyPublishService.get().checkForLockedLinks(_def, rowIds);
+            if (!StringUtils.isEmpty(errorMsg))
+                errors.reject(ERROR_MSG, errorMsg);
+        }
+
+        @Override
+        public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
+        {
+            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
+
+            Dataset.PublishSource publishSource = _def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : sourceLsidToLsidPair.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : _sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
                     Collection<Pair<String, Integer>> pairs = entry.getValue();
-                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, sourceRowId);
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, _sourceRowId);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), _def, pairs.size(), pairs);
                 }
             }
-            def.deleteDatasetRows(getUser(), allLsids);
+
+            _def.deleteDatasetRows(getUser(), _allLsids);
 
             // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
             if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, sourceRowId);
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, _sourceRowId);
                 if (container != null)
                     throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
@@ -2949,11 +2990,14 @@ public class StudyController extends BaseStudyController
         {
             int datasetId = form.getDatasetId();
             StudyImpl study = getStudyThrowIfNull();
-            Dataset dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-            if (null == dataset)
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
+            DatasetDefinition dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            TableInfo datasetTable = null==dataset ? null : schema.getDatasetTable(dataset, null);
+
+            if (null == dataset || null == datasetTable)
                 throw new NotFoundException();
 
-            if (!dataset.canDelete(getUser()))
+            if (!datasetTable.hasPermission(getUser(), DeletePermission.class))
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
@@ -2965,9 +3009,6 @@ public class StudyController extends BaseStudyController
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
-
-                StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
-                TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset, null);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
@@ -3242,7 +3283,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
 
-            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, context.getUser());
             QuerySettings qs = querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
             qs.setViewName(viewName);
 
@@ -3315,7 +3356,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
+    public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultPipelineQCState;
         private Integer _defaultPublishDataQCState;
@@ -3409,7 +3450,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler)
+        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
         {
             _study = StudyController.getStudyThrowIfNull(container);
 
@@ -3437,7 +3478,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
+        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
             panelHtml.append("  <table class=\"lk-fields-table\">");
@@ -3462,22 +3503,22 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
+    public class DeleteQCStateAction extends AbstractDeleteDataStateAction
     {
         public DeleteQCStateAction()
         {
             super();
-            _qcStateHandler = new StudyQCStateHandler();
+            _dataStateHandler = new StudyQCStateHandler();
         }
 
         @Override
-        public QCStateHandler getQCStateHandler()
+        public DataStateHandler getDataStateHandler()
         {
-            return _qcStateHandler;
+            return _dataStateHandler;
         }
 
         @Override
-        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        public ActionURL getSuccessURL(DeleteDataStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
@@ -3598,7 +3639,7 @@ public class StudyController extends BaseStudyController
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
-            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
+            StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
 
             qs.setSchemaName(querySchema.getSchemaName());
@@ -3643,10 +3684,10 @@ public class StudyController extends BaseStudyController
                 return false;
             Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
-            QCState newState = null;
+            DataState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
+                newState = QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
@@ -3667,7 +3708,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(Dataset.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
+                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
         }
 
@@ -3860,7 +3901,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customViews"));
+            setHelpTopic("customViews");
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3991,8 +4032,8 @@ public class StudyController extends BaseStudyController
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
-            File studyFile = form.getValidatedSingleFile(c);
-            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyFile, true, null, false);
+            Path studyPath = form.getValidatedSinglePath(c);
+            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyPath, true, null, false);
         }
 
         @Override
@@ -4249,8 +4290,9 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
+            var sqs = StudyQuerySchema.createSchema(_study, getUser());
             Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
-            for (Dataset def : _study.getDatasets())
+            for (DatasetDefinition def : _study.getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4258,14 +4300,17 @@ public class StudyController extends BaseStudyController
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.shared = def.isShared();
-                data.inherited = ((DatasetDefinition)def).isInherited();
+                data.inherited = def.isInherited();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
                 if ("None".equals(data.status))
                     data.status = null;
-                TableInfo t = def.getTableInfo(getViewContext().getUser(), false, _study.isDataspaceStudy());
-                long rowCount = new TableSelector(t).getRowCount();
-                data.rowCount = rowCount;
-                data.empty = 0 == rowCount;
+                DatasetTable t = sqs.getDatasetTable(def, null);
+                if (null != t)
+                {
+                    long rowCount = new TableSelector(t).getRowCount();
+                    data.rowCount = rowCount;
+                    data.empty = 0 == rowCount;
+                }
                 bean.put(def.getDatasetId(), data);
             }
 
@@ -4645,7 +4690,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresAllOf({AdminPermission.class, BrowserDeveloperPermission.class})
     public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
     {
         @Override
@@ -4656,9 +4701,6 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors)
         {
-            // We know that the user is at least a folder admin - they must also be either a developer
-            if (!getUser().isPlatformDeveloper())
-                throw new UnauthorizedException();
             Study study = getStudyRedirectIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
@@ -5299,7 +5341,7 @@ public class StudyController extends BaseStudyController
         @Override
         public Map<String, String> getAliases()
         {
-            return aliases;
+            return null == aliases ? Map.of() : aliases;
         }
 
         @Override
@@ -6099,7 +6141,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No LSID specified");
             }
 
-            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser());
 
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
             assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";

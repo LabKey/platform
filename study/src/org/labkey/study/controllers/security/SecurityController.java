@@ -43,7 +43,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -105,7 +104,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            setHelpTopic(new HelpTopic("studySecurity"));
+            setHelpTopic("studySecurity");
             StudyImpl study = BaseStudyController.getStudyRedirectIfNull(getContainer());
             return new Overview(study);
         }
@@ -500,7 +499,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors)
         {
-            setHelpTopic(new HelpTopic("reportPermissions"));
+            setHelpTopic("reportPermissions");
             return new ReportPermissionsTabStrip(form);
         }
 
@@ -754,21 +753,18 @@ public class SecurityController extends SpringActionController
 
             JspView<StudyImpl> studySecurityView = new JspView<>("/org/labkey/study/security/studySecurity.jsp", study);
 
-            Pair<StudyImpl, ActionURL> pair = new Pair<>(study, returnUrl);
-            JspView<Pair<StudyImpl, ActionURL>> studyView = new JspView<>("/org/labkey/study/security/study.jsp", pair);
-            studyView.setTitle("Study Security");
-
-            JspView<Pair<StudyImpl, ActionURL>> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", pair);
-            dsView.setTitle("Per Dataset Permissions");
-
-            JspView<StudyImpl> siteView = new JspView<>("/org/labkey/study/security/locations.jsp", study);
-            siteView.setTitle("Restricted Dataset Permissions (per Location)");
-
             VBox v = new VBox();
             v.addView(studySecurityView);
+
             if (study.getSecurityType() == SecurityType.ADVANCED_READ || study.getSecurityType() == SecurityType.ADVANCED_WRITE)
             {
+                Pair<StudyImpl, ActionURL> pair = new Pair<>(study, returnUrl);
+                JspView<Pair<StudyImpl, ActionURL>> studyView = new JspView<>("/org/labkey/study/security/study.jsp", pair);
+                studyView.setTitle("Study Security");
                 v.addView(studyView);
+
+                JspView<Pair<StudyImpl, ActionURL>> dsView = new JspView<>("/org/labkey/study/security/datasets.jsp", pair);
+                dsView.setTitle("Per Dataset Permissions");
                 v.addView(dsView);
             }
 

@@ -35,8 +35,10 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -44,7 +46,11 @@ import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -81,6 +87,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String FILES_TABLE_NAME = "Files";
     public static final String QCSTATE_TABLE_NAME = "QCState";
+    public static final String DATA_STATES_TABLE_NAME = "DataStates";
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
@@ -112,7 +119,7 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
+            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -159,7 +166,9 @@ public class CoreQuerySchema extends UserSchema
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
-            return getQCStateTable();
+           return getQCStatesTable();
+        if (DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
+            return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
@@ -434,14 +443,35 @@ public class CoreQuerySchema extends UserSchema
             if (_projectUserIds == null)
             {
                 _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
 
+                // add all Site Admin group members
+                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
                 _projectUserIds.addAll(
                     SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
                         .stream()
                         .map(UserPrincipal::getUserId)
                         .collect(Collectors.toList())
                 );
+
+                // add all user with root container ApplicationAdminRole or SiteAdminRole assignments
+                for (Role adminRole : Set.of(RoleManager.getRole(SiteAdminRole.class), RoleManager.getRole(ApplicationAdminRole.class)))
+                {
+                    SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
+                    List<RoleAssignment> assignments = rootContainerPolicy.getAssignments().stream()
+                            .filter(assignment -> adminRole.equals(assignment.getRole())).collect(Collectors.toList());
+                    assignments.forEach(assignment -> {
+                        Group assignedGroup = SecurityManager.getGroup(assignment.getUserId());
+                        if (assignedGroup != null)
+                            _projectUserIds.addAll(
+                                    SecurityManager.getAllGroupMembers(assignedGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
+                                            .stream()
+                                            .map(UserPrincipal::getUserId)
+                                            .collect(Collectors.toList())
+                            );
+
+                        _projectUserIds.add(assignment.getUserId());
+                    });
+                }
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);
@@ -624,9 +654,24 @@ public class CoreQuerySchema extends UserSchema
         return new FileListTableInfo(this);
     }
 
-    protected TableInfo getQCStateTable()
+    protected TableInfo getDataStatesTable()
     {
-        return new QCStateTableInfo(this);
+        return new DataStatesTableInfo(this);
+    }
+
+    public TableInfo getQCStatesTable()
+    {
+        TableInfo dataStatesTable = getDataStatesTable();
+        FilteredTable table = new FilteredTable<>(dataStatesTable, this);
+        SQLFragment sql = new SQLFragment("(stateType IS NULL)");
+        table.setName(QCSTATE_TABLE_NAME);
+
+        table.addCondition(sql);
+        table.addWrapColumn(dataStatesTable.getColumn("RowId"));
+        table.addWrapColumn(dataStatesTable.getColumn("Label"));
+        table.addWrapColumn(dataStatesTable.getColumn("Description"));
+        table.addWrapColumn(dataStatesTable.getColumn("PublicData"));
+        return table;
     }
 
     protected void addNullSetFilter(FilteredTable table)
@@ -640,7 +685,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
     @Override
-    protected boolean canReadSchema()
+    public boolean canReadSchema()
     {
         SecurityLogger.indent("CoreQuerySchema.canReadSchema()");
         try

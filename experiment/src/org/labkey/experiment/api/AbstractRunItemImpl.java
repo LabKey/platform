@@ -15,13 +15,17 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
@@ -33,6 +37,7 @@ import org.labkey.api.security.UserManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -271,5 +276,39 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         sql.append(" = ?)");
         sql.add(getRowId());
         return ExpRunImpl.fromRuns(new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ExperimentRun.class));
+    }
+
+    protected HashMap<String,ObjectProperty> getObjectProperties(TableInfo ti)
+    {
+        HashMap<String,ObjectProperty> ret = new HashMap<>();
+        if (null != ti)
+        {
+            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
+            {
+                for (ColumnInfo c : ti.getColumns())
+                {
+                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
+                        continue;
+                    if (c.isMvIndicatorColumn())
+                        continue;
+                    Object value = c.getValue(rs);
+                    String mvIndicator = null;
+                    if (null != c.getMvColumnName())
+                    {
+                        ColumnInfo mv = ti.getColumn(c.getMvColumnName());
+                        mvIndicator = null==mv ? null : (String)mv.getValue(rs);
+                    }
+                    if (null == value && null == mvIndicator)
+                        continue;
+                    if (null != mvIndicator)
+                        value = null;
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
+                    if (null != mvIndicator)
+                        prop.setMvIndicator(mvIndicator);
+                    ret.put(c.getPropertyURI(), prop);
+                }
+            });
+        }
+        return ret;
     }
 }

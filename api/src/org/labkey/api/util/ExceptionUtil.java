@@ -263,6 +263,15 @@ public class ExceptionUtil
                 }
             }
 
+            if (t instanceof DeadlockPreventingException)
+            {
+                String extraSqlInfo = CoreSchema.getInstance().getSqlDialect().getOtherDatabaseThreads();
+                if (extraSqlInfo != null)
+                {
+                    extraInfo = extraSqlInfo;
+                }
+            }
+
             if (sqlState != null)
                 break;
         }

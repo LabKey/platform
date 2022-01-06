@@ -54,6 +54,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static org.labkey.study.query.StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME;
+
 public class SpecimenSummaryTable extends BaseStudyTable
 {
     final ColumnInfo _participantidColumn;
@@ -63,7 +65,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
     public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf,true);
-        setName("SpecimenSummary");
+        setName(SPECIMEN_SUMMARY_TABLE_NAME);
 
         _participantidColumn = addWrapParticipantColumn("PTID");
         addContainerColumn(true);

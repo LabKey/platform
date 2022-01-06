@@ -22,6 +22,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -83,6 +84,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     private static final String XAR_TYPES_XML_NAME = XAR_TYPES_NAME + ".xml";
     private static final String XAR_RUNS_XML_NAME = XAR_RUNS_NAME + ".xml";
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
+    public static final String SAMPLE_STATUS_PREFIX = "SAMPLE_STATUS_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
     private PHI _exportPhiLevel = PHI.NotPHI;
     private XarExportContext _xarCtx;
@@ -224,25 +226,21 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 TableInfo tinfo = userSchema.getTable(sampleType.getName());
                 if (tinfo != null)
                 {
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
+
+                    // filter only to the specific samples
+                    if (_xarCtx != null && _xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
+                        filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedSamples().get(sampleType.getRowId()));
+
+                    // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
+                    Sort sort = new Sort(FieldKey.fromParts("RowId"));
+
                     Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
 
                     if (!columns.isEmpty())
-                    {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
+                        writeTsv(tinfo, columns, filter, sort, dir, SAMPLE_TYPE_PREFIX + sampleType.getName());
 
-                        // filter only to the specific samples
-                        if (_xarCtx != null && _xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
-                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedSamples().get(sampleType.getRowId()));
-
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
-                        {
-                            tsvWriter.setApplyFormats(false);
-                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = dir.getPrintWriter(SAMPLE_TYPE_PREFIX + sampleType.getName() + ".tsv");
-                            tsvWriter.write(out);
-                        }
-                    }
+                    writeTsv(tinfo, getStatusColumnsToExport(tinfo), filter, sort, dir, SAMPLE_STATUS_PREFIX + sampleType.getName());
                 }
             }
         }
@@ -265,24 +263,64 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     {
                         SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
 
-                        // filter only to the specific samples
+                        // filter only to the specific data
                         if (_xarCtx != null && _xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
                             filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()));
 
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
-                        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
-                        {
-                            tsvWriter.setApplyFormats(false);
-                            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
-                            PrintWriter out = dir.getPrintWriter(DATA_CLASS_PREFIX + dataClass.getName() + ".tsv");
-                            tsvWriter.write(out);
-                        }
+                        // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
+                        writeTsv(tinfo, columns, filter, new Sort(FieldKey.fromParts("RowId")), dir, DATA_CLASS_PREFIX + dataClass.getName());
 
                         writeAttachments(ctx.getContainer(), tinfo, dir);
                     }
                 }
             }
         }
+    }
+
+    private void writeTsv(TableInfo tinfo, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, VirtualFile dir, String baseName) throws IOException
+    {
+        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
+        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
+        {
+            tsvWriter.setApplyFormats(false);
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.FieldKey);
+            PrintWriter out = dir.getPrintWriter(baseName + ".tsv");
+            tsvWriter.write(out);
+        }
+    }
+
+    private ColumnInfo getAliquotedFromNameColumn(TableInfo tinfo)
+    {
+        ColumnInfo col = tinfo.getColumn(FieldKey.fromParts(ExpMaterialTable.Column.AliquotedFromLSID.name()));
+        AliasedColumn aliquotedAlias = new AliasedColumn(tinfo, "AliquotedFrom", col);
+        aliquotedAlias.setDisplayColumnFactory(NameFromLsidDataColumn::new);
+        return aliquotedAlias;
+    }
+
+    private Collection<ColumnInfo> getStatusColumnsToExport(TableInfo tinfo)
+    {
+        List<ColumnInfo> columns = new ArrayList<>();
+
+        // Name
+        FieldKey nameFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Name.name());
+        ColumnInfo col = tinfo.getColumn(nameFieldKey);
+        MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+        wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+        columns.add(wrappedCol);
+
+        // SampleState
+        // substitute the Label value for the RowId lookup value
+        FieldKey statusFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.SampleState.name(), "Label");
+        Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(statusFieldKey));
+        ColumnInfo statusAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.SampleState.name(), select.get(statusFieldKey));
+
+        columns.add(statusAlias);
+
+        // In order to update status values for Aliquots, the AliquotedFrom field, which is the
+        // name of the aliquot's parent, must be present.  We get the name from the LSID.
+        columns.add(getAliquotedFromNameColumn(tinfo));
+
+        return columns;
     }
 
     private Collection<ColumnInfo> getColumnsToExport(ImportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
@@ -298,9 +336,14 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             if (!isExportable(col))
                 continue;
 
-            if (basePropNames.contains(col.getName())
+            if ((basePropNames.contains(col.getName())
                     && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(col.getName())
                     && !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()))
+                    || ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName())
+                    // don't include sample state here so the sample type data and then all related
+                    // runs, storage info, etc. can be imported without sample state restrictions.
+                    // SampleState is exported and imported from a separate file.
+            )
             {
                 continue;
             }
@@ -332,6 +375,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
                 // CONSIDER: Alternate strategy would be to export the lookup target values?
                 ctx.getLogger().info("Skipping multi-value column: " + col.getName());
+            }
+            else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
+            {
+                // In order to reimport Aliquots, the AliquotedFrom field, which is the
+                // name of the aliquot's parent, must be present.  We get the name from the LSID.
+                ColumnInfo wrappedCol = getAliquotedFromNameColumn(tinfo);
+                columns.put(col.getFieldKey(), wrappedCol);
             }
             else if (col.isKeyField() ||
                     ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
@@ -489,6 +539,25 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
 
         abstract Collection<String> getAliases(String lsid);
+    }
+
+    private static class NameFromLsidDataColumn extends ExportDataColumn
+    {
+        private NameFromLsidDataColumn(ColumnInfo col) { super(col); }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            String lsid = (String) super.getValue(ctx);
+            if (lsid == null)
+                return null;
+
+            String[] parts = lsid.split(":");
+            if (parts.length == 0)
+                return null;
+
+            return parts[parts.length-1];
+        }
     }
 
     private static class ExportDataColumn extends DataColumn

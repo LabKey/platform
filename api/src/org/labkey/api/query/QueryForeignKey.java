@@ -27,6 +27,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
@@ -54,7 +55,7 @@ public class QueryForeignKey extends AbstractForeignKey
     QuerySchema _schema;
     boolean _useRawFKValue;
     LookupColumn.JoinType _joinType = LookupColumn.JoinType.leftOuter;
-
+    DetailsURL _url;
 
     /* There are (were) way too many QueryForeignKey constructors, that's a sign we need a builder */
     public static class Builder implements org.labkey.api.data.Builder<ForeignKey>
@@ -77,6 +78,8 @@ public class QueryForeignKey extends AbstractForeignKey
         // display
         String displayField = null;
         boolean useRawFKValue = false;
+
+        DetailsURL url;
 
         // for deprecated constructors only
         private Builder()
@@ -177,6 +180,12 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
+        public Builder url(DetailsURL url)
+        {
+            this.url = url;
+            return this;
+        }
+
 //        public Builder setLookupKey(String name)
 //        {
 //            this.lookupKey = name;
@@ -244,6 +253,7 @@ public class QueryForeignKey extends AbstractForeignKey
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
         _schema = builder.targetSchema;
+        _url = builder.url;
         // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
         // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
     }
@@ -375,7 +385,10 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         if (_table == null && getSchema() != null)
         {
-            _table = getSchema().getTable(_tableName, getLookupContainerFilter());
+            TableInfo t = getSchema().getTable(_tableName, getLookupContainerFilter());
+            if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
+                t = null;
+            _table = t;
         }
         return _table;
     }
@@ -400,6 +413,10 @@ public class QueryForeignKey extends AbstractForeignKey
         TableInfo table = getLookupTableInfo();
         if (table == null)
             return null;
+
+        if (_url != null)
+            return _url;
+
         return LookupForeignKey.getDetailsURL(parent, table, getLookupColumnName());
     }
 

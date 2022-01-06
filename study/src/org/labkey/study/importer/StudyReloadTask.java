@@ -65,7 +65,7 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
             if (params.containsKey(FAIL_FOR_UNDEFINED_VISITS))
                 options.setFailForUndefinedVisits(BooleanUtils.toBoolean(params.get(FAIL_FOR_UNDEFINED_VISITS)));
 
-            options.setAnalysisDir(support.getDataDirectory());
+            options.setAnalysisDir(support.getDataDirectoryPath());
             StudyReload.ReloadStatus status = reloadTask.attemptTriggeredReload(options, "a configured study reload filewatcher");
             job.setStatus(status.getMessage());
         }

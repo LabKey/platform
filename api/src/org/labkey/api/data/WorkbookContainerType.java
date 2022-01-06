@@ -97,6 +97,12 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
+    public boolean includeInAPIResponse()
+    {
+        return true;
+    }
+
+    @Override
     public boolean isConvertibleToTab()
     {
         return false;

@@ -94,8 +94,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -117,7 +117,6 @@ import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -213,7 +212,7 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(ProtocolIdForm o, BindException errors)
         {
-            setHelpTopic(new HelpTopic("adminAssays"));
+            setHelpTopic("adminAssays");
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 
@@ -325,6 +324,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("containerPath", protocol.getContainer().getPath());
         assayProperties.put("name", protocol.getName());
         assayProperties.put("id", protocol.getRowId());
+        assayProperties.put("status", protocol.getStatus());
         assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
@@ -522,7 +522,7 @@ public class AssayController extends SpringActionController
             HtmlView bbar = new HtmlView(
                     PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));
-            setHelpTopic(new HelpTopic("manageAssayDesign"));
+            setHelpTopic("manageAssayDesign");
             return new VBox(bbar, fileTree, bbar);
         }
 
@@ -734,7 +734,7 @@ public class AssayController extends SpringActionController
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
-            setHelpTopic(new HelpTopic("defineAssaySchema"));
+            setHelpTopic("defineAssaySchema");
         }
     }
 
@@ -1477,7 +1477,7 @@ public class AssayController extends SpringActionController
                 if (expRun != null)
                 {
                     response.put("success", true);
-                    QCState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
+                    DataState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
                     if (state != null)
                     {
                         response.put("qcState", PageFlowUtil.map("label", state.getLabel(), "rowId", state.getRowId()));
@@ -1626,7 +1626,7 @@ public class AssayController extends SpringActionController
 
                 if (run != null)
                 {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), form.getState());
+                    DataState state = DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), form.getState());
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }

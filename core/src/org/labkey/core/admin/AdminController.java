@@ -205,6 +205,7 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -267,6 +268,7 @@ import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
+import static org.labkey.api.util.logging.LogHelper.getLabKeyLogDir;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
@@ -284,6 +286,7 @@ public class AdminController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         AdminController.class,
         FilesSiteSettingsAction.class,
+        UpdateFilePathsAction.class,
         FileListAction.class
     );
 
@@ -293,6 +296,7 @@ public class AdminController extends SpringActionController
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
+    private static long _primaryLogMark = 0;
 
     public static void registerAdminConsoleLinks()
     {
@@ -428,7 +432,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
+            return new JspView<>("/org/labkey/core/admin/admin.jsp");
         }
 
         @Override
@@ -438,7 +442,7 @@ public class AdminController extends SpringActionController
             if (null != returnUrl)
                 root.addChild("Return to Project", returnUrl);
             root.addChild("Admin Console");
-            getPageConfig().setHelpTopic(new HelpTopic("siteManagement"));
+            setHelpTopic("siteManagement");
         }
     }
 
@@ -1473,7 +1477,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
+            setHelpTopic("siteValidation");
             addAdminNavTrail(root, "Site Validation", this.getClass());
         }
     }
@@ -1538,6 +1542,16 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultNumberFormat(String defaultNumberFormat);
 
+        String getExtraDateParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraDateParsingPattern(String extraDateParsingPattern);
+
+        String getExtraDateTimeParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
+
         boolean areRestrictedColumnsEnabled();
 
         @SuppressWarnings("UnusedDeclaration")
@@ -1591,6 +1605,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
@@ -1821,6 +1837,30 @@ public class AdminController extends SpringActionController
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        @Override
+        public String getExtraDateParsingPattern()
+        {
+            return _extraDateParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
+        {
+            _extraDateParsingPattern = extraDateParsingPattern;
+        }
+
+        @Override
+        public String getExtraDateTimeParsingPattern()
+        {
+            return _extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
+        {
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -2297,7 +2337,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("dumpDebugging#threads"));
+            setHelpTopic("dumpDebugging#threads");
             addAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
@@ -2315,7 +2355,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
+            setHelpTopic("dumpHeap");
             addAdminNavTrail(root, "Heap dump", getClass());
         }
     }
@@ -2466,23 +2506,50 @@ public class AdminController extends SpringActionController
         }
     }
 
+
+    @AdminConsoleAction(ApplicationAdminPermission.class)
+    public class ResetPrimaryLogMarkAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            File logFile = getPrimaryLogFile();
+            _primaryLogMark = logFile.length();
+            return null;
+        }
+    }
+
+
     @AdminConsoleAction
-    public class ShowPrimaryLogAction extends ExportAction
+    public class ShowPrimaryLogSinceMarkAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            PageFlowUtil.streamLogFile(response, _primaryLogMark, getPrimaryLogFile());
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class ShowPrimaryLogAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
-            File tomcatHome = new File(System.getProperty("catalina.home"));
-            File logFile = new File(tomcatHome, "logs/labkey.log");
-            PageFlowUtil.streamLogFile(response, 0, logFile);
+            PageFlowUtil.streamLogFile(response, 0, getPrimaryLogFile());
         }
     }
 
     private File getErrorLogFile()
     {
-        File tomcatHome = new File(System.getProperty("catalina.home"));
-        return new File(tomcatHome, "logs/labkey-errors.log");
+        return new File(getLabKeyLogDir(), "labkey-errors.log");
+    }
+
+    private File getPrimaryLogFile()
+    {
+        return new File(getLabKeyLogDir(), "labkey.log");
     }
 
     private static ActionURL getActionsURL()
@@ -2492,7 +2559,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ActionsAction extends SimpleViewAction
+    public class ActionsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2503,7 +2570,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("actionsDiagnostics"));
+            setHelpTopic("actionsDiagnostics");
             addAdminNavTrail(root, "Actions", this.getClass());
         }
     }
@@ -2573,7 +2640,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("queryPerf"));
+            setHelpTopic("queryPerf");
             addAdminNavTrail(root, "Queries", this.getClass());
         }
     }
@@ -2887,7 +2954,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("cachesDiagnostics"));
+            setHelpTopic("cachesDiagnostics");
             addAdminNavTrail(root, "Cache Statistics", this.getClass());
         }
     }
@@ -3219,7 +3286,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("memTracker"));
+            setHelpTopic("memTracker");
             addAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
         }
     }
@@ -3310,7 +3377,7 @@ public class AdminController extends SpringActionController
                     if (labkeyThread)
                     {
                         String threadInfo = thread.getName();
-                        String uri = ViewServlet.getRequestURL(thread);
+                        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
                         if (null != uri)
                             threadInfo += "; processing URL " + uri;
                         activeThreads.add(threadInfo);
@@ -3631,7 +3698,7 @@ public class AdminController extends SpringActionController
 
             getPageConfig().setTemplate(Template.Wizard);
             getPageConfig().setTitle(bean.verb + " Modules");
-            getPageConfig().setHelpTopic(new HelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade"));
+            setHelpTopic(ModuleLoader.getInstance().isNewInstall() ? "config" : "upgrade");
 
             return vbox;
         }
@@ -4311,10 +4378,9 @@ public class AdminController extends SpringActionController
                     form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                     form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-            switch(form.getLocation())
+            switch (form.getLocation())
             {
-                case 0:
-                {
+                case 0 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4331,16 +4397,14 @@ public class AdminController extends SpringActionController
                         {
                             writer.write(container, ctx, new FileSystemFile(exportDir));
                         }
-                        catch (Container.ContainerException e)
+                        catch (ContainerException e)
                         {
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
                         _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
-                    break;
                 }
-                case 1:
-                {
+                case 1 -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4348,36 +4412,53 @@ public class AdminController extends SpringActionController
                     }
                     Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
                     Files.createDirectories(exportDir);
-                    try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
-                    {
-                        writer.write(container, ctx, zip);
-                    }
-                    catch (Container.ContainerException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    }
+                    exportFolderToFile(exportDir, container, writer, ctx, errors);
                     _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                    break;
                 }
-                case 2:
-                {
+                case 2 -> {
                     try
                     {
-                        ContainerManager.checkContainerValidity(container);
-                        try (ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
+                        ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
+
+                        // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+                        // Same pattern as ExportListArchiveAction
+                        Path tempDir = FileUtil.getTempDirectory().toPath();
+                        Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
+
+                        // No exceptions, so stream the resulting zip file to the browser and delete it
+                        try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
                         {
-                            writer.write(container, ctx, zip);
+                            Files.copy(tempZipFile, os);
+                        }
+                        finally
+                        {
+                            Files.delete(tempZipFile);
                         }
                     }
-                    catch (Container.ContainerException e)
+                    catch (ContainerException e)
                     {
                         errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                     }
-                    break;
                 }
             }
 
             return !errors.hasErrors();
+        }
+
+        private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
+        {
+            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+
+            try (ZipFile zip = new ZipFile(exportDir, filename))
+            {
+                writer.write(container, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return exportDir.resolve(filename);
         }
 
         @Override
@@ -4487,6 +4568,11 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(ImportFolderForm form, Errors errors)
         {
+            // don't allow import into the root container
+            if (getContainer().isRoot())
+            {
+                throw new NotFoundException();
+            }
         }
 
         @Override
@@ -4498,23 +4584,12 @@ public class AdminController extends SpringActionController
             Container container = getContainer();
             PipeRoot pipelineRoot;
             boolean isStudy = false;
-            File archiveXml;
-            File pipelineUnzipDir;
-            File pipelineUnzipFile;
+            Path pipelineUnzipDir;  // Should be local & writable
             PipelineUrls pipelineUrlProvider;
-            String originalFileName;
-            File archiveFile;
-            boolean fromTemplateSourceFolder;
 
             if (form.getOrigin() == null)
             {
                 form.setOrigin("Folder");
-            }
-
-            // don't allow import into the root container
-            if (container.isRoot())
-            {
-                throw new NotFoundException();
             }
 
             // make sure we have a pipeline url provider to use for the success URL redirect
@@ -4536,7 +4611,7 @@ public class AdminController extends SpringActionController
             // make sure we are able to delete any existing unzip dir in the pipeline root
             try
             {
-                pipelineUnzipDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                pipelineUnzipDir = pipelineRoot.deleteImportDirectory(null);
             }
             catch (DirectoryNotDeletedException e)
             {
@@ -4544,90 +4619,28 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
+            FolderImportConfig fiConfig;
             if (!StringUtils.isEmpty(form.getSourceTemplateFolder()))
             {
-                // user choose to import from a template source folder
-
-                Container sourceContainer = form.getSourceTemplateFolderContainer();
-
-                // In order to support the Advanced import options to import into multiple target folders we need to zip
-                // the source template folder so that the zip file can be passed to the pipeline processes.
-                FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
-                        getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
-                        PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
-                FolderWriterImpl writer = new FolderWriterImpl();
-                String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
-                try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
-                {
-                    writer.write(sourceContainer, ctx, zip);
-                }
-                catch (Container.ContainerException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                }
-                File implicitZipFile = new File(pipelineUnzipDir, zipFileName);
-
-                // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
-                ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
-
-                fromTemplateSourceFolder = StringUtils.isNotEmpty(form.getSourceTemplateFolderId());
-                originalFileName = implicitZipFile.getName();
-                archiveFile = implicitZipFile;
+                fiConfig = getFolderImportConfigFromTemplateFolder(form, pipelineUnzipDir, errors);
             }
             else
             {
-                // user chose to import from a zip file
-
-                Map<String, MultipartFile> map = getFileMap();
-
-                // make sure we have a single file selected for import
-                if (map.isEmpty() || map.size() > 1)
+                fiConfig = getFolderFromZipArchive(pipelineUnzipDir, errors);
+                if (fiConfig == null || errors.hasErrors())
                 {
-                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                     return false;
                 }
-
-                // make sure the file is not empty and that it has a .zip extension
-                MultipartFile zipFile = map.values().iterator().next();
-                if (0 == zipFile.getSize() || isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
-                {
-                    errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
-                    return false;
-                }
-
-                // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
-                try
-                {
-                    pipelineUnzipFile = new File(pipelineUnzipDir, zipFile.getOriginalFilename());
-                    pipelineUnzipFile.getParentFile().mkdirs();
-                    pipelineUnzipFile.createNewFile();
-                    FileUtil.copyData(zipFile.getInputStream(), pipelineUnzipFile);
-                    ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
-                }
-                catch (FileNotFoundException e)
-                {
-                    errors.reject("folderImport", "File not found.");
-                    return false;
-                }
-                catch (IOException e)
-                {
-                    errors.reject("folderImport", "This file does not appear to be a valid zip archive file.");
-                    return false;
-                }
-
-                fromTemplateSourceFolder = false;
-                originalFileName = zipFile.getOriginalFilename();
-                archiveFile = pipelineUnzipFile;
             }
 
             // get the main xml file from the unzipped import archive
-            archiveXml = new File(pipelineUnzipDir, "folder.xml");
-            if (!archiveXml.exists())
+            Path archiveXml = pipelineUnzipDir.resolve("folder.xml");
+            if (!Files.exists(archiveXml))
             {
-                archiveXml = new File(pipelineUnzipDir, "study.xml");
+                archiveXml = pipelineUnzipDir.resolve( "study.xml");
                 isStudy = true;
             }
-            if (!archiveXml.exists())
+            if (!Files.exists(archiveXml))
             {
                 errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
                 return false;
@@ -4643,18 +4656,119 @@ public class AdminController extends SpringActionController
             if (form.isAdvancedImportOptions())
             {
                 // archiveFile is the zip of the source template folder located in the current container's unzip dir
-                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), archiveFile, isStudy, options, fromTemplateSourceFolder);
+                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), fiConfig.archiveFile, isStudy, options, fiConfig.fromTemplateSourceFolder);
                 return true;
             }
 
             // finally, create the study or folder import pipeline job
             _successURL = pipelineUrlProvider.urlBegin(container);
             if (isStudy)
-                StudyService.get().runStudyImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+                StudyService.get().runStudyImportJob(container, user, url, archiveXml, fiConfig.originalFileName, errors, pipelineRoot, options);
             else
-                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, originalFileName, errors, pipelineRoot, options);
+                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, errors, pipelineRoot, options);
 
             return !errors.hasErrors();
+        }
+
+        private @Nullable FolderImportConfig getFolderFromZipArchive(Path pipelineUnzipDir, BindException errors)
+        {
+            // user chose to import from a zip file
+            Map<String, MultipartFile> map = getFileMap();
+
+            // make sure we have a single file selected for import
+            if (map.isEmpty() || map.size() > 1)
+            {
+                errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
+                return null;
+            }
+
+            // make sure the file is not empty and that it has a .zip extension
+            MultipartFile zipFile = map.values().iterator().next();
+            if (0 == zipFile.getSize() || isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
+            {
+                errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
+                return null;
+            }
+
+            // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
+            try
+            {
+                Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
+                Files.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
+                Files.createFile(pipelineUnzipFile);
+                try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
+                {
+                    FileUtil.copyData(zipFile.getInputStream(), os);
+                }
+                ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
+
+                return new FolderImportConfig(
+                        false,
+                        zipFile.getOriginalFilename(),
+                        pipelineUnzipFile,
+                        pipelineUnzipFile
+                );
+            }
+            catch (FileNotFoundException e)
+            {
+                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
+                errors.reject("folderImport", "File not found.");
+                return null;
+            }
+            catch (IOException e)
+            {
+                LOG.debug("Failed to import '" + zipFile.getOriginalFilename() + "'.", e);
+                errors.reject("folderImport", "Unable to unzip folder archive.");
+                return null;
+            }
+        }
+
+        private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final Path pipelineUnzipDir, final BindException errors) throws Exception
+        {
+            // user choose to import from a template source folder
+            Container sourceContainer = form.getSourceTemplateFolderContainer();
+
+            // In order to support the Advanced import options to import into multiple target folders we need to zip
+            // the source template folder so that the zip file can be passed to the pipeline processes.
+            FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
+                    getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
+                    PHI.NotPHI, false, false, false, new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
+            FolderWriterImpl writer = new FolderWriterImpl();
+            String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
+            try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
+            {
+                writer.write(sourceContainer, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+            Path implicitZipFile = pipelineUnzipDir.resolve(zipFileName);
+
+            // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
+            ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
+
+            return new FolderImportConfig(
+                    StringUtils.isNotEmpty(form.getSourceTemplateFolderId()),
+                    implicitZipFile.getFileName().toString(),
+                    implicitZipFile,
+                    null
+            );
+        }
+
+        private class FolderImportConfig {
+            Path pipelineUnzipFile;
+            String originalFileName;
+            Path archiveFile;
+            boolean fromTemplateSourceFolder;
+
+            public FolderImportConfig(boolean fromTemplateSourceFolder, String originalFileName, Path archiveFile, @Nullable Path pipelineUnzipFile)
+            {
+                this.originalFileName = originalFileName;
+                this.archiveFile = archiveFile;
+                this.fromTemplateSourceFolder = fromTemplateSourceFolder;
+                this.pipelineUnzipFile = pipelineUnzipFile;
+            }
         }
 
         @Override
@@ -4709,6 +4823,8 @@ public class AdminController extends SpringActionController
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
         private String _defaultNumberFormat;
+        private String _extraDateParsingPattern;
+        private String _extraDateTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
 
         @Override
@@ -4745,6 +4861,30 @@ public class AdminController extends SpringActionController
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
+        }
+
+        @Override
+        public String getExtraDateParsingPattern()
+        {
+            return _extraDateParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateParsingPattern(String extraDateParsingPattern)
+        {
+            _extraDateParsingPattern = extraDateParsingPattern;
+        }
+
+        @Override
+        public String getExtraDateTimeParsingPattern()
+        {
+            return _extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
+        {
+            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
         }
 
         @Override
@@ -5477,6 +5617,7 @@ public class AdminController extends SpringActionController
             }
             catch (UncheckedExecutionException e)
             {
+                LOG.debug("Failed to configure cloud store(s).", e);
                 // UncheckedExecutionException with cause org.jclouds.blobstore.ContainerNotFoundException
                 // is what BlobStore hands us if bucket (S3 container) does not exist
                 if (null != e.getCause())
@@ -5486,6 +5627,7 @@ public class AdminController extends SpringActionController
             }
             catch (RuntimeException e)
             {
+                LOG.debug("Failed to configure cloud store(s).", e);
                 errors.reject(ERROR_MSG, e.getMessage());
             }
         }
@@ -6126,7 +6268,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customEmail"));
+            setHelpTopic("customEmail");
             addAdminNavTrail(root, "Customize " + (getContainer().isRoot() ? "Site-Wide" : StringUtils.capitalize(getContainer().getContainerNoun()) + "-Level") + " Email", this.getClass());
         }
     }
@@ -7120,7 +7262,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            getPageConfig().setHelpTopic(new HelpTopic("createProject"));
+            setHelpTopic("createProject");
         }
     }
 
@@ -7485,7 +7627,7 @@ public class AdminController extends SpringActionController
         {
             if(null == form.getTo() || form.getTo().equals(""))
             {
-                errors.reject("To field cannot be blank.");
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
                 form.setException(new ConfigurationException("To field cannot be blank"));
                 return;
             }
@@ -7496,7 +7638,7 @@ public class AdminController extends SpringActionController
             }
             catch(ValidEmail.InvalidEmailException e)
             {
-                errors.reject(e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
                 form.setException(new ConfigurationException(e.getMessage()));
             }
         }
@@ -7550,7 +7692,7 @@ public class AdminController extends SpringActionController
                 }
                 catch (MessagingException e)
                 {
-                    errors.reject(e.getMessage());
+                    errors.reject(ERROR_MSG, e.getMessage());
                     return false;
                 }
             return true;
@@ -8025,7 +8167,7 @@ public class AdminController extends SpringActionController
 
             ManageFilter filter = form.isManagedOnly() ? ManageFilter.ManagedOnly : (form.isUnmanagedOnly() ? ManageFilter.UnmanagedOnly : ManageFilter.All);
 
-            HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of("");
+            HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of();
             if (hasAdminOpsPerm)
             {
                 deleteInstructions.append(unsafe("<br><br>")).append(
@@ -8035,14 +8177,14 @@ public class AdminController extends SpringActionController
                         PageFlowUtil.link("Create new empty module").href(getCreateURL()));
             }
 
-            HtmlStringBuilder docLink = HtmlStringBuilder.of("");
+            HtmlStringBuilder docLink = HtmlStringBuilder.of();
             docLink.append(unsafe("<br><br>")).append("Additional modules available, click ").append(new HelpTopic("defaultModules").getSimpleLinkHtml("here")).append(" to learn more.");
 
-            HtmlStringBuilder knownDescription = HtmlStringBuilder.of("")
+            HtmlStringBuilder knownDescription = HtmlStringBuilder.of()
                 .append("Each of these modules is installed and has a valid module file. ").append(managedLink).append(unmanagedLink).append(deleteInstructions).append(docLink);
             HttpView known = new ModulesView(knownModules, "Known", knownDescription.getHtmlString(), null, ignoreSet, filter);
 
-            HtmlStringBuilder unknownDescription = HtmlStringBuilder.of("")
+            HtmlStringBuilder unknownDescription = HtmlStringBuilder.of()
                     .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
                     "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                     "module is no longer being distributed, the module has been renamed, the server location where the module " +
@@ -8200,7 +8342,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("defaultModules"));
+            setHelpTopic("defaultModules");
             addAdminNavTrail(root, "Modules", getClass());
         }
     }
@@ -8213,9 +8355,9 @@ public class AdminController extends SpringActionController
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->null != m.getSchemaVersion())
-                .filter(m->m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
-                .collect(Collectors.toList());
+                .filter(m -> null != m.getSchemaVersion())
+                .filter(m -> m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
+                .toList();
 
             if (!modulesTooLow.isEmpty())
                 fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
@@ -8224,17 +8366,15 @@ public class AdminController extends SpringActionController
         @Test
         public void modulesWithSchemaVersionButNoScripts()
         {
-            // Flag all managed modules that have a schema version but don't have scripts. Their schema version should be null.
+            // Flag all modules that have a schema version but don't have scripts. Their schema version should be null.
             List<String> moduleNames = ModuleLoader.getInstance().getModules().stream()
-                .filter(m->m.getSchemaVersion() != null)
-                .filter(m->m.getSchemaVersion() != 20.3) // These will become null soon enough
-                .filter(m->!((DefaultModule)m).hasScripts())
-                .filter(m->!Set.of("rstudio", "Recipe").contains(m.getName()))  // Filter out oddball modules
-                .map(m->m.getName() + ": " + m.getSchemaVersion())
-                .collect(Collectors.toList());
+                .filter(m -> m.getSchemaVersion() != null)
+                .filter(m -> m instanceof DefaultModule dm && !dm.hasScripts())
+                .map(m -> m.getName() + ": " + m.getSchemaVersion())
+                .toList();
 
             if (!moduleNames.isEmpty())
-                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames.toString());
+                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames);
         }
     }
 
@@ -9896,8 +10036,7 @@ public class AdminController extends SpringActionController
     {
         JSONObject res = new JSONObject();
 
-        AdminBean admin = new AdminBean(getUser());
-        res.put("server", admin);
+        res.put("server", AdminBean.getPropertyMap());
 
         final Map<String,Map<String,Object>> sets = new TreeMap<>();
         new SqlSelector(CoreSchema.getInstance().getScope(),
@@ -10252,59 +10391,16 @@ public class AdminController extends SpringActionController
     // Validate and populate the folder settings; save & log all changes
     private static boolean saveFolderSettings(Container c, SettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
-        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
-        if (null == defaultDateFormat)
-        {
-            props.clearDefaultDateFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultDateFormat(defaultDateFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid date format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        String defaultDateTimeFormat = StringUtils.trimToNull(form.getDefaultDateTimeFormat());
-        if (null == defaultDateTimeFormat)
-        {
-            props.clearDefaultDateTimeFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultDateTimeFormat(defaultDateTimeFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid date time format: " + e.getMessage());
-                return false;
-            }
-        }
-
-        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
-        if (null == defaultNumberFormat)
-        {
-            props.clearDefaultNumberFormat();
-        }
-        else
-        {
-            try
-            {
-                props.setDefaultNumberFormat(defaultNumberFormat);
-            }
-            catch (IllegalArgumentException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid number format: " + e.getMessage());
-                return false;
-            }
-        }
+        if (!validateAndSaveFormat(form.getDefaultDateFormat(), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
 
         try
         {
@@ -10324,6 +10420,33 @@ public class AdminController extends SpringActionController
         return true;
     }
 
+    private interface FormatSaver
+    {
+        void save(String format) throws IllegalArgumentException;
+    }
+
+    private static boolean validateAndSaveFormat(String format, Runnable clearer, FormatSaver saver, BindException errors, String what)
+    {
+        String defaultFormat = StringUtils.trimToNull(format);
+        if (null == defaultFormat)
+        {
+            clearer.run();
+        }
+        else
+        {
+            try
+            {
+                saver.save(defaultFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid " + what + " format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public static class LookAndFeelView extends JspView<LookAndFeelBean>
     {
@@ -10341,6 +10464,107 @@ public class AdminController extends SpringActionController
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
+    {
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+
+        @Override
+        public void validateCommand(AdjustTimestampsForm form, Errors errors)
+        {
+            if (form.getHourDelta() == null || form.getHourDelta() == 0)
+                errors.reject(ERROR_MSG, "You must specify a non-zero value for 'Hour Delta'");
+        }
+
+        @Override
+        public ModelAndView getView(AdjustTimestampsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/adjustTimestamps.jsp", form, errors);
+        }
+
+        private void updateFields(TableInfo tInfo, Collection<String> fieldNames, int delta)
+        {
+            SQLFragment sql = new SQLFragment();
+            DbSchema schema = tInfo.getSchema();
+            String comma = "";
+            List<String> updating = new ArrayList<>();
+            for (String fieldName: fieldNames)
+            {
+                ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
+                if (col != null && col.getJdbcType() == JdbcType.TIMESTAMP)
+                {
+                    updating.add(fieldName);
+                    if (sql.isEmpty())
+                        sql.append("UPDATE ").append(tInfo, "").append(" SET ");
+                    sql.append(comma)
+                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
+                    comma = ", ";
+                }
+            };
+            if (!sql.isEmpty())
+            {
+                logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
+                logger.debug(sql.toDebugString());
+                int numRows = new SqlExecutor(schema).execute(sql);
+                logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
+            }
+
+        }
+
+        @Override
+        public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
+        {
+            List<String> toUpdate = Arrays.asList("Created", "Modified", "lastIndexed", "diCreated", "diModified");
+            logger.info("Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            DbScope scope = DbScope.getLabKeyScope();
+            try (DbScope.Transaction t = scope.ensureTransaction())
+            {
+                ModuleLoader.getInstance().getModules().forEach(module -> {
+                    logger.info("==> Beginning update of timestamps for module: " + module.getName());
+                    module.getSchemaNames().stream().sorted().forEach(schemaName -> {
+                        DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
+                        scope.invalidateSchema(schema); // Issue 44452: assure we have a fresh set of tables to work from
+                        schema.getTableNames().forEach(tableName -> {
+                            TableInfo tInfo = schema.getTable(tableName);
+                            if (tInfo.getTableType() == DatabaseTableType.TABLE)
+                            {
+                                updateFields(tInfo, toUpdate, form.getHourDelta());
+                            }
+                        });
+                    });
+                    logger.info("<== DONE updating timestamps for module: " + module.getName());
+                });
+                t.commit();
+            }
+            logger.info("DONE Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
+        {
+            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+    }
+
+    public static class AdjustTimestampsForm
+    {
+        private Integer hourDelta;
+
+        public Integer getHourDelta()
+        {
+            return hourDelta;
+        }
+
+        public void setHourDelta(Integer hourDelta)
+        {
+            this.hourDelta = hourDelta;
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {

@@ -51,9 +51,9 @@ import java.util.Map;
 public interface PipelineService extends PipelineStatusFile.StatusReader, PipelineStatusFile.StatusWriter
 {
     String MODULE_NAME = "Pipeline";
-    String UNZIP_DIR = "unzip";
+    String UNZIP_DIR = ".unzip"; // '.' prefix prevents search indexing
     String EXPORT_DIR = "export";
-    String CACHE_DIR = "cache";
+    String CACHE_DIR = ".cache";
 
     String PRIMARY_ROOT = "PRIMARY";
 
@@ -190,16 +190,23 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
-    boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+    @Deprecated //Prefer the Path version
+    default boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
+    {
+        return runFolderImportJob(c, user, url, studyXml.toPath(), originalFilename, errors, pipelineRoot, options);
+    }
+
+    boolean runFolderImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);
 
-    FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+    PathAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
 
     TriggerConfiguration getTriggerConfig(Container c, String name);
     void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
     void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date);
 
+    @Deprecated //Prefer PathAnalysisProperties as it better supports Cloud
     class FileAnalysisProperties
     {
         private final PipeRoot _pipeRoot;
@@ -219,6 +226,36 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
         }
 
         public File getDirData()
+        {
+            return _dirData;
+        }
+
+        public AbstractFileAnalysisProtocolFactory getFactory()
+        {
+            return _factory;
+        }
+    }
+
+    class PathAnalysisProperties
+    {
+        private final PipeRoot _pipeRoot;
+        private final Path _dirData;
+        private final AbstractFileAnalysisProtocolFactory _factory;
+
+        public PathAnalysisProperties(PipeRoot pipeRoot, Path dirData, AbstractFileAnalysisProtocolFactory factory)
+        {
+            _pipeRoot = pipeRoot;
+            _dirData = dirData;
+            _factory = factory;
+        }
+
+        public PipeRoot getPipeRoot()
+        {
+            return _pipeRoot;
+        }
+
+        @Nullable
+        public Path getDirData()
         {
             return _dirData;
         }

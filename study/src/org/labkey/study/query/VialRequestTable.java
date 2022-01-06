@@ -26,6 +26,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.specimen.SpecimenSchema;
 
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIALREQUEST_TABLENAME;
+
 /**
  * User: brittp
  * Created: July 15, 2008 11:13:43 AM
@@ -35,6 +37,8 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
     public VialRequestTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
         super(SpecimenSchema.get().getTableInfoSampleRequestSpecimen(), schema, cf);
+        setName(VIALREQUEST_TABLENAME);
+
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

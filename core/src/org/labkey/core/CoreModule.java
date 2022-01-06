@@ -59,7 +59,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -190,6 +190,7 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -203,8 +204,8 @@ import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.qc.CoreQCStateHandler;
-import org.labkey.core.qc.QCStateImporter;
-import org.labkey.core.qc.QCStateWriter;
+import org.labkey.core.qc.DataStateImporter;
+import org.labkey.core.qc.DataStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -667,7 +668,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         if (moduleContext.isNewInstall())
         {
-            bootstrap(moduleContext.getUpgradeUser());
+            bootstrap();
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -693,7 +694,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    private void bootstrap(User upgradeUser)
+    private void bootstrap()
     {
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
@@ -722,13 +723,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Users & guests can read from /home
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
-        home.setFolderType(collaborationType, upgradeUser);
+        home.setFolderType(collaborationType, (User)null);
         addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
 
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, upgradeUser);
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, upgradeUser);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, (User)null);
 
         try
         {
@@ -794,7 +795,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
             AuditLogService.get().registerAuditType(new TransactionAuditProvider());
 
-            QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
+            DataStateManager.getInstance().registerDataStateHandler(new CoreQCStateHandler());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -907,7 +908,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
-            fsr.addFactories(new QCStateWriter.Factory(), new QCStateImporter.Factory());
+            fsr.addFactories(new DataStateWriter.Factory(), new DataStateImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
@@ -975,6 +976,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         ClientSideMetricManager.get().registerUsageMetrics(getName());
+        UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

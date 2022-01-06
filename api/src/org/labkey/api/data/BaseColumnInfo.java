@@ -31,6 +31,7 @@ import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -51,6 +52,8 @@ import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -105,6 +108,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
+    private SimpleTranslator.RemapMissingBehavior _remapMissingBehavior = null;
 
     /**
      * True if this column isn't really part of the database. It might be a calculated value, or an alternate
@@ -321,7 +325,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         if (col instanceof BaseColumnInfo)
-        {
+        {//TODO why are we doing this? most of the props are the same in both methods
             setExtraAttributesFrom((BaseColumnInfo) col);
             return;
         }
@@ -402,6 +406,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptLabelColumn(col.getConceptLabelColumn());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
     /*
@@ -482,6 +487,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setPrincipalConceptCode(col.getPrincipalConceptCode());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
 
@@ -1127,6 +1133,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _isUserEditable = xmlCol.getIsUserEditable();
         if (xmlCol.isSetScale())
             _scale = xmlCol.getScale();
+        if (xmlCol.isSetScannable())
+            _scannable = xmlCol.getScannable();
         if (xmlCol.isSetDefaultValue())
             _defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())
@@ -1221,18 +1229,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             {
                 switch (displayColumnClassName)
                 {
-                    case "DEFAULT":
-                        _displayColumnFactory = DEFAULT_FACTORY;
-                        break;
-                    case "NOWRAP":
-                        _displayColumnFactory = NOWRAP_FACTORY;
-                        break;
-                    case "NOLOOKUP":
-                        _displayColumnFactory = NOLOOKUP_FACTORY;
-                        break;
-                    default:
-                        Class clazz = Class.forName(displayColumnClassName);
-
+                    case "DEFAULT" -> _displayColumnFactory = DEFAULT_FACTORY;
+                    case "NOWRAP" -> _displayColumnFactory = NOWRAP_FACTORY;
+                    case "NOLOOKUP" -> _displayColumnFactory = NOLOOKUP_FACTORY;
+                    default -> {
+                        Class<?> clazz = Class.forName(displayColumnClassName);
                         if (DisplayColumnFactory.class.isAssignableFrom(clazz))
                         {
                             //noinspection unchecked
@@ -1253,12 +1254,26 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                         {
                             LOG.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
                         }
-                        break;
+                    }
                 }
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
             {
-                LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
+                String message = "Can't instantiate DisplayColumnFactory: " + displayColumnClassName;
+                // Defer logging an error until column is actually used, Issue #44103
+                // Substitute a factory that provides a renderer that displays and logs the error at render time
+                LOG.debug(message, e);
+                _displayColumnFactory = colInfo -> {
+                    LOG.error(message, e);
+                    return new SimpleDisplayColumn()
+                    {
+                        @Override
+                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                        {
+                            out.write(PageFlowUtil.filter("Error: " + message));
+                        }
+                    };
+                };
             }
         }
 
@@ -1609,9 +1624,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         DbScope scope = parentTable.getSchema().getScope();
         Map<String, ImportedKey> importedKeys = new HashMap<>();    // Use map to handle multiple FKs with multiple fields from same table referencing same PK
 
-        try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
+        try (JdbcMetaDataLocator locator = dialect.getTableResolver().getSingleTableLocator(scope, schemaName, parentTable))
         {
-            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, (dbmd, loc) -> dbmd.getColumns(loc.getCatalogName(), loc.getSchemaName(), loc.getTableName(), columnNamePattern));
+            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, (dbmd, loc) -> dbmd.getColumns(loc.getCatalogName(), loc.getSchemaNamePattern(), loc.getTableNamePattern(), columnNamePattern));
 
             try (ResultSet rsCols = columnSelector.getResultSet())
             {
@@ -2178,5 +2193,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public ColumnLogging getColumnLogging()
     {
         return _columnLogging;
+    }
+
+    @Override
+    public SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior()
+    {
+        return _remapMissingBehavior;
+    }
+
+    @Override
+    public void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior)
+    {
+        _remapMissingBehavior = missingBehavior;
     }
 }

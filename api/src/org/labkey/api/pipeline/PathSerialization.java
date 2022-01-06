@@ -24,9 +24,10 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.util.FileUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -68,17 +69,14 @@ public class PathSerialization
         }
 
         @Override
-        public Path deserialize(JsonParser parser, DeserializationContext context) throws IOException
+        public @Nullable Path deserialize(JsonParser parser, DeserializationContext context) throws IOException
         {
             String str = parser.getValueAsString();
             if (FileUtil.hasCloudScheme(str))
             {
-                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
-                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
-                return null;
+                throw new PremiumFeatureNotEnabledException("Cloud module not installed. Please talk to your account representative for additional information.");
             }
-            else
-                return new File(str).toPath();
+            return Path.of(str);
         }
     }
 }

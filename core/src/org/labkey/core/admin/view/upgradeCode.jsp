@@ -12,13 +12,13 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Class<?>[] params = new Class[]{ModuleContext.class};
-    Map<String, String> methodMap = new TreeMap<>();
+    Map<String, String> methodMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     ModuleLoader.getInstance().getModules().forEach(module -> {
         UpgradeCode code = module.getUpgradeCode();
         if (null != code)
         {
             Arrays.stream(code.getClass().getDeclaredMethods())
-                .filter(method -> Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers()))
+                .filter(method -> Modifier.isPublic(method.getModifiers()))
                 .filter(method -> Arrays.equals(method.getParameterTypes(), params))
                 .forEach(method -> {
                     String key = module.getName() + ": " + method.getName();

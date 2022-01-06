@@ -18,6 +18,7 @@ package org.labkey.mothership;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HashHelpers;
 
@@ -110,6 +111,12 @@ public class ExceptionStackTrace
                 }
                 while ((line = reader.readLine()) != null)
                 {
+                    // Don't include the other threads when de-duping stack traces
+                    if (line.startsWith(SqlDialect.SEPARATOR_BANNER))
+                    {
+                        break;
+                    }
+
                     // Don't include lines that vary based on reflection
                     // Don't include lines that depend on Groovy view numbers
                     if (line.trim().startsWith("at ") && 
@@ -294,6 +301,37 @@ public class ExceptionStackTrace
 
             stackTrace3.hashStackTrace();
             assertNotSame(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
+        }
+
+        @Test
+        public void testOtherThreadCombining()
+        {
+            ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
+            stackTrace1.setStackTrace("java.lang.NullPointerException\n" +
+                    "\tat org.labkey.api.view.ViewController.requiresPermission(ViewController.java:231)\n" +
+                    "\tat Experiment.ExperimentController.showRun(ExperimentController.java:788)\n" +
+                    SqlDialect.SEPARATOR_BANNER + "\n" +
+                    "\tat Experiment.ExperimentController.showRunGraphDetail(ExperimentController.java:380)\n");
+
+            ExceptionStackTrace stackTrace2 = new ExceptionStackTrace();
+            stackTrace2.setStackTrace("java.lang.NullPointerException\n" +
+                    "\tat org.labkey.api.view.ViewController.requiresPermission(ViewController.java:231)\n" +
+                    "\tat Experiment.ExperimentController.showRun(ExperimentController.java:788)\n" +
+                    SqlDialect.SEPARATOR_BANNER + "\n" +
+                    "\tat Experiment.ExperimentController2.showRunGraphDetail(ExperimentController2.java:400)\n");
+
+            ExceptionStackTrace stackTrace3 = new ExceptionStackTrace();
+            stackTrace3.setStackTrace("java.lang.NullPointerException\n" +
+                    "\tat org.labkey.api.view.ViewController.requiresPermission(ViewController.java:231)\n" +
+                    "\tat Experiment.ExperimentController.showRun(ExperimentController.java:788)\n");
+
+
+            stackTrace1.hashStackTrace();
+            stackTrace2.hashStackTrace();
+            stackTrace3.hashStackTrace();
+            assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
+            assertEquals(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
+
         }
 
         @Test

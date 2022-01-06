@@ -30,7 +30,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.CancelledException;
-import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.PairSerializer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -77,7 +76,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
 
     CopyFileRootPipelineJob(Container container, User user, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
-        super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
+        super("FileRootCopy", new ViewBackgroundInfo(container, user, null), pipeRoot);
         _sourceInfos = sourceInfos;
         _migrateFilesOption = migrateFilesOption;
 
@@ -85,10 +84,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         String baseLogFileName = FileUtil.makeFileNameWithTimestamp(
                 FileUtil.getBaseName("copy_directory_fileroot_change", 1).replace(" ", "_"));
 
-        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, CoreModule.CORE_MODULE_NAME, baseLogFileName,
-                !pipeRoot.isCloudRoot() ? pipeRoot.getRootPath().getPath() : FileUtil.getTempDirectory().getPath());
-        setLocalDirectory(localDirectory);
-        setLogFile(localDirectory.determineLogFile());
+        setupLocalDirectoryAndJobLog(pipeRoot, CoreModule.CORE_MODULE_NAME, baseLogFileName);
     }
 
     @Override

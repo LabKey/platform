@@ -14,10 +14,10 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "2.60.0"
+    "@labkey/components": "2.115.1"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.0",
+    "@labkey/build": "5.0.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@labkey/eslint-config-react": "0.0.8"
   }

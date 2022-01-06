@@ -16,15 +16,12 @@
 package org.labkey.api.view;
 
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -73,9 +70,7 @@ public class PopupDeveloperView extends PopupMenuView
             NavTree memTrackerNavTree = new NavTree("Memory Allocations");
             memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','memoryallocations','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
             items.add(DeveloperMenuNavTrees.Section.monitoring, memTrackerNavTree);
-
-            if (!c.isRoot())
-                items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
+            items.add(DeveloperMenuNavTrees.Section.tools, new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c)));
 
             if (user.hasRootPermission(PlatformDeveloperPermission.class))
             {

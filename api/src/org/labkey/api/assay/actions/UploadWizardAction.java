@@ -70,10 +70,9 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.util.HelpTopic;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -178,7 +177,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         _provider = form.getProvider();
 
         String currentStep = form.getUploadStep();
-        setHelpTopic(new HelpTopic("uploadAssayRuns"));
+        setHelpTopic("uploadAssayRuns");
 
         if (null != form.getTargetStudy())
         {
@@ -1138,7 +1137,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     return HtmlString.EMPTY_STRING;
 
                 Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
-                HtmlStringBuilder sb = HtmlStringBuilder.of("");
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
                 StringBuilder msgBox = new StringBuilder();
                 HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
                 int cnt = 0;

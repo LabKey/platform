@@ -23,8 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithLink;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -69,6 +69,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
@@ -348,16 +349,21 @@ public class AuthenticationManager
         if (ssoConfigurations.isEmpty())
             return null;
 
-        HtmlStringBuilder html = HtmlStringBuilder.of("");
+        HtmlStringBuilder html = HtmlStringBuilder.of();
 
         for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
         {
             if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
-                html.startTag("li");
-                html.append(factory.getLink(currentURL, logoType));
-                html.endTag("li");
+                HtmlString link = factory.getLink(currentURL, logoType);
+
+                if (null != link)
+                {
+                    html.startTag("li");
+                    html.append(link);
+                    html.endTag("li");
+                }
             }
         }
 
@@ -592,7 +598,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
+                errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
         },
         LoginDisabled
@@ -617,7 +623,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
+                errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
         },
         UserCreationNotAllowed
@@ -625,7 +631,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
+                errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
         },
         PasswordExpired
@@ -653,6 +659,14 @@ public class AuthenticationManager
         public boolean requiresRedirect()
         {
             return false;
+        }
+    }
+
+    private static final class ContactAnAdministratorError extends LabKeyErrorWithLink
+    {
+        public ContactAnAdministratorError(String message, String adviceTextSuffix)
+        {
+            super(message, "Please contact a system administrator " + adviceTextSuffix, "mailto:" + AppProps.getInstance().getAdministratorContactEmail(true));
         }
     }
 
@@ -1438,15 +1452,11 @@ public class AuthenticationManager
             _configuration = configuration;
         }
 
-        private @NotNull HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
+        private @Nullable HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
         {
-            String content = _configuration.getDescription();
-            String img = getImg(prefix);
+            HtmlString img = getImg(prefix);
 
-            if (null != img)
-                content = img;
-
-            return HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>");
+            return null != img ? new LinkBuilder(img).href(getURL(returnURL, false)).clearClasses().getHtmlString() : null;
         }
 
         @SuppressWarnings("ConstantConditions")
@@ -1455,7 +1465,7 @@ public class AuthenticationManager
             return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
         }
 
-        public String getImg(AuthLogoType logoType)
+        public HtmlString getImg(AuthLogoType logoType)
         {
             try
             {
@@ -1463,7 +1473,11 @@ public class AuthenticationManager
 
                 if (null != logoUrl)
                 {
-                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
+                    HtmlString message = HtmlString.of("Sign in using " + _configuration.getDescription());
+                    return HtmlStringBuilder.of(HtmlString.unsafe("<img src=\"")).append(logoUrl)
+                        .append(HtmlString.unsafe("\" alt=\"")).append(message)
+                        .append(HtmlString.unsafe("\" title=\"")).append(message)
+                        .append(HtmlString.unsafe("\" height=\"")).append(logoType.getHeight()).append(HtmlString.unsafe("px\">")).getHtmlString();
                 }
             }
             catch (RuntimeSQLException e)
@@ -1475,7 +1489,6 @@ public class AuthenticationManager
         }
     }
 
-    // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
     public static @Nullable String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
     {
         Attachment logo = AttachmentService.get().getAttachment(configuration, logoType.getFileName());

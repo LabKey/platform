@@ -134,7 +134,7 @@ public class Portal implements ModuleChangeListener
     private static Map<String, WebPartFactory> _viewMap = null;
     private static final List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
-    private static final Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
+    private static final Map<String, List<NavTreeCustomizer>> _navTreeCustomizerMap = new CaseInsensitiveHashMap<>();
 
 
     public static DbSchema getSchema()
@@ -802,12 +802,12 @@ public class Portal implements ModuleChangeListener
 
     public static void saveParts(Container c, Collection<WebPart> newParts)
     {
-        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts.toArray(new WebPart[newParts.size()]));
+        saveParts(c, DEFAULT_PORTAL_PAGE_ID, newParts.toArray(new WebPart[0]));
     }
 
     public static void saveParts(Container c, String pageId, Collection<WebPart> newParts)
     {
-        saveParts(c, pageId, newParts.toArray(new WebPart[newParts.size()]));
+        saveParts(c, pageId, newParts.toArray(new WebPart[0]));
     }
 
 
@@ -1668,15 +1668,23 @@ public class Portal implements ModuleChangeListener
                     view.setTitle(props.get("webpart.title"));
 
                 //find any matching navTreeCustomizers and inject their NavTree elements
-                _navTreeCustomizerMap.forEach((webPartName, navTreeCustomizer) -> {
-                    if (webPart.name.equalsIgnoreCase(webPartName))
+                List<NavTreeCustomizer> customizers = _navTreeCustomizerMap.get(webPart.name);
+                if (customizers != null)
+                {
+                    NavTree menu = view.getNavMenu();
+                    if (menu == null)
                     {
-                        if (null != navTreeCustomizer.getNavTrees(portalCtx))
-                        {
-                            navTreeCustomizer.getNavTrees(portalCtx).forEach(view::setNavMenu);
-                        }
+                        menu = new NavTree();
                     }
-                });
+                    for (NavTreeCustomizer customizer : customizers)
+                    {
+                        menu.addChildren(customizer.getNavTrees(portalCtx));
+                    }
+                    if (menu.getChildCount() > 0)
+                    {
+                        view.setNavMenu(menu);
+                    }
+                }
             }
 
             return view;
@@ -2203,8 +2211,10 @@ public class Portal implements ModuleChangeListener
         }
     }
 
+    /** Injects custom menu items for a portal by its web part name */
     public static void registerNavTreeCustomizer(String webPartName, NavTreeCustomizer navTreeCustomizer)
     {
-        _navTreeCustomizerMap.put(webPartName, navTreeCustomizer);
+        List<NavTreeCustomizer> customizers = _navTreeCustomizerMap.computeIfAbsent(webPartName, (name) -> new ArrayList<>());
+        customizers.add(navTreeCustomizer);
     }
 }

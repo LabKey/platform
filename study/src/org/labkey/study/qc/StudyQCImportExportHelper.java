@@ -2,9 +2,9 @@ package org.labkey.study.qc;
 
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -13,7 +13,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
-public class StudyQCImportExportHelper implements QCStateImportExportHelper
+public class StudyQCImportExportHelper implements DataStateImportExportHelper
 {
     @Override
     public boolean matches(Container container)
@@ -37,45 +37,45 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
         qcXml.setBlankQCStatePublic(study.isBlankQCStatePublic());
 
         // set the default states for each import type
-        QCState pipelineImportState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPipelineQCState());
+        DataState pipelineImportState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPipelineQCState());
         if (pipelineImportState != null)
             qcXml.setPipelineImportDefault(pipelineImportState.getLabel());
 
-        QCState assayCopyState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPublishDataQCState());
+        DataState assayCopyState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPublishDataQCState());
         if (assayCopyState != null)
             qcXml.setAssayDataDefault(assayCopyState.getLabel());
 
-        QCState datasetInsertState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultDirectEntryQCState());
+        DataState datasetInsertState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultDirectEntryQCState());
         if (datasetInsertState != null)
             qcXml.setInsertUpdateDefault(datasetInsertState.getLabel());
     }
 
-    private QCState getQCStateFromRowId(Container container, Integer rowId)
+    private DataState getQCStateFromRowId(Container container, Integer rowId)
     {
         if (rowId != null)
-            return QCStateManager.getInstance().getQCStateForRowId(container, rowId);
+            return DataStateManager.getInstance().getStateForRowId(container, rowId);
 
         return null;
     }
 
     @Override
-    public boolean isQCStateInUse(Container container, QCState state)
+    public boolean isDataStateInUse(Container container, DataState state)
     {
         StudyQCStateHandler handler = new StudyQCStateHandler();
 
-        return handler.isQCStateInUse(container, state);
+        return handler.isStateInUse(container, state);
     }
 
     @Override
-    public QCState insertQCState(User user, QCState state)
+    public DataState insertDataState(User user, DataState state)
     {
         return StudyManager.getInstance().insertQCState(user, state);
     }
 
     @Override
-    public QCState updateQCState(User user, QCState state)
+    public DataState updateDataState(User user, DataState state)
     {
-        return QCStateManager.getInstance().updateQCState(user, state);
+        return DataStateManager.getInstance().updateState(user, state);
     }
 
     @Override

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.QueryLogging" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
@@ -29,7 +30,7 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
@@ -99,12 +100,17 @@
 
     User user = (User) request.getUserPrincipal();
     List<DatasetDefinition> allDatasets = manager.getDatasetDefinitions(study);
-    ArrayList<DatasetDefinition> datasets = new ArrayList<>(allDatasets.size());
+
+    ArrayList<Pair<DatasetDefinition,TableInfo>> datasets = new ArrayList<>(allDatasets.size());
+
     for (DatasetDefinition def : allDatasets)
     {
-        if (!def.canRead(user) || !def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
+        if (!def.isShowByDefault() || null == def.getStorageTableInfo() || def.isDemographicData())
             continue;
-        datasets.add(def);
+        TableInfo t = querySchema.getDatasetTableForLookup(def, null);
+        if (null==t || !t.hasPermission(user, ReadPermission.class))
+            continue;
+        datasets.add(new Pair<>(def,t));
     }
 
     //
@@ -135,29 +141,45 @@
     final VisitMultiMap visitSequenceMap = new VisitMultiMap();
     final Map<Double, Integer> countKeysForSequence = new HashMap<>();
     final Set<Integer> datasetSet = new HashSet<>();
-    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(study.getSubjectColumnName()), bean.getParticipantId());
-    Sort sort = new Sort("SequenceNum");
-    SQLFragment f = new SQLFragment();
-    f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
-    f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets, user).getFromSQL("SD"));
-    f.append("\nWHERE ParticipantId = ?");
-    f.append("\nGROUP BY ParticipantId, SequenceNum, DatasetId");
-    f.add(bean.getParticipantId());
 
-    new SqlSelector(dbSchema, f).forEach(rs -> {
-        String ptid = rs.getString(1);
-        double s = rs.getDouble(2);
-        Double sequenceNum = rs.wasNull() ? null : s;
-        int datasetId = rs.getInt(3);
-        int rowCount = ((Number) rs.getObject(4)).intValue();
-        Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
-        if (null != visitRowId && null != sequenceNum)
-            visitSequenceMap.put(visitRowId, sequenceNum);
-        datasetSet.add(datasetId);
-        Integer count = countKeysForSequence.get(sequenceNum);
-        if (null == count || count < rowCount)
-            countKeysForSequence.put(sequenceNum, rowCount);
-    });
+    if (!datasets.isEmpty())
+    {
+        SQLFragment f = new SQLFragment();
+        String union = "";
+        for (var pair : datasets)
+        {
+            DatasetDefinition dd = pair.getKey();
+            TableInfo t = pair.getValue();
+            String alias = "__x" + dd.getDatasetId() + "__";
+            ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
+            ColumnInfo seq = t.getColumn("SequenceNum");
+            f.append(union).append("SELECT ")
+                    .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
+                    .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
+                    .append(dd.getDatasetId()).append(" as DatasetId,")
+                    .append("COUNT(*) AS _RowCount");
+            f.append("\nFROM ").append(t.getFromSQL(alias));
+            f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
+            f.append("\nGROUP BY ").append(ptid.getValueSql(alias)).append(",").append(seq.getValueSql(alias));
+            union = "\n  UNION ALL\n";
+        }
+        f.append("\n ORDER BY 2");
+
+        new SqlSelector(dbSchema.getScope(), f, QueryLogging.noValidationNeededQueryLogging()).forEach(rs -> {
+            String ptid = rs.getString(1);
+            double s = rs.getDouble(2);
+            Double sequenceNum = rs.wasNull() ? null : s;
+            int datasetId = rs.getInt(3);
+            int rowCount = ((Number) rs.getObject(4)).intValue();
+            Integer visitRowId = visitRowIdMap.get(new Pair<>(ptid, sequenceNum));
+            if (null != visitRowId && null != sequenceNum)
+                visitSequenceMap.put(visitRowId, sequenceNum);
+            datasetSet.add(datasetId);
+            Integer count = countKeysForSequence.get(sequenceNum);
+            if (null == count || count < rowCount)
+                countKeysForSequence.put(sequenceNum, rowCount);
+        });
+    }
 
     // Now we have a list of datasets with 1 or more rows and a visitMap to help with layout
     // get the data
@@ -177,7 +199,7 @@
 %>
 
 <%
-    if (!aliasMap.isEmpty())
+    if (null != aliasMap && !aliasMap.isEmpty())
     {
 %>
 <h3>Aliases:</h3>
@@ -395,8 +417,11 @@
 </tr>
 
 <%
-    for (DatasetDefinition dataset : datasets)
+    for (var pair : datasets)
     {
+        var dataset = pair.getKey();
+        var table = pair.getValue();
+
         // Do not display demographic data here. That goes in a separate web part,
         // the participant characteristics
         if (dataset.isDemographicData())
@@ -411,7 +436,8 @@
         if ("expand".equalsIgnoreCase(expandedMap.get(datasetId)))
             expanded = true;
 
-        if (!dataset.canRead(user))
+        assert table.hasPermission(user,ReadPermission.class);
+        if (!table.hasPermission(user,ReadPermission.class))
         {
 %>
 <tr class="labkey-header">
@@ -421,13 +447,12 @@
 </tr>
 <%
         continue;
-    }
+        }
 
     if (!datasetSet.contains(datasetId))
         continue;
 
     // get the data for this dataset and group rows by SequenceNum/Key
-    TableInfo table = querySchema.createDatasetTableInternal(dataset, null);
     Map<Double, Map<Object, Map<String, Object>>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
     ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
@@ -437,6 +462,8 @@
     ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
 
     final int rowCount;
+    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(study.getSubjectColumnName()), bean.getParticipantId());
+    Sort sort = new Sort("SequenceNum");
     try (Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults())
     {
         rowCount = dsResults.getSize();
@@ -500,7 +527,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (QCStateManager.getInstance().showQCStates(getContainer()))
+    if (QCStateManager.getInstance().showStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -520,7 +547,7 @@
                     for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
                         Integer id = (Integer) e.getValue().get("QCState");
-                        QCState state = getQCState(study, id);
+                        DataState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
     <td>
@@ -722,15 +749,15 @@
 </table>
 <%!
 
-    Map<Integer, QCState> qcstates = null;
+    Map<Integer, DataState> qcstates = null;
 
-    QCState getQCState(Study study, Integer id)
+    DataState getQCState(Study study, Integer id)
     {
         if (null == qcstates)
         {
-            List<QCState> states = QCStateManager.getInstance().getQCStates(study.getContainer());
+            List<DataState> states = QCStateManager.getInstance().getStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
-            for (QCState state : states)
+            for (DataState state : states)
                 qcstates.put(state.getRowId(), state);
         }
         return qcstates.get(id);

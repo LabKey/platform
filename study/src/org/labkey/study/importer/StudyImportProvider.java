@@ -25,8 +25,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 
 /*
 * User: adam
@@ -52,15 +53,24 @@ public class StudyImportProvider extends PipelineProvider
 
         String label = (null == StudyManager.getInstance().getStudy(context.getContainer()) ? "Import Study" : "Reload Study");
         String actionId = createActionId(StudyController.ImportStudyFromPipelineAction.class, null);
-        addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false, false, includeAll);
+        addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listPaths(new StudyImportFilter()), false, false, includeAll);
     }
 
-    private static class StudyImportFilter implements FileFilter
+    private static class StudyImportFilter implements DirectoryStream.Filter<Path>
     {
         @Override
-        public boolean accept(File file)
+        public boolean accept(Path entry) throws IOException
         {
-            return file.getName().endsWith("study.xml") || file.getName().endsWith(".study.zip") || file.getName().endsWith(".folder.zip");
+            // Path.endsWith checks the final path piece (eg, /root/filename.xml checks filename.xml).
+            // So, we want to check the string value instead
+            String pathString = entry.toString();
+            return pathString.toLowerCase().endsWith("study.xml") || pathString.toLowerCase().endsWith(".study.zip") || pathString.toLowerCase().endsWith(".folder.zip");
         }
+    }
+
+    @Override
+    public boolean supportsCloud()
+    {
+        return true;
     }
 }

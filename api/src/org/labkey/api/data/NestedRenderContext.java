@@ -166,7 +166,7 @@ public class NestedRenderContext extends RenderContext
         fromSQL.append(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query
-        VirtualTable aggTableInfo = new VirtualTable(tinfo.getSchema(), "AggTable")
+        VirtualTable aggTableInfo = new VirtualTable(tinfo.getSchema(), "AggTable", tinfo.getUserSchema())
         {
             @NotNull
             @Override

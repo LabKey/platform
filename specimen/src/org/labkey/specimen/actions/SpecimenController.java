@@ -1,8 +1,8 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -52,6 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
@@ -109,7 +110,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -157,6 +157,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -460,7 +461,7 @@ public class SpecimenController extends SpringActionController
                 if (participantCommentDatasetId != null && participantCommentDatasetId != -1)
                 {
                     Dataset ds = StudyService.get().getDataset(study.getContainer(), participantCommentDatasetId);
-                    if (ds != null && ds.canUpdate(getUser()))
+                    if (ds != null && ds.getTableInfo(getUser()).hasPermission(getUser(), UpdatePermission.class))
                     {
                         if (addSep)
                         {
@@ -478,7 +479,8 @@ public class SpecimenController extends SpringActionController
                 if (participantVisitCommentDatasetId != null && participantVisitCommentDatasetId != -1)
                 {
                     Dataset ds = StudyService.get().getDataset(study.getContainer(), participantVisitCommentDatasetId);
-                    if (ds != null && ds.canUpdate(getUser()))
+                    TableInfo table = null==ds ? null : ds.getTableInfo(getUser());
+                    if (null != table && table.hasPermission(getUser(), UpdatePermission.class))
                     {
                         if (addSep)
                         {
@@ -1566,7 +1568,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("specimenRequest#display"));
+            setHelpTopic("specimenRequest#display");
             addManageStudyNavTrail(root);
             root.addChild("Manage Specimen Display Settings");
         }
@@ -2728,15 +2730,13 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(Form form, boolean reshow, BindException errors)
         {
             ensureSpecimenRequestsConfigured(false);
-            return getJspView(getStudyRedirectIfNull());
+            return new JspView<>(_jsp, getStudyRedirectIfNull());
         }
-
-        protected abstract JspView<Study> getJspView(Study study);
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic(_helpTopic));
+            setHelpTopic(_helpTopic);
             addManageStudyNavTrail(root);
             root.addChild(_title);
         }
@@ -2772,13 +2772,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageActorsAction()
         {
-            super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageActors.jsp", study);
+            super("/org/labkey/specimen/view/manageActors.jsp", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
         }
 
         @Override
@@ -2846,13 +2840,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageActorOrderAction()
         {
-            super("manageActorOrder", "Manage Actor Order", "specimenRequest");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageActorOrder.jsp", study);
+            super("/org/labkey/specimen/view/manageActorOrder.jsp", "Manage Actor Order", "specimenRequest");
         }
 
         @Override
@@ -3006,13 +2994,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageStatusesAction()
         {
-            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageStatuses.jsp", study);
+            super("/org/labkey/specimen/view/manageStatuses.jsp", "Manage Specimen Request Statuses", "specimenRequest#status");
         }
 
         @Override
@@ -3093,13 +3075,7 @@ public class SpecimenController extends SpringActionController
     {
         public ManageStatusOrderAction()
         {
-            super("manageStatusOrder", "Manage Status Order", "specimenRequest");
-        }
-
-        @Override
-        protected JspView<Study> getJspView(Study study)
-        {
-            return new JspView<>("/org/labkey/specimen/view/manageStatusOrder.jsp", study);
+            super("/org/labkey/specimen/view/manageStatusOrder.jsp", "Manage Status Order", "specimenRequest");
         }
 
         @Override
@@ -3771,7 +3747,7 @@ public class SpecimenController extends SpringActionController
                     message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
                     MailHelper.send(message, getUser(), getContainer());
                 }
-                catch (javax.mail.internet.AddressException | NullPointerException e)
+                catch (AddressException | NullPointerException e)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());      // Bad address; also InternetAddress constructor can throw null
                 }
@@ -5308,7 +5284,7 @@ public class SpecimenController extends SpringActionController
         @Override
         public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("externalSpecimens"));
+            setHelpTopic("externalSpecimens");
             return new JspView<>("/org/labkey/specimen/view/chooseImporter.jsp", form, errors);
         }
 

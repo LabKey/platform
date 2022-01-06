@@ -31,12 +31,14 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -205,28 +207,25 @@ public abstract class VisitManager
 
     protected abstract void updateVisitTable(User user, @Nullable Logger logger);
 
-    // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;
-    // it also needs to filter by cohort and qcstates.  Tables providing the statistics must be aliased using the provided alias.
-    protected abstract SQLFragment getVisitSummarySql(User user, CohortFilter cohortFilter, QCStateSet qcStates, String stats, String alias, boolean showAll);
+    // Produce appropriate SQL for getVisitSummary(). The SQL must select dataset ID, sequence number, and then the specified statistics;
+    // it also needs to filter by cohort and qcstates.
+    @Nullable
+    protected abstract SQLFragment getVisitSummarySql(StudyQuerySchema studyQuerySchema, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll);
 
     public Map<VisitMapKey, VisitStatistics> getVisitSummary(User user, CohortFilter cohortFilter, QCStateSet qcStates, Set<VisitStatistic> stats, boolean showAll) throws SQLException
     {
-        String alias = "SD";
-        StringBuilder statsSql = new StringBuilder();
-
-        for (VisitStatistic stat : stats)
-        {
-            statsSql.append(", ");
-            statsSql.append(stat.getSql(alias));
-        }
+        QueryProfiler.getInstance().ensureListenerEnvironment();
 
         Map<VisitMapKey, VisitStatistics> visitSummary = new HashMap<>();
         VisitMapKey key = null;
         VisitStatistics statistics = new VisitStatistics();
 
-        SQLFragment sql = getVisitSummarySql(user, cohortFilter, qcStates, statsSql.toString(), alias, showAll);
+        StudyQuerySchema sqs = StudyQuerySchema.createSchema(_study, user);
+        SQLFragment sql = getVisitSummarySql(sqs, cohortFilter, qcStates, stats, showAll);
+        if (null == sql || sql.isEmpty())
+            return visitSummary;
 
-        try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false, false))
+        try (ResultSet rows = new SqlSelector(StudySchema.getInstance().getScope(), sql, QueryLogging.noValidationNeededQueryLogging()).getResultSet(false, false))
         {
             while (rows.next())
             {
@@ -292,9 +291,9 @@ public abstract class VisitManager
         ParticipantCount
         {
             @Override
-            String getSql(@NotNull String alias)
+            SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return "CAST(COUNT(DISTINCT " + alias + ".ParticipantId) AS INT)";
+                return new SQLFragment("CAST(COUNT(DISTINCT ").append(ptid).append(") AS INT)");
             }
 
             @Override
@@ -306,9 +305,9 @@ public abstract class VisitManager
         RowCount
         {
             @Override
-            String getSql(@NotNull String alias)
+            SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return "CAST(COUNT(*) AS INT)";
+                return new SQLFragment("CAST(COUNT(*) AS INT)");
             }
 
             @Override
@@ -318,7 +317,7 @@ public abstract class VisitManager
             }
         };
 
-        abstract String getSql(@NotNull String alias);
+        abstract SQLFragment getSql(@NotNull SQLFragment participant);
         public abstract String getDisplayString(Study study);
     }
 
@@ -642,7 +641,7 @@ public abstract class VisitManager
         // reasons.
         if (study.isAncillaryStudy() && null != user)
         {
-            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user, false);
+            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user);
             studyQuerySchema.setDontAliasColumns(true);
             return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
         }

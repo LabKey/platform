@@ -17,13 +17,15 @@
 %>
 <%@ page import="org.apache.commons.beanutils.ConvertUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.collections.CsvSet" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -38,7 +40,9 @@
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.List" %>
@@ -51,8 +55,9 @@
 
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(getContainer());
-
     User user = (User) request.getUserPrincipal();
+    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl)study, user);
+
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
 %>
@@ -77,7 +82,9 @@
 
             // sort the properties so they appear in the same order as the grid view
             List<PropertyDescriptor> pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
-            if (!dataset.canRead(user))
+
+            TableInfo datasetTable = schema.getDatasetTable(dataset, null);
+            if (null == datasetTable || !datasetTable.hasPermission(user, ReadPermission.class))
             {
     %>
     <tr class="labkey-header">
@@ -111,7 +118,6 @@
 
         // Cache the request for data, so that we don't have to repeat this query
         // once for each row and column, but only once per row.
-        TableInfo datasetTable = dataset.getTableInfo(user);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(StudyService.get().getSubjectColumnName(dataset.getContainer()), bean.getParticipantId());
 
@@ -126,24 +132,20 @@
         }
 
         // Issue 13496: it is possible for older studies (<12.1) to have multiple records for a participant in a demographic dataset, so default to the first one
-        Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataset.getContainer()) + ",Date,SequenceNum"), filter, sort).getMapArray();
+        Map<String, Object>[] results = new TableSelector(datasetTable, TableSelector.ALL_COLUMNS, filter, sort).getMapArray();
         if (results.length > 1)
         {
             String msg = "Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length + "\n" +
                     dataset.getName() + " in container " + dataset.getContainer().getPath();
             ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException(msg));
         }
-        String lsid = results.length > 0 ? (String) results[0].get("lsid") : null;
-        Map<String, Object> datasetRow = null;
+        Map<String, Object> datasetRow = results.length > 0 ? results[0] : null;
+        String lsid = datasetRow != null ? (String)datasetRow.get("lsid")  : null;
 
-        if (lsid != null)
-        {
-            datasetRow = dataset.getDatasetRow(user, lsid);
-        }
 
         if (datasetRow == null)
         {
-            if (dataset.canInsert(user))
+            if (datasetTable.hasPermission(user, InsertPermission.class))
             {
                 ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, getContainer());
                 addAction.addParameter("datasetId", datasetId);
@@ -158,7 +160,7 @@
             continue;
         }
 
-        if (dataset.canUpdate(user))
+        if (datasetTable.hasPermission(user, UpdatePermission.class))
         {
     %>
     <tr class="labkey-alternate-row" style="<%=text(expanded ? "" : "display:none")%>">

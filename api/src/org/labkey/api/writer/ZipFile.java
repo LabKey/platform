@@ -85,7 +85,7 @@ public class ZipFile extends AbstractVirtualFile
     {
         // Make sure directory exists, is writeable
         if (!FileUtil.hasCloudScheme(root))
-            FileSystemFile.ensureWriteableDirectory(root.toFile());
+            FileSystemFile.ensureWriteableDirectory(root);
 
         Path zipFile = root.resolve(_makeLegalName(name));
         OutputStream fos = Files.newOutputStream(zipFile);
@@ -93,7 +93,7 @@ public class ZipFile extends AbstractVirtualFile
         return new BufferedOutputStream(fos);
     }
 
-    private static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
+    public static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
     {
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + _makeLegalName(name) + "\";");

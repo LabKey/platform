@@ -27,13 +27,19 @@
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
     DatasetDefinition dataset = me.getModelBean();
     Study study = dataset.getStudy();
 
-    List<ColumnInfo> allCols = dataset.getTableInfo(getUser(), true).getColumns();
+    // NOTE: DatasetTableImpl has columns in additino to the ones that DatasetDefinition.DatasetSchemaTableInfo, such as
+    Set<String> addlDatasetTableColumns = CaseInsensitiveHashSet.of(StudyService.get().getSubjectVisitColumnName(study.getContainer()), "DataSets", "Folder", "DatasetId");
+
+    List<ColumnInfo> allCols = dataset.getTableInfo(getUser()).getColumns();
 
     List<ColumnInfo> systemColumns = new ArrayList<>();
     List<ColumnInfo> userColumns = new ArrayList<>();
@@ -56,7 +62,7 @@
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(col.getPropertyURI(), study.getContainer());
             if (pd != null && !pd.getContainer().equals(dataset.getContainer()))
                 systemColumns.add(col);
-            else
+            else if (!addlDatasetTableColumns.contains(col.getName()))
                 userColumns.add(col);
         }
     }

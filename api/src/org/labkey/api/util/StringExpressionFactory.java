@@ -27,6 +27,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
@@ -246,11 +247,23 @@ public class StringExpressionFactory
 
     public static abstract class StringPart implements Cloneable
     {
+        public boolean isPreviewMode()
+        {
+            return _previewMode;
+        }
+
+        public void setPreviewMode(boolean previewMode)
+        {
+            _previewMode = previewMode;
+        }
+
+        private boolean _previewMode;
         /**
          * @return The string value or null if the part is found in the map,
          * otherwise UNDEFINED if the value does not exist in the map.
          */
-        @Nullable abstract String getValue(Map map);
+        @Nullable
+        public abstract String getValue(Map map);
 
         @NotNull
         final String valueOf(Object o)
@@ -288,7 +301,7 @@ public class StringExpressionFactory
         }
     }
 
-    private static class ConstantPart extends StringPart
+    public static class ConstantPart extends StringPart
     {
         private String _value;
         public ConstantPart(String value)
@@ -338,6 +351,16 @@ public class StringExpressionFactory
                 {
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
+                }
+                else if ((rest.startsWith("minValue('") && rest.endsWith("')")
+                    || (rest.startsWith("minValue(") && rest.endsWith(")"))))
+                {
+                    String param = "";
+                    if (rest.startsWith("minValue('") && rest.endsWith("')"))
+                        param = rest.substring("minValue('".length(), rest.length() - "')".length());
+                    else if (rest.startsWith("minValue(") && rest.endsWith(")"))
+                        param = rest.substring("minValue(".length(), rest.length() - ")".length());
+                    format = new SubstitutionFormat.MinValueSubstitutionFormat(param);
                 }
                 else if (rest.startsWith("number('") && rest.endsWith("')"))
                 {
@@ -462,7 +485,7 @@ public class StringExpressionFactory
         }
     }
 
-    private static SubstitutionFormat createDateSubstitutionFormat(String format)
+    public static SubstitutionFormat createDateSubstitutionFormat(String format)
     {
         return new SubstitutionFormat.DateSubstitutionFormat(createDateFormatter(format));
     }
@@ -609,6 +632,9 @@ public class StringExpressionFactory
         @Override
         public String getValue(Map map)
         {
+            if (isPreviewMode())
+                return (String) map.get(_value);
+
             if (!(map instanceof RenderContext))
                 return "";
 
@@ -669,6 +695,7 @@ public class StringExpressionFactory
 
         protected String _source;
         protected ArrayList<StringPart> _parsedExpression = null;
+        protected ArrayList<StringPart> _deepParsedExpression = null;
 
         AbstractStringExpression(String source)
         {
@@ -698,6 +725,27 @@ public class StringExpressionFactory
             if (null == _parsedExpression)
                 parse();
             return _parsedExpression;
+        }
+
+        public synchronized ArrayList<StringPart> getDeepParsedExpression()
+        {
+            if (null == _deepParsedExpression)
+            {
+                ArrayList<StringPart> parts = new ArrayList<>();
+                for (StringPart part : getParsedExpression())
+                {
+                    if (part instanceof NameGenerator.CounterExpressionPart)
+                    {
+                        NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) part;
+                        parts.addAll(counterPart.getParsedNameExpression().getParsedExpression());
+                    }
+                    else
+                        parts.add(part);
+                }
+                _deepParsedExpression = parts;
+            }
+
+            return _deepParsedExpression;
         }
 
         protected void parse()
@@ -937,11 +985,11 @@ public class StringExpressionFactory
     }
 
 
-    private static class FieldPart extends SubstitutePart
+    public static class FieldPart extends SubstitutePart
     {
         @NotNull private FieldKey _key;
 
-        FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
+        public FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
         {
             super(s, urlEncodeSubstitutions);
             _key = FieldKey.decode(_value);
@@ -951,7 +999,7 @@ public class StringExpressionFactory
             }
         }
 
-        FieldPart(@NotNull FieldKey key, SubstitutionFormat sf)
+        public FieldPart(@NotNull FieldKey key, SubstitutionFormat sf)
         {
             super(key.toString(), sf);
             _key = key;
@@ -1372,17 +1420,12 @@ public class StringExpressionFactory
             m.put("list", Arrays.asList("a", "b", "c"));
 
             // CONSIDER: We may want to allow empty string to pass through the collection methods untouched
-            try
             {
                 StringExpression se = StringExpressionFactory.create(
                         "${a:first}", false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
 
                 String s = se.eval(m);
-                fail("Expected exception");
-            }
-            catch (IllegalArgumentException e)
-            {
-                // ok
+                assertEquals("A", s);
             }
 
             {

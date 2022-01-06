@@ -36,6 +36,7 @@ import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
@@ -44,7 +45,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -57,12 +58,23 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
+import org.labkey.api.security.permissions.RestrictedInsertPermission;
+import org.labkey.api.security.permissions.RestrictedReadPermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -97,6 +109,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -105,6 +118,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
     /**
      * The sample LSID or the assay result LSID column is added to the dataset for assays that support it.
+     *
      * @see AssayTableMetadata#getResultLsidFieldKey()
      */
     public static final String SOURCE_ROW_LSID = "SourceRowLsid";
@@ -114,9 +128,19 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private TableInfo _fromTable;
 
-    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
+    Set<Role> _contextualRoles = null;
+
+
+    /* This predicate is used for restricting which participants are editable by the current user
+     * Assuming the user has permission, all users are editable by default.
+     */
+    Predicate<String> canModifyParticipantPredicate = (id) -> false;
+
+
+    DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
-        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), null);
+        /* NOTE! some code paths still expect this to throw rather than checking table.canRead() */
+        super(schema, dsd.getDatasetSchemaTableInfo(schema.getUser(), false, true), null);
 
         if (null != cf && dsd.getStudy().getShareDatasetDefinitions())
             _setContainerFilter(cf);
@@ -171,7 +195,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
-                var column = new AliasedColumn(this, subjectColName, baseColumn);
+                var column = new AliasedColumn(this, subjectColName, baseColumn)
+                {
+                    @Override
+                    public StringExpression getURL()
+                    {
+                        // delay constructing Participant table
+                        // This is still expensive and should be handled by getEffectiveURL()
+                        if (null == _url && null != getFk())
+                            _url = getFk().getURL(this);
+                        return _url;
+                    }
+                };
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
                 column.setDisplayColumnFactory(colInfo -> {
@@ -181,8 +216,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 });
 
                 column.setFk(new ParticipantForeignKey(cf));
-                if (null == column.getURL())
-                    column.setURL(column.getFk().getURL(column));
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
@@ -250,7 +283,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
-                if (!QCStateManager.getInstance().showQCStates(_userSchema.getContainer()))
+                if (!QCStateManager.getInstance().showStates(_userSchema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
@@ -418,8 +451,44 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 
+        var datasetId = new BaseColumnInfo("DatasetId", this, JdbcType.INTEGER)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAliasName)
+            {
+                return new SQLFragment(String.valueOf(_dsd.getDatasetId()));
+            }
+        };
+        datasetId.setHidden(true);
+        datasetId.setReadOnly(true);
+        datasetId.setUserEditable(false);
+        datasetId.setShownInDetailsView(false);
+        datasetId.setShownInInsertView(false);
+        datasetId.setShownInUpdateView(false);
+        addColumn(datasetId);
+
         addFolderColumn();
     }
+
+
+    @Override
+    public void addContextualRole(Role contextualRole)
+    {
+        if (null == _contextualRoles)
+            _contextualRoles = new HashSet<>();
+        _contextualRoles.add(contextualRole);
+    }
+
+    @Override
+    @NotNull
+    protected Set<Role> getContextualRoles()
+    {
+        var ret = new HashSet<>(getUserSchema().getContextualRoles());
+        if (null != _contextualRoles)
+            ret.addAll(_contextualRoles);
+        return ret;
+    }
+
 
     @NotNull
     @Override
@@ -442,7 +511,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
+    public @NotNull
+    Set<FieldKey> getPHIDataLoggingColumns()
     {
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         Set<FieldKey> loggingColumns = new HashSet<>(1);
@@ -474,7 +544,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public String getContainerFilterColumn()
     {
         if (null == _rootTable.getColumn("container"))
-                return null;
+            return null;
 
         return "Container";
     }
@@ -542,8 +612,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             result = columns.get(fieldKey);
             if (null != result)
             {
-                ((BaseColumnInfo)result).setFieldKey(new FieldKey(null,name));
-                ((BaseColumnInfo)result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
+                ((BaseColumnInfo) result).setFieldKey(new FieldKey(null, name));
+                ((BaseColumnInfo) result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
             }
         }
         return result;
@@ -561,7 +631,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         checkLocked();
 
         if (filter instanceof DataspaceContainerFilter)
-            filter = ((DataspaceContainerFilter)filter).getCanOptimizeDatasetContainerFilter();
+            filter = ((DataspaceContainerFilter) filter).getCanOptimizeDatasetContainerFilter();
 
         super._setContainerFilter(filter);
     }
@@ -572,18 +642,22 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         ContainerFilter f = super.getDefaultContainerFilter();
         if (f instanceof DataspaceContainerFilter)
-            f = ((DataspaceContainerFilter)f).getCanOptimizeDatasetContainerFilter();
+            f = ((DataspaceContainerFilter) f).getCanOptimizeDatasetContainerFilter();
         return f;
     }
 
 
+
+    /** This function is too complicated, consider NOT calling super.getFromSQL() to make the paths through this code more consistent */
     @NotNull
     protected SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
+        checkReadBeforeExecute();
         ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
         DatasetDefinition.DataSharing sharing = getDataset().getDataSharingEnum();
 
         final SQLFragment sqlf;
+        boolean hasWhere = false;
 
         if (!includeParticipantVisit && !_dsd.isPublishedData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
         {
@@ -591,7 +665,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
         else
         {
-            String innerAlias = "__" +  alias;
+            String innerAlias = "__" + alias;
             SqlDialect d = getSchema().getSqlDialect();
             sqlf = new SQLFragment();
             sqlf.appendComment("<DatasetTableImpl>", d);
@@ -604,25 +678,31 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else
             {
                 TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-                sqlf.append("(SELECT ").append(innerAlias).append(".*, PV.VisitRowId");
+                sqlf.append("(SELECT * FROM (SELECT __DS__.*, __PV__.VisitRowId");
                 if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
-                    sqlf.append(", PV.Day");
-                SQLFragment from = getRealTable().getFromSQL(innerAlias);
-                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV"))
-                        .append("\n" + "    ON ").append(innerAlias).append(".ParticipantId = PV.ParticipantId AND ")
-                        .append(innerAlias).append(".SequenceNum = PV.SequenceNum");
+                    sqlf.append(", __PV__.Day");
+                SQLFragment from = getRealTable().getFromSQL("__DS__");
+                sqlf.append("\n FROM ").append(from).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("__PV__"))
+                        .append("\n" + "    ON __DS__.ParticipantId = __PV__.ParticipantId AND __DS__.SequenceNum = __PV__.SequenceNum");
 
                 if (null != getRealTable().getColumn("container"))
                 {
-                    sqlf.append(" AND PV.Container = ").append(innerAlias).append(".Container");
+                    sqlf.append(" AND __PV__.Container = __DS__.Container");
                 }
                 else
                 {
-                    sqlf.append(" AND PV.Container = '").append(getContainer().getId()).append("'");
+                    sqlf.append(" AND __PV__.Container = '").append(getContainer().getId()).append("'");
+                }
+                sqlf.append(") ").append(innerAlias).append(" ");
+
+                Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+                SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), innerAlias, columnMap);
+                if (!filterFrag.isEmpty())
+                {
+                    sqlf.append(filterFrag);
+                    hasWhere = true;
                 }
             }
-
-            boolean hasWhere = false;
 
             // Datasets mostly ignore container filters because they usually belong to a single container.
             // In the dataspace case, they are unfiltered (no container filter).
@@ -639,17 +719,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
                     if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
                     {
-                        sqlf.append(" WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
+                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".ParticipantId IN (SELECT ParticipantId FROM study.Participant WHERE ").append(sqlCF).append(")");
                     }
                     else
                     {
                         // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
                         if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
                             throw new IllegalStateException("problem generating dataset SQL");
-                        sqlf.append(" WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".").append(sqlCF);
+                        hasWhere = true;
                     }
-
-                    hasWhere = true;
                 }
             }
 
@@ -724,7 +803,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public ContainerContext getContainerContext()
     {
         if (_dsd.isShared())
-            return new ContainerContext.FieldKeyContext(new FieldKey(null,"Folder"));
+            return new ContainerContext.FieldKeyContext(new FieldKey(null, "Folder"));
         else
             return _dsd.getContainer();
     }
@@ -757,13 +836,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 else
                 {
-                    if(overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
+                    if (overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
                         LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
                 if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
                 {
                     // TableName different than both name and label, so overlay it if found
-                    if(overlayMetadataIfExists(tableName, schema, errors))
+                    if (overlayMetadataIfExists(tableName, schema, errors))
                         LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
             }
@@ -785,7 +864,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private class QCStateDisplayColumn extends DataColumn
     {
-        private Map<Integer, QCState> _qcStateCache;
+        private Map<Integer, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
         {
             super(col);
@@ -798,19 +877,19 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
             if (value instanceof Integer)
             {
-                QCState state = getStateCache(ctx).get(value);
+                DataState state = getStateCache(ctx).get(value);
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(HtmlString.unsafe(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription())));
             }
             return formattedValue.getHtmlString();
         }
 
-        private Map<Integer, QCState> getStateCache(RenderContext ctx)
+        private Map<Integer, DataState> getStateCache(RenderContext ctx)
         {
             if (_qcStateCache == null)
             {
                 _qcStateCache = new HashMap<>();
-                for (QCState state : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
+                for (DataState state : QCStateManager.getInstance().getStates(ctx.getContainer()))
                     _qcStateCache.put(state.getRowId(), state);
             }
             return _qcStateCache;
@@ -841,7 +920,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_userSchema.getUser(), _userSchema.getMustCheckPermissions(), true);
+            _fromTable = _dsd.getDatasetSchemaTableInfo(_userSchema.getUser(), false, true);
         }
         return _fromTable;
     }
@@ -876,7 +955,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !def.canInsert(user))
+        if (!user.hasRootAdminPermission() && !hasPermission(user, ReadPermission.class))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -884,8 +963,15 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        // OK to edit these in Dataspace project and in any folder
-        return getDatasetDefinition().hasPermission(user, perm);
+        if (!perm.equals(ReadPermission.class) && !perm.equals(RestrictedReadPermission.class) && !canUserAccessPhi())
+            return false;
+        return getDatasetDefinition().hasPermission(user, perm, getContextualRoles());
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        throw new IllegalStateException();
     }
 
     @Override
@@ -912,14 +998,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     // TODO see BaseStudyTable.addWrapParticipantColumn(), do we need both?
     class ParticipantForeignKey extends LookupForeignKey
     {
-        private ParticipantTable _tableInfo;
+        private TableInfo _tableInfo;
 
         ParticipantForeignKey(ContainerFilter cf)
         {
             super(cf, StudyService.get().getSubjectColumnName(_userSchema.getContainer()), null);
             // 19918: GROUP BY columns in custom query no longer retain ForeignKey configuration
             if (_dsd.isShared())
-                addJoin(new FieldKey(null,"Folder"),"Container",false);
+                addJoin(new FieldKey(null, "Folder"), "Container", false);
             // Perf improvement - stash the table name so it can be accessed without needing to create the whole TableInfo
             _tableName = StudyService.get().getSubjectTableName(_userSchema.getContainer());
         }
@@ -929,12 +1015,18 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             if (_tableInfo == null)
             {
-                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantTable(_userSchema, getLookupContainerFilter(), true);
-                _tableInfo.setIgnoreSessionParticipantGroup();
-                _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
-                _tableInfo.afterConstruct();
+                final ContainerFilter cf = getLookupContainerFilter();
+                _tableInfo = getUserSchema().getCachedLookupTableInfo(this.getClass().getName() + "/" + (null==cf?"null":cf.getCacheKey()), () ->
+                {
+                    // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                    // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                    var t = new ParticipantTable(_userSchema, getLookupContainerFilter(), true);
+                    t.setIgnoreSessionParticipantGroup();
+                    t.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
+                    t.afterConstruct();
+                    t.setLocked(true);
+                    return t;
+                });
             }
             return _tableInfo;
         }
@@ -948,7 +1040,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     class ParticipantVisitForeignKey extends LookupForeignKey
     {
-        private ParticipantVisitTable _tableInfo;
+        private TableInfo _tableInfo;
 
         ParticipantVisitForeignKey(ContainerFilter cf, String pkColumnName)
         {
@@ -956,7 +1048,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
             // 20546: row duplication for dataspace project w/ same ptid in multiple containers
             if (_dsd.isShared())
-                addJoin(new FieldKey(null,"Folder"),"Container",false);
+                addJoin(new FieldKey(null, "Folder"), "Container", false);
         }
 
         @Override
@@ -964,11 +1056,17 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             if (_tableInfo == null)
             {
-                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), true);
-                _tableInfo.setIgnoreSessionParticipantGroup();
-                _tableInfo.afterConstruct();
+                final ContainerFilter cf = getLookupContainerFilter();
+                _tableInfo = getUserSchema().getCachedLookupTableInfo(this.getClass().getName() + "/" + (null==cf?"null":cf.getCacheKey()), () ->
+                {
+                    // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                    // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                    var t = new ParticipantVisitTable(_userSchema, cf, true);
+                    t.setIgnoreSessionParticipantGroup();
+                    t.afterConstruct();
+                    t.setLocked(true);
+                    return t;
+                });
             }
             return _tableInfo;
         }
@@ -1035,5 +1133,86 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         if (fk instanceof SpecimenForeignKey)
             ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
         return wrappedColumn;
+    }
+
+
+    // cache individual predicates per operation to avoid permission checking on every call
+    Predicate<String> insertPredicate = null;
+    Predicate<String> updatePredicate = null;
+    Predicate<String> deletePredicate = null;
+
+    @Override
+    public void setCanModifyParticipantPredicate(Predicate<String> edit)
+    {
+        canModifyParticipantPredicate = edit;
+    }
+
+    public boolean canUpdateRowForParticipant(String subjectid)
+    {
+        if (null == updatePredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), UpdatePermission.class))
+                updatePredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class))
+                updatePredicate = (s) -> false;
+            else
+                updatePredicate = canModifyParticipantPredicate;
+        }
+        return updatePredicate.test(subjectid);
+    }
+
+    public boolean canInsertRowForParticipant(String subjectid)
+    {
+        if (null == insertPredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), InsertPermission.class))
+                insertPredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedInsertPermission.class))
+                insertPredicate = (s) -> false;
+            else
+                insertPredicate = canModifyParticipantPredicate;
+        }
+        return insertPredicate.test(subjectid);
+    }
+
+    public boolean canDeleteRowForParticipant(String subjectid)
+    {
+        if (null == deletePredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), DeletePermission.class))
+                deletePredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedDeletePermission.class))
+                deletePredicate = (s) -> false;
+            else
+                deletePredicate = canModifyParticipantPredicate;
+        }
+        return deletePredicate.test(subjectid);
+    }
+
+    @Override
+    public String getParticipant(Map<String, Object> row)
+    {
+        try
+        {
+            return ((DatasetUpdateService) getUpdateService()).getParticipant(row, getUserSchema().getUser(), getUserSchema().getContainer());
+        }
+        catch (ValidationException|QueryUpdateServiceException ex)
+        {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean hasUpdateURLOverride()
+    {
+        // TODO
+        return super.hasUpdateURLOverride();
+    }
+
+    @Override
+    public boolean allowQueryTableURLOverrides()
+    {
+        // TODO
+        return super.allowQueryTableURLOverrides() || hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class);
     }
 }

@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,6 +60,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.ForbiddenProjectException;
@@ -98,7 +98,7 @@ import java.util.function.BooleanSupplier;
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {
-    private static final Logger LOG = LogManager.getLogger(Container.class);
+    private static final Logger LOG = LogHelper.getLogger(Container.class, "Information about projects and folders");
 
     private GUID _id;
     private Path _path;
@@ -125,7 +125,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _title;
 
     private LockState _lockState = null;
-    @JsonIgnore // Current Jackson version (2.11.3) can't handle LocalDate, so skip expiration date during serialization
     private LocalDate _expirationDate = null;
 
     // Might add others in the future (e.g., ReadOnly)
@@ -446,13 +445,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public boolean hasPermissions(@NotNull User user, @NotNull Set<Class<? extends Permission>> permissions)
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, Set.of());
     }
 
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    {
+        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, contextualRoles);
+    }
 
-    public boolean hasOneOf(@NotNull User user, @NotNull Set<Class<? extends Permission>> perms)
+
+    public boolean hasOneOf(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms)
     {
         return SecurityManager.hasAnyPermissions(null, getPolicy(), user, perms, Set.of());
     }
@@ -909,7 +913,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
     {
-        setFolderType(folderType, ensureModules,ModuleLoader.getInstance().getUpgradeUser(), errors);
+        setFolderType(folderType, ensureModules, null, errors);
     }
 
     public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user, BindException errors)
@@ -1047,7 +1051,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         props.save();
-        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules);
+        ContainerManager.notifyContainerChange(getId(), ContainerManager.Property.Modules, user);
     }
 
     public void appendWorkbookModulesToParent(Set<Module> newModules, @Nullable User user)
@@ -1334,6 +1338,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         containerProps.put("name", getName());
         containerProps.put("path", getPath());
         containerProps.put("parentPath", parent==null ? null : parent.getPath());
+        containerProps.put("title", getTitle());
 
         if (this.hasPermission(user, ReadPermission.class))
         {
@@ -1361,9 +1366,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("folderType", getFolderType().getName());
             containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
             containerProps.put("parentId", parent==null ? null : parent.getId());
-
-            if (null != getTitle())
-                containerProps.put("title", getTitle());
         }
         else
         {
@@ -1682,26 +1684,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _lockState = lockState;
     }
 
-    @Deprecated @JsonIgnore
-    public @Nullable LocalDate getExpirationDateLD()
+    public @Nullable LocalDate getExpirationDate()
     {
         return _expirationDate;
     }
 
-    @Deprecated
-    public void setExpirationDateLD(LocalDate expirationDate)
+    public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
-    }
-
-    // TODO: Convert to LocalDate once we fix Jackson serialization of LocalDate
-    public java.sql.Date getExpirationDate()
-    {
-        return java.sql.Date.valueOf(_expirationDate);
-    }
-
-    public void setExpirationDate(java.sql.Date expirationDate)
-    {
-        _expirationDate = expirationDate.toLocalDate();
     }
 }

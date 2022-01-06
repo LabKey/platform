@@ -60,6 +60,7 @@ public class VisualizationVisitTagTable extends VirtualTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         if (_altQueryName == null)
         {
             String innerAlias = alias + "_SP";

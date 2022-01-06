@@ -17,8 +17,8 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -542,12 +542,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             return defaultValue;
         }
         return result;
-    }
-
-    @Override
-    public String getAdministratorContactHTML()
-    {
-        return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail(true)) + "\">contact a system administrator</a>";
     }
 
     @NotNull

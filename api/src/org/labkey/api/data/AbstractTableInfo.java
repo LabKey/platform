@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -54,6 +54,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -122,7 +123,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected DbSchema _schema;
     protected String _titleColumn;
     protected boolean _hasDefaultTitleColumn = true;
-    private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
+    private int _cacheSize = CacheManager.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
     /** Columns that aren't part of this table any more, but can still be resolved for backwards compatibility */
@@ -364,7 +365,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             cols = Arrays.asList(firstColumn, titleColumnInfo);
             titleIndex = 2;
         }
-        else if (firstColumn == titleColumn)
+        else if (firstColumn == titleColumn || firstColumn.equals(titleColumnInfo))
         {
             cols = Arrays.asList(firstColumn);
             titleIndex = 1;
@@ -889,6 +890,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         SecurityLogger.log("AbstractTableInfo.hasPermission " + getName(), user, null, false);
+        UserSchema s = getUserSchema();
+        if (perm.equals(ReadPermission.class) && null != s)
+            return s.canReadSchema() && s.getContainer().hasPermission(user, perm);
         return false;
     }
 

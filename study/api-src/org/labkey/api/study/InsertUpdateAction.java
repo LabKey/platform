@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -45,6 +46,9 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -90,7 +94,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         super(formClass);
     }
 
-    private QueryUpdateForm getUpdateForm(TableInfo datasetTable, BindException errors)
+    protected QueryUpdateForm getUpdateForm(TableInfo datasetTable, BindException errors)
     {
         if (_updateForm == null)
         {
@@ -108,33 +112,28 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
     {
         Study study = getStudy();
+        Dataset ds = getDataset(form.getDatasetId());
+        @NotNull TableInfo datasetTable = getQueryTable();
 
-        _ds = StudyService.get().getDataset(study.getContainer(), form.getDatasetId());
-        if (null == _ds)
-        {
-            redirectTypeNotFound(form.getDatasetId());
-            return null;
-        }
-        if (!_ds.canRead(getUser()))
+        if (!datasetTable.hasPermission(getUser(), ReadPermission.class))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
-        if (isInsert() && !_ds.canInsert(getUser()))
+        if (isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+            if (!datasetTable.hasPermission(getUser(), InsertPermission.class))
+                throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
-        if (!isInsert() && !_ds.canUpdate(getUser()))
+        else // !isInsert()
         {
-            throw new UnauthorizedException("User does not have permission to edit this dataset");
+            if (!datasetTable.hasPermission(getUser(), UpdatePermission.class))
+                throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-
-        // we want to use the actual user schema table, since it implements UpdateService and permissions checks
-        TableInfo datasetTable = getQueryTable();
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
         // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
-        if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDatasetId()))
+        if (!study.isManualCohortAssignment() && Objects.equals(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
             final List<? extends Cohort> cohorts = CohortService.get().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
@@ -178,7 +177,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             {
                 Map<String, Object> formDefaults = new HashMap<>();
 
-                Domain domain = PropertyService.get().getDomain(getContainer(), _ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(getContainer(), ds.getTypeURI());
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
@@ -206,7 +205,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        String referer = StringUtils.defaultString(form.getReturnUrl(), HttpView.currentRequest().getHeader("Referer"));
+        String referer = StringUtils.defaultString(form.getReturnUrl(), getViewContext().getRequest().getHeader("Referer"));
         URLHelper cancelURL;
 
         if (StringUtils.isEmpty(referer))
@@ -272,32 +271,28 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
     @Override
     public boolean handlePost(Form form, BindException errors) throws Exception
     {
-        int datasetId = form.getDatasetId();
-        Study study = getStudy();
-        _ds = StudyService.get().getDataset(study.getContainer(), datasetId);
-        if (null == _ds)
-        {
-            redirectTypeNotFound(form.getDatasetId());
-            return false;
-        }
+        // init _study, _ds
+        getDataset(form.getDatasetId());
+
+        TableInfo datasetTable = getQueryTable();
         final Container c = getContainer();
         final User user = getUser();
-        if (isInsert() && !_ds.canInsert(user))
+        if (isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+            if (!datasetTable.hasPermission(user, InsertPermission.class))
+                throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
-        if (!isInsert() && !_ds.canUpdate(user))
+        else // if (!isInsert())
         {
-            throw new UnauthorizedException("User does not have permission to edit this dataset");
+            if (!datasetTable.hasPermission(user, UpdatePermission.class))
+                throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-        if (_ds.isPublishedData())
+        if (getDataset(form.getDatasetId()).isPublishedData())
         {
             throw new UnauthorizedException("This dataset comes from linked data. You cannot update it directly");
         }
 
-        TableInfo datasetTable = getQueryTable();
         QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
-
         if (errors.hasErrors())
             return false;
 
@@ -320,7 +315,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                     return false;
 
                 // save last inputs for use in default value population:
-                Domain domain = PropertyService.get().getDomain(c, _ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(c, getDataset(form.getDatasetId()).getTypeURI());
                 List<? extends DomainProperty> properties = domain.getProperties();
                 Map<String, Object> requestMap = updateForm.getTypedValues();
                 Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
@@ -365,7 +360,6 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         }
 
         return !errors.hasErrors();
-
     }
 
     @Override
@@ -393,18 +387,42 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         return _study;
     }
 
+    protected Dataset getDataset(int datasetid)
+    {
+        if (null == _ds || _ds.getDatasetId() != datasetid)
+        {
+            Study study = getStudy();
+            _ds = StudyService.get().getDataset(study.getContainer(), datasetid);
+            if (null == _ds)
+            {
+                redirectTypeNotFound(datasetid);
+                return null;
+            }
+        }
+        return _ds;
+    }
+
+
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
         throw new RedirectException(PageFlowUtil.urlProvider(StudyUrls.class).getTypeNotFoundURL(getContainer(), datasetId));
     }
 
-    TableInfo getQueryTable()
+
+    protected DatasetTable _datasetTableInfo = null;
+
+    @NotNull
+    protected TableInfo getQueryTable()
     {
-        UserSchema schema = StudyService.get().getStudyQuerySchema(getStudy(), getUser());
-        // TODO need to return unlocked tableinfo because the action hacks on it
-        TableInfo datasetQueryTable= schema.getTable(_ds.getName(), null, true, true);
-        if (null == datasetQueryTable) // shouldn't happen...
-            throw new NotFoundException("table: study." + _ds.getName());
-        return datasetQueryTable;
+        if (null == _datasetTableInfo)
+        {
+            UserSchema schema = StudyService.get().getStudyQuerySchema(getStudy(), getUser());
+            // NOTE: need to return unlocked tableinfo because the action hacks on it
+            // NOTE: also subclasses may call (DataTable).addContextualRole()
+            _datasetTableInfo = (DatasetTable) schema.getTable(_ds.getName(), null, true, true);
+            if (null == _datasetTableInfo)
+                throw new NotFoundException("table: study." + _ds.getName());
+        }
+        return _datasetTableInfo;
     }
 }

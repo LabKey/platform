@@ -17,8 +17,11 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
@@ -43,5 +46,28 @@ public interface ExpMaterial extends ExpRunItem
 
     String getRootMaterialLSID();
 
+    void setRootMaterialLSID(String lsid);
+
     String getAliquotedFromLSID();
+
+    void setAliquotedFromLSID(String lsid);
+
+    DataState getSampleState();
+
+    String getStateLabel();
+
+    // rollup - begin
+    boolean isRecomputeRollup();
+    int getAliquotCount();
+    double getAliquotVolume();
+    String getAliquotUnit();
+    // rollup - end
+
+    boolean isOperationPermitted(SampleTypeService.SampleOperations operation);
+
+    String getNameAndStatus();
+
+    void setSampleStateId(Integer stateId);
+
+    ActionURL detailsURL(Container container, boolean checkForOverride);
 }

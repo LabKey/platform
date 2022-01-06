@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
@@ -40,6 +41,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.qc.QCStateManager;
@@ -53,9 +55,14 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
+import org.labkey.api.security.permissions.RestrictedInsertPermission;
+import org.labkey.api.security.permissions.RestrictedUpdatePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
@@ -65,6 +72,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -134,7 +142,9 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canUpdate(getUser()));
+        var table = getTable();
+        var hasUpdatePermission = null != table && (table.hasPermission(getUser(), UpdatePermission.class) || table.hasPermission(getUser(), RestrictedUpdatePermission.class));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && hasUpdatePermission);
 
         if (form.getVisitRowId() != 0)
         {
@@ -179,7 +189,7 @@ public class DatasetQueryView extends StudyQueryView
     private DatasetFilterForm getForm(ViewContext context)
     {
         DatasetFilterForm form = new DatasetFilterForm();
-
+        form.setViewContext(context);
         form.bindParameters(context.getBindPropertyValues());
         return form;
     }
@@ -234,6 +244,61 @@ public class DatasetQueryView extends StudyQueryView
         view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
+    }
+
+    /** This is how we tell the QueryView that we want to render the UpdateURL (well icon actually) even though
+     * table.hasPermission(UpdatePermission) is false.
+      * @return
+     */
+    protected boolean allowQueryTableUpdateURLOverride()
+    {
+        if (super.allowQueryTableUpdateURLOverride())
+            return true;
+        TableInfo table = getTable();
+        return null != table && table.hasPermission(getUser(), RestrictedUpdatePermission.class);
+    }
+
+    @Override
+    protected @Nullable DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
+    {
+        final DatasetTableImpl dtable = (DatasetTableImpl)table;
+        final FieldKey subject = dtable.getColumn(dtable.getDataset().getStudy().getSubjectColumnName()).getFieldKey();
+
+        return new UpdateColumn.Impl(urlUpdate)
+        {
+            @Override
+            public void addQueryFieldKeys(Set<FieldKey> keys)
+            {
+                super.addQueryFieldKeys(keys);
+                keys.add(subject);
+            }
+
+            // NOTE oddly the DataRegion does not call this Display column to render itself???
+            // Instead, it pieces together the HTML calling only getValue(), renderURL(), and getLinkTarget().
+            @Override
+            public Object getValue(RenderContext ctx)
+            {
+                String value = (String)super.getValue(ctx);
+                if (null == value)
+                    return null;
+                String subjectId = (String)ctx.get(subject);
+                if (null != subjectId && dtable.canUpdateRowForParticipant(subjectId))
+                    return value;
+                return null;
+            }
+
+            @Override
+            public String renderURL(RenderContext ctx)
+            {
+                return super.renderURL(ctx);
+            }
+
+            @Override
+            public String getLinkTarget()
+            {
+                return super.getLinkTarget();
+            }
+        };
     }
 
     private boolean hasUsefulDetailsPage()
@@ -356,8 +421,10 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         User user = getUser();
-        boolean canInsert = _dataset.canInsert(user);
-        boolean canDelete = _dataset.canDelete(user);
+        var table = getTable();
+        boolean canImport = null != table && table.hasPermission(user, InsertPermission.class);
+        boolean canInsert = canImport || (null != table && table.hasPermission(user, RestrictedInsertPermission.class));
+        boolean canDelete = null != table && (table.hasPermission(user, DeletePermission.class) || table.hasPermission(user, RestrictedDeletePermission.class));
         boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         ExpObject publishSource = _dataset.resolvePublishSource();
@@ -369,6 +436,10 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (canInsert)
                 {
+                    // don't show import button if user only had RestrictedInsertPermission
+                    if (!canImport)
+                        setShowImportDataButton(false);
+
                     // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionButton insertButton = createInsertMenuButton();
                     if (insertButton != null)
@@ -434,7 +505,7 @@ public class DatasetQueryView extends StudyQueryView
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
-        if (QCStateManager.getInstance().showQCStates(getContainer()))
+        if (QCStateManager.getInstance().showStates(getContainer()))
             bar.add(createQCStateButton());
 
         if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
@@ -553,7 +624,11 @@ public class DatasetQueryView extends StudyQueryView
         @Override
         public @NotNull BindException bindParameters(PropertyValues params)
         {
-            return BaseViewAction.springBindParameters(this, "form", params);
+            assert _bindState == BindState.UNBOUND;
+            _bindState = BindState.BINDING;
+            var ret = BaseViewAction.springBindParameters(this, "form", params);
+            _bindState = BindState.BOUND;
+            return ret;
         }
 
         public String getCohortFilterType()

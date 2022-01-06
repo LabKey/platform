@@ -368,7 +368,7 @@ public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     errors = new BatchValidationException();
     svc.insertRows(user, c, rows, errors, null, null);
     assertTrue(errors.hasErrors());
-    assertTrue(errors.getMessage().contains("Name is required for sample on row 1"));
+    assertTrue(errors.getMessage().contains("SampleID or Name is required for sample on row 1"));
 }
 
 // idCols not null, nameExpression not null, 'name' property (not used) -- fail
@@ -1048,7 +1048,7 @@ public void testExpMaterialPermissions() throws Exception
     try
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(
-                user, c, List.of(stSampleId, m.getRowId()), true, null);
+                user, c, List.of(stSampleId, m.getRowId()), true, null, false, false);
         fail("Expected to throw exception");
     }
     catch (Exception e)
@@ -1060,7 +1060,7 @@ public void testExpMaterialPermissions() throws Exception
     try
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(
-                user, c, List.of(stSampleId, m.getRowId()), true, st);
+                user, c, List.of(stSampleId, m.getRowId()), true, st, false, false);
         fail("Expected to throw exception");
     }
     catch (Exception e)

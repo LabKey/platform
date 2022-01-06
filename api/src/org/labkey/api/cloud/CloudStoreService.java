@@ -18,6 +18,8 @@ package org.labkey.api.cloud;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
@@ -27,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * User: kevink
@@ -46,6 +49,8 @@ public interface CloudStoreService
     {
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
+
+    Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
     class StoreInfo
     {
@@ -114,7 +119,7 @@ public interface CloudStoreService
     /**
      * Returns a list of all store names.
      */
-    public Collection<String> getCloudStores();
+    Collection<String> getCloudStores();
 
     /**
      * Returns a list of enabled store names in the container.
@@ -160,15 +165,7 @@ public interface CloudStoreService
                                   @NotNull org.labkey.api.util.Path path);
 
     @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)      // TODO: remove this when implementation switches to below
-    {
-        return null;
-    }
-    @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay)
-    {
-        return getWebFilesResource(parent, container, name);
-    }
+    WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay);
 
     default Map<String, StoreInfo> getStoreInfos(@Nullable Container container)
     {

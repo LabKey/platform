@@ -28,14 +28,13 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -59,14 +58,17 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -78,8 +80,10 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -108,6 +112,11 @@ public abstract class UploadSamplesHelper
     private static boolean isDescriptionHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Description.name());
+    }
+
+    private static boolean isSampleStateHeader(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.SampleState.name());
     }
 
     private static boolean isCommentHeader(String name)
@@ -175,20 +184,23 @@ public abstract class UploadSamplesHelper
      * If the run has more than the sample as an output, the material is removed as an output of the run
      * otherwise the run will be deleted.
      */
-    public static void clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    @NotNull
+    public static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
     {
         ExpProtocolApplication existingSourceApp = material.getSourceApplication();
+        Set<ExpMaterial> previousSampleParents = Collections.emptySet();
+        Set<ExpMaterial> previousSampleChildren = Collections.emptySet();
         if (existingSourceApp == null)
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);
 
         ExpRun existingDerivationRun = existingSourceApp.getRun();
         if (existingDerivationRun == null)
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);
 
         ExpProtocol protocol = existingDerivationRun.getProtocol();
 
         if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);;
 
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
@@ -197,6 +209,9 @@ public abstract class UploadSamplesHelper
                     " of protocol '" + protocol.getName() + "'" +
                     " for sample '" + material.getName() + "' since it is not a sample derivation run");
         }
+
+        previousSampleParents = existingDerivationRun.getMaterialInputs().keySet();
+        previousSampleChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
@@ -221,6 +236,7 @@ public abstract class UploadSamplesHelper
             existingSourceApp.removeMaterialInput(user, material);
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
+        return Pair.of(previousSampleParents, previousSampleChildren);
     }
 
     /**
@@ -343,14 +359,13 @@ public abstract class UploadSamplesHelper
      *
      * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
      *                will be incorporated into the resolved inputs and outputs
-     * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
-     *                    indicate tha parent should be removed.
+     * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
+     *                    indicate the parent should be removed.
      * @throws ExperimentException
      */
     @NotNull
     public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, @Nullable ExpRunItem runItem,
-                                                                                       Set<Pair<String, String>> parentNames,
-                                                                                       @Nullable MaterialSource source,
+                                                                                       Set<Pair<String, String>> entityNamePairs,
                                                                                        RemapCache cache,
                                                                                        Map<Integer, ExpMaterial> materialMap,
                                                                                        Map<Integer, ExpData> dataMap,
@@ -385,20 +400,24 @@ public abstract class UploadSamplesHelper
                 String message = "Aliquot parent '" + aliquotedFrom + "' not found.";
                 throw new ValidationException(message);
             }
+            else if (!aliquotParent.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            {
+                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStateLabel()));
+            }
         }
 
-        for (Pair<String, String> pair : parentNames)
+        for (Pair<String, String> pair : entityNamePairs)
         {
-            String parentColName = pair.first;
-            String parentValue = pair.second;
-            boolean isEmptyParent = StringUtils.isEmpty(parentValue);
+            String entityColName = pair.first;
+            String entityName = pair.second;
+            boolean isEmptyEntity = StringUtils.isEmpty(entityName);
 
-            String[] parts = parentColName.split("\\.|/");
+            String[] parts = entityColName.split("\\.|/");
             if (parts.length == 1)
             {
                 if (parts[0].equalsIgnoreCase("parent"))
                 {
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
                         if (isAliquot)
                         {
@@ -406,12 +425,12 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, null, null, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, null, null, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
                         {
-                            String message = "Sample input '" + parentValue + "' not found";
+                            String message = "Sample input '" + entityName + "' not found";
                             throw new ValidationException(message);
                         }
                     }
@@ -426,7 +445,7 @@ public abstract class UploadSamplesHelper
                     if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (isEmptyParent)
+                    if (isEmptyEntity)
                     {
                         if (isMerge && !isAliquot)
                             parentSampleTypesToRemove.add(namePart);
@@ -439,11 +458,11 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
+                            throw new ValidationException("Sample '" + entityName + "' not found in Sample Type '" + namePart + "'.");
 
                     }
                  }
@@ -453,9 +472,9 @@ public abstract class UploadSamplesHelper
                     if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: child SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
@@ -467,7 +486,7 @@ public abstract class UploadSamplesHelper
                             }
                         }
                         else
-                            throw new ValidationException("Sample output '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
+                            throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
@@ -476,7 +495,7 @@ public abstract class UploadSamplesHelper
                     if (dataClass == null)
                         throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (isEmptyParent)
+                    if (isEmptyEntity)
                     {
                         if (isMerge && !isAliquot)
                             parentDataTypesToRemove.add(namePart);
@@ -485,20 +504,20 @@ public abstract class UploadSamplesHelper
                     {
                         if (isAliquot)
                         {
-                            String message = parentColName + " is not allowed for aliquots";
+                            String message = entityColName + " is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
 
-                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
                         {
 
                             if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
-                                throw new ValidationException("Source '" + parentValue + "' not found in Source Type  '" + namePart + "'.");
+                                throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
                             else
-                                throw new ValidationException("Data input '" + parentValue + "' not found in in Data Class '" + namePart + "'.");
+                                throw new ValidationException("Data input '" + entityName + "' not found in in Data Class '" + namePart + "'.");
                         }
                     }
                 }
@@ -508,13 +527,13 @@ public abstract class UploadSamplesHelper
                     if (dataClass == null)
                         throw new ValidationException(String.format("Invalid import alias: child DataClass [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
-                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             childData.put(data, dataRole(data, user));
                         else
-                            throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                            throw new ValidationException("Data output '" + entityName + "' in DataClass '" + namePart + "' not found");
                     }
                 }
             }
@@ -691,13 +710,15 @@ public abstract class UploadSamplesHelper
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
+        final Container container;
 
-        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in, Container container)
         {
             this.sampletype = sampletype;
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
+            this.container = container;
         }
 
         @Override
@@ -724,6 +745,8 @@ public abstract class UploadSamplesHelper
                         continue;
                     if (isAliasHeader(name))
                         continue;
+                    if (isSampleStateHeader(name))
+                        continue;
                     drop.add(name);
                 }
             }
@@ -745,17 +768,24 @@ public abstract class UploadSamplesHelper
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize);
+            addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize, sampletype.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
             dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
+            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()))
+                    .addExtraPropsFn(() -> {
+                        if (container != null)
+                            return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                        else
+                            return Collections.emptyMap();
+                    });
 
             return LoggingDataIterator.wrap(names);
         }
@@ -766,17 +796,19 @@ public abstract class UploadSamplesHelper
     {
         final ExpSampleTypeImpl sampletype;
         final NameGenerator nameGen;
+        final NameGenerator aliquotNameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final Container _container;
         final int _batchSize;
         boolean first = true;
         Map<String, String> importAliasMap = null;
+        boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
+        Set<String> _existingNames = null;
+        List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
         String generatedName = null;
         String generatedLsid = null;
-
-        private Map<String, DbSequence> _aliquotSequences = new HashMap<>();
 
         _GenerateNamesDataIterator(ExpSampleTypeImpl sampletype, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
@@ -785,13 +817,23 @@ public abstract class UploadSamplesHelper
             try
             {
                 this.importAliasMap = sampletype.getImportAliasMap();
+                _extraPropsFns.add(() -> {
+                    if (this.importAliasMap != null)
+                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);
+                    else
+                        return Collections.emptyMap();
+                });
             }
             catch (IOException e)
             {
                 // do nothing
             }
             nameGen = sampletype.getNameGenerator();
-            nameState = nameGen.createState(true);
+            aliquotNameGen = sampletype.getAliquotNameGenerator();
+            if (nameGen != null)
+                nameState = nameGen.createState(true);
+            else
+                nameState = null;
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             _container = sampletype.getContainer();
             _batchSize = batchSize;
@@ -805,6 +847,18 @@ public abstract class UploadSamplesHelper
             addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampletype.getLSID()));
         }
 
+        _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
+        {
+            _allowUserSpecifiedNames = allowUserSpecifiedNames;
+            return this;
+        }
+
+        _GenerateNamesDataIterator addExtraPropsFn(Supplier<Map<String, Object>> extraProps)
+        {
+            _extraPropsFns.add(extraProps);
+            return this;
+        }
+
         void onFirst()
         {
             first = false;
@@ -814,49 +868,51 @@ public abstract class UploadSamplesHelper
         protected void processNextInput()
         {
             Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
+
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get("AliquotedFrom");
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    aliquotedFrom = (String) aliquotedFromObj;
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
             try
             {
-                String aliquotedFrom = null;
-                Object aliquotedFromObj = map.get("AliquotedFrom");
-                if (aliquotedFromObj != null)
+                Object currNameObj = map.get("Name");
+                if (currNameObj != null && !_allowUserSpecifiedNames)
                 {
-                    if (aliquotedFromObj instanceof String)
+                    if (StringUtils.isNotBlank(currNameObj.toString()))
                     {
-                        aliquotedFrom = (String) aliquotedFromObj;
-                    }
-                    else if (aliquotedFromObj instanceof Number)
-                    {
-                        aliquotedFrom = aliquotedFromObj.toString();
+                        if (_context.getInsertOption().equals(QueryUpdateService.InsertOption.MERGE))
+                        {
+                            // don't flag rows that already exist if the option is set to update existing
+                            if (!rowExists(currNameObj.toString()))
+                                addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names (or existing names) are allowed.");
+                        }
+                        else
+                            addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names are allowed.");
+
                     }
                 }
 
-                boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
-                if (isAliquot)
+                if (nameGen != null)
                 {
-                    String aliquotName = null;
-                    // If a name is already provided, just use it as is
-                    Object currNameObj = map.get("Name");
-                    if (currNameObj != null)
-                        aliquotName = currNameObj.toString();
-
-                    if (StringUtils.isEmpty(aliquotName))
-                        aliquotName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
-
-                    generatedName = aliquotName;
+                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
+                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
                 }
                 else
-                {
-                    Supplier<Map<String, Object>> extraPropsFn = () -> {
-                        if (importAliasMap != null)
-                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
-                        else
-                            return Collections.emptyMap();
-                    };
-
-                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
-                }
-                generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                    addRowError("Error creating naming pattern generator.");
             }
+
             catch (NameGenerator.DuplicateNameException dup)
             {
                 addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
@@ -864,32 +920,20 @@ public abstract class UploadSamplesHelper
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                if (sampletype.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
-                else if (sampletype.hasNameAsIdCol())
-                    addRowError("Name is required for sample on row " + e.getRowNumber());
+                if (isAliquot)
+                {
+                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + sampletype.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                }
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                {
+                    if (sampletype.hasNameExpression())
+                        addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    else if (sampletype.hasNameAsIdCol())
+                        addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    else
+                        addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                }
             }
-        }
-
-        private DbSequence getAliquotSequence(String aliquotedFrom)
-        {
-            ExpMaterial parent = this.sampletype.getSample(_container, aliquotedFrom);
-            String seqName = ALIQUOT_DB_SEQ_PREFIX + ":" + aliquotedFrom;
-            if (!_aliquotSequences.containsKey(seqName))
-            {
-                int seqId = parent != null ? parent.getRowId() : 0;
-                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, seqName, seqId, _batchSize);
-                long currentSeqMax = newSequence.current();
-                long currentAliquotMax = SampleTypeService.get().getMaxAliquotId(aliquotedFrom, this.sampletype.getLSID(), _container);
-                if (currentAliquotMax >= currentSeqMax)
-                    newSequence.ensureMinimum(currentAliquotMax);
-
-                _aliquotSequences.put(seqName, newSequence);
-            }
-
-            return _aliquotSequences.get(seqName);
         }
 
         @Override
@@ -909,6 +953,18 @@ public abstract class UploadSamplesHelper
             super.close();
             if (null != nameState)
                 nameState.close();
+        }
+
+        private boolean rowExists(String name)
+        {
+            if (_existingNames == null)
+            {
+                _existingNames = new HashSet<>();
+                SamplesSchema schema = new SamplesSchema(User.getSearchUser(), _container);
+                TableSelector ts = new TableSelector(schema.getTable(sampletype, null), Set.of("Name")).setMaxRows(1_000_000);
+                ts.fillSet(_existingNames);
+            }
+            return _existingNames.contains(name);
         }
     }
 
@@ -992,12 +1048,12 @@ public abstract class UploadSamplesHelper
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }
                 }
                 else
                 {
-                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows)
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
                         addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
@@ -1020,7 +1076,7 @@ public abstract class UploadSamplesHelper
 
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
-            SimpleConvertColumn c = createConvertColumn(col, fromIndex, true);
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
@@ -1038,10 +1094,5 @@ public abstract class UploadSamplesHelper
             return super.get(i);
         }
 
-        @Override
-        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
-        {
-            return value;
-        }
     }
 }

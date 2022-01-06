@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -77,6 +78,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -85,8 +87,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     private static final String categoryName = "materialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
 
+    public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
+    public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
+
     private Domain _domain;
     private NameGenerator _nameGen;
+    private NameGenerator _aliquotNameGen;
 
     // For serialization
     protected ExpSampleTypeImpl() {}
@@ -278,13 +284,19 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return getDomainProperty(_object.getParentCol());
     }
 
-    // NOTE: intentionally not public in ExpSampleType interface
+    @Override
     public void setNameExpression(String expression)
     {
         if (expression != null && hasIdColumns() && !hasNameAsIdCol())
             throw new IllegalArgumentException("Can't set both a name expression and idCols");
 
         _object.setNameExpression(expression);
+    }
+
+    @Override
+    public void setAliquotNameExpression(String expression)
+    {
+        _object.setAliquotNameExpression(expression);
     }
 
     @Override
@@ -297,6 +309,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public boolean hasNameExpression()
     {
         return _object.getNameExpression() != null;
+    }
+
+    @Override
+    public String getAliquotNameExpression()
+    {
+        return _object.getAliquotNameExpression();
+    }
+
+    @Override
+    public boolean hasAliquotNameExpression()
+    {
+        return _object.getAliquotNameExpression() != null;
     }
 
     // NOTE: intentionally not public in ExpSampleType interface
@@ -332,6 +356,29 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public @Nullable Container getAutoLinkTargetContainer()
     {
         return _object.getAutoLinkTargetContainer();
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        _object.setAutoLinkCategory(autoLinkCategory);
+    }
+
+    @Override
+    public @Nullable String getAutoLinkCategory()
+    {
+        return _object.getAutoLinkCategory();
+    }
+
+    @Override
+    public void setCategory(String category)
+    {
+        _object.setCategory(category);
+    }
+
+    @Override
+    public @Nullable String getCategory()
+    {
+        return _object.getCategory();
     }
 
     @Nullable
@@ -377,11 +424,54 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 {
                     // do nothing
                 }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap);
+                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
             }
         }
 
         return _nameGen;
+    }
+
+    @NotNull
+    public NameGenerator getAliquotNameGenerator()
+    {
+        if (_aliquotNameGen == null)
+        {
+            String s;
+
+            if (_object.getAliquotNameExpression() != null)
+            {
+                s = _object.getAliquotNameExpression();
+            }
+            else
+            {
+                s = ALIQUOT_NAME_EXPRESSION;
+            }
+
+            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
+            Map<String, String> importAliasMap = null;
+            try
+            {
+                importAliasMap = getImportAliasMap();
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
+
+            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+        }
+
+        return _aliquotNameGen;
+    }
+
+    /*
+     * Check name expression and aliquot name expression for '${genId:minValue(100)}' syntax to return the specified startInd for genId
+     */
+    public long getMinGenId()
+    {
+        long nameGenMin = NameGenerator.getGenIdStartValue(_object.getNameExpression());
+        long aliquotGenMin = NameGenerator.getGenIdStartValue(_object.getAliquotNameExpression());
+        return Math.max(nameGenMin, aliquotGenMin);
     }
 
     @Override
@@ -396,7 +486,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (expr != null)
         {
             TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-            nameGen = new NameGenerator(expr, parentTable);
+            nameGen = new NameGenerator(expr, parentTable, getContainer());
         }
         else
         {
@@ -409,7 +499,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
-            nameGen.generateNames(state, maps, parentDatas, parentSamples, extraPropsFn, skipDuplicates);
+            nameGen.generateNames(state, maps, parentDatas, parentSamples, List.of(extraPropsFn), skipDuplicates);
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -419,11 +509,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             // Failed to generate a name due to some part of the expression not in the row
             if (hasNameExpression())
-                throw new ExperimentException("Failed to generate name for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("Failed to generate name for sample on row " + e.getRowNumber(), e);
             else if (hasNameAsIdCol())
-                throw new ExperimentException("Name is required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("SampleID or Name is required for sample on row " + e.getRowNumber(), e);
             else
-                throw new ExperimentException("All id columns are required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("All id columns are required for sample on row " + e.getRowNumber(), e);
         }
     }
 
@@ -447,7 +537,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
-            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, extraPropsFn);
+            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
         }
         catch (NameGenerator.NameGenerationException e)
         {
@@ -458,9 +548,49 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     // The DbSequence used to generate the ${genId} column values
     public DbSequence genIdSequence()
     {
-        return DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        long minGenId = getMinGenId();
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        if (minGenId > 1)
+            seq.ensureMinimum(minGenId - 1);
+        return seq;
     }
 
+    @Override
+    public long getCurrentGenId()
+    {
+        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        if (null == seqRowId)
+            return 0;
+
+        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        return seq.current();
+    }
+
+    @Override
+    public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
+    {
+        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if (!hasSamples(container))
+            {
+                seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+            }
+            else
+                throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
+        }
+        else
+            seq.ensureMinimum(newSeqValue);
+    }
+
+    private boolean hasSamples(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
+    }
 
     @Override
     public void setIdCol1(String s)
@@ -746,5 +876,17 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
         _object.setMaterialParentImportAliasMap(SampleTypeServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
+    }
+
+    @Override
+    public Function<String, Long> getMaxSampleCounterFunction()
+    {
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoMaterial());
+    }
+
+    @Override
+    public boolean isMedia()
+    {
+        return ExpSchema.SampleTypeCategoryType.media.name().equalsIgnoreCase(getCategory());
     }
 }

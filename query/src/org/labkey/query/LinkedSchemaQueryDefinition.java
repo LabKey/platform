@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -56,6 +57,7 @@ import java.util.Set;
  */
 public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 {
+    private final List<QueryException> _sourceQueryErrors;
     private String _extraMetadata;
 
     public LinkedSchemaQueryDefinition(LinkedSchema schema, QueryDefinition query, String extraMetadata)
@@ -63,6 +65,15 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         super(schema.getUser(), schema.getContainer(), ((QueryDefinitionImpl)query).getQueryDef());
         _schema = schema;
         _extraMetadata = extraMetadata;
+        _sourceQueryErrors = null;
+    }
+
+    public LinkedSchemaQueryDefinition(LinkedSchema schema, List<QueryException> sourceQueryErrors, String name)
+    {
+        super(schema.getUser(), schema.getContainer(), schema.getSchemaPath(), name);
+        assert !sourceQueryErrors.isEmpty();
+        _schema = schema;
+        _sourceQueryErrors = sourceQueryErrors;
     }
 
     @Override
@@ -95,6 +106,17 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     {
         // Parse/resolve the wrapped query in the context of the original source schema
         UserSchema sourceSchema = getSchema().getSourceSchema();
+
+        if (_sourceQueryErrors != null && !_sourceQueryErrors.isEmpty())
+        {
+            if (errors != null)
+                errors.addAll(_sourceQueryErrors);
+            Query q = new Query(schema, getName(), parent);
+            q.setDebugName(getSchemaName() + "." + getName());
+            q.getParseErrors().addAll(_sourceQueryErrors);
+            return q;
+        }
+
         return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns);
     }
 
@@ -133,6 +155,19 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         }
 
         return ret;
+    }
+
+    @Override
+    public @Nullable TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns)
+    {
+        if (_sourceQueryErrors != null && !_sourceQueryErrors.isEmpty())
+        {
+            if (errors != null)
+                errors.addAll(_sourceQueryErrors);
+            return null;
+        }
+
+        return super.createTable(schema, errors, includeMetadata, query, skipSuggestedColumns);
     }
 
     @Override

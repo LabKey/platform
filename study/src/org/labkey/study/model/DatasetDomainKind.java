@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -60,16 +61,17 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetFactory;
-import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
@@ -113,7 +115,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         DATASPACE_BASE_PROPERTIES = new HashSet<>(Arrays.asList(
             new PropertyStorageSpec(DSROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null),
             new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
-            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
+            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32).setNullable(false),
             new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
             new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
@@ -261,6 +263,22 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
+    }
+
+    // Issue 43898: Add the study subject name column to reserved fields
+    protected Set<String> getStudySubjectReservedName(Domain domain)
+    {
+        HashSet<String> fields = new HashSet<>();
+        if (null != domain)
+        {
+            Study study = StudyManager.getInstance().getStudy(domain.getContainer());
+            if (null != study)
+            {
+                String participantIdField = study.getSubjectColumnName();
+                fields.add(participantIdField);
+            }
+        }
+        return Collections.unmodifiableSet(fields);
     }
 
     @Override
@@ -688,7 +706,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             checkCanUpdate(def, container, user, datasetProperties, original, update);
         }
 
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        // Acquire lock before we actually start the transaction to avoid deadlocks when it's refreshed during the process
+        Lock[] locks = def == null ? new Lock[0] : new Lock[] { def.getDomainLoadingLock() };
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction(locks))
         {
             ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
@@ -733,17 +753,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
 
     @Override
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
             return null;
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user);
         DatasetDefinition dsd = schema.getDatasetDefinitionByName(name);
         if (null == dsd)
             return null;
 
-        return DatasetFactory.createDataset(schema, null, dsd);
+        return DatasetFactory.createDataset(schema, cf, dsd);
     }
 
     @Override

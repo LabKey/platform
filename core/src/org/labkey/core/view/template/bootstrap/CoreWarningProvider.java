@@ -36,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.metrics.WebSocketConnectionManager;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -78,6 +79,8 @@ public class CoreWarningProvider implements WarningProvider
             getModuleErrorWarnings(warnings, context);
 
             getProbableLeakCountWarnings(warnings);
+
+            getWebSocketConnectionWarnings(warnings);
 
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
@@ -166,6 +169,12 @@ public class CoreWarningProvider implements WarningProvider
             }
             addStandardWarning(warnings, "The following modules experienced errors during startup:", moduleFailures.keySet().toString(), PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()));
         }
+    }
+
+    private void getWebSocketConnectionWarnings(Warnings warnings)
+    {
+        if (SHOW_ALL_WARNINGS || WebSocketConnectionManager.getInstance().showWarning())
+            addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
     private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings)

@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -83,6 +82,7 @@
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
+    String fileRootText = getContainer().isProject() ? "site-level file root" : getContainer().getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -118,7 +118,7 @@
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
                                 <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(<%=h(!FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>);">
-                            Use a default based on the project-level root
+                            Use a default based on the <%=h(fileRootText)%>:
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr style="height: 1.75em">
@@ -208,7 +208,7 @@
             {
                 for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
                 {
-                    String id = "cloudStore_" + UniqueID.getRequestScopedUID(getViewContext().getRequest());
+                    String id = "cloudStore_" + getRequestScopedUID();
         %>
         <tr>
             <td <%=text(storeInfo.isEnabled() ? "" : "class='labkey-disabled'")%>>

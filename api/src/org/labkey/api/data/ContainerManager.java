@@ -81,6 +81,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -136,7 +137,7 @@ import java.util.stream.Collectors;
  */
 public class ContainerManager
 {
-    private static final Logger LOG = LogManager.getLogger(ContainerManager.class);
+    private static final Logger LOG = LogHelper.getLogger(ContainerManager.class, "Container (projects, folders, and workbooks) retrieval and management");
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     private static final String CONTAINER_PREFIX = ContainerManager.class.getName() + "/";
@@ -1905,6 +1906,11 @@ public class ContainerManager
 
     public static void notifyContainerChange(String id, Property prop)
     {
+        notifyContainerChange(id, prop, null);
+    }
+
+    public static void notifyContainerChange(String id, Property prop, @Nullable User u)
+    {
         Container c = getForId(id);
         if (null != c)
         {
@@ -1912,7 +1918,7 @@ public class ContainerManager
             c = getForId(id);  // load a fresh container since the original might be stale.
             if (null != c)
             {
-                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, prop, null, null);
+                ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, u, prop, null, null);
                 firePropertyChangeEvent(evt);
             }
         }
@@ -2779,7 +2785,7 @@ public class ContainerManager
             d.setType(type);
             d.setTitle(title);
             d.setLockState(lockState);
-            d.setExpirationDateLD(expirationDate);
+            d.setExpirationDate(expirationDate);
             return d;
         }
 

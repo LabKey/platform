@@ -16,23 +16,25 @@
 
 package org.labkey.api.pipeline;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,11 +47,13 @@ import java.util.List;
  */
 abstract public class PipelineProvider
 {
+    private static Logger _log = LogHelper.getLogger(PipelineProvider.class, "PipelineProvider and subclasses' execution");
+
     public enum Params { path }
 
     private boolean _showActionsIfModuleInactive;
 
-    public static abstract class FileEntryFilter implements FileFilter
+    public static abstract class FileEntryFilter implements FileAnalysisTaskPipeline.FilePathFilter
     {
         private PipelineDirectory _entry;
 
@@ -63,6 +67,18 @@ abstract public class PipelineProvider
             if (_entry == null)
                 return f.exists();
             return _entry.fileExists(f);
+        }
+
+        public boolean fileExists(Path f)
+        {
+            if (_entry == null)
+                return Files.exists(f);
+            return _entry.fileExists(f);
+        }
+
+        public boolean accept(Path file)
+        {
+            return accept(file.toFile());
         }
     }
 
@@ -106,12 +122,18 @@ abstract public class PipelineProvider
         }
 
         @Override
+        @Deprecated //Prefer Path version
         public boolean accept(File f)
+        {
+            return accept(f.toPath(), true);
+        }
+
+        public boolean accept(Path f)
         {
             return accept(f, true);
         }
 
-        public boolean accept(File f, boolean checkSiblings)
+        public boolean accept(Path f, boolean checkSiblings)
         {
             if (_initialFileTypes != null)
             {
@@ -120,7 +142,7 @@ abstract public class PipelineProvider
                     FileType ft = _initialFileTypes[i];
                     if (ft.isType(f))
                     {
-                        File dir = f.getParentFile();
+                        Path dir = f.getParent();
                         String basename = ft.getBaseName(f);
 
                         // If any of the preceding types exist, then don't include this one.
@@ -133,19 +155,21 @@ abstract public class PipelineProvider
                         int indexMatch = ft.getIndexMatch(f);
                         if (checkSiblings && indexMatch > 0 && ft.isExtensionsMutuallyExclusive())
                         {
-                            File[] siblings = dir.listFiles();
-                            if (siblings != null)
+                            try
                             {
-                                for (File sibling : siblings)
-                                {
-                                    if (!sibling.equals(f) &&
+                                return Files.walk(
+                                        dir,
+                                        0,
+                                        FileVisitOption.FOLLOW_LINKS
+                                ).noneMatch(sibling -> !sibling.equals(f) &&
                                         ft.getBaseName(sibling).equals(basename) &&
-                                        ft.isType(sibling.getName()) &&
-                                        ft.getIndexMatch(sibling) < indexMatch)
-                                    {
-                                        return false;
-                                    }
-                                }
+                                        ft.isType(sibling.getFileName().toString()) &&
+                                        ft.getIndexMatch(sibling) < indexMatch);
+                            }
+                            catch (IOException e)
+                            {
+                                _log.error("Error matching siblings with filter", e);
+                                return false;
                             }
                         }
 
@@ -302,6 +326,7 @@ abstract public class PipelineProvider
             return action.getName();
     }
 
+    @Deprecated //Prefer List<Path> version
     protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, File[] files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
@@ -311,6 +336,7 @@ abstract public class PipelineProvider
         entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
     }
 
+    @Deprecated //Prefer List<Path> version
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
@@ -322,6 +348,15 @@ abstract public class PipelineProvider
 //        actionURL.addParameter("gwt.codesvr", "127.0.0.1:9997");
         directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
       }
+
+    protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, List<Path> files,
+                             boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
+    {
+        if (!includeAll && (files == null || files.size() == 0))
+            return;
+
+        entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
+    }
 
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)

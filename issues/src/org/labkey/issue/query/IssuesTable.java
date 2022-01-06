@@ -75,6 +75,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
@@ -185,12 +186,17 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 if (_table == null && getSchema() != null)
                 {
                     // TODO use forWrite==true because of setFk() below
-                    _table = getUserSchema().getTable(_tableName, getLookupContainerFilter(), true, true);
-
-                    var lookupColumn = (BaseColumnInfo)_table.getColumn(getLookupColumnName());
-                    lookupColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
-                    var junctionColumn = (BaseColumnInfo)_table.getColumn("RelatedIssueId");
-                    junctionColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
+                    TableInfo t = getUserSchema().getTable(_tableName, getLookupContainerFilter(), true, true);
+                    if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
+                        t = null;
+                    if (null != t)
+                    {
+                        var lookupColumn = (BaseColumnInfo)t.getColumn(getLookupColumnName());
+                        lookupColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
+                        var junctionColumn = (BaseColumnInfo)t.getColumn("RelatedIssueId");
+                        junctionColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
+                        _table = t;
+                    }
                 }
 
                 return _table;
@@ -267,6 +273,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             var extensionCol = new ExprColumn(this, colName, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
             addColumn(extensionCol);
             extensionCol.copyAttributesFrom(col);
+            // URLs are not included in the standard copy and need to be handled separately
+            extensionCol.copyURLFrom(col, null, null);
 
             if (col.isHidden())
                 extensionCol.setHidden(true);
@@ -364,6 +372,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         TableInfo provisioned = _issueDef.createTable(getUserSchema().getUser());
 
         SQLFragment sql = new SQLFragment();

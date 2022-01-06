@@ -28,11 +28,9 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.iterator.BeanIterator;
-import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.writer.PrintWriters;
 
@@ -55,12 +53,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
- * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>.  The iterator must be closed
- * (typically in a finally block) to close the underlying input source.  The iterator can be wrapped with a BeanIterator
- * (to provide beans) and/or a CloseableFilteredIterator (to filter the iterator).
+ * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>. The iterator must be closed
+ * (typically via try-with-resources or a finally block) to close the underlying input source. The iterator can be wrapped
+ * with a BeanIterator (to provide beans) and/or a CloseableFilteredIterator (to filter the iterator).
  * <p/>
  * NOTE: Column descriptors should not be changed in the midst of iterating; a single set of column descriptors is used
  * to key all the maps.
@@ -98,7 +97,7 @@ public class TabLoader extends DataLoader
     public static class CsvFactory extends AbstractDataLoaderFactory
     {
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public TabLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
@@ -106,8 +105,8 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        // A TabLoader created with this constructor does NOT close the reader
+        public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
@@ -121,21 +120,26 @@ public class TabLoader extends DataLoader
     public static class CsvFactoryNoConversions extends CsvFactory
     {
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public TabLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
+            TabLoader loader = super.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            return configParsing(loader);
+        }
 
-            DataLoader loader = super.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        private TabLoader configParsing(TabLoader loader)
+        {
             loader.setInferTypes(false);
+            // Issue 43661 - Excessive logging when indexing a .log file containing backslash followed by "u" that confuses TabLoader
+            loader.setUnescapeBackslashes(false);
             return loader;
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        // A TabLoader created with this constructor does NOT close the reader
+        public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            DataLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
-            loader.setInferTypes(false);
-            return loader;
+            TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
+            return configParsing(loader);
         }
 
         @NotNull @Override
@@ -180,14 +184,13 @@ public class TabLoader extends DataLoader
     private TabBufferedReader _reader = null;
     private int _commentLines = 0;
     private char _chDelimiter = '\t';
-    private String _strDelimiter = new String(new char[]{_chDelimiter});
+    private String _strDelimiter = String.valueOf(_chDelimiter);
     private String _lineDelimiter = null;
 
     private String _strQuote = null;
     private String _strQuoteQuote = null;
     private boolean _parseQuotes = true;
     private boolean _unescapeBackslashes = true;
-    private Filter<Map<String, Object>> _mapFilter;
 
     // Infer whether there are headers
     public TabLoader(File inputFile)
@@ -417,7 +420,7 @@ public class TabLoader extends DataLoader
             {
                 if (_strQuote == null)
                 {
-                    _strQuote = new String(new char[] {chQuote});
+                    _strQuote = String.valueOf(chQuote);
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
@@ -505,20 +508,8 @@ public class TabLoader extends DataLoader
         return listParse.toArray(new String[listParse.size()]);
     }
 
-    @Deprecated // Just use a CloseableFilteredIterator.  TODO: Remove
-    public void setMapFilter(Filter<Map<String, Object>> mapFilter)
-    {
-        _mapFilter = mapFilter;
-    }
-
     @Override
-    public @NotNull CloseableIterator<Map<String, Object>> iterator()
-    {
-        return iterator(false);
-    }
-
-    @Override
-    public @NotNull CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
+    public @NotNull CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         TabLoaderIterator iter;
         try
@@ -531,10 +522,7 @@ public class TabLoader extends DataLoader
             throw new RuntimeException(e);
         }
 
-        if (null == _mapFilter)
-            return iter;
-        else
-            return new CloseableFilteredIterator<>(iter, _mapFilter);
+        return iter;
     }
 
 
@@ -547,7 +535,7 @@ public class TabLoader extends DataLoader
     public void setDelimiterCharacter(char delimiter)
     {
         _chDelimiter = delimiter;
-        _strDelimiter = new String(new char[]{_chDelimiter});
+        _strDelimiter = String.valueOf(_chDelimiter);
     }
 
     public void setDelimiters(@NotNull String field, @Nullable String line)
@@ -700,57 +688,59 @@ public class TabLoader extends DataLoader
 
     public static class TabLoaderTestCase extends Assert
     {
-        String malformedCsvData =
-                "\"Header1\",\"Header2\", \"Header3\"\n" +
-                "\"test1a\", \"testb";
+        String malformedCsvData = """
+                "Header1","Header2", "Header3"
+                "test1a", "testb""";
 
-        String csvData =
-                "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
-                "# date=Mon May 22 13:25:28 PDT 2006\n" +
-                "# java.vendor=Sun Microsystems Inc.\n" +
-                "# java.version=1.5.0_06\n" +
-                "# revision=rev1.1\n" +
-                "# user.name=Matthew\n" +
-                "date,scan,time,mz,accurateMZ,mass,intensity,charge,chargeStates,kl,background,median,peaks,scanFirst,scanLast,scanCount,totalIntensity,description\n" +
-                "1/2/2006,96,1543.3401,858.3246,FALSE,1714.6346,2029.6295,2,1,0.19630894,26.471083,12.982442,4,92,100,9,20248.762,description\n" +
-/*empty int*/   "2/Jan/2006,100,1560.348,858.37555,FALSE,1714.7366,1168.3536,2,1,0.033085547,63.493385,8.771278,5,101,119,19,17977.979,\"desc\"\"ion\"\n" +
-/*empty date*/  ",25,1460.2411,745.39404,FALSE,744.3868,1114.4303,1,1,0.020280406,15.826528,12.413276,4,17,41,25,13456.231,\"des,crip,tion\"\n" +
-                "2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,\n" +
-                "2 January 2006,164,1624.442,783.8968,FALSE,1565.779,771.20935,2,1,0.024676466,11.3547325,3.3645654,5,156,187,32,12656.351,\n" +
-                "\"January 2, 2006\",224,1695.389,725.39404,FALSE,2173.1604,6.278867,3,1,0.2767084,1.6497655,1.2496755,3,221,229,9,55.546417\n" +
-                "1/2/06,249,1724.5541,773.42175,FALSE,1544.829,5.9057474,2,1,0.5105971,0.67020833,1.4744527,2,246,250,5,29.369175\n" +
-                "# bar\n" +
-                "\n" +
-                "#";
+        String csvData = """
+                # algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters
+                # date=Mon May 22 13:25:28 PDT 2006
+                # java.vendor=Sun Microsystems Inc.
+                # java.version=1.5.0_06
+                # revision=rev1.1
+                # user.name=Matthew
+                date,scan,time,mz,accurateMZ,mass,intensity,charge,chargeStates,kl,background,median,peaks,scanFirst,scanLast,scanCount,totalIntensity,description
+                1/2/2006,96,1543.3401,858.3246,FALSE,1714.6346,2029.6295,2,1,0.19630894,26.471083,12.982442,4,92,100,9,20248.762,description
+                2/Jan/2006,100,1560.348,858.37555,FALSE,1714.7366,1168.3536,2,1,0.033085547,63.493385,8.771278,5,101,119,19,17977.979,"desc""ion"
+                ,25,1460.2411,745.39404,FALSE,744.3868,1114.4303,1,1,0.020280406,15.826528,12.413276,4,17,41,25,13456.231,"des,crip,tion"
+                2-Jan-06,89,1535.602,970.9579,FALSE,1939.9012,823.70984,2,1,0.0228055,10.497823,2.5962036,5,81,103,23,9500.36,
+                2 January 2006,164,1624.442,783.8968,FALSE,1565.779,771.20935,2,1,0.024676466,11.3547325,3.3645654,5,156,187,32,12656.351,
+                "January 2, 2006",224,1695.389,725.39404,FALSE,2173.1604,6.278867,3,1,0.2767084,1.6497655,1.2496755,3,221,229,9,55.546417
+                1/2/06,249,1724.5541,773.42175,FALSE,1544.829,5.9057474,2,1,0.5105971,0.67020833,1.4744527,2,246,250,5,29.369175
+                # bar
+    
+                #""";
 
-        String tsvData =
-                "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
-                "# date=Mon May 22 13:25:28 PDT 2006\n" +
-                "# java.vendor=Sun Microsystems Inc.\n" +
-                "# java.version=1.5.0_06\n" +
-                "# revision=rev1.1\n" +
-                "# user.name=Matthew\n" +
-                "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
-                "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
-/*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
-/*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
-                "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
-                "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n" +
-                "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
-                "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n" +
-                "# foo\n" +
-                "\n" +
-                "#";
+        String tsvData = """
+                # algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters
+                # date=Mon May 22 13:25:28 PDT 2006
+                # java.vendor=Sun Microsystems Inc.
+                # java.version=1.5.0_06
+                # revision=rev1.1
+                # user.name=Matthew
+                date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription
+                1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription
+                2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc"ion
+                \t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion
+                2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t
+                2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t
+                January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t
+                1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t
+                # foo
+
+                #""";
+
         /* same data in a different order */
-        String tsvDataReordered =
-                "date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription\n" +
-                "1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t\n"+
-                /*empty date*/  "\t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion\n" +
-                "2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t\n" +
-                "January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t\n" +
-                /*empty int*/   "2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc\"ion\n" +
-                "1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription\n" +
-                "2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t\n";
+        String tsvDataReordered = """
+                date\tscan\ttime\tmz\taccurateMZ\tmass\tintensity\tcharge\tchargeStates\tkl\tbackground\tmedian\tpeaks\tscanFirst\tscanLast\tscanCount\ttotalIntensity\tdescription
+                1/2/06\t249\t1724.5541\t773.42175\tFALSE\t1544.829\t5.9057474\t2\t1\t0.5105971\t0.67020833\t1.4744527\t2\t246\t250\t5\t29.369175\t
+                \t25\t1460.2411\t745.39404\tFALSE\t744.3868\t1114.4303\t1\t1\t0.020280406\t15.826528\t12.413276\t4\t17\t41\t25\t13456.231\tdes,crip,tion
+                2-Jan-06\t89\t1535.602\t970.9579\tFALSE\t1939.9012\t823.70984\t2\t1\t0.0228055\t10.497823\t2.5962036\t5\t81\t103\t23\t9500.36\t
+                January 2, 2006\t224\t1695.389\t725.39404\tFALSE\t2173.1604\t6.278867\t3\t1\t0.2767084\t1.6497655\t1.2496755\t3\t221\t229\t9\t55.546417\t
+                2/Jan/2006\t100\t1560.348\t858.37555\tFALSE\t1714.7366\t1168.3536\t2\t1\t0.033085547\t63.493385\t8.771278\t5\t101\t119\t19\t17977.979\tdesc"ion
+                1/2/2006\t96\t1543.3401\t858.3246\tFALSE\t1714.6346\t2029.6295\t2\t1\t0.19630894\t26.471083\t12.982442\t4\t92\t100\t9\t20248.762\tdescription
+                2 January 2006\t164\t1624.442\t783.8968\tFALSE\t1565.779\t771.20935\t2\t1\t0.024676466\t11.3547325\t3.3645654\t5\t156\t187\t32\t12656.351\t
+                """;
 
         private File _createTempFile(String data, String ext) throws IOException
         {
@@ -951,10 +941,11 @@ public class TabLoader extends DataLoader
         @Test
         public void testUnescape()
         {
-            final String data =
-                "A\tMulti-Line\tB\n" +
-                "a\tthis\\nis\\tmulti-line\tb\n" +
-                "\tthis\\nis\\tmulti-line\tb\n";
+            final String data = """
+                A\tMulti-Line\tB
+                a\tthis\\nis\\tmulti-line\tb
+                \tthis\\nis\\tmulti-line\tb
+                """;
 
             try (TabLoader loader = new TabLoader(data, true))
             {
@@ -995,12 +986,13 @@ public class TabLoader extends DataLoader
         @Test
         public void testEmptyRow()
         {
-            final String data =
-                "A\tB\n" +
-                "first\tline\n" +
-                "\n" +
-                "# comment\n" +
-                "second\tline\n";
+            final String data = """
+                A\tB
+                first\tline
+
+                # comment
+                second\tline
+                """;
 
             for (int i = 0; i < 1; i++)
             {
@@ -1046,12 +1038,14 @@ public class TabLoader extends DataLoader
         @Test
         public void testParseQuotes()
         {
-            final String data =
-                "Name\tMulti-Line\tAge\n" +
-                "Bob\t\"apple\norange\tgrape\"\t3\n" +
-                "Bob\t\"one\n\"\"two\"\"\tthree\"\n" +
-                "\tred\\nblue\\tgreen\t4\n" +
-                "Fred\t\"quoted stuff\" unquoted\t1";
+            final String data = """
+                Name\tMulti-Line\tAge
+                Bob\t"apple
+                orange\tgrape"\t3
+                Bob\t"one
+                ""two""\tthree"
+                \tred\\nblue\\tgreen\t4
+                Fred\t"quoted stuff" unquoted\t1""";
 
             try (TabLoader loader = new TabLoader(data, true))
             {
@@ -1105,23 +1099,30 @@ public class TabLoader extends DataLoader
                 assertEquals("Fred", row.get("Name"));
                 assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
+
+                List<Map<String, Object>> rows2 = loader.stream()
+                    .collect(Collectors.toList());
+
+                assertEquals(rows, rows2);
             }
         }
 
         @Test
         public void testMySql() throws IOException
         {
-            String mysqlData =
-                "3072~@~\\N~@~biotinylated antihuIgG antibody~@~ESR8865~@~2149~@@~\n" +
-                "3073~@~Multiline\n" +
-                        "description~@~anti-huIgM antibody~@~ESR8866~@~2149~@@~\n" +
-                "3074~@~short~description~@~anti-huIgA antibody~@~ESR8867~@~2149~@@~\n" +
-                "3075~@~description with\n" +
-                        "\n" +
-                        "\n" +
-                        "\n" +
-                        "blank lines\n" +
-                        "\n~@~avidin-D-HRP conjugate~@~ESR8868~@~2149~@@~\n";
+            String mysqlData = """
+                3072~@~\\N~@~biotinylated antihuIgG antibody~@~ESR8865~@~2149~@@~
+                3073~@~Multiline
+                description~@~anti-huIgM antibody~@~ESR8866~@~2149~@@~
+                3074~@~short~description~@~anti-huIgA antibody~@~ESR8867~@~2149~@@~
+                3075~@~description with
+
+
+
+                blank lines
+
+                ~@~avidin-D-HRP conjugate~@~ESR8868~@~2149~@@~
+                """;
 
             final List<Map<String, Object>> rows;
 
@@ -1160,7 +1161,7 @@ public class TabLoader extends DataLoader
         @Test
         public void testHash()
         {
-            /* NOTE hashes hard coded so we know if implementation has changed.  Uncomment this block to print out hashes to update code *
+            /* NOTE hashes are hard-coded so we know if implementation has changed. Uncomment this block to print out hashes to update code *
             TabLoader tl = new TabLoader(tsvData);
             DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
             while (it.hasNext())

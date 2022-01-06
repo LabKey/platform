@@ -21,7 +21,6 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,6 +96,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
@@ -116,7 +116,6 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.IOException;
@@ -145,7 +144,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class SecurityManager
 {
-    private static final Logger _log = LogManager.getLogger(SecurityManager.class);
+    private static final Logger _log = LogHelper.getLogger(SecurityManager.class, "User and group creation and management");
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
     private static final List<TermsOfUseProvider> TERMS_OF_USE_PROVIDERS = new CopyOnWriteArrayList<>();
@@ -627,6 +626,9 @@ public class SecurityManager
         {
             return _apikey;
         }
+
+        @Override
+        public abstract void close();
     }
 
     private static final class HttpSessionTransformSession extends TransformSession
@@ -638,7 +640,7 @@ public class SecurityManager
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
             SessionApiKeyManager.get().invalidateKey(getApiKey());
         }
@@ -653,7 +655,7 @@ public class SecurityManager
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
             ApiKeyManager.get().deleteKey(getApiKey());
         }
@@ -3041,6 +3043,9 @@ public class SecurityManager
 
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
     {
+        if (policy == null)
+            return Set.of();
+
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null != c && (principal instanceof User && c.isForbiddenProject((User) principal)))
             return Set.of();

@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -36,6 +37,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -43,8 +45,9 @@ import java.util.Set;
  */
 public class XarExportSelection implements Serializable
 {
+    // Store ids instead of experiment objects so that it's easily serializable
     private final List<Integer> _expIds = new ArrayList<>();
-    private final Set<ExpRun> _runs = new LinkedHashSet<>();
+    private final Set<Integer> _runIds = new LinkedHashSet<>();
     private final List<Integer> _dataIds = new ArrayList<>();
     private final List<Integer> _sampleTypeIds = new ArrayList<>();
     private final List<Integer> _protocolIds = new ArrayList<>();
@@ -63,7 +66,8 @@ public class XarExportSelection implements Serializable
 
     public void addRuns(Collection<? extends ExpRun> runs)
     {
-        _runs.addAll(runs);
+        // Issue 44306 - be sure to retain the ordering of the runs as passed in the collection
+        _runIds.addAll(runs.stream().map(ExpObject::getRowId).collect(Collectors.toList()));
     }
 
     public void addDataIds(int... dataIds)
@@ -130,9 +134,9 @@ public class XarExportSelection implements Serializable
 
         // Process runs after protocols because we want to assure the protocols are all defined
         // since SM Workflow Tasks can reference assay design protocols
-        for (ExpRun run : _runs)
+        for (int runId : _runIds)
         {
-            exporter.addExperimentRun(run);
+            exporter.addExperimentRun(ExperimentService.get().getExpRun(runId));
         }
 
         for (int sampleTypeId : _sampleTypeIds)

@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -34,14 +35,16 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * <code>AbstractFileAnalysisJob</code>
@@ -62,11 +66,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private String _protocolName;
     private String _joinedBaseName;
     private String _baseName;
-    private File _dirData;
-    private File _dirAnalysis;
-    private File _fileParameters;
-    private File _fileJobInfo;
-    private List<File> _filesInput;
+    private Path _dirData;
+    private Path _dirAnalysis;
+    private Path _fileParameters;
+    private Path _fileJobInfo;
+    private List<Path> _filesInput;
     private List<FileType> _inputTypes;
     private boolean _splittable = true;
 
@@ -78,6 +82,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     // For serialization
     protected AbstractFileAnalysisJob() {}
 
+    @Deprecated //Prefer the Path version, retained for backwards compatbility
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,
@@ -88,25 +93,48 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    boolean splittable,
                                    boolean writeJobInfoFile) throws IOException
     {
+        this(
+                protocol,
+                providerName,
+                info,
+                root,
+                protocolName,
+                fileParameters.toPath(),
+                filesInput.stream().map(File::toPath).collect(Collectors.toList()),
+                splittable,
+                writeJobInfoFile
+        );
+    }
+
+    public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
+                                   String providerName,
+                                   ViewBackgroundInfo info,
+                                   PipeRoot root,
+                                   String protocolName,
+                                   Path fileParameters,
+                                   List<Path> filesInput,
+                                   boolean splittable,
+                                   boolean writeJobInfoFile) throws IOException
+    {
         super(providerName, info, root);
 
         _filesInput = filesInput;
         _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);
-        _dirData = filesInput.get(0).getParentFile();
+        _dirData = filesInput.get(0).getParent();
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
         getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME); // input
-        _dirAnalysis = _fileParameters.getParentFile();
+        _dirAnalysis = _fileParameters.getParent();
 
         // Load parameter files
         _parametersOverrides = getInputParameters().getInputParameters();
 
         // Check for explicitly set default parameters.  Otherwise use the default.
         String paramDefaults = _parametersOverrides.get("list path, default parameters");
-        File fileDefaults;
+        Path fileDefaults;
         if (paramDefaults != null)
-            fileDefaults = getPipeRoot().resolvePath(paramDefaults);
+            fileDefaults = getPipeRoot().resolveToNioPath(paramDefaults);
         else
             fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
@@ -129,17 +157,16 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
+    }
 
-        // CONSIDER: Remove writing out jobInfo file completely
-//        // Write out job information
-//        if (writeJobInfoFile)
-//        {
-//            String infoFileName = _baseName + "-jobInfo";
-//            _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
-//            writeJobInfoTSV(_fileJobInfo);
-//            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
-//        }
+    /**
+     * @return Path String for a local working directory, temporary if root is cloud based
+     */
+    @Override
+    protected Path getWorkingDirectoryString()
+    {
+        return _dirAnalysis.toAbsolutePath();
     }
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
@@ -163,10 +190,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _joinedBaseName = job._joinedBaseName;
 
         // Change parameters which are specific to the fraction job.
-        _filesInput = filesInput;
+        _filesInput = filesInput.stream().map(File::toPath).collect(Collectors.toList());
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+
+        setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
 
         // CONSIDER: Remove writing out jobInfo file completely
         // If parent job wrote a job info file, assume the child should too
@@ -203,7 +231,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public boolean isSplittable()
     {
-        return _splittable && getInputFiles().size() > 1;
+        return _splittable && getInputFilePaths().size() > 1;
     }
 
     @Override
@@ -250,7 +278,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public List<String> getSplitBaseNames()
     {
         ArrayList<String> baseNames = new ArrayList<>();
-        for (File fileInput : _filesInput)
+        for (Path fileInput : _filesInput)
         {
             for (FileType ft : _inputTypes)
             {
@@ -269,7 +297,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         if (fileType != null)
         {
-            for (File fileInput : _filesInput)
+            for (Path fileInput : _filesInput)
             {
                 if (fileType.isType(fileInput))
                     return fileType.getBaseName(fileInput);
@@ -282,11 +310,23 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public File getDataDirectory()
     {
+        return _dirData.toFile();
+    }
+
+    @Override
+    public Path getDataDirectoryPath()
+    {
         return _dirData;
     }
 
     @Override
     public File getAnalysisDirectory()
+    {
+        return _dirAnalysis.toFile();
+    }
+
+    @Override
+    public Path getAnalysisDirectoryPath()
     {
         return _dirAnalysis;
     }
@@ -330,6 +370,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public List<File> getInputFiles()
     {
+        return getInputFilePaths().stream().map(Path::toFile).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Path> getInputFilePaths()
+    {
         return _filesInput;
     }
 
@@ -337,13 +383,21 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Nullable
     public File getJobInfoFile()
     {
+        return _fileJobInfo.toFile();
+    }
+
+
+    @Override
+    @Nullable
+    public Path getJobInfoFilePath()
+    {
         return _fileJobInfo;
     }
 
     @Override
     public File getParametersFile()
     {
-        return _fileParameters;
+        return _fileParameters.toFile();
     }
 
     @Override
@@ -372,28 +426,28 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return getInputParameters(_fileParameters);
     }
 
-    public ParamParser getInputParameters(File parametersFile) throws IOException
+    public ParamParser getInputParameters(Path parametersFile) throws IOException
     {
         ParamParser parser = createParamParser();
-        parser.parse(new FileInputStream(parametersFile));
+        parser.parse(Files.newInputStream(parametersFile));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
             if (err.getLine() == 0)
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.getPath() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
                         err.getMessage());
             }
             else
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.getPath() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
                         "Line " + err.getLine() + ": " + err.getMessage());
             }
         }
         return parser;
     }
 
-    private void logParameters(String description, File file, Map<String, String> parameters)
+    private void logParameters(String description, Path file, Map<String, String> parameters)
     {
         _log.debug(description + " " + parameters.size() + " parameters (" + file + "):");
         for (Map.Entry<String, String> entry : new TreeMap<>(parameters).entrySet())
@@ -410,7 +464,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public String getDescription()
     {
-        return getDataDescription(getDataDirectory(), getBaseName(), getJoinedBaseName(), getProtocolName());
+        return getDataDescription(getDataDirectoryPath(), getBaseName(), getJoinedBaseName(), getProtocolName());
     }
 
     @Override
@@ -425,19 +479,25 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return null;
     }
 
+    @Deprecated //prefer Path version
     public static String getDataDescription(File dirData, String baseName, String joinedBaseName, String protocolName)
+    {
+        return getDataDescription(dirData.toPath(), baseName, joinedBaseName, protocolName);
+    }
+
+    public static String getDataDescription(Path dirData, String baseName, String joinedBaseName, String protocolName)
     {
         String dataName = "";
         if (dirData != null)
         {
-            dataName = dirData.getName();
+            dataName = dirData.getFileName().toString();
             // Can't remember why we would ever need the "xml" check. We may get an extra "." in the path,
             // so check for that and remove it.
             if (".".equals(dataName) || "xml".equals(dataName))
             {
-                dirData = dirData.getParentFile();
+                dirData = dirData.getParent();
                 if (dirData != null)
-                    dataName = dirData.getName();
+                    dataName = dirData.getFileName().toString();
             }
         }
 
@@ -463,54 +523,5 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         String doGZ = getParameters().get("pipeline, gzip outputs");
         return "yes".equalsIgnoreCase(doGZ)?FileType.gzSupportLevel.PREFER_GZ:FileType.gzSupportLevel.SUPPORT_GZ;
-    }
-
-    /**
-     * Write out the job info as a tsv file similar to the R transformation runProperties format.
-     * This is a info file for an entire job (or split job) that command line or script tasks may use
-     * to determine the inputs files and other job related metadata.
-     *
-     * @see FileAnalysisTaskPipeline#isWriteJobInfoFile()
-     * @see org.labkey.api.qc.TsvDataExchangeHandler
-     * @link https://www.labkey.org/Documentation/wiki-page.view?name=runProperties
-     */
-    private void writeJobInfoTSV(File file) throws IOException
-    {
-        RowMapFactory<Object> factory = new RowMapFactory<>(Arrays.asList("Name", "Value", "Type"));
-        List<Map<String, Object>> rows = new ArrayList<>();
-
-        rows.add(factory.getRowMap("protocolName", getProtocolName(), "java.lang.String"));
-        rows.add(factory.getRowMap("provider", getProvider(), "java.lang.String"));
-        rows.add(factory.getRowMap("description", getDescription(), "java.lang.String"));
-        rows.add(factory.getRowMap("taskPipelineId", getTaskPipelineId(), "java.lang.String"));
-        rows.add(factory.getRowMap("jobGUID", getJobGUID(), "java.lang.String"));
-        rows.add(factory.getRowMap("parentGUID", getParentGUID(), "java.lang.String"));
-        rows.add(factory.getRowMap("splitJob", isSplitJob(), "java.lang.Boolean"));
-
-        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl(), "java.lang.String"));
-        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath(), "java.lang.String"));
-        rows.add(factory.getRowMap("containerPath", getContainer().getPath(), "java.lang.String"));
-        rows.add(factory.getRowMap("containerId", getContainer().getEntityId(), "java.lang.String"));
-        rows.add(factory.getRowMap("user", getUser().getEmail(), "java.lang.String"));
-
-        rows.add(factory.getRowMap("pipeRoot", getPipeRoot().getRootNioPath(), "java.lang.String"));
-
-        // FileAnalysisJobSupport properties
-        rows.add(factory.getRowMap("baseName", getBaseName(), "java.lang.String"));
-        rows.add(factory.getRowMap("joinedBaseName", getJoinedBaseName(), "java.lang.String"));
-        rows.add(factory.getRowMap("analysisDirectory", getAnalysisDirectory(), "java.lang.String"));
-        rows.add(factory.getRowMap("dataDirectory", getDataDirectory(), "java.lang.String"));
-
-        // TODO: Perhaps move this tsv writer to the task so we can get work directory and input types
-        for (File inputFile : getInputFiles())
-        {
-            rows.add(factory.getRowMap("inputFile", inputFile));
-        }
-
-        try (TSVMapWriter tsvWriter = new TSVMapWriter(rows))
-        {
-            tsvWriter.setHeaderRowVisible(false);
-            tsvWriter.write(file);
-        }
     }
 }

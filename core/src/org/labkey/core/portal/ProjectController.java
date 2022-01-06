@@ -323,10 +323,12 @@ public class ProjectController extends SpringActionController
             if (null == url || url.getExtraPath().equals("/"))
                 return HttpView.redirect(homeURL());
 
-            String pageId1 = url.getParameter("pageId");
-            if (null != pageId1)
+            String pageId = form.getPageId();
+            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
+
+            if (null != pageId)
             {
-                Container childContainer = ContainerManager.getChild(c, pageId1);
+                Container childContainer = ContainerManager.getChild(c, pageId);
                 if (null != childContainer && childContainer.isContainerTab())
                 {
                     // Redirect to child container, but only if user has permission
@@ -337,16 +339,22 @@ public class ProjectController extends SpringActionController
                         throw new RedirectException(new ActionURL(BeginAction.class, c));    // same class with no parameter
                     }
                 }
+
+                // Issue 44445: Redirect to default view if portal page does not exist
+                if (portalPage == null)
+                    throw new RedirectException(new ActionURL(BeginAction.class, c));
             }
 
             PageConfig page = getPageConfig();
-            page.setHelpTopic(folderType.getHelpTopic());
+            if (folderType.getHelpTopic() != null)
+            {
+                page.setHelpTopic(folderType.getHelpTopic());
+            }
             page.setNavTrail(Collections.emptyList());
 
             Template t = isPrint() ? Template.Print : Template.Home;
             HttpView<?> template = t.getTemplate(getViewContext(), new VBox(), page);
 
-            String pageId = form.getPageId();
             if (pageId == null)
             {
                 pageId = folderType.getDefaultPageId(getViewContext());
@@ -354,7 +362,6 @@ public class ProjectController extends SpringActionController
             Portal.populatePortalView(getViewContext(), pageId, template, isPrint());
 
             // Figure out title
-            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
             FolderTab folderTab = null;
             if (!DefaultFolderType.DEFAULT_DASHBOARD.equalsIgnoreCase(pageId))
                 folderTab = Portal.getFolderTabFromId(getViewContext(), pageId);
@@ -1268,14 +1275,14 @@ public class ProjectController extends SpringActionController
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
             if (null == factory)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find the web part factory for web part '" + webPartName + "'.");
+                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find a web part factory for requested web part.");
                 return null;
             }
 
             Portal.WebPart part = factory.createWebPart();
             if (null == part)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 
@@ -1285,7 +1292,7 @@ public class ProjectController extends SpringActionController
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part view for part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 
@@ -1515,13 +1522,28 @@ public class ProjectController extends SpringActionController
             return response;
         }
 
-        Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
+        private Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
         {
-            Map<String, Object> resultMap = container.toJSON(user, _includeEffectivePermissions);
-            addModuleProperties(container, propertiesToSerialize, resultMap);
+            Map<String, Object> resultMap = new HashMap<>();
+            if (container.hasPermission(user, ReadPermission.class)) // 43853
+            {
+                resultMap = container.toJSON(user, _includeEffectivePermissions);
+                addModuleProperties(container, propertiesToSerialize, resultMap);
+            }
 
             if (_requestedDepth > 0)
-                resultMap.put("children", getVisibleChildren(container, user, propertiesToSerialize, 0));
+            {
+                List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0);
+                resultMap.put("children", children);
+
+                if (children.size() > 0)
+                {
+                    // If user has permissions to at least one child container, then make sure that at least the
+                    // parent name is shown (even if the user doesn't have permission in the parent container)
+                    resultMap.put("name", container.getName());
+                }
+            }
+
             return resultMap;
         }
 
@@ -1553,7 +1575,7 @@ public class ProjectController extends SpringActionController
             for (Container child : parent.getChildren())
             {
                 List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
-                if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
+                if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
                 {
                     Map<String, Object> visibleChild = child.toJSON(user, _includeEffectivePermissions);
                     addModuleProperties(child, propertiesToSerialize, visibleChild);

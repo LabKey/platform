@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -59,6 +60,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
@@ -105,8 +108,8 @@ import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -132,6 +135,11 @@ public class StudyServiceImpl implements StudyService
     private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
 
     private StudyServiceImpl() {}
+
+    public static StudyServiceImpl get()
+    {
+        return INSTANCE;
+    }
 
     @Override
     public Class<? extends Module> getStudyModuleClass()
@@ -295,7 +303,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public void applyDefaultQCStateFilter(DataView view)
     {
-        if (QCStateManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
+        if (QCStateManager.getInstance().showStates(view.getRenderContext().getContainer()))
         {
             QCStateSet stateSet = QCStateSet.getDefaultStates(view.getRenderContext().getContainer());
             if (null != stateSet)
@@ -389,7 +397,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public UserSchema getStudyQuerySchema(Study study, User user)
     {
-        return StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+        return StudyQuerySchema.createSchema((StudyImpl)study, user);
     }
 
     @Override
@@ -566,7 +574,7 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
+    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
     {
         try
         {
@@ -665,7 +673,7 @@ public class StudyServiceImpl implements StudyService
             Study s = StudyManager.getInstance().getStudy(c);
             if (null != s)
             {
-                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, RoleManager.getRole(ReaderRole.class));
                 BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
                 tables.put(c, t);
@@ -680,11 +688,11 @@ public class StudyServiceImpl implements StudyService
             t.setPublic(false);
             return t;
         }
-        return createUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, kind, filterFragmentMap,
+        return createUnionTable(schemaDefault, tables.values(), null, tables.keySet(), publicName, kind, filterFragmentMap,
                 dontAliasColumns, useParticipantIdName);
     }
 
-    private TableInfo createUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, final Set<Container> containers, String tableName, DomainKind kind,
+    public TableInfo createUnionTable(StudyQuerySchema schemaDefault, Collection<BaseStudyTable> terms, @Nullable Set<String> allowedColumnNames, final Set<Container> containers, String tableName, DomainKind kind,
                      @NotNull Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, boolean useParticipantIdName)
     {
         if (null == terms || terms.isEmpty())
@@ -709,6 +717,8 @@ public class StudyServiceImpl implements StudyService
             for (ColumnInfo c : t.getColumns())
             {
                 String name = c.getName();
+                if (null != allowedColumnNames && !allowedColumnNames.contains(name))
+                    continue;
                 if (useParticipantIdName && name.equalsIgnoreCase(subjectColumnName))
                     name = "ParticipantId";
                 var unionCol = unionColumns.get(name);
@@ -851,7 +861,7 @@ public class StudyServiceImpl implements StudyService
             Study s = StudyManager.getInstance().getStudy(c);
             if (null != s)
             {
-                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, RoleManager.getRole(ReaderRole.class));
                 BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
                 tables.put(c, t);
@@ -930,12 +940,16 @@ public class StudyServiceImpl implements StudyService
             sqlf.append(union);
             sqlf.append("SELECT ");
             String comma = "";
+            Set<FieldKey> selectedColumns = new HashSet<>();
             for (ColumnInfo colUnion : unionColumns.values())
             {
-                ColumnInfo col = t.getColumn(colUnion.getName());
+                // NOTE: getColumn() can be _really_ slow if there are lots of misses, use resolveIfNeeded=false
+                ColumnInfo col = ((AbstractTableInfo)t).getColumn(colUnion.getName(), false);
                 sqlf.append(comma);
                 if (null == col && colUnion.getName().equalsIgnoreCase("ParticipantId"))
                     col = t.getColumn(((StudyQuerySchema)userSchema).getSubjectColumnName());
+                if (null != col)
+                    selectedColumns.add(col.getFieldKey());
                 if (null == col)
                 {
                     sqlf.append("CAST(NULL AS ").append(dialect.getSqlCastTypeName(colUnion.getJdbcType())).append(")");
@@ -956,7 +970,7 @@ public class StudyServiceImpl implements StudyService
                 comma = ", ";
             }
             sqlf.append("\nFROM ");
-            sqlf.append(t.getFromSQL(tableAlias));
+            sqlf.append(t.getFromSQL(tableAlias, selectedColumns));
             for (SQLFragment j : joins.values())
                 sqlf.append(" ").append(j);
             if (filterFragmentMap.containsKey(t))
@@ -1017,7 +1031,7 @@ public class StudyServiceImpl implements StudyService
         for (Dataset dataset : datasets)
         {
             DatasetDefinition d = (DatasetDefinition)dataset;
-            TableInfo t = d.getTableInfo(user,true, false);
+            TableInfo t = d.getTableInfo(user);
             if (null == t)
                 continue;
             long count = new TableSelector(t).getRowCount();

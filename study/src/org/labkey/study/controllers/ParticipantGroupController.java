@@ -32,7 +32,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -418,8 +417,23 @@ public class ParticipantGroupController extends BaseStudyController
             try
             {
                 Set<String> ptids = new LinkedHashSet<>();
-
                 QuerySettings settings = form.getQuerySettings();
+
+                if (form.isAllParticipants())
+                {
+                    // if the user has selected all participants, remove any special dataset params on the URL
+                    // such as cohort or visit ID
+                    getViewContext().setActionURL(new ActionURL());
+                }
+                else
+                {
+                    // if the group is created from selected participants (even if the select all checkbox is selected), we
+                    // want to apply any filters on the dataregion
+                    ActionURL url = new ActionURL();
+                    url.setRawQuery(form.getRequestURL());
+                    settings.setSortFilterURL(url);
+                }
+
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
                 if (schema == null)
                 {
@@ -434,6 +448,7 @@ public class ParticipantGroupController extends BaseStudyController
                     return null;
                 }
 
+                // select all was checked
                 if (form.isSelectAll())
                 {
                     for (String ptid : StudyController.generateParticipantList(view))
@@ -457,8 +472,9 @@ public class ParticipantGroupController extends BaseStudyController
 
     public static class ParticipantSelection extends QueryForm
     {
-        private String[] _selections;
-        private boolean _selectAll;
+        private String[] _selections;       // specific selections
+        private boolean _selectAll;         // select all is checked
+        private boolean _allParticipants;   // all participants option
         private String _requestURL;
 
         public String getRequestURL()
@@ -489,6 +505,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setSelectAll(boolean selectAll)
         {
             _selectAll = selectAll;
+        }
+
+        public boolean isAllParticipants()
+        {
+            return _allParticipants;
+        }
+
+        public void setAllParticipants(boolean allParticipants)
+        {
+            _allParticipants = allParticipants;
         }
     }
 
@@ -1519,7 +1545,7 @@ public class ParticipantGroupController extends BaseStudyController
     {
         if (!getStudy().isDataspaceStudy())
             return null;
-        DataspaceQuerySchema dqs = new DataspaceQuerySchema(getStudy(), getUser(), true);
+        DataspaceQuerySchema dqs = new DataspaceQuerySchema(getStudy(), getUser());
         return dqs.getDefaultContainerFilter();
     }
 

@@ -43,6 +43,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -58,6 +59,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -71,11 +73,15 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -85,8 +91,10 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -99,6 +107,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -116,11 +125,20 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    // columns that may appear in a row when only the sample status is updating.
+    public static final Set<String> statusUpdateColumns = Set.of(
+            ExpMaterialTable.Column.Modified.name().toLowerCase(),
+            ExpMaterialTable.Column.ModifiedBy.name().toLowerCase(),
+            ExpMaterialTable.Column.SampleState.name().toLowerCase(),
+            ExpMaterialTable.Column.Folder.name().toLowerCase()
+    );
+
     public static SampleTypeServiceImpl get()
     {
         return (SampleTypeServiceImpl) SampleTypeService.get();
@@ -425,6 +443,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getSampleTypeByType(lsid, null);
     }
 
+    @Nullable
+    @Override
+    public DataState getSampleState(Container container, Integer stateRowId)
+    {
+        return DataStateManager.getInstance().getStateForRowId(container, stateRowId);
+    }
+
     private ExpSampleTypeImpl _getSampleType(String lsid)
     {
         MaterialSource ms = getMaterialSource(lsid);
@@ -472,7 +497,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             Container container = ContainerManager.getForId(entry.getKey());
             // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
             count += entry.getValue().size();
         }
         return count;
@@ -569,13 +594,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null, null, null);
+                parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category)
         throws ExperimentException
     {
         if (name == null)
@@ -609,10 +635,29 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (nameExpression != null && idCol1 > -1)
             throw new ExperimentException("Name expression cannot be used with id columns");
 
+        NameExpressionOptionService svc = NameExpressionOptionService.get();
+        if (!svc.allowUserSpecifiedNames(c))
+        {
+            if (nameExpression == null)
+                throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+        }
+
+        if (svc.getExpressionPrefix(c) != null)
+        {
+            // automatically apply the configured prefix to the name expression
+            nameExpression = svc.createPrefixedExpression(c, nameExpression, false);
+            aliquotNameExpression = svc.createPrefixedExpression(c, aliquotNameExpression, true);
+        }
+
         // Validate the name expression length
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate the aliquot name expression length
+        int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
+        if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
+            throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
@@ -623,6 +668,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         int metricUnitMax = materialSourceTable.getColumn("MetricUnit").getScale();
         if (metricUnit != null && metricUnit.length() > metricUnitMax)
             throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
+
+        // Validate the category length
+        int categoryMax = materialSourceTable.getColumn("Category").getScale();
+        if (category != null && category.length() > categoryMax)
+            throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -694,9 +744,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
+        if (aliquotNameExpression != null)
+            source.setAliquotNameExpression(aliquotNameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
         source.setAutoLinkTargetContainer(autoLinkTargetContainer);
+        source.setAutoLinkCategory(autoLinkCategory);
+        source.setCategory(category);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -864,19 +918,44 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setDescription(newDescription);
         }
 
+        boolean hasMetricUnitChanged = false;
+
         if (options != null)
         {
-            String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
+            String sampleIdPattern = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(options.getNameExpression()));
             String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
                 st.setNameExpression(sampleIdPattern);
+                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
+                {
+                    ValidationException errors = new ValidationException();
+                    errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+
+                    return errors;
+                }
+            }
+
+            String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
+            String oldAliquotPattern = st.getAliquotNameExpression();
+            if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
+            {
+                st.setAliquotNameExpression(aliquotIdPattern);
             }
 
             st.setLabelColor(options.getLabelColor());
+            String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
+            String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
+
+            if (!Objects.equals(oldMetricUnit, newMetricUnit))
+                hasMetricUnitChanged = true;
+
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
             st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
+            st.setAutoLinkCategory(options.getAutoLinkCategory());
+            if (options.getCategory() != null) // update sample type category is currently not supported
+                st.setCategory(options.getCategory());
         }
 
         ValidationException errors;
@@ -887,7 +966,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (!errors.hasErrors())
             {
-                transaction.addCommitTask(() -> clearMaterialSourceCache(container), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
+                transaction.addCommitTask(() -> {
+                    clearMaterialSourceCache(container);
+
+                    if (finalHasMetricUnitChanged && InventoryService.get() != null)
+                    {
+                        try
+                        {
+                            InventoryService.get().recomputeSampleTypeRollup(st, container, true);
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                    }
+
+                }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
             }
         }
@@ -1067,5 +1162,33 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return max;
+    }
+
+    @Override
+    public Collection<? extends ExpMaterial> getSamplesNotPermitted(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        return samples.stream()
+                .filter(sample -> !sample.isOperationPermitted(operation))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation)
+    {
+        String message;
+        if (samples.size() == 1)
+        {
+            ExpMaterial sample = samples.iterator().next();
+            message = "Sample " + sample.getName() + " has status " + sample.getStateLabel() + ", which prevents";
+        }
+        else
+        {
+            message = samples.size() + " samples (";
+            message += samples.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (samples.size() > 10)
+                message += " ...";
+            message += ") have statuses that prevent";
+        }
+        return message + " " + operation.getDescription() + ".";
     }
 }

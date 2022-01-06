@@ -183,6 +183,9 @@
       </column>
       <column columnName="ObjectId"/>
       <column columnName="LastIndexed"/>
+      <column columnName="WorkflowTask">
+        <description>The Workflow Task this run is associated with.</description>
+      </column>
     </columns>
     <description>Contains a row per experiment run in this folder.</description>
   </table>
@@ -285,6 +288,36 @@
       <column columnName="ObjectId"/>
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
+      <column columnName="SampleState">
+          <description>Represents the status of the sample</description>
+      </column>
+      <column columnName="RecomputeRollup">
+          <isHidden>true</isHidden>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotCount">
+          <columnTitle>Aliquots Created Count</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotVolume">
+          <columnTitle>Aliquot Total Volume</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AliquotUnit">
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
@@ -334,9 +367,18 @@
       <column columnName="IdCol3"/>
       <column columnName="ParentCol"/>
       <column columnName="NameExpression"/>
+      <column columnName="AliquotNameExpression"/>
       <column columnName="LabelColor"/>
       <column columnName="MetricUnit"/>
       <column columnName="AutoLinkTargetContainer"/>
+      <column columnName="AutoLinkCategory"/>
+      <column columnName="Category">
+          <fk>
+              <fkDbSchema>exp</fkDbSchema>
+              <fkTable>SampleTypeCategoryType</fkTable>
+              <fkColumnName>Value</fkColumnName>
+          </fk>
+      </column>
       <column columnName="CreatedBy">
         <description>Contains the user that created this sample type</description>
       </column>
@@ -383,8 +425,8 @@
       <column columnName="Category">
         <fk>
             <fkDbSchema>exp</fkDbSchema>
-            <fkTable>DataClassCategory</fkTable>
-            <fkColumnName>category</fkColumnName>
+            <fkTable>DataClassCategoryType</fkTable>
+            <fkColumnName>Value</fkColumnName>
         </fk>
       </column>
         <column columnName="LastIndexed">
@@ -445,6 +487,7 @@
       <column columnName="PrincipalConceptCode"/>
       <column columnName="ConceptSubtree"/>
       <column columnName="DerivationDataScope"/>
+      <column columnName="Scannable" />
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
@@ -536,6 +579,9 @@
       </column>
       <column columnName="Container">
           <description>Contains the folder or project where this protocol is stored</description>
+      </column>
+      <column columnName="Status">
+          <description>The current status of this protocol</description>
       </column>
     </columns>
     <description>Contains a row per experiment protocol, a series of steps that may be performed when doing an experiment run.</description>
@@ -635,6 +681,9 @@
       <column columnName="RecordCount">
           <description>Contains the number of records affected by this step</description>
       </column>
+        <column columnName="EntityId">
+            <description>The EntityId of the ProtocolApplication</description>
+        </column>
     </columns>
     <description>Contains a row per step taken when performing an experiment run.</description>
   </table>
@@ -916,6 +965,11 @@
       <column columnName="ObjectId"/>
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
+      <column columnName="SampleState"/>
+      <column columnName="RecomputeRollup"/>
+      <column columnName="AliquotCount"/>
+      <column columnName="AliquotVolume"/>
+      <column columnName="AliquotUnit"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">

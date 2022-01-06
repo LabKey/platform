@@ -1,0 +1,1 @@
+ALTER TABLE exp.MaterialSource ADD COLUMN AliquotNameExpression VARCHAR(200) NULL;

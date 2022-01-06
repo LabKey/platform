@@ -11,13 +11,16 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
+import static org.labkey.api.specimen.model.SpecimenTablesProvider.VIALREQUEST_TABLENAME;
+
 class SpecimenSchema extends StudyQuerySchema
 {
     private final StudyQuerySchema _parentSchema;
 
     SpecimenSchema(StudyQuerySchema parent)
     {
-        super(new SchemaKey(parent.getSchemaPath(), "Specimens"), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
+        super(new SchemaKey(parent.getSchemaPath(), SPECIMENTS_SCHEMA_NAME), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._contextualRole);
         _parentSchema = parent;
         setSessionParticipantGroup(parent.getSessionParticipantGroup());
     }
@@ -51,11 +54,11 @@ class SpecimenSchema extends StudyQuerySchema
                 names.add(SPECIMEN_EVENT_TABLE_NAME);
                 names.add(SPECIMEN_DETAIL_TABLE_NAME);
                 names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                names.add("SpecimenVialCount");
+                names.add(SPECIMENVIALCOUNT_TABLENAME);
                 names.add(SIMPLE_SPECIMEN_TABLE_NAME);
                 names.add("SpecimenRequest");
                 names.add("SpecimenRequestStatus");
-                names.add("VialRequest");
+                names.add(VIALREQUEST_TABLENAME);
                 names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
                 names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
                 names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);

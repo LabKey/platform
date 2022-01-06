@@ -34,6 +34,7 @@ export const SampleInsertPage: FC = memo(() => {
                 importHelpLinkNode={<>Get help with your samples</>}
                 fileImportParameters={{
                     'importAlias.SampleId': 'Name', // accept both 'SampleId' and 'Name' as name
+                    'importAlias.Sample Id': 'Name', // accept both 'SampleId' and 'Name' as name
                 }}
                 nounPlural="samples"
                 nounSingular="sample"

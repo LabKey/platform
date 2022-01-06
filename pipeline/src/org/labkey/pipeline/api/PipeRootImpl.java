@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class PipeRootImpl implements PipeRoot
     private String _containerId;
     private final List<URI> _uris = new ArrayList<>();
     private List<File> _rootPaths = new ArrayList<>();
+    private List<Path> _rootNioPaths = new ArrayList<>();
     private final String _entityId;
     private final boolean _searchable;
     private String _cloudStoreName;         // Only used for cloud
@@ -251,6 +253,21 @@ public class PipeRootImpl implements PipeRoot
         return _rootPaths;
     }
 
+    public synchronized List<Path> getRootNioPaths()
+    {
+        if (_rootNioPaths.size() == 0 && !isCloudRoot())
+        {
+            for (URI uri : _uris)
+            {
+                Path file = FileUtil.getPath(getContainer(), uri);
+                _rootNioPaths.add(file);
+                assert file != null;
+                NetworkDrive.ensureDrive(file.toString());
+            }
+        }
+        return _rootNioPaths;
+    }
+
     public List<URI> getRootURIs()
     {
         return _uris;
@@ -355,26 +372,33 @@ public class PipeRootImpl implements PipeRoot
     @Nullable
     public Path resolveToNioPath(String path)
     {
-        if (null == path)
+        if (path == null)
             throw new NotFoundException("Must specify a file path");
 
-        if (ROOT_BASE.cloud.equals(_defaultRoot))
+        try
         {
-            // Remove leading "./" sometimes added by the client side FileBrowser
-            if (path.startsWith("./"))
-                path = path.substring(2);
+            if (ROOT_BASE.cloud.equals(_defaultRoot))
+            {
+                // Remove leading "./" sometimes added by the client side FileBrowser
+                if (path.startsWith("./"))
+                    path = path.substring(2);
 
-            // Return the path to the default location
-            org.labkey.api.util.Path combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
-                    new org.labkey.api.util.Path(_uris.get(0).getPath(), path) :
-                    new org.labkey.api.util.Path(path);
-            return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
-            // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+                // Return the path to the default location
+                org.labkey.api.util.Path combinedPath = StringUtils.isNotBlank(_uris.get(0).getPath()) ?
+                        new org.labkey.api.util.Path(_uris.get(0).getPath(), path) :
+                        new org.labkey.api.util.Path(path);
+                return CloudStoreService.get().getPath(getContainer(), _cloudStoreName, combinedPath);
+                // TODO: Do we need? Check that it's under the root to protect against ../../ type paths
+            }
+            else
+            {
+                File file = resolvePath(path);
+                return null != file ? file.toPath() : null;
+            }
         }
-        else
+        catch (InvalidPathException e)
         {
-            File  file = resolvePath(path);
-            return null != file ? file.toPath() : null;
+            throw new NotFoundException("Must specify a valid file path", e);
         }
     }
 
@@ -402,6 +426,13 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    /**
+     * Get a local directory that can be used for importing (Read/Write)
+     *
+     * Cloud: Uses temp directory
+     * Default: Uses file root
+     * @return
+     */
     @Override
     @NotNull
     public File getImportDirectory()
@@ -414,24 +445,15 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
+    public Path deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
-        File importDir = getImportDirectory();
-
-        if (importDir.exists() && !FileUtil.deleteDir(importDir))
-            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
-
-        return importDir;
-    }
-
-    @Override
-    public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
-    {
-        File importDir = getImportDirectory();
-        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
+        Path importDir = getImportDirectory().toPath();
+        if (Files.exists(importDir) && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
+
+        return importDir;
     }
 
     @Override
@@ -609,12 +631,12 @@ public class PipeRootImpl implements PipeRoot
             {
                 if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
                 {
-                    File rootPath = new File(uri);
+                    Path rootPath = Path.of(uri);
                     if (!NetworkDrive.exists(rootPath))
                     {
                         result.add("Pipeline root does not exist.");
                     }
-                    else if (!rootPath.isDirectory())
+                    else if (!Files.isDirectory(rootPath))
                     {
                         result.add("Pipeline root is not a directory.");
                     }

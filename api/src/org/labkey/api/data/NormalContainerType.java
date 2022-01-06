@@ -66,6 +66,12 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
+    public boolean includeInAPIResponse()
+    {
+        return true;
+    }
+
+    @Override
     public boolean isConvertibleToTab()
     {
         return true;

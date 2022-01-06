@@ -26,6 +26,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
@@ -34,6 +35,7 @@ import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -83,7 +85,7 @@ public class ListModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 21.002;
+        return 22.000;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -119,6 +121,9 @@ public class ListModule extends SpringModule
         RoleManager.registerPermission(new ManagePicklistsPermission());
 
         AttachmentService.get().registerAttachmentType(ListItemType.get());
+        ExperimentService.get().addExperimentListener(new PicklistMaterialListener());
+
+        QueryService.get().addCompareType(new PicklistSampleCompareType());
     }
 
     @Override

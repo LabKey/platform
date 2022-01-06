@@ -25,14 +25,13 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
-
-import java.util.ArrayList;
 
 public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 {
@@ -42,14 +41,16 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getSchema(), null, schema, cf);
         _colParticipantId = colParticipantId;
+        StudyQuerySchema sqs = getUserSchema();
         for (DatasetDefinition dataset : schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
-            if (!dataset.canRead(schema.getUser()))
+            var t = sqs.getDatasetTable(dataset, null);
+            if (null == t || !t.hasPermission(schema.getUser(), ReadPermission.class))
                 continue;
 
-            String name = dataset.getName();
+            String name = t.getName();
             if (name == null)
                 continue;
             // if not keyed by Participant/SequenceNum it is not a lookup
@@ -100,10 +101,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     try
                     {
-                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def, getContainerFilter());
-                        dsTable.hideParticipantLookups();
-                        dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
-                        return dsTable;
+                        return _userSchema.getDatasetTableForLookup(def, getContainerFilter());
                     }
                     catch (UnauthorizedException e)
                     {

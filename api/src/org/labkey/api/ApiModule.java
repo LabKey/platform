@@ -35,6 +35,7 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
@@ -195,6 +196,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.InClauseTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
+            NameGenerator.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
@@ -210,8 +212,7 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
         List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
-        //TODO: No test cases.
-        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;
     }
 
@@ -225,11 +226,11 @@ public class ApiModule extends CodeOnlyModule
             ApiKeyManager.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
+            CachingTestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
             CompareType.TestCase.class,
-            DbSchema.CachingTestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
             DbSchema.TableSelectTestCase.class,
@@ -245,6 +246,7 @@ public class ApiModule extends CodeOnlyModule
             FileSystemWatcherImpl.TestCase.class,
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
+            JdbcMetaDataTest.class,
             JspTemplate.TestCase.class,
             LabKeyCollectors.TestCase.class,
             MapLoader.MapLoaderTestCase.class,

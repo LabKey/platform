@@ -2,7 +2,8 @@ package org.labkey.pipeline.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
@@ -36,7 +37,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class StatusDetailsBean
 {
-    public static final Logger LOG = Logger.getLogger(StatusDetailsBean.class);
+    public static final Logger LOG = LogManager.getLogger(StatusDetailsBean.class);
 
     public final int rowId;
     public final String jobId;

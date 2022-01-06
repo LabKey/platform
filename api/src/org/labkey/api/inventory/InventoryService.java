@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
@@ -31,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ExperimentalFeatureService;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +43,7 @@ import java.util.Set;
  */
 public interface InventoryService
 {
-    String PRODUCT_ID = "freezerManager";
+    String PRODUCT_ID = "FreezerManager";
 
     Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
             "FreezeThawCount",
@@ -56,8 +58,6 @@ public interface InventoryService
             "Units",
             "StorageComment"
     );
-
-    String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
 
     static void setInstance(InventoryService impl)
     {
@@ -78,11 +78,14 @@ public interface InventoryService
     @NotNull
     String getWellLabel(int boxId, int row, Integer col);
 
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
+
+    void recomputeSamplesRollup(Set<Integer> parentIds, String sampleTypeMetricUnit, Container container) throws SQLException;
+
     static boolean isFreezerManagementEnabled(Container c)
     {
         Set<Module> moduleSet = c.getActiveModules();
-        return (moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"))
-                && (!moduleSet.contains(ModuleLoader.getInstance().getModule("Biologics"))
-                || ExperimentalFeatureService.get().isFeatureEnabled(InventoryService.EXPERIMENTAL_FM_BIOLOGICS)));
+        return moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"));
     }
+
 }

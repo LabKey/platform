@@ -41,6 +41,7 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -155,7 +156,7 @@ public class ProtocolManagementWebPart extends GridView
         // The code in AnalysisController.GetSavedProtocolsAction suggests that we may need to call getProtocolNames() with
         // workbook roots/dirDatas, and or a non-null dirData  in some cases, but I can't find any code path in which
         // those would have been set.
-        return Arrays.stream(factory.getProtocolNames(root, null, archived)).sorted(String.CASE_INSENSITIVE_ORDER)
+        return Arrays.stream(factory.getProtocolNames(root, (Path) null, archived)).sorted(String.CASE_INSENSITIVE_ORDER)
                 .map(protocolName -> new Protocol(taskPipeline, protocolName, archived))
                 .collect(Collectors.toList());
     }

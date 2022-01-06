@@ -1,7 +1,9 @@
 package org.labkey.study.controllers.publish;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -20,7 +22,6 @@ import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -32,6 +33,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -205,6 +207,11 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
+        List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(dataKeys.keySet());
+        SampleTypeService sampleService = SampleTypeService.get();
+        Collection<? extends ExpMaterial> unlinkableSamples = sampleService.getSamplesNotPermitted(samples, SampleTypeService.SampleOperations.LinkToStudy);
+        if (!unlinkableSamples.isEmpty())
+            errors.add(sampleService.getOperationNotPermittedMessage(unlinkableSamples, SampleTypeService.SampleOperations.LinkToStudy));
 
         for (PublishKey publishKey : dataKeys.values())
         {
@@ -236,7 +243,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             return null;
         }
 
-        return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
+        return StudyPublishService.get().publishData(
+                getUser(),
+                form.getContainer(),
+                targetStudy,
+                form.getAutoLinkCategory(),
+                sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                 dataMaps, ROW_ID, errors);
     }
@@ -253,7 +265,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     public void addNavTrail(NavTree root)
     {
-        setHelpTopic(new HelpTopic("linkSampleData"));
+        setHelpTopic("linkSampleData");
         root.addChild("Sample Types", urlProvider(ExperimentUrls.class).getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));

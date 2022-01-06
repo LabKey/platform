@@ -63,7 +63,7 @@ import java.util.Set;
  */
 public class CohortManager
 {
-    private static CohortManager _instance = new CohortManager();
+    private static final CohortManager _instance = new CohortManager();
 
     private CohortManager()
     {
@@ -313,7 +313,7 @@ public class CohortManager
             if (null != dataset)
             {
                 TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-                TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false);
+                TableInfo cohortDatasetTinfo = dataset.getTableInfo(user);
 
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
@@ -370,8 +370,8 @@ public class CohortManager
         // assignment never changes.  Participant "NegativeUntil2" starts out negative, then switches to positive in visit
         // 2.  The following code uses this information to fill in the blanks between assignment changes, saving a cohort
         // assignment for every known participant/visit combination based on the results of this query.
-        DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
-        ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
+        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
+        ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
         SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
                 "FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n" +
                 "  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n" +
@@ -394,8 +394,8 @@ public class CohortManager
         if (study.isAdvancedCohorts())
             throw new IllegalStateException("Continuous studies require simple cohort management");
 
-        DatasetDefinition.DatasetSchemaTableInfo cohortDatasetTinfo = dsd.getTableInfo(user, false);
-        ColumnInfo subjectCol = cohortDatasetTinfo.getParticipantColumn();
+        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
+        ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
         SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
                 "FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n" +
                 "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +

@@ -29,6 +29,8 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -524,7 +526,6 @@ public class AnnouncementManager
             // Send a notification email to everyone on the member list.
             IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
             Set<User> recipients = sel.getNotificationUsers(a);
-
             if (!recipients.isEmpty())
             {
                 BulkEmailer emailer = new BulkEmailer(user);
@@ -614,7 +615,8 @@ public class AnnouncementManager
     // Most recent member list is attached to the most recent approved post
     static List<Integer> getMemberList(AnnouncementModel ann)
     {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", ann.getRowId());
+        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?",
+                AnnouncementManager.getLatestPostId(ann) != null ? AnnouncementManager.getLatestPostId(ann) : ann.getRowId());
 
         return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
     }
@@ -1163,7 +1165,8 @@ public class AnnouncementManager
             {
                 if (notificationBean == null)
                     return null;
-                return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
+
+                return notificationBean.messageSubject;
             });
 
             replacements.add("attachments", String.class, "Attachments for this message", ContentType.HTML, c -> attachments);
@@ -1256,6 +1259,7 @@ public class AnnouncementManager
         private final User recipient;
         private final ActionURL threadURL;
         private final ActionURL threadParentURL;
+        private String messageSubject;
         private final String boardPath;
         private final ActionURL boardURL;
         private final String siteURL;
@@ -1275,6 +1279,18 @@ public class AnnouncementManager
                                      User recipient, Settings settings, @NotNull Permissions perm, AnnouncementModel parent,
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
+            DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(a.getDiscussionSrcEntityType());
+            if (typeProvider != null)
+            {
+                String parentBody = null;
+                AnnouncementModel annParent = AnnouncementManager.getAnnouncement(c, a.getParent());
+                if (annParent != null)
+                    parentBody = annParent.getBody();
+                this.messageSubject = typeProvider.getEmailSubject(c, UserManager.getUser(a.getCreatedBy()), a.getRowId(), a.getDiscussionSrcIdentifier(), a.getBody(), a.getTitle(), parentBody);
+            }
+            if (this.messageSubject == null)
+                this.messageSubject = StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle());
+
             this.recipient = recipient;
             this.threadURL = AnnouncementsController.getThreadURL(c, recipient, a);
             this.threadParentURL = AnnouncementsController.getThreadURL(c, recipient, parent);

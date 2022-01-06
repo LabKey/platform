@@ -18,6 +18,9 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
@@ -49,6 +52,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -365,6 +369,48 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public String getDocumentId()
     {
         return SEARCH_CATEGORY_NAME + ":" + getRowId();
+    }
+
+    @Override
+    public Function<String, Long> getMaxDataCounterFunction()
+    {
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData());
+    }
+
+    public long getMinGenId()
+    {
+        return NameGenerator.getGenIdStartValue(_object.getNameExpression());
+    }
+
+    @Override
+    public long getCurrentGenId()
+    {
+        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        if (null == seqRowId)
+            return 0;
+
+        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        return seq.current();
+    }
+
+    @Override
+    public void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException
+    {
+        DbSequence seq = DbSequenceManager.get(c, SEQUENCE_PREFIX, getRowId());
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if (getDatas().isEmpty())
+            {
+                seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(c, SEQUENCE_PREFIX, getRowId());
+            }
+            else
+                throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing data.");
+        }
+        else
+            seq.ensureMinimum(newSeqValue);
+
     }
 
 }

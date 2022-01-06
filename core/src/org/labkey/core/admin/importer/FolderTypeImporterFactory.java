@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: cnathe
@@ -70,11 +71,13 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         {
             Container c = ctx.getContainer();
             FolderDocument.Folder folderXml = ctx.getXml();
+            ctx.getLogger().debug("[" + c.getPath() + "] Importing folder properties from: " + root.getLocation());
 
             if (folderXml.isSetDefaultDateFormat())
             {
                 try
                 {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Default date format: " + folderXml.getDefaultDateFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, folderXml.getDefaultDateFormat());
                 }
                 catch (IllegalArgumentException e)
@@ -87,6 +90,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 try
                 {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Default date-time format: " + folderXml.getDefaultDateTimeFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultDateTimeFormat(c, folderXml.getDefaultDateTimeFormat());
                 }
                 catch (IllegalArgumentException e)
@@ -97,6 +101,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
 
             if (folderXml.isSetRestrictedColumnsEnabled())
             {
+                ctx.getLogger().debug("[" + c.getPath() + "] Restricted columns enabled: " + folderXml.getRestrictedColumnsEnabled());
                 WriteableFolderLookAndFeelProperties.saveRestrictedColumnsEnabled(c, folderXml.getRestrictedColumnsEnabled());
             }
 
@@ -104,11 +109,38 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 try
                 {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Default number format: " + folderXml.getDefaultNumberFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, folderXml.getDefaultNumberFormat());
                 }
                 catch (IllegalArgumentException e)
                 {
                     ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetExtraDateParsingPattern())
+            {
+                try
+                {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Extra date parsing format: " + folderXml.getExtraDateParsingPattern());
+                    WriteableFolderLookAndFeelProperties.saveExtraDateParsingPattern(c, folderXml.getExtraDateParsingPattern());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetExtraDateTimeParsingPattern())
+            {
+                try
+                {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Extra date-time parsing format: " + folderXml.getExtraDateTimeParsingPattern());
+                    WriteableFolderLookAndFeelProperties.saveExtraDateTimeParsingPattern(c, folderXml.getExtraDateTimeParsingPattern());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default date-time format specified: " + e.getMessage());
                 }
             }
 
@@ -132,18 +164,14 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
 
                 if (null != folderType)
                 {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Folder type: " + folderType.getName());
+                    ctx.getLogger().debug("[" + c.getPath() + "] Active modules: " + activeModules.stream().map(Module::getName).collect(Collectors.joining(", ")));
                     // It's sorta BrandNew, but not really; say it's not and SubImporter will handle container tabs correctly
                     BindException errors = new BindException(new Object(), "dummy");
                     c.setFolderType(folderType, activeModules, ctx.getUser(), errors);
-                    if (errors.hasErrors())
+                    for (ObjectError error : errors.getAllErrors())
                     {
-                        for (Object error : errors.getAllErrors())
-                        {
-                            if (error instanceof ObjectError)
-                                ctx.getLogger().error(((ObjectError)error).getDefaultMessage());
-                            else
-                                ctx.getLogger().error("Unknown error attempting to set folder type or enable modules.");
-                        }
+                        ctx.getLogger().error(error.getDefaultMessage());
                     }
                 }
                 else

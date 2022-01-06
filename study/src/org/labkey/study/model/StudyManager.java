@@ -75,7 +75,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -107,6 +107,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -188,6 +189,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
@@ -479,7 +481,6 @@ public class StudyManager
         return _instance;
     }
 
-
     @Nullable
     public StudyImpl getStudy(@NotNull Container c)
     {
@@ -598,6 +599,7 @@ public class StudyManager
         {
             SpecimenSchema.get().getTableInfoLocation(container, user);    // This provisioned table is needed for creating the study
             study = _studyHelper.create(user, study);
+            clearCaches(container,false);
 
             //note: we no longer copy the container's policy to the study upon creation
             //instead, we let it inherit the container's policy until the security type
@@ -841,6 +843,7 @@ public class StudyManager
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+        datasetDefinition.refreshDomain();
         return true;
     }
 
@@ -1100,6 +1103,8 @@ public class StudyManager
             if (result.getRowId() == 0)
             {
                 createVisit(study, user, result, visits);
+                // Refresh existing visits to avoid constraint violation, see #44425
+                visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
                 created = true;
             }
         }
@@ -1816,10 +1821,10 @@ public class StudyManager
     /**
      * Helper to insert a new QCState and manage some study specific behavior
      */
-    public QCState insertQCState(User user, QCState state)
+    public DataState insertQCState(User user, DataState state)
     {
-        boolean isFirst = QCStateManager.getInstance().getQCStates(state.getContainer()).isEmpty();
-        QCState newState = QCStateManager.getInstance().insertQCState(user, state);
+        boolean isFirst = QCStateManager.getInstance().getStates(state.getContainer()).isEmpty();
+        DataState newState = QCStateManager.getInstance().insertState(user, state);
         if (isFirst)
             // switching from zero to more than zero QC states affects the columns in our materialized datasets
             // (adding a QC State column), so we unmaterialize them here:
@@ -1829,12 +1834,12 @@ public class StudyManager
     }
 
     @Nullable
-    public QCState getDefaultQCState(StudyImpl study)
+    public DataState getDefaultQCState(StudyImpl study)
     {
         Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
-        QCState defaultQCState = null;
+        DataState defaultQCState = null;
         if (defaultQcStateId != null)
-            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(
+            defaultQCState = QCStateManager.getInstance().getStateForRowId(
                     study.getContainer(), defaultQcStateId);
         return defaultQCState;
     }
@@ -1849,7 +1854,7 @@ public class StudyManager
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
 
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
 
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
@@ -1880,7 +1885,7 @@ public class StudyManager
         List<VisitImpl> visits = new ArrayList<>();
 
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
 
         final Study study = def.getStudy();
         final Study visitStudy = getStudyForVisits(study);
@@ -1908,7 +1913,7 @@ public class StudyManager
     public List<Double> getUndefinedSequenceNumsForDataset(Container container, int datasetId)
     {
         DatasetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
-        TableInfo ds = def.getTableInfo(null, false);
+        TableInfo ds = def.getDatasetSchemaTableInfo(null, false);
         Study visitStudy = getStudyForVisits(def.getStudy());
 
         SQLFragment sql = new SQLFragment();
@@ -1924,7 +1929,7 @@ public class StudyManager
         return selector.getArrayList(Double.class);
     }
 
-    public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments)
+    public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, DataState newState, String comments)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         Study study = getStudy(container);
@@ -1946,9 +1951,9 @@ public class StudyManager
             String lsid = (String) row.get("lsid");
 
             Integer oldStateId = (Integer) row.get(DatasetTableImpl.QCSTATE_ID_COLNAME);
-            QCState oldState = null;
+            DataState oldState = null;
             if (oldStateId != null)
-                oldState = QCStateManager.getInstance().getQCStateForRowId(container, oldStateId);
+                oldState = QCStateManager.getInstance().getStateForRowId(container, oldStateId);
 
             // check to see if we're actually changing state.  If not, no-op:
             if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
@@ -2047,7 +2052,7 @@ public class StudyManager
         DatasetDefinition def = getDatasetDefinition(study, cohortDatasetId);
 
         if (def != null)
-            return def.canRead(user);
+            return def.canReadInternal(user);
 
         return false;
     }
@@ -2453,7 +2458,7 @@ public class StudyManager
 
     public List<String> getDatasetLSIDs(User user, DatasetDefinition def)
     {
-        TableInfo tInfo = def.getTableInfo(user, true);
+        TableInfo tInfo = def.getTableInfo(user);
         return new TableSelector(tInfo.getColumn("lsid")).getArrayList(String.class);
     }
 
@@ -2561,7 +2566,7 @@ public class StudyManager
 
     public long getNumDatasetRows(User user, Dataset dataset)
     {
-        TableInfo sdTable = dataset.getTableInfo(user, false);
+        TableInfo sdTable = dataset.getTableInfo(user);
         return new TableSelector(sdTable).getRowCount();
     }
 
@@ -3392,7 +3397,7 @@ public class StudyManager
                Map<String, String> columnMap)
             throws IOException
     {
-        TableInfo tinfo = def.getTableInfo(user, false);
+        TableInfo tinfo = def.getTableInfo(user);
 
         // We're going to lower-case the keys ourselves later,
         // so this needs to be case-insensitive
@@ -3455,12 +3460,13 @@ public class StudyManager
     /**
      * @deprecated pass in a DataIteratorContext instead of individual options
      */
+    @Deprecated
     public List<String> importDatasetData(User user, DatasetDefinition def,
                                           DataLoader loader,
                                           Map<String, String> columnMap,
                                           BatchValidationException errors,
                                           DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          @Nullable QCState defaultQCState,
+                                          @Nullable DataState defaultQCState,
                                           QueryUpdateService.InsertOption insertOption,
                                           Logger logger,
                                           boolean importLookupByAlternateKey,
@@ -3497,13 +3503,15 @@ public class StudyManager
     /**
      * @deprecated pass in a DataIteratorContext instead of individual options
      */
+    @Deprecated
     public List<String> importDatasetData(User user, DatasetDefinition def,
                                           List<Map<String, Object>> data,
                                           BatchValidationException errors,
                                           DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          @Nullable QCState defaultQCState,
+                                          @Nullable DataState defaultQCState,
                                           Logger logger,
-                                          boolean allowImportManagedKey) throws IOException
+                                          boolean allowImportManagedKey,
+                                          boolean skipTriggers) throws IOException
     {
         if (data.isEmpty())
             return Collections.emptyList();
@@ -3516,6 +3524,7 @@ public class StudyManager
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
+        options.put(QueryUpdateService.ConfigParameters.SkipTriggers, skipTriggers);
         context.setConfigParameters(options);
 
         DataLoader loader = new MapLoader(data);
@@ -3941,15 +3950,15 @@ public class StudyManager
         return sql;
     }
 
-    private String getParticipantCacheName(Container container)
+    private String getParticipantCacheKey(Container container)
     {
-        return container.getId() + "/" + Participant.class.toString();
+        return container.getId() + "/" + Participant.class;
     }
 
     /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
-        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
+        Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()));
         if (participantMap == null)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
@@ -3959,14 +3968,14 @@ public class StudyManager
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
             participantMap = Collections.unmodifiableMap(participantMap);
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, CacheManager.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(study.getContainer()), participantMap, CacheManager.HOUR);
         }
         return participantMap;
     }
 
     public void clearParticipantCache(Container container)
     {
-        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(container));
+        DbCache.remove(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheKey(container));
     }
 
     public Collection<Participant> getParticipants(Study study)
@@ -3989,7 +3998,7 @@ public class StudyManager
         }
     }
 
-    /* non-permission checking,  may return participant from sub folder */
+    /* non-permission checking, may return participant from sub folder */
     public Container findParticipant(Study study, String ptid) throws ParticipantNotUniqueException
     {
         Participant p = getParticipant(study, ptid);
@@ -4164,7 +4173,7 @@ public class StudyManager
     // Return a source->alias map for the specified participant
     public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user, true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, user).getParticipantAliasesTable();
 
         if (null == aliasTable)
             return Collections.emptyMap();
@@ -4255,8 +4264,8 @@ public class StudyManager
 
         body.append(keywords).append("\n");
 
-        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
-        TableInfo tableInfo = schema.createDatasetTableInternal(dsd, null);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), RoleManager.getRole(ReaderRole.class));
+        TableInfo tableInfo = schema.getDatasetTable(dsd, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
         for (ColumnInfo column : columns.values())
@@ -4325,7 +4334,7 @@ public class StudyManager
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
 
         if (null != aliasTable)
         {
@@ -4707,6 +4716,76 @@ public class StudyManager
                 StudyDesignManager mgr = StudyDesignManager.get();
                 StudyManager.getInstance().getAllStudies()
                     .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
+            }
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void ensureParticipantIds(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                _log.info("Ensuring participantIds in all study datasets");
+                try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+                {
+                    // Iterate through all studies
+                    Set<? extends StudyImpl> studies = StudyManager.getInstance().getAllStudies();
+                    for (StudyImpl study : studies)
+                    {
+                        String subjectColName = study.getSubjectColumnName();
+
+                        // Iterate datasets
+                        List<DatasetDefinition> datasets = study.getDatasets();
+                        for (DatasetDefinition dataset : datasets)
+                        {
+                            Domain dom = dataset.getDomain();
+                            if (null != dom)
+                            {
+                                // If subject id renamed then try to correct
+                                if (!subjectColName.equalsIgnoreCase("ParticipantId"))
+                                {
+                                    // Try to correct datasets with subject id overwritten with custom column
+                                    List<? extends DomainProperty> dupeId = dom.getProperties().stream().filter(d -> d.getName().equalsIgnoreCase(subjectColName)).collect(Collectors.toList());
+                                    if (dupeId.size() > 0)
+                                    {
+                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
+                                        updateSql.append(" SET participantid = ").append(subjectColName);
+                                        updateSql.append(" WHERE participantid IS NULL");
+                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
+                                        if (rows > 0)
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
+                                    }
+                                    else
+                                    {   // set participantid to Unknown if it is null and doesn't match the above case. Only way known that it could
+                                        // happen is if the above case was corrected before running this script, but should catch any other edge cases
+                                        SQLFragment updateSql = new SQLFragment("UPDATE studydataset.").append(dom.getStorageTableName());
+                                        updateSql.append(" SET participantid = 'Unknown'");
+                                        updateSql.append(" WHERE participantid IS NULL");
+                                        int rows = new SqlExecutor(StudySchema.getInstance().getScope()).execute(updateSql);
+                                        if (rows > 0)
+                                            _log.info(dataset.getName() + " in " + study.getContainer().getName() + " updated " + rows + " participantId rows.");
+                                    }
+                                }
+
+                                SQLFragment constraintSql = new SQLFragment("ALTER TABLE studydataset.").append(dom.getStorageTableName());
+                                if (StudySchema.getInstance().getSqlDialect().isPostgreSQL())
+                                {
+                                    constraintSql.append(" ALTER COLUMN participantid SET NOT NULL");
+                                }
+                                else
+                                {
+                                    // Adding not null constraint avoids having to drop indexes to re-declare column as not null
+                                    constraintSql.append(" WITH CHECK ADD CONSTRAINT ").append(dom.getStorageTableName()).append("_participantid_not_null");
+                                    constraintSql.append(" CHECK (participantid IS NOT NULL);");
+                                }
+
+                                new SqlExecutor(StudySchema.getInstance().getScope()).execute(constraintSql);
+                            }
+                        }
+
+                    }
+
+                    transaction.commit();
+                }
             }
         }
     }

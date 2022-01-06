@@ -30,7 +30,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
@@ -88,11 +87,7 @@ public interface StudyPublishService
                           Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors);
 
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
-                          Pair<Dataset.PublishSource, Integer> publishSource,
-                          List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
-
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
                           String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
@@ -134,6 +129,8 @@ public interface StudyPublishService
      * permission to read or modify all of the datasets that are returned.
      */
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
+
+    String checkForLockedLinks(Dataset def, @Nullable List<Integer> rowIds);
 
     void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
 

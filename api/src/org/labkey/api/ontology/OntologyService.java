@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.MutableColumnRenderProperties;
+import org.labkey.api.data.MutableColumnConceptProperties;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.property.DomainProperty;
@@ -48,11 +48,11 @@ public interface OntologyService
         ServiceRegistry.get().registerService(OntologyService.class, impl);
     }
 
-    void parseXml(ColumnType xmlCol, MutableColumnRenderProperties col);
+    void parseXml(ColumnType xmlCol, MutableColumnConceptProperties col);
 
     void writeXml(ColumnRenderProperties col, ColumnType colXml);
 
-    void parseXml(PropertyDescriptorType xmlProp, DomainProperty domainProp);
+    void parseXml(PropertyDescriptorType xmlProp, MutableColumnConceptProperties domainProp);
 
     void writeXml(DomainProperty domainProp, PropertyDescriptorType xProp);
 

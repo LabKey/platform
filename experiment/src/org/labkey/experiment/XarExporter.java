@@ -122,17 +122,17 @@ public class XarExporter
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
      */
-    private Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<>();
-    private Set<String> _experimentRunLSIDs = new HashSet<>();
-    private Set<String> _protocolLSIDs = new HashSet<>();
-    private Set<String> _inputDataLSIDs = new HashSet<>();
-    private Set<String> _inputMaterialLSIDs = new HashSet<>();
+    private final Map<String, Set<String>> _experimentLSIDToRunLSIDs = new HashMap<>();
+    private final Set<String> _experimentRunLSIDs = new HashSet<>();
+    private final Set<String> _protocolLSIDs = new HashSet<>();
+    private final Set<String> _inputDataLSIDs = new HashSet<>();
+    private final Set<String> _inputMaterialLSIDs = new HashSet<>();
 
-    private Set<String> _sampleSetLSIDs = new HashSet<>();
+    private final Set<String> _sampleSetLSIDs = new HashSet<>();
     /** Use a TreeMap so that we order domains by their RowIds, see issue 22459 */
-    private Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
-    private Set<String> _domainLSIDs = new HashSet<>();
-    private Set<Integer> _expDataIDs = new HashSet<>();
+    private final Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
+    private final Set<String> _domainLSIDs = new HashSet<>();
+    private final Set<Integer> _expDataIDs = new HashSet<>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
@@ -264,6 +264,12 @@ public class XarExporter
 
         addProtocol(protocol, true);
 
+        ExpRun replacedByRun = run.getReplacedByRun();
+        if (replacedByRun != null)
+        {
+            xRun.setReplacedByRunLSID(_relativizedLSIDs.relativize(replacedByRun.getLSID()));
+        }
+
         Set<Map.Entry<ExpData, String>> inputData = run.getDataInputs().entrySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
         if (inputData.size() > 0 && inputDefs == null)
@@ -302,6 +308,16 @@ public class XarExporter
         for (ExpProtocolApplication application : ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId()))
         {
             addProtocolApplication(application, run, xApplications);
+        }
+
+        ExpProtocolApplication workflowTask = run.getWorkflowTask();
+
+        if (workflowTask != null)
+        {
+            // Due to the way ProtocolApplication LSIDs are generated we can't actually round trip them the normal way
+            // via the LSIDRelativizer. Instead we construct an LSID out of the object ID with a custom prefix.
+            String workflowObjectId = Lsid.parse(workflowTask.getLSID()).getObjectId();
+            xRun.setWorkflowTaskLSID("${WorkflowTaskReference}:" + workflowObjectId);
         }
 
         // get AssayService.get().getProvider(run).getXarCallbacks().beforeXarExportRun() with simple attempt at caching for common case
@@ -606,9 +622,19 @@ public class XarExporter
             xSampleSet.setAutoLinkTargetContainerId(sampleType.getAutoLinkTargetContainer().getId());
         }
 
+        if (sampleType.getAutoLinkCategory() != null)
+        {
+            xSampleSet.setAutoLinkCategory(sampleType.getAutoLinkCategory());
+        }
+
         if (sampleType.hasNameExpression())
         {
             xSampleSet.setNameExpression(sampleType.getNameExpression());
+        }
+
+        if (sampleType.hasAliquotNameExpression())
+        {
+            xSampleSet.setAliquotNameExpression(sampleType.getAliquotNameExpression());
         }
 
         if (sampleType.hasNameAsIdCol())
@@ -634,6 +660,11 @@ public class XarExporter
         if (sampleType.getMetricUnit() != null)
         {
             xSampleSet.setMetricUnit(sampleType.getMetricUnit());
+        }
+
+        if (sampleType.getCategory() != null)
+        {
+            xSampleSet.setCategory(sampleType.getCategory());
         }
 
         try
@@ -815,6 +846,9 @@ public class XarExporter
         xProp.setMeasure(domainProp.isMeasure());
         xProp.setDimension(domainProp.isDimension());
         xProp.setRecommendedVariable(domainProp.isRecommendedVariable());
+
+        if (domainProp.isScannable())
+            xProp.setScannable(domainProp.isScannable());
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)
@@ -1006,7 +1040,10 @@ public class XarExporter
         {
             xProtocol.setSoftware(protocol.getSoftware());
         }
-
+        if (protocol.getStatus() != null)
+        {
+            xProtocol.setStatus(protocol.getStatus().name());
+        }
         Map<String, ProtocolParameter> params = protocol.getProtocolParameters();
         SimpleValueCollectionType valueCollection = null;
         for (ProtocolParameter param : params.values())
@@ -1363,7 +1400,7 @@ public class XarExporter
                 sb.append(error.getCursorLocation().xmlText());
                 sb.append("\n");
             }
-            throw new ExperimentException("Failed to create a valid XML file\n" + sb.toString());
+            throw new ExperimentException("Failed to create a valid XML file\n" + sb);
         }
 
         XmlOptions options = new XmlOptions();
@@ -1408,14 +1445,8 @@ public class XarExporter
         }
     }
 
-    @Deprecated
-    public void write(OutputStream out) throws IOException
-    {
-        writeAsArchive(out);
-    }
-
     /** TODO use VFS so we can void two impl */
-    public void writeAsArchive(OutputStream out) throws IOException
+    public void writeAsArchive(OutputStream out) throws IOException, ExperimentException
     {
         try (ZipOutputStream zOut = new ZipOutputStream(out))
         {
@@ -1443,7 +1474,7 @@ public class XarExporter
                     }
                 }
             }
-            catch (Exception e)
+            catch (IOException | RuntimeException e)
             {
                 // insert the stack trace into the zip file
                 ZipEntry errorEntry = new ZipEntry("error.log");
@@ -1453,6 +1484,7 @@ public class XarExporter
                 ps.println("Failed to complete export of the XAR file: ");
                 e.printStackTrace(ps);
                 zOut.closeEntry();
+                throw e;
             }
         }
     }

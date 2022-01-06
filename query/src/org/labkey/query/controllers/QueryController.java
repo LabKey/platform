@@ -91,7 +91,6 @@ import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -290,7 +289,7 @@ public class QueryController extends SpringActionController
                 remoteConnectionForm.setPassword(map1.get("password"));
                 remoteConnectionForm.setContainer(map1.get("container"));
             }
-            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
+            setHelpTopic("remoteConnection");
             return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", remoteConnectionForm, errors);
         }
 
@@ -526,7 +525,7 @@ public class QueryController extends SpringActionController
     {
         // set default help topic for query controller
         PageConfig config = super.defaultPageConfig();
-        config.setHelpTopic(new HelpTopic("querySchemaBrowser"));
+        config.setHelpTopic("querySchemaBrowser");
         return config;
     }
 
@@ -545,7 +544,7 @@ public class QueryController extends SpringActionController
 
             StringBuilder sb = new StringBuilder();
 
-            sb.append("\n<div>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available at server startup and the external schemas defined in each.</div><br/>\n");
+            sb.append("\n<div>This page lists all the data sources defined in your ").append(AppProps.getInstance().getWebappConfigurationFilename()).append(" file that were available when first referenced and the external schemas defined in each.</div><br/>\n");
             sb.append("\n<table class=\"labkey-data-region\">\n");
             sb.append("<tr class=\"labkey-show-borders\">");
             sb.append("  <td class=\"labkey-column-header\">Data Source</td>");
@@ -556,7 +555,8 @@ public class QueryController extends SpringActionController
             sb.append("  <td class=\"labkey-column-header\">Product Version</td>");
             sb.append("  <td class=\"labkey-column-header\">Max Connections</td>");
             sb.append("  <td class=\"labkey-column-header\">Active Connections</td>");
-            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td></tr>\n");
+            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td>\n");
+            sb.append("  <td class=\"labkey-column-header\">Max Wait (ms)</td></tr>\n");
 
             int rowCount = 0;
             for (DbScope scope : DbScope.getDbScopes())
@@ -590,7 +590,7 @@ public class QueryController extends SpringActionController
 
                 sb.append(status);
                 sb.append("</td><td>");
-                sb.append(PageFlowUtil.filter(scope.getURL()));
+                sb.append(PageFlowUtil.filter(scope.getDatabaseUrl()));
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDatabaseName()));
                 sb.append("</td><td>");
@@ -603,12 +603,14 @@ public class QueryController extends SpringActionController
                 sb.append(scope.getDataSourceProperties().getNumActive());
                 sb.append("</td><td>");
                 sb.append(scope.getDataSourceProperties().getNumIdle());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getMaxWaitMillis());
                 sb.append("</td></tr>\n");
 
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
 
                 sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">\n");
-                sb.append("  <td colspan=9>\n");
+                sb.append("  <td colspan=\"10\">\n");
                 sb.append("    <table>\n");
 
                 if (null != dsDefs)
@@ -817,7 +819,7 @@ public class QueryController extends SpringActionController
             }
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
-            setHelpTopic(new HelpTopic("sqlTutorial"));
+            setHelpTopic("sqlTutorial");
             return new JspView<>("/org/labkey/query/view/newQuery.jsp", form, errors);
         }
 
@@ -998,7 +1000,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("useSqlEditor"));
+            setHelpTopic("useSqlEditor");
 
             addSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
 
@@ -1055,6 +1057,12 @@ public class QueryController extends SpringActionController
                             {
                                 if (null != tableType)
                                 {
+                                    if (!Objects.equals(tableType.getTableName(), form.getQueryName()))
+                                    {
+                                        errors.reject(ERROR_MSG, "Table name in the XML metadata must match the table/query name: " + form.getQueryName());
+
+                                    }
+
                                     TableType.Columns tableColumns = tableType.getColumns();
                                     if (null != tableColumns)
                                     {
@@ -1319,7 +1327,7 @@ public class QueryController extends SpringActionController
             }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
-            setHelpTopic(new HelpTopic("customSQL"));
+            setHelpTopic("customSQL");
             _queryView = queryView;
             return queryView;
         }
@@ -1410,10 +1418,10 @@ public class QueryController extends SpringActionController
 
                 result.addView(scopeInfo);
 
-                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _dbSchemaName, _dbTableName))
+                try (JdbcMetaDataLocator locator = dialect.getTableResolver().getSingleTableLocator(scope, _dbSchemaName, _dbTableName))
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
-                            (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
+                            (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaNamePattern(), l.getTableNamePattern(), null));
                     result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
 
                     JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
@@ -1477,10 +1485,10 @@ public class QueryController extends SpringActionController
 
             ModelAndView tablesView;
 
-            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, dbSchemaName, null))
+            try (JdbcMetaDataLocator locator = dialect.getTableResolver().getAllTablesLocator(scope, dbSchemaName))
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
-                    (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName(), null));
+                    (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
 
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
@@ -1541,7 +1549,7 @@ public class QueryController extends SpringActionController
 
             sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
             sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getURL()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
             sb.append("</table>\n");
 
             out.print(sb);
@@ -2279,7 +2287,7 @@ public class QueryController extends SpringActionController
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
-            setHelpTopic(new HelpTopic("editQueryProperties"));
+            setHelpTopic("editQueryProperties");
             _queryName = form.getQueryName();
 
             return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);
@@ -2914,7 +2922,7 @@ public class QueryController extends SpringActionController
             if (null != StringUtils.trimToNull(form.getViewName()) &&
                     null == view.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.getViewName()))
             {
-                throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
+                throw new NotFoundException("The requested view does not exist for this user!");
             }
 
             TableInfo t = view.getTable();
@@ -4281,7 +4289,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
@@ -4346,7 +4354,7 @@ public class QueryController extends SpringActionController
             {
                 connectionMap = null; // render the failure page
             }
-            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
+            setHelpTopic("remoteConnection");
             return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 
@@ -4421,7 +4429,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
-            setHelpTopic(new HelpTopic("filterSchema"));
+            setHelpTopic("filterSchema");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
@@ -4437,7 +4445,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }
@@ -4616,7 +4624,7 @@ public class QueryController extends SpringActionController
         {
             LinkedSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic(new HelpTopic("linkedSchemas"));
+            setHelpTopic("linkedSchemas");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }
@@ -4641,7 +4649,7 @@ public class QueryController extends SpringActionController
         {
             ExternalSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic(new HelpTopic("externalSchemas"));
+            setHelpTopic("externalSchemas");
             return new JspView<>("/org/labkey/query/view/externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
     }

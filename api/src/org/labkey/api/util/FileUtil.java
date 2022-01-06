@@ -18,6 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -51,7 +53,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,23 +69,37 @@ public class FileUtil
 
     private static File _tempDir = null;
 
+    @Deprecated
     public static boolean deleteDirectoryContents(File dir)
+    {
+        try
+        {
+            return deleteDirectoryContents(dir.toPath());
+        }
+        catch (IOException e)
+        {
+            return false; // could there be more done here to log the error?
+        }
+    }
+
+    public static boolean deleteDirectoryContents(Path dir) throws IOException
     {
         return deleteDirectoryContents(dir, null);
     }
 
-    public static boolean deleteDirectoryContents(File dir, @Nullable Logger log)
+    public static boolean deleteDirectoryContents(Path dir, @Nullable Logger log) throws IOException
     {
-        if (dir.isDirectory())
+        if (Files.isDirectory(dir))
         {
-            String[] children = dir.list();
+            File dirFile = dir.toFile(); //TODO this method should be converted to use Path and Files.walkFileTree
+            String[] children = dirFile.list();
 
             if (null == children) // 17562
                 return true;
 
             for (String aChildren : children)
             {
-                boolean success = deleteDir(new File(dir, aChildren), log);
+                boolean success = deleteDir(new File(dirFile, aChildren), log);
                 if (!success)
                 {
                     return false;
@@ -121,32 +136,55 @@ public class FileUtil
         return deleteDir(dir, null);
     }
 
-    public static boolean deleteDir(File dir, Logger log)
+    @Deprecated
+    public static boolean deleteDir(@NotNull File dir, Logger log)
     {
+        return deleteDir(dir.toPath(), log);
+    }
+
+    public static boolean deleteDir(Path dir, Logger log)
+    {
+        //TODO seems like this could be reworked to use Files.walkFileTree
         log = log == null ? LOG : log;
 
         // Issue 22336: See note in FileUtils.isSymLink() about windows-specific bugs for symlinks:
         // http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FileUtils.html
-        if (!Files.isSymbolicLink(dir.toPath()))
+        if (!Files.isSymbolicLink(dir))
         {
-            // this returns true if !dir.isDirectory()
-            boolean success = deleteDirectoryContents(dir, log);
-            if (!success)
+            try
+            {
+                // this returns true if !dir.isDirectory()
+                boolean success = deleteDirectoryContents(dir, log);
+                if (!success)
+                    return false;
+            }
+            catch (IOException e)
+            {
+                log.debug(String.format("Unable to clean dir [%1$s]", dir.toString()), e);
                 return false;
+            }
         }
+
+        IOException lastException = null;
 
         // The directory is now either a sym-link or empty, so delete it
         for (int i = 0; i < 5 ; i++)
         {
-            if (dir.delete() || !dir.exists())
+            try
+            {
+                Files.deleteIfExists(dir);
                 return true;
-
-            // Issue 39579: Folder import sometimes fails to delete temp directory
-            // wait a little then try again
-            log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
-            try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
+            }
+            catch (IOException e)
+            {
+                lastException = e;
+                // Issue 39579: Folder import sometimes fails to delete temp directory
+                // wait a little then try again
+                log.warn("Failed to delete file. Sleep and try to delete again. " + e.getMessage());
+                try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
+            }
         }
-        log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+        log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), lastException);
         return false;
     }
 
@@ -299,14 +337,7 @@ public class FileUtil
 
     public static boolean hasCloudScheme(String url)
     {
-        try
-        {
-            return hasCloudScheme(new URI(url));
-        }
-        catch (URISyntaxException e)
-        {
-            return false;
-        }
+        return url.toLowerCase().startsWith("s3://");
     }
 
     public static String getAbsolutePath(Path path)
@@ -1082,21 +1113,9 @@ quickScan:
         return new File(resolveFile(parent), file.getName());
     }
 
-
-    // Create a directory within the standard temp directory
-    public static File createTempDirectory(String prefix) throws IOException
+    public static Path createTempDirectory(String prefix) throws IOException
     {
-        final File temp;
-
-        temp = File.createTempFile(prefix, "");
-
-        if (!(temp.delete()))
-            throw new IOException("Could not delete temp file: " + temp.getAbsolutePath());
-
-        if (!(temp.mkdir()))
-            throw new IOException("Could not create temp directory: " + temp.getAbsolutePath());
-
-        return temp;
+        return Files.createTempDirectory(prefix);
     }
 
 
@@ -1187,38 +1206,76 @@ quickScan:
         return sb.toString();
     }
 
-    private static void printTree(StringBuilder sb, File node, LinkedList<Boolean> hasMoreFlags)
+    private static void printTree(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
     {
-        if (hasMoreFlags.isEmpty())
-            sb.append(node.getAbsolutePath());
-        else
-            sb.append(indent(hasMoreFlags)).append(node.getName());
-
-        if (node.isDirectory())
-            sb.append("/");
-        else
-            sb.append(" (").append(FileUtils.byteCountToDisplaySize(node.length())).append(")");
-        sb.append("\n");
-
-        File[] children = node.listFiles();
-        if (children != null)
+        Files.walkFileTree(node, new SimplePathVisitor()
         {
-            Arrays.sort(children, Comparator.comparing(File::getName));
-            for (int i = 0; i < children.length; i++)
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException
             {
-                File child = children[i];
-                hasMoreFlags.add(i < children.length - 1);
-                printTree(sb, child, hasMoreFlags);
-                hasMoreFlags.removeLast();
+                hasMoreFlags.add(true);
+                return super.preVisitDirectory(dir, attrs);
             }
-        }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+            {
+                appendFileLogEntry(sb, file, hasMoreFlags);
+                return super.visitFile(file, attrs);
+            }
+
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException
+            {
+                hasMoreFlags.removeLast();
+                return super.postVisitDirectory(dir, exc);
+            }
+        });
     }
 
-    public static String printTree(File root)
+    private static void appendFileLogEntry(StringBuilder sb, Path node, LinkedList<Boolean> hasMoreFlags) throws IOException
+    {
+        if (hasMoreFlags.isEmpty())
+            sb.append(node.toAbsolutePath());
+        else
+            sb.append(indent(hasMoreFlags)).append(node.getFileName());
+
+        if (Files.isDirectory(node))
+            sb.append("/");
+        else
+            sb.append(" (").append(FileUtils.byteCountToDisplaySize(Files.size(node))).append(")");
+        sb.append("\n");
+    }
+
+    public static String printTree(Path root) throws IOException
     {
         StringBuilder sb = new StringBuilder();
         printTree(sb, root, new LinkedList<>());
         return sb.toString();
+    }
+
+    public static String printTree(File root) throws IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        printTree(sb, root.toPath(), new LinkedList<>());
+        return sb.toString();
+    }
+
+    public static String getUnencodedAbsolutePath(Container container, Path path)
+    {
+        if (!path.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(path))
+            return path.toFile().getAbsolutePath();
+        else
+        {
+            return PageFlowUtil.decode( //URI conversion encodes
+                getPathStringWithoutAccessId(
+                        CloudStoreService.get().getPathFromUrl(container, path.toString()).toUri()
+                )
+            );
+        }
     }
 
 

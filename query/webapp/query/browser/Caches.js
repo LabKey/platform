@@ -127,7 +127,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
     },
 
     getCacheKey : function(schemaName, queryName, fk) {
-        return schemaName + '.' + queryName + (fk ? '.' + fk : '');
+        return schemaName + '.' + queryName.toLowerCase() + (fk ? '.' + fk : '');
     },
 
     getQueryDetails : function(schemaName, queryName, fk) {
@@ -179,7 +179,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     },
 
     getCacheKey : function(container, schemaName, queryName) {
-        return container + '.' + schemaName + '.' + queryName;
+        return container + '.' + schemaName + '.' + queryName.toLowerCase();
     },
 
     getDependencies : function(container, schemaName, queryName) {

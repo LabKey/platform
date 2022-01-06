@@ -7,9 +7,8 @@ import {List, Map} from "immutable";
 import {
     SchemaQuery,
     IGridLoader,
-    LoadingSpinner,
     EditableColumnMetadata,
-    EditableGridPanel,
+    EditableGridPanelDeprecated,
     getQueryGridModel,
     getStateQueryGridModel,
     gridInit,
@@ -129,11 +128,11 @@ class EditableGridPageImpl extends PureComponent<SchemaQueryInputContext> {
         return (
             <>
                 {model
-                    ? <EditableGridPanel
+                    ? <EditableGridPanelDeprecated
                         {...defaultProps}
                         model={this.getEditorQueryGridModel()}
                     />
-                    : <EditableGridPanel
+                    : <EditableGridPanelDeprecated
                         {...defaultProps}
                         model={editorModelWithData}
                         columnMetadata={columnMetadata}

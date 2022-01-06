@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
@@ -29,10 +31,10 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -57,7 +59,10 @@
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-<% if (c.isProject()) {%>
+<%
+    if (c.isProject())
+    {
+%>
 <tr>
     <td colspan=2>Security defaults</td>
 </tr>
@@ -69,11 +74,22 @@
     <td colspan=2>&nbsp;</td>
 </tr>
 <%
-   }
+    }
 
-   // If this is a folder then skip everything except default date & number formats
-   if (!folder)
-   {
+    // If this is a folder then skip everything except default date & number formats
+    if (!folder)
+    {
+        String shortNameHelp = "The header short name supports string substitution of specific server properties. For example, " +
+            "the value:<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>will currently result in this header text:<br><br><code>&nbsp;&nbsp;LabKey " + AdminBean.releaseVersion + "</code><br><br>" +
+            "The supported properties and their current values are listed in the table below.<br><br>" +
+            "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
+            "<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>" +
+
+            AdminBean.getPropertyMap().entrySet().stream()
+                .map(e -> "<tr valign=top class=\"labkey-row\"><td>" + h(e.getKey()) + "</td><td>" + h(e.getValue()) + "</td></tr>\n")
+                .collect(Collectors.joining()) +
+
+            "</table>";
 %>
 <tr>
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
@@ -83,8 +99,8 @@
     <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header short name (appears in every page header and in emails)</td>
-    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getShortName()) %>"></td>
+    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, true, 350)%></td>
+    <td><input type="text" name="systemShortName" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Theme</td>
@@ -176,7 +192,7 @@
 <%
     }  // End of project/site only settings
 
-    String decimalFormatHelp = "The format string for numbers must be compatible with the format that the java class " +
+    String decimalFormatHelp = "The pattern string for numbers must be compatible with the format that the java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
             "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
@@ -191,7 +207,7 @@
             "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
             "</table>";
 
-    String simpleDateFormatDocs = "<br><br>The format string must be compatible with the format that the java class " +
+    String simpleDateFormatDocs = "<br><br>The pattern string must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
@@ -216,31 +232,15 @@
             "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>" +
             "</table>";
-    String dateFormatHelp = "This format is applied when displaying columns that are defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey columns use date-time data types (see below)." + simpleDateFormatDocs;
-    String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
+    String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs;
+    String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateFormatDocs;
+
+    String dateParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs;
+    String dateTimeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateFormatDocs;
 %>
 <tr>
-    <td colspan=2>Customize date and number formats (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
 </tr>
-<%
-    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
-    if (c.isRoot())
-    {
-        DateParsingMode dateParsingMode = laf.getDateParsingMode();
-        String dateParsingHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
-                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
-                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
-                "parsing mode that matches your users' expectations.";
-%>
-<tr>
-    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing", dateParsingHelp, false)%></td>
-    <td>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
-        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
-    </td>
-</tr><%
-    }
-%>
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
@@ -252,6 +252,40 @@
 <tr>
     <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
+    <td colspan=2>Customize date parsing behavior (<%=bean.helpLink%>)</td>
+</tr>
+<%
+    // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
+    if (c.isRoot())
+    {
+        DateParsingMode dateParsingMode = laf.getDateParsingMode();
+        String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+                "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
+                "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
+                "parsing mode that matches your users' expectations.";
+%>
+<tr>
+    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
+    <td>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
+    </td>
+</tr><%
+    }
+%>
+<tr>
+    <td class="labkey-form-label">Additional parsing pattern for dates<%=helpPopup("Extra date parsing pattern", dateParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateParsingPattern" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
+    <td><input type="text" name="extraDateTimeParsingPattern" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

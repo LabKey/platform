@@ -57,7 +57,7 @@
     List<Study> studies = new ArrayList<>();
     if (hasStudy)
     {
-        DataspaceQuerySchema schema = new DataspaceQuerySchema((StudyImpl)study, getUser(), true);
+        DataspaceQuerySchema schema = new DataspaceQuerySchema((StudyImpl)study, getUser());
         ContainerFilter cf = schema.getDefaultContainerFilter();
         Collection<GUID> containerIds = cf.getIds();
         if (null != containerIds)

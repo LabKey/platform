@@ -18,8 +18,10 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -33,6 +35,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -251,9 +254,14 @@ abstract public class DomainKind<T>  implements Handler<String>
         return false;
     }
 
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         return null;
+    }
+
+    public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
+    {
+        return getTableInfo(user, container, domain.getName(), cf);
     }
 
     /** Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and
@@ -296,6 +304,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowFileLinkProperties() { return false; }
     public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
+    public boolean allowTextChoiceProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
 
@@ -337,5 +346,23 @@ abstract public class DomainKind<T>  implements Handler<String>
 
         if (isUpdate && !canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain");
+    }
+
+    public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain domainDesign, Container container)
+    {
+        return null;
+    }
+
+    /**
+     * @param schemaName
+     * @param queryName
+     * @param container
+     * @param user
+     * @return  Return preview name(s) based on the name expression configured for the designer. For DataClass, up to one preview names is returned.
+     * For samples, up to 2 names can be returned, with the 1st one being the sample preview name and the 2nd being the aliquot preview name.
+     */
+    public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
+    {
+        return null;
     }
 }

@@ -73,6 +73,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -893,11 +894,11 @@ public class Query
             if (null == cf && null != cfType)
                 cf = cfType.create(resolvedSchema);
 
-            if (resolvedSchema instanceof UserSchema)
+            if (resolvedSchema instanceof UserSchema userSchema)
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
+                t = userSchema._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
             {
@@ -927,13 +928,12 @@ public class Query
             throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 		}
 
-        if (t instanceof TableInfo)
+        if (t instanceof TableInfo tableInfo)
         {
-            TableInfo tableInfo = (TableInfo)t;
             // I don't see why Query is being roped into helping with this??? Can't this be handled on the LinkedSchema side?
             TableType tableType = lookupMetadataTable(tableInfo.getName());
-            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
-                tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
+            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema userSchema)
+                tableInfo.overlayMetadata(Collections.singletonList(tableType), userSchema, _parseErrors);
             _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
             String name = ((TableInfo) t).getName();
@@ -943,6 +943,9 @@ public class Query
                 ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
                 addDependency(QueryService.DependencyType.Table, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
             }
+
+            if (!tableInfo.hasPermission(getSchema().getUser(), ReadPermission.class))
+                throw new UnauthorizedException(tableInfo.getPublicSchemaName() + "." + tableInfo.getName());
 
             return new QueryTable(this, resolvedSchema, tableInfo, alias);
         }
@@ -1131,8 +1134,7 @@ public class Query
         private int i=1;
 
         @Override
-        @NotNull
-        public CloseableIterator<Map<String, Object>> iterator()
+        protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
         {
             return new _Iterator();
         }
@@ -1148,6 +1150,8 @@ public class Query
             @Override
             public Map<String, Object> next()
             {
+                // Leave this in place: javac complains without this cast. IntelliJ disagrees.
+                //noinspection RedundantCast
                 return _rowMapFactory.getRowMap((Object[])data[i++]);
             }
 
@@ -1761,8 +1765,7 @@ public class Query
         new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1),
-        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
+        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1)
     };
 
 
@@ -1771,7 +1774,10 @@ public class Query
 		// ORDER BY tests
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
-        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize)
+        new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize),
+
+        // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
+        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
     };
 
 
@@ -1803,6 +1809,13 @@ public class Query
         new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
         new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
         new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
+        new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
+        new SqlTest("SELECT json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a')", 1, 1),
+        // Postgres 9.6 doesn't support direct JSONB and JSON to INTEGER casting, so use VARCHAR for our simple purposes
+        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
+        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
+        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
+        new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
     };
 
 

@@ -100,6 +100,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -143,7 +144,7 @@ import java.util.stream.Stream;
  */
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
-    private static final Logger _log = LogManager.getLogger(LuceneSearchServiceImpl.class);
+    private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
@@ -281,8 +282,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     /**
-     * Determine the currently configured Lucene Directory type (an explicit concrete implementation such as MMapDirectory,
-     * SimpleFSDirectory, or NIOFSDirectory, or Default which lets Lucene choose).
+     * Determine the currently configured Lucene Directory type (an explicit concrete implementation such as
+     * MMapDirectory or NIOFSDirectory, or Default which lets Lucene choose).
      *
      * @return The LuceneDirectoryType representing the current setting
      */
@@ -535,7 +536,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
 
                 Metadata metadata = new Metadata();
-                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
 
                 // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
@@ -634,6 +635,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // === Store security context in DocValues field ===
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             String securityContext = r.getContainerId() + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+            // TODO: As of Lucene 9.0.0, BinaryDocValues is recommended instead of SortedDocValues (for performance)
             doc.add(new SortedDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
@@ -1088,7 +1090,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         Title(TikaCoreProperties.TITLE),
         Creator(TikaCoreProperties.CREATOR),
-        Keywords(TikaCoreProperties.KEYWORDS),
+        Keywords(TikaCoreProperties.SUBJECT), // As of Tika 2.1.0, docs claim this includes keywords
         Comments(TikaCoreProperties.COMMENTS),
         Description(TikaCoreProperties.DESCRIPTION),
         Notes(OfficeOpenXMLExtended.NOTES),
@@ -1696,7 +1698,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         // - strict == true: The test validates the content length and contents of each file against expectations. This
         //   is very picky; it fails immediately if an exception is thrown, an expected string isn't found, or length of
         //   extracted contents differs from expectations by a single byte.
-        // - string == false: The test attempts to extract from every file and simply logs all discrepancies. This mode
+        // - strict == false: The test attempts to extract from every file and simply logs all discrepancies. This mode
         //   is useful for debugging parsing issues, etc.
         //
         // Regardless of the flag, the test will always fail if unknown files are found in the fileTypes folder OR if
@@ -1837,9 +1839,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
             add(map, "hdf_sample.hdf", 0);  //We are blocking loading of the hdf parser instead of taking an additional dependency Issue 38386
             add(map, "ico_sample.ico", 0);
-//            Our version of Tika can't extract text from .class and .jar files since we stopped including asm.jar. If we ever add it back then uncomment the line below to test decompilation.
-//            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
-            add(map, "jar_sample.jar", 49162, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator");
+            add(map, "jar_sample.jar", 712120, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator", "public synchronized class ApiVersionException extends CommandException", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
@@ -1848,7 +1848,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 110, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");

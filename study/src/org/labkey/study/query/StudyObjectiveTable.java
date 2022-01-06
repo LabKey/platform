@@ -16,13 +16,11 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
@@ -87,13 +85,6 @@ public class StudyObjectiveTable extends BaseStudyTable
         modifiedBy.setHidden(true);
     }
 
-
-    @Override
-    public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return getContainer().hasPermission(user, perm);
-    }
-
     @Override
     public QueryUpdateService getUpdateService()
     {
@@ -104,5 +95,11 @@ public class StudyObjectiveTable extends BaseStudyTable
     public boolean supportsContainerFilter()
     {
         return true;
+    }
+
+    @Override
+    protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
+    {
+        return checkReadOrIsAdminPermission(user, perm);
     }
 }

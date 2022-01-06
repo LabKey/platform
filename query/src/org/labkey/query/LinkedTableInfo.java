@@ -207,6 +207,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        checkReadBeforeExecute();
         SQLFragment frag = super.getFromSQL(alias);
 
         // Bind named parameters added to the generated LinkedSchema.createQueryDef() query. .. looks like these are bound second after URL parameters.

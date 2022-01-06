@@ -16,6 +16,7 @@
 package org.labkey.api.specimen.query;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -355,5 +359,11 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // Because these Pivot tables pull from tables that have already been filtered, don't apply any such filter here
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
     }
 }

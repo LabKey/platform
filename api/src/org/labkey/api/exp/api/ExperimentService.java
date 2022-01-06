@@ -55,6 +55,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -286,6 +287,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
 
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
+
     ExpMaterial getExpMaterial(String lsid);
 
     /**
@@ -452,6 +455,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpDataTable createFilesTable(String name, UserSchema schema);
+
+    SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
@@ -679,7 +684,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
-    ExpProtocolApplication getExpProtocolApplication(int rowId);
+    @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);
+
+    @Nullable ExpProtocolApplication getExpProtocolApplicationFromEntityId(String entityId);
+
+    @NotNull
+    List<? extends ExpProtocolApplication> getExpProtocolApplicationsByObjectId(Container container, String objectId);
 
     List<? extends ExpProtocolApplication> getExpProtocolApplicationsForRun(int runId);
 

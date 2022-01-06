@@ -47,10 +47,14 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -141,7 +145,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         // MOVE PrepareDataIteratorBuilder into this file
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
+        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in, getContainer());
     }
 
     @Override
@@ -151,6 +155,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -190,6 +206,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
         }
@@ -203,6 +231,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+            {
+                try
+                {
+                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+
             onSamplesChanged();
             audit(QueryService.AuditAction.MERGE);
         }
@@ -210,7 +250,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
@@ -221,6 +261,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
+            if (InventoryService.get() != null)
+                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
+
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
@@ -297,12 +340,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
 
+        // We need to allow updating from one locked status to another locked status, but without other changes
+        // and updating from either locked or unlocked to something else while also updating other metadata
+        DataState oldStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
+        DataState newStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
+        boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
+
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
+        boolean hasNonStatusChange = false;
         for (String updateField : rowCopy.keySet())
         {
             Object updateValue = rowCopy.get(updateField);
@@ -319,8 +370,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
             else
             {
+                hasNonStatusChange = hasNonStatusChange || !SampleTypeServiceImpl.statusUpdateColumns.contains(updateField.toLowerCase());
                 validRowCopy.put(updateField, updateValue);
             }
+        }
+        // had a locked status before and either not updating the status or updating to a new locked status
+        if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
+        {
+            throw new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel()));
         }
 
         keys = new Object[]{lsid};
@@ -387,7 +444,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Integer> id = new LinkedList<>();
         Integer rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false, false);
         return oldRowMap;
     }
 
@@ -414,18 +471,24 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
                 if (map == null)
-                    throw new QueryUpdateServiceException("No Sample Type Material found for rowId or LSID");
+                    throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
                 if (rowId == null)
                     rowId = getMaterialRowId(map);
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
+                if (!SampleStatusService.get().isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
+                {
+                    DataState dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()));
+                    throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, dataState));
+                }
+
                 ids.add(rowId);
                 result.add(map);
             }
             // TODO check if this handle attachments???
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false, false);
         }
 
         if (result.size() > 0)

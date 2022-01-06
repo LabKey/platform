@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -35,6 +36,8 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.action.UrlProviderOverrideHandler;
+import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
@@ -120,9 +123,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -869,14 +875,20 @@ public class PageFlowUtil
      */
     public static MediaType getMediaTypeFor(File file)
     {
+        return getMediaTypeFor(file.toPath());
+    }
+
+    public static MediaType getMediaTypeFor(Path file)
+    {
         try
         {
             DefaultDetector detector = new DefaultDetector();
             Metadata metaData = new Metadata();
+            String filename = file.getFileName().toString();
 
             // use the metadata to hint at the type for a faster lookup
-            metaData.add(Metadata.RESOURCE_NAME_KEY, file.getName());
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(file.getName()));
+            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
 
             return detector.detect(TikaInputStream.get(file), metaData);
         }
@@ -897,12 +909,18 @@ public class PageFlowUtil
     /**
      * Sets up the response to stream back a file. The content type is detected by the file contents.
      */
+    @Deprecated //Prefer the Path version
     public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment)
+    {
+        prepareResponseForFile(response, responseHeaders, file.toPath(), asAttachment);
+    }
+
+    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, Path file, boolean asAttachment)
     {
         if (file == null)
             throw new IllegalArgumentException("file cannot be null");
 
-        String fileName = file.getName();
+        String fileName = file.getFileName().toString();
         MediaType mediaType = getMediaTypeFor(file);
         String contentType = getContentTypeFor(fileName);
 
@@ -975,7 +993,31 @@ public class PageFlowUtil
         }
     }
 
+    public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment, boolean detectContentType) throws IOException
+    {
+        String filename = file.getFileName().toString();
+        if (detectContentType)
+            streamFile(response, Collections.emptyMap(), file, asAttachment);
+        else
+        {
+            try (InputStream is = Files.newInputStream(file))
+            {
+                streamFile(response, Collections.emptyMap(), filename, is, asAttachment);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new NotFoundException(filename);
+            }
+        }
+    }
+
+    @Deprecated // Prefer the Path version
     public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
+    {
+        streamFile(response, file.toPath(), asAttachment, false);
+    }
+
+    public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment) throws IOException
     {
         streamFile(response, file, asAttachment, false);
     }
@@ -985,9 +1027,15 @@ public class PageFlowUtil
      * Read the file and stream it to the browser through the response. The content type of the file is detected
      * from the contents of the file.
      */
+    @Deprecated //Prefer the Path version
     public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
-        try (InputStream is = new FileInputStream(file))
+        streamFile(response,responseHeaders, file.toPath(), asAttachment);
+    }
+
+    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, Path file, boolean asAttachment) throws IOException
+    {
+        try (InputStream is = Files.newInputStream(file))
         {
             prepareResponseForFile(response, responseHeaders, file, asAttachment);
             ServletOutputStream out = response.getOutputStream();
@@ -2632,7 +2680,7 @@ public class PageFlowUtil
     /** @return true if the UrlProvider exists. */
     static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
     {
-        return ModuleLoader.getInstance().hasUrlProvider(inter);
+        return UrlProviderService.getInstance().hasUrlProvider(inter);
     }
 
     /**
@@ -2645,7 +2693,31 @@ public class PageFlowUtil
     @Nullable
     static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
-        return ModuleLoader.getInstance().getUrlProvider(inter);
+        return UrlProviderService.getInstance().getUrlProvider(inter);
+    }
+
+    /**
+     * Returns a specified <code>UrlProvider</code> interface implementation, for use
+     * in writing URLs implemented in other modules. If the user passes true for the checkForOverrides param,
+     * we will create and return a UrlProviderOverrideHandler which will take into account any module registered
+     * overrides to the given interface. If module overrides exist, they will be checked first for non-null results
+     * when a given method of the interface is invoked before falling back to the default implementation.
+     *
+     * @param inter interface extending UrlProvider
+     * @param checkForOverrides true to check for module overrides to this interface
+     * @return an implementation of the interface.
+     */
+    @Nullable
+    static public <P extends UrlProvider> P urlProvider(Class<P> inter, boolean checkForOverrides)
+    {
+        if (checkForOverrides)
+        {
+            P impl = urlProvider(inter);
+            ClassLoader cl = inter.getClassLoader();
+            return (P) Proxy.newProxyInstance(cl, new Class[]{inter}, new UrlProviderOverrideHandler(inter, impl));
+        }
+
+        return urlProvider(inter);
     }
 
     static private String h(Object o)

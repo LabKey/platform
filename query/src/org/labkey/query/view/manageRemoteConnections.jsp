@@ -39,7 +39,7 @@
     Map<String, String> connectionMap = ((JspView<Map<String,String>>) HttpView.currentView()).getModelBean();
     if (connectionMap == null)
     { %>
-        <p style="color: red">MasterEncryptionKey has not been specified in <%= h(AppProps.getInstance().getWebappConfigurationFilename()) %>, or its value no longer matches key previously in use.</p>
+        <p style="color: red">EncryptionKey has not been specified in <%= h(AppProps.getInstance().getWebappConfigurationFilename()) %>, or its value no longer matches key previously in use.</p>
         <labkey:form method="post">
             <input type="hidden" name="reset" value="true" />
             <labkey:button text="Reset Remote Configurations"></labkey:button>

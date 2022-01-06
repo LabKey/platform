@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -320,9 +321,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
-        return new ListQuerySchema(user, container).createTable(name);
+        return new ListQuerySchema(user, container).createTable(name, cf);
     }
 
     @Override

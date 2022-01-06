@@ -204,6 +204,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
+        result.setStatus(protocol.getStatus() != null ? protocol.getStatus().name() : ExpProtocol.Status.Active.name());
         Map<String, String> gwtProtocolParams = new HashMap<>();
         for (ProtocolParameter property : protocol.getProtocolParameters().values())
         {
@@ -382,8 +383,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                 DbSchema schema = AssayDbSchema.getInstance().getSchema();
                 try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                 {
-                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 300)
-                        throw new AssayException("Linked Dataset Category name must be shorter than 300 characters.");
+                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
+                        throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
 
                     ExpProtocol protocol;
                     if (assay.getProtocolId() == null)
@@ -439,6 +440,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                                     "This assay was created in folder " + protocol.getContainer().getPath());
                         protocol.setName(assay.getName());
                         protocol.setProtocolDescription(assay.getDescription());
+                        if (assay.getStatus() != null)
+                            protocol.setStatus(ExpProtocol.Status.valueOf(assay.getStatus()));
                     }
 
                     Map<String, ProtocolParameter> newParams = new HashMap<>(protocol.getProtocolParameters());

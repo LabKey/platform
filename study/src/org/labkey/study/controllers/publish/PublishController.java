@@ -31,15 +31,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -130,7 +127,7 @@ public class PublishController extends SpringActionController
             QueryView historyView = createHistoryView(_protocol.getRowId(), PublishAuditProvider.COLUMN_NAME_PROTOCOL, containerFilter, errors);
             view.addView(historyView);
 
-            setHelpTopic(new HelpTopic("publishHistory"));
+            setHelpTopic("publishHistory");
             return view;
         }
 
@@ -201,7 +198,7 @@ public class PublishController extends SpringActionController
             QueryView historyView = createHistoryView(_sampleType.getRowId(), PublishAuditProvider.COLUMN_NAME_SAMPLE_TYPE_ID, containerFilter, errors);
             view.addView(historyView);
 
-            setHelpTopic(new HelpTopic("publishHistory"));
+            setHelpTopic("publishHistory");
             return view;
         }
 
@@ -312,13 +309,13 @@ public class PublishController extends SpringActionController
 
         public AutoLinkPipelineJob(ViewBackgroundInfo info, @NotNull PipeRoot pipeRoot, AutoLinkRunForm form)
         {
-            super(null, info, pipeRoot);
+            super("AutoLinkToStudy", info, pipeRoot);
             _targetStudyContainer = form.getTargetStudy();
             _protocolId = form.getProtocol().getRowId();
             _runIds = form.getRunId();
             _autoLinkCategory = form.getAutoLinkCategory();
 
-            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")));
+            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")).toPath());
         }
 
         @Override
@@ -346,7 +343,6 @@ public class PublishController extends SpringActionController
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);
-                    ViewCategory targetCategory = _autoLinkCategory != null ? ViewCategoryManager.getInstance().ensureViewCategory(_targetStudyContainer, getUser(), _autoLinkCategory) : null;
 
                     _runIds.forEach((runId) -> {
 
@@ -362,7 +358,7 @@ public class PublishController extends SpringActionController
                                     getUser(),
                                     getContainer(),
                                     _targetStudyContainer,
-                                    targetCategory,
+                                    _autoLinkCategory,
                                     errors,
                                     getLogger());
 

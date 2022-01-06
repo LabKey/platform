@@ -20,7 +20,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -28,6 +30,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
@@ -47,6 +50,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -82,7 +89,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
     // CONSIDER: Use ScriptEngineReport to generate a script prolog
     @Override
-    protected boolean runCommand(RecordedAction action, String apiKey) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, @Nullable String apiKey, @Nullable Container container) throws IOException, PipelineJobException
     {
         // Get the script engine
         LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
@@ -160,7 +167,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
                 bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
 
-            Map<String, String> replacements = createReplacements(scriptFile, apiKey);
+            Map<String, String> replacements = createReplacements(scriptFile, apiKey, container);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory
@@ -230,6 +237,76 @@ public class ScriptTaskImpl extends CommandTaskImpl
         finally
         {
             _engine = null;
+        }
+    }
+
+    protected void writeTaskInfo(File file, RecordedAction action) throws IOException
+    {
+        List<String> columns = Arrays.asList("Name", "Value");
+        RowMapFactory<Object> factory = new RowMapFactory<>(columns);
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        // Job information
+        rows.add(factory.getRowMap("provider", getJob().getProvider()));
+        rows.add(factory.getRowMap("description", getJob().getDescription()));
+        rows.add(factory.getRowMap("jobGUID", getJob().getJobGUID()));
+        rows.add(factory.getRowMap("parentGUID", getJob().getParentGUID()));
+        rows.add(factory.getRowMap("splitJob", getJob().isSplitJob()));
+
+        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl()));
+        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath()));
+        rows.add(factory.getRowMap("containerPath", getJob().getContainer().getPath()));
+        rows.add(factory.getRowMap("containerId", getJob().getContainer().getEntityId()));
+        rows.add(factory.getRowMap("user", getJob().getUser().getEmail()));
+
+        PipeRoot pipeRoot = getJob().getPipeRoot();
+        rows.add(factory.getRowMap("pipeRoot", getJob().getPipeRoot().getRootPath()));
+
+        // FileAnalysisJobSupport properties
+        FileAnalysisJobSupport support = getJobSupport();
+        rows.add(factory.getRowMap("protocol", support.getProtocolName()));
+        rows.add(factory.getRowMap("baseName", support.getBaseName()));
+        rows.add(factory.getRowMap("joinedBaseName", support.getJoinedBaseName()));
+        rows.add(factory.getRowMap("analysisDirectory", rewritePath(support.getAnalysisDirectory().toString())));
+        rows.add(factory.getRowMap("dataDirectory", rewritePath(support.getDataDirectory().toString())));
+
+        // Task information
+        rows.add(factory.getRowMap("taskId", _factory.getId()));
+
+        // Write out the known inputs to this task
+        for (RecordedAction.DataFile inputFile : action.getInputs())
+        {
+            String role = inputFile.getRole();
+            if (role == null)
+                continue;
+
+            URI uri = inputFile.getURI();
+            File f = new File(uri);
+            if (f.exists())
+            {
+                String inputPath = _wd.getRelativePath(f);
+                rows.add(factory.getRowMap(role, inputPath));
+            }
+        }
+
+        for (Map.Entry<String, TaskPath> entry : _factory.getOutputPaths().entrySet())
+        {
+            String key = entry.getKey();
+            TaskPath path = entry.getValue();
+
+            // CONSIDER: Include the TaskPath information (optional, etc.)
+
+            String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
+            for (String outputPath : outputPaths)
+            {
+                rows.add(factory.getRowMap(key, outputPath, path.getType().getDefaultSuffix()));
+            }
+        }
+
+        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows))
+        {
+            tsvWriter.setHeaderRowVisible(false);
+            tsvWriter.write(file);
         }
     }
 

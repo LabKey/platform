@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertySchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -39,6 +40,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
@@ -54,8 +56,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.QCStateManager;
-import org.labkey.api.qc.export.QCStateImportExportHelper;
+import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -68,6 +70,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -140,6 +143,7 @@ import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
+import org.labkey.study.importer.ViewCategoryImporter;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DatasetDefinition;
@@ -192,6 +196,7 @@ import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
+import org.labkey.study.writer.ViewCategoryWriter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -202,6 +207,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
@@ -236,7 +242,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 21.004;
+        return 22.000;
     }
 
     @Override
@@ -387,7 +393,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
-        QCStateManager.getInstance().registerQCHandler(new StudyQCStateHandler());
+        DataStateManager.getInstance().registerDataStateHandler(new StudyQCStateHandler());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
         ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
@@ -412,6 +418,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
+            folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
         }
 
         FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));
@@ -453,6 +460,26 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
+                metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
+                metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
+                metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(destination)) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
+
+                SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
+                metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData = " + dialect.getBooleanTRUE()).getObject(Long.class));
+                metric.put("standardDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE Type = 'Standard'").getObject(Long.class));
+
+                metric.put("managedThirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE KeyManagementType <> 'None'").getObject(Long.class));
+                metric.put("thirdKeyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE (KeyManagementType = 'None' AND KeyPropertyName IS NOT NULL) OR (UseTimeKeyField = " + dialect.getBooleanTRUE() + ")").getObject(Long.class));
+
+                metric.put("datasetsLinkedFromAssays", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
+                metric.put("datasetsLinkedFromSamples", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
+
+                metric.put("assayScheduleCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.AssaySpecimen").getObject(Long.class));
+
+                metric.put("alternateParticipantIdCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AlternateIdPrefix IS NOT NULL").getObject(Long.class));
+                metric.put("participantIdMappingCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT(container)) FROM study.Participant WHERE AlternateId IS NOT NULL").getObject(Long.class));
+                metric.put("participantAliasCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE ParticipantAliasDatasetId IS NOT NULL").getObject(Long.class));
+
                 // grab the counts of report and dataset notification settings (by notification option)
                 Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
                 Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
@@ -464,6 +491,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
                     }
                 });
+                Long cloudBackedStudies = allStudies.stream()
+                        .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
+                        .count();
+                metric.put("cloudBackedStudies", cloudBackedStudies);
 
                 Map<String, Integer> notificationMap = new HashMap<>();
                 notifyOptionCounts.forEach((key, value) -> notificationMap.put(key.name(), value));
@@ -474,9 +505,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 HashBag<String> specimenBag = new HashBag<>();
                 MutableInt requestsEnabled = new MutableInt(0);
                 MutableInt hasLocations = new MutableInt(0);
+                MutableInt hasProducts = new MutableInt(0);
+                MutableInt hasTreatments = new MutableInt(0);
 
                 allStudies.stream()
-                    .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
+                    .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
                     .forEach(schema->{
                         RepositorySettings settings = SettingsManager.get().getRepositorySettings(schema.getContainer());
 
@@ -509,6 +542,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                             hasLocations.increment();
                         }
 
+                        TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                        long productCount = new TableSelector(products).getRowCount();
+                        if (productCount > 0)
+                            hasProducts.increment();
+
+                        TableInfo treatments = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                        long treatmentCount = new TableSelector(treatments).getRowCount();
+                        if (treatmentCount > 0)
+                            hasTreatments.increment();
+
                         LOG.debug(specimenBag.toString());
                     });
 
@@ -518,6 +561,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 specimensMap.put("requests", requestsMap);
                 specimensMap.put("hasLocations", hasLocations.intValue());
 
+                metric.put("studyProducts", hasProducts.intValue());
+                metric.put("studyTreatments", hasTreatments.intValue());
+
                 metric.put("specimens", specimensMap);
 
                 return metric;
@@ -525,7 +571,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
-        QCStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
+        DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
     @Override

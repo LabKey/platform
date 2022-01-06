@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +52,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 
 public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
@@ -401,6 +404,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         Map<ExpData, String> inputData = getInputData(context, inputDataArray);
         Map<ExpMaterial, String> inputMaterial = getInputMaterial(context, inputMaterialArray);
 
+        boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
+        String aliquotParentLsid = null;
+        String aliquotRootLsid = null;
+        if (isAliquotProtocol)
+        {
+            if (inputMaterial.size() != 1)
+                throw new IllegalArgumentException(protocol.getName() + " expects a single materialInputs.");
+
+            ExpMaterial parent = inputMaterial.keySet().iterator().next();
+            aliquotParentLsid = parent.getLSID();
+            aliquotRootLsid = StringUtils.isEmpty(parent.getRootMaterialLSID()) ? parent.getLSID() : parent.getRootMaterialLSID();
+        }
+
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
@@ -418,8 +434,17 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             JSONObject materialObject = outputMaterialArray.getJSONObject(i);
             ExpMaterial material = handleMaterial(context, materialObject);
+
             if (material != null)
+            {
+                if (isAliquotProtocol)
+                {
+                    material.setAliquotedFromLSID(aliquotParentLsid);
+                    material.setRootMaterialLSID(aliquotRootLsid);
+                }
+
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
+            }
         }
 
         checkForCycles(inputData, outputData);

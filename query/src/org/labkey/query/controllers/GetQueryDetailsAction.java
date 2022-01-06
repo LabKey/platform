@@ -104,13 +104,15 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
         QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
         if (!(querySchema instanceof UserSchema))
-            throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + container.getPath() + "'!");
+            // Don't echo the provided schema name. See #44528.
+            throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'!");
         UserSchema schema = (UserSchema)querySchema;
 
         QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
         QueryDefinition queryDef = settings.getQueryDef(schema);
         if (null == queryDef)
-            throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
+            // Don't echo the provided query name, but schema name is legit since it was found. See #44528.
+            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'!");
 
         boolean isUserDefined = queryDef.isUserDefined();
 
@@ -393,6 +395,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 Domain domain = tinfo.getDomain();
                 if (domain != null)
                 {
+                    if (domain.getContainer() != null)
+                        resp.put("domainContainerPath", domain.getContainer().getPath());
+
                     if (kind.canEditDefinition(user, domain))
                     {
                         ActionURL editUrl = kind.urlEditDefinition(domain, getViewContext());

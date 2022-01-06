@@ -17,7 +17,6 @@ package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseTableType;
@@ -123,15 +122,21 @@ public class MySqlDialect extends SimpleSqlDialect
 
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, String schemaName, String schemaNamePattern, String tableName, String tableNamePattern) throws SQLException
         {
             // MySQL treats catalogs as schemas... i.e., getSchemaName() needs to return null and getCatalogName() needs to return the schema name
-            return new StandardJdbcMetaDataLocator(scope, null, tableName)
+            return new StandardJdbcMetaDataLocator(scope, schemaName, schemaNamePattern, tableName, tableNamePattern)
             {
+                @Override
+                public String getSchemaName()
+                {
+                    return null;
+                }
+
                 @Override
                 public String getCatalogName()
                 {
-                    return schemaName;
+                    return super.getSchemaName();
                 }
 
                 @Override
@@ -144,7 +149,7 @@ public class MySqlDialect extends SimpleSqlDialect
     };
 
     @Override
-    protected TableResolver getTableResolver()
+    public TableResolver getTableResolver()
     {
         return TABLE_RESOLVER;
     }

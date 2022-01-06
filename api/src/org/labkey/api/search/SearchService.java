@@ -429,6 +429,28 @@ public interface SearchService
          * any stored lastIndexed values.
          */
         void indexDeleted() throws SQLException;
+
+        /**
+         * Thrown for a document that is an illegal/invalid state that should not be indexed, but can be safely ignored.
+         * May be caused by the document's subject being queued for indexing, but being deleted prior to processing.
+         */
+        class InvalidDocumentException extends IllegalStateException
+        {
+            public InvalidDocumentException(String message)
+            {
+                super(message);
+            }
+
+            public InvalidDocumentException(Throwable e)
+            {
+                super(e);
+            }
+
+            public InvalidDocumentException(String message, Throwable e)
+            {
+                super(message, e);
+            }
+        }
     }
 
 

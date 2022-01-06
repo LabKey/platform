@@ -34,6 +34,8 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.UpdateCommentsAction" %>
 <%@ page import="org.labkey.specimen.actions.UpdateSpecimenCommentsBean" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -160,13 +162,15 @@
         if (hasParticipantMenu)
         {
             Dataset ds = StudyService.get().getDataset(study.getContainer(), participantCommentDatasetId);
-            hasParticipantMenu = ds != null && ds.canUpdate(user);
+            TableInfo t = null==ds ? null : ds.getTableInfo(user);
+            hasParticipantMenu = t != null && t.hasPermission(user, UpdatePermission.class);
         }
 
         if (hasParticipantVisitMenu)
         {
             Dataset ds = StudyService.get().getDataset(study.getContainer(), participantVisitCommentDatasetId);
-            hasParticipantVisitMenu = ds != null && ds.canUpdate(user);
+            TableInfo t = null==ds ? null : ds.getTableInfo(user);
+            hasParticipantVisitMenu = t != null && t.hasPermission(user, UpdatePermission.class);
         }
 
         if (hasParticipantMenu || hasParticipantVisitMenu)
