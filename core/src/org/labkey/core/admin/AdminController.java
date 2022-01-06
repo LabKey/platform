@@ -8355,9 +8355,9 @@ public class AdminController extends SpringActionController
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->null != m.getSchemaVersion())
-                .filter(m->m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
-                .collect(Collectors.toList());
+                .filter(m -> null != m.getSchemaVersion())
+                .filter(m -> m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
+                .toList();
 
             if (!modulesTooLow.isEmpty())
                 fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
@@ -8366,17 +8366,15 @@ public class AdminController extends SpringActionController
         @Test
         public void modulesWithSchemaVersionButNoScripts()
         {
-            // Flag all managed modules that have a schema version but don't have scripts. Their schema version should be null.
+            // Flag all modules that have a schema version but don't have scripts. Their schema version should be null.
             List<String> moduleNames = ModuleLoader.getInstance().getModules().stream()
-                .filter(m->m.getSchemaVersion() != null)
-                .filter(m->m.getSchemaVersion() != 20.3) // These will become null soon enough
-                .filter(m->!((DefaultModule)m).hasScripts())
-                .filter(m->!Set.of("rstudio", "Recipe").contains(m.getName()))  // Filter out oddball modules
-                .map(m->m.getName() + ": " + m.getSchemaVersion())
-                .collect(Collectors.toList());
+                .filter(m -> m.getSchemaVersion() != null)
+                .filter(m -> m instanceof DefaultModule dm && !dm.hasScripts())
+                .map(m -> m.getName() + ": " + m.getSchemaVersion())
+                .toList();
 
             if (!moduleNames.isEmpty())
-                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames.toString());
+                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames);
         }
     }
 
