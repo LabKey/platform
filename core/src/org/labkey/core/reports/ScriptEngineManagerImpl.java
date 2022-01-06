@@ -37,6 +37,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
@@ -51,10 +52,12 @@ import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -103,22 +106,35 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                    .append(" WHERE RowId IN (SELECT EngineId FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?)")
-                    .add(containerId)
-                    .add(context);
+                .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
+                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .add(containerId)
+                .add(context);
 
             return unmodifiableList(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
         }
     });
 
-    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+        LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
+        TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
+        new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).getValueMap().forEach((rowId, configuration) -> {
+            LOG.info("    " + rowId + ": " + configuration);
+        });
+        LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
+    };
+
+    public static void registerEncryptionMigrationHandler()
     {
-        return c.getId() + ":" + context.toString();
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
     }
 
+    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    {
+        return c.getId() + ":" + context;
+    }
 
     enum Props
     {
@@ -484,7 +500,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
         }
 
-        // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
+        // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
         CacheManager.clearAllKnownCaches();
 
         return def;

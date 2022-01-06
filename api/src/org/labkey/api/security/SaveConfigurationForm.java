@@ -63,7 +63,7 @@ public abstract class SaveConfigurationForm
     {
         if (Encryption.isEncryptionPassPhraseSpecified())
         {
-            return Base64.encodeBase64String(Encryption.getAES128().encrypt(map.toString()));
+            return Base64.encodeBase64String(AES.get().encrypt(map.toString()));
         }
         else
         {

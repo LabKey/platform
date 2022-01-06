@@ -30,7 +30,7 @@ public class ConfigurationSettings
             {
                 try
                 {
-                    encryptedProperties = new JSONObject(Encryption.getAES128().decrypt(Base64.decodeBase64(encryptedPropertiesJson)));
+                    encryptedProperties = new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson)));
                 }
                 catch (Encryption.DecryptionException e)
                 {

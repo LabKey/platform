@@ -305,10 +305,14 @@ public class Encryption
 
     /**
      * Return standard AES encryption algorithm. Generates a 128-bit key from the labkey.xml encryption key. All other
-     * encryption parameters are documented in AES().
+     * encryption parameters are documented in AES(). Pass in a registered EncryptionMigrationHandler to prove that you
+     * can migrate your encrypted content.
      */
-    public static Algorithm getAES128()
+    public static Algorithm getAES128(EncryptionMigrationHandler handler)
     {
+        // Ensure that every user of AES128 has registered an EncryptionMigrationHandler
+        assert null != handler && (EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
+
         if (isEncryptionPassPhraseSpecified())
             return new AES(getEncryptionPassPhrase(), 128, ENCRYPTION_KEY_CHANGED);
         else
@@ -345,15 +349,17 @@ public class Encryption
             String keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
             LOG.info("OldEncryptionKey was found in " + AppProps.getInstance().getWebappConfigurationFilename());
             LOG.info("Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey");
-            LOG.info("IMPORTANT: Once encrypted content is migrated you should remove the " + keySource);
 
             EncryptionMigrationHandler.HANDLERS
                 .forEach(handler -> handler.migrateEncryptedContent(oldPassPhrase, keySource));
 
             CacheManager.clearAllKnownCaches();
-            LOG.info("Migration complete");
+            LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
+            LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
         }
     }
+
+    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource) -> {};
 
     public static class TestCase extends Assert
     {
@@ -368,7 +374,7 @@ public class Encryption
 
             if (isEncryptionPassPhraseSpecified())
             {
-                Algorithm aes = getAES128();
+                Algorithm aes = getAES128(TEST_HANDLER);
                 test(aes);
 
                 // Test that static factory method matches this configuration

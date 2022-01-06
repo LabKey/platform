@@ -22,7 +22,7 @@ import org.labkey.api.security.Encryption;
  * The AES128 enum requires the property manager (we store the standard salt in properties), so we use a holder pattern
  * (instead of normal static initialization) to implement thread-safe lazy initialization, breaking the loop.
  *
- * This class is only needed for the PropertyManager; other encryption users should call Encryption.getAES128() directly.
+ * This class is only used by the PropertyManager; other encryption users should call Encryption.getAES128() directly.
  */
 class AES
 {
@@ -33,12 +33,12 @@ class AES
 
     private final Encryption.Algorithm _aes;
 
-    AES()
+    private AES()
     {
-        _aes = Encryption.getAES128();
+        _aes = Encryption.getAES128(PropertyManager.ENCRYPTED_STORE);
     }
 
-    Encryption.Algorithm getAES()
+    private Encryption.Algorithm getAES()
     {
         return _aes;
     }

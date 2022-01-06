@@ -1006,6 +1006,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());
         }
+
+        ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
     }
 
     @Override

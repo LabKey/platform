@@ -57,11 +57,10 @@ public class PropertyManager
     private static final Logger _log = LogManager.getLogger(PropertyManager.class);
     private static final PropertySchema prop = PropertySchema.getInstance();
     private static final NormalPropertyStore STORE = new NormalPropertyStore();
-    private static final EncryptedPropertyStore ENCRYPTED_STORE = new EncryptedPropertyStore();
-
     private static final PropertySchema SCHEMA = PropertySchema.getInstance();
-
     private static final LockManager<PropertyMap> PROPERTY_MAP_LOCK_MANAGER = new LockManager<>();
+
+    static final EncryptedPropertyStore ENCRYPTED_STORE = new EncryptedPropertyStore();
 
     private PropertyManager()
     {
