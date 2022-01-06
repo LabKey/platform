@@ -112,7 +112,7 @@ public class IssueServiceImpl implements IssueService
 
                 Set<Integer> newRelatedIds = issueObject.getRelatedIssues();
 
-                // this list represents all the ids which will need related handling for a creating a relatedIssue entry
+                // this list represents all the ids which will need related handling for creating a relatedIssue entry
                 List<Integer> newAddedRelatedIssues = new ArrayList<>(newRelatedIds);
                 newAddedRelatedIssues.removeAll(prevRelatedIds);
 
