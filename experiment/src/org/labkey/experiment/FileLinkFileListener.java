@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles fixup of paths stored in OntologyManager for File Link fields. These values are persisted as absolute paths
@@ -67,21 +68,22 @@ public class FileLinkFileListener implements FileListener
     }
 
     @Override
-    public void fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull File srcFile, @NotNull File destFile, @Nullable User user, @Nullable Container container)
     {
-        fileMoved(srcFile.toPath(), destFile.toPath(), user, container);
+        return fileMoved(srcFile.toPath(), destFile.toPath(), user, container);
     }
 
     @Override
-    public void fileMoved(@NotNull Path srcFile, @NotNull Path destFile, @Nullable User user, @Nullable Container container)
+    public int fileMoved(@NotNull Path srcFile, @NotNull Path destFile, @Nullable User user, @Nullable Container container)
     {
-        updateObjectProperty(srcFile, destFile);
+        int result = updateObjectProperty(srcFile, destFile);
 
-        updateHardTables(srcFile, destFile, user, container);
+        result += updateHardTables(srcFile, destFile, user, container);
+        return result;
     }
 
     /** Migrate FileLink values stored in exp.ObjectProperty */
-    private void updateObjectProperty(Path srcFile, Path destFile)
+    private int updateObjectProperty(Path srcFile, Path destFile)
     {
         String srcPath = FileUtil.hasCloudScheme(srcFile) ? FileUtil.pathToString(srcFile) : srcFile.toFile().getPath();
         String destPath = FileUtil.hasCloudScheme(destFile) ? FileUtil.pathToString(destFile) : destFile.toFile().getPath();
@@ -142,16 +144,20 @@ public class FileLinkFileListener implements FileListener
                 OntologyManager.clearPropertyCache();
             }
             LOG.info("Updated " + childRows + " child paths in exp.ObjectProperty rows for move from " + srcFile + " to " + destFile);
+            return rows + childRows;
         }
+        return rows;
     }
 
-    private void updateHardTables(final Path srcFile, final Path destFile, final User user, final Container container)
+    private int updateHardTables(final Path srcFile, final Path destFile, final User user, final Container container)
     {
+        AtomicInteger result = new AtomicInteger(0);
         hardTableFileLinkColumns((schema, table, pathColumn, containerId) -> {
             // Migrate any paths that match this file move
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath);
-            updater.fileMoved(srcFile, destFile, user, container);
+            result.addAndGet(updater.fileMoved(srcFile, destFile, user, container));
         });
+        return result.intValue();
     }
 
     private interface ForEachFileLinkColumn

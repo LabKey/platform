@@ -70,7 +70,7 @@ public class DbSchemaCache
     void remove(String schemaName, DbSchemaType type)
     {
         if (type == DbSchemaType.Module)
-            LOG.warn("removing module schema: " + schemaName, new Throwable("removing module schema: " + schemaName));
+            LOG.debug("removing module schema: " + schemaName, new Throwable("removing module schema: " + schemaName));
         else
             LOG.debug("remove " + type + " schema: " + schemaName);
         _cache.removeUsingFilter(new Cache.StringPrefixFilter(getKey(schemaName, type)));

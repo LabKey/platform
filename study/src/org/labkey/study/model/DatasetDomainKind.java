@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -114,7 +115,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         DATASPACE_BASE_PROPERTIES = new HashSet<>(Arrays.asList(
             new PropertyStorageSpec(DSROWID, JdbcType.BIGINT, 0, PropertyStorageSpec.Special.PrimaryKeyNonClustered, false, true, null),
             new PropertyStorageSpec(CONTAINER, JdbcType.GUID).setNullable(false),
-            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32),
+            new PropertyStorageSpec(PARTICIPANTID, JdbcType.VARCHAR, 32).setNullable(false),
             new PropertyStorageSpec(LSID, JdbcType.VARCHAR, 200),
             new PropertyStorageSpec(SEQUENCENUM, JdbcType.DECIMAL),
             new PropertyStorageSpec(SOURCELSID, JdbcType.VARCHAR, 200),
@@ -752,7 +753,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
 
     @Override
-    public TableInfo getTableInfo(User user, Container container, String name)
+    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -762,7 +763,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return DatasetFactory.createDataset(schema, null, dsd);
+        return DatasetFactory.createDataset(schema, cf, dsd);
     }
 
     @Override

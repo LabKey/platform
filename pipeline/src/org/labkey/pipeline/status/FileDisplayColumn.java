@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.status;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
@@ -58,9 +59,8 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         List<Path> files = null;
-        File dir = null;
 
-        Map cols = ctx.getRow();
+        Map<String, Object> cols = ctx.getRow();
         Integer rowIdI = (Integer) cols.get("RowId");
         String filePath = (String) cols.get("FilePath");
         String providerName = (String) cols.get("Provider");
@@ -106,7 +106,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         }
     }
 
-    public static List<Path> listFiles(Path p, Container c, PipelineProvider provider)
+    public static List<Path> listFiles(Path p, Container c, @Nullable PipelineProvider provider)
     {
         Path parent = p.getParent();
 

@@ -64,6 +64,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -346,7 +348,7 @@ public class Table
     }
 
 
-    private static Map<Class, Getter> _getterMap = new HashMap<>(10);
+    private static final Map<Class<?>, Getter> _getterMap = new HashMap<>(20);
 
     enum Getter
     {
@@ -398,6 +400,26 @@ public class Table
             @Override
             Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
         },
+        LOCAL_DATE(LocalDate.class) {
+            @Override
+            Object getObject(ResultSet rs, int i) throws SQLException { return convert(rs.getDate(i)); }
+            @Override
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return convert(rs.getDate(columnLabel)); }
+            private LocalDate convert(@Nullable java.sql.Date sqlDate)
+            {
+                return null == sqlDate ? null : sqlDate.toLocalDate();
+            }
+        },
+        LOCAL_DATE_TIME(LocalDateTime.class) {
+            @Override
+            Object getObject(ResultSet rs, int i) throws SQLException { return convert(rs.getTimestamp(i)); }
+            @Override
+            Object getObject(ResultSet rs, String columnLabel) throws SQLException { return convert(rs.getTimestamp(columnLabel)); }
+            private LocalDateTime convert(@Nullable Timestamp timestamp)
+            {
+                return null == timestamp ? null : timestamp.toLocalDateTime();
+            }
+        },
         OBJECT(Object.class) {
             @Override
             Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }
@@ -413,7 +435,7 @@ public class Table
             return getObject(rs, 1);
         }
 
-        Getter(Class c)
+        Getter(Class<?> c)
         {
             _getterMap.put(c, this);
         }

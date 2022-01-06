@@ -101,7 +101,7 @@ public class ViewServlet extends HttpServlet
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
     // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
-    private static final Map<Thread,String> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<Thread, RequestSummary> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<>();
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
@@ -117,6 +117,20 @@ public class ViewServlet extends HttpServlet
     public static int getRequestCount()
     {
         return _requestCount.get();
+    }
+
+    public record RequestSummary(String url, long startTime)
+    {
+        private RequestSummary(String url)
+        {
+            this(url, System.currentTimeMillis());
+        }
+
+        @Override
+        public String toString()
+        {
+            return url() + "  running for " + (System.currentTimeMillis() - startTime) + "ms";
+        }
     }
 
     /**
@@ -135,18 +149,18 @@ public class ViewServlet extends HttpServlet
             return;
         }
         final Thread t = Thread.currentThread();
-        String previousRequestURI = null;
+        RequestSummary previousSummary = null;
         try
         {
-            previousRequestURI = _pendingRequests.put(t, request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()));
+            previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString())));
             _service(request, response);
         }
         finally
         {
-            if (null == previousRequestURI)
+            if (null == previousSummary)
                 _pendingRequests.remove(t);
             else
-                _pendingRequests.put(t, previousRequestURI);
+                _pendingRequests.put(t, previousSummary);
         }
     }
 
@@ -698,7 +712,7 @@ public class ViewServlet extends HttpServlet
     }
 
     /* Similar to getRequestURL(), but can be used by a different thread (e.g. for thread dump) */
-    public static String getRequestURL(Thread t)
+    public static RequestSummary getRequestSummary(Thread t)
     {
         return _pendingRequests.get(t);
     }

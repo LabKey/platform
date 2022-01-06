@@ -269,7 +269,7 @@ public class DesignerController extends SpringActionController
                     {
                         VBox vbox = new VBox();
                         vbox.addClientDependency(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
-                        if (null != HttpView.currentRequest().getParameter("discussion.start") || null != HttpView.currentRequest().getParameter("discussion.id"))
+                        if (null != getViewContext().getRequest().getParameter("discussion.start") || null != getViewContext().getRequest().getParameter("discussion.id"))
                             vbox.addView(new HtmlView("Study information is on this page below the discussion."));
                         vbox.addView(discussion);
                         vbox.addView(studyView);

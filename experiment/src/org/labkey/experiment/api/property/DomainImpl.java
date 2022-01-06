@@ -555,7 +555,7 @@ public class DomainImpl implements Domain
             {
                 try
                 {
-                    TableInfo tableInfo = kind.getTableInfo(user, getContainer(), getName());
+                    TableInfo tableInfo = kind.getTableInfo(user, getContainer(), getName(), null);
                     if (tableInfo == null)
                     {
                         throw new ChangePropertyDescriptorException("Couldn't resolve TableInfo for domain kind " + kind + " with name " + getName());
@@ -974,6 +974,7 @@ public class DomainImpl implements Domain
             str.append("ShownInUpdate: ").append(renderBool(prop.isShownInUpdateView())).append("; ");
             str.append("RecommendedVariable: ").append(renderBool(prop.isRecommendedVariable())).append("; ");
             str.append("ExcludedFromShifting: ").append(renderBool(prop.isExcludeFromShifting())).append("; ");
+            str.append("Scannable: ").append(renderBool(prop.isScannable())).append("; ");
             return str.toString();
         }
 
@@ -1033,6 +1034,8 @@ public class DomainImpl implements Domain
                 str.append("RecommendedVariable: ").append(renderOldVsNew(renderBool(pdOld.isRecommendedVariable()), renderBool(prop.isRecommendedVariable()))).append("; ");
             if (pdOld.isExcludeFromShifting() != prop.isExcludeFromShifting())
                 str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
+            if (pdOld.isScannable() != prop.isScannable())
+                str.append("Scannable: ").append(renderOldVsNew(renderBool(pdOld.isScannable()), renderBool(prop.isScannable()))).append("; ");
             return str.toString();
         }
 

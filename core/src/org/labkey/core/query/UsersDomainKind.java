@@ -126,6 +126,12 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
+    public boolean allowTextChoiceProperties()
+    {
+        return false;
+    }
+
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain);

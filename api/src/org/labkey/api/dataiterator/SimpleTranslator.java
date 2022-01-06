@@ -1426,7 +1426,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             .stream()
             .filter(columnInfo -> columnInfo.hasDbSequence() && !columnInfo.isUniqueIdField())
             .forEach(columnInfo -> {
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100);
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100, null);
             });
     }
 
@@ -1500,12 +1500,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName)
     {
-        return addSequenceColumn(col, sequenceContainer, sequenceName, null, null);
+        return addSequenceColumn(col, sequenceContainer, sequenceName, null, null, null);
     }
 
-    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize)
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize, @Nullable Long minValue)
     {
-        SequenceColumn seqCol = new SequenceColumn(sequenceContainer, sequenceName, sequenceId, batchSize);
+        SequenceColumn seqCol = new SequenceColumn(sequenceContainer, sequenceName, sequenceId, batchSize, minValue);
         return addColumn(col, seqCol);
     }
 
@@ -1522,22 +1522,26 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final String seqName;
         private final int seqId;
         private final int batchSize;
+        private final long minValue;
 
         // sequence state
         private DbSequence sequence;
 
-        public SequenceColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
+        public SequenceColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize, @Nullable Long minValue)
         {
             this.seqContainer = seqContainer;
             this.seqName = seqName;
             this.seqId = seqId == null ? 0 : seqId.intValue();
             this.batchSize = batchSize == null ? 1 : batchSize;
+            this.minValue = minValue == null ? 1 : minValue;
         }
 
         protected DbSequence getSequence()
         {
             if (sequence == null)
                 sequence = DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, seqId, batchSize);
+            if (minValue > 1)
+                sequence.ensureMinimum(minValue);
             return sequence;
         }
 
@@ -1554,7 +1558,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public TextIdColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
         {
-            super(seqContainer, seqName, seqId, batchSize);
+            super(seqContainer, seqName, seqId, batchSize, null);
         }
 
         public static Object getFormattedValue(long value)

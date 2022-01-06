@@ -976,7 +976,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, Set.of()));
+                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, contextualRoles));
                 }
             }
         }

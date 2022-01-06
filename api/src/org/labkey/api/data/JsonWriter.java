@@ -23,9 +23,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.PHIType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -151,6 +154,7 @@ public class JsonWriter
         props.put("isSelectable", selectable);  //avoid double-negative boolean name
         props.put("selectable", selectable);    //avoid double-negative boolean name
 
+
         // These fields are new and don't need to have the "is" prefix for backwards compatibility
         props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());
         props.put("shownInUpdateView", cinfo != null && cinfo.isShownInUpdateView());
@@ -164,6 +168,7 @@ public class JsonWriter
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
         props.put("filterable", dc.isFilterable());
+        props.put("scannable", cinfo != null && !cinfo.isScannable());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
@@ -265,6 +270,10 @@ public class JsonWriter
 
             if (cinfo.getNameExpression() != null)
                 props.put("nameExpression", cinfo.getNameExpression());
+
+            IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(cinfo, PropertyValidatorType.TextChoice);
+            if (textChoiceValidator != null)
+                props.put("validValues", PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator));
         }
         else
         {

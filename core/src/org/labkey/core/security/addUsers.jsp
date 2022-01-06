@@ -70,7 +70,7 @@
         {
             if (textElem.value != null && textElem.value.length > 0)
             {
-                var target = "<%=h(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()).addParameter("newEmail", null))%>" + textElem.value;
+                var target = <%=q(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()).addParameter("renderInHomeTemplate", false).addParameter("newEmail", null))%> + textElem.value;
                 window.open(target, "permissions", "height=450,width=500,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no,resizable=yes");
             }
         }

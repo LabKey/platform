@@ -159,6 +159,19 @@ public class LookupColumn extends BaseColumnInfo
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
+
+    private String tableName(TableInfo t)
+    {
+        if (null == t)
+            return "null";
+        if (null != t.getUserSchema())
+            return t.getUserSchema().getName() + "." + t.getName();
+        if (null != t.getSchema())
+            return t.getSchema().getName() + "." + t.getName();
+        return t.getName();
+    }
+
+
     public void addJoin(FieldKey foreignKeyFieldKey, ColumnInfo lookupKey, boolean equalOrIsNull)
     {
         FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKeyFieldKey.getName());
@@ -166,11 +179,12 @@ public class LookupColumn extends BaseColumnInfo
         ColumnInfo translatedFK = map.get(fieldKey);
         if (translatedFK == null)
         {
-            throw new IllegalArgumentException("ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'");
+            throw new IllegalArgumentException("ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + tableName(_foreignKey.getParentTable()) + "' for lookup to '" + lookupKey.getFieldKey() + "'");
         }
 
         _additionalJoins.put(translatedFK, Pair.of(lookupKey, equalOrIsNull));
     }
+
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {

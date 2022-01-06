@@ -19,7 +19,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.store.NIOFSDirectory;
-import org.apache.lucene.store.SimpleFSDirectory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -51,14 +50,6 @@ public enum LuceneDirectoryType
         public Directory open(Path path) throws IOException
         {
             return new NIOFSDirectory(path);
-        }
-    },
-    SimpleFSDirectory
-    {
-        @Override
-        public Directory open(Path path) throws IOException
-        {
-            return new SimpleFSDirectory(path);
         }
     };
 

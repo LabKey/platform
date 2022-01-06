@@ -21,7 +21,9 @@ import org.json.JSONObject;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -230,5 +232,11 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     public boolean showDefaultValueSettings()
     {
         return true;
+    }
+
+    @Override
+    public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
+    {
+        return AssayService.get().getTableInfoForDomainId(user, container, domain.getTypeId(), cf);
     }
 }

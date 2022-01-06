@@ -74,7 +74,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 21.000;
+        return 22.000;
     }
 
     @Override

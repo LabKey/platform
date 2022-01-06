@@ -28,8 +28,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
-        dependencies.add("announcements/discuss.js");
+        dependencies.add("announcements/discuss");
         dependencies.add("nabqc");
     }
 %>

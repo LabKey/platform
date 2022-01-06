@@ -323,10 +323,12 @@ public class ProjectController extends SpringActionController
             if (null == url || url.getExtraPath().equals("/"))
                 return HttpView.redirect(homeURL());
 
-            String pageId1 = url.getParameter("pageId");
-            if (null != pageId1)
+            String pageId = form.getPageId();
+            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
+
+            if (null != pageId)
             {
-                Container childContainer = ContainerManager.getChild(c, pageId1);
+                Container childContainer = ContainerManager.getChild(c, pageId);
                 if (null != childContainer && childContainer.isContainerTab())
                 {
                     // Redirect to child container, but only if user has permission
@@ -337,6 +339,10 @@ public class ProjectController extends SpringActionController
                         throw new RedirectException(new ActionURL(BeginAction.class, c));    // same class with no parameter
                     }
                 }
+
+                // Issue 44445: Redirect to default view if portal page does not exist
+                if (portalPage == null)
+                    throw new RedirectException(new ActionURL(BeginAction.class, c));
             }
 
             PageConfig page = getPageConfig();
@@ -349,7 +355,6 @@ public class ProjectController extends SpringActionController
             Template t = isPrint() ? Template.Print : Template.Home;
             HttpView<?> template = t.getTemplate(getViewContext(), new VBox(), page);
 
-            String pageId = form.getPageId();
             if (pageId == null)
             {
                 pageId = folderType.getDefaultPageId(getViewContext());
@@ -357,7 +362,6 @@ public class ProjectController extends SpringActionController
             Portal.populatePortalView(getViewContext(), pageId, template, isPrint());
 
             // Figure out title
-            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
             FolderTab folderTab = null;
             if (!DefaultFolderType.DEFAULT_DASHBOARD.equalsIgnoreCase(pageId))
                 folderTab = Portal.getFolderTabFromId(getViewContext(), pageId);
@@ -1271,14 +1275,14 @@ public class ProjectController extends SpringActionController
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
             if (null == factory)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find the web part factory for web part '" + webPartName + "'.");
+                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find a web part factory for requested web part.");
                 return null;
             }
 
             Portal.WebPart part = factory.createWebPart();
             if (null == part)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 
@@ -1288,7 +1292,7 @@ public class ProjectController extends SpringActionController
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part view for part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 
