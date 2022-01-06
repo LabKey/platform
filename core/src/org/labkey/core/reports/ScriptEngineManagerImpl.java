@@ -16,6 +16,7 @@
 package org.labkey.core.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
@@ -52,6 +54,9 @@ import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ConfigProperty;
@@ -83,9 +88,7 @@ import static java.util.Collections.unmodifiableList;
 public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
-
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
-
     private static final String ALL_ENGINES = "ALL";
 
     // cache engine definitions by:
@@ -119,9 +122,31 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
     static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
         LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
-        new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).getValueMap().forEach((rowId, configuration) -> {
-            LOG.info("    " + rowId + ": " + configuration);
+        new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
+            JSONObject json = new JSONObject(configuration);
+            String oldEncryptedPassword = json.getString("password");
+            if (null != oldEncryptedPassword)
+            {
+                LOG.info("    Migrating script engine configuration " + rowId);
+                try
+                {
+                    String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
+                    String newEncryptedPassword = Base64.encodeBase64String(ExternalScriptEngineDefinitionImpl.AES.encrypt(decryptedPassword));
+                    json.replace("password", newEncryptedPassword);
+                    assert decryptedPassword.equals(ExternalScriptEngineDefinitionImpl.AES.decrypt(Base64.decodeBase64(json.getString("password")))); // TODO: Remove
+                    Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+                }
+                catch (DecryptionException e)
+                {
+                    LOG.info("    Failed to decrypt password for configuration " + rowId + ". This configuration will be skipped.");
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Exception while attempting to migrate configuration " + rowId, e);
+                }
+            }
         });
         LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
     };

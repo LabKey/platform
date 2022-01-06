@@ -39,7 +39,7 @@ import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATI
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
 {
-    private static final Algorithm AES = Encryption.getAES128(ENCRYPTION_MIGRATION_HANDLER);
+    static final Algorithm AES = Encryption.getAES128(ENCRYPTION_MIGRATION_HANDLER);
 
     private Integer _rowId;
     private String _name;

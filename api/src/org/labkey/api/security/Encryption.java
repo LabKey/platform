@@ -347,8 +347,8 @@ public class Encryption
         if (null != oldPassPhrase && isEncryptionPassPhraseSpecified())
         {
             String keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
-            LOG.info("OldEncryptionKey was found in " + AppProps.getInstance().getWebappConfigurationFilename());
-            LOG.info("Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey");
+            LOG.info("OldEncryptionKey was found in " + AppProps.getInstance().getWebappConfigurationFilename() +
+                ". Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey.");
 
             EncryptionMigrationHandler.HANDLERS
                 .forEach(handler -> handler.migrateEncryptedContent(oldPassPhrase, keySource));
