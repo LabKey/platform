@@ -1279,6 +1279,30 @@ public class NameGenerator
                 }
             }
 
+            if (rowMap.containsKey(ALIQUOTED_FROM_FIELD_NAME))
+            {
+                // Issue 44568: We will pass through a rowId when creating aliquots via insertRows.
+                // We need to find the corresponding material so we can use its name in the name we generate instead of its rowId.
+                Object value = rowMap.get(ALIQUOTED_FROM_FIELD_NAME);
+                if (value != null)
+                {
+                    User user = User.getSearchUser();
+                    ExpSampleType parentObjectType = _sampleTypes.computeIfAbsent((String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), (name) -> SampleTypeService.get().getSampleType(_container, user, name));
+                    ExpMaterial material = null;
+                    String strValue = value.toString();
+                    try
+                    {
+                        material = ExperimentService.get().findExpMaterial(_container, user, parentObjectType, (String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), strValue, renameCache, materialCache, true);
+                    }
+                    catch (ValidationException e)
+                    {
+                        // if we haven't been able to find a sample using either the name or rowId, we'll use the value originally provided
+                    }
+                    if (material != null && !material.getName().equals(strValue)) // replace supplied value with the name of the material we found.
+                        ctx.put(ALIQUOTED_FROM_FIELD_NAME, material.getName());
+                }
+            }
+
             // If needed, add the parent names to the replacement map
             if (_exprHasLineageInputs || _exprHasLineageLookup)
             {
@@ -1351,25 +1375,6 @@ public class NameGenerator
                             addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
                         if (_exprHasLineageLookup)
                             addLineageInput(parts, colName, value, parentImportAliases, inputLookupValues);
-                    }
-                    // Issue 44568: We will pass through a rowId when creating aliquots via insertRows.
-                    // We need to find the corresponding material so we can use its name in the name we generate instead of its rowId.
-                    else if (parts[0].equalsIgnoreCase(ALIQUOTED_FROM_FIELD_NAME))
-                    {
-                        User user = User.getSearchUser();
-                        ExpSampleType parentObjectType = _sampleTypes.computeIfAbsent((String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), (name) -> SampleTypeService.get().getSampleType(_container, user, name));
-                        ExpMaterial material = null;
-                        String strValue = value.toString();
-                        try
-                        {
-                            material = ExperimentService.get().findExpMaterial(_container, user,  parentObjectType, (String) ctx.get(CURRENT_SAMPLE_TYPE_NAME), strValue, renameCache, materialCache, true);
-                        }
-                        catch (ValidationException e)
-                        {
-                            // if we haven't been able to find a sample using either the name or rowId, we'll use the value originally provided
-                        }
-                        if (material != null && !material.getName().equals(strValue)) // replace supplied value with the name of the material we found.
-                            ctx.put(ALIQUOTED_FROM_FIELD_NAME, material.getName());
                     }
                 }
 
