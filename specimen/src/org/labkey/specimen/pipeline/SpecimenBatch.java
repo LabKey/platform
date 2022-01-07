@@ -77,12 +77,6 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     }
 
     @Override
-    public File getSpecimenArchive()
-    {
-        return _definitionFile;
-    }
-
-    @Override
     public Path getSpecimenArchivePath()
     {
         return _definitionFile.toPath();
