@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
@@ -27,9 +26,8 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.xml.MissingValueIndicatorsType;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
+import org.labkey.folder.xml.MissingValueIndicatorsType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,12 +41,12 @@ import java.util.Map;
 public class MissingValueImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<Folder> create()
     {
         return new MissingValueImporter();
     }
 
-    public class MissingValueImporter implements FolderImporter
+    public static class MissingValueImporter implements FolderImporter<Folder>
     {
         @Override
         public String getDataType()
@@ -63,14 +61,14 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+        public void process(@Nullable PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
         {
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
 
             if (isValidForImportArchive(ctx))
             {
-                MissingValueIndicatorsType mvXml = getMissingValueIndicatorsFromXml(ctx.getXml());
+                MissingValueIndicatorsType mvXml = ctx.getXml().getMissingValueIndicators();
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
@@ -99,28 +97,15 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
+        public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
         {
-            return ctx.getXml() != null && getMissingValueIndicatorsFromXml(ctx.getXml()) != null;
-        }
-
-        private MissingValueIndicatorsType getMissingValueIndicatorsFromXml(XmlObject xml)
-        {
-            // This conversion of the xml object to either a Study doc or a Folder doc is to support backward
-            // compatibility for importing study archives which have the MVI info in the study.xml file
-            MissingValueIndicatorsType mvi = null;
-            if (xml instanceof StudyDocument.Study)
-                mvi = ((StudyDocument.Study)xml).getMissingValueIndicators();
-            else if (xml instanceof FolderDocument.Folder)
-                mvi = ((FolderDocument.Folder)xml).getMissingValueIndicators();
-
-            return mvi;
+            return ctx.getXml() != null && ctx.getXml().getMissingValueIndicators() != null;
         }
     }
 }

@@ -26,6 +26,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +38,7 @@ import java.util.List;
 * Date: Aug 27, 2009
 * Time: 2:12:01 PM
 */
-public class FolderListImporter implements FolderImporter
+public class FolderListImporter implements FolderImporter<Folder>
 {
     @Override
     public String getDataType()
@@ -52,7 +53,7 @@ public class FolderListImporter implements FolderImporter
     }
 
     @Override
-    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+    public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
     {
         if (isValidForImportArchive(ctx))
         {
@@ -76,13 +77,13 @@ public class FolderListImporter implements FolderImporter
 
     @Override
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }
 
     @Override
-    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
     {
         return ctx.getDir("lists") != null;
     }
@@ -90,7 +91,7 @@ public class FolderListImporter implements FolderImporter
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override
-        public FolderImporter create()
+        public FolderImporter<Folder> create()
         {
             return new FolderListImporter();
         }
