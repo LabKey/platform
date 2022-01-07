@@ -507,4 +507,35 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="missingValueIndicatorsType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="missingValueIndicator">
+                <xs:complexType>
+                    <xs:attribute name="indicator" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The indicator to use for a certain type of missing values (e.g., "N").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="label" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The text to use in association with this indicator in the UI
+                                (e.g., "Required field marked by site as 'data not available'.").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="file" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                      The file that contains the list of missing value indicators.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
 </xs:schema>
