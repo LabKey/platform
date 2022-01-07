@@ -131,7 +131,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
                         LOG.info("      Attempting to decrypt property \"" + name + "\"");
                         String decryptedValue = pe.decrypt(Base64.decodeBase64(encryptedValue), oldPassPhrase, keySource);
                         String newEncryptedValue = Base64.encodeBase64String(pe.encrypt(decryptedValue));
-                        assert decryptedValue.equals(pe.decrypt(Base64.decodeBase64(newEncryptedValue))); // TODO: Remove
+                        assert decryptedValue.equals(pe.decrypt(Base64.decodeBase64(newEncryptedValue)));
                         newProps.put(name, newEncryptedValue);
                     }
 

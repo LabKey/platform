@@ -335,7 +335,7 @@ public class AuthenticationManager
                 String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
                 String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
                 saveMap.put("EncryptedProperties", newEncryptedValue);
-                assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue))); // TODO: Remove
+                assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
                 Table.update(null, tinfo, saveMap, key);
             }
             catch (DecryptionException e)

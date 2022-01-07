@@ -120,13 +120,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         }
     });
 
+    private static final String PASSWORD_FIELD = "password";
+
     static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
         LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
         Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
         new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
             JSONObject json = new JSONObject(configuration);
-            String oldEncryptedPassword = json.getString("password");
+            String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
             if (null != oldEncryptedPassword)
             {
                 LOG.info("    Migrating script engine configuration " + rowId);
@@ -134,8 +136,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
                     String newEncryptedPassword = Base64.encodeBase64String(ExternalScriptEngineDefinitionImpl.AES.encrypt(decryptedPassword));
-                    json.replace("password", newEncryptedPassword);
-                    assert decryptedPassword.equals(ExternalScriptEngineDefinitionImpl.AES.decrypt(Base64.decodeBase64(json.getString("password")))); // TODO: Remove
+                    json.replace(PASSWORD_FIELD, newEncryptedPassword);
+                    assert decryptedPassword.equals(ExternalScriptEngineDefinitionImpl.AES.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
                     Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
                 }
                 catch (DecryptionException e)
