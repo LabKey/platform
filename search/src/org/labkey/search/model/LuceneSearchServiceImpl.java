@@ -1754,7 +1754,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         Pair<Integer, String[]> expectation = expectations.get(file.getName());
                         assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
                         // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
-                        assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
+                        assertEquals("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first), (0 == expectation.second.length));
 
                         if (expectation.first != body.length())
                         {
@@ -1862,7 +1862,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
-            add(map, "zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+            add(map, "zip_sample.zip", 1878, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
 
             return map;
         }
