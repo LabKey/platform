@@ -15,6 +15,7 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
@@ -44,6 +45,12 @@ public class ViewCategoryWriter extends BaseFolderWriter
     public String getDataType()
     {
         return FolderArchiveDataTypes.VIEW_CATEGORIES;
+    }
+
+    @Override
+    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
     }
 
     @Override

@@ -410,7 +410,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
 
-            // old study-based qc states: should remove this at some point
+            // old study-based qc states: should remove this at some point (moved to folder level in 19.2, so 24.11)
             new StudyQcStatesImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
