@@ -55,10 +55,4 @@ public class XmlValidationException extends Exception
     {
         return getDetails(_errorList);
     }
-
-    @Override
-    public String toString()
-    {
-        return super.toString() + "\n\n" + getDetails();
-    }
 }
