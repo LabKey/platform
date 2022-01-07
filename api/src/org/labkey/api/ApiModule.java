@@ -116,6 +116,9 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
+
+        PropertyManager.registerEncryptionMigrationHandler();
+        AuthenticationManager.registerEncryptionMigrationHandler();
     }
 
     @NotNull

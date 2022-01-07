@@ -18,11 +18,14 @@ package org.labkey.api.security;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
@@ -31,6 +34,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -49,6 +53,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -63,6 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Encryption
 {
+    private static final Logger LOG = LogHelper.getLogger(Encryption.class, "Encryption operations");
     private static final String CATEGORY = "Encryption";
     private static final String SALT_KEY = "Salt";
     private static final SecureRandom SR = new SecureRandom();
@@ -144,20 +150,31 @@ public class Encryption
 
 
     private static final String ENCRYPTION_KEY_PARAMETER_NAME = "EncryptionKey";
-    private static final String OLD_ENCRYPTION_KEY_PARAMETER_NAME = "MasterEncryptionKey";
+    private static final String DEPRECATED_ENCRYPTION_KEY_PARAMETER_NAME = "MasterEncryptionKey";
+    private static final String OLD_ENCRYPTION_KEY_PARAMETER_NAME = "OldEncryptionKey";
 
-    private static @Nullable String loadEncryptionPassPhrase()
+    private static @Nullable String loadEncryptionProperty(String... propertyNames)
     {
         ServletContext context = ModuleLoader.getServletContext();
 
         if (null == context)
             throw new IllegalStateException("ServletContext is null");
 
-        String encryptionKey = context.getInitParameter(ENCRYPTION_KEY_PARAMETER_NAME);
+        String propertyValue = null;
 
-        // Backward compatibility -- look for old parameter name if new one is missing
-        if (null == encryptionKey)
-            encryptionKey = context.getInitParameter(OLD_ENCRYPTION_KEY_PARAMETER_NAME);
+        for (String name : propertyNames)
+        {
+            propertyValue = context.getInitParameter(name);
+            if (null != propertyValue)
+                break;
+        }
+
+        return propertyValue;
+    }
+
+    private static @Nullable String loadEncryptionPassPhrase()
+    {
+        String encryptionKey = loadEncryptionProperty(ENCRYPTION_KEY_PARAMETER_NAME, DEPRECATED_ENCRYPTION_KEY_PARAMETER_NAME);
 
         // Return the encryption key if it's there (not null, not blank, not whitespace, not default value), otherwise return null
         if (!StringUtils.isBlank(encryptionKey) && !encryptionKey.trim().equals("@@masterEncryptionKey@@") && !encryptionKey.trim().equals("@@encryptionKey@@"))
@@ -171,18 +188,21 @@ public class Encryption
         return ENCRYPTION_PASS_PHRASE;
     }
 
+    public static @Nullable String getOldEncryptionPassPhrase()
+    {
+        return loadEncryptionProperty(OLD_ENCRYPTION_KEY_PARAMETER_NAME);
+    }
+
     public static boolean isEncryptionPassPhraseSpecified()
     {
         return null != getEncryptionPassPhrase();
     }
-
 
     public interface Algorithm
     {
         @NotNull byte[] encrypt(@NotNull String plainText);
         @NotNull String decrypt(@NotNull byte[] cipherText);
     }
-
 
     /*
         Wrapper class that makes it easier to encrypt/decrypt using AES and a pass phrase.
@@ -283,19 +303,63 @@ public class Encryption
         }
     }
 
-
-    /*
-        Return an encryption algorithm that uses AES and generates a 128-bit key from the labkey.xml encryption key.
-        All other encryption parameters are documented in AES().
+    /**
+     * Return standard AES encryption algorithm. Generates a 128-bit key from the labkey.xml encryption key. All other
+     * encryption parameters are documented in AES(). Pass in a registered EncryptionMigrationHandler to prove that you
+     * can migrate your encrypted content.
      */
-    public static Algorithm getAES128()
+    public static Algorithm getAES128(EncryptionMigrationHandler handler)
     {
+        // Ensure that every user of AES128 has registered an EncryptionMigrationHandler
+        assert null != handler && (EncryptionMigrationHandler.HANDLERS.contains(handler) || handler == TEST_HANDLER);
+
         if (isEncryptionPassPhraseSpecified())
             return new AES(getEncryptionPassPhrase(), 128, ENCRYPTION_KEY_CHANGED);
         else
             throw new IllegalStateException("EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename() + "; this method should not be called");
     }
 
+    /**
+     * Same as above, but caller specifies the pass phrase. Used for one special case: migrating encrypted properties
+     * and settings after changing an encryption key. See {@link EncryptionMigrationHandler}.
+     */
+    public static Algorithm getAES128(String encryptionPassPhrase, String keySource)
+    {
+        return new AES(encryptionPassPhrase, 128, keySource);
+    }
+
+    public interface EncryptionMigrationHandler
+    {
+        Set<EncryptionMigrationHandler> HANDLERS = new ConcurrentHashSet<>();
+
+        static void registerHandler(EncryptionMigrationHandler handler)
+        {
+            HANDLERS.add(handler);
+        }
+
+        void migrateEncryptedContent(String oldPassPhrase, String keySource);
+    }
+
+    public static void checkMigration()
+    {
+        String oldPassPhrase = getOldEncryptionPassPhrase();
+
+        if (null != oldPassPhrase && isEncryptionPassPhraseSpecified())
+        {
+            String keySource = "OldEncryptionKey specified in " + AppProps.getInstance().getWebappConfigurationFilename();
+            LOG.info("OldEncryptionKey was found in " + AppProps.getInstance().getWebappConfigurationFilename() +
+                ". Attempting to migrate existing encrypted content from OldEncryptionKey to EncryptionKey.");
+
+            EncryptionMigrationHandler.HANDLERS
+                .forEach(handler -> handler.migrateEncryptedContent(oldPassPhrase, keySource));
+
+            CacheManager.clearAllKnownCaches();
+            LOG.info("Migration of all existing encrypted content from OldEncryptionKey to EncryptionKey is complete");
+            LOG.info("IMPORTANT: Since migration is complete you should now remove the " + keySource);
+        }
+    }
+
+    private static final EncryptionMigrationHandler TEST_HANDLER = (oldPassPhrase, keySource) -> {};
 
     public static class TestCase extends Assert
     {
@@ -310,7 +374,7 @@ public class Encryption
 
             if (isEncryptionPassPhraseSpecified())
             {
-                Algorithm aes = getAES128();
+                Algorithm aes = getAES128(TEST_HANDLER);
                 test(aes);
 
                 // Test that static factory method matches this configuration

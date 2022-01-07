@@ -55,6 +55,11 @@ public class PropertyCache
         _blockingCache.removeUsingFilter(new Cache.StringPrefixFilter(c.getId()));
     }
 
+    void clear()
+    {
+        _blockingCache.clear();
+    }
+
     private static String getCacheKey(Container c, User user, String category)
     {
         return getCacheKey(c.getId(), user.getUserId(), category);
