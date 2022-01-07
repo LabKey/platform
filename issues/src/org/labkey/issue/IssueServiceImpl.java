@@ -260,11 +260,7 @@ public class IssueServiceImpl implements IssueService
             }
         }
 
-        if (action == Issue.action.insert)
-            IssueValidation.requiresInsertPermission(user, issueObject, container);
-        else
-            IssueValidation.requiresUpdatePermission(user, issueObject, container);
-
+        action.checkPermission(container, user, issueObject);
         CustomColumnConfiguration ccc = new IssuesController.CustomColumnConfigurationImpl(container, user, issueListDef);
         IssueValidation.validateRequiredFields(issueListDef, ccc, issueObject, user, errors);
         IssueValidation.validateNotifyList(issueObject, errors);

@@ -1276,13 +1276,14 @@ public class IssuesController extends SpringActionController
 
             IssueObject prevIssue = _issue.clone();
             User user = getUser();
-            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
+            Issue.action action = Issue.action.update;
+            action.checkPermission(getContainer(), getUser(), _issue);
 
             _issue.beforeUpdate(getContainer());
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            page.setAction(Issue.action.update);
+            page.setAction(action);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
@@ -1322,7 +1323,8 @@ public class IssuesController extends SpringActionController
 
             IssueObject prevIssue = _issue.clone();
             User user = getUser();
-            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
+            Issue.action action = Issue.action.resolve;
+            action.checkPermission(getContainer(), getUser(), _issue);
 
             _issue.beforeResolve(getContainer(), user);
 
@@ -1336,7 +1338,7 @@ public class IssuesController extends SpringActionController
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            page.setAction(Issue.action.resolve);
+            page.setAction(action);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
@@ -1376,13 +1378,14 @@ public class IssuesController extends SpringActionController
 
             IssueObject prevIssue = _issue.clone();
             User user = getUser();
-            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
+            Issue.action action = Issue.action.close;
+            action.checkPermission(getContainer(), getUser(), _issue);
 
             _issue.close(user);
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            page.setAction(Issue.action.close);
+            page.setAction(action);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
@@ -1424,14 +1427,15 @@ public class IssuesController extends SpringActionController
             IssueObject prevIssue = _issue.clone();
 
             User user = getUser();
-            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
+            Issue.action action = Issue.action.reopen;
+            action.checkPermission(getContainer(), getUser(), _issue);
 
             _issue.beforeReOpen(getContainer(), true);
             _issue.open(getContainer(), user);
             beforeReshow(reshow, form, _issue, getIssueListDef());
 
             IssuePage page = new IssuePage(getContainer(), user);
-            page.setAction(Issue.action.reopen);
+            page.setAction(action);
             page.setMode(DataRegion.MODE_UPDATE);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);

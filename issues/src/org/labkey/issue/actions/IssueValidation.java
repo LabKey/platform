@@ -33,11 +33,9 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.model.IssueListDef;
@@ -236,40 +234,14 @@ public class IssueValidation
     }
 
     /**
-     * Throw an exception if user does not have permission to update issue
-     */
-    public static void requiresInsertPermission(User user, IssueObject issue, Container c)
-    {
-        if (!hasInsertPermission(user, issue, c))
-            throw new UnauthorizedException();
-    }
-
-    /**
-     * Throw an exception if user does not have permission to update issue
-     */
-    public static void requiresUpdatePermission(User user, IssueObject issue, Container c)
-    {
-        if (!hasUpdatePermission(user, issue, c))
-            throw new UnauthorizedException();
-    }
-
-    /**
      * Does this user have permission to update this issue?
      */
-    public static boolean hasInsertPermission(User user, IssueObject issue, Container c)
-    {
-        return c.hasPermission(user, InsertPermission.class, getContextualRoles(user, issue, c));
-    }
-
-    /**
-     * Does this user have permission to update this issue?
-     */
-    public static boolean hasUpdatePermission(User user, IssueObject issue, Container c)
+    public static boolean hasUpdatePermission(User user, Issue issue, Container c)
     {
         return c.hasPermission(user, UpdatePermission.class, getContextualRoles(user, issue, c));
     }
 
-    private static Set<Role> getContextualRoles(User user, IssueObject issue, Container c)
+    private static Set<Role> getContextualRoles(User user, Issue issue, Container c)
     {
         // we can't support AuthorRoles until we address issue: 36942
 /*
