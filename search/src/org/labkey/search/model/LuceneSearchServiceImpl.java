@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;

@@ -32,8 +32,18 @@ public class XmlValidationException extends Exception
 
     public XmlValidationException(Collection<XmlError> errorList, String schemaName, @Nullable String additionalMessage)
     {
-        super("Document does not conform to its XML schema, " + schemaName + (null != additionalMessage ? " (" + additionalMessage + ")" : ""));
+        super("Document does not conform to its XML schema, " + schemaName + (null != additionalMessage ? " (" + additionalMessage + ")" : "") + "\n" + getDetails(errorList));
         _errorList = errorList;
+    }
+
+    private static String getDetails(Collection<XmlError> errorList)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (XmlError error : errorList)
+            sb.append("line ").append(error.getLine()).append(": ").append(error.getMessage()).append('\n');
+
+        return sb.toString();
     }
 
     public Collection<XmlError> getErrorList()
@@ -43,12 +53,7 @@ public class XmlValidationException extends Exception
 
     public String getDetails()
     {
-        StringBuilder sb = new StringBuilder();
-
-        for (XmlError error : _errorList)
-            sb.append("line ").append(error.getLine()).append(": ").append(error.getMessage()).append('\n');
-
-        return sb.toString();
+        return getDetails(_errorList);
     }
 
     @Override
