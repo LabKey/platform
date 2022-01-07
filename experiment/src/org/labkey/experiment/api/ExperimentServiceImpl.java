@@ -1457,78 +1457,79 @@ public class ExperimentServiceImpl implements ExperimentService
                             RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
+        StringBuilder errors = new StringBuilder();
+        // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Attempt to resolve by name first.
+        try
+        {
+            Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+            if (rowId != null)
+                return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
+        }
+        catch (ConversionException e2)
+        {
+            errors.append("Failed to resolve '").append(dataName).append("' into a data. ").append(e2.getMessage());
+            errors.append(" Use 'DataInputs/<DataClassName>' column header to resolve parents from a specific DataClass.");
+            errors.append(" ").append(e2.getMessage());
+        }
+
         try
         {
             Integer rowId = ConvertHelper.convert(dataName, Integer.class);
 
-            // first attempt to resolve by rowId
-            ExpData data = dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
-            if (data != null)
-                return data;
+            // now attempt to resolve by rowId
+            return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
         }
         catch (ConversionException e1)
         {
             // ignore
         }
-
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-        // Either dataName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
-        try
-        {
-            Integer rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-            if (rowId == null)
-                return null;
-
-            return dataCache.computeIfAbsent(rowId, (x) -> getExpData(dataClass, rowId));
-        }
-        catch (ConversionException e2)
-        {
-            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
-        }
+        if (!errors.isEmpty())
+            throw new ValidationException(errors.toString());
+        return null;
     }
 
     @Override
     public @Nullable ExpMaterial findExpMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        try
-        {
-            Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
-
-            // first attempt to resolve by rowId
-            ExpMaterial material = materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
-            if (material != null)
-                return material;
-        }
-        catch (ConversionException e1)
-        {
-            // ignore
-        }
-
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
-        // Either sampleName failed to parse as a rowId or the rowId didn't resolve. Attempt to resolve by alternate key.
+        StringBuilder errors = new StringBuilder();
+        // Issue 44568, Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // First attempt to resolve by name.
         try
         {
             Integer rowId = (sampleTypeName == null) ?
                     cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName) :
                     cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
 
-            if (rowId == null)
-                return null;
-
-            return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+            if (rowId != null)
+                return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
         }
         catch (ConversionException e2)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+            errors.append("Failed to resolve '").append(sampleName).append("' into a sample.");
             if (sampleTypeName == null)
             {
-                sb.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
+                errors.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
             }
-            sb.append(" " + e2.getMessage());
-            throw new ValidationException(sb.toString());
+            errors.append(" ").append(e2.getMessage());
         }
+
+        try
+        {
+            Integer rowId = ConvertHelper.convert(sampleName, Integer.class);
+
+            // next attempt to resolve by rowId
+            return materialCache.computeIfAbsent(rowId, (x) -> getExpMaterial(c, user, rowId, sampleType));
+        }
+        catch (ConversionException e1)
+        {
+            // ignore
+        }
+        if (!errors.isEmpty())
+            throw new ValidationException(errors.toString());
+
+        return null;
     }
 
     @Override
