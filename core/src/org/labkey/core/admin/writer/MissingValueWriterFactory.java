@@ -26,6 +26,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.MissingValueIndicatorsType;
+import org.labkey.folder.xml.MissingValueIndicatorsType.MissingValueIndicator;
 
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class MissingValueWriterFactory implements FolderWriterFactory
             Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(c);
             for (Map.Entry<String, String> mv : mvMap.entrySet())
             {
-                MissingValueIndicatorsType.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
+                MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
                 indXml.setIndicator(mv.getKey());
                 indXml.setLabel(mv.getValue());
             }            
