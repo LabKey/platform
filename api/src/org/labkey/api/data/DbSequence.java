@@ -67,6 +67,11 @@ public class DbSequence
         DbSequenceManager.ensureMinimum(this, minimum);
     }
 
+    public void setSequenceValue(long newSeqValue)
+    {
+        DbSequenceManager.setSequenceValue(this, newSeqValue);
+    }
+
     @Override
     public String toString()
     {

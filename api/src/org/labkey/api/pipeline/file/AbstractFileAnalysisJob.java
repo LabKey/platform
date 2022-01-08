@@ -158,16 +158,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         }
 
         setupLocalDirectoryAndJobLog(getPipeRoot(), "FileAnalysis", _baseName);
-
-        // CONSIDER: Remove writing out jobInfo file completely
-//        // Write out job information
-//        if (writeJobInfoFile)
-//        {
-//            String infoFileName = _baseName + "-jobInfo";
-//            _fileJobInfo = TabLoader.TSV_FILE_TYPE.newFile(_dirAnalysis, infoFileName);
-//            writeJobInfoTSV(_fileJobInfo);
-//            getParameters().put(PIPELINE_JOB_INFO_PARAM, _fileJobInfo.getAbsolutePath());
-//        }
     }
 
     /**
@@ -533,54 +523,5 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         String doGZ = getParameters().get("pipeline, gzip outputs");
         return "yes".equalsIgnoreCase(doGZ)?FileType.gzSupportLevel.PREFER_GZ:FileType.gzSupportLevel.SUPPORT_GZ;
-    }
-
-    /**
-     * Write out the job info as a tsv file similar to the R transformation runProperties format.
-     * This is a info file for an entire job (or split job) that command line or script tasks may use
-     * to determine the inputs files and other job related metadata.
-     *
-     * @see FileAnalysisTaskPipeline#isWriteJobInfoFile()
-     * @see org.labkey.api.qc.TsvDataExchangeHandler
-     * @link https://www.labkey.org/Documentation/wiki-page.view?name=runProperties
-     */
-    private void writeJobInfoTSV(File file) throws IOException
-    {
-        RowMapFactory<Object> factory = new RowMapFactory<>(Arrays.asList("Name", "Value", "Type"));
-        List<Map<String, Object>> rows = new ArrayList<>();
-
-        rows.add(factory.getRowMap("protocolName", getProtocolName(), "java.lang.String"));
-        rows.add(factory.getRowMap("provider", getProvider(), "java.lang.String"));
-        rows.add(factory.getRowMap("description", getDescription(), "java.lang.String"));
-        rows.add(factory.getRowMap("taskPipelineId", getTaskPipelineId(), "java.lang.String"));
-        rows.add(factory.getRowMap("jobGUID", getJobGUID(), "java.lang.String"));
-        rows.add(factory.getRowMap("parentGUID", getParentGUID(), "java.lang.String"));
-        rows.add(factory.getRowMap("splitJob", isSplitJob(), "java.lang.Boolean"));
-
-        rows.add(factory.getRowMap("baseUrl", AppProps.getInstance().getBaseServerUrl(), "java.lang.String"));
-        rows.add(factory.getRowMap("contextPath", AppProps.getInstance().getContextPath(), "java.lang.String"));
-        rows.add(factory.getRowMap("containerPath", getContainer().getPath(), "java.lang.String"));
-        rows.add(factory.getRowMap("containerId", getContainer().getEntityId(), "java.lang.String"));
-        rows.add(factory.getRowMap("user", getUser().getEmail(), "java.lang.String"));
-
-        rows.add(factory.getRowMap("pipeRoot", getPipeRoot().getRootNioPath(), "java.lang.String"));
-
-        // FileAnalysisJobSupport properties
-        rows.add(factory.getRowMap("baseName", getBaseName(), "java.lang.String"));
-        rows.add(factory.getRowMap("joinedBaseName", getJoinedBaseName(), "java.lang.String"));
-        rows.add(factory.getRowMap("analysisDirectory", getAnalysisDirectory(), "java.lang.String"));
-        rows.add(factory.getRowMap("dataDirectory", getDataDirectory(), "java.lang.String"));
-
-        // TODO: Perhaps move this tsv writer to the task so we can get work directory and input types
-        for (File inputFile : getInputFiles())
-        {
-            rows.add(factory.getRowMap("inputFile", inputFile));
-        }
-
-        try (TSVMapWriter tsvWriter = new TSVMapWriter(rows))
-        {
-            tsvWriter.setHeaderRowVisible(false);
-            tsvWriter.write(file);
-        }
     }
 }

@@ -51,12 +51,12 @@
     "testResultsProcessor": "jest-teamcity-reporter"
   },
   "dependencies": {
-    "@labkey/api": "1.7.1",
-    "@labkey/components": "2.112.0",
+    "@labkey/api": "1.7.2",
+    "@labkey/components": "2.115.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.1",
+    "@labkey/build": "5.0.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@types/enzyme": "3.10.9",
     "@types/enzyme-adapter-react-16": "1.0.6",

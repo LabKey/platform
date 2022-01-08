@@ -432,7 +432,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * Set Log file path and clear/reset logger
-     * @param logFile
      */
     private void updateLogFilePath(Path logFile)
     {

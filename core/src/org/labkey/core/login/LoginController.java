@@ -1517,7 +1517,7 @@ public class LoginController extends SpringActionController
             final URLHelper url;
             int rowId = form.getConfiguration();
 
-            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
+            SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
 
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");

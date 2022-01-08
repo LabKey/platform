@@ -69,7 +69,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
 
     public FolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
     {
-        super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
+        super("FolderImport", new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(folderXml.getParent());
         _originalFilename = originalFilename;
         setupLocalDirectoryAndJobLog(pipeRoot, "FolderImport", FolderImportProvider.generateLogFilename("folder_load"));

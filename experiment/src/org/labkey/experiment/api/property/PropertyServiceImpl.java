@@ -38,6 +38,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -632,14 +633,28 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public Map<String, Object> getUsageMetrics()
     {
+        DbSchema schema = ExperimentService.get().getSchema();
+        String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
+
         return Map.of(
                 "propertyValidators", Map.of(
-                        "byType", new SqlSelector(ExperimentService.get().getSchema(),
+                        "byType", new SqlSelector(schema,
                                 new SQLFragment("SELECT typeuri, COUNT(*) AS count FROM exp.propertyvalidator GROUP BY typeuri")
                         ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                             x.put(m.get("typeuri").toString(), m.get("count"));
                             return x;
-                        })
+                        }),
+                        "textChoiceValues", new SqlSelector(schema,
+                                new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
+                                        .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
+                                        .append(") AS X")
+                                        .add("urn:lsid:labkey.com:PropertyValidator:textchoice")
+                            ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
+                                x.put("min", m.get("min") != null ? m.get("min") : 0);
+                                x.put("max", m.get("max") != null ? m.get("max") : 0);
+                                x.put("avg", m.get("avg") != null ? m.get("avg") : 0);
+                                return x;
+                            })
                 )
         );
     }

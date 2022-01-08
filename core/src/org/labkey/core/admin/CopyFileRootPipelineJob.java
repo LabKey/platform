@@ -76,7 +76,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
 
     CopyFileRootPipelineJob(Container container, User user, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
-        super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
+        super("FileRootCopy", new ViewBackgroundInfo(container, user, null), pipeRoot);
         _sourceInfos = sourceInfos;
         _migrateFilesOption = migrateFilesOption;
 

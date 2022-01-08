@@ -16,6 +16,7 @@
 package org.labkey.core.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
@@ -37,6 +39,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
@@ -51,10 +54,15 @@ import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -80,9 +88,7 @@ import static java.util.Collections.unmodifiableList;
 public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
-
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
-
     private static final String ALL_ENGINES = "ALL";
 
     // cache engine definitions by:
@@ -103,22 +109,59 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                    .append(" WHERE RowId IN (SELECT EngineId FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?)")
-                    .add(containerId)
-                    .add(context);
+                .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
+                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .add(containerId)
+                .add(context);
 
             return unmodifiableList(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
         }
     });
 
-    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    private static final String PASSWORD_FIELD = "password";
+
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+        LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
+        TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
+        new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
+            JSONObject json = new JSONObject(configuration);
+            String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
+            if (null != oldEncryptedPassword)
+            {
+                LOG.info("    Migrating script engine configuration " + rowId);
+                try
+                {
+                    String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
+                    String newEncryptedPassword = Base64.encodeBase64String(ExternalScriptEngineDefinitionImpl.AES.encrypt(decryptedPassword));
+                    json.replace(PASSWORD_FIELD, newEncryptedPassword);
+                    assert decryptedPassword.equals(ExternalScriptEngineDefinitionImpl.AES.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
+                    Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
+                }
+                catch (DecryptionException e)
+                {
+                    LOG.info("    Failed to decrypt password for configuration " + rowId + ". This configuration will be skipped.");
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Exception while attempting to migrate configuration " + rowId, e);
+                }
+            }
+        });
+        LOG.info("  Migration of encrypted content in scripting engine configurations is complete");
+    };
+
+    public static void registerEncryptionMigrationHandler()
     {
-        return c.getId() + ":" + context.toString();
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
     }
 
+    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    {
+        return c.getId() + ":" + context;
+    }
 
     enum Props
     {
@@ -484,7 +527,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
         }
 
-        // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
+        // Issue 22354: It's a little heavy-handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
         CacheManager.clearAllKnownCaches();
 
         return def;
