@@ -40,7 +40,6 @@ import org.springframework.validation.ObjectError;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -79,8 +78,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     {
         // Construct all the SimpleStudyImporters that are designated as "Early"
         List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistryImpl.get().getSimpleStudyImporters().stream()
-            .filter(ssi->ssi.getTiming() == SimpleStudyImporter.Timing.Early)
-            .collect(Collectors.toList());
+            .filter(ssi -> ssi.getTiming() == SimpleStudyImporter.Timing.Early)
+            .toList();
 
         try
         {
@@ -189,8 +188,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
         // study.objective, study.personnel, and study.studyproperties tables
         new StudyPropertiesImporter().process(ctx, ctx.getRoot(), errors);
-
-        new MissingValueImporterFactory().create().process(job, ctx, ctx.getRoot());
 
         // check for legacy QC states file in study
         processImporter(ctx, job, errors, new StudyQcStatesImporter());

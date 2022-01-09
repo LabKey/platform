@@ -41,7 +41,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -191,12 +190,6 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");
-    }
-
-    @Override
-    public File getSpecimenArchive() throws ImportException
-    {
-        return getSpecimenArchivePath().toFile();
     }
 
     @Override

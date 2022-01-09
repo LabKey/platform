@@ -112,6 +112,8 @@ import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportsWebPartFactory;
+import org.labkey.query.reports.ViewCategoryImporter;
+import org.labkey.query.reports.ViewCategoryWriter;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
@@ -252,6 +254,7 @@ public class QueryModule extends DefaultModule
             folderRegistry.addFactories(new QueryWriter.Factory(), new QueryImporter.Factory());
             folderRegistry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
             folderRegistry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
+            folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
             folderRegistry.addFactories(new ExternalSchemaDefWriterFactory(), new ExternalSchemaDefImporterFactory());
         }
 
@@ -262,6 +265,7 @@ public class QueryModule extends DefaultModule
             studyRegistry.addImportFactory(new QueryImporter.Factory());
             studyRegistry.addImportFactory(new CustomViewImporter.Factory());
             studyRegistry.addImportFactory(new ReportImporter.Factory());
+            studyRegistry.addImportFactory(new ViewCategoryImporter.Factory());
         }
 
         SearchService ss = SearchService.get();

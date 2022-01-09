@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -66,8 +65,8 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
     {
         // Construct all the SimpleStudyImporters that are designated as "Late"
         List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistryImpl.get().getSimpleStudyImporters().stream()
-            .filter(ssi->ssi.getTiming() == SimpleStudyImporter.Timing.Late)
-            .collect(Collectors.toList());
+            .filter(ssi -> ssi.getTiming() == Timing.Late)
+            .toList();
 
         try
         {
