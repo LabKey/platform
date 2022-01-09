@@ -18,11 +18,11 @@ package org.labkey.issue.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.EntityAttachmentParent;
-import org.labkey.issue.model.Issue.Comment;
+import org.labkey.issue.model.IssueObject.CommentObject;
 
 public class CommentAttachmentParent extends EntityAttachmentParent
 {
-    public CommentAttachmentParent(Comment comment)
+    public CommentAttachmentParent(CommentObject comment)
     {
         super(comment);
     }

@@ -31,7 +31,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
@@ -90,7 +90,7 @@
 
     for (String issueId : issueIds )
     {
-        Issue issue = null;
+        IssueObject issue = null;
         if (NumberUtils.isCreatable(issueId))
             issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
 
@@ -131,7 +131,7 @@
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
             if (issueListDef != null)
             {
-                boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+                boolean issueIsOpen = IssueObject.statusOPEN.equals(issue.getStatus());
                 additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
             }
         }
@@ -211,7 +211,7 @@
     <div class="col-md-4">
         <label class="control-label">Recent Activity</label>
         <%
-            Issue.IssueEvent m = issue.getMostRecentEvent(user);
+            IssueObject.IssueEvent m = issue.getMostRecentEvent(user);
             String lastUpdatedStr = "";
             String lastUpdatedTitleStr = "";
             if (null != m)
@@ -230,11 +230,11 @@
 
             <div id="<%=h(allTimeStampsId)%>" style="display: none;">
                 <%
-                    ArrayList<Issue.IssueEvent> eventArray = issue.getOrderedEventArray(user);
+                    ArrayList<IssueObject.IssueEvent> eventArray = issue.getOrderedEventArray(user);
 
                     for (int j = 1; j < eventArray.size(); j++)
                     {
-                        Issue.IssueEvent e = eventArray.get(j);
+                        IssueObject.IssueEvent e = eventArray.get(j);
                         String stampString = e.toString();
                 %>
                 <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
@@ -317,10 +317,10 @@
         <labkey:panel type="portal">
 
             <%
-                for (Issue.Comment comment : IssueManager.getCommentsForRelatedIssues(issue, user))
+                for (IssueObject.CommentObject comment : IssueManager.getCommentsForRelatedIssues(issue, user))
                 {
-                    String styleStr = !issue.getComments().contains(comment) ? "display: none; word-break: break-word" : "display: inline; word-break: break-word";
-                    String classStr = !issue.getComments().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
+                    String styleStr = !issue.getCommentObjects().contains(comment) ? "display: none; word-break: break-word" : "display: inline; word-break: break-word";
+                    String classStr = !issue.getCommentObjects().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
             %>
             <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">
                 <strong class=".comment-created-by">
@@ -331,7 +331,7 @@
                     <%=h(bean.writeDate(comment.getCreated()))%>
                 </strong>
                 <%
-                    if (!issue.getComments().contains(comment))
+                    if (!issue.getCommentObjects().contains(comment))
                     {%>
                 <div style="font-weight:bold;">Related #<%=comment.getIssue().getIssueId()%> </div><%
                 }%>
