@@ -26,9 +26,9 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument.Folder;
-import org.labkey.study.xml.viewCategory.CategoriesDocument;
-import org.labkey.study.xml.viewCategory.CategoryType;
-import org.labkey.study.xml.viewCategory.ViewCategoryType;
+import org.labkey.folder.xml.viewCategory.CategoriesDocument;
+import org.labkey.folder.xml.viewCategory.CategoryType;
+import org.labkey.folder.xml.viewCategory.ViewCategoryType;
 
 import java.util.List;
 
