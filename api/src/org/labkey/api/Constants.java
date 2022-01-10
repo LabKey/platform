@@ -40,7 +40,7 @@ public class Constants
      */
     public static double getEarliestUpgradeVersion()
     {
-        return 19.2;
+        return 21.000;
     }
 
     /**
