@@ -140,10 +140,8 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.importer.ViewCategoryImporter;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DatasetDefinition;
@@ -193,10 +191,8 @@ import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
-import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
-import org.labkey.study.writer.ViewCategoryWriter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -416,9 +412,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
-            folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
-            folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
         }
 
         FileContentService.get().addFileListener(new TableUpdaterFileListener(StudySchema.getInstance().getTableInfoUploadLog(), "FilePath", TableUpdaterFileListener.Type.filePath, "RowId"));

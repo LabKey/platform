@@ -34,6 +34,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -49,7 +50,7 @@ import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADA
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class ReportImporter implements FolderImporter
+public class ReportImporter implements FolderImporter<Folder>
 {
     @Override
     public String getDataType()
@@ -64,7 +65,7 @@ public class ReportImporter implements FolderImporter
     }
 
     @Override
-    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
         {
@@ -105,7 +106,7 @@ public class ReportImporter implements FolderImporter
 
     @Override
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
     {
         // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
         // fire the query change listeners for older archives to fix-up these dataset label references
@@ -142,7 +143,7 @@ public class ReportImporter implements FolderImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
     {
         return ctx.getDir("reports") != null;
     }
@@ -150,7 +151,7 @@ public class ReportImporter implements FolderImporter
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override
-        public FolderImporter create()
+        public FolderImporter<Folder> create()
         {
             return new ReportImporter();
         }
