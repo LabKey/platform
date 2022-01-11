@@ -18,7 +18,6 @@ package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +54,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.Warnings;
 
 import javax.servlet.ServletException;
@@ -91,7 +91,7 @@ import java.util.stream.Collectors;
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
-    private static final Logger LOG = LogManager.getLogger(BaseMicrosoftSqlServerDialect.class);
+    private static final Logger LOG = LogHelper.getLogger(BaseMicrosoftSqlServerDialect.class, "SQL Server-specific SQL generation");
 
     // SQLServer limits maximum index key size of 900 bytes
     private static final int MAX_INDEX_SIZE = 900;
@@ -1079,39 +1079,18 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
-            case CreateTable:
-                sql.addAll(getCreateTableStatements(change));
-                break;
-            case DropTable:
-                sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
-                break;
-            case AddColumns:
-                sql.addAll(getAddColumnsStatements(change));
-                break;
-            case DropColumns:
-                sql.add(getDropColumnsStatement(change));
-                break;
-            case RenameColumns:
-                sql.addAll(getRenameColumnsStatements(change));
-                break;
-            case DropIndicesByName:
-                sql.addAll(getDropIndexByNameStatements(change));
-                break;
-            case DropIndices:
-                sql.addAll(getDropIndexStatements(change));
-                break;
-            case AddIndices:
-                sql.addAll(getCreateIndexStatements(change));
-                break;
-            case ResizeColumns:
-                sql.addAll(getResizeColumnStatement(change));
-                break;
-            case DropConstraints:
-                sql.addAll(getDropConstraintsStatement(change));
-                break;
-            case AddConstraints:
-                sql.addAll(getAddConstraintsStatement(change));
-                break;
+            case CreateTable -> sql.addAll(getCreateTableStatements(change));
+            case DropTable -> sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
+            case AddColumns -> sql.addAll(getAddColumnsStatements(change));
+            case DropColumns -> sql.add(getDropColumnsStatement(change));
+            case RenameColumns -> sql.addAll(getRenameColumnsStatements(change));
+            case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
+            case DropIndices -> sql.addAll(getDropIndexStatements(change));
+            case AddIndices -> sql.addAll(getCreateIndexStatements(change));
+            case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
+            case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
+            case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
+            default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
         }
 
         return sql;
@@ -1123,10 +1102,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
      *       will throw an Argument exception if attempting to change Key column
-     * @param change
-     * @return
      */
-    private List<String> getResizeColumnStatement(TableChange change)
+    private List<String> getChangeColumnTypeStatement(TableChange change)
     {
         change.updateResizeIndices();
         List<String> statements = new ArrayList<>(getDropIndexStatements(change));
@@ -1135,22 +1112,30 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
 
         //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
-        for (Map.Entry<String, Integer> entry : change.getColumnResizes().entrySet())
+        for (PropertyStorageSpec column : change.getColumns())
         {
-            final String name = entry.getKey();
-            PropertyStorageSpec column = change.getColumns().stream().filter(col -> name.equals(col.getName())).findFirst().orElseThrow(IllegalStateException::new);
-
-            //T-SQL will throw an error for nvarchar sizes >4000
-            //Use the common default max size to make type change to nvarchar(max)/text consistent
-            String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    "max" :
-                    column.getSize().toString();
-
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
-            String statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
-                    column.getName(),
-                    getSqlTypeName(column.getJdbcType()),
-                    size);
+            String statement;
+
+            if (column.getJdbcType().isText())
+            {
+                //T-SQL will throw an error for nvarchar sizes >4000
+                //Use the common default max size to make type change to nvarchar(max)/text consistent
+                String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                        "max" :
+                        column.getSize().toString();
+
+                statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
+                        column.getName(),
+                        getSqlTypeName(column.getJdbcType()),
+                        size);
+            }
+            else
+            {
+                statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s ",
+                        column.getName(),
+                        getSqlTypeName(column.getJdbcType()));
+            }
 
             //T-SQL will drop any existing null constraints
             statement += column.isNullable() ? "NULL;" : "NOT NULL;";

@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.7.2",
-    "@labkey/components": "2.115.1",
+    "@labkey/components": "2.116.0-fb-domainChangeType.4",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
