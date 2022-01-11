@@ -8138,7 +8138,7 @@ public class AdminController extends SpringActionController
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.link("Click here to ignore 0.00, " + lowestSchemaVersion + " and unmanaged modules").href(url).getHtmlString();
+                    managedLink = PageFlowUtil.link("Click here to ignore null, " + lowestSchemaVersion + " and unmanaged modules").href(url).getHtmlString();
                 }
                 else
                 {
