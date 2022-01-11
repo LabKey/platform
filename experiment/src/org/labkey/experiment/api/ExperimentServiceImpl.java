@@ -1470,7 +1470,8 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             errors.append("Failed to resolve '").append(dataName).append("' into a data. ").append(e2.getMessage());
             errors.append(" Use 'DataInputs/<DataClassName>' column header to resolve parents from a specific DataClass.");
-            errors.append(" ").append(e2.getMessage());
+            if (e2.getMessage() != null)
+                errors.append(" ").append(e2.getMessage());
         }
 
         try
@@ -1512,7 +1513,8 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 errors.append(" Use 'MaterialInputs/<SampleTypeName>' column header to resolve parent samples from a specific SampleType.");
             }
-            errors.append(" ").append(e2.getMessage());
+            if (e2.getMessage() != null)
+                errors.append(" ").append(e2.getMessage());
         }
 
         try
