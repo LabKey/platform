@@ -891,8 +891,7 @@ public class XarReader extends AbstractXarImporter
                 experimentDataObject.setBatchProtocolId(batchProtocol.getRowId());
             }
 
-            experimentDataObject = Table.insert(getUser(), tiExperiment, experimentDataObject);
-            experiment = new ExpExperimentImpl(experimentDataObject);
+            Table.insert(getUser(), tiExperiment, experimentDataObject);
 
             ObjectProperty contactProperty = null;
             if (null != exp.getContact())
@@ -1235,7 +1234,7 @@ public class XarReader extends AbstractXarImporter
             protocolApp.setLSID(protAppLSID);
             protocolApp.setName(trimString(xmlProtocolApp.getName()));
             String cpasType = trimString(xmlProtocolApp.getCpasType());
-            checkProtocolApplicationCpasType(cpasType, getLog());
+            checkProtocolApplicationCpasType(cpasType);
             protocolApp.setCpasType(cpasType);
             protocolApp.setProtocolLSID(protocolLSID);
             protocolApp.setActivityDate(sqlDateTime);
@@ -1348,7 +1347,7 @@ public class XarReader extends AbstractXarImporter
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
                                   @Nullable ExperimentRun run,
                                   Integer sourceApplicationId,
-                                  XarContext context) throws XarFormatException
+                                  XarContext context) throws XarFormatException, ExperimentException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
@@ -2414,7 +2413,7 @@ public class XarReader extends AbstractXarImporter
 
         XmlCursor c = xObj.newCursor();
         XmlCursor cTest;
-        Map m = new HashMap();
+        Map<String, String> m = new HashMap<>();
         c.getAllNamespaces(m);
         String nsObject = c.getName().getNamespaceURI();
 
