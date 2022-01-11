@@ -3627,26 +3627,37 @@ public class StudyManager
             {
                 // issue 44363 : in certain situations the dataset domain will need to be saved earlier in order to support
                 // a change in the key column that may not be in the initial domain
-                if (manager.isKeyChanged(def) && !def.getUseTimeKeyField())
+                if (manager.isKeyChanged(def))
                 {
-                    String keyName = def.getKeyPropertyName();
-                    Domain domain = def.refreshDomain();
-                    if (domain != null)
+                    long rowCount = new TableSelector(def.getTableInfo(user)).getRowCount();
+                    if (rowCount > 0)
                     {
-                        _DatasetDomainChange domainChange = domainChangeMap.get(domain.getTypeURI());
-                        Domain newDomain = domainChange.domain;
-                        if (domain.getStorageTableName() != null && newDomain != null)
+                        // throw an error if we are changing keys on a dataset with data
+                        errors.reject(ERROR_MSG, "Unable to change the keys on dataset (" + def.getName() + "), because there is still data present. The dataset should be truncated before the import.");
+                        return false;
+                    }
+
+                    if (!def.getUseTimeKeyField())
+                    {
+                        String keyName = def.getKeyPropertyName();
+                        Domain domain = def.refreshDomain();
+                        if (domain != null)
                         {
-                            if (domain.getPropertyByName(keyName) == null && newDomain.getPropertyByName(keyName) != null)
+                            _DatasetDomainChange domainChange = domainChangeMap.get(domain.getTypeURI());
+                            Domain newDomain = domainChange.domain;
+                            if (domain.getStorageTableName() != null && newDomain != null)
                             {
-                                try
+                                if (domain.getPropertyByName(keyName) == null && newDomain.getPropertyByName(keyName) != null)
                                 {
-                                    newDomain.save(user);
-                                }
-                                catch (ChangePropertyDescriptorException ex)
-                                {
-                                    errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
-                                    return false;
+                                    try
+                                    {
+                                        newDomain.save(user);
+                                    }
+                                    catch (ChangePropertyDescriptorException ex)
+                                    {
+                                        errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
+                                        return false;
+                                    }
                                 }
                             }
                         }
