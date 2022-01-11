@@ -38,9 +38,9 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.FolderDocument.Folder;
-import org.labkey.study.xml.viewCategory.CategoriesDocument;
-import org.labkey.study.xml.viewCategory.CategoryType;
-import org.labkey.study.xml.viewCategory.ViewCategoryType;
+import org.labkey.folder.xml.viewCategory.CategoriesDocument;
+import org.labkey.folder.xml.viewCategory.CategoryType;
+import org.labkey.folder.xml.viewCategory.ViewCategoryType;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -77,10 +77,17 @@ public class ViewCategoryImporter implements FolderImporter
         try
         {
             XmlObject xml = getXmlBean(ctx);
-            if (xml instanceof CategoriesDocument)
+            if (xml instanceof CategoriesDocument doc)
             {
+                // Newer "folder"-namespace CategoriesDocument
                 xml.validate(XmlBeansUtil.getDefaultParseOptions());
-                process(ctx.getContainer(), ctx.getUser(), ctx.getLogger(), xml);
+                process(ctx.getContainer(), ctx.getUser(), ctx.getLogger(), doc);
+            }
+            else if (xml instanceof org.labkey.study.xml.viewCategory.CategoriesDocument oldDoc)
+            {
+                // Older "study"-namespace CategoriesDocument - deprecated in 22.2, remove support in 27.2
+                xml.validate(XmlBeansUtil.getDefaultParseOptions());
+                process(ctx.getContainer(), ctx.getUser(), ctx.getLogger(), oldDoc);
             }
         }
         catch (XmlException x)
@@ -126,42 +133,70 @@ public class ViewCategoryImporter implements FolderImporter
         }
     }
 
-    private void process(Container c, User user, Logger logger, XmlObject xmlObject) throws Exception
+    private void process(Container c, User user, Logger logger, @NotNull CategoriesDocument doc) throws Exception
     {
-        if (xmlObject instanceof CategoriesDocument)
+        logger.info("Loading " + getDescription());
+
+        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            logger.info("Loading " + getDescription());
+            XmlBeansUtil.validateXmlDocument(doc);
+            ViewCategoryType categoryType = doc.getCategories();
 
-            DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            if (categoryType != null)
             {
-                CategoriesDocument doc = (CategoriesDocument)xmlObject;
-                XmlBeansUtil.validateXmlDocument(doc);
-
-                ViewCategoryType categoryType = doc.getCategories();
-
-                if (categoryType != null)
+                for (CategoryType type : categoryType.getCategoryArray())
                 {
-                    for (CategoryType type : categoryType.getCategoryArray())
-                    {
-                        String[] parts;
-                        if (type.getParent() != null)
-                            parts = new String[]{type.getParent(), type.getLabel()};
-                        else
-                            parts = new String[]{type.getLabel()};
+                    String[] parts;
+                    if (type.getParent() != null)
+                        parts = new String[]{type.getParent(), type.getLabel()};
+                    else
+                        parts = new String[]{type.getLabel()};
 
-                        ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(c, user, parts);
+                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(c, user, parts);
 
-                        category.setDisplayOrder(type.getDisplayOrder());
-                        ViewCategoryManager.getInstance().saveCategory(c, user, category);
-                    }
+                    category.setDisplayOrder(type.getDisplayOrder());
+                    ViewCategoryManager.getInstance().saveCategory(c, user, category);
                 }
-                transaction.commit();
             }
-
-            logger.info("Done importing " + getDescription());
+            transaction.commit();
         }
+
+        logger.info("Done importing " + getDescription());
+    }
+
+    private void process(Container c, User user, Logger logger, @NotNull org.labkey.study.xml.viewCategory.CategoriesDocument doc) throws Exception
+    {
+        logger.info("Loading " + getDescription());
+
+        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            XmlBeansUtil.validateXmlDocument(doc);
+            org.labkey.study.xml.viewCategory.ViewCategoryType categoryType = doc.getCategories();
+
+            if (categoryType != null)
+            {
+                for (org.labkey.study.xml.viewCategory.CategoryType type : categoryType.getCategoryArray())
+                {
+                    String[] parts;
+                    if (type.getParent() != null)
+                        parts = new String[]{type.getParent(), type.getLabel()};
+                    else
+                        parts = new String[]{type.getLabel()};
+
+                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(c, user, parts);
+
+                    category.setDisplayOrder(type.getDisplayOrder());
+                    ViewCategoryManager.getInstance().saveCategory(c, user, category);
+                }
+            }
+            transaction.commit();
+        }
+
+        logger.info("Done importing " + getDescription());
     }
 
     @Override
