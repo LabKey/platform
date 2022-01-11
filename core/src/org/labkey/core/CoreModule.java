@@ -161,6 +161,7 @@ import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
+import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.RoleAssignmentsImporterFactory;
@@ -175,6 +176,7 @@ import org.labkey.core.admin.test.SchemaXMLTestCase;
 import org.labkey.core.admin.usageMetrics.UsageMetricsServiceImpl;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
+import org.labkey.core.admin.writer.MissingValueWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
 import org.labkey.core.admin.writer.PageWriterFactory;
 import org.labkey.core.admin.writer.RoleAssignmentsWriterFactory;
@@ -395,6 +397,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
+
+        ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
    }
 
     private void registerHealthChecks()
@@ -903,6 +907,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != fsr)
         {
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
+            fsr.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());

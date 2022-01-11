@@ -134,6 +134,9 @@ public class TableInfoWriter
         if (column.isRecommendedVariable())
             columnXml.setRecommendedVariable(true);
 
+        if (column.isScannable())
+            columnXml.setScannable(column.isScannable());
+
         if (column.getDefaultScale() != null)
         {
             // Export default scale only if not set to LINEAR
@@ -265,7 +268,6 @@ public class TableInfoWriter
         if (column.isStringType())
         {
             columnXml.setScale(column.getScale());
-            columnXml.setScannable(column.isScannable());
         }
 
         var os = OntologyService.get();

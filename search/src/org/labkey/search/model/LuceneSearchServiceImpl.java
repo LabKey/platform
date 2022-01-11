@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -100,6 +99,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -143,7 +143,7 @@ import java.util.stream.Stream;
  */
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
-    private static final Logger _log = LogManager.getLogger(LuceneSearchServiceImpl.class);
+    private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
@@ -281,8 +281,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     /**
-     * Determine the currently configured Lucene Directory type (an explicit concrete implementation such as MMapDirectory,
-     * SimpleFSDirectory, or NIOFSDirectory, or Default which lets Lucene choose).
+     * Determine the currently configured Lucene Directory type (an explicit concrete implementation such as
+     * MMapDirectory or NIOFSDirectory, or Default which lets Lucene choose).
      *
      * @return The LuceneDirectoryType representing the current setting
      */
@@ -634,6 +634,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // === Store security context in DocValues field ===
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             String securityContext = r.getContainerId() + (null != resourceId && !resourceId.equals(r.getContainerId()) ? "|" + resourceId : "");
+            // TODO: As of Lucene 9.0.0, BinaryDocValues is recommended instead of SortedDocValues (for performance)
             doc.add(new SortedDocValuesField(FIELD_NAME.securityContext.toString(), new BytesRef(securityContext)));
 
             // === Custom properties: Index and analyze, but don't store
@@ -1752,7 +1753,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         Pair<Integer, String[]> expectation = expectations.get(file.getName());
                         assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
                         // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
-                        assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
+                        assertEquals("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first), (0 == expectation.second.length));
 
                         if (expectation.first != body.length())
                         {
@@ -1860,7 +1861,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
-            add(map, "zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
+            add(map, "zip_sample.zip", 1935, "map a source tsv column", "if there are NO explicit import definitions", "SequenceNum\toriginal_column\toriginal_column_numeric");
 
             return map;
         }

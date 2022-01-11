@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.quartz.JobExecutionContext;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.Callable;
  */
 public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
 {
-    private static final Logger LOG = LogManager.getLogger(SystemMaintenanceJob.class);
+    private static final Logger LOG = LogHelper.getLogger(SystemMaintenanceJob.class, "System maintenance job scheduling");
 
     private final @Nullable String _taskName;
     private final @Nullable User _user;

@@ -34,7 +34,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
-<%@ page import="org.labkey.issue.model.Issue" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
@@ -60,7 +60,7 @@
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     IssuePage bean = me.getModelBean();
-    final Issue issue = bean.getIssue();
+    final IssueObject issue = bean.getIssue();
     ViewContext context = getViewContext();
     final Container c = getContainer();
     final User user = getUser();
@@ -68,7 +68,7 @@
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     final boolean hasInsertPerms = c.hasPermission(getUser(), InsertPermission.class);
 
-    List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
+    List<IssueObject.CommentObject> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
     EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
@@ -98,11 +98,11 @@
         }
     }
 
-    int commentCount = issue.getComments().size();
+    int commentCount = issue.getCommentObjects().size();
     boolean hasAttachments = false;
 
     // Determine if the comment has attachments
-    for (Issue.Comment comment : commentLinkedList)
+    for (IssueObject.CommentObject comment : commentLinkedList)
     {
         // Determine if the comment has attachments
         hasAttachments = hasAttachments || !HtmlString.isEmpty(bean.renderAttachments(context, comment));
@@ -123,7 +123,7 @@
     relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
-    relatedIssues.append(", priority :").append(q(issue.getProperty(Issue.Prop.priority)));
+    relatedIssues.append(", priority :").append(q(issue.getProperty(IssueObject.Prop.priority)));
     relatedIssues.append(", related :").append(issue.getIssueId());
     relatedIssues.append("})");
 
@@ -133,7 +133,7 @@
         IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issue.getIssueDefId());
         if (issueListDef != null)
         {
-            boolean issueIsOpen = Issue.statusOPEN.equals(issue.getStatus());
+            boolean issueIsOpen = IssueObject.statusOPEN.equals(issue.getStatus());
             additionalHeaderLinks.addAll(provider.getLinks(issueListDef.getDomain(getUser()), issue.getIssueId(), issueIsOpen, issue.getProperties(), getContainer(), getUser()));
         }
     }
@@ -178,14 +178,14 @@
         <% if (bean.getHasUpdatePermissions()) { %>
         <%= button("Update").href(IssuesController.issueURL(c, IssuesController.UpdateAction.class).addParameter("issueId", issueId)) %>
         <% }
-            if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions()) { %>
+            if (issue.getStatus().equals(IssueObject.statusOPEN) && bean.getHasUpdatePermissions()) { %>
         <%= button("Resolve").href(IssuesController.issueURL(c, IssuesController.ResolveAction.class).addParameter("issueId", issueId)) %>
         <% }
-        else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions()) { %>
+        else if (issue.getStatus().equals(IssueObject.statusRESOLVED) && bean.getHasUpdatePermissions()) { %>
         <%= button("Close").href(IssuesController.issueURL(c, IssuesController.CloseAction.class).addParameter("issueId", issueId)) %>
         <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
         <% }
-        else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions()) { %>
+        else if (issue.getStatus().equals(IssueObject.statusCLOSED) && bean.getHasUpdatePermissions()) { %>
         <%= button("Reopen").href(IssuesController.issueURL(c, IssuesController.ReopenAction.class).addParameter("issueId", issueId)) %>
         <% } %>
     </div>
@@ -298,8 +298,8 @@ include(new RelatedIssuesView(context, issue.getRelatedIssues()), out);
 <%
 for (int j = 0; j < commentLinkedList.size(); j++)
 {
-    Issue.Comment comment = commentLinkedList.get(j);
-if (!issue.getComments().contains(comment))
+    IssueObject.CommentObject comment = commentLinkedList.get(j);
+if (!issue.getCommentObjects().contains(comment))
 {%>
 <div class="relatedIssue" style="display: none; word-break: break-word; overflow-wrap: break-word"><%
         }
@@ -314,7 +314,7 @@ if (!issue.getComments().contains(comment))
             <%=UserManager.getUserDetailsHTMLLink(c, user, comment.getCreatedBy())%>
         </b></td></tr></table>
         <%
-            if (!issue.getComments().contains(comment))
+            if (!issue.getCommentObjects().contains(comment))
             {%>
         <div style="font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
             }%>

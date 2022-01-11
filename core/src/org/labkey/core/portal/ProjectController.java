@@ -1275,14 +1275,14 @@ public class ProjectController extends SpringActionController
             WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
             if (null == factory)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find the web part factory for web part '" + webPartName + "'.");
+                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find a web part factory for requested web part.");
                 return null;
             }
 
             Portal.WebPart part = factory.createWebPart();
             if (null == part)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 
@@ -1292,7 +1292,7 @@ public class ProjectController extends SpringActionController
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
             {
-                errors.reject(ERROR_MSG, "Couldn't create web part view for part '" + webPartName + "'.");
+                errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
                 return null;
             }
 

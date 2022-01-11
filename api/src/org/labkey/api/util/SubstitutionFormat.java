@@ -278,6 +278,43 @@ public class SubstitutionFormat
     }
     static final SubstitutionFormat defaultValue = new DefaultSubstitutionFormat("");
 
+    public static class MinValueSubstitutionFormat extends SubstitutionFormat
+    {
+        private final long _min;
+
+        public MinValueSubstitutionFormat(@NotNull String minValue)
+        {
+            super("minValue");
+            long value = 0;
+            try
+            {
+                value = (long) Float.parseFloat(minValue);
+            }
+            catch (NumberFormatException e)
+            {
+            }
+
+            _min = value;
+        }
+
+        @Override
+        public Object format(Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (!(value instanceof Number))
+                throw new IllegalArgumentException("Expected number: " + value);
+
+            long numberVal = ((Number) value).longValue();
+            return Math.max(_min, numberVal);
+        }
+
+        @Override
+        public boolean argumentQuotesOptional() { return true; }
+    }
+    static final SubstitutionFormat minValue = new MinValueSubstitutionFormat("");
+
     public static class JoinSubstitutionFormat extends SubstitutionFormat
     {
         private final String _sep;
@@ -457,6 +494,8 @@ public class SubstitutionFormat
 
     public boolean argumentOptional() { return false; }
 
+    public boolean argumentQuotesOptional() { return false; }
+
     public int argumentCount() { return 1; }
 
     public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index)
@@ -469,10 +508,10 @@ public class SubstitutionFormat
         if (index <= 0)
             return Collections.emptyList();
 
-        return validateSyntax(formatName, nameExpression, index, format);
+        return validateSyntax(formatName, nameExpression, index, format, format.argumentQuotesOptional());
     }
 
-    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index, @NotNull SubstitutionFormat format)
+    public static List<String> validateSyntax(@NotNull String formatName, @NotNull String nameExpression, int index, @NotNull SubstitutionFormat format, boolean isArgumentQuoteOptional)
     {
         int argumentCount = format.argumentCount();
         boolean isArgumentOptional = format.argumentOptional();
@@ -480,10 +519,10 @@ public class SubstitutionFormat
         if (index <= 0)
             return Collections.emptyList();
 
-        return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount, isArgumentOptional);
+        return validateFunctionalSyntax(formatName, nameExpression, index, argumentCount, isArgumentOptional, isArgumentQuoteOptional);
     }
 
-    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int start, int argumentCount, boolean isArgumentOptional)
+    public static List<String> validateFunctionalSyntax(String formatName, String nameExpression, int start, int argumentCount, boolean isArgumentOptional, boolean isArgumentQuoteOptional)
     {
         List<String> messages = new ArrayList<>();
 
@@ -501,10 +540,14 @@ public class SubstitutionFormat
             int endParen = nameExpression.indexOf(")", start);
             if (endParen == -1)
                 messages.add(String.format("No ending parentheses found for the '%s' substitution pattern starting at index %d.", formatName, start));
-            if (startParen < nameExpression.length()-1 && nameExpression.charAt(startParen+1) != '\'')
-                messages.add(String.format("Value in parentheses starting at index %d should be enclosed in single quotes.", startParen));
-            else if (endParen > -1 &&  nameExpression.charAt(endParen-1) != '\'')
-                messages.add(String.format("No ending quote for the '%s' substitution pattern value starting at index %d.", formatName, start));
+
+            if (!isArgumentQuoteOptional)
+            {
+                if (startParen < nameExpression.length()-1 && nameExpression.charAt(startParen+1) != '\'')
+                    messages.add(String.format("Value in parentheses starting at index %d should be enclosed in single quotes.", startParen));
+                else if (endParen > -1 &&  nameExpression.charAt(endParen-1) != '\'')
+                    messages.add(String.format("No ending quote for the '%s' substitution pattern value starting at index %d.", formatName, start));
+            }
         }
         return messages;
     }
@@ -558,6 +601,7 @@ public class SubstitutionFormat
 
         // with arguments, for validation purpose only
         register(SubstitutionFormat.defaultValue);
+        register(SubstitutionFormat.minValue);
         register(SubstitutionFormat.number);
         register(SubstitutionFormat.prefix);
         register(SubstitutionFormat.suffix);

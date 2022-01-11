@@ -555,7 +555,7 @@ public class DomainImpl implements Domain
             {
                 try
                 {
-                    TableInfo tableInfo = kind.getTableInfo(user, getContainer(), getName());
+                    TableInfo tableInfo = kind.getTableInfo(user, getContainer(), getName(), null);
                     if (tableInfo == null)
                     {
                         throw new ChangePropertyDescriptorException("Couldn't resolve TableInfo for domain kind " + kind + " with name " + getName());

@@ -94,7 +94,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         super(formClass);
     }
 
-    private QueryUpdateForm getUpdateForm(TableInfo datasetTable, BindException errors)
+    protected QueryUpdateForm getUpdateForm(TableInfo datasetTable, BindException errors)
     {
         if (_updateForm == null)
         {
@@ -112,15 +112,9 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
     {
         Study study = getStudy();
+        Dataset ds = getDataset(form.getDatasetId());
+        @NotNull TableInfo datasetTable = getQueryTable();
 
-        _ds = StudyService.get().getDataset(study.getContainer(), form.getDatasetId());
-        if (null == _ds)
-        {
-            redirectTypeNotFound(form.getDatasetId());
-            return null;
-        }
-
-        TableInfo datasetTable = getQueryTable();
         if (!datasetTable.hasPermission(getUser(), ReadPermission.class))
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
@@ -139,7 +133,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
         // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
-        if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDatasetId()))
+        if (!study.isManualCohortAssignment() && Objects.equals(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
             final List<? extends Cohort> cohorts = CohortService.get().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
@@ -183,7 +177,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             {
                 Map<String, Object> formDefaults = new HashMap<>();
 
-                Domain domain = PropertyService.get().getDomain(getContainer(), _ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(getContainer(), ds.getTypeURI());
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
@@ -277,14 +271,8 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
     @Override
     public boolean handlePost(Form form, BindException errors) throws Exception
     {
-        int datasetId = form.getDatasetId();
-        Study study = getStudy();
-        _ds = StudyService.get().getDataset(study.getContainer(), datasetId);
-        if (null == _ds)
-        {
-            redirectTypeNotFound(form.getDatasetId());
-            return false;
-        }
+        // init _study, _ds
+        getDataset(form.getDatasetId());
 
         TableInfo datasetTable = getQueryTable();
         final Container c = getContainer();
@@ -299,13 +287,12 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             if (!datasetTable.hasPermission(user, UpdatePermission.class))
                 throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-        if (_ds.isPublishedData())
+        if (getDataset(form.getDatasetId()).isPublishedData())
         {
             throw new UnauthorizedException("This dataset comes from linked data. You cannot update it directly");
         }
 
         QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
-
         if (errors.hasErrors())
             return false;
 
@@ -328,7 +315,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                     return false;
 
                 // save last inputs for use in default value population:
-                Domain domain = PropertyService.get().getDomain(c, _ds.getTypeURI());
+                Domain domain = PropertyService.get().getDomain(c, getDataset(form.getDatasetId()).getTypeURI());
                 List<? extends DomainProperty> properties = domain.getProperties();
                 Map<String, Object> requestMap = updateForm.getTypedValues();
                 Map<DomainProperty, Object> dataMap = new HashMap<>(requestMap.size());
@@ -400,19 +387,42 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         return _study;
     }
 
+    protected Dataset getDataset(int datasetid)
+    {
+        if (null == _ds || _ds.getDatasetId() != datasetid)
+        {
+            Study study = getStudy();
+            _ds = StudyService.get().getDataset(study.getContainer(), datasetid);
+            if (null == _ds)
+            {
+                redirectTypeNotFound(datasetid);
+                return null;
+            }
+        }
+        return _ds;
+    }
+
+
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
         throw new RedirectException(PageFlowUtil.urlProvider(StudyUrls.class).getTypeNotFoundURL(getContainer(), datasetId));
     }
 
+
+    protected DatasetTable _datasetTableInfo = null;
+
     @NotNull
-    TableInfo getQueryTable()
+    protected TableInfo getQueryTable()
     {
-        UserSchema schema = StudyService.get().getStudyQuerySchema(getStudy(), getUser());
-        // TODO need to return unlocked tableinfo because the action hacks on it
-        TableInfo datasetQueryTable= schema.getTable(_ds.getName(), null, true, true);
-        if (null == datasetQueryTable) // shouldn't happen...
-            throw new NotFoundException("table: study." + _ds.getName());
-        return datasetQueryTable;
+        if (null == _datasetTableInfo)
+        {
+            UserSchema schema = StudyService.get().getStudyQuerySchema(getStudy(), getUser());
+            // NOTE: need to return unlocked tableinfo because the action hacks on it
+            // NOTE: also subclasses may call (DataTable).addContextualRole()
+            _datasetTableInfo = (DatasetTable) schema.getTable(_ds.getName(), null, true, true);
+            if (null == _datasetTableInfo)
+                throw new NotFoundException("table: study." + _ds.getName());
+        }
+        return _datasetTableInfo;
     }
 }

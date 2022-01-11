@@ -277,7 +277,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (def == null)
             throw new IllegalArgumentException("Could not find the IssueListDef with the following name: " + issueDefName);
 
-        Issue issue = new Issue();
+        IssueObject issue = new IssueObject();
         issue.open(container, user);
         issue.setIssueDefName(def.getName());
         issue.setAssignedTo(user.getUserId());
@@ -287,7 +287,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (body != null)
             issue.addComment(user, body);
 
-        ObjectFactory<Issue> factory = ObjectFactory.Registry.getFactory(Issue.class);
+        ObjectFactory<IssueObject> factory = ObjectFactory.Registry.getFactory(IssueObject.class);
         factory.toMap(issue, issue.getProperties());
 
         IssueManager.saveIssue(user, container, issue);

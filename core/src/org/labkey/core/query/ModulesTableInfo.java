@@ -236,7 +236,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
     }
 
     // Format SchemaVersion column using the standard ModuleContext formatting rules: force three-decimal places for >= 20.000,
-    // otherwise suppress trailing zeroes. Also right align the values in the grid.
+    // otherwise suppress trailing zeroes. Also, right align the values in the grid.
     private static class SchemaVersionDisplayColumnFactory implements DisplayColumnFactory
     {
         private final DisplayColumnFactory _factory;

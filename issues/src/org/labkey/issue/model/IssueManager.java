@@ -172,19 +172,19 @@ public class IssueManager
     {
     }
 
-    private static Issue _getIssue(@Nullable Container c, int issueId)
+    private static IssueObject _getIssue(@Nullable Container c, int issueId)
     {
         SimpleFilter filter = null;
         if (null != c)
             filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
 
-        Issue issue = new TableSelector(_issuesSchema.getTableInfoIssues(), filter, null).getObject(issueId, Issue.class);
+        IssueObject issue = new TableSelector(_issuesSchema.getTableInfoIssues(), filter, null).getObject(issueId, IssueObject.class);
         if (issue == null)
             return null;
 
-        List<Issue.Comment> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
+        List<IssueObject.CommentObject> comments = new TableSelector(_issuesSchema.getTableInfoComments(),
                 new SimpleFilter(FieldKey.fromParts("issueId"), issue.getIssueId()),
-                new Sort("CommentId")).getArrayList(Issue.Comment.class);
+                new Sort("CommentId")).getArrayList(IssueObject.CommentObject.class);
         issue.setComments(comments);
 
         Collection<Integer> dups = new TableSelector(_issuesSchema.getTableInfoIssues().getColumn("IssueId"),
@@ -203,9 +203,9 @@ public class IssueManager
     }
 
     @Nullable
-    public static Issue getIssue(@Nullable Container c, User user, int issueId)
+    public static IssueObject getIssue(@Nullable Container c, User user, int issueId)
     {
-        Issue issue = _getIssue(c, issueId);
+        IssueObject issue = _getIssue(c, issueId);
 
         if (issue != null && issue.getIssueDefId() != null)
         {
@@ -254,28 +254,28 @@ public class IssueManager
      * @param   issue   an issue to retrieve comments from
      * @return          the sorted linked list of all related comments
      */
-    public static List<Issue.Comment> getCommentsForRelatedIssues(Issue issue, User user)
+    public static List<IssueObject.CommentObject> getCommentsForRelatedIssues(IssueObject issue, User user)
     {
         // Get related issues for optional display
         Set<Integer> relatedIssues = issue.getRelatedIssues();
-        List<Issue.Comment> commentLinkedList = new LinkedList<>();
+        List<IssueObject.CommentObject> commentLinkedList = new LinkedList<>();
 
         // Add related issue comments
         for (Integer relatedIssueInt : relatedIssues)
         {
             // only add related issues that the user has permission to see
-            Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
+            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
             if (relatedIssue != null)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
                 if (hasReadPermission)
-                    commentLinkedList.addAll(relatedIssue.getComments());
+                    commentLinkedList.addAll(relatedIssue.getCommentObjects());
             }
         }
         // Add all current issue comments
-        commentLinkedList.addAll(issue.getComments());
+        commentLinkedList.addAll(issue.getCommentObjects());
 
-        Comparator<Issue.Comment> comparator = Comparator.comparing(Entity::getCreated);
+        Comparator<IssueObject.CommentObject> comparator = Comparator.comparing(Entity::getCreated);
         // Respect the configuration's sorting order - issue 23524
         Container issueContainer = issue.lookupContainer();
         IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
@@ -295,12 +295,12 @@ public class IssueManager
      * @param   issue   The issue to query
      * @return          boolean return value
      */
-    public static boolean hasRelatedIssues(Issue issue, User user)
+    public static boolean hasRelatedIssues(IssueObject issue, User user)
     {
         for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
-            Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
-            if (relatedIssue != null && relatedIssue.getComments().size() > 0)
+            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
+            if (relatedIssue != null && relatedIssue.getCommentObjects().size() > 0)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
                 if (hasReadPermission)
@@ -310,7 +310,7 @@ public class IssueManager
         return false;
     }
 
-    public static void saveIssue(User user, Container container, Issue issue)
+    public static void saveIssue(User user, Container container, IssueObject issue)
     {
         if (issue.getAssignedTo() == null)
             issue.setAssignedTo(0);
@@ -331,7 +331,7 @@ public class IssueManager
                 QueryUpdateService qus = table.getUpdateService();
                 Map<String, Object> row = new CaseInsensitiveHashMap<>();
 
-                ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+                ObjectFactory factory = ObjectFactory.Registry.getFactory(IssueObject.class);
                 String related = issue.getRelated();
                 issue.setRelated(null);
 
@@ -376,12 +376,12 @@ public class IssueManager
         }
     }
 
-    protected static void saveComments(User user, Issue issue)
+    protected static void saveComments(User user, IssueObject issue)
     {
-        Collection<Issue.Comment> comments = issue._added;
+        Collection<IssueObject.CommentObject> comments = issue._added;
         if (null == comments)
             return;
-        for (Issue.Comment comment : comments)
+        for (IssueObject.CommentObject comment : comments)
         {
             // NOTE: form has already validated comment text, but let's be extra paranoid.
             if (!ViewServlet.validChars(comment.getHtmlComment().toString()))
@@ -396,7 +396,7 @@ public class IssueManager
         issue._added = null;
     }
 
-    protected static void saveRelatedIssues(User user, Issue issue)
+    protected static void saveRelatedIssues(User user, IssueObject issue)
     {
         Collection<Integer> rels = issue.getRelatedIssues();
 
@@ -436,7 +436,7 @@ public class IssueManager
     }
 
 
-    public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable String issueDefName, @Nullable Issue issue)
+    public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable String issueDefName, @Nullable IssueObject issue)
     {
         Collection<User> initialAssignedTo = getInitialAssignedToList(c, issueDefName);
 
@@ -717,7 +717,7 @@ public class IssueManager
             List<String> entityIds = new ArrayList<>();
             for (int issueId : issueIds)
             {
-                Issue issue = IssueManager.getIssue(null, user, issueId);
+                IssueObject issue = IssueManager.getIssue(null, user, issueId);
                 if (issue != null)
                 {
                     if (issue.getIssueDefId() != null && issueDefId == null)
@@ -727,7 +727,7 @@ public class IssueManager
                     }
                     entityIds.add(issue.getEntityId());
 
-                    issue.getComments().forEach(comment -> attachmentParents.add(new CommentAttachmentParent(comment)));
+                    issue.getCommentObjects().forEach(comment -> attachmentParents.add(new CommentAttachmentParent(comment)));
                 }
             }
             if (issueDefId != null)
@@ -1024,14 +1024,14 @@ public class IssueManager
 
         for (Integer id : ids)
         {
-            Issue issue = IssueManager.getIssue(container, user, id);
+            IssueObject issue = IssueManager.getIssue(container, user, id);
             if (issue != null)
-                queueIssue(task, id, issue.getProperties(), issue.getComments());
+                queueIssue(task, id, issue.getProperties(), issue.getCommentObjects());
         }
     }
 
 
-    static void indexIssue(Container container, User user, @Nullable IndexTask task, Issue issue)
+    static void indexIssue(Container container, User user, @Nullable IndexTask task, IssueObject issue)
     {
         if (task == null)
         {
@@ -1049,7 +1049,7 @@ public class IssueManager
     }
 
 
-    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<Issue.Comment> comments)
+    static void queueIssue(IndexTask task, int id, Map<String,Object> m, Collection<IssueObject.CommentObject> comments)
     {
         if (null == task || null == m)
             return;
@@ -1084,7 +1084,7 @@ public class IssueManager
                     return null;
                 }
 
-                final Issue issue = getIssue(null, user, issueId);
+                final IssueObject issue = getIssue(null, user, issueId);
                 if (null == issue)
                     return null;
                 Container c = issue.lookupContainer();
@@ -1098,7 +1098,7 @@ public class IssueManager
 
     public static class IssueSummaryView extends JspView
     {
-        IssueSummaryView(Issue issue)
+        IssueSummaryView(IssueObject issue)
         {
             super("/org/labkey/issue/view/searchSummary.jsp", issue);
         }
@@ -1339,7 +1339,7 @@ public class IssueManager
     }
 
     @Nullable
-    public static IssueListDef getIssueListDef(Issue issue)
+    public static IssueListDef getIssueListDef(IssueObject issue)
     {
         if (issue.getIssueDefId() != null)
         {
@@ -1364,7 +1364,7 @@ public class IssueManager
             return null;
         }
 
-        final Issue issue = getIssue(null, User.getSearchUser(), issueId);
+        final IssueObject issue = getIssue(null, User.getSearchUser(), issueId);
         if (null == issue)
             return null;
 
@@ -1372,14 +1372,14 @@ public class IssueManager
     }
 
 
-    static final ObjectFactory _issueFactory = ObjectFactory.Registry.getFactory(Issue.class);
+    static final ObjectFactory _issueFactory = ObjectFactory.Registry.getFactory(IssueObject.class);
 
     private static class IssueResource extends AbstractDocumentResource
     {
-        Collection<Issue.Comment> _comments;
+        Collection<IssueObject.CommentObject> _comments;
         final int _issueId;
 
-        IssueResource(Issue issue)
+        IssueResource(IssueObject issue)
         {
             super(new Path("issue:" + issue.getIssueId()));
             _issueId = issue.issueId;
@@ -1389,12 +1389,12 @@ public class IssueManager
             m.remove("comments");
             _containerId = issue.getContainerId();
             _properties = m;
-            _comments = issue.getComments();
+            _comments = issue.getCommentObjects();
             _properties.put(categories.toString(), searchCategory.getName());
         }
 
 
-        IssueResource(int issueId, Map<String,Object> m, Collection<Issue.Comment> comments)
+        IssueResource(int issueId, Map<String,Object> m, Collection<IssueObject.CommentObject> comments)
         {
             super(new Path("issue:"+ issueId));
             _issueId = issueId;
@@ -1488,7 +1488,7 @@ public class IssueManager
                     out.write("</title></head><body>");
                     out.write(PageFlowUtil.filter(title));
                     out.write("\n");
-                    for (Issue.Comment c : _comments)
+                    for (IssueObject.CommentObject c : _comments)
                         if (!HtmlString.isBlank(c.getHtmlComment()))
                             out.write(c.getHtmlComment().toString());
                 }
@@ -1556,7 +1556,7 @@ public class IssueManager
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();
-            ObjectFactory factory = ObjectFactory.Registry.getFactory(Issue.class);
+            ObjectFactory factory = ObjectFactory.Registry.getFactory(IssueObject.class);
 
             int issueId;
 
@@ -1564,7 +1564,7 @@ public class IssueManager
             // INSERT
             //
             {
-                Issue issue = new Issue();
+                IssueObject issue = new IssueObject();
                 issue.open(c, user);
                 issue.setAssignedTo(user.getUserId());
                 issue.setTitle("This is a junit test bug");
@@ -1579,15 +1579,15 @@ public class IssueManager
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
                 assertEquals("This is a junit test bug", issue.getTitle());
                 assertEquals(user.getUserId(), issue.getCreatedBy());
                 assertTrue(issue.getCreated().getTime() != 0);
                 assertTrue(issue.getModified().getTime() != 0);
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
-                assertEquals(Issue.statusOPEN, issue.getStatus());
-                assertEquals(1, issue.getComments().size());
-				String comment = (issue.getComments().iterator().next()).getHtmlComment().toString();
+                assertEquals(IssueObject.statusOPEN, issue.getStatus());
+                assertEquals(1, issue.getCommentObjects().size());
+				String comment = (issue.getCommentObjects().iterator().next()).getHtmlComment().toString();
                 assertTrue("new issue".equals(comment));
             }
 
@@ -1595,7 +1595,7 @@ public class IssueManager
             // ADD COMMENT
             //
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
                 issue.addComment(user, HtmlString.unsafe("what was I thinking"));
                 factory.toMap(issue, issue.getProperties());
                 IssueManager.saveIssue(user, c, issue);
@@ -1603,18 +1603,18 @@ public class IssueManager
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
-                assertEquals(2, issue.getComments().size());
-                Iterator it = issue.getComments().iterator();
-                assertEquals("new issue", ((Issue.Comment) it.next()).getHtmlComment().toString());
-                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getHtmlComment().toString());
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
+                assertEquals(2, issue.getCommentObjects().size());
+                Iterator it = issue.getCommentObjects().iterator();
+                assertEquals("new issue", ((IssueObject.CommentObject) it.next()).getHtmlComment().toString());
+                assertEquals("what was I thinking", ((IssueObject.CommentObject) it.next()).getHtmlComment().toString());
             }
 
             //
             // ADD INVALID COMMENT
             //
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
                 issue.addComment(user, HtmlString.unsafe("invalid character <\u0010>"));
                 try
                 {
@@ -1631,7 +1631,7 @@ public class IssueManager
             // RESOLVE
             //
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
                 assertNotNull("issue not found", issue);
                 issue.resolve(user);
                 issue.setResolution("fixed");
@@ -1642,16 +1642,16 @@ public class IssueManager
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
-                assertEquals(Issue.statusRESOLVED, issue.getStatus());
-                assertEquals(3, issue.getComments().size());
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
+                assertEquals(IssueObject.statusRESOLVED, issue.getStatus());
+                assertEquals(3, issue.getCommentObjects().size());
             }
 
             //
             // CLOSE
             //
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
                 assertNotNull("issue not found", issue);
                 issue.close(user);
                 issue.addComment(user, HtmlString.unsafe("closed"));
@@ -1661,9 +1661,9 @@ public class IssueManager
 
             // verify
             {
-                Issue issue = IssueManager.getIssue(c, user, issueId);
-                assertEquals(Issue.statusCLOSED, issue.getStatus());
-                assertEquals(4, issue.getComments().size());
+                IssueObject issue = IssueManager.getIssue(c, user, issueId);
+                assertEquals(IssueObject.statusCLOSED, issue.getStatus());
+                assertEquals(4, issue.getCommentObjects().size());
             }
         }
 

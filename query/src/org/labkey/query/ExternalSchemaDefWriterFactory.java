@@ -29,7 +29,7 @@ import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
 import org.labkey.data.xml.externalSchema.ExternalSchemaType;
 import org.labkey.data.xml.externalSchema.LinkedSchemaDocument;
 import org.labkey.data.xml.externalSchema.LinkedSchemaType;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -53,7 +53,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         return new ExternalSchemaDefWriter();
     }
 
-    public class ExternalSchemaDefWriter extends BaseFolderWriter
+    public static class ExternalSchemaDefWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -62,7 +62,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
         {
             List<ExternalSchemaDef> externalSchemas = QueryManager.get().getExternalSchemaDefs(c);
             List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);

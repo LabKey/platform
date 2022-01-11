@@ -53,7 +53,7 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
         return 2;
     }
 
-    public class RoleAssignmentsImporter implements FolderImporter<FolderDocument.Folder>
+    public static class RoleAssignmentsImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()

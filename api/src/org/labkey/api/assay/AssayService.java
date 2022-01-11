@@ -237,5 +237,5 @@ public interface AssayService
     /**
      * Returns the TableInfo for the given assay domain based on the assay domain ID.
      */
-    TableInfo getTableInfoForDomainId(User user, Container container, int domainId);
+    TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf);
 }

@@ -26,8 +26,8 @@ dependencies {
             "MySQL JDBC Driver",
             "MySQL",
             "http://www.mysql.com/downloads/connector/j",
-            "GPL v2",
-            "http://www.gnu.org/licenses/gpl-2.0.html with Universal FOSS Exception https://oss.oracle.com/licenses/universal-foss-exception/",
+            "GPL v2 with Universal FOSS Exception",
+            "https://oss.oracle.com/licenses/universal-foss-exception/",
             "Connect with MySQL database servers"
         ),
         {

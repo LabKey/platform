@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.notification.NotificationService;
@@ -25,6 +24,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
@@ -42,9 +43,11 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.Portal;
@@ -88,14 +91,14 @@ import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-/**
- */
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
-    private static final Logger _log = LogManager.getLogger(PipelineModule.class);
+    private static final Logger _log = LogHelper.getLogger(PipelineModule.class, "Module responsible for managing pipeline jobs and logs");
 
     @Override
     public String getName()
@@ -106,7 +109,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 21.000;
+        return 22.000;
     }
 
     @Override
@@ -203,6 +206,18 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+            Map<String, Long> jobCounts = new HashMap<>();
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+            sql.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+            sql.append(" GROUP BY Provider");
+
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), sql).forEach(rs ->
+                    jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+
+            return Collections.singletonMap("jobCounts", jobCounts);
+        });
     }
 
     @Override
@@ -326,7 +341,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             }
 
             // TODO: is this the correct spot to start all of the trigger configs?
-            for (PipelineTriggerType triggerType : PipelineTriggerRegistry.get().getTypes())
+            for (PipelineTriggerType<?> triggerType : PipelineTriggerRegistry.get().getTypes())
             {
                 triggerType.startAll();
             }

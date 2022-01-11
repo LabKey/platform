@@ -1,0 +1,10 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="announcements/discuss.css" />
+        <script path="announcements/discuss.js" />
+    </library>
+    <dependencies>
+        <dependency path="internal/jQuery" />
+        <dependency path="Ext4" />
+    </dependencies>
+</libraries>

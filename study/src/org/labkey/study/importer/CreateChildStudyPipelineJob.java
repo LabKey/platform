@@ -99,7 +99,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
-        super(context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
+        super("CreateChildStudy", context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
 
         _form = form;
         _destFolderCreated = destFolderCreated;
@@ -349,8 +349,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.VISIT_MAP);
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
-        dataTypes.add(StudyArchiveDataTypes.VIEW_CATEGORIES);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
+
+        dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
 
         if (StudySnapshotType.ancillary.equals(form.getMode()))
         {
@@ -409,8 +410,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             importContext = new StudyImportContext(getUser(), newStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
 
-            // missing values and qc states
-            new MissingValueImporterFactory().create().process(null, importContext, studyDir);
+            // old study-based qc states: should remove this at some point (moved to folder level in 19.2, so 24.11)
             new StudyQcStatesImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
@@ -430,10 +430,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             // custom participant view
             StudyViewsImporter viewsImporter = new StudyViewsImporter();
             viewsImporter.process(importContext, studyDir, errors);
-
-            // view categories
-            ViewCategoryImporter categoryImporter = new ViewCategoryImporter();
-            categoryImporter.process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());

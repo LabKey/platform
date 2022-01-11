@@ -44,6 +44,17 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="categories" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that contains category definitions.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="qcStates" minOccurs="0">
                     <xs:complexType>
                         <xs:attribute name="showPrivateDataByDefault" type="xs:boolean">
@@ -70,6 +81,11 @@
                 <xs:element name="queries" minOccurs="0" type="exportDirType" />
                 <xs:element name="views" minOccurs="0" type="exportDirType" />
                 <xs:element name="lists" minOccurs="0" type="exportDirType" />
+                <!-- Starting with 22.2, MVIs are exported to this element in the "folder" namespace -->
+
+                <xs:element name="missingValueIndicator" type="missingValueIndicatorsType" minOccurs="0" />
+                <!-- Pre-22.2 archives exported MVIs in the "study" namespace -->
+
                 <xs:element name="missingValueIndicators" type="study:missingValueIndicatorsType" minOccurs="0" />
                 <xs:element name="wikis" minOccurs="0" type="exportDirType"/>
                 <xs:element name="etls" minOccurs="0" type="exportDirType"/>
@@ -242,6 +258,37 @@
         <xs:attribute name="value" type="xs:string">
             <xs:annotation>
                 <xs:documentation>Container-specific value of the property</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="missingValueIndicatorsType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="missingValueIndicator">
+                <xs:complexType>
+                    <xs:attribute name="indicator" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The indicator to use for a certain type of missing values (e.g., "N").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="label" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The text to use in association with this indicator in the UI
+                                (e.g., "Required field marked by site as 'data not available'.").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="file" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The file that contains the list of missing value indicators.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>

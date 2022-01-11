@@ -24,9 +24,12 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class NameExpressionDataIterator extends WrapperDataIterator
 {
@@ -40,6 +43,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private Function<String, Long> _getNonConflictCountFn;
     private String _counterSeqPrefix;
     private boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
+    private List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
     public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
@@ -62,6 +66,12 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     public NameExpressionDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
     {
         _allowUserSpecifiedNames = allowUserSpecifiedNames;
+        return this;
+    }
+
+    public NameExpressionDataIterator addExtraPropsFn(Supplier<Map<String, Object>> extraProps)
+    {
+        _extraPropsFns.add(extraProps);
         return this;
     }
 
@@ -119,7 +129,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
                 if (_newNames.get(nameExpression) == null)
                 {
                     Pair<NameGenerator, NameGenerator.State> nameGenPair = _nameGeneratorMap.get(nameExpression);
-                    _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow));
+                    _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow, null, null, _extraPropsFns, null));
                 }
                 String newName = _newNames.get(nameExpression);
                 if (!StringUtils.isEmpty(newName))
@@ -133,5 +143,4 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
         return super.get(i);
     }
-
 }
