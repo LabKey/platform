@@ -3629,8 +3629,8 @@ public class StudyManager
                 // a change in the key column that may not be in the initial domain
                 if (manager.isKeyChanged(def))
                 {
-                    long rowCount = new TableSelector(def.getTableInfo(user)).getRowCount();
-                    if (rowCount > 0)
+                    var tableInfo = def.getTableInfo(user);
+                    if (tableInfo != null && (new TableSelector(def.getTableInfo(user)).getRowCount() > 0))
                     {
                         // throw an error if we are changing keys on a dataset with data
                         errors.reject(ERROR_MSG, "Unable to change the keys on dataset (" + def.getName() + "), because there is still data present. The dataset should be truncated before the import.");
