@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -87,14 +88,18 @@ public class MultiValuedLookupColumn extends LookupColumn
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
 
+        // In group_concat case, we always join to child.  In select_concat case, we need to re-join to junction on each
+        // column select, so we need a unique alias for the inner join.
+        String fromAlias   = AliasManager.makeLegalName("_mvlc_" + alias, dialect);
+        String nestedAlias = "_mvlc_select_";
+
         SQLFragment strJoin = new SQLFragment();
+        strJoin.appendComment("<MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT ");
-        strJoin.append(_lookupKey.getValueSql("child"));
+        strJoin.append(_lookupKey.getValueSql(fromAlias));
 
-        // In group_concat case, we always join to child.  In select_concat case, we need to re-join to junction on each
-        // column select, so we need a unique alias ("c") for the inner join.
-        String joinAlias = groupConcat ? "child" : "c";
+        String joinAlias = groupConcat ? fromAlias : nestedAlias;
 
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         _lookupColumn.declareJoins(joinAlias, joins);
@@ -143,7 +148,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                 SQLFragment select = new SQLFragment("SELECT ");
                 select.append(valueSql);
                 select.append(" FROM ");
-                select.append(_lookupKey.getParentTable().getFromSQL("c"));
+                select.append(_lookupKey.getParentTable().getFromSQL(nestedAlias));
 
                 for (SQLFragment fragment : joins.values())
                 {
@@ -154,9 +159,9 @@ public class MultiValuedLookupColumn extends LookupColumn
                 }
 
                 select.append(" WHERE ");
-                select.append(_lookupKey.getValueSql("child"));
+                select.append(_lookupKey.getValueSql(fromAlias));
                 select.append(" = ");
-                select.append(_lookupKey.getValueSql("c"));
+                select.append(_lookupKey.getValueSql(nestedAlias));
 
                 // TODO: Always order by value
 
@@ -168,7 +173,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         }
 
         strJoin.append("\n\t\tFROM ");
-        strJoin.append(_lookupKey.getParentTable().getFromSQL("child"));
+        strJoin.append(_lookupKey.getParentTable().getFromSQL(fromAlias));
 
         if (groupConcat)
         {
@@ -182,8 +187,9 @@ public class MultiValuedLookupColumn extends LookupColumn
         // TODO: Add ORDER BY?
 
         strJoin.append("\n\t\tGROUP BY ");
-        strJoin.append(_lookupKey.getValueSql("child"));
+        strJoin.append(_lookupKey.getValueSql(fromAlias));
         strJoin.append("\n\t) ").append(alias);
+        strJoin.appendComment("</MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         return strJoin;
     }
     
