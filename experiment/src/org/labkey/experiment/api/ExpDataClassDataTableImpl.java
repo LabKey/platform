@@ -255,10 +255,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return createAliasColumn(alias, ExperimentService.get()::getTinfoDataAliasMap);
 
             case Inputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
+
+            case MultiValuedInputs:
+                return createLineageColumn(this, alias, true, true);
 
             case Outputs:
-                return createLineageColumn(this, alias, false);
+                return createLineageColumn(this, alias, false, false);
 
             case DataFileUrl:
                 var dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));

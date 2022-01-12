@@ -568,10 +568,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return wrapColumn(alias, _rootTable.getColumn("Generated"));
 
             case Inputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
 
             case Outputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
 
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);

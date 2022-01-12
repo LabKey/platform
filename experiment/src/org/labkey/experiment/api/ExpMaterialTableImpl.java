@@ -29,7 +29,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -325,10 +324,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return createAliasColumn(alias, ExperimentService.get()::getTinfoMaterialAliasMap);
 
             case Inputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
+
+            case MultiValuedInputs:
+                return createLineageColumn(this, alias, true, true);
 
             case Outputs:
-                return createLineageColumn(this, alias, false);
+                return createLineageColumn(this, alias, false, false);
 
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
@@ -635,6 +637,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+
+        var colMultiValuedInputs = addColumn(Column.MultiValuedInputs);
+        addMethod("MultiValuedInputs", new LineageMethod(getContainer(), colMultiValuedInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
