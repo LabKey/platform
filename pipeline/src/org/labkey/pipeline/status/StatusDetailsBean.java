@@ -1,8 +1,6 @@
 package org.labkey.pipeline.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -10,11 +8,8 @@ import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.LimitedSizeInputStream;
@@ -25,19 +20,15 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -58,7 +49,6 @@ public class StatusDetailsBean
     public final String modified;
     public final String email;
     public final String status;
-    public final Container container;
     public final String description;
     public final String info;
     public final boolean active;
@@ -66,6 +56,8 @@ public class StatusDetailsBean
     public final String dataUrl;
     public final String activeHostName;
     public final String filePath;
+
+    public final String webDavURL;
 
     public final StatusDetailsBean parentStatus;
     public final List<StatusDetailsBean> splitStatus;
@@ -90,7 +82,6 @@ public class StatusDetailsBean
         this.modified = DateUtil.formatDateTime(c, psf.getModified());
         this.email = psf.getEmail();
         this.status = psf.getStatus();
-        this.container = psf.lookupContainer();
         this.description = psf.getDescription();
         this.info = psf.getInfo();
         this.active = psf.isActive();
@@ -107,12 +98,27 @@ public class StatusDetailsBean
         this.log = log;
         this.fetchCount = fetchCount;
         this.queuePosition = queuePosition;
+
+        this.webDavURL = createWebDavURL(psf.lookupContainer());
+    }
+
+    private String createWebDavURL(Container container)
+    {
+        if (filePath != null && container != null)
+        {
+            Path logPath = Path.of(filePath);
+            if (Files.exists(logPath))
+            {
+                return FileContentService.get().getWebDavUrl(logPath, container, FileContentService.PathType.serverRelative);
+            }
+        }
+        return null;
     }
 
     public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset, int fetchCount)
     {
         var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
-        var statusFiles = Collections.emptyList();
+        List<StatusDetailFile> statusFiles = Collections.emptyList();
         StatusDetailLog statusLog = null;
 
         String strPath = psf.getFilePath();
@@ -239,11 +245,6 @@ public class StatusDetailsBean
         public final ActionURL viewUrl;
         public final ActionURL downloadUrl;
 
-        public StatusDetailFile(Container c, int rowId, File file)
-        {
-            this(c, rowId, file.getName());
-        }
-
         public StatusDetailFile(Container c, int rowId, Path path)
         {
             this(c, rowId, path.getFileName().toString());
@@ -287,26 +288,9 @@ public class StatusDetailsBean
 
     public @Nullable URLHelper getWebDavUrl()
     {
-        if (filePath == null)
-        {
-            return null;
-        }
-
-        Path logPath = Path.of(filePath);
-        if (!Files.exists(logPath))
-        {
-            return null;
-        }
-
-        if (container == null)
-        {
-            return null;
-        }
-
-        String url = FileContentService.get().getWebDavUrl(logPath, container, FileContentService.PathType.serverRelative);
         try
         {
-            return url == null ? null : new URLHelper(url);
+            return webDavURL == null ? null : new URLHelper(webDavURL);
         }
         catch (URISyntaxException e)
         {
