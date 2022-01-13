@@ -825,7 +825,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             if (data == null)
                 return null;
 
-            return data.getWebDavURL(_relative ? ExpData.PathType.folderRelative : ExpData.PathType.serverRelative);
+            return data.getWebDavURL(_relative ? FileContentService.PathType.folderRelative : FileContentService.PathType.serverRelative);
         }
 
         @Override

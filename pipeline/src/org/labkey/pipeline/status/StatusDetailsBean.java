@@ -6,7 +6,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -18,7 +17,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.LimitedSizeInputStream;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -26,10 +27,16 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 
@@ -38,8 +45,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 
 /**
  * Used for Jackson serialization
- * @see StatusController.Details2Action
- * @see StatusController.StatusDetailLog
+ * @see StatusController.DetailsAction
  */
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class StatusDetailsBean
@@ -174,21 +180,35 @@ public class StatusDetailsBean
         return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePositions().get(psf.getJobId()));
     }
 
+    /** Issue 44540 - any log files bigger than this will effectively be truncated for the job details page's log view */
+    private static final long MAX_LOG_SIZE = 10_000_000;
+
     // Copy the file content from Path to the PrintWriter,
     // skipping offset characters and closing the PrintWriter when complete.
     private static long transferTo(StringBuilder out, Path p, long offset) throws IOException
     {
-        //TODO
         // Pipeline log files are written in platform default encoding.
         // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
         // Use platform default encoding when reading the log file.
-        try (BufferedReader br = Files.newBufferedReader(p, Charset.defaultCharset());
+        try (LimitedSizeInputStream in = new LimitedSizeInputStream(Files.newInputStream(p), MAX_LOG_SIZE);
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, Charset.defaultCharset()));
              PrintWriter pw = new PrintWriter(new StringBuilderWriter(out)))
         {
             if (offset > 0)
                 br.skip(offset);
 
-            return br.transferTo(pw);
+            try
+            {
+                return br.transferTo(pw);
+            }
+            catch (LimitedSizeInputStream.LimitReachedException e)
+            {
+                String extraMessage = System.lineSeparator() + System.lineSeparator() +
+                        "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Use the raw the full file to view the remainder locally."
+                        + System.lineSeparator();
+                out.append(extraMessage);
+                return e.getBytesRead() + extraMessage.getBytes(Charset.defaultCharset()).length;
+            }
         }
     }
 
@@ -272,46 +292,25 @@ public class StatusDetailsBean
             return null;
         }
 
-        Path logFile = Path.of(filePath);
+        Path logPath = Path.of(filePath);
+        if (!Files.exists(logPath))
+        {
+            return null;
+        }
 
         if (container == null)
         {
             return null;
         }
 
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
-        if (root == null)
+        String url = FileContentService.get().getWebDavUrl(logPath, container, FileContentService.PathType.serverRelative);
+        try
         {
-            return null;
+            return url == null ? null : new URLHelper(url);
         }
-
-        if (!root.isUnderRoot(logFile))
+        catch (URISyntaxException e)
         {
-            return null;
+            throw UnexpectedException.wrap(e);
         }
-
-        // TODO: if this the best cloud-aware way to test whether this file exists?
-        if (!Files.exists(logFile))
-        {
-            return null;
-        }
-
-        String relPath = root.relativePath(logFile);
-        if (relPath == null)
-        {
-            return null;
-        }
-
-        if (!FileContentService.get().isCloudRoot(container))
-        {
-            relPath = org.labkey.api.util.Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
-        }
-        else
-        {
-            // Do not encode path from S3 folder.  It is already encoded.
-            relPath = org.labkey.api.util.Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
-        }
-
-        return new ResourceURL(AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath);
     }
 }
