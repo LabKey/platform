@@ -48,16 +48,17 @@ import java.util.Map;
 
 public class QueryWebPart extends VBox
 {
-    private ViewContext _context;
-    private Map<String, String> _properties;
-    private Map<String, Object> _extendedProperties;
+    private final ViewContext _context;
+    private final Map<String, String> _properties;
+    private final Map<String, Object> _extendedProperties;
+
     private UserSchema _schema;
     private QuerySettings _settings;
     private String _schemaName;
 
     // if set to 'html', any parse errors in the query are returned to the client as a JSON object instead of
     // rendered in the webpart
-    private String _errorType;
+    private final String _errorType;
     private String _metadata;
     private boolean _hasSql;
 
@@ -194,7 +195,10 @@ public class QueryWebPart extends VBox
     {
         if (_schema == null || _settings == null)
         {
-            throw new NotFoundException("Invalid Schema provided: " + (_schemaName != null ? _schemaName : "<empty>"));
+            if (StringUtils.isEmpty(_schemaName))
+                throw new NotFoundException("SchemaName was not provided");
+            else
+                throw new NotFoundException("Invalid SchemaName provided");
         }
 
         QueryDefinition queryDef = _settings.getQueryDef(_schema);

@@ -58,16 +58,22 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.RestrictedDeletePermission;
+import org.labkey.api.security.permissions.RestrictedInsertPermission;
 import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
@@ -103,6 +109,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -122,6 +129,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private TableInfo _fromTable;
 
     Set<Role> _contextualRoles = null;
+
+
+    /* This predicate is used for restricting which participants are editable by the current user
+     * Assuming the user has permission, all users are editable by default.
+     */
+    Predicate<String> canModifyParticipantPredicate = (id) -> false;
+
 
     DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
@@ -941,7 +955,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !hasPermission(user, InsertPermission.class))
+        if (!user.hasRootAdminPermission() && !hasPermission(user, ReadPermission.class))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -1121,31 +1135,72 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return wrappedColumn;
     }
 
-    /** Caller is still responsible for calling hasPermission()
+
+    // cache individual predicates per operation to avoid permission checking on every call
+    Predicate<String> insertPredicate = null;
+    Predicate<String> updatePredicate = null;
+    Predicate<String> deletePredicate = null;
+
     @Override
     public void setCanModifyParticipantPredicate(Predicate<String> edit)
     {
         canModifyParticipantPredicate = edit;
     }
 
-     public boolean canUpdateRowForParticipant(String subjectid)
-     {
-         assert hasPermission(getUserSchema().getUser(), UpdatePermission.class) || hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class);
-         return canModifyParticipantPredicate.test(subjectid);
-     }
+    public boolean canUpdateRowForParticipant(String subjectid)
+    {
+        if (null == updatePredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), UpdatePermission.class))
+                updatePredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedUpdatePermission.class))
+                updatePredicate = (s) -> false;
+            else
+                updatePredicate = canModifyParticipantPredicate;
+        }
+        return updatePredicate.test(subjectid);
+    }
 
     public boolean canInsertRowForParticipant(String subjectid)
     {
-        assert hasPermission(getUserSchema().getUser(), InsertPermission.class) || hasPermission(getUserSchema().getUser(), RestrictedInsertPermission.class);
-        return canModifyParticipantPredicate.test(subjectid);
+        if (null == insertPredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), InsertPermission.class))
+                insertPredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedInsertPermission.class))
+                insertPredicate = (s) -> false;
+            else
+                insertPredicate = canModifyParticipantPredicate;
+        }
+        return insertPredicate.test(subjectid);
     }
 
     public boolean canDeleteRowForParticipant(String subjectid)
     {
-        assert hasPermission(getUserSchema().getUser(), DeletePermission.class) || hasPermission(getUserSchema().getUser(), RestrictedDeletePermission.class);
-        return canModifyParticipantPredicate.test(subjectid);
+        if (null == deletePredicate)
+        {
+            if (hasPermission(getUserSchema().getUser(), DeletePermission.class))
+                deletePredicate = (s) -> true;
+            else if (!hasPermission(getUserSchema().getUser(), RestrictedDeletePermission.class))
+                deletePredicate = (s) -> false;
+            else
+                deletePredicate = canModifyParticipantPredicate;
+        }
+        return deletePredicate.test(subjectid);
     }
-    */
+
+    @Override
+    public String getParticipant(Map<String, Object> row)
+    {
+        try
+        {
+            return ((DatasetUpdateService) getUpdateService()).getParticipant(row, getUserSchema().getUser(), getUserSchema().getContainer());
+        }
+        catch (ValidationException|QueryUpdateServiceException ex)
+        {
+            return null;
+        }
+    }
 
     @Override
     public boolean hasUpdateURLOverride()

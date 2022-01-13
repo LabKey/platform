@@ -34,6 +34,7 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -57,6 +58,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -158,7 +160,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         DataIterator input = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
-        DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
+        DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, subjectCol, input, context, user);
 
         ValidationException matchError = new ValidationException();
         ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError, null);
@@ -407,6 +409,17 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
             setupError("Missing required field SequenceNum");
 
+        // Issue 43909: Don't allow insert/update if subject id is overwritten with custom column (no longer allowed).
+        for (DomainProperty p : Objects.requireNonNull(_datasetDefinition.getDomain()).getProperties())
+        {
+            if (p.getName().equalsIgnoreCase(_datasetDefinition.getStudy().getSubjectColumnName()))
+            {
+                setupError(_datasetDefinition.getStudy().getSubjectColumnName() + " is a reserved name for this study. Remove " +
+                        "this column from " + _datasetDefinition.getName() + " dataset design and try again.");
+                break;
+            }
+        }
+
         it.setInput(ErrorIterator.wrap(input, context, false, setupError));
         DataIterator ret = LoggingDataIterator.wrap(it);
 
@@ -473,12 +486,12 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         TimepointType timetype;
 
-        DatasetColumnsIterator(DatasetDefinition datasetDefinition, DataIterator data, DataIteratorContext context, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        DatasetColumnsIterator(DatasetDefinition datasetDefinition, ColumnInfo subjectCol, DataIterator data, DataIteratorContext context, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
             super(data, context);
-            _datasetDefinition = datasetDefinition;
+            this._datasetDefinition = datasetDefinition;
             this.user = user;
-            _maxPTIDLength = _datasetDefinition.getTableInfo(this.user).getColumn("ParticipantID").getScale();
+            this._maxPTIDLength = subjectCol.getScale();
         }
 
         void setSpecialOutputColumns(Integer indexPTID, Integer indexSequenceNum, Integer indexVisitDate, Integer indexKeyProperty, Integer indexContainer)

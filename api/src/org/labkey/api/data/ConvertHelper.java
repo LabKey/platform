@@ -92,7 +92,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     private static final ConvertHelper _myInstance = new ConvertHelper();
 
     // just a list of converters we know about
-    private final Set<Class> _converters = new ConcurrentHashSet<>();
+    private final Set<Class<?>> _converters = new ConcurrentHashSet<>();
 
 
     public static PropertyEditorRegistrar getPropertyEditorRegistrar()
@@ -450,7 +450,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
 
             if (null == c)
-                throw new ContainerConversionException("Could not convert: " + str + " to container.  Container not found.");
+                throw new ContainerConversionException("Could not convert supplied value to a container. Container not found.");
 
             return c;
         }
