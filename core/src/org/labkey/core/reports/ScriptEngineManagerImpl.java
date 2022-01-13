@@ -126,6 +126,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         LOG.info("  Attempting to migrate encrypted content in scripting engine configurations");
         Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
         TableInfo tinfo = CoreSchema.getInstance().getTableInfoReportEngines();
+        Algorithm encryptAes = ExternalScriptEngineDefinitionImpl.AES.get();
         new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
             JSONObject json = new JSONObject(configuration);
             String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
@@ -135,9 +136,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 try
                 {
                     String decryptedPassword = decryptAes.decrypt(Base64.decodeBase64(oldEncryptedPassword));
-                    String newEncryptedPassword = Base64.encodeBase64String(ExternalScriptEngineDefinitionImpl.AES.encrypt(decryptedPassword));
+                    String newEncryptedPassword = Base64.encodeBase64String(encryptAes.encrypt(decryptedPassword));
                     json.replace(PASSWORD_FIELD, newEncryptedPassword);
-                    assert decryptedPassword.equals(ExternalScriptEngineDefinitionImpl.AES.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
+                    assert decryptedPassword.equals(encryptAes.decrypt(Base64.decodeBase64(json.getString(PASSWORD_FIELD))));
                     Table.update(null, tinfo, PageFlowUtil.map("Configuration", json.toString()), rowId);
                 }
                 catch (DecryptionException e)
