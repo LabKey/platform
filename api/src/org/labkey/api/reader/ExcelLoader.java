@@ -35,6 +35,7 @@ import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
@@ -65,6 +66,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Data loader for Excel files -- can infer columns and return rows of data
@@ -115,6 +117,7 @@ public class ExcelLoader extends DataLoader
 
     private InputStream _is = null;
     private Workbook _workbook = null;
+    private ExcelFactory.WorkbookMetadata _workbookMetadata = null;
 
     private String sheetName;
     private Integer sheetIndex;
@@ -172,18 +175,23 @@ public class ExcelLoader extends DataLoader
     {
         try
         {
-            Sheet sheet = getSheet();
-            Row row = sheet.createRow(sheet.getLastRowNum() + 1);
-            Cell cell = row.createCell(0);
-            cell.setCellValue(0.0);
-            Date date = cell.getDateCellValue();
-            Calendar cal = new GregorianCalendar();
-            cal.setTime(date);
-            long year1900 = cal.get(Calendar.YEAR)-1900;
-            _isStartDate1904 =  year1900 > 0;
-            sheet.removeRow(row);
+            Boolean isStart1904 = getWorkbookMetadata(null).isStart1904();
+            if (null == isStart1904)
+            {
+                Sheet sheet = getSheet();
+                Row row = sheet.createRow(sheet.getLastRowNum() + 1);
+                Cell cell = row.createCell(0);
+                cell.setCellValue(0.0);
+                Date date = cell.getDateCellValue();
+                Calendar cal = new GregorianCalendar();
+                cal.setTime(date);
+                long year1900 = cal.get(Calendar.YEAR)-1900;
+                isStart1904 =  year1900 > 0;
+                sheet.removeRow(row);
+            }
+            _isStartDate1904 = isStart1904;
         }
-        catch (IOException e) // can't read the sheet
+        catch (IOException x)
         {
             _isStartDate1904 = false;
         }
@@ -194,6 +202,33 @@ public class ExcelLoader extends DataLoader
         if (_isStartDate1904 == null)
             computeIsStartDate1904();
         return _isStartDate1904;
+    }
+
+    private ExcelFactory.WorkbookMetadata getWorkbookMetadata(@Nullable OPCPackage opc) throws IOException
+    {
+        try
+        {
+            if (null == _workbookMetadata && null == _workbook)
+            {
+                if (null == _is && (null != _file))
+                {
+                    // if we already have an OPCPackage we can reuse it
+                    if (null != opc)
+                        _workbookMetadata = ExcelFactory.getMetadata(opc);
+                    else
+                        _workbookMetadata = ExcelFactory.getMetadata(_file);
+                    if (null != _workbookMetadata.getWorkbook())
+                        _workbook = _workbookMetadata.getWorkbook();
+                }
+            }
+            if (null == _workbookMetadata)
+                _workbookMetadata = ExcelFactory.getMetadata(getWorkbook());
+            return _workbookMetadata;
+        }
+        catch (InvalidFormatException e)
+        {
+            throw new ExcelFormatException(e);
+        }
     }
 
     private Workbook getWorkbook() throws IOException
@@ -222,13 +257,9 @@ public class ExcelLoader extends DataLoader
 
     public List<String> getSheetNames() throws IOException
     {
-        List<String> names = new ArrayList<>();
-
-        Workbook workbook = getWorkbook();
-        for (int i=0; i < workbook.getNumberOfSheets(); i++)
-            names.add(workbook.getSheetName(i));
-        return names;
+        return getWorkbookMetadata(null).getSheetNames();
     }
+
 
     public void setSheetName(String sheetName)
     {
@@ -236,11 +267,13 @@ public class ExcelLoader extends DataLoader
         this.sheetIndex = null;
     }
 
+
     public void setSheetIndex(int index)
     {
         this.sheetName = null;
         this.sheetIndex = index;
     }
+
 
     private Sheet getSheet() throws IOException
     {
@@ -260,6 +293,18 @@ public class ExcelLoader extends DataLoader
         }
     }
 
+
+    public boolean sheetMatches(int index, String name)
+    {
+        if (sheetName != null)
+            return StringUtils.equals(sheetName, name);
+        else if (sheetIndex != null)
+            return  sheetIndex == index;
+        else
+            return index == 0;
+    }
+
+
     @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
@@ -267,27 +312,7 @@ public class ExcelLoader extends DataLoader
         {
             try
             {
-                List<List<?>> grid = getParsedGridXLSX();
-                List<String[]> cells = new ArrayList<>();
-
-                for (int i=0 ; cells.size() < n && i<grid.size() ; i++)
-                {
-                    List<?> currentRow = grid.get(i);
-                    List<String> rowData = new ArrayList<>(currentRow.size());
-                    boolean foundData = false;
-
-                    for (Object v : currentRow)
-                    {
-                        String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
-                        if (!StringUtils.isEmpty(data))
-                            foundData = true;
-                        rowData.add(data != null ? data : "");
-                    }
-                    if (foundData)
-                        cells.add(rowData.toArray(new String[rowData.size()]));
-                }
-
-                return cells.toArray(new String[cells.size()][]);
+                return getFirstNLinesXLSX(n);
             }
             catch (InvalidFormatException x)
             {
@@ -303,6 +328,33 @@ public class ExcelLoader extends DataLoader
         {
             throw new IOException("Unable to open Excel file: " + (e.getMessage() == null ? "No specific error information available" : e.getMessage()), e);
         }
+    }
+
+
+    @NotNull
+    private String[][] getFirstNLinesXLSX(int n) throws IOException, InvalidFormatException
+    {
+        var grid = loadSheetFromXLSX(n);
+        List<String[]> cells = new ArrayList<>();
+
+        for (int i = 0; cells.size() < n && i<grid.size() ; i++)
+        {
+            List<?> currentRow = grid.get(i);
+            List<String> rowData = new ArrayList<>(currentRow.size());
+            boolean foundData = false;
+
+            for (Object v : currentRow)
+            {
+                String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
+                if (!StringUtils.isEmpty(data))
+                    foundData = true;
+                rowData.add(data != null ? data : "");
+            }
+            if (foundData)
+                cells.add(rowData.toArray(new String[rowData.size()]));
+        }
+
+        return cells.toArray(new String[cells.size()][]);
     }
 
 
@@ -353,25 +405,19 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
+
     @Override
     protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
     {
         try
         {
-            if (null != _file)
-            {
-                try
-                {
+                var md = getWorkbookMetadata(null);
+                if (md.isSpreadSheetML())
                     return new XlsxIterator();
-                }
-                catch (InvalidFormatException x)
-                {
-                    /* fall through */
-                }
-            }
-            return new ExcelIterator();
+                else
+                    return new ExcelIterator();
         }
-        catch (IOException e)
+        catch (InvalidFormatException | IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -391,64 +437,53 @@ public class ExcelLoader extends DataLoader
     }
 
 
-//    public List<Map<String, Object>> loadSAXY() throws IOException
-//    {
-//        try
-//        {
-//            LinkedList<ArrayList<Object>> output = loadSheetFromXLSX();
-//
-//            // arrays to maps
-//            if (output.isEmpty())
-//                return Collections.emptyList();
-//            ArrayListMap.FindMap<String> findMap = new ArrayListMap.FindMap<String>(new CaseInsensitiveHashMap<Integer>());
-//            List<Object> firstRow = output.removeFirst();
-//            for (int index=0 ; index<firstRow.size() ; index++)
-//                findMap.put(String.valueOf(firstRow.get(index)),index);
-//            ArrayList<Map<String,Object>> maps = new ArrayList<Map<String, Object>>(output.size());
-//            for (ArrayList<Object> row : output)
-//                maps.add(new _ArrayListMap(findMap,row));
-//            return maps;
-//        }
-//        catch (InvalidFormatException x)
-//        {
-//            // maybe .xls
-//            return load();
-//        }
-//    }
-
-
     private List<List<?>> _parsedGridXLSX = null;
+
 
     private List<List<?>> getParsedGridXLSX() throws IOException, InvalidFormatException
     {
         if (null == _parsedGridXLSX)
-            _parsedGridXLSX = loadSheetFromXLSX();
+            _parsedGridXLSX = loadSheetFromXLSX(-1);
         return _parsedGridXLSX;
     }
 
-    private List<List<?>> loadSheetFromXLSX() throws IOException, InvalidFormatException
+
+    private static class StopLoadingRows extends RuntimeException
+    {}
+
+    private List<List<?>> loadSheetFromXLSX(int maxRows) throws IOException, InvalidFormatException
     {
         OPCPackage xlsxPackage = null;
         try
         {
             List<List<Object>> collect = new LinkedList<>();
             xlsxPackage = OPCPackage.open(_file.getPath(), PackageAccess.READ);
-            ReadOnlySharedStringsTable strings = new ReadOnlySharedStringsTable(xlsxPackage);
+            ExcelFactory.WorkbookMetadata md = getWorkbookMetadata(xlsxPackage);
+            String[] strings = md.getSharedStrings();
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
             StylesTable styles = xssfReader.getStylesTable();
             XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
+            int sheet_index = 0;
             while (iter.hasNext())
             {
                 InputStream stream = iter.next();
-                if (getSheet().getSheetName().equals(iter.getSheetName()))
+                // DO NOT CALL getSheet() for XLSX!
+                if (sheetMatches(sheet_index, iter.getSheetName()))
                 {
                     InputSource sheetSource = new InputSource(stream);
                     SAXParserFactory saxFactory = SAXParserFactory.newInstance();
                     SAXParser saxParser = saxFactory.newSAXParser();
                     XMLReader sheetParser = saxParser.getXMLReader();
-                    SheetHandler handler = new SheetHandler(styles, strings, 1, collect, getIsStartDate1904());
+                    SheetHandler handler = new SheetHandler(styles, strings, 1, maxRows, collect, getIsStartDate1904());
                     sheetParser.setContentHandler(handler);
-                    sheetParser.parse(sheetSource);
+                    try
+                    {
+                        sheetParser.parse(sheetSource);
+                    }
+                    catch (StopLoadingRows slr)
+                    {
+                        /* no problem */
+                    }
                     break;
                 }
             }
@@ -756,12 +791,14 @@ public class ExcelLoader extends DataLoader
         /**
          * Table with unique strings
          */
-        private final ReadOnlySharedStringsTable sharedStringsTable;
+        private final String sharedStringsTable[];
 
         /**
          * Destination for data
          */
-        private final Collection<List<Object>> output;
+        //private final Collection<List<Object>> output;
+        private final Consumer<List<Object>> output;
+        private long output_rowcount = 0;
 
         private ArrayList<Object> currentRow;
         private int widestRow = 1;
@@ -770,6 +807,7 @@ public class ExcelLoader extends DataLoader
          * Number of columns to read starting with leftmost
          */
         private final int minColumnCount;
+        private final int maxRowCount;
 
         // Set when V start element is seen
         private boolean vIsOpen;
@@ -778,8 +816,10 @@ public class ExcelLoader extends DataLoader
         // used when cell close element is seen.
         private xssfDataType nextDataType;
 
-            // Used to format numeric cell values.
+        // Used to format numeric cell values, if the user prefers us to import data 'as it appears' rather than the actual stored values
+        // NOTE: not currently used, not sure when that functionality went away.
         private boolean useFormats = false;
+
         private short formatIndex;
         private String formatString;
         private final DataFormatter formatter;
@@ -800,8 +840,9 @@ public class ExcelLoader extends DataLoader
          */
         SheetHandler(
                 StylesTable styles,
-                ReadOnlySharedStringsTable strings,
+                String[] strings,
                 int cols,
+                int maxRows,
                 Collection<List<Object>> target, boolean isStartDate1904)
         {
             this.stylesTable = styles;
@@ -809,10 +850,11 @@ public class ExcelLoader extends DataLoader
             this.minColumnCount = cols;
             this.value = new StringBuilder();
             this.nextDataType = xssfDataType.NUMBER;
-            this.output = target;
+            this.output = target::add;
             this.formatter = new DataFormatter();
             this.useFormats = false;
             this.isStartDate1904 = isStartDate1904;
+            this.maxRowCount = maxRows >= 0 ? maxRows : Integer.MAX_VALUE;
         }
 
         private void debugPrint(String s)
@@ -833,7 +875,6 @@ public class ExcelLoader extends DataLoader
             if ("row".equals(name))
             {
                 currentRow = new ArrayList<>(Math.max(1,widestRow));
-                output.add(currentRow);
             }
             if ("inlineStr".equals(name) || "v".equals(name) || "t".equals(name))
             {
@@ -880,11 +921,23 @@ public class ExcelLoader extends DataLoader
                     int styleIndex = Integer.parseInt(cellStyleStr);
                     XSSFCellStyle style = stylesTable.getStyleAt(styleIndex);
                     this.formatIndex = style.getDataFormat();
+                    this.formatIndex = style.getDataFormat();
                     this.formatString = style.getDataFormatString();
                     if (this.formatString == null)
                         this.formatString = BuiltinFormats.getBuiltinFormat(this.formatIndex);
                 }
             }
+        }
+
+
+        final Date getDateFromExcelDouble(double value)
+        {
+            return org.apache.poi.ss.usermodel.DateUtil.getJavaDate(value, isStartDate1904);
+        }
+
+        final String getIsoStringDateFromExcelDouble(double value)
+        {
+            return DateUtil.formatDateTimeISO8601(getDateFromExcelDouble(value));
         }
 
         /*
@@ -928,12 +981,7 @@ public class ExcelLoader extends DataLoader
                         String sstIndex = value.toString();
                         try
                         {
-                            int idx = Integer.parseInt(sstIndex);
-                            String raw = sharedStringsTable.getEntryAt(idx);
-//                          XSSFRichTextString is really expensive, put this back if we need it (examples anyone?)
-//                            XSSFRichTextString rtss = new XSSFRichTextString(sharedStringsTable.getEntryAt(idx));
-//                            thisValue = rtss.toString();
-                            thisValue = raw;
+                            thisValue = sharedStringsTable[Integer.parseInt(sstIndex)];
                         }
                         catch (NumberFormatException ex)
                         {
@@ -947,9 +995,13 @@ public class ExcelLoader extends DataLoader
 
                         if (StringUtils.isBlank(value))
                             thisValue = "";
-                        else if (this.formatString != null && (useFormats || isDateFormat))
+                        else if (this.formatString != null && useFormats)
                         {
                             thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString, this.isStartDate1904);
+                        }
+                        else if (isDateFormat)
+                        {
+                            thisValue = getIsoStringDateFromExcelDouble(Double.parseDouble(value.toString()));
                         }
                         else
                         {
@@ -970,7 +1022,7 @@ public class ExcelLoader extends DataLoader
 
                 while (currentRow.size() <= thisColumn)
                     currentRow.add(null);
-                debugPrint("row:" + output.size() + " col:" + thisColumn + " " + thisValue);
+                debugPrint("row:" + (output_rowcount+1) + " col:" + thisColumn + " " + thisValue);
                 currentRow.set(thisColumn, thisValue);
                 value.setLength(0);
             }
@@ -978,7 +1030,11 @@ public class ExcelLoader extends DataLoader
             {
                 // We're onto a new row
                 widestRow = Math.max(widestRow,currentRow.size());
+                output.accept(currentRow);
+                output_rowcount++;
                 currentRow = null;
+                if (output_rowcount >= this.maxRowCount)
+                    throw new StopLoadingRows();
             }
 
             debugPrint("</" + name + ">");

@@ -17,17 +17,19 @@ package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -41,6 +43,9 @@ import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.model.SharedStringsTable;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -53,20 +58,23 @@ import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.logging.LogHelper;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,11 +85,126 @@ import java.util.Map;
  */
 public class ExcelFactory
 {
-    private static final Logger LOG = LogManager.getLogger(ExcelFactory.class);
+    private static final Logger LOG = LogHelper.getLogger(ExcelFactory.class, "Excel file parsing (.xls, .xlsx)");
 
     public static final String SUB_TYPE_XSSF = "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
+
+
+    public static class WorkbookMetadata
+    {
+        private final List<String> _names;
+        private final boolean _isSpreadSheetML;
+        private final Boolean _isStart1904;
+        private final Workbook _workbook;
+        private final String[] _sharedStrings;
+
+        WorkbookMetadata(Workbook workbook, boolean isXML, @Nullable List<String> names, @Nullable Boolean isStart1904, @Nullable SharedStringsTable sharedStrings)
+        {
+            this._workbook = workbook;
+            this._isSpreadSheetML = isXML;
+            this._isStart1904 = _isSpreadSheetML ? isStart1904 : null;
+
+            if (null == names)
+            {
+                names = new ArrayList<>();
+                for (int i=0 ; i < workbook.getNumberOfSheets() ; i++)
+                    names.add(workbook.getSheetName(i));
+            }
+            this._names = names;
+
+            if (null == sharedStrings)
+                this._sharedStrings = null;
+            else
+            {
+                var items = sharedStrings.getItems();
+                String[] strings = new String[items.size()];
+                for (int i = 0; i < items.size(); i++)
+                    strings[i] = items.get(i).getT();
+                this._sharedStrings = strings;
+            }
+        }
+
+        boolean isSpreadSheetML()
+        {
+            return _isSpreadSheetML;
+        }
+        List<String> getSheetNames()
+        {
+            return _names;
+        }
+        // returns null if we don't know (.XLS).
+        // Consider moving code from ExcelLoader.computeIsStartDate1904() to here
+        @Nullable
+        Boolean isStart1904()
+        {
+            return _isStart1904;
+        }
+        /* I can't seem to avoid loading the shared strings so might as well return them */
+        String[] getSharedStrings()
+        {
+            return _sharedStrings;
+        }
+        /* returns non-null value if workbook is the same as returned by create(File) */
+        Workbook getWorkbook()
+        {
+            return _workbook;
+        }
+    }
+
+
+    public static WorkbookMetadata getMetadata(@NotNull File file) throws IOException, InvalidFormatException
+    {
+        try
+        {
+            return getMetadata(OPCPackage.open(file, PackageAccess.READ));
+        }
+        catch (OldExcelFormatException e)
+        {
+            Workbook wb = new JxlWorkbook(file);
+            return getMetadata(wb, null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
+        }
+    }
+
+
+    @NotNull
+    public static WorkbookMetadata getMetadata(@NotNull OPCPackage opc) throws IOException, InvalidFormatException
+    {
+        final ArrayList<String> sheetNames = new ArrayList<>();
+        Workbook wb = new XSSFWorkbook(opc)
+        {
+            @Override
+            public void parseSheet(Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
+            {
+                sheetNames.add(ctSheet.getName());
+            }
+        };
+        return getMetadata(wb, sheetNames);
+    }
+
+
+    public static WorkbookMetadata getMetadata(Workbook wb) throws IOException, InvalidFormatException
+    {
+        ArrayList<String> names = new ArrayList<>();
+        for (int i=0 ; i<wb.getNumberOfSheets() ; i++)
+            names.add(wb.getSheetName(i));
+        return getMetadata(wb, names);
+    }
+
+
+    public static WorkbookMetadata getMetadata(Workbook wb, List<String> names) throws IOException, InvalidFormatException
+    {
+        if (wb instanceof XSSFWorkbook)
+            return new WorkbookMetadata(null, true, names, ((XSSFWorkbook)wb).isDate1904(), ((XSSFWorkbook)wb).getSharedStringSource());
+        else
+            return new WorkbookMetadata(wb, false, names, null, null);
+    }
+
 
     /**
      * Sniffs the file type and returns the appropriate parser
@@ -90,24 +213,26 @@ public class ExcelFactory
     @NotNull
     public static Workbook create(@NotNull File file) throws IOException, InvalidFormatException
     {
-        FileInputStream fIn = new FileInputStream(file);
         try
         {
-            return WorkbookFactory.create(fIn);
+            OPCPackage opc = OPCPackage.open(file, PackageAccess.READ);
+            return new XSSFWorkbook(opc)
+            {
+                // This overload is here to make it easy to see which code pats are inadvertently loading spreadsheet data the expensive way!
+                @Override
+                public void parseSheet(Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
+                {
+                    super.parseSheet(shIdMap, ctSheet);
+                }
+            };
         }
-        catch (OldExcelFormatException e)
+        catch (UnsupportedFileFormatException e)
         {
-            try { fIn.close(); } catch (IOException ignored) {}
-            fIn = new FileInputStream(file);
-            return new JxlWorkbook(fIn);
+            return new JxlWorkbook(file);
         }
         catch (IllegalArgumentException e)
         {
             throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
-        }
-        finally
-        {
-            try { fIn.close(); } catch (IOException ignored) {}
         }
     }
 
@@ -125,16 +250,8 @@ public class ExcelFactory
         {
             temp.delete();
         }
-/*
-        DefaultDetector detector = new DefaultDetector();
-        MediaType type = detector.detect(TikaInputStream.get(dataFile), new Metadata());
-
-        if (SUB_TYPE_BIFF5.equals(type.getSubtype()))
-            return new JxlWorkbook(dataFile);
-        else
-            return WorkbookFactory.create(new FileInputStream(dataFile));
-*/
     }
+
 
     /**
      * Contructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
@@ -568,7 +685,7 @@ public class ExcelFactory
 
                             case BOOLEAN:
                                 value = cell.getBooleanCellValue();
-                                formattedValue = value == null ? null : value.toString();
+                                formattedValue = value.toString();
                                 break;
 
                             case ERROR:
