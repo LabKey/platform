@@ -132,6 +132,8 @@ public class XarExporter
     /** Use a TreeMap so that we order domains by their RowIds, see issue 22459 */
     private final Map<Integer, Domain> _domainsToAdd = new TreeMap<>();
     private final Set<String> _domainLSIDs = new HashSet<>();
+
+    private final Set<Integer> _expDataClasses = new HashSet<>();
     private final Set<Integer> _expDataIDs = new HashSet<>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
@@ -423,7 +425,17 @@ public class XarExporter
                 }
             }
             else
-                dataLSID.setCpasType(data.getCpasType());
+            {
+                dataLSID.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
+                if (data.getCpasType() != null && !ExpData.DEFAULT_CPAS_TYPE.equalsIgnoreCase(data.getCpasType()))
+                {
+                    ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(data.getCpasType());
+                    if (dataClass != null)
+                    {
+                        addDataClass(dataClass);
+                    }
+                }
+            }
         }
 
         List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
@@ -692,6 +704,11 @@ public class XarExporter
 
     public void addDataClass(ExpDataClass dataClass)
     {
+        if (!_expDataClasses.add(dataClass.getRowId()))
+        {
+            return;
+        }
+
         if (_archive.getDataClasses() == null)
         {
             _archive.addNewDataClasses();

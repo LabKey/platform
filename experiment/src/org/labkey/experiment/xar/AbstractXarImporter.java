@@ -23,6 +23,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -47,14 +48,18 @@ public abstract class AbstractXarImporter
         _job = job;
     }
 
-    protected void checkDataCpasType(String declaredType) throws ExperimentException
+    protected ExpDataClass checkDataCpasType(String declaredType) throws ExperimentException
     {
+        ExpDataClass result = null;
         if (declaredType != null && !ExpData.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
             // check if this is a reference to a data class
-            if (ExperimentService.get().getDataClass(declaredType) == null)
-                throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
+
+            result = ExperimentService.get().getDataClass(declaredType);
+            if (result == null)
+                throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' referenced for Data object.");
         }
+        return result;
     }
 
     protected ExpSampleTypeImpl checkMaterialCpasType(String declaredType) throws ExperimentException
