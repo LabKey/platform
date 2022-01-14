@@ -319,7 +319,7 @@ class LineageForeignKey extends AbstractForeignKey
                 {
                     if (null == _table)
                     {
-                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
+                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
                             _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                             {
                             SQLFragment objectids;
