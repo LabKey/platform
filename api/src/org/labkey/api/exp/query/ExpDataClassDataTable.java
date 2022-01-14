@@ -41,6 +41,6 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         Outputs,
         DataFileUrl,
         Properties,
-        MultiValuedInputs,
+        QueryableInputs,
     }
 }

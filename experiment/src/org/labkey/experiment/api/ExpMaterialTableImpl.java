@@ -144,6 +144,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
+
+            if (Column.QueryableInputs.name().equalsIgnoreCase(name))
+            {
+                result = createColumn(Column.QueryableInputs.name(), Column.QueryableInputs);
+                // TODO this can't be added unless the table becomes mutable.  Is it needed?
+//                addMethod(Column.QueryableInputs.name(), new LineageMethod(getContainer(), result, true));
+            }
         }
         return result;
     }
@@ -326,7 +333,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Inputs:
                 return createLineageColumn(this, alias, true, false);
 
-            case MultiValuedInputs:
+            case QueryableInputs:
                 return createLineageColumn(this, alias, true, true);
 
             case Outputs:
@@ -637,9 +644,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
-
-        var colMultiValuedInputs = addColumn(Column.MultiValuedInputs);
-        addMethod("MultiValuedInputs", new LineageMethod(getContainer(), colMultiValuedInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));

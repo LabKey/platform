@@ -110,6 +110,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+
 /**
  * User: kevink
  * Date: 9/29/15
@@ -169,6 +171,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return categoryType.additionalAuditFields;
 
         return Collections.emptySet();
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null)
+        {
+            if (QueryableInputs.name().equalsIgnoreCase(name))
+            {
+                result = createColumn(QueryableInputs.name(), QueryableInputs);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -257,7 +273,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case Inputs:
                 return createLineageColumn(this, alias, true, false);
 
-            case MultiValuedInputs:
+            case QueryableInputs:
                 return createLineageColumn(this, alias, true, true);
 
             case Outputs:
