@@ -936,7 +936,7 @@ public class FileContentServiceImpl implements FileContentService
 
     /**
      * Move the file or directory into a ".deleted" directory under the parent directory.
-     * @return True if succesfully moved.
+     * @return True if successfully moved.
      */
     private static boolean moveToDeleted(File fileToMove)
     {
@@ -1337,8 +1337,8 @@ public class FileContentServiceImpl implements FileContentService
                 return switch (type)
                         {
                             case folderRelative -> relPath;
-                            case serverRelative -> root.getWebdavURL() + relPath;
-                            case full -> AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
+                            case serverRelative -> Path.parse(root.getWebdavURL()).encode() + relPath;
+                            case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(root.getWebdavURL()).encode() + relPath;
                             default -> throw new IllegalArgumentException("Unexpected path type: " + type);
                         };
             }
@@ -1557,15 +1557,12 @@ public class FileContentServiceImpl implements FileContentService
         if (!FileUtil.hasCloudScheme(path))
         {
             File file = path.toFile();
-            if (null != file)
-            {
-                String legacyUrl = file.toURI().toString();
-                if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
-                    return true;
+            String legacyUrl = file.toURI().toString();
+            if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
+                return true;
 
-                if (existingUrls.contains(file.getPath()))
-                    return true;
-            }
+            if (existingUrls.contains(file.getPath()))
+                return true;
         }
         return false;
     }
