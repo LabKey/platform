@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,6 +92,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1300,6 +1302,53 @@ public class FileContentServiceImpl implements FileContentService
     public String getAbsolutePathFromDataFileUrl(String dataFileUrl, Container container)
     {
         return FileUtil.getAbsolutePath(container, FileUtil.createUri(dataFileUrl));
+    }
+
+    @Nullable
+    @Override
+    public String getWebDavUrl(java.nio.file.@NotNull Path path, @NotNull Container container, @NotNull PathType type)
+    {
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+
+        if (root == null)
+            return null;
+
+        try
+        {
+            path = path.toAbsolutePath();
+
+            // currently, only report if the file is under the parent container
+            if (root.isUnderRoot(path))
+            {
+                String relPath = root.relativePath(path);
+                if (relPath == null)
+                    return null;
+
+                if(!isCloudRoot(container))
+                {
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                }
+                else
+                {
+                    // Do not encode path from S3 folder.  It is already encoded.
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+                }
+
+                return switch (type)
+                        {
+                            case folderRelative -> relPath;
+                            case serverRelative -> root.getWebdavURL() + relPath;
+                            case full -> AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
+                            default -> throw new IllegalArgumentException("Unexpected path type: " + type);
+                        };
+            }
+        }
+        catch (InvalidPathException e)
+        {
+            _log.error("Invalid WebDav URL from: " + path, e);
+        }
+
+        return null;
     }
 
     @Override
