@@ -210,7 +210,7 @@ public class StatusDetailsBean
             catch (LimitedSizeInputStream.LimitReachedException e)
             {
                 String extraMessage = System.lineSeparator() + System.lineSeparator() +
-                        "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Use the raw the full file to view the remainder locally."
+                        "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Download the raw file to view the remainder."
                         + System.lineSeparator();
                 out.append(extraMessage);
                 return e.getBytesRead() + extraMessage.getBytes(Charset.defaultCharset()).length;
