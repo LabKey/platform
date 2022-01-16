@@ -1,1 +1,0 @@
-SELECT core.executeJavaUpgradeCode('addDbSequenceForMaterialsRowIdIfMissed');
