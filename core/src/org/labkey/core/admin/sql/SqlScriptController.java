@@ -532,7 +532,7 @@ public class SqlScriptController extends SpringActionController
         {
             html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts that don't start with 0.00</td></tr>\n");
+            html.append("/>Include single scripts that don't start with 0.000</td></tr>\n");
         }
 
         @Override
