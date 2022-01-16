@@ -876,7 +876,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
                 PipeRoot pr = PipelineService.get().getPipelineRootSetting(getProject());
 
-                return pr.getWebdavURL() + getUrlRelative();
+                return org.labkey.api.util.Path.parse(pr.getWebdavURL()).encode() + getUrlRelative();
             }
 
             public String getUrlRelative()
