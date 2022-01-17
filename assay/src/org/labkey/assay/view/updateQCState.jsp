@@ -46,6 +46,8 @@
     ExpRun expRun = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
     if (expRun != null)
         protocolContainerPath = expRun.getProtocol().getContainer().getPath();
+
+    boolean requireComment = AssayQCService.getProvider().isRequireCommentOnQCStateChange(getContainer());
 %>
 
 <script type="application/javascript">
@@ -81,6 +83,14 @@
 
             let form = document.querySelector('#qc_form');
             if (form){
+                const formData = new FormData(form);
+                const missingComment = <%=requireComment%> && formData.get('comment').trim().length === 0;
+
+                if (missingComment) {
+                    LABKEY.Utils.alert('Error', 'A comment is required when changing a QC State for the selected run(s).')
+                    return;
+                }
+
                 LABKEY.Ajax.request({
                     method  : 'POST',
                     url     : LABKEY.ActionURL.buildURL("assay", "updateQCState.api"),
@@ -139,9 +149,16 @@
             .formGroup(true)
     %>
 
-    <%= new TextArea.TextAreaBuilder().name("comment").id("commentInput").label("Comment")
+    <%
+        String commentLabel = requireComment ? "Comment *" : "Comment";
+        String commentHelpTip = requireComment ? "A comment is required when changing a QC State for the selected run(s)." : null;
+    %>
+    <%= new TextArea.TextAreaBuilder().name("comment").id("commentInput").label(commentLabel)
             .layout(Input.Layout.HORIZONTAL)
             .value(form.getComment())
+            .required(requireComment)
+            .contextContent(commentHelpTip)
+            .forceSmallContext(true)
             .formGroup(true)
             .columns(80)
             .rows(5)

@@ -1605,6 +1605,8 @@ public class AssayController extends SpringActionController
                 errors.reject(ERROR_MSG, "QC State cannot be blank");
             if (form.getRuns().isEmpty())
                 errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+            if (AssayQCService.getProvider().isRequireCommentOnQCStateChange(getContainer()) && form.getComment() == null)
+                errors.reject(ERROR_MSG, "A comment is required when changing a QC State for the selected run(s).");
         }
 
         @Override
