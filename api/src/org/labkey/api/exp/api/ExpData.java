@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 
@@ -100,9 +101,7 @@ public interface ExpData extends ExpRunItem
     @Override
     void save(User user);
 
-    enum PathType { full, serverRelative, folderRelative }
-
     /** If this file is under the file root for its parent container, return the WebDAV URL that can be used to interact with it */
     @Nullable
-    String getWebDavURL(@NotNull PathType type);
+    String getWebDavURL(@NotNull FileContentService.PathType type);
 }

@@ -44,4 +44,5 @@ public class FolderArchiveDataTypes
     public static final String ETLS = "ETL Definitions";
     public static final String SAMPLE_TYPES_AND_DATA_CLASSES = "Sample Types and Data Classes";
     public static final String INVENTORY = "Inventory locations and items";
+    public static final String VIEW_CATEGORIES = "Categories";
 }
