@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  */
 public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> implements ExpDataClass
 {
-    protected static final String NAMESPACE_PREFIX = "DataClass";
+    public static final String NAMESPACE_PREFIX = "DataClass";
     private static final String SEARCH_CATEGORY_NAME = "dataClass";
     public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects");
 
