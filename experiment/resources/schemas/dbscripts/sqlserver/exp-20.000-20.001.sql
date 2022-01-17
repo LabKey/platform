@@ -1,1 +1,0 @@
-ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;
