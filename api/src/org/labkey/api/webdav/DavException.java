@@ -111,8 +111,8 @@ public class DavException extends Exception
             o.put("resourceName", p.getName());
         }
         // check for interesting annotations
-        Map<Enum,String> map = ExceptionUtil.getExceptionDecorations(this);
-        for (Map.Entry<Enum,String> e : map.entrySet())
+        Map<Enum<?>, String> map = ExceptionUtil.getExceptionDecorations(this);
+        for (Map.Entry<Enum<?>, String> e : map.entrySet())
         {
             if (e.getKey() == ExceptionUtil.ExceptionInfo.ResolveURL ||
                     e.getKey() == ExceptionUtil.ExceptionInfo.ResolveText ||
