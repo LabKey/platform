@@ -595,9 +595,8 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-    // leave public until upgrade from 19.3 is no longer allowed (and CoreUpgrade migration method is removed)
-    public static final String AUTHENTICATION_CATEGORY = "Authentication";
-    public static final String PROVIDERS_KEY = "Authentication";
+    // Used by start-up properties
+    private static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
