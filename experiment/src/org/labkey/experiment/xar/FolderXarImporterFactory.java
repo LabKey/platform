@@ -227,7 +227,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         }
     }
 
-    private static class FolderExportXarReader extends XarReader
+    public static class FolderExportXarReader extends XarReader
     {
         public FolderExportXarReader(XarSource source, PipelineJob job)
         {

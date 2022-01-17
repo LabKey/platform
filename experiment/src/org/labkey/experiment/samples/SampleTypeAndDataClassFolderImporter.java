@@ -32,6 +32,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
 
 import java.io.File;
@@ -168,7 +169,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         };
                     }
 
-                    XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job);
+                    XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getContainer());
                     try
                     {
                         typesXarSource.init();
@@ -179,7 +180,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         throw(e);
                     }
                     log.info("Importing the types XAR file: " + typesXarFile.getFileName().toString());
-                    XarReader typesReader = new XarReader(typesXarSource, job);
+                    XarReader typesReader = new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job);
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
@@ -192,7 +193,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
                     {
-                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job);
+                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getContainer());
                         try
                         {
                             runsXarSource.init();
@@ -203,7 +204,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                             throw(e);
                         }
                         log.info("Importing the runs XAR file: " + runsXarFile.getFileName().toString());
-                        XarReader runsReader = new XarReader(runsXarSource, job);
+                        XarReader runsReader = new FolderXarImporterFactory.FolderExportXarReader(runsXarSource, job);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
                     }
