@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -315,7 +316,8 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
             List<Map<String, Object>> viewInfos = new ArrayList<>();
             Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
-            Set<String> viewNames = new CaseInsensitiveHashSet("");
+            Set<String> viewNames = new HashSet();
+            viewNames.add("");
             if (form.getViewName() != null)
                 viewNames.addAll(Arrays.stream(form.getViewName()).map(String::trim).collect(toList()));
 
@@ -334,7 +336,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             }
             else
             {
-                allViews = new CaseInsensitiveHashMap<>(allViews);
+                allViews = new HashMap<>(allViews);
                 for (String viewName : viewNames)
                 {
                     // NOTE viewName==null in the allViews map

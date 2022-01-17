@@ -779,7 +779,7 @@ public class QueryServiceImpl implements QueryService
     protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd,
                                                        boolean inheritable, boolean sharedOnly)
     {
-        Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
+        Map<String, CustomView> views = new HashMap<>();
 
         // module query views have lower precedence, so add them first
         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
@@ -843,7 +843,7 @@ public class QueryServiceImpl implements QueryService
                     }
                 });
 
-        Map<Path, CustomView> views = new HashMap<>();
+        Map<String, CustomView> views = new HashMap<>();
 
         for (String schemaName : moduleViewSchemas)
         {
@@ -866,7 +866,8 @@ public class QueryServiceImpl implements QueryService
 
                         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
                         {
-                            Path key = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(), ""));
+                            Path keyPath = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(), ""));
+                            String key = keyPath.toString();
                             if (!views.containsKey(key))
                                 views.put(key, view);
                         }
@@ -878,7 +879,8 @@ public class QueryServiceImpl implements QueryService
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, null, null, owner, inheritable, sharedOnly))
         {
-            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(), ""));
+            Path keyPath = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(), ""));
+            String key = keyPath.toString();
             // The database custom views are in priority order so check if the view has already been added
             if (!views.containsKey(key))
             {
