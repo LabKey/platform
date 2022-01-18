@@ -532,7 +532,7 @@ public class SqlScriptController extends SpringActionController
         {
             html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts that don't start with 0.00</td></tr>\n");
+            html.append("/>Include single scripts that don't start with 0.000</td></tr>\n");
         }
 
         @Override
@@ -633,6 +633,7 @@ public class SqlScriptController extends SpringActionController
             Pattern copyrightPattern = Pattern.compile("^/\\*\\s*\\*\\s*Copyright.*?\\*/\\s*", Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
             StringBuilder sb = new StringBuilder();
             boolean firstScript = true;
+            int lastLoggedYear = 0;
 
             for (SqlScript script : getScripts())
             {
@@ -649,10 +650,6 @@ public class SqlScriptController extends SpringActionController
                         sb.append(contents, 0, contentStartIndex);
                     }
 
-                    // Skip for incremental and existing bootstrap scripts
-                    if (!script.isIncremental() && script.getFromVersion() != 0.0)
-                        sb.append("/* ").append(script.getDescription()).append(" */\n\n");
-
                     sb.append(contents.substring(contentStartIndex));
                     firstScript = false;
                 }
@@ -660,9 +657,13 @@ public class SqlScriptController extends SpringActionController
                 {
                     sb.append("\n\n");
 
-                    // Skip for incremental scripts
-                    if (!script.isIncremental())
-                        sb.append("/* ").append(script.getDescription()).append(" */\n\n");
+                    // Optimized for bootstrap script consolidation: single comment at the start of each year's scripts.
+                    int year = (int)script.getFromVersion();
+                    if (lastLoggedYear < year)
+                    {
+                        sb.append("/* ").append(year).append(".xxx SQL scripts */\n\n");
+                        lastLoggedYear = year;
+                    }
 
                     sb.append(licenseMatcher.replaceFirst(""));    // Remove license
                 }

@@ -1294,14 +1294,23 @@ public class XarReader extends AbstractXarImporter
 
         for (InputOutputRefsType.DataLSID inputDataLSID : inputDataLSIDs)
         {
-            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : "Data");
-            checkDataCpasType(declaredType);
+            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : ExpData.DEFAULT_CPAS_TYPE);
+            if (declaredType.contains("${"))
+            {
+                declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, ExpDataClassImpl.NAMESPACE_PREFIX);
+            }
+            ExpDataClass dataClass = checkDataCpasType(declaredType);
             String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), getContainer(), _xarSource));
 
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
                 _xarSource.addData(experimentRun.getLSID(), data, null);
+            }
+
+            if (dataClass != null)
+            {
+                data.setCpasType(dataClass.getLSID());
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());

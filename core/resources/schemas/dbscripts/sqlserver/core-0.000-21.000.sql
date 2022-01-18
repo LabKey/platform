@@ -955,8 +955,6 @@ CREATE TABLE core.AuthenticationConfigurations
     CONSTRAINT PK_AuthenticationConfigurations PRIMARY KEY (RowId)
 );
 
-EXEC core.executeJavaUpgradeCode 'migrateAuthenticationConfigurations';
-
 /*
     For LabKey 19.3.x and earlier, the email preferences tables lived in the 'comm' schema and were managed by the
     announcements module. As of 20.1.0, the core module now manages these tables in the 'core' schema. This script
@@ -1055,9 +1053,7 @@ EXEC core.fn_dropifexists 'AuthenticationConfigurations', 'core', 'DEFAULT', 'So
 ALTER TABLE core.AuthenticationConfigurations ALTER COLUMN SortOrder SMALLINT;
 ALTER TABLE core.AuthenticationConfigurations ADD CONSTRAINT DF_SortOrder DEFAULT 32767 FOR SortOrder;
 
-EXEC core.executeJavaUpgradeCode 'migrateSecondaryAuthenticationConfigurations';
-
-sp_rename 'core.Modules.InstalledVersion', 'SchemaVersion', 'COLUMN';
+EXEC sp_rename 'core.Modules.InstalledVersion', 'SchemaVersion', 'COLUMN';
 ALTER TABLE core.Modules ALTER COLUMN SchemaVersion FLOAT NULL;
 
 -- labbook email notification options

@@ -208,7 +208,7 @@ CREATE INDEX IDX_DataInput_Role ON exp.DataInput(Role);
 
 CREATE TABLE exp.Material
 (
-    RowId INT IDENTITY (1, 1) NOT NULL,
+    RowId INT NOT NULL,
     LSID LSIDtype NOT NULL,
     Name NVARCHAR (200) NULL,
     CpasType NVARCHAR (200) NULL,
@@ -1213,34 +1213,6 @@ CREATE TABLE exp.Edge
 ALTER TABLE exp.PropertyDescriptor
   ADD TextExpression nvarchar(200) NULL
 
-CREATE TABLE exp.Exclusions
-(
-  RowId INT IDENTITY (1, 1) NOT NULL,
-  RunId INT NOT NULL,
-  Comment TEXT NULL,
-  Created DATETIME  NULL,
-  CreatedBy INT NULL,
-  Modified DATETIME  NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_Exclusion_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_Exclusion_RunId FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId)
-);
-CREATE INDEX IX_Exclusion_RunId ON exp.Exclusions(RunId);
-
-CREATE TABLE exp.ExclusionMaps
-(
-  RowId INT IDENTITY (1, 1) NOT NULL,
-  ExclusionId INT NOT NULL,
-  DataRowId INT NOT NULL,
-  Created DATETIME  NULL,
-  CreatedBy INT NULL,
-  Modified DATETIME  NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_ExclusionMap_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_ExclusionMap_ExclusionId FOREIGN KEY (ExclusionId) REFERENCES exp.Exclusions (RowId),
-  CONSTRAINT UQ_ExclusionMap_ExclusionId_DataId UNIQUE (ExclusionId, DataRowId)
-);
-
 ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI NVARCHAR(300) NOT NULL;
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI NVARCHAR(300) NOT NULL;
 
@@ -1396,15 +1368,7 @@ ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments NVARCHAR(MAX);
 
 ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;
 
-EXEC core.executeJavaUpgradeCode 'addProvisionedDataClassNameClassId';
-
 ALTER TABLE exp.DataClass ADD LastIndexed DATETIME NULL;
-
-EXEC core.executeJavaInitializationCode  'addDbSequenceForMaterialsRowId';
-
-EXEC core.executeJavaUpgradeCode 'addDbSequenceForMaterialsRowIdIfMissed';
-
-EXEC core.executeJavaInitializationCode 'recreateViewsAfterMaterialRowIdDbSequence';
 
 ALTER TABLE exp.MaterialSource ADD LabelColor NVARCHAR(7) NULL;
 
