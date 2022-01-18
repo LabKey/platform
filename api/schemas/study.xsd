@@ -234,9 +234,7 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
-				<xs:element name="reports" minOccurs="0" type="exportDirType" />
-				<xs:element name="queries" minOccurs="0" type="exportDirType" />
-				<xs:element name="views" minOccurs="0" type="exportDirType" />
+                <!--- Deprecated... but REDCap and CDISC_ODM still use this. They need to be refactored to generate folder archvies. -->
                 <xs:element name="lists" minOccurs="0" type="exportDirType" />
                 <xs:element name="comments" minOccurs="0">
                     <xs:complexType>
