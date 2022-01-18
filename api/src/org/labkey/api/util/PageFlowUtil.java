@@ -1558,17 +1558,18 @@ public class PageFlowUtil
             Transformer t = TransformerFactory.newInstance().newTransformer();
             t.setOutputProperty(OutputKeys.METHOD, format.toString());
             t.setOutputProperty(OutputKeys.ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
-            ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-            t.transform(new DOMSource(node), new StreamResult(out));
-            out.close();
 
-            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream())
+            {
+                t.transform(new DOMSource(node), new StreamResult(out));
+                return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            }
         }
         catch (TransformerFactoryConfigurationError e)
         {
             throw new RuntimeException("There was a problem creating the XML transformer factory." +
-                    " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
-                    " please ensure that this class is included in the classpath for web application.", e);
+                " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
+                " please ensure that this class is included in the classpath for web application.", e);
         }
     }
 
