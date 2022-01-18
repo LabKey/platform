@@ -67,6 +67,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.issues.IssuesSchema.ISSUE_DEF_SCHEMA_NAME;
+
 /**
  * User: migra
  * Date: Jul 18, 2005
@@ -202,7 +204,18 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
+        return Set.of(
+            IssuesSchema.getInstance().getSchemaName(),
+            ISSUE_DEF_SCHEMA_NAME
+        );
+    }
+
+    @Override
+    public @NotNull Collection<String> getProvisionedSchemaNames()
+    {
+        return Set.of(
+            ISSUE_DEF_SCHEMA_NAME
+        );
     }
 
     @Override

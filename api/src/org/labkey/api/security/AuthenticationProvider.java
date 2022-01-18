@@ -19,11 +19,6 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
@@ -33,12 +28,9 @@ import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticati
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.ConfigProperty;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -48,7 +40,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -171,54 +162,16 @@ public interface AuthenticationProvider
 
     interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
     interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
-
-        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
-
-        @Override
-        default void migrateOldConfiguration(boolean active, User user)
-        {
-            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
-        }
     }
 
     interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
-
-        @Override
-        default void migrateOldConfiguration(boolean active, User user) throws Throwable
-        {
-            AttachmentService svc = AttachmentService.get();
-            AttachmentParent oldParent = AuthenticationLogoAttachmentParent.get();
-
-            List<Attachment> logos = Arrays.stream(AuthLogoType.values())
-                .map(alt->svc.getAttachment(oldParent, alt.getOldPrefix() + getName()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-            SsoSaveConfigurationForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
-            SaveConfigurationAction.saveOldProperties(form, user);
-
-            if (null != form && !logos.isEmpty())
-            {
-                SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
-
-                List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
-                svc.addAttachments(configuration, attachmentFiles, user);
-                for (AuthLogoType alt : AuthLogoType.values())
-                    svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
-
-                AttachmentCache.clearAuthLogoCache();
-                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            }
-        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
@@ -244,13 +197,6 @@ public interface AuthenticationProvider
 
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
-
-        default void migrateOldConfiguration(boolean active, User user)
-        {
-            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
-        }
-
         /**
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
          * temporarily not require secondary authentication if this has been misconfigured or a 3rd

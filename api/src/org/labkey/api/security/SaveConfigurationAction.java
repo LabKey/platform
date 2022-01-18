@@ -123,15 +123,4 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         AC configuration = getFromCache(rowId);
         return AuthenticationManager.getConfigurationMap(configuration);
     }
-
-    // Remove after we no longer upgrade from 20.1
-    public static void saveOldProperties(@Nullable SaveConfigurationForm form, @Nullable User user)
-    {
-        if (null != form)
-        {
-            form.setEnabled(true);
-            form.setDescription(form.getProvider() + " Configuration");
-            saveForm(form, user);
-        }
-    }
 }
