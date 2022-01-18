@@ -188,3 +188,25 @@ SELECT core.fn_dropifexists('ServerSession', 'mothership', 'COLUMN', 'buildTime'
 
 ALTER TABLE mothership.ServerSession
   ADD COLUMN buildTime timestamp;
+
+/* mothership-19.20-19.30.sql */
+
+ALTER TABLE mothership.SoftwareRelease DROP CONSTRAINT UQ_SoftwareRelease;
+
+ALTER TABLE mothership.SoftwareRelease ADD COLUMN BuildTime TIMESTAMP;
+ALTER TABLE mothership.SoftwareRelease ADD COLUMN VcsTag VARCHAR(100);
+ALTER TABLE mothership.SoftwareRelease ADD COLUMN VcsBranch VARCHAR(100);
+
+UPDATE mothership.SoftwareRelease SET BuildTime = (SELECT MIN(ss.BuildTime) FROM mothership.ServerSession ss WHERE ss.SoftwareReleaseId = mothership.SoftwareRelease.SoftwareReleaseId);
+
+ALTER TABLE mothership.ServerSession DROP COLUMN BuildTime;
+
+ALTER TABLE mothership.SoftwareRelease RENAME SvnRevision TO VcsRevision;
+ALTER TABLE mothership.SoftwareRelease RENAME SvnUrl TO VcsUrl;
+ALTER TABLE mothership.SoftwareRelease RENAME Description TO BuildNumber;
+
+ALTER TABLE mothership.SoftwareRelease ALTER COLUMN VcsRevision TYPE VARCHAR(40);
+
+ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT UQ_SoftwareRelease UNIQUE (Container, VcsRevision, VcsUrl, VcsBranch, VcsTag, BuildTime);
+
+ALTER TABLE mothership.ServerSession ALTER COLUMN JsonMetrics TYPE JSONB USING JsonMetrics::JSONB;

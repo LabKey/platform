@@ -208,7 +208,7 @@ CREATE INDEX IDX_DataInput_Role ON exp.DataInput(Role);
 
 CREATE TABLE exp.Material
 (
-    RowId INT IDENTITY (1, 1) NOT NULL,
+    RowId INT NOT NULL,
     LSID LSIDtype NOT NULL,
     Name NVARCHAR (200) NULL,
     CpasType NVARCHAR (200) NULL,
@@ -1213,34 +1213,6 @@ CREATE TABLE exp.Edge
 ALTER TABLE exp.PropertyDescriptor
   ADD TextExpression nvarchar(200) NULL
 
-CREATE TABLE exp.Exclusions
-(
-  RowId INT IDENTITY (1, 1) NOT NULL,
-  RunId INT NOT NULL,
-  Comment TEXT NULL,
-  Created DATETIME  NULL,
-  CreatedBy INT NULL,
-  Modified DATETIME  NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_Exclusion_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_Exclusion_RunId FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId)
-);
-CREATE INDEX IX_Exclusion_RunId ON exp.Exclusions(RunId);
-
-CREATE TABLE exp.ExclusionMaps
-(
-  RowId INT IDENTITY (1, 1) NOT NULL,
-  ExclusionId INT NOT NULL,
-  DataRowId INT NOT NULL,
-  Created DATETIME  NULL,
-  CreatedBy INT NULL,
-  Modified DATETIME  NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_ExclusionMap_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_ExclusionMap_ExclusionId FOREIGN KEY (ExclusionId) REFERENCES exp.Exclusions (RowId),
-  CONSTRAINT UQ_ExclusionMap_ExclusionId_DataId UNIQUE (ExclusionId, DataRowId)
-);
-
 ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI NVARCHAR(300) NOT NULL;
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI NVARCHAR(300) NOT NULL;
 
@@ -1343,3 +1315,137 @@ ALTER TABLE exp.MaterialSource ADD LastIndexed DATETIME NULL;
 
 ALTER TABLE exp.MaterialSource
     ADD MaterialParentImportAliasMap NVARCHAR(4000) NULL;
+
+/* exp-19.20-19.30.sql */
+
+ALTER TABLE exp.data ADD ObjectId INT;
+ALTER TABLE exp.experimentrun ADD objectid INT;
+ALTER TABLE exp.material ADD objectid INT;
+GO
+
+
+INSERT INTO exp.object (objecturi, container)
+SELECT D.lsid as objecturi, D.container as container
+FROM exp.data D
+WHERE D.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
+
+UPDATE exp.data
+SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
+
+
+INSERT INTO exp.object (objecturi, container)
+SELECT ER.lsid as objecturi, ER.container as container
+FROM exp.experimentrun ER
+WHERE ER.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
+
+UPDATE exp.experimentrun
+SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
+
+
+INSERT INTO exp.object (objecturi, container, ownerobjectid)
+SELECT M.lsid as objecturi,M.container as container,
+       (select O.objectid from exp.materialsource MS left outer join exp.object O ON MS.lsid = O.objecturi WHERE MS.lsid = M.cpastype) as ownerobjectid
+FROM exp.material M
+WHERE M.lsid NOT IN (SELECT O.objecturi FROM exp.object O);
+
+UPDATE exp.material
+SET objectid = (select O.objectid from exp.object O where O.objecturi = lsid);
+
+
+ALTER TABLE exp.data ALTER COLUMN objectid INT NOT NULL;
+ALTER TABLE exp.experimentrun ALTER COLUMN objectid INT NOT NULL;
+ALTER TABLE exp.material ALTER COLUMN objectid INT NOT NULL;
+GO
+
+CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid);
+CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid);
+CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
+GO
+
+ALTER TABLE exp.ExperimentRun ADD LastIndexed DATETIME NULL;
+
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments NVARCHAR(MAX);
+
+ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;
+
+ALTER TABLE exp.DataClass ADD LastIndexed DATETIME NULL;
+
+ALTER TABLE exp.MaterialSource ADD LabelColor NVARCHAR(7) NULL;
+
+EXEC sp_rename 'exp.propertyvalidator', 'pv_old'
+GO
+
+CREATE TABLE exp.PropertyValidator
+(
+    RowId        int identity(1,1) not null,
+    Name         NVARCHAR(50) not null,
+    Description  NVARCHAR(200),
+    TypeURI      NVARCHAR(200) not null,
+    Expression   NVARCHAR(MAX),
+    ErrorMessage NVARCHAR(MAX),
+    Properties   NVARCHAR(MAX),
+    Container    entityid not null constraint fk_pv_container references core.containers (entityid),
+    PropertyId   int not null constraint fk_pv_descriptor references exp.propertydescriptor,
+    constraint pk_propertyvalidator primary key (container, propertyid, rowid)
+);
+GO
+
+INSERT INTO exp.propertyvalidator(propertyid, name, description, typeuri, expression, properties, errormessage, container)
+SELECT VR.propertyid, PV.name, PV.description, PV.typeuri, PV.expression, PV.properties, PV.errormessage, PV.container
+FROM exp.pv_old PV INNER JOIN exp.validatorreference VR ON PV.rowid = VR.validatorid
+ORDER BY container, propertyid;
+
+CREATE INDEX ix_propertyvalidator_propertyid on exp.PropertyValidator(PropertyId);
+
+DROP TABLE exp.validatorreference;
+DROP TABLE exp.pv_old;
+GO
+
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN OntologyURI;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SearchTerms;
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN SemanticType;
+GO
+
+ALTER TABLE exp.PropertyDescriptor ADD PrincipalConceptCode NVARCHAR(50) NULL;
+GO
+
+ALTER TABLE exp.MaterialSource ADD MetricUnit NVARCHAR(10) NULL;
+GO
+
+ALTER TABLE exp.PropertyDescriptor ADD SourceOntology NVARCHAR(20) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptImportColumn NVARCHAR(200) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptLabelColumn NVARCHAR(200) NULL;
+GO
+
+-- create exp.object for exp.data without one
+INSERT INTO exp.object (objecturi, container)
+SELECT D.lsid as objecturi, D.container as container
+FROM exp.data D LEFT OUTER JOIN exp.object O ON D.lsid = O.objecturi
+WHERE O.objecturi IS NULL;
+
+-- fixup exp.data.objectid to be consistent with the lsid of the exp.object
+UPDATE exp.data
+SET objectid = (SELECT O.objectid FROM exp.object O WHERE O.objecturi = lsid)
+WHERE rowid IN (
+    SELECT rowid
+    FROM exp.data D
+    LEFT OUTER JOIN exp.object O ON D.lsid = O.objecturi
+    WHERE D.objectid != O.objectid
+);
+
+-- add constraints for lsid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_Lsid
+    FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
+
+-- add constraints for objectid -> exp.object
+ALTER TABLE exp.data ADD CONSTRAINT FK_Data_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
+    FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+GO
