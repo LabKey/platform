@@ -204,7 +204,7 @@ CREATE INDEX IDX_DataInput_Role ON exp.DataInput(Role);
 
 CREATE TABLE exp.Material
 (
-    RowId SERIAL NOT NULL,
+    RowId INT NOT NULL,
     LSID LSIDtype NOT NULL,
     Name VARCHAR (200) NULL,
     CpasType VARCHAR (200) NULL,
@@ -1368,10 +1368,6 @@ ALTER TABLE exp.DataClass ADD COLUMN Category VARCHAR(20) NULL;
 
 ALTER TABLE exp.dataclass
     ADD COLUMN lastindexed TIMESTAMP NULL;
-
-SELECT core.executeJavaInitializationCode('addDbSequenceForMaterialsRowId');
-
-SELECT core.executeJavaUpgradeCode('addDbSequenceForMaterialsRowIdIfMissed');
 
 ALTER TABLE exp.MaterialSource ADD COLUMN LabelColor VARCHAR(7) NULL;
 

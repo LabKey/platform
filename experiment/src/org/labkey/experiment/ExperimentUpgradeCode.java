@@ -20,8 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -33,7 +31,6 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -87,121 +84,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             LOG.info("Updated ownerObjectId for " + rowCount + " materials");
         });
         SampleTypeServiceImpl.get().clearMaterialSourceCache(null);
-    }
-
-    // Changes from an autoIncrement column as the RowId to a DBSequence so the rowId can be more readily available
-    // during creation of materials (particularly during file import).
-    //
-    // This needs to be run after startup because we are altering the primary key column for exp.Materials, and for SQL Server
-    // this means we need to remove some foreign key constraints in other schemas.
-    @DeferredUpgrade
-    @SuppressWarnings("unused") // called from exp-20.003-20.004
-    public static void addDbSequenceForMaterialsRowId(ModuleContext context)
-    {
-        _addDbSequenceForMaterialRowId();
-    }
-
-    // The previous method originally mistakenly did not update RowId column for new installs,
-    // leaving databases bootstrapped after the previous upgrade script was implemented in a strange state.
-    // This method will fix up the databases where that removal of autoIncrement was missed.
-    @DeferredUpgrade
-    @SuppressWarnings("unused") // called from exp-20.004-20.005
-    public static void addDbSequenceForMaterialsRowIdIfMissed(ModuleContext context)
-    {
-        if (ExperimentService.get().getTinfoMaterial().getColumn("RowId").isAutoIncrement())
-            _addDbSequenceForMaterialRowId();
-    }
-
-    private static void _addDbSequenceForMaterialRowId()
-    {
-        SQLFragment frag = new SQLFragment("SELECT MAX(rowId) FROM exp.material");
-        Integer maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
-
-        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId"));
-        if (maxId != null)
-            sequence.ensureMinimum(maxId);
-
-        DbScope scope = DbScope.getLabKeyScope();
-        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
-        {
-            SQLFragment sql;
-            if (scope.getSqlDialect().isPostgreSQL())
-            {
-                sql = new SQLFragment("ALTER SEQUENCE exp.material_rowid_seq owned by NONE;\n");
-                sql.append("ALTER TABLE exp.material ALTER COLUMN rowId DROP DEFAULT;\n");
-                sql.append("DROP SEQUENCE exp.material_rowid_seq;");
-                new SqlExecutor(scope).execute(sql);
-            }
-            else
-            {
-                // For SQLServer We can't do this modification in place for the RowId column, so we make a copy of the column, drop the original
-                // column then rename the copy and add back the constraints.
-                sql = new SQLFragment();
-
-                sql.append("ALTER TABLE exp.material ADD RowId_copy INT NULL;\n");
-                // Drop foreign keys before dropping the original column.  First materialInput
-                sql.append("ALTER TABLE exp.materialInput DROP CONSTRAINT fk_materialinput_material;\n");
-                // now ms2
-                sql.append("EXEC core.fn_dropifexists 'ExpressionData', 'ms2', 'constraint', 'FK_ExpressionData_SampleId';\n");
-                // and labbook
-                sql.append("EXEC core.fn_dropifexists 'LabBookExperimentMaterial', 'labbook', 'constraint', 'FK_LabBookExperimentMaterial_MaterialId';\n");
-                // and microarray
-                sql.append("EXEC core.fn_dropifexists 'FeatureData', 'microarray', 'constraint', 'FK_FeatureData_SampleId';\n");
-                // and idri
-                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Compounds';\n");
-                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Materials';\n");
-                sql.append("EXEC core.fn_dropifexists 'concentrations', 'idri', 'constraint', 'FK_Lot';\n");
-                // Drop index
-                sql.append("EXEC core.fn_dropifexists 'material', 'exp', 'index', 'IDX_exp_material_recompute';\n");
-                // Remove primary key constraint
-                sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
-
-                new SqlExecutor(scope).execute(sql);
-
-                sql = new SQLFragment();
-                // Copy RowId to the new column
-                sql.append("UPDATE exp.material SET RowId_copy = RowId;\n");
-
-                // Now drop the original column
-                sql.append("ALTER TABLE exp.material DROP COLUMN RowId;\n");
-
-                new SqlExecutor(scope).execute(sql);
-
-                sql = new SQLFragment();
-                // Rename the copy to the original name and restore it as a Non-Null PK
-                sql.append("EXEC sp_rename 'exp.material.RowId_copy', 'RowId', 'COLUMN';\n");
-                sql.append("ALTER TABLE exp.Material ALTER COLUMN RowId INT NOT NULL;\n");
-                sql.append("ALTER TABLE exp.Material ADD CONSTRAINT PK_Material PRIMARY KEY (RowId);\n");
-                // Add index
-                sql.append("CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=1;\n");
-                // Add the foreign key constraints back again
-                sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +
-                        "       ALTER TABLE ms2.ExpressionData ADD CONSTRAINT FK_ExpressionData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n"
-                );
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
-                        "   ALTER TABLE microarray.FeatureData ADD CONSTRAINT FK_FeatureData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n");
-                sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'idri')\n" +
-                        " BEGIN" +
-                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Compounds FOREIGN KEY (Compound) REFERENCES exp.Material(RowId);\n" +
-                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Materials FOREIGN KEY (Material) REFERENCES exp.Material(RowId);\n" +
-                        "   ALTER TABLE idri.concentrations ADD CONSTRAINT FK_Lot FOREIGN KEY (Lot) REFERENCES exp.Material(RowId);\n" +
-                        " END; "
-                );
-                new SqlExecutor(scope).execute(sql);
-            }
-            tx.commit();
-        }
-    }
-
-    // Issue 40443: For SQL Server, if modifying a table that is used in a view, the views need to get recreated after that
-    // modification happens. So we need to do that after the previous deferred upgrade scripts happen since
-    // the createViews scripts run at the end of the regular upgrade scripts and thus before the deferred ones.
-    @DeferredUpgrade
-    @SuppressWarnings("unused") // called from exp-20.005-20.006
-    public static void recreateViewsAfterMaterialRowIdDbSequence(ModuleContext context)
-    {
-        ModuleLoader.getInstance().recreateViews(ModuleLoader.getInstance().getModule(context.getName()));
     }
 
     // Issue 43246: Lineage query NPE while processing an UploadedFile
