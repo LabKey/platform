@@ -30,6 +30,7 @@
     UpdateQCStateForm form = (UpdateQCStateForm) HttpView.currentView().getModelBean();
     String currentState = null;
     String protocolContainerPath = null;
+    boolean requireComment = false;
 
     if (form.getRuns().size() == 1)
     {
@@ -45,9 +46,10 @@
     // get the protocol container to determine the folder where QC states are defined
     ExpRun expRun = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
     if (expRun != null)
+    {
         protocolContainerPath = expRun.getProtocol().getContainer().getPath();
-
-    boolean requireComment = AssayQCService.getProvider().isRequireCommentOnQCStateChange(getContainer());
+        requireComment = AssayQCService.getProvider().isRequireCommentOnQCStateChange(expRun.getProtocol().getContainer());
+    }
 %>
 
 <script type="application/javascript">
