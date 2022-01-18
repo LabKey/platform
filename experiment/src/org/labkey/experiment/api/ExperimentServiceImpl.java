@@ -2450,7 +2450,7 @@ public class ExperimentServiceImpl implements ExperimentService
         String parentsSelect = map.get("$PARENTS$");
         parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
         // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-        String parentsToken = ret.addCommonTableExpression("$PARENTS$/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+        String parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
 
         String childrenInnerSelect = map.get("$CHILDREN_INNER$");
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
@@ -2461,7 +2461,7 @@ public class ExperimentServiceImpl implements ExperimentService
         String childrenSelect = map.get("$CHILDREN$");
         childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
         // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-        String childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+        String childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
 
         return new Pair<>(parentsToken,childrenToken);
     }
