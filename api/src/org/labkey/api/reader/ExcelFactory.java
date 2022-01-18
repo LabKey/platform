@@ -160,7 +160,7 @@ public class ExcelFactory
         {
             return getMetadata(OPCPackage.open(file, PackageAccess.READ));
         }
-        catch (OldExcelFormatException e)
+        catch (InvalidFormatException|UnsupportedFileFormatException e)
         {
             Workbook wb = new JxlWorkbook(file);
             return getMetadata(wb, null);
