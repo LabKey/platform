@@ -1,5 +1,6 @@
 package org.labkey.api.issues;
 
+import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
@@ -28,4 +29,7 @@ public interface IssueService
     Issue saveIssue(ViewContext context, Issue issue, Issue.action action, Errors errors);
 
     void validateIssue(Container container, User user, Issue issue, Issue.action action, Errors errors);
+
+    @Nullable
+    Issue getIssue(Container container, User user, Integer issueId);
 }

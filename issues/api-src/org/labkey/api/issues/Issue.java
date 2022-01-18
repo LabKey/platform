@@ -8,6 +8,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.Collection;
@@ -55,6 +56,7 @@ public interface Issue
     String getIssueDefName();
     List<String> getNotifyListDisplayNames(User user);
     List<ValidEmail> getNotifyListEmail();
+    List<Pair<User, ValidEmail>> getNotifyListUserEmail();
     Map<String, Object> getProperties();
 
     Integer getAssignedTo();

@@ -305,4 +305,10 @@ public class IssueServiceImpl implements IssueService
 
         return issueListDef;
     }
+
+    @Override
+    public @Nullable Issue getIssue(Container container, User user, Integer issueId)
+    {
+        return IssueManager.getIssue(container, user, issueId);
+    }
 }

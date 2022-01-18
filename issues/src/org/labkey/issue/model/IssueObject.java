@@ -31,6 +31,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Tuple3;
 import org.springframework.validation.Errors;
 
@@ -531,6 +532,14 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
     public List<ValidEmail> getNotifyListEmail()
     {
         return getNotifyListEmail(getNotifyList(), null);
+    }
+
+    @Override
+    public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
+    {
+        return getNotifyListUserEmails(getNotifyList(), null).stream()
+                .map(t -> new Pair<>(t.second, t.third))
+                .collect(Collectors.toList());
     }
 
     public static List<ValidEmail> getNotifyListEmail(String notifyList, @Nullable Errors errors)
