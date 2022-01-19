@@ -188,6 +188,12 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
+    public long getNotificationCountByUser(Container container, int notifyUserId, boolean unreadOnly)
+    {
+        return createSelectorByUserOrType(container, null, notifyUserId, unreadOnly).getRowCount();
+    }
+
+    @Override
     public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
     {
         return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly);
@@ -203,7 +209,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly);
     }
 
-    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
+    private TableSelector createSelectorByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
     {
         SimpleFilter filter = new SimpleFilter();
         if (null != container)
@@ -217,8 +223,12 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         Sort sort = new Sort();
         sort.appendSortColumn(FieldKey.fromParts("Created"), Sort.SortDirection.DESC, false);
 
-        TableSelector selector = new TableSelector(getTable(), filter, sort);
-        return selector.getArrayList(Notification.class);
+        return new TableSelector(getTable(), filter, sort);
+    }
+
+    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly)
+    {
+        return createSelectorByUserOrType(container, types, notifyUserId, unreadOnly).getArrayList(Notification.class);
     }
 
     @Override

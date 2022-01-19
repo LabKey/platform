@@ -171,10 +171,11 @@ public class Table
             sqlLine = sqlLine.trim();
             if (!sqlLine.startsWith("--"))
             {
-                // First non-comment line must start with SELECT
+                // First non-comment line must start with SELECT or WITH (for a CTE)
                 if (!select)
                 {
-                    if (StringUtils.startsWithIgnoreCase(sqlLine, "SELECT"))
+                    if (StringUtils.startsWithIgnoreCase(sqlLine, "SELECT") ||
+                            (StringUtils.startsWithIgnoreCase(sqlLine, "WITH") && StringUtils.containsIgnoreCase(sql, "SELECT")))
                         select = true;
                     else
                         return false;
