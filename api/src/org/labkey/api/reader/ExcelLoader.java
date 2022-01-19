@@ -157,8 +157,6 @@ public class ExcelLoader extends DataLoader
 
         // NOTE: If we don't create a temp file, ExcelFactory will.
         // Create here so we can call getMetadata() and then stream sheets in loadSheetFromXLSX().
-        assert(!(is instanceof FileInputStream));
-
         _file = FileUtil.createTempFile("excel", "tmp", true);
         shouldDeleteFile = true;
         try
