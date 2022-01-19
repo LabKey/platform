@@ -51,6 +51,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.Version;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
@@ -83,6 +84,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
@@ -100,6 +102,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -143,7 +146,7 @@ import java.util.stream.Stream;
  */
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
-    private static final Logger _log = LogManager.getLogger(LuceneSearchServiceImpl.class);
+    private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text search indexing operations");
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
@@ -251,9 +254,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private void attemptInitialize() throws IOException
     {
-        File indexDir = SearchPropertyManager.getIndexDirectory();
+        File indexDir = getIndexDirectory();
         _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
         setConfigurationError(null);  // Clear out any previous error
+    }
+
+    // In dev mode, put the full-text-search index in a Lucene-version-specific subfolder (/Lucene8, /Lucene9, /Lucene10, etc.).
+    // This prevents full index rebuilds when switching between branches with different major Lucene versions.
+    public static File getIndexDirectory()
+    {
+        File adminSpecifiedDirectory = SearchPropertyManager.getIndexDirectory();
+        return AppProps.getInstance().isDevMode() ? new File(adminSpecifiedDirectory, "Lucene" + Version.LATEST.major) : adminSpecifiedDirectory;
     }
 
     @Override
@@ -413,7 +424,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (_indexManager.isReal())
             closeIndex();
 
-        File indexDir = SearchPropertyManager.getIndexDirectory();
+        File indexDir = getIndexDirectory();
 
         if (indexDir.exists())
             FileUtil.deleteDir(indexDir);
