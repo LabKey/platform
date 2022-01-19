@@ -18,10 +18,10 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.UnsupportedFileFormatException;
-import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.poifs.filesystem.NotOLE2FileException;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -63,6 +63,7 @@ import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -126,31 +127,40 @@ public class ExcelFactory
             }
         }
 
-        boolean isSpreadSheetML()
+        public boolean isSpreadSheetML()
         {
             return _isSpreadSheetML;
         }
-        List<String> getSheetNames()
+        public List<String> getSheetNames()
         {
             return _names;
         }
         // returns null if we don't know (.XLS).
         // Consider moving code from ExcelLoader.computeIsStartDate1904() to here
         @Nullable
-        Boolean isStart1904()
+        public Boolean isStart1904()
         {
             return _isStart1904;
         }
         /* I can't seem to avoid loading the shared strings so might as well return them */
-        String[] getSharedStrings()
+        public String[] getSharedStrings()
         {
             return _sharedStrings;
         }
         /* returns non-null value if workbook is the same as returned by create(File) */
-        Workbook getWorkbook()
+        public Workbook getWorkbook()
         {
             return _workbook;
         }
+    }
+
+
+    // throw FileNotFoundException instead of InvalidOperationException or InvalidFormatException
+    static OPCPackage readOPCPackage(@NotNull File file) throws IOException, InvalidFormatException
+    {
+        if (!file.isFile())
+            throw new FileNotFoundException("file not found");
+        return OPCPackage.open(file, PackageAccess.READ);
     }
 
 
@@ -158,11 +168,12 @@ public class ExcelFactory
     {
         try
         {
-            return getMetadata(OPCPackage.open(file, PackageAccess.READ));
+            return getMetadata(readOPCPackage(file));
         }
+        // might be OLE2 formet
         catch (InvalidFormatException|UnsupportedFileFormatException e)
         {
-            Workbook wb = new JxlWorkbook(file);
+            Workbook wb = create(file);
             return getMetadata(wb, null);
         }
         catch (IllegalArgumentException e)
@@ -215,7 +226,7 @@ public class ExcelFactory
     {
         try
         {
-            OPCPackage opc = OPCPackage.open(file, PackageAccess.READ);
+            OPCPackage opc = readOPCPackage(file);
             return new XSSFWorkbook(opc)
             {
                 // This overload is here to make it easy to see which code pats are inadvertently loading spreadsheet data the expensive way!
@@ -226,9 +237,19 @@ public class ExcelFactory
                 }
             };
         }
-        catch (UnsupportedFileFormatException e)
+        catch (UnsupportedFileFormatException not_xssf)
         {
-            return new JxlWorkbook(file);
+            try
+            {
+                return WorkbookFactory.create(file);
+            }
+            catch (NotOLE2FileException|UnsupportedFileFormatException not_ole2_either)
+            {
+                try (FileInputStream fis = new FileInputStream(file))
+                {
+                    return new JxlWorkbook(fis);
+                }
+            }
         }
         catch (IllegalArgumentException e)
         {
@@ -239,8 +260,7 @@ public class ExcelFactory
     /** Creates a temp file from the InputStream, then attempts to parse using the new and old formats. */
     public static Workbook create(InputStream is) throws IOException, InvalidFormatException
     {
-
-        File temp = File.createTempFile("excel", "tmp");
+        File temp = FileUtil.createTempFile("excel", "tmp", true);
         try
         {
             FileUtil.copyData(is, temp);
@@ -248,7 +268,7 @@ public class ExcelFactory
         }
         finally
         {
-            temp.delete();
+            FileUtil.deleteTempFile(temp);
         }
     }
 
@@ -608,7 +628,7 @@ public class ExcelFactory
                             }
                         }
                         // Workaround for issue 15437
-                        catch (NullPointerException ignored) {}
+                        catch (NullPointerException|UnsupportedOperationException ignored) {}
 
                         if ("General".equalsIgnoreCase(formatString))
                         {
@@ -879,7 +899,7 @@ public class ExcelFactory
 
             attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), IOException.class);
+            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
         }
 
         private void attemptImportExpectError(File excelFile, Class exceptionClass)

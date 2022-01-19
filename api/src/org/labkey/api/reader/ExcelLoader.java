@@ -30,7 +30,6 @@ import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
@@ -53,13 +52,18 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
@@ -93,7 +97,7 @@ public class ExcelLoader extends DataLoader
         }
 
         @NotNull @Override
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             return new ExcelLoader(is, hasColumnHeaders, mvIndicatorContainer);
         }
@@ -115,15 +119,25 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    private InputStream _is = null;
     private Workbook _workbook = null;
     private ExcelFactory.WorkbookMetadata _workbookMetadata = null;
 
     private String sheetName;
     private Integer sheetIndex;
 
+    // keep track if we created a temp file
+    private boolean shouldDeleteFile = false;
+
+
     private ExcelLoader()
     {}
+
+    public static ExcelLoader create(Path path, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        if (path.getFileSystem() == FileSystems.getDefault())
+            return new ExcelLoader(path.toFile(), hasColumnHeaders, mvIndicatorContainer);
+        return new ExcelLoader(Files.newInputStream(path), hasColumnHeaders, mvIndicatorContainer);
+    }
 
     public ExcelLoader(File file) throws IOException
     {
@@ -135,14 +149,29 @@ public class ExcelLoader extends DataLoader
         this(file, hasColumnHeaders, null);
     }
 
-    public ExcelLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
+    public ExcelLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
-        _is = is;
         setScrollable(false);
-    }
 
+        // NOTE: If we don't create a temp file, ExcelFactory will.
+        // Create here so we can call getMetadata() and then stream sheets in loadSheetFromXLSX().
+        assert(!(is instanceof FileInputStream));
+
+        _file = FileUtil.createTempFile("excel", "tmp", true);
+        shouldDeleteFile = true;
+        try
+        {
+            FileUtil.copyData(is, _file);
+        }
+        catch (IOException x)
+        {
+            FileUtil.deleteTempFile(_file);
+            _file = null;
+            throw x;
+        }
+    }
 
     public ExcelLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
     {
@@ -152,12 +181,13 @@ public class ExcelLoader extends DataLoader
         setScrollable(true);
     }
 
-    public ExcelLoader(Workbook workbook, boolean hasColumnHeaders, Container mvIndicatorContainer)
+    public ExcelLoader(File file, ExcelFactory.WorkbookMetadata md, boolean hasColumnHeaders, Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
-        _file = null;
-        _workbook = workbook;
+        _file = file;
+        _workbookMetadata = md;
+        _workbook = md.getWorkbook();
         setScrollable(true);
     }
 
@@ -204,22 +234,19 @@ public class ExcelLoader extends DataLoader
         return _isStartDate1904;
     }
 
-    private ExcelFactory.WorkbookMetadata getWorkbookMetadata(@Nullable OPCPackage opc) throws IOException
+    public ExcelFactory.WorkbookMetadata getWorkbookMetadata(@Nullable OPCPackage opc) throws IOException
     {
         try
         {
-            if (null == _workbookMetadata && null == _workbook)
+            if (null == _workbookMetadata && null == _workbook && (null != _file || null != opc))
             {
-                if (null == _is && (null != _file))
-                {
-                    // if we already have an OPCPackage we can reuse it
-                    if (null != opc)
-                        _workbookMetadata = ExcelFactory.getMetadata(opc);
-                    else
-                        _workbookMetadata = ExcelFactory.getMetadata(_file);
-                    if (null != _workbookMetadata.getWorkbook())
-                        _workbook = _workbookMetadata.getWorkbook();
-                }
+                // if we already have an OPCPackage we can reuse it
+                if (null != opc)
+                    _workbookMetadata = ExcelFactory.getMetadata(opc);
+                else
+                    _workbookMetadata = ExcelFactory.getMetadata(_file);
+                if (null != _workbookMetadata.getWorkbook())
+                    _workbook = _workbookMetadata.getWorkbook();
             }
             if (null == _workbookMetadata)
                 _workbookMetadata = ExcelFactory.getMetadata(getWorkbook());
@@ -231,20 +258,14 @@ public class ExcelLoader extends DataLoader
         }
     }
 
+
     private Workbook getWorkbook() throws IOException
     {
         if (null == _workbook)
         {
             try
             {
-                if (null != _is)
-                {
-                    _workbook = ExcelFactory.create(_is);
-                }
-                else if (null != _file)
-                {
-                    _workbook = ExcelFactory.create(_file);
-                }
+                _workbook = ExcelFactory.create(_file);
             }
             catch (InvalidFormatException e)
             {
@@ -423,17 +444,12 @@ public class ExcelLoader extends DataLoader
         }
     }
 
-/*
-    public void finalize() throws Throwable
-    {
-        workbook.close();
-        super.finalize();
-    }
-*/
 
     @Override
     public void close()
     {
+        if (shouldDeleteFile && null != _file)
+            FileUtil.deleteTempFile(_file);
     }
 
 
@@ -463,12 +479,13 @@ public class ExcelLoader extends DataLoader
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
             StylesTable styles = xssfReader.getStylesTable();
             XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            int sheet_index = 0;
+            int sheetIndex = -1;
             while (iter.hasNext())
             {
                 InputStream stream = iter.next();
+                sheetIndex++;
                 // DO NOT CALL getSheet() for XLSX!
-                if (sheetMatches(sheet_index, iter.getSheetName()))
+                if (sheetMatches(sheetIndex, iter.getSheetName()))
                 {
                     InputSource sheetSource = new InputSource(stream);
                     SAXParserFactory saxFactory = SAXParserFactory.newInstance();
@@ -695,10 +712,11 @@ public class ExcelLoader extends DataLoader
 
             File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");
 
-            ExcelLoader loader = new ExcelLoader(metadataSample, true);
-            checkColumnMetadata(loader);
-            checkData(loader);
-            loader.close();
+            try (ExcelLoader loader = new ExcelLoader(metadataSample, true))
+            {
+                checkColumnMetadata(loader);
+                checkData(loader);
+            }
         }
 
         private static void checkColumnMetadata(ExcelLoader loader) throws IOException
