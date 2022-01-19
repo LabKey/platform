@@ -189,7 +189,7 @@ abstract public class PipelineProvider
      */
     public static class StatusAction
     {
-        String _label;
+        private final String _label;
 
         public StatusAction(String label)
         {
