@@ -95,9 +95,13 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         related = issue.getRelated();
         setContainerId(issue.getContainerId());
 
-        if (issue instanceof IssueObject io)
+        if (issue instanceof Entity entity)
         {
-            io.copyTo(this);
+            setEntityId(entity.getEntityId());
+            setCreatedBy(entity.getCreatedBy());
+            setCreated(entity.getCreated());
+            setModifiedBy(entity.getModifiedBy());
+            setModified(entity.getModified());
         }
     }
 
