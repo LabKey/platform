@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -469,14 +470,16 @@ public class ExperimentJSONConverter
         return map;
     }
 
-    // For now, just return the lsid if it isn't null
-    // CONSIDER: Use LsidManager to find the object and call serialize() ?
-    private static Object serializeProvenanceObject(String objectUri)
+    private static JSONObject serializeProvenanceObject(String objectUri)
     {
         if (objectUri == null)
             return null;
 
-        return objectUri;
+        Identifiable obj = LsidManager.get().getObject(objectUri);
+        if (obj == null)
+            return null;
+
+        return serializeIdentifiableBean(obj);
     }
 
     /**
