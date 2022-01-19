@@ -190,12 +190,6 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
-    @Deprecated //Prefer the Path version
-    default boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
-    {
-        return runFolderImportJob(c, user, url, studyXml.toPath(), originalFilename, errors, pipelineRoot, options);
-    }
-
     boolean runFolderImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);
@@ -205,36 +199,6 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     TriggerConfiguration getTriggerConfig(Container c, String name);
     void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
     void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date);
-
-    @Deprecated //Prefer PathAnalysisProperties as it better supports Cloud
-    class FileAnalysisProperties
-    {
-        private final PipeRoot _pipeRoot;
-        private final File _dirData;
-        private final AbstractFileAnalysisProtocolFactory _factory;
-
-        public FileAnalysisProperties(PipeRoot pipeRoot, File dirData, AbstractFileAnalysisProtocolFactory factory)
-        {
-            _pipeRoot = pipeRoot;
-            _dirData = dirData;
-            _factory = factory;
-        }
-
-        public PipeRoot getPipeRoot()
-        {
-            return _pipeRoot;
-        }
-
-        public File getDirData()
-        {
-            return _dirData;
-        }
-
-        public AbstractFileAnalysisProtocolFactory getFactory()
-        {
-            return _factory;
-        }
-    }
 
     class PathAnalysisProperties
     {
