@@ -25,6 +25,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
@@ -76,6 +77,8 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         // non-empty dataset.
         Assert.assertTrue("Server errors detected", getServerErrorCount() == 0);
         reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 2, true);
+        clickAndWait(Locator.linkWithText("ERROR"));
+        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains("ERROR: Unable to change the keys on dataset (DEM-1), because there is still data present. The dataset should be truncated before the import.");
         resetErrors();
 
         // truncate the table
