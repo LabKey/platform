@@ -52,7 +52,6 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystems;
@@ -63,13 +62,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -301,10 +300,8 @@ public class ExcelLoader extends DataLoader
             Workbook workbook = getWorkbook();
             if (sheetName != null)
                 return workbook.getSheet(sheetName);
-            else if (sheetIndex != null)
-                return workbook.getSheetAt(sheetIndex);
             else
-                return workbook.getSheetAt(0);
+                return workbook.getSheetAt(Objects.requireNonNullElse(sheetIndex, 0));
         }
         catch (ArrayIndexOutOfBoundsException e)
         {
@@ -370,7 +367,7 @@ public class ExcelLoader extends DataLoader
                 rowData.add(data != null ? data : "");
             }
             if (foundData)
-                cells.add(rowData.toArray(new String[rowData.size()]));
+                cells.add(rowData.toArray(new String[0]));
         }
 
         return cells.toArray(new String[cells.size()][]);
@@ -415,7 +412,7 @@ public class ExcelLoader extends DataLoader
                         rowData.add("");
                 }
                 if (foundData)
-                    cells.add(rowData.toArray(new String[rowData.size()]));
+                    cells.add(rowData.toArray(new String[0]));
             }
             if (--n == 0)
                 break;
@@ -489,7 +486,7 @@ public class ExcelLoader extends DataLoader
                     SAXParserFactory saxFactory = SAXParserFactory.newInstance();
                     SAXParser saxParser = saxFactory.newSAXParser();
                     XMLReader sheetParser = saxParser.getXMLReader();
-                    SheetHandler handler = new SheetHandler(styles, strings, 1, maxRows, collect, getIsStartDate1904());
+                    SheetHandler handler = new SheetHandler(styles, strings, maxRows, collect, getIsStartDate1904());
                     sheetParser.setContentHandler(handler);
                     try
                     {
@@ -628,7 +625,7 @@ public class ExcelLoader extends DataLoader
         @Override
         public void close() throws IOException
         {
-            super.close();       // TODO: Shouldn't this close the workbook?
+            super.close();
         }
     }
 
@@ -666,6 +663,7 @@ public class ExcelLoader extends DataLoader
         }
         catch (NumberFormatException x)
         {
+            /* pass */
         }
         return toStringValue;
     }
@@ -705,7 +703,7 @@ public class ExcelLoader extends DataLoader
         {
             File excelSamplesRoot = JunitUtil.getSampleData(null, "dataLoading/excel");
 
-            if (null == excelSamplesRoot || !excelSamplesRoot.canRead())
+            if (!excelSamplesRoot.canRead())
                 throw new IOException("Could not read excel samples in: " + excelSamplesRoot);
 
             File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");
@@ -721,7 +719,7 @@ public class ExcelLoader extends DataLoader
         {
             ColumnDescriptor[] columns = loader.getColumns();
 
-            assertTrue(columns.length == 18);
+            assertEquals(18, columns.length);
 
             assertEquals(columns[0].clazz, Date.class);
             assertEquals(columns[1].clazz, Integer.class);
@@ -807,7 +805,7 @@ public class ExcelLoader extends DataLoader
         /**
          * Table with unique strings
          */
-        private final String sharedStringsTable[];
+        private final String[] sharedStringsTable;
 
         /**
          * Destination for data
@@ -822,7 +820,6 @@ public class ExcelLoader extends DataLoader
         /**
          * Number of columns to read starting with leftmost
          */
-        private final int minColumnCount;
         private final int maxRowCount;
 
         // Set when V start element is seen
@@ -834,36 +831,31 @@ public class ExcelLoader extends DataLoader
 
         // Used to format numeric cell values, if the user prefers us to import data 'as it appears' rather than the actual stored values
         // NOTE: not currently used, not sure when that functionality went away.
-        private boolean useFormats = false;
+        private final boolean useFormats;
 
         private short formatIndex;
         private String formatString;
         private final DataFormatter formatter;
         private int thisColumn = -1;
-        private boolean isStartDate1904 = false;
+        private final boolean isStartDate1904;
 
         // Gathers characters as they are seen.
-        private StringBuilder value;
-
-        private int debugIndent = 0;
+        private final StringBuilder value;
 
         /**
          * Accepts objects needed while parsing.
          *  @param strings Table of shared strings
-         * @param cols    Minimum number of columns to show
          * @param target  Sink for output
          * @param isStartDate1904 Indicates which date system is in use for this sheet
          */
         SheetHandler(
                 StylesTable styles,
                 String[] strings,
-                int cols,
                 int maxRows,
                 Collection<List<Object>> target, boolean isStartDate1904)
         {
             this.stylesTable = styles;
             this.sharedStringsTable = strings;
-            this.minColumnCount = cols;
             this.value = new StringBuilder();
             this.nextDataType = xssfDataType.NUMBER;
             this.output = target::add;
@@ -873,6 +865,7 @@ public class ExcelLoader extends DataLoader
             this.maxRowCount = maxRows >= 0 ? maxRows : Integer.MAX_VALUE;
         }
 
+        @SuppressWarnings("unused")
         private void debugPrint(String s)
         {
 //            System.out.println(StringUtils.repeat(" ", debugIndent) + s);
@@ -886,7 +879,6 @@ public class ExcelLoader extends DataLoader
         public void startElement(String uri, String localName, String name,
                                  Attributes attributes)
         {
-            debugIndent++;
             debugPrint("<" + name + ">");
             if ("row".equals(name))
             {
@@ -963,7 +955,7 @@ public class ExcelLoader extends DataLoader
         @Override
         public void endElement(String uri, String localName, String name)
         {
-            Object thisValue = null;
+            Object thisValue;
 
             if ("c".equals(name))
             {
@@ -978,7 +970,7 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case ERROR:
-                        thisValue = "ERROR:" + value.toString();
+                        thisValue = "ERROR:" + value;
                         break;
 
                     case FORMULA:
@@ -988,8 +980,7 @@ public class ExcelLoader extends DataLoader
                         break;
 
                     case INLINESTR:
-//                        XSSFRichTextString rtsi = new XSSFRichTextString(value.toString());
-//                        thisValue = rtsi.toString();
+                        //noinspection DuplicateBranchesInSwitch
                         thisValue = value.toString();
                         break;
 
@@ -1001,7 +992,7 @@ public class ExcelLoader extends DataLoader
                         }
                         catch (NumberFormatException ex)
                         {
-                            thisValue = "Failed to parse SST index '" + sstIndex + "': " + ex.toString();
+                            thisValue = "Failed to parse SST index '" + sstIndex + "': " + ex;
                         }
                         break;
 
@@ -1054,7 +1045,6 @@ public class ExcelLoader extends DataLoader
             }
 
             debugPrint("</" + name + ">");
-            debugIndent--;
         }
 
         /**
