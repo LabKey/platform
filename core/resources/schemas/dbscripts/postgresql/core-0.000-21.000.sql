@@ -715,8 +715,6 @@ CREATE TABLE core.AuthenticationConfigurations
     CONSTRAINT PK_AuthenticationConfigurations PRIMARY KEY (RowId)
 );
 
-SELECT core.executeJavaUpgradeCode('migrateAuthenticationConfigurations');
-
 /*
     For LabKey 19.3.x and earlier, the email preferences tables lived in the 'comm' schema and were managed by the
     announcements module. As of 20.1.0, the core module now manages these tables in the 'core' schema. This script
@@ -816,8 +814,6 @@ INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (702, 'A
 SELECT core.fn_dropifexists('AuthenticationConfigurations', 'core', 'DEFAULT', 'SortOrder');
 ALTER TABLE core.AuthenticationConfigurations ALTER COLUMN SortOrder TYPE SMALLINT;
 ALTER TABLE core.AuthenticationConfigurations ALTER COLUMN SortOrder SET DEFAULT 32767;
-
-SELECT core.executeJavaUpgradeCode('migrateSecondaryAuthenticationConfigurations');
 
 ALTER TABLE core.Modules RENAME COLUMN InstalledVersion TO SchemaVersion;
 ALTER TABLE core.Modules ALTER COLUMN SchemaVersion DROP NOT NULL;

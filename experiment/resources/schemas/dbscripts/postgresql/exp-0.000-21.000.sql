@@ -204,7 +204,7 @@ CREATE INDEX IDX_DataInput_Role ON exp.DataInput(Role);
 
 CREATE TABLE exp.Material
 (
-    RowId SERIAL NOT NULL,
+    RowId INT NOT NULL,
     LSID LSIDtype NOT NULL,
     Name VARCHAR (200) NULL,
     CpasType VARCHAR (200) NULL,
@@ -1217,34 +1217,6 @@ CREATE TABLE exp.Edge
 ALTER TABLE exp.propertydescriptor
   ADD TextExpression varchar(200) NULL;
 
-CREATE TABLE exp.Exclusions
-(
-  RowId SERIAL NOT NULL,
-  RunId INT NOT NULL,
-  Comment TEXT NULL,
-  Created TIMESTAMP NULL,
-  CreatedBy INT NULL,
-  Modified TIMESTAMP NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_Exclusion_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_Exclusion_RunId FOREIGN KEY (RunId) REFERENCES exp.ExperimentRun (RowId)
-);
-CREATE INDEX IX_Exclusion_RunId ON exp.Exclusions(RunId);
-
-CREATE TABLE exp.ExclusionMaps
-(
-  RowId SERIAL NOT NULL,
-  ExclusionId INT NOT NULL,
-  DataRowId INT NOT NULL,
-  Created TIMESTAMP NULL,
-  CreatedBy INT NULL,
-  Modified TIMESTAMP NULL,
-  ModifiedBy INT NULL,
-  CONSTRAINT PK_ExclusionMap_RowId PRIMARY KEY (RowId),
-  CONSTRAINT FK_ExclusionMap_ExclusionId FOREIGN KEY (ExclusionId) REFERENCES exp.Exclusions (RowId),
-  CONSTRAINT UQ_ExclusionMap_ExclusionId_DataId UNIQUE (ExclusionId, DataRowId)
-);
-
 ALTER TABLE exp.DomainDescriptor ALTER COLUMN DomainURI TYPE VARCHAR(300);
 ALTER TABLE exp.PropertyDescriptor ALTER COLUMN PropertyURI TYPE VARCHAR(300);
 
@@ -1394,14 +1366,8 @@ ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments TYPE TEXT;
 
 ALTER TABLE exp.DataClass ADD COLUMN Category VARCHAR(20) NULL;
 
-SELECT core.executeJavaUpgradeCode('addProvisionedDataClassNameClassId');
-
 ALTER TABLE exp.dataclass
     ADD COLUMN lastindexed TIMESTAMP NULL;
-
-SELECT core.executeJavaInitializationCode('addDbSequenceForMaterialsRowId');
-
-SELECT core.executeJavaUpgradeCode('addDbSequenceForMaterialsRowIdIfMissed');
 
 ALTER TABLE exp.MaterialSource ADD COLUMN LabelColor VARCHAR(7) NULL;
 
