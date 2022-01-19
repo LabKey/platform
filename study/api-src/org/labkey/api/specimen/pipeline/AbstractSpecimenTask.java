@@ -253,12 +253,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 delete(_unzipDir, ctx);
         }
 
-        @Deprecated  //Prefer the Path version
-        protected void delete(File file, SimpleStudyImportContext ctx)
-        {
-            delete(file.toPath(), ctx);
-        }
-
         protected void delete(Path path, SimpleStudyImportContext ctx)
         {
             Logger log = ctx.getLogger();

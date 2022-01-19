@@ -47,7 +47,7 @@ import java.util.List;
  */
 abstract public class PipelineProvider
 {
-    private static Logger _log = LogHelper.getLogger(PipelineProvider.class, "PipelineProvider and subclasses' execution");
+    private static final Logger _log = LogHelper.getLogger(PipelineProvider.class, "PipelineProvider and subclasses' execution");
 
     public enum Params { path }
 
@@ -76,6 +76,7 @@ abstract public class PipelineProvider
             return _entry.fileExists(f);
         }
 
+        @Override
         public boolean accept(Path file)
         {
             return accept(file.toFile());
@@ -84,7 +85,7 @@ abstract public class PipelineProvider
 
     public static class FileTypesEntryFilter extends FileEntryFilter
     {
-        private FileType[] _initialFileTypes;
+        private final FileType[] _initialFileTypes;
 
         public FileTypesEntryFilter(List<FileType> initialFileTypes)
         {
@@ -128,6 +129,7 @@ abstract public class PipelineProvider
             return accept(f.toPath(), true);
         }
 
+        @Override
         public boolean accept(Path f)
         {
             return accept(f, true);

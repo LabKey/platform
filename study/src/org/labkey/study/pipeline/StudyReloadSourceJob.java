@@ -44,8 +44,9 @@ import java.nio.file.Path;
  */
 public class StudyReloadSourceJob extends PipelineJob implements StudyReloadSourceJobSupport //extends StudyBatch implements Serializable, StudyReloadSourceJobSupport, FolderImporter
 {
-    private FolderImportContext _ctx;
-    private VirtualFile _root;
+    private final FolderImportContext _ctx;
+    private final VirtualFile _root;
+
     private String _reloadSourceName;
     private BindException _errors;
 
@@ -59,7 +60,7 @@ public class StudyReloadSourceJob extends PipelineJob implements StudyReloadSour
 
     public StudyReloadSourceJob(ViewBackgroundInfo info, PipeRoot root, String reloadSourceName)
     {
-//        super(info, null, root);
+        super(null, info, root);
         _reloadSourceName = reloadSourceName;
         _root = new FileSystemFile(root.getRootPath());
         Path folderXml = new File(root.getRootPath(), "folder.xml").toPath();
