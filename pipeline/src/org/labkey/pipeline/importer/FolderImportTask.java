@@ -107,7 +107,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             else
             {
                 //Build a fake ViewContext so we can run trigger scripts
-                try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(job.getUser(), job.getContainer(), job.getActionURL()))
+                try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(job.getUser(), job.getContainer(), job.getActionURL()))
                 {
                     importer.process(job, importContext, vf);
                 }

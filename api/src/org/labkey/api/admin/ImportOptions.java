@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 /**
- * Settings to control behavior during the import of a folder or study.
+ * Settings to control behavior during the import of a folder
  * User: klum
  * Date: 10/10/13
  */
@@ -38,8 +38,8 @@ public class ImportOptions
     private boolean _failForUndefinedVisits;
     private boolean _includeSubfolders = true; // default to true, unless explicitly disabled (i.e. advanced import to multiple folders option)
     private String _containerId;
-    private Integer _userId = null;
-    private Collection<String> _messages = new LinkedList<>();
+    private Integer _userId;
+    private final Collection<String> _messages = new LinkedList<>();
     private Set<String> _dataTypes;
     private Activity _activity;
     private Path _analysisDir;

@@ -80,7 +80,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
         _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
         _ctx.setActivity(options.getActivity());
 
-        LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
+        LOG.info("Pipeline job initialized for importing folder archive to folder " + c.getPath());
     }
 
     @Override
@@ -123,12 +123,12 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     protected String getNotificationType(PipelineJob.TaskStatus status)
     {
         return switch (status)
-                {
-                    case complete -> IMPORT_COMPLETED_NOTIFICATION;
-                    case error -> IMPORT_ERROR_NOTIFICATION;
-                    case cancelled -> IMPORT_CANCELLED_NOTIFICATION;
-                    default -> status.getNotificationType();
-                };
+        {
+            case complete -> IMPORT_COMPLETED_NOTIFICATION;
+            case error -> IMPORT_ERROR_NOTIFICATION;
+            case cancelled -> IMPORT_CANCELLED_NOTIFICATION;
+            default -> status.getNotificationType();
+        };
     }
 
     @Override
