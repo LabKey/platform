@@ -1097,7 +1097,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     /**
-     * Generate the Alter Table statement to change the size of a column
+     * Generate the Alter Table statement to change the size and/or data type of a column
      *
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
@@ -1125,15 +1125,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         "max" :
                         column.getSize().toString();
 
-                statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s(%s) ",
-                        column.getName(),
+                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
+                        makeLegalIdentifier(column.getName()),
                         getSqlTypeName(column.getJdbcType()),
                         size);
             }
             else
             {
-                statement = alterTableSegment + String.format(" ALTER COLUMN [%s] %s ",
-                        column.getName(),
+                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
+                        makeLegalIdentifier(column.getName()),
                         getSqlTypeName(column.getJdbcType()));
             }
 
@@ -1655,7 +1655,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             }
         }
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add("(15,4)");
+            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
 
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");

@@ -860,6 +860,11 @@ public class DomainPropertyImpl implements DomainProperty
         DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
     }
 
+    /**
+     * Format values in columns that were just converted from booleans to strings with the DB's default type conversion.
+     * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
+     * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
+     */
     private void updateBooleanValue(String schemaTable, String column, String formatString)
     {
         column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);

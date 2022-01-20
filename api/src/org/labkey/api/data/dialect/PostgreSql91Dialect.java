@@ -1073,7 +1073,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
         //Postgres allows executing multiple Alter Column statements under one Alter Table
         //  Reducing column size may cause a rebuild of the data so it can be expensive
-        sb.append( String.format("ALTER TABLE %s.%s ", change.getSchemaName(), change.getTableName()));
+        sb.append( String.format("ALTER TABLE %s ", makeTableIdentifier(change)));
         for (PropertyStorageSpec column : change.getColumns())
         {
             String dbType;
@@ -1086,7 +1086,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             }
             else if (column.getJdbcType().isDecimal())
             {
-                dbType = getSqlTypeName(column.getJdbcType()) + "(" + column.getPrecision() + ", " + column.getSize() + ")";
+                dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
             }
             else
             {
@@ -1332,7 +1332,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add("(15,4)");
+            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
 
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
