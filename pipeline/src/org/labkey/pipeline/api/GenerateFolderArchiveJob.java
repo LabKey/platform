@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.study.StudyReloadSource;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.study.FolderArchiveSource;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
@@ -12,7 +14,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 public class GenerateFolderArchiveJob extends PipelineJob
 {
-    private String _reloadSourceName;
+    private String _archiveSourceName;
 
     @SuppressWarnings("unused")
     // For serialization
@@ -20,11 +22,11 @@ public class GenerateFolderArchiveJob extends PipelineJob
     {
     }
 
-    public GenerateFolderArchiveJob(@Nullable String provider, ViewBackgroundInfo info, @NotNull PipeRoot root, @NotNull String reloadSourceName)
+    public GenerateFolderArchiveJob(@Nullable String provider, ViewBackgroundInfo info, @NotNull PipeRoot root, @NotNull String archiveSourceName)
     {
         super(provider, info, root);
         setupLocalDirectoryAndJobLog(root, "GenerateFolderArchive", FileUtil.makeFileNameWithTimestamp("generate_folder_archive", ".log"));
-        _reloadSourceName = reloadSourceName;
+        _archiveSourceName = archiveSourceName;
     }
 
     @Override
@@ -42,10 +44,35 @@ public class GenerateFolderArchiveJob extends PipelineJob
     @Override
     public void run()
     {
-        info("Generating folder archive");
-        StudyReloadSource reloadSource = StudyService.get().getStudyReloadSource(_reloadSourceName);
-        reloadSource.generateReloadSource(this, StudyService.get().getStudy(getContainer()));
-        info("Successfully generated folder archive");
-        setStatus(PipelineJob.TaskStatus.complete);
+        StudyService ss = StudyService.get();
+        if (null == ss)
+        {
+            setStatus(TaskStatus.error, "StudyService is not available");
+        }
+        else
+        {
+            Study study = ss.getStudy(getContainer());
+
+            if (null == study)
+            {
+                setStatus(TaskStatus.error, "No study is available in this folder");
+            }
+            else
+            {
+                FolderArchiveSource folderArchiveSource = PipelineService.get().getFolderArchiveSource(_archiveSourceName);
+
+                if (null == folderArchiveSource)
+                {
+                    setStatus(TaskStatus.error, "Folder archive source named \"" + _archiveSourceName + "\" is not registered");
+                }
+                else
+                {
+                    info("Generating folder archive");
+                    folderArchiveSource.generateFolderArchive(this, study);
+                    info("Successfully generated folder archive");
+                    setStatus(PipelineJob.TaskStatus.complete);
+                }
+            }
+        }
     }
 }

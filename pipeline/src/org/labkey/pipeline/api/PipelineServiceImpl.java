@@ -60,6 +60,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -105,6 +106,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -764,8 +766,39 @@ public class PipelineServiceImpl implements PipelineService
         }
     }
 
+    private final Map<String, FolderArchiveSource> _reloadSourceMap = new ConcurrentHashMap<>();
+
     @Override
-    public boolean runFolderArchiveCreateAndImportJob(Container c, User user, ActionURL url, String sourceName)
+    public void registerFolderArchiveSource(FolderArchiveSource source)
+    {
+        if (!_reloadSourceMap.containsKey(source.getName()))
+            _reloadSourceMap.put(source.getName(), source);
+        else
+            throw new IllegalStateException("A folder archive source implementation with the name: " + source.getName() + " is already registered!");
+    }
+
+    @Override
+    public Collection<FolderArchiveSource> getFolderArchiveSources(Container container)
+    {
+        List<FolderArchiveSource> sources = new ArrayList<>();
+
+        for (FolderArchiveSource source : _reloadSourceMap.values())
+        {
+            if (source.isEnabled(container))
+                sources.add(source);
+        }
+        return sources;
+    }
+
+    @Nullable
+    @Override
+    public FolderArchiveSource getFolderArchiveSource(String name)
+    {
+        return _reloadSourceMap.get(name);
+    }
+
+    @Override
+    public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName)
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
 

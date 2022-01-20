@@ -6418,7 +6418,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public @NotNull URLHelper getSuccessURL(Object o)
         {
             return new ActionURL(ShowVisitImportMappingAction.class, getContainer());
         }

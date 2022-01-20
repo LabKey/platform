@@ -69,7 +69,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyManagementOption;
-import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
@@ -118,7 +117,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -128,8 +126,6 @@ public class StudyServiceImpl implements StudyService
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private static final List<StudyManagementOption> _managementOptions = new ArrayList<>();
-
-    private final Map<String, StudyReloadSource> _reloadSourceMap = new ConcurrentHashMap<>();
 
     private StudyServiceImpl() {}
 
@@ -976,35 +972,6 @@ public class StudyServiceImpl implements StudyService
             union = "\nUNION ALL\n";
         }
         return sqlf;
-    }
-
-    @Override
-    public void registerStudyReloadSource(StudyReloadSource source)
-    {
-        if (!_reloadSourceMap.containsKey(source.getName()))
-            _reloadSourceMap.put(source.getName(), source);
-        else
-            throw new IllegalStateException("A study reload source implementation with the name: " + source.getName() + " is already registered");
-    }
-
-    @Override
-    public Collection<StudyReloadSource> getStudyReloadSources(Container container)
-    {
-        List<StudyReloadSource> sources = new ArrayList<>();
-
-        for (StudyReloadSource source : _reloadSourceMap.values())
-        {
-            if (source.isEnabled(container))
-                sources.add(source);
-        }
-        return sources;
-    }
-
-    @Nullable
-    @Override
-    public StudyReloadSource getStudyReloadSource(String name)
-    {
-        return _reloadSourceMap.get(name);
     }
 
     @Override

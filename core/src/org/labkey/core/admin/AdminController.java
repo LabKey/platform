@@ -395,7 +395,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public static class BeginAction extends SimpleRedirectAction
+    public static class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
@@ -427,7 +427,7 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public static class ShowAdminAction extends SimpleViewAction
+    public static class ShowAdminAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -448,7 +448,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class ShowModuleErrors extends SimpleViewAction
+    public class ShowModuleErrors extends SimpleViewAction<Object>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -459,7 +459,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/core/admin/moduleErrors.jsp");
+            return new JspView<>("/org/labkey/core/admin/moduleErrors.jsp");
         }
     }
 
@@ -788,7 +788,7 @@ public class AdminController extends SpringActionController
             bean.content = content;
             bean.loginURL = loginURL;
 
-            JspView view = new JspView<>("/org/labkey/core/admin/maintenance.jsp", bean, errors);
+            JspView<MaintenanceBean> view = new JspView<>("/org/labkey/core/admin/maintenance.jsp", bean, errors);
             view.setTitle(_title);
             return view;
         }
@@ -807,7 +807,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking
-    public static class StartupStatusAction extends ReadOnlyApiAction
+    public static class StartupStatusAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -822,7 +822,7 @@ public class AdminController extends SpringActionController
 
     @RequiresSiteAdmin
     @IgnoresTermsOfUse
-    public static class GetPendingRequestCountAction extends ReadOnlyApiAction
+    public static class GetPendingRequestCountAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -878,7 +878,6 @@ public class AdminController extends SpringActionController
 
     public static class GetModulesForm
     {
-
     }
 
     @RequiresNoPermission
@@ -938,6 +937,7 @@ public class AdminController extends SpringActionController
             return _categories;
         }
 
+        @SuppressWarnings("unused")
         public void setCategories(String categories)
         {
             _categories = categories;
@@ -946,7 +946,7 @@ public class AdminController extends SpringActionController
 
     // No security checks... anyone (even guests) can view the credits page
     @RequiresNoPermission
-    public class CreditsAction extends SimpleViewAction
+    public class CreditsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -985,12 +985,10 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
     {
         addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource);
     }
-
 
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
     {
@@ -1013,7 +1011,6 @@ public class AdminController extends SpringActionController
             }
         }
     }
-
 
     private static class CreditsView extends WebPartView
     {
@@ -1046,12 +1043,10 @@ public class AdminController extends SpringActionController
             }
         }
 
-
         private @NotNull String getErrors()
         {
             return _errors;
         }
-
 
         private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
@@ -1081,14 +1076,12 @@ public class AdminController extends SpringActionController
             return undocumentedErrors + missingErrors;
         }
 
-
         @Override
         public void renderView(Object model, PrintWriter out)
         {
             out.print(_html);
         }
     }
-
 
     private static String getCreditsFile(Module module, String filename) throws IOException
     {
@@ -1097,7 +1090,6 @@ public class AdminController extends SpringActionController
 
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
     }
-
 
     @NotNull
     private Set<String> getTomcatJars()
@@ -1466,7 +1458,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SiteValidationAction extends SimpleViewAction
+    public class SiteValidationAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1502,6 +1494,7 @@ public class AdminController extends SpringActionController
 
         String[] getEnabledCloudStore();
 
+        @SuppressWarnings("unused")
         void setEnabledCloudStore(String[] enabledCloudStore);
 
         boolean isCloudFileRoot();
@@ -3071,7 +3064,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class SystemMaintenanceForm
     {
         private String _taskName;
@@ -3098,7 +3090,6 @@ public class AdminController extends SpringActionController
             _test = test;
         }
     }
-
 
     @RequiresSiteAdmin
     public class SystemMaintenanceAction extends FormHandlerAction<SystemMaintenanceForm>
@@ -3143,12 +3134,10 @@ public class AdminController extends SpringActionController
             // If the test is invoking system maintenance then return the URL instead
             return form.isTest() ? null : _url;
         }
-
     }
 
-
     @AdminConsoleAction
-    public class AttachmentsAction extends SimpleViewAction
+    public class AttachmentsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -3163,9 +3152,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @AdminConsoleAction
-    public class FindAttachmentParentsAction extends SimpleViewAction
+    public class FindAttachmentParentsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -3179,7 +3167,6 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "Find Attachment Parents", getClass());
         }
     }
-
 
     public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
     {
@@ -3291,7 +3278,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class MemForm
     {
         private enum Params {clearCaches, debugName, gc}
@@ -3305,6 +3291,7 @@ public class AdminController extends SpringActionController
             return _clearCaches;
         }
 
+        @SuppressWarnings("unused")
         public void setClearCaches(boolean clearCaches)
         {
             _clearCaches = clearCaches;
@@ -3315,6 +3302,7 @@ public class AdminController extends SpringActionController
             return _gc;
         }
 
+        @SuppressWarnings("unused")
         public void setGc(boolean gc)
         {
             _gc = gc;
@@ -3325,12 +3313,12 @@ public class AdminController extends SpringActionController
             return _debugName;
         }
 
+        @SuppressWarnings("unused")
         public void setDebugName(String debugName)
         {
             _debugName = debugName;
         }
     }
-
 
     public static class MemBean
     {
@@ -3469,7 +3457,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private static MemoryUsageSummary getUsage(MemoryPoolMXBean pool)
     {
         try
@@ -3535,7 +3522,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class ChartForm
     {
         private String _type;
@@ -3551,11 +3537,11 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private static class MemoryCategory implements Comparable<MemoryCategory>
     {
-        private String _type;
-        private double _mb;
+        private final String _type;
+        private final double _mb;
+
         public MemoryCategory(String type, double mb)
         {
             _type = type;
@@ -3579,9 +3565,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @AdminConsoleAction
-    public class MemoryChartAction extends ExportAction<ChartForm>
+    public static class MemoryChartAction extends ExportAction<ChartForm>
     {
         @Override
         public void export(ChartForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -3598,9 +3583,9 @@ public class AdminController extends SpringActionController
             else
             {
                 List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-                for (Iterator it = pools.iterator(); it.hasNext() && usage == null;)
+                for (Iterator<MemoryPoolMXBean> it = pools.iterator(); it.hasNext() && usage == null;)
                 {
-                    MemoryPoolMXBean pool = (MemoryPoolMXBean) it.next();
+                    MemoryPoolMXBean pool = it.next();
                     if (form.getType().equals(pool.getName()))
                         usage = pool.getUsage();
                 }
@@ -3631,7 +3616,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {
         ActionURL url = new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
@@ -3656,9 +3640,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             ModuleLoader loader = ModuleLoader.getInstance();
-
             VBox vbox = new VBox();
-
             ModuleStatusBean bean = new ModuleStatusBean();
 
             if (loader.isNewInstall())
@@ -3827,12 +3809,12 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public static class InstallCompleteAction extends SimpleViewAction
+    public static class InstallCompleteAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            JspView view = new JspView("/org/labkey/core/admin/installComplete.jsp");
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/installComplete.jsp");
 
             getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
             getPageConfig().setTitle("Complete");
@@ -3869,7 +3851,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DbCheckerAction extends SimpleViewAction
+    public class DbCheckerAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -3877,14 +3859,12 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
         }
 
-
         @Override
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Database Check Tools", this.getClass());
         }
     }
-
 
     @RequiresPermission(AdminOperationsPermission.class)
     public class DoCheckAction extends SimpleViewAction<DataCheckForm>
@@ -3984,7 +3964,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class DataCheckForm
     {
         private String _dbSchema = "";
@@ -4000,7 +3979,6 @@ public class AdminController extends SpringActionController
         public boolean getFull() { return _full; }
         public void setFull(boolean full) { _full = full; }
     }
-
 
     @RequiresPermission(AdminOperationsPermission.class)
     public static class GetSchemaXmlDocAction extends ExportAction<DataCheckForm>
@@ -4031,7 +4009,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public static class FolderInformationAction extends FolderManagementViewAction
     {
@@ -4056,7 +4033,6 @@ public class AdminController extends SpringActionController
             return new HtmlView(PageFlowUtil.getDataRegionHtmlForPropertyObjects(propValueMap));
         }
     }
-
 
     public static class MissingValuesForm
     {
@@ -4094,7 +4070,6 @@ public class AdminController extends SpringActionController
             _mvLabels = mvLabels;
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public static class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
@@ -4336,7 +4311,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public static class ExportFolderAction extends FolderManagementViewPostAction<ExportFolderForm>
     {
@@ -4375,8 +4349,8 @@ public class AdminController extends SpringActionController
 
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
-                    form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
-                    form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
+                form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
+                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
             switch (form.getLocation())
             {
@@ -4468,7 +4442,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class ImportFolderForm
     {
         private boolean _createSharedDatasets;
@@ -4513,6 +4486,7 @@ public class AdminController extends SpringActionController
             return _sourceTemplateFolder;
         }
 
+        @SuppressWarnings("unused")
         public void setSourceTemplateFolder(String sourceTemplateFolder)
         {
             _sourceTemplateFolder = sourceTemplateFolder;
@@ -4523,6 +4497,7 @@ public class AdminController extends SpringActionController
             return _sourceTemplateFolderId;
         }
 
+        @SuppressWarnings("unused")
         public void setSourceTemplateFolderId(String sourceTemplateFolderId)
         {
             _sourceTemplateFolderId = sourceTemplateFolderId;
@@ -4545,7 +4520,6 @@ public class AdminController extends SpringActionController
             return ContainerManager.getForId(getSourceTemplateFolderId().replace(',', ' ').trim());
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class ImportFolderAction extends FolderManagementViewPostAction<ImportFolderForm>
@@ -4676,7 +4650,7 @@ public class AdminController extends SpringActionController
             Map<String, MultipartFile> map = getFileMap();
 
             // make sure we have a single file selected for import
-            if (map.isEmpty() || map.size() > 1)
+            if (map.size() != 1)
             {
                 errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                 return null;
@@ -4703,10 +4677,10 @@ public class AdminController extends SpringActionController
                 ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
 
                 return new FolderImportConfig(
-                        false,
-                        zipFile.getOriginalFilename(),
-                        pipelineUnzipFile,
-                        pipelineUnzipFile
+                    false,
+                    zipFile.getOriginalFilename(),
+                    pipelineUnzipFile,
+                    pipelineUnzipFile
                 );
             }
             catch (FileNotFoundException e)
@@ -4749,10 +4723,10 @@ public class AdminController extends SpringActionController
             ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
 
             return new FolderImportConfig(
-                    StringUtils.isNotEmpty(form.getSourceTemplateFolderId()),
-                    implicitZipFile.getFileName().toString(),
-                    implicitZipFile,
-                    null
+                StringUtils.isNotEmpty(form.getSourceTemplateFolderId()),
+                implicitZipFile.getFileName().toString(),
+                implicitZipFile,
+                null
             );
         }
 
@@ -4777,7 +4751,6 @@ public class AdminController extends SpringActionController
             return _successURL;
         }
     }
-
 
     private Set<String> getRegisteredFolderWritersForImplicitExport(Container sourceContainer)
     {
@@ -5715,7 +5688,6 @@ public class AdminController extends SpringActionController
             form.setConfirmMessage("The enabled cloud stores changed.");
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public static class ManageFoldersAction extends FolderManagementViewAction
     {
@@ -5725,7 +5697,6 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/manageFolders.jsp");
         }
     }
-
 
     public static class NotificationsForm
     {
@@ -5741,7 +5712,6 @@ public class AdminController extends SpringActionController
             _provider = provider;
         }
     }
-
 
     private static final String DATA_REGION_NAME = "Users";
 
@@ -5865,7 +5835,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class NotifyOptionsForm
     {
         private String _type;
@@ -5921,9 +5890,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class SetBulkEmailOptionsAction extends MutatingApiAction<EmailConfigFormImpl>
+    public static class SetBulkEmailOptionsAction extends MutatingApiAction<EmailConfigFormImpl>
     {
         @Override
         public ApiResponse execute(EmailConfigFormImpl form, BindException errors)
@@ -5998,7 +5966,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private static class PanelConfig implements MessageConfigService.PanelInfo
     {
         private final ActionURL _returnUrl;
@@ -6022,7 +5989,6 @@ public class AdminController extends SpringActionController
             return _dataRegionSelectionKey;
         }
     }
-
 
     public static class ConceptsForm
     {
@@ -6072,9 +6038,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
+    public static class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
         protected HttpView getTabView(ConceptsForm form, boolean reshow, BindException errors)
@@ -6133,7 +6098,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public class FolderAliasesAction extends FormViewAction<FolderAliasesForm>
     {
@@ -6187,7 +6151,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class FolderAliasesForm
     {
         private String _aliases;
@@ -6197,23 +6160,12 @@ public class AdminController extends SpringActionController
             return _aliases;
         }
 
+        @SuppressWarnings("unused")
         public void setAliases(String aliases)
         {
             _aliases = aliases;
         }
     }
-
-
-    public ActionURL getCustomizeEmailURL(String templateClassName)
-    {
-        ActionURL url = new ActionURL(CustomizeEmailAction.class, getContainer());
-
-        if (null != templateClassName)
-            url.addParameter("templateClassName", templateClassName);
-
-        return url;
-    }
-
 
     @RequiresPermission(AdminPermission.class)
     public class CustomizeEmailAction extends FormViewAction<CustomEmailForm>
@@ -6273,9 +6225,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomEmailAction extends FormHandlerAction<CustomEmailForm>
+    public static class DeleteCustomEmailAction extends FormHandlerAction<CustomEmailForm>
     {
         @Override
         public void validateCommand(CustomEmailForm target, Errors errors)
@@ -6301,9 +6252,7 @@ public class AdminController extends SpringActionController
         {
             return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
         }
-
     }
-
 
     @SuppressWarnings("unused")
     public static class CustomEmailForm extends ReturnUrlForm
@@ -6698,7 +6647,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class MoveFolderTreeView extends JspView<ManageFoldersForm>
     {
         private MoveFolderTreeView(ManageFoldersForm form, BindException errors)
@@ -6706,7 +6654,6 @@ public class AdminController extends SpringActionController
             super("/org/labkey/core/admin/moveFolder.jsp", form, errors);
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     @ActionNames("ShowMoveFolderTree,MoveFolder")
@@ -6808,9 +6755,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
+    public static class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
     {
         @Override
         public ModelAndView getView(ManageFoldersForm form, BindException errors)
@@ -6826,9 +6772,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class CreateFolderAction extends FormViewAction<ManageFoldersForm>
+    public static class CreateFolderAction extends FormViewAction<ManageFoldersForm>
     {
         private ActionURL _successURL;
 
@@ -6998,9 +6943,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class SetFolderPermissionsAction extends FormViewAction<SetFolderPermissionsForm>
+    public static class SetFolderPermissionsAction extends FormViewAction<SetFolderPermissionsForm>
     {
         private ActionURL _successURL;
 
@@ -7009,13 +6953,12 @@ public class AdminController extends SpringActionController
         {
         }
 
-
         @Override
         public ModelAndView getView(SetFolderPermissionsForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
-            JspView statusView = new JspView<>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
+            JspView<Object> statusView = new JspView<>("/org/labkey/core/admin/setFolderPermissions.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getContainer();
@@ -7025,7 +6968,6 @@ public class AdminController extends SpringActionController
             setHelpTopic("createProject");
 
             return vbox;
-
         }
 
         @Override
@@ -7064,17 +7006,14 @@ public class AdminController extends SpringActionController
 
             switch (permissionType)
             {
-                case "CurrentUser":
+                case "CurrentUser" -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
                     Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
-
                     policy.addRoleAssignment(getUser(), role);
                     SecurityPolicyManager.savePolicy(policy);
-                    break;
-                case "Inherit":
-                    SecurityManager.setInheritPermissions(c);
-                    break;
-                case "CopyExistingProject":
+                }
+                case "Inherit" -> SecurityManager.setInheritPermissions(c);
+                case "CopyExistingProject" -> {
                     String targetProject = form.getTargetProject();
                     if (targetProject == null)
                     {
@@ -7090,7 +7029,6 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
-
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 
                     //copy role assignments
@@ -7098,7 +7036,7 @@ public class AdminController extends SpringActionController
                     MutableSecurityPolicy np = new MutableSecurityPolicy(c);
                     for (RoleAssignment assignment : op.getAssignments())
                     {
-                        Integer userId = assignment.getUserId();
+                        int userId = assignment.getUserId();
                         UserPrincipal p = SecurityManager.getPrincipal(userId);
                         Role r = assignment.getRole();
 
@@ -7119,11 +7057,9 @@ public class AdminController extends SpringActionController
                             np.addRoleAssignment(p, r);
                         }
                     }
-
                     SecurityPolicyManager.savePolicy(np);
-                    break;
-                default:
-                    throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
+                }
+                default -> throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
             }
             _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
@@ -7154,6 +7090,7 @@ public class AdminController extends SpringActionController
             return permissionType;
         }
 
+        @SuppressWarnings("unused")
         public void setPermissionType(String permissionType)
         {
             this.permissionType = permissionType;
@@ -7164,6 +7101,7 @@ public class AdminController extends SpringActionController
             return targetProject;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetProject(String targetProject)
         {
             this.targetProject = targetProject;
@@ -7174,6 +7112,7 @@ public class AdminController extends SpringActionController
             return advanced;
         }
 
+        @SuppressWarnings("unused")
         public void setAdvanced(boolean advanced)
         {
             this.advanced = advanced;
@@ -7181,7 +7120,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetInitialFolderSettingsAction extends FormViewAction<FilesForm>
+    public static class SetInitialFolderSettingsAction extends FormViewAction<FilesForm>
     {
         private ActionURL _successURL;
 
@@ -7196,7 +7135,7 @@ public class AdminController extends SpringActionController
             VBox vbox = new VBox();
             Container c = getContainer();
 
-            JspView statusView = new JspView<>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
+            JspView<FilesForm> statusView = new JspView<>("/org/labkey/core/admin/setInitialFolderSettings.jsp", form, errors);
             vbox.addView(statusView);
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
@@ -7267,7 +7206,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteWorkbooksAction extends SimpleRedirectAction<ReturnUrlForm>
+    public static class DeleteWorkbooksAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         public void validateCommand(ReturnUrlForm target, Errors errors)
         {
@@ -7284,9 +7223,7 @@ public class AdminController extends SpringActionController
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
 
             ActionURL ret = new ActionURL(DeleteFolderAction.class, getContainer());
-            ids.forEach(id -> {
-                ret.addParameter("targets", id);
-            });
+            ids.forEach(id -> ret.addParameter("targets", id));
 
             ret.replaceParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
 
@@ -7296,9 +7233,9 @@ public class AdminController extends SpringActionController
 
     //NOTE: some types of containers can be deleted by non-admin users, provided they have DeletePermission on the parent
     @RequiresPermission(DeletePermission.class)
-    public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
+    public static class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        private List<Container> _deleted = new ArrayList<>();
+        private final List<Container> _deleted = new ArrayList<>();
 
         @Override
         public void validateCommand(ManageFoldersForm form, Errors errors)
@@ -7394,7 +7331,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public class ReorderFoldersAction extends FormViewAction<FolderReorderForm>
     {
@@ -7485,6 +7421,7 @@ public class AdminController extends SpringActionController
             return _order;
         }
 
+        @SuppressWarnings("unused")
         public void setOrder(String order)
         {
             _order = order;
@@ -7495,6 +7432,7 @@ public class AdminController extends SpringActionController
             return _resetToAlphabetical;
         }
 
+        @SuppressWarnings("unused")
         public void setResetToAlphabetical(boolean resetToAlphabetical)
         {
             _resetToAlphabetical = resetToAlphabetical;
@@ -7502,7 +7440,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RevertFolderAction extends MutatingApiAction<RevertFolderForm>
+    public static class RevertFolderAction extends MutatingApiAction<RevertFolderForm>
     {
         @Override
         public ApiResponse execute(RevertFolderForm form, BindException errors)
@@ -7651,7 +7589,7 @@ public class AdminController extends SpringActionController
 
             if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
             {
-                JspView emailPropsView = new JspView("/org/labkey/core/admin/emailProps.jsp");
+                JspView<?> emailPropsView = new JspView<>("/org/labkey/core/admin/emailProps.jsp");
                 emailPropsView.setTitle("Current Email Settings");
 
                 return new VBox(emailPropsView, testView);
@@ -7663,7 +7601,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
         {
-            if(errors.hasErrors())
+            if (errors.hasErrors())
             {
                 return false;
             }
@@ -7711,9 +7649,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminOperationsPermission.class)
-    public class RecreateViewsAction extends ConfirmAction
+    public static class RecreateViewsAction extends ConfirmAction<Object>
     {
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
@@ -7736,12 +7673,11 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(Object o)
+        public @NotNull ActionURL getSuccessURL(Object o)
         {
             return AppProps.getInstance().getHomePageActionURL();
         }
     }
-
 
     static public class LoggingForm
     {
@@ -7758,11 +7694,10 @@ public class AdminController extends SpringActionController
         public boolean logging = false;
     }
 
-
     @RequiresLogin
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public static class GetSessionLogEventsAction extends ReadOnlyApiAction
+    public static class GetSessionLogEventsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public void checkPermissions()
@@ -7809,7 +7744,7 @@ public class AdminController extends SpringActionController
     @AllowedBeforeInitialUserIsSet
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking  /* ignore so that we don't get an update in the UI for each time it requests the newest data */
-    public class GetTrackedAllocationsAction extends ReadOnlyApiAction
+    public static class GetTrackedAllocationsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public void checkPermissions()
@@ -7859,7 +7794,7 @@ public class AdminController extends SpringActionController
         private List<Map.Entry<String, Integer>> sortByCounts(RequestInfo requestInfo)
         {
             List<Map.Entry<String, Integer>> objects = new ArrayList<>(requestInfo.getObjects().entrySet());
-            objects.sort(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()));
+            objects.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
             return objects;
         }
     }
@@ -7867,7 +7802,7 @@ public class AdminController extends SpringActionController
     @RequiresLogin
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class TrackedAllocationsViewerAction extends SimpleViewAction
+    public static class TrackedAllocationsViewerAction extends SimpleViewAction<Object>
     {
         @Override
         public void checkPermissions()
@@ -7881,7 +7816,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(Template.Print);
-            return new JspView("/org/labkey/core/admin/memTrackerViewer.jsp");
+            return new JspView<>("/org/labkey/core/admin/memTrackerViewer.jsp");
         }
 
         @Override
@@ -7893,7 +7828,7 @@ public class AdminController extends SpringActionController
     @RequiresLogin
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class SessionLoggingAction extends FormViewAction<LoggingForm>
+    public static class SessionLoggingAction extends FormViewAction<LoggingForm>
     {
         @Override
         public void checkPermissions()
@@ -7945,7 +7880,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     static class LoggingView extends JspView<Object>
     {
         LoggingView()
@@ -7953,7 +7887,6 @@ public class AdminController extends SpringActionController
             super("/org/labkey/core/admin/logging.jsp", null);
         }
     }
-
 
     public static class LogForm
     {
@@ -7985,7 +7918,7 @@ public class AdminController extends SpringActionController
     // Simple action that writes "message" parameter to the labkey log. Used by the test harness to indicate when
     // each test begins and ends. Message parameter is output as sent, except that \n is translated to newline.
     @RequiresLogin
-    public class LogAction extends MutatingApiAction<LogForm>
+    public static class LogAction extends MutatingApiAction<LogForm>
     {
         @Override
         public ApiResponse execute(LogForm logForm, BindException errors)
@@ -8001,9 +7934,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ValidateDomainsAction extends FormHandlerAction
+    public class ValidateDomainsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -8034,7 +7966,6 @@ public class AdminController extends SpringActionController
             return urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
         }
     }
-
 
     public static class ModulesForm
     {
@@ -8080,33 +8011,32 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public enum ManageFilter
     {
         ManagedOnly
+        {
+            @Override
+            public boolean accept(Module module)
             {
-                @Override
-                public boolean accept(Module module)
-                {
-                    return null != module && module.shouldManageVersion();
-                }
-            },
+                return null != module && module.shouldManageVersion();
+            }
+        },
         UnmanagedOnly
+        {
+            @Override
+            public boolean accept(Module module)
             {
-                @Override
-                public boolean accept(Module module)
-                {
-                    return null != module && !module.shouldManageVersion();
-                }
-            },
+                return null != module && !module.shouldManageVersion();
+            }
+        },
         All
+        {
+            @Override
+            public boolean accept(Module module)
             {
-                @Override
-                public boolean accept(Module module)
-                {
-                    return true;
-                }
-            };
+                return true;
+            }
+        };
 
         public abstract boolean accept(Module module);
     }
@@ -8185,11 +8115,11 @@ public class AdminController extends SpringActionController
             HttpView known = new ModulesView(knownModules, "Known", knownDescription.getHtmlString(), null, ignoreSet, filter);
 
             HtmlStringBuilder unknownDescription = HtmlStringBuilder.of()
-                    .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
-                    "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
-                    "module is no longer being distributed, the module has been renamed, the server location where the module " +
-                    "is stored is not accessible, or the module file is corrupted.")
-                    .append(HtmlString.unsafe("<br><br>")).append("The delete links below will remove all record of a module from the database tables.");
+                .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
+                "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
+                "module is no longer being distributed, the module has been renamed, the server location where the module " +
+                "is stored is not accessible, or the module file is corrupted.")
+                .append(HtmlString.unsafe("<br><br>")).append("The delete links below will remove all record of a module from the database tables.");
             HtmlString noModulesDescription = HtmlString.of("A module is considered \"unknown\" if it was installed on this server " +
                     "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules.");
             HttpView unknown = new ModulesView(unknownModules, "Unknown", unknownDescription.getHtmlString(), noModulesDescription, Collections.emptySet(), filter);
@@ -8347,7 +8277,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class SchemaVersionTestCase extends Assert
     {
         @Test
@@ -8378,7 +8307,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class ModuleForm
     {
         private String _name;
@@ -8406,7 +8334,6 @@ public class AdminController extends SpringActionController
             return ctx;
         }
     }
-
 
     @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteModuleAction extends ConfirmAction<ModuleForm>
@@ -8439,16 +8366,16 @@ public class AdminController extends SpringActionController
             }
 
             return new HtmlView(DIV(
-                    !hasFiles ? null : DIV(cl("labkey-warning-messages"),
-                            "This module still has files on disk.  Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
-                            null==module.getExplodedPath()?null:UL(LI(module.getExplodedPath().getPath())),
-                            null==module.getZippedPath()?null:UL(LI(module.getZippedPath().getPath()))
-                        ),
-                    BR(),
-                    "Are you sure you want to remove the ", description, "? ",
-                    (!hasFiles && !hasSchemas && isSimple) ?  "This operation cannot be undone!" : "This operation may render the server unusable and cannot be undone!",
-                    BR(),
-                    !hasFiles ? null : "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server."
+                !hasFiles ? null : DIV(cl("labkey-warning-messages"),
+                        "This module still has files on disk.  Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
+                        null==module.getExplodedPath()?null:UL(LI(module.getExplodedPath().getPath())),
+                        null==module.getZippedPath()?null:UL(LI(module.getZippedPath().getPath()))
+                    ),
+                BR(),
+                "Are you sure you want to remove the ", description, "? ",
+                (!hasFiles && !hasSchemas && isSimple) ?  "This operation cannot be undone!" : "This operation may render the server unusable and cannot be undone!",
+                BR(),
+                !hasFiles ? null : "Deleting modules on a running server could leave it in an unpredictable state; be sure to restart your server."
             ));
         }
 
@@ -8461,7 +8388,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(ModuleForm form)
+        public @NotNull URLHelper getSuccessURL(ModuleForm form)
         {
             return new ActionURL(ModulesAction.class, ContainerManager.getRoot());
         }
@@ -8482,7 +8409,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminOperationsPermission.class)
     public static class CreateModuleAction extends SimpleViewAction<ModuleForm>
     {
@@ -8497,7 +8423,6 @@ public class AdminController extends SpringActionController
         {
         }
     }
-
 
     public static class ExperimentalFeaturesForm
     {
@@ -8526,7 +8451,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ExperimentalFeatureAction extends MutatingApiAction<ExperimentalFeaturesForm>
+    public static class ExperimentalFeatureAction extends MutatingApiAction<ExperimentalFeaturesForm>
     {
         @Override
         public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
@@ -8566,7 +8491,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors)
         {
-            JspView view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/experimentalFeatures.jsp");
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
@@ -10040,16 +9965,16 @@ public class AdminController extends SpringActionController
 
         final Map<String,Map<String,Object>> sets = new TreeMap<>();
         new SqlSelector(CoreSchema.getInstance().getScope(),
-                "SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-                "WHERE objectid = 'b4a1ed67-a8c5-1036-b972-11ad73d07947' AND category IN ('SiteConfig') AND encryption='None'").forEachMap(m ->
-                {
-                    String category = (String)m.get("category");
-                    String name = (String)m.get("name");
-                    Object value = m.get("value");
-                    if (!sets.containsKey(category))
-                        sets.put(category, new TreeMap<String,Object>());
-                    sets.get(category).put(name,value);
-                }
+            "SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
+            "WHERE objectid = 'b4a1ed67-a8c5-1036-b972-11ad73d07947' AND category IN ('SiteConfig') AND encryption='None'").forEachMap(m ->
+            {
+                String category = (String)m.get("category");
+                String name = (String)m.get("name");
+                Object value = m.get("value");
+                if (!sets.containsKey(category))
+                    sets.put(category, new TreeMap<>());
+                sets.get(category).put(name,value);
+            }
         );
         res.put("siteSettings", sets);
 
@@ -10182,7 +10107,7 @@ public class AdminController extends SpringActionController
 
     // Same as ProjectSettingsAction, but provides special admin console permissions handling
     @AdminConsoleAction(ApplicationAdminPermission.class)
-    public class LookAndFeelSettingsAction extends ProjectSettingsAction
+    public static class LookAndFeelSettingsAction extends ProjectSettingsAction
     {
         @Override
         protected TYPE getType()
@@ -10192,7 +10117,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResourcesAction extends ProjectSettingsViewPostAction
+    public static class ResourcesAction extends ProjectSettingsViewPostAction<Object>
     {
         @Override
         protected HttpView getTabView(Object o, boolean reshow, BindException errors)
@@ -10241,7 +10166,7 @@ public class AdminController extends SpringActionController
 
     // Same as ResourcesAction, but provides special admin console permissions handling
     @AdminConsoleAction
-    public class AdminConsoleResourcesAction extends ResourcesAction
+    public static class AdminConsoleResourcesAction extends ResourcesAction
     {
         @Override
         protected TYPE getType()
@@ -10251,7 +10176,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MenuBarAction extends ProjectSettingsViewAction
+    public static class MenuBarAction extends ProjectSettingsViewAction
     {
         @Override
         protected HttpView getTabView()
@@ -10267,15 +10192,13 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     private static HtmlView getErrorView(String msg)
     {
         return new HtmlView("<span class=\"labkey-error\">" + msg + "</span>");
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
+    public static class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
     {
         @Override
         protected HttpView getTabView(FilesForm form, boolean reshow, BindException errors)
@@ -10297,7 +10220,7 @@ public class AdminController extends SpringActionController
                 }
             }
             VBox box = new VBox();
-            JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+            JspView<FilesForm> view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
             String title = "Configure File Root";
             if (CloudStoreService.get() != null)
                 title += " And Enable Cloud Stores";
@@ -10579,43 +10502,43 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                    new GetModulesAction(),
-                    new GetFolderTabsAction(),
-                    controller.new ClearDeletedTabFoldersAction()
+                new GetModulesAction(),
+                new GetFolderTabsAction(),
+                controller.new ClearDeletedTabFoldersAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,
-                    controller.new DeleteFolderAction()
+                new DeleteFolderAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                    new ResetResourceAction(),
-                    new ResetPropertiesAction(),
-                    controller.new SiteValidationAction(),
-                    controller.new ResetQueryStatisticsAction(),
-                    controller.new FolderAliasesAction(),
-                    controller.new CustomizeEmailAction(),
-                    controller.new DeleteCustomEmailAction(),
-                    controller.new RenameFolderAction(),
-                    controller.new MoveFolderAction(),
-                    controller.new ConfirmProjectMoveAction(),
-                    controller.new CreateFolderAction(),
-                    controller.new SetFolderPermissionsAction(),
-                    controller.new SetInitialFolderSettingsAction(),
-                    controller.new ReorderFoldersAction(),
-                    controller.new ReorderFoldersApiAction(),
-                    controller.new RevertFolderAction(),
-                    controller.new CustomizeMenuAction(),
-                    controller.new AddTabAction(),
-                    controller.new ShowTabAction(),
-                    controller.new MoveTabAction(),
-                    controller.new RenameTabAction(),
-                    new ProjectSettingsAction(),
-                    controller.new ResourcesAction(),
-                    controller.new MenuBarAction(),
-                    controller.new FilesAction()
+                new ResetResourceAction(),
+                new ResetPropertiesAction(),
+                controller.new SiteValidationAction(),
+                controller.new ResetQueryStatisticsAction(),
+                controller.new FolderAliasesAction(),
+                controller.new CustomizeEmailAction(),
+                new DeleteCustomEmailAction(),
+                controller.new RenameFolderAction(),
+                controller.new MoveFolderAction(),
+                new ConfirmProjectMoveAction(),
+                new CreateFolderAction(),
+                new SetFolderPermissionsAction(),
+                new SetInitialFolderSettingsAction(),
+                controller.new ReorderFoldersAction(),
+                controller.new ReorderFoldersApiAction(),
+                new RevertFolderAction(),
+                controller.new CustomizeMenuAction(),
+                controller.new AddTabAction(),
+                controller.new ShowTabAction(),
+                controller.new MoveTabAction(),
+                controller.new RenameTabAction(),
+                new ProjectSettingsAction(),
+                    new ResourcesAction(),
+                    new MenuBarAction(),
+                    new FilesAction()
             );
 
             //TODO @RequiresPermission(AdminReadPermission.class)
@@ -10623,40 +10546,40 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                    controller.new EmailTestAction(),
-                    controller.new ShowNetworkDriveTestAction(),
-                    controller.new DbCheckerAction(),
-                    controller.new DoCheckAction(),
-                    new GetSchemaXmlDocAction(),
-                    controller.new RecreateViewsAction(),
-                    controller.new ValidateDomainsAction(),
-                    controller.new DeleteModuleAction(),
-                    controller.new ExperimentalFeatureAction()
+                controller.new EmailTestAction(),
+                controller.new ShowNetworkDriveTestAction(),
+                controller.new DbCheckerAction(),
+                controller.new DoCheckAction(),
+                new GetSchemaXmlDocAction(),
+                new RecreateViewsAction(),
+                controller.new ValidateDomainsAction(),
+                controller.new DeleteModuleAction(),
+                new ExperimentalFeatureAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                    new ShowAdminAction(),
-                    controller.new ShowThreadsAction(),
-                    controller.new DumpHeapAction(),
-                    controller.new ResetErrorMarkAction(),
-                    controller.new ShowErrorsSinceMarkAction(),
-                    controller.new ShowAllErrorsAction(),
-                    controller.new ShowPrimaryLogAction(),
-                    controller.new ActionsAction(),
-                    controller.new ExportActionsAction(),
-                    controller.new QueriesAction(),
-                    controller.new QueryStackTracesAction(),
-                    controller.new ExecutionPlanAction(),
-                    controller.new ExportQueriesAction(),
-                    controller.new MemTrackerAction(),
-                    controller.new MemoryChartAction(),
-                    controller.new FolderTypesAction(),
-                    controller.new ShortURLAdminAction(),
-                    controller.new CustomizeSiteAction(),
-                    controller.new CachesAction(),
-                    controller.new ConfigureSystemMaintenanceAction(),
-                    controller.new ModulesAction()
+                new ShowAdminAction(),
+                controller.new ShowThreadsAction(),
+                controller.new DumpHeapAction(),
+                controller.new ResetErrorMarkAction(),
+                controller.new ShowErrorsSinceMarkAction(),
+                controller.new ShowAllErrorsAction(),
+                controller.new ShowPrimaryLogAction(),
+                controller.new ActionsAction(),
+                controller.new ExportActionsAction(),
+                controller.new QueriesAction(),
+                controller.new QueryStackTracesAction(),
+                controller.new ExecutionPlanAction(),
+                controller.new ExportQueriesAction(),
+                controller.new MemTrackerAction(),
+                new MemoryChartAction(),
+                controller.new FolderTypesAction(),
+                controller.new ShortURLAdminAction(),
+                controller.new CustomizeSiteAction(),
+                controller.new CachesAction(),
+                controller.new ConfigureSystemMaintenanceAction(),
+                controller.new ModulesAction()
             );
 
             // @AdminConsoleAction
@@ -10667,14 +10590,14 @@ public class AdminController extends SpringActionController
 
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
-                    controller.new ShowModuleErrors(),
-                    new GetPendingRequestCountAction(),
-                    controller.new SystemMaintenanceAction(),
-                    new ModuleStatusAction(),
-                    new NewInstallSiteSettingsAction(),
-                    new InstallCompleteAction(),
-                    controller.new EnvironmentVariablesAction(),
-                    controller.new SystemPropertiesAction()
+                controller.new ShowModuleErrors(),
+                new GetPendingRequestCountAction(),
+                controller.new SystemMaintenanceAction(),
+                new ModuleStatusAction(),
+                new NewInstallSiteSettingsAction(),
+                new InstallCompleteAction(),
+                controller.new EnvironmentVariablesAction(),
+                controller.new SystemPropertiesAction()
             );
         }
     }
@@ -10697,14 +10620,14 @@ public class AdminController extends SpringActionController
             viewContext.setContainer(ContainerManager.getSharedContainer());
             viewContext.setUser(ctx.getUser());
             RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(
-                    viewContext.getContainer(), viewContext.getUser(),
-                    Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
+                viewContext.getContainer(), viewContext.getUser(),
+                Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
             job._impersonationContext = factory.getImpersonationContext();
 
             try
             {
                 UserImpersonationContextFactory factory1 = new UserImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
-                        UserManager.getGuestUser(), null);
+                    UserManager.getGuestUser(), null);
                 job._impersonationContext1 = factory1.getImpersonationContext();
             }
             catch (Exception e)
@@ -10713,7 +10636,7 @@ public class AdminController extends SpringActionController
             }
 
             GroupImpersonationContextFactory factory2 = new GroupImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
-                    GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
+                GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
             job._impersonationContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
         }

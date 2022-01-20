@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -165,7 +166,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption);
 
-    HttpView getSetupView(SetupForm form);
+    HttpView<SetupForm> getSetupView(SetupForm form);
 
     boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;
 
@@ -192,7 +193,19 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
 
-    boolean runFolderArchiveCreateAndImportJob(Container c, User user, ActionURL url, String sourceName);
+    /**
+     * Register a folder archive source implementation. A FolderArchiveSource creates folder artifacts that can be
+     * imported automatically via the folder import framework. The source of the artifacts could be an external
+     * repository or server.
+     */
+    void registerFolderArchiveSource(FolderArchiveSource reloadSource);
+
+    Collection<FolderArchiveSource> getFolderArchiveSources(Container container);
+
+    @Nullable
+    FolderArchiveSource getFolderArchiveSource(String name);
+
+    boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName);
 
     Integer getJobId(User u, Container c, String jobGUID);
 
