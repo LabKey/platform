@@ -424,7 +424,7 @@ public class ExperimentJSONConverter
                 obj.put(ProvenanceService.PROVENANCE_OBJECT_INPUTS,
                         Collections.unmodifiableList(inputSet.stream()
                                 .map(Pair::getKey)
-                                .map(ExperimentJSONConverter::serializeProvenanceObject)
+                                .map((objectUri -> serializeProvenanceObject(objectUri, false)))
                                 .collect(Collectors.toList())));
             }
         }
@@ -464,22 +464,27 @@ public class ExperimentJSONConverter
     {
         var map = new HashMap<String, Object>();
         if (pair.first != null)
-            map.put("from", serializeProvenanceObject(pair.first));
+            map.put("from", serializeProvenanceObject(pair.first, true));
         if (pair.second != null)
-            map.put("to", serializeProvenanceObject(pair.second));
+            map.put("to", serializeProvenanceObject(pair.second, true));
         return map;
     }
 
-    private static JSONObject serializeProvenanceObject(String objectUri)
+    private static Object serializeProvenanceObject(String objectUri, boolean asJSON)
     {
         if (objectUri == null)
             return null;
 
-        Identifiable obj = LsidManager.get().getObject(objectUri);
-        if (obj == null)
-            return null;
+        if (asJSON)
+        {
+            Identifiable obj = LsidManager.get().getObject(objectUri);
+            if (obj == null)
+                return null;
 
-        return serializeIdentifiableBean(obj);
+            return serializeIdentifiableBean(obj);
+        }
+
+        return objectUri;
     }
 
     /**
