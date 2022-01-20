@@ -1,9 +1,11 @@
 package org.labkey.api.issues;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -11,11 +13,12 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,10 +89,12 @@ public interface Issue
 
     class Builder implements org.labkey.api.data.Builder<Issue>
     {
-        private Integer _issueId;
+        private final Container _container;
+        private final User _user;
+        private final action _action;
+        private Integer _issueId = 0;
         private Integer _issueDefId;
         private String _issueDefName;
-        private final String _containerId;
         private final Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
         private Integer _createdBy;
         private Long _created;
@@ -97,9 +102,11 @@ public interface Issue
         private Long _modified;
         private String _related;
 
-        public Builder(String containerId)
+        public Builder(Container container, User user, action action)
         {
-            _containerId = containerId;
+            _container = container;
+            _user = user;
+            _action = action;
         }
 
         public Builder issueId(Integer issueId)
@@ -218,18 +225,57 @@ public interface Issue
         @Override
         public Issue build()
         {
-            IssueImpl issue = new IssueImpl();
+            IssueImpl issue = new IssueImpl(_container, _issueId, _issueDefId, _issueDefName, _related, _properties);
 
             if (_createdBy != null) issue.setCreatedBy(_createdBy);
             if (_created != null) issue.setCreated(new Date(_created));
             if (_modifiedBy != null) issue.setModifiedBy(_modifiedBy);
             if (_modified != null) issue.setModified(new Date(_modified));
 
-            return issue;
+            if (_action != action.insert)
+            {
+                // if not a new issue, we need to merge the existing issue with new changes
+                ObjectFactory<IssueImpl> factory = ObjectFactory.Registry.getFactory(IssueImpl.class);
+                Map<String, Object> updates = new HashMap<>();
+                Map<String, Object> bean = factory.toMap(issue, null);
+
+                // remove entries with null values
+                bean.forEach((k, v) -> {if (v != null) updates.put(k, v);});
+                Issue updatedIssue = IssueService.get().getIssue(_container, _user, _issueId, updates);
+                if (updatedIssue == null)
+                    throw new NotFoundException("Existing issue with id: " + _issueId + " was not found");
+
+                return updatedIssue;
+            }
+            else
+                return issue;
         }
 
-        class IssueImpl extends Entity implements Issue
+        public static class IssueImpl extends Entity implements Issue
         {
+            private Container _container;
+            private Integer _issueId;
+            private Integer _issueDefId;
+            private String _issueDefName;
+            private Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
+            private String _related;
+
+            // for ObjectFactory
+            public IssueImpl()
+            {
+            }
+
+            public IssueImpl(Container container, @Nullable Integer issueId, @Nullable Integer issueDefId, @Nullable String issueDefName,
+                             @Nullable String related, Map<String, Object> properties)
+            {
+                _container = container;
+                _issueId = issueId;
+                _issueDefId = issueDefId;
+                _issueDefName = issueDefName;
+                _related = related;
+                _properties = properties;
+            }
+
             @Override
             public int getIssueId()
             {
@@ -251,7 +297,7 @@ public interface Issue
             @Override
             public String getContainerId()
             {
-                return _containerId;
+                return _container.getId();
             }
 
             @Override
@@ -276,14 +322,14 @@ public interface Issue
             public Collection<Integer> getDuplicates()
             {
                 // not used to update issues
-                return Collections.emptyList();
+                return null;
             }
 
             @Override
             public @NotNull Set<Integer> getRelatedIssues()
             {
                 // not used to update issues
-                return Collections.emptySet();
+                return null;
             }
 
             @Override
@@ -296,33 +342,35 @@ public interface Issue
             public Collection<Comment> getComments()
             {
                 // not used to update issues
-                return Collections.emptyList();
+                return null;
             }
 
             @Override
             public List<String> getNotifyListDisplayNames(User user)
             {
                 // not used to update issues
-                return Collections.emptyList();
+                return null;
             }
 
             @Override
             public List<ValidEmail> getNotifyListEmail()
             {
                 // not used to update issues
-                return Collections.emptyList();
+                return null;
             }
 
             @Override
             public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
             {
                 // not used to update issues
-                return Collections.emptyList();
+                return null;
             }
 
             @Override
             public Map<String, Object> getProperties()
             {
+                if (_properties.isEmpty())
+                    return null;
                 return _properties;
             }
 
