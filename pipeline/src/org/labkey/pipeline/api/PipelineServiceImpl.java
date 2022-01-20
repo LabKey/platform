@@ -758,9 +758,45 @@ public class PipelineServiceImpl implements PipelineService
             PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
             return true;
         }
-        catch (PipelineValidationException e){
+        catch (PipelineValidationException e)
+        {
             return false;
         }
+    }
+
+    @Override
+    public boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options)
+    {
+        try
+        {
+            PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
+            return true;
+        }
+        catch (PipelineValidationException e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean runFolderArchiveCreateAndImportJob(Container c, User user, ActionURL url, String sourceName)
+    {
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
+
+        try
+        {
+            // Temporary... queue up creation of the archive as a separate pipeline job
+            PipelineService.get().queueJob(new GenerateFolderArchiveJob(null, new ViewBackgroundInfo(c, user, url), pipelineRoot, sourceName));
+        }
+        catch (PipelineValidationException e)
+        {
+            return false;
+        }
+
+        Path folderXml = new File(pipelineRoot.getRootPath(), "folder.xml").toPath();
+        ImportOptions options = new ImportOptions(c.getId(), user.getUserId()); // TODO: Review: Other options? Query validation?
+
+        return runFolderImportJob(c, user, null, folderXml, "folder.xml", pipelineRoot, options);
     }
 
     @Override

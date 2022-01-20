@@ -1011,6 +1011,7 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
+    @Deprecated // Replaced by PipelineService.runFolderArchiveCreateAndImportJob()
     public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url)
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(container);

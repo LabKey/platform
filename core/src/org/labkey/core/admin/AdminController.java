@@ -4665,7 +4665,7 @@ public class AdminController extends SpringActionController
             if (isStudy)
                 StudyService.get().runStudyImportJob(container, user, url, archiveXml, fiConfig.originalFileName, errors, pipelineRoot, options);
             else
-                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, errors, pipelineRoot, options);
+                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, pipelineRoot, options);
 
             return !errors.hasErrors();
         }

@@ -190,7 +190,12 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
-    boolean runFolderImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+    @Deprecated // errors isn't used, so just use the variant below
+    boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+
+    boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
+
+    boolean runFolderArchiveCreateAndImportJob(Container c, User user, ActionURL url, String sourceName);
 
     Integer getJobId(User u, Container c, String jobGUID);
 
