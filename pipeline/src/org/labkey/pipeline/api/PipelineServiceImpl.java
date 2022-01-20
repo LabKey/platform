@@ -751,20 +751,6 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
-    {
-        try
-        {
-            PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
-            return true;
-        }
-        catch (PipelineValidationException e)
-        {
-            return false;
-        }
-    }
-
-    @Override
     public boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options)
     {
         try
