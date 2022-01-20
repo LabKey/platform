@@ -16,6 +16,8 @@
 
 package org.labkey.api.module;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -29,6 +31,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Orders modules so that each module will always be after all of the modules it depends on.
@@ -48,15 +51,25 @@ public class ModuleDependencySorter
             moduleNames.add(module.getName());
         }
 
+        MultiValuedMap<String, String> missingDependencies = new ArrayListValuedHashMap<>();
+
         for (Pair<Module, Set<String>> dependency : dependencies)
         {
             for (String dependencyName : dependency.getValue())
             {
                 if (!moduleNames.contains(dependencyName))
                 {
-                    throw new IllegalArgumentException("Could not find module '" + dependencyName + "' on which module '" + dependency.getKey().getName() + "' depends");
+                    missingDependencies.put(dependencyName, dependency.getKey().getName());
                 }
             }
+        }
+
+        if (!missingDependencies.isEmpty())
+        {
+            String message = missingDependencies.keySet().stream()
+                .map(dependency -> "Module \"" + dependency + "\", which is a dependency for: " + missingDependencies.get(dependency))
+                .collect(Collectors.joining("\n"));
+            throw new IllegalArgumentException("Missing dependencies:\n" + message);
         }
 
 //  Uncomment this to generate an SVG graph of all module dependencies
@@ -78,7 +91,7 @@ public class ModuleDependencySorter
         for (int i = 0; i < result.size(); i++)
         {
             Module module = result.get(i);
-            if (module.getName().toLowerCase().equals("core"))
+            if (module.getName().equalsIgnoreCase("core"))
             {
                 result.remove(i);
                 result.add(0, module);

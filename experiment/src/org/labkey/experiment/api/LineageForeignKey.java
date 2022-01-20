@@ -319,7 +319,7 @@ class LineageForeignKey extends AbstractForeignKey
                 {
                     if (null == _table)
                     {
-                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
+                        Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(_useLineageDisplayColumn), String.valueOf(_parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
                             _table = LineageForeignKey.this._userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                             {
                             SQLFragment objectids;
@@ -331,7 +331,7 @@ class LineageForeignKey extends AbstractForeignKey
                             {
                                 objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
                             }
-                            var ret = new LineageTableInfo("Foo", _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid);
+                            var ret = new LineageTableInfo("LineageTableInfo (" + (_parents?"parents)":"children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid);
                             ret.setLocked(true);
                             return ret;
                             });
@@ -440,7 +440,7 @@ class LineageForeignKey extends AbstractForeignKey
                 Path cacheKey = _cacheKeyPrefix.append(getClass().getSimpleName(), _level.name());
                 _table = _schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                 {
-                    var ret = new ByTypeLineageForeignKeyLookupTable("Foo", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema)).init();
+                    var ret = new ByTypeLineageForeignKeyLookupTable("ByTypeLineageForeignKeyLookupTable (" + _level.expType + ")", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema)).init();
                     ret.setLocked(true);
                     return ret;
                 });

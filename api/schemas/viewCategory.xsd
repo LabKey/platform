@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-            xmlns:vc="http://labkey.org/study/xml/viewCategory"
-            targetNamespace="http://labkey.org/study/xml/viewCategory"
+            xmlns:vc="http://labkey.org/folder/xml/viewCategory"
+            targetNamespace="http://labkey.org/folder/xml/viewCategory"
             elementFormDefault="qualified" attributeFormDefault="unqualified">
 
     <xsd:annotation>

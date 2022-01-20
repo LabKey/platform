@@ -709,6 +709,18 @@ public class StudyManager
         }
     }
 
+    public boolean isKeyChanged(final DatasetDefinition datasetDefinition)
+    {
+        DatasetDefinition old = getDatasetDefinition(datasetDefinition.getStudy(), datasetDefinition.getDatasetId());
+        if (old != null)
+        {
+            return old.isDemographicData() != datasetDefinition.isDemographicData() ||
+                    !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName()) ||
+                    old.getUseTimeKeyField() != datasetDefinition.getUseTimeKeyField();
+        }
+        return false;
+    }
+
     /* most users should call the List<String> errors version to avoid uncaught exceptions */
     @Deprecated
     public boolean updateDatasetDefinition(User user, final DatasetDefinition datasetDefinition)
@@ -735,10 +747,7 @@ public class StudyManager
 
             // Check if the extra key field has changed
             boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
-            boolean isKeyChanged =
-                            old.isDemographicData() != datasetDefinition.isDemographicData() ||
-                            !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName()) ||
-                            old.getUseTimeKeyField() != datasetDefinition.getUseTimeKeyField();
+            boolean isKeyChanged = isKeyChanged(datasetDefinition);
             boolean isSharedChanged = old.getDataSharingEnum() != datasetDefinition.getDataSharingEnum();
             if (isProvisioned && isSharedChanged)
             {
@@ -748,6 +757,7 @@ public class StudyManager
                     throw new IllegalArgumentException("Can't change data sharing setting if there are existing data rows.");
                 }
             }
+
             if (isProvisioned && isKeyChanged)
             {
                 TableInfo storageTableInfo = datasetDefinition.getStorageTableInfo();
@@ -3598,6 +3608,13 @@ public class StudyManager
 
         StudyManager manager = StudyManager.getInstance();
 
+        Map<String, _DatasetDomainChange> domainChangeMap = new CaseInsensitiveHashMap<>();
+        if (allowDomainUpdates)
+        {
+            // generate the dataset domain changes for existing datasets
+            buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, true);
+        }
+
         // now actually create the datasets
         for (Map.Entry<String, DatasetDefinitionEntry> entry : datasetDefEntryMap.entrySet())
         {
@@ -3607,7 +3624,47 @@ public class StudyManager
             if (d.isNew)
                 manager.createDatasetDefinition(user, def);
             else if (d.isModified)
+            {
+                // issue 44363 : in certain situations the dataset domain will need to be saved earlier in order to support
+                // a change in the key column that may not be in the initial domain
+                if (manager.isKeyChanged(def))
+                {
+                    var tableInfo = def.getTableInfo(user);
+                    if (tableInfo != null && (new TableSelector(def.getTableInfo(user)).getRowCount() > 0))
+                    {
+                        // throw an error if we are changing keys on a dataset with data
+                        errors.reject(ERROR_MSG, "Unable to change the keys on dataset (" + def.getName() + "), because there is still data present. The dataset should be truncated before the import.");
+                        return false;
+                    }
+
+                    if (!def.getUseTimeKeyField())
+                    {
+                        String keyName = def.getKeyPropertyName();
+                        Domain domain = def.refreshDomain();
+                        if (domain != null)
+                        {
+                            _DatasetDomainChange domainChange = domainChangeMap.get(domain.getTypeURI());
+                            Domain newDomain = domainChange.domain;
+                            if (domain.getStorageTableName() != null && newDomain != null)
+                            {
+                                if (domain.getPropertyByName(keyName) == null && newDomain.getPropertyByName(keyName) != null)
+                                {
+                                    try
+                                    {
+                                        newDomain.save(user);
+                                    }
+                                    catch (ChangePropertyDescriptorException ex)
+                                    {
+                                        errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 manager.updateDatasetDefinition(user, def);
+            }
 
             if (d.tags != null)
                 ReportPropsManager.get().importProperties(def.getEntityId(), def.getDefinitionContainer(), user, d.tags);
@@ -3616,36 +3673,34 @@ public class StudyManager
         // optional param to control whether field additions or deletions are permitted
         if (allowDomainUpdates)
         {
+            // generate dataset domain changes for new datasets
+            domainChangeMap.clear();
+            buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainChangeMap, false);
+
             // now that we actually have datasets, create/update the domains
-            Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
-            Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
+            dropNotRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
 
-            buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
-
-            dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
-
-            if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
+            if (!deleteAndSaveProperties(user, errors, domainChangeMap))
                 return false;
 
-            addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+            addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
         return true;
     }
 
-    private boolean deleteAndSaveProperties(User user, BindException errors, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
+    private boolean deleteAndSaveProperties(User user, BindException errors, Map<String, _DatasetDomainChange> domainChangeMap)
     {
         // see if we need to delete any columns from an existing domain
-        for (Domain d : domainsMap.values())
+        for (_DatasetDomainChange domainChange : domainChangeMap.values())
         {
-            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
-            for (DomainProperty p : propertiesToDel)
+            for (DomainProperty p : domainChange.propsToDelete)
             {
                 p.delete();
             }
 
             try
             {
-                d.save(user);
+                domainChange.domain.save(user);
             }
             catch (ChangePropertyDescriptorException ex)
             {
@@ -3656,27 +3711,62 @@ public class StudyManager
         return true;
     }
 
-    private void buildPropertySaveAndDeleteLists(Map<String, DatasetDefinitionEntry> datasetDefEntryMap, ImportPropertyDescriptorsList list, Map<String, Domain> domainsMap, Map<String, List<? extends DomainProperty>> domainsPropertiesMap)
+    /**
+     * Utility class to track dataset domain changes
+     */
+    private static class _DatasetDomainChange
+    {
+        public _DatasetDomainChange() {}
+        public _DatasetDomainChange(Domain domain)
+        {
+            this.domain = domain;
+            this.propsToDelete = new ArrayList<>(domain.getProperties());
+        }
+
+        private Domain domain;
+        private List<? extends DomainProperty> propsToDelete = Collections.emptyList();
+    }
+
+    private _DatasetDomainChange createDomainChange(String domainURI, String domainName, DatasetDefinitionEntry def, boolean existingDomainsOnly)
+    {
+        _DatasetDomainChange domainChange = new _DatasetDomainChange();
+        domainChange.domain = PropertyService.get().getDomain(def.datasetDefinition.getDefinitionContainer(), domainURI);
+        if (domainChange.domain == null && existingDomainsOnly)
+            return null;
+        else if (domainChange.domain == null)
+            domainChange.domain = PropertyService.get().createDomain(def.datasetDefinition.getDefinitionContainer(), domainURI, domainName);
+
+        // add all the properties that exist for the domain
+        domainChange.propsToDelete = new ArrayList<>(domainChange.domain.getProperties());
+
+        return domainChange;
+    }
+
+    /**
+     * Generate the dataset domain changes for the import
+     * @param domainChangeMap - maps domain URIs to the _DatasetDomainChange object
+     * @param existingDomainsOnly - if true will only populate the map for existing datasets
+     */
+    private void buildPropertySaveAndDeleteLists(Map<String, DatasetDefinitionEntry> datasetDefEntryMap,
+                                                 ImportPropertyDescriptorsList list,
+                                                 Map<String, _DatasetDomainChange> domainChangeMap,
+                                                 boolean existingDomainsOnly)
     {
         for (ImportPropertyDescriptor ipd : list.properties)
         {
-            Domain d = domainsMap.get(ipd.domainURI);
-            if (null == d)
-            {
-                DatasetDefinitionEntry entry = datasetDefEntryMap.get(ipd.domainName);
-                d = PropertyService.get().getDomain(entry.datasetDefinition.getDefinitionContainer(), ipd.domainURI);
-                if (null == d)
-                    d = PropertyService.get().createDomain(entry.datasetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
-                domainsMap.put(d.getTypeURI(), d);
-                populateDomainExistingPropertiesMap(domainsPropertiesMap, d);
-            }
+            _DatasetDomainChange domainChange = domainChangeMap.computeIfAbsent(ipd.domainURI, (k) ->
+                    createDomainChange(ipd.domainURI, ipd.domainName, datasetDefEntryMap.get(ipd.domainName), existingDomainsOnly));
+
+            if (domainChange == null)
+                continue;
+
+            Domain d = domainChange.domain;
             // Issue 14569:  during study reimport be sure to look for a column has been deleted.
             // Look at the existing properties for this dataset's domain and
             // remove them as we find them in schema.  If there are any properties left after we've
             // iterated over all the import properties then we need to delete them
-            List<? extends DomainProperty> propertiesToDel = domainsPropertiesMap.get(d.getTypeURI());
             DomainProperty p = d.getPropertyByName(ipd.pd.getName());
-            propertiesToDel.remove(p);
+            domainChange.propsToDelete.remove(p);
 
             if (null != p)
             {
@@ -3705,34 +3795,24 @@ public class StudyManager
         }
 
         //Ensure that each dataset has an entry in the domain map
-        if (datasetDefEntryMap.size() != domainsMap.size())
+        if (datasetDefEntryMap.size() != domainChangeMap.size())
         {
             for (DatasetDefinitionEntry datasetDefinitionEntry : datasetDefEntryMap.values())
             {
-                if (!domainsMap.containsKey(datasetDefinitionEntry.datasetDefinition.getTypeURI()))
+                if (!domainChangeMap.containsKey(datasetDefinitionEntry.datasetDefinition.getTypeURI()))
                 {
                     Domain domain =
                             PropertyService.get().getDomain(
                                     datasetDefinitionEntry.datasetDefinition.getDefinitionContainer(),
                                     datasetDefinitionEntry.datasetDefinition.getTypeURI());
                     if (domain != null)
-                    {
-                        populateDomainExistingPropertiesMap(domainsPropertiesMap, domain);
-                        domainsMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), domain);
-                    }
+                        domainChangeMap.put(datasetDefinitionEntry.datasetDefinition.getTypeURI(), new _DatasetDomainChange(domain));
                 }
             }
         }
     }
 
-    private void populateDomainExistingPropertiesMap(Map<String, List<? extends DomainProperty>> domainsPropertiesMap, Domain d)
-    {
-        // add all the properties that exist for the domain
-        List<? extends DomainProperty> existingProperties = new ArrayList<>(d.getProperties());
-        domainsPropertiesMap.put(d.getTypeURI(), existingProperties);
-    }
-
-    private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
+    private void addMissingRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
@@ -3741,13 +3821,13 @@ public class StudyManager
             {
                 continue;
             }
-            Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
+            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
             StorageProvisioner.get().addMissingRequiredIndices(domain);
         }
     }
 
-    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, Domain> domainsMap)
+    private void dropNotRequiredIndices(SchemaReader reader, Map<String, DatasetDefinitionEntry> datasetDefEntryMap, Map<String, _DatasetDomainChange> domainChangeMap)
     {
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
@@ -3756,7 +3836,7 @@ public class StudyManager
             {
                 continue;
             }
-            Domain domain = domainsMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI());
+            Domain domain = domainChangeMap.get(datasetDefinitionEntry.datasetDefinition.getTypeURI()).domain;
             domain.setPropertyIndices(datasetImportInfo.indices);
             StorageProvisioner.get().dropNotRequiredIndices(domain);
         }

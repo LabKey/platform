@@ -17,7 +17,6 @@ package org.labkey.core.login;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
@@ -25,7 +24,6 @@ import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
-import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -127,12 +125,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
 
         return AuthenticationResponse.createSuccessResponse(configuration, email);
-    }
-
-    @Override
-    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
-    {
-        return null;  // We don't migrate the database login configuration
     }
 
     @Override

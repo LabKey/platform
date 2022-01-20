@@ -95,7 +95,7 @@ public class QueryParseException extends QueryException
     @Override
     public JSONObject toJSON(String sql)
     {
-        String lines[] = null;
+        String[] lines = null;
         if (sql != null)
             lines = sql.split("\n");
 
@@ -113,11 +113,11 @@ public class QueryParseException extends QueryException
             String errorStr = lines[getLine() - 1];
             error.put("errorStr", errorStr);
         }
-        Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(this);
+        Map<Enum<?>, String> decorations = ExceptionUtil.getExceptionDecorations(this);
         if (!decorations.isEmpty())
         {
             JSONObject d = new JSONObject();
-            for (Map.Entry<Enum,String> entry : decorations.entrySet())
+            for (Map.Entry<Enum<?>, String> entry : decorations.entrySet())
                 d.put(entry.getKey().name(), entry.getValue());
             error.put("decorations",d);
         }

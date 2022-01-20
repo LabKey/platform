@@ -499,12 +499,7 @@ public class XarExpander extends AbstractXarImporter
     private void addMaterialObject(String protocolLSID, int actionSequence, String materialLSID)
     {
         PredecessorStep step = new PredecessorStep(protocolLSID, actionSequence);
-        List<String> outputs = _materialOutputs.get(step);
-        if (outputs == null)
-        {
-            outputs = new ArrayList<>();
-            _materialOutputs.put(step, outputs);
-        }
+        List<String> outputs = _materialOutputs.computeIfAbsent(step, k -> new ArrayList<>());
         outputs.add(materialLSID);
     }
 
@@ -575,12 +570,7 @@ public class XarExpander extends AbstractXarImporter
     private void addDataObject(String protocolLSID, int actionSequence, String dataLSID)
     {
         PredecessorStep step = new PredecessorStep(protocolLSID, actionSequence);
-        List<String> outputs = _dataOutputs.get(step);
-        if (outputs == null)
-        {
-            outputs = new ArrayList<>();
-            _dataOutputs.put(step, outputs);
-        }
+        List<String> outputs = _dataOutputs.computeIfAbsent(step, k -> new ArrayList<>());
         outputs.add(dataLSID);
     }
 

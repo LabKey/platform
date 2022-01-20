@@ -19,12 +19,10 @@ package org.labkey.core.login;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -90,7 +88,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.core.CoreUpgradeCode;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -2722,39 +2719,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class MigrateAuthenticationConfigurationsAction extends ConfirmAction
-    {
-        @Override
-        public ModelAndView getConfirmView(Object o, BindException errors)
-        {
-            if (getPageConfig().getTitle() == null)
-                setTitle("Migrate Authentication Configurations");
-
-            return new HtmlView(HtmlString.of("Are you sure you want to re-run the authentication configuration migration? This may cause duplicate configurations (which can be deleted)."));
-        }
-
-        @Override
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            new CoreUpgradeCode().migrateAuthenticationConfigurations(getUser());
-
-            return true;
-        }
-
-        @Override
-        public @NotNull URLHelper getSuccessURL(Object o)
-        {
-            return urlProvider(LoginUrls.class).getConfigureURL();
-        }
-    }
-
-
     /**
      * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
      * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
@@ -2787,7 +2751,6 @@ public class LoginController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new DeleteConfigurationAction(),
-                controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
                 controller.new SetAuthenticationParameterAction()

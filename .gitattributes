@@ -165,7 +165,6 @@ api/src/org/labkey/api/action/ExportException.java -text
 api/src/org/labkey/api/action/ExtendedApiQueryResponse.java -text
 api/src/org/labkey/api/action/ExtFormResponseWriter.java -text
 api/src/org/labkey/api/action/FormArrayList.java -text
-api/src/org/labkey/api/action/FormattedError.java -text
 api/src/org/labkey/api/action/FormHandlerAction.java -text
 api/src/org/labkey/api/action/FormViewAction.java -text
 api/src/org/labkey/api/action/HasBindParameters.java -text
@@ -221,7 +220,6 @@ api/src/org/labkey/api/admin/FolderWriterImpl.java -text
 api/src/org/labkey/api/admin/ImportContext.java -text
 api/src/org/labkey/api/admin/ImportException.java -text
 api/src/org/labkey/api/admin/ImportOptions.java -text
-api/src/org/labkey/api/admin/InternalFolderWriter.java -text
 api/src/org/labkey/api/admin/InvalidFileException.java -text
 api/src/org/labkey/api/admin/LoggerGetter.java -text
 api/src/org/labkey/api/admin/notification/Notification.java -text
@@ -2634,7 +2632,6 @@ issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/model/CommentAttachmentParent.java -text
 issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/GeneralIssuesListDefProvider.java -text
-issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueCommentType.java -text
 issues/src/org/labkey/issue/model/IssueListDef.java -text
 issues/src/org/labkey/issue/model/IssueListDefCache.java -text
@@ -3053,8 +3050,6 @@ query/webapp/reports/ScriptReportPanel.js -text
 query/webapp/scriptreporteditor.lib.xml -text
 search/module.properties -text
 search/resources/credits/jars.txt -text
-search/resources/schemas/dbscripts/postgresql/search-0.00-13.10.sql -text
-search/resources/schemas/dbscripts/sqlserver/search-0.00-13.10.sql -text
 search/resources/schemas/search.xml -text
 search/src/org/labkey/search/audit/SearchAuditProvider.java -text
 search/src/org/labkey/search/model/DocumentConversionServiceImpl.java -text
@@ -3165,7 +3160,6 @@ study/src/org/labkey/study/importer/DatasetDefinitionImporter.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DefaultStudyDesignImporter.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
-study/src/org/labkey/study/importer/MissingValueImporterFactory.java -text
 study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
 study/src/org/labkey/study/importer/ParticipantGroupImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
@@ -3188,7 +3182,6 @@ study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/TopLevelStudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
 study/src/org/labkey/study/importer/TreatmentVisitMapImporter.java -text
-study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
@@ -3437,7 +3430,6 @@ study/src/org/labkey/study/writer/AssayScheduleWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DefaultStudyDesignWriter.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text
-study/src/org/labkey/study/writer/MissingValueWriterFactory.java -text
 study/src/org/labkey/study/writer/OutputStreamWrapper.java -text
 study/src/org/labkey/study/writer/ParticipantCommentWriter.java -text
 study/src/org/labkey/study/writer/ParticipantGroupWriter.java -text
@@ -3451,7 +3443,6 @@ study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyWriterFactory.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/TreatmentDataWriter.java -text
-study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/XmlVisitMapWriter.java -text
 study/test/sampledata/study/commondata/APX-1.tsv -text
