@@ -14,6 +14,8 @@ public class GenerateFolderArchiveJob extends PipelineJob
 {
     private String _reloadSourceName;
 
+    @SuppressWarnings("unused")
+    // For serialization
     protected GenerateFolderArchiveJob()
     {
     }
@@ -34,7 +36,7 @@ public class GenerateFolderArchiveJob extends PipelineJob
     @Override
     public String getDescription()
     {
-        return "Export folder archive via CDISC_ODM";
+        return "Export folder archive";
     }
 
     @Override

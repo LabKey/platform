@@ -43,7 +43,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.QCStateManager;
@@ -79,7 +78,6 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
@@ -92,7 +90,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
 import org.labkey.study.query.DatasetTableImpl;
@@ -1008,16 +1005,6 @@ public class StudyServiceImpl implements StudyService
     public StudyReloadSource getStudyReloadSource(String name)
     {
         return _reloadSourceMap.get(name);
-    }
-
-    @Override
-    @Deprecated // Replaced by PipelineService.runFolderArchiveCreateAndImportJob()
-    public PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource reloadSource, @Nullable ActionURL url)
-    {
-        PipeRoot root = PipelineService.get().findPipelineRoot(container);
-        StudyReloadSourceJob job = new StudyReloadSourceJob(new ViewBackgroundInfo(container, user, url), root, reloadSource.getName());
-
-        return job;
     }
 
     @Override

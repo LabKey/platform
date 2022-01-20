@@ -210,8 +210,6 @@ public interface StudyService
     @Nullable
     StudyReloadSource getStudyReloadSource(String name);
 
-    PipelineJob createReloadSourceJob(Container container, User user, StudyReloadSource transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
-
     // consider will set hide==true for empty datasets, and clear (inherit) for non-empty datasets
     void hideEmptyDatasets(Container c, User user);
 
