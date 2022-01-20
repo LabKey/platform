@@ -6,6 +6,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesSchema;
@@ -26,6 +27,7 @@ import org.labkey.issue.model.CommentAttachmentParent;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueObject;
+import org.labkey.issue.query.IssuesListDefTable;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -310,5 +313,28 @@ public class IssueServiceImpl implements IssueService
     public @Nullable Issue getIssue(Container container, User user, Integer issueId)
     {
         return IssueManager.getIssue(container, user, issueId);
+    }
+
+    @Override
+    public @Nullable Issue getIssue(Container container, User user, Integer issueId, Map<String, Object> bean)
+    {
+        IssueObject issue = IssueManager.getIssue(container, user, issueId);
+        if (issue != null)
+        {
+            ObjectFactory<IssueObject> factory = ObjectFactory.Registry.getFactory(IssueObject.class);
+            return factory.fromMap(issue, bean);
+        }
+        return null;
+    }
+
+    @Override
+    @Nullable
+    public Integer getIssueDefinitionId(Container container, String name)
+    {
+        IssueListDef issueListDef = IssueManager.getIssueListDef(container, IssuesListDefTable.nameFromLabel(name));
+        if (issueListDef != null)
+            return issueListDef.getRowId();
+        else
+            return null;
     }
 }
