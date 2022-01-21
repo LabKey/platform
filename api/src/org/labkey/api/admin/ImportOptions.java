@@ -43,6 +43,7 @@ public class ImportOptions
     private Set<String> _dataTypes;
     private Activity _activity;
     private Path _analysisDir;
+    private String _folderArchiveSourceName = null;
 
     public ImportOptions(String containerId, @Nullable Integer userId)
     {
@@ -160,4 +161,13 @@ public class ImportOptions
         _analysisDir = analysisDir;
     }
 
+    public String getFolderArchiveSourceName()
+    {
+        return _folderArchiveSourceName;
+    }
+
+    public void setFolderArchiveSourceName(String folderArchiveSourceName)
+    {
+        _folderArchiveSourceName = folderArchiveSourceName;
+    }
 }

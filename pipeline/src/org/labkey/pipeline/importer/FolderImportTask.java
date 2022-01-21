@@ -50,6 +50,7 @@ import java.util.List;
 public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 {
     private static final String FOLDER_XML = "folder.xml";
+
     private FolderImportTask(Factory factory, PipelineJob job)
     {
         super(factory, job);

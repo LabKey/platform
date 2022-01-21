@@ -57,13 +57,15 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     private FolderImportContext _ctx;
     private VirtualFile _root;
     private final String _originalFilename;
+    private final String _folderArchiveSourceName;
 
     @JsonCreator
-    protected FolderImportJob(@JsonProperty("_ctx") FolderImportContext ctx, @JsonProperty("_root") VirtualFile root, @JsonProperty("_originalFilename") String originalFilename)
+    protected FolderImportJob(@JsonProperty("_ctx") FolderImportContext ctx, @JsonProperty("_root") VirtualFile root, @JsonProperty("_originalFilename") String originalFilename, @JsonProperty("_folderArchiveSourceName") String folderArchiveSourceName)
     {
         _ctx = ctx;
         _root = root;
         _originalFilename = originalFilename;
+        _folderArchiveSourceName = folderArchiveSourceName;
         _ctx.setLoggerGetter(new PipelineJobLoggerGetter(this));
     }
 
@@ -72,6 +74,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
         super("FolderImport", new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(folderXml.getParent());
         _originalFilename = originalFilename;
+        _folderArchiveSourceName = options.getFolderArchiveSourceName(); // Optional FolderArchiveSource name. If non-null, will be invoked to generate the archive before import.
         setupLocalDirectoryAndJobLog(pipeRoot, "FolderImport", FolderImportProvider.generateLogFilename("folder_load"));
         _ctx = new FolderImportContext(user, c, folderXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
@@ -102,6 +105,12 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     }
 
     @Override
+    public String getFolderArchiveSourceName()
+    {
+        return _folderArchiveSourceName;
+    }
+
+    @Override
     public TaskPipeline getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(FolderImportJob.class));
@@ -116,7 +125,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     @Override
     public String getDescription()
     {
-        return "Folder import";
+        return null == _folderArchiveSourceName ? "Folder import" : "Generate folder archive from " + _folderArchiveSourceName + " and import that archive";
     }
 
     @Override
