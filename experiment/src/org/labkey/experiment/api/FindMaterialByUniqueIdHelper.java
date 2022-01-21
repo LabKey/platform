@@ -48,12 +48,14 @@ public class FindMaterialByUniqueIdHelper
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isUniqueIdField).collect(Collectors.toList());
+            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
             _numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {
                query.append(unionAll);
-               query.append("(SELECT RowId, ").append(dialect.quoteIdentifier(col.getName())).append(" AS ").append(UNIQUE_ID_COL_NAME);
+               query.append("(SELECT RowId, ")
+                       .append("CAST (").append(dialect.quoteIdentifier(col.getName())).append(" AS VARCHAR)")
+                       .append(" AS ").append(UNIQUE_ID_COL_NAME);
                query.append(" FROM samples.").append(dialect.quoteIdentifier(tableInfo.getName()));
                unionAll = ") UNION ALL\n";
             }

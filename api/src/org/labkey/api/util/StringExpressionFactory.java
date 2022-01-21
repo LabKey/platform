@@ -247,6 +247,17 @@ public class StringExpressionFactory
 
     public static abstract class StringPart implements Cloneable
     {
+        public boolean isPreviewMode()
+        {
+            return _previewMode;
+        }
+
+        public void setPreviewMode(boolean previewMode)
+        {
+            _previewMode = previewMode;
+        }
+
+        private boolean _previewMode;
         /**
          * @return The string value or null if the part is found in the map,
          * otherwise UNDEFINED if the value does not exist in the map.
@@ -340,6 +351,16 @@ public class StringExpressionFactory
                 {
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
                     format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
+                }
+                else if ((rest.startsWith("minValue('") && rest.endsWith("')")
+                    || (rest.startsWith("minValue(") && rest.endsWith(")"))))
+                {
+                    String param = "";
+                    if (rest.startsWith("minValue('") && rest.endsWith("')"))
+                        param = rest.substring("minValue('".length(), rest.length() - "')".length());
+                    else if (rest.startsWith("minValue(") && rest.endsWith(")"))
+                        param = rest.substring("minValue(".length(), rest.length() - ")".length());
+                    format = new SubstitutionFormat.MinValueSubstitutionFormat(param);
                 }
                 else if (rest.startsWith("number('") && rest.endsWith("')"))
                 {
@@ -611,6 +632,9 @@ public class StringExpressionFactory
         @Override
         public String getValue(Map map)
         {
+            if (isPreviewMode())
+                return (String) map.get(_value);
+
             if (!(map instanceof RenderContext))
                 return "";
 

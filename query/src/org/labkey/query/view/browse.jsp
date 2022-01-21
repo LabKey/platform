@@ -16,8 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -29,7 +27,7 @@
     }
 %>
 <%
-    String renderId = "query-browser-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "query-browser-" + getRequestScopedUID();
     QueryService.QueryAnalysisService svc = QueryService.get().getQueryAnalysisService();
 %>
 <div id="<%=h(renderId)%>"></div>

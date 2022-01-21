@@ -36,6 +36,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.Link;
@@ -89,7 +90,7 @@ public class QueryProfiler
     private long _upTimeAtLastReset;
     private boolean _hasBeenReset = false;
 
-    private final List<DatabaseQueryListener> _listeners = new CopyOnWriteArrayList<>();
+    private final List<DatabaseQueryListener<?>> _listeners = new CopyOnWriteArrayList<>();
 
     public static QueryProfiler getInstance()
     {
@@ -191,7 +192,7 @@ public class QueryProfiler
         thread.start();
     }
 
-    public void addListener(DatabaseQueryListener listener)
+    public void addListener(DatabaseQueryListener<?> listener)
     {
         _listeners.add(listener);
     }
@@ -207,7 +208,7 @@ public class QueryProfiler
         {
             if (listener.matches(scope, sql, queryLogging))
             {
-                Map<DatabaseQueryListener, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
+                Map<DatabaseQueryListener<?>, Object> listenersEnvironment = (Map)QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS);
                 Object listenerEnvironment;
                 if (listenersEnvironment == null)
                 {
@@ -269,7 +270,7 @@ public class QueryProfiler
         }
     }
 
-    private class ReportView extends HttpView
+    private class ReportView extends HttpView<Object>
     {
         private final String _statName;
         private final String _buttonHTML;
@@ -361,19 +362,19 @@ public class QueryProfiler
         }
     }
 
-    public HttpView getReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
+    public HttpView<?> getReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
     {
         return new ReportView(statName, buttonHTML, captionURLFactory, stackTraceURLFactory);
     }
 
-    public HttpView getStackTraceView(final int hashCode, final ActionURLFactory executeFactory)
+    public HttpView<?> getStackTraceView(final int hashCode, final ActionURLFactory executeFactory)
     {
-        return new HttpView()
+        return new HttpView<>()
         {
             @Override
             public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
             {
-                LinkedHashSet result = super.getClientDependencies();
+                LinkedHashSet<ClientDependency> result = super.getClientDependencies();
                 result.add(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js"));
                 return result;
             }
@@ -412,7 +413,7 @@ public class QueryProfiler
                     {
                         out.println("<table>\n  <tr><td>");
                         ActionURL url = executeFactory.getActionURL(tracker.getSql());
-                        out.println(PageFlowUtil.textLink("Show Execution Plan", url));
+                        out.println(PageFlowUtil.link("Show Execution Plan").href(url).build());
                         out.println("  </td></tr></table>\n<br>\n");
                     }
 
@@ -425,7 +426,7 @@ public class QueryProfiler
     }
 
 
-    public HttpView getExecutionPlanView(int hashCode)
+    public HttpView<?> getExecutionPlanView(int hashCode)
     {
         SQLFragment sql;
         DbScope scope;
@@ -436,7 +437,7 @@ public class QueryProfiler
             QueryTracker tracker = findTracker(hashCode);
 
             if (null == tracker)
-                return new HtmlView("<font class=\"labkey-error\">Error: That query no longer exists</font>");
+                return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
             if (!tracker.canShowExecutionPlan())
                 throw new IllegalStateException("Can't show the execution plan for this query");
@@ -453,7 +454,7 @@ public class QueryProfiler
 
         String fullPlan = StringUtils.join(executionPlan, "\n");
 
-        return new HtmlView("<pre>" + PageFlowUtil.filter(fullPlan, true) + "</pre>");
+        return new HtmlView(DOM.PRE(fullPlan));
     }
 
 
@@ -482,9 +483,9 @@ public class QueryProfiler
         // The environment is stored in a ThreadLocal, so there's no need for synchronization on the get/set combination
         if (QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS) == null)
         {
-            Map<DatabaseQueryListener, Object> listenerEnvironment = new HashMap<>();
+            Map<DatabaseQueryListener<?>, Object> listenerEnvironment = new HashMap<>();
             QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);     // Set environment here to avoid stack overflow (Issue #22277)
-            for (DatabaseQueryListener listener : _listeners)
+            for (DatabaseQueryListener<?> listener : _listeners)
             {
                 listenerEnvironment.put(listener, listener.getEnvironment());
             }

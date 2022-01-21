@@ -44,10 +44,10 @@
     Container sourceContainer = targetContainer;
 
     boolean isExternal = true;
-    if (def instanceof LinkedSchemaDef)
+    if (def instanceof LinkedSchemaDef lsd)
     {
         isExternal = false;
-        sourceContainer = ((LinkedSchemaDef)def).lookupSourceContainer();
+        sourceContainer = lsd.lookupSourceContainer();
     }
 
     String initialTemplateName = def.getSchemaTemplate();

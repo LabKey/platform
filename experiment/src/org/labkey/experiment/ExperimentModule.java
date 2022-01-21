@@ -19,7 +19,6 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -69,7 +68,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -84,7 +82,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -116,10 +113,12 @@ import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
+import org.labkey.experiment.api.property.TextChoiceValidator;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeAndDataClassFolderImporter;
 import org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter;
@@ -139,6 +138,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI;
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 /**
@@ -161,7 +161,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.018;
+        return 22.000;
     }
 
     @Nullable
@@ -179,9 +179,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("property", PropertyController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
-        PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
         StorageProvisioner.setInstance(StorageProvisionerImpl.get());
+
+        PropertyServiceImpl propertyServiceImpl = new PropertyServiceImpl();
+        PropertyService.setInstance(propertyServiceImpl);
+        UsageMetricsService.get().registerUsageMetrics(getName(), propertyServiceImpl);
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -201,6 +204,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
         PropertyService.get().registerValidatorKind(new LengthValidator());
+        PropertyService.get().registerValidatorKind(new TextChoiceValidator());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
@@ -428,7 +432,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
-            folderRegistry.addFactories(new SampleTypeAndDataClassFolderWriter.Factory(), new SampleTypeAndDataClassFolderImporter.Factory());
+            folderRegistry.addFactories(
+                    new SampleTypeAndDataClassFolderWriter.Factory(),
+                    new SampleTypeAndDataClassFolderImporter.Factory()
+            );
+            folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
@@ -436,7 +444,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(MODULE_NAME, () -> {
+            svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> results = new HashMap<>();
                 if (AssayService.get() != null)
                 {
@@ -484,6 +492,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
+                results.put("scannableColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE scannable = ?", true).getObject(Long.class));
                 results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
                 results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
                         "     exp.PropertyDescriptor D \n" +
@@ -504,6 +513,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+
+                results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 
                 return results;
             });
@@ -566,7 +577,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             LineageTest.class,
             OntologyManager.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class
+            UniqueValueCounterTestCase.class,
+            PropertyServiceImpl.TestCase.class
         );
     }
 

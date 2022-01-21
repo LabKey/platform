@@ -1,17 +1,16 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
-import org.labkey.api.data.AES;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
 
 public class ConfigurationSettings
 {
-    private static final Logger LOG = LogManager.getLogger(ConfigurationSettings.class);
+    private static final Logger LOG = LogHelper.getLogger(ConfigurationSettings.class, "Loading of authentication configuration properties");
 
     private final Map<String, Object> _standardSettings;
     private final Map<String, Object> _properties;
@@ -23,23 +22,28 @@ public class ConfigurationSettings
         String propertiesJson = (String) settings.get("Properties");
         _properties = null != propertiesJson ? new JSONObject(propertiesJson) : new JSONObject();
         String encryptedPropertiesJson = (String) settings.get("EncryptedProperties");
+        Map<String, Object> encryptedProperties = new JSONObject();
 
         if (null != encryptedPropertiesJson)
         {
-            if (Encryption.isMasterEncryptionPassPhraseSpecified())
+            if (Encryption.isEncryptionPassPhraseSpecified())
             {
-                _encryptedProperties = new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson)));
+                try
+                {
+                    encryptedProperties = new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson)));
+                }
+                catch (Encryption.DecryptionException e)
+                {
+                    LOG.warn("Encrypted properties can't be read", e);
+                }
             }
             else
             {
-                LOG.warn("Encrypted properties can't be read: master encryption key has not been set in " + AppProps.getInstance().getWebappConfigurationFilename() + "!");
-                _encryptedProperties = new JSONObject();
+                LOG.warn("Encrypted properties can't be read: encryption key has not been set in " + AppProps.getInstance().getWebappConfigurationFilename() + "!");
             }
         }
-        else
-        {
-            _encryptedProperties = new JSONObject();
-        }
+
+        _encryptedProperties = encryptedProperties;
     }
 
     public Map<String, Object> getStandardSettings()

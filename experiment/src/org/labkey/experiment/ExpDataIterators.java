@@ -593,7 +593,7 @@ public class ExpDataIterators
     /* setup mini dataiterator pipeline to process lineage */
     public static void derive(User user, Container container, DataIterator di, boolean isSample, boolean skipAliquot) throws BatchValidationException
     {
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, isSample, skipAliquot);
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, skipAliquot);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         DataIterator derive = ddib.getDataIterator(context);
@@ -663,7 +663,7 @@ public class ExpDataIterators
             super(di);
             _context = context;
             _isSample = isSample;
-            _skipAliquot = skipAliquot;
+            _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
@@ -709,7 +709,7 @@ public class ExpDataIterators
             if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
-                if (_aliquotParentCol > -1)
+                if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
                     String aliquotParentName = null;
@@ -1139,7 +1139,7 @@ public class ExpDataIterators
         private final TableInfo _propertiesTable;
         private final Container _container;
         private final User _user;
-        private final Integer _ownerObjectId;
+        private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
 
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
@@ -1154,7 +1154,6 @@ public class ExpDataIterators
             _propertiesTable = propsTable;
             _container = container;
             _user = user;
-            _ownerObjectId = ownerObjectId;
             _importAliases = importAliases;
         }
 
@@ -1229,7 +1228,7 @@ public class ExpDataIterators
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step1, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
-                    .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table

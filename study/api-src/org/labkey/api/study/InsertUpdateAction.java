@@ -205,7 +205,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        String referer = StringUtils.defaultString(form.getReturnUrl(), HttpView.currentRequest().getHeader("Referer"));
+        String referer = StringUtils.defaultString(form.getReturnUrl(), getViewContext().getRequest().getHeader("Referer"));
         URLHelper cancelURL;
 
         if (StringUtils.isEmpty(referer))

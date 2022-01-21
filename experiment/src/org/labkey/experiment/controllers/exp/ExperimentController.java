@@ -3758,6 +3758,16 @@ public class ExperimentController extends SpringActionController
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
         @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            Map<String, String> renamedColumns = super.getRenamedColumns();
+            // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
+            renamedColumns.put("SampleId", "Name");
+            renamedColumns.put("Sample Id", "Name");
+            return renamedColumns;
+        }
+
+        @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
@@ -6504,9 +6514,12 @@ public class ExperimentController extends SpringActionController
                     if (id == null)
                         throw new NotFoundException("Unable to resolve object: " + lsid);
 
-                    // ensure that the protocol output lineage is in the same container as the request
+                    // ensure the user has read permission in the seed container
                     if (!getContainer().equals(id.getContainer()))
-                        throw new ApiUsageException("Object requested must be in the same folder that the request originates: " + id.getContainer().getPath());
+                    {
+                        if (!id.getContainer().hasPermission(getUser(), ReadPermission.class))
+                            throw new UnauthorizedException("User does not have permission to read object: " + lsid);
+                    }
 
                     _seeds.add(id);
                 }
@@ -7087,4 +7100,140 @@ public class ExperimentController extends SpringActionController
             _sessionKey = sessionKey;
         }
     }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetGenIdAction extends ReadOnlyApiAction<GenIdForm>
+    {
+        @Override
+        public void validateForm(GenIdForm form, Errors errors)
+        {
+            String kindName = form.getKindName();
+
+            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
+                errors.reject(ERROR_REQUIRED, "RowId and KindName must be provided");
+
+            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
+                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+        }
+
+        @Override
+        public Object execute(GenIdForm form, BindException errors) throws Exception
+        {
+            long genId = -1;
+            if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                if (sampleType != null)
+                    genId = sampleType.getCurrentGenId();
+            }
+            else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            {
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
+                if (dataClass != null)
+                    genId = dataClass.getCurrentGenId();
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", genId > -1);
+            resp.put("genId", genId);
+            return resp;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) // actual permission checked later
+    public static class SetGenIdAction extends MutatingApiAction<GenIdForm>
+    {
+        @Override
+        public void validateForm(GenIdForm form, Errors errors)
+        {
+            String kindName = form.getKindName();
+
+            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
+                errors.reject(ERROR_REQUIRED, "RowId or KindName must be provided");
+
+            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
+                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+
+            if (form.getGenId() == null || form.getGenId() < 0)
+                errors.reject(ERROR_MSG, "Invalid GenId.");
+        }
+
+        @Override
+        public Object execute(GenIdForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+
+            if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            {
+                if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                    throw new UnauthorizedException("Insufficient permissions.");
+
+
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                if (sampleType != null)
+                    sampleType.ensureMinGenId(form.getGenId(), getContainer());
+                else
+                {
+                    resp.put("success", false);
+                    resp.put("error", "Sample type does not exist.");
+                }
+            }
+            else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            {
+                if (!getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
+                    throw new BadRequestException("Insufficient permissions.");
+
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
+                if (dataClass != null)
+                    dataClass.ensureMinGenId(form.getGenId(), getContainer());
+                else
+                {
+                    resp.put("success", false);
+                    resp.put("error", "DataClass does not exist.");
+                }
+            }
+
+            return resp;
+        }
+    }
+
+    public static class GenIdForm
+    {
+        private Integer _rowId;
+        private String _kindName;
+        private Long _genId;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public String getKindName()
+        {
+            return _kindName;
+        }
+
+        public void setKindName(String kindName)
+        {
+            _kindName = kindName;
+        }
+
+        public Long getGenId()
+        {
+            return _genId;
+        }
+
+        public void setGenId(Long genId)
+        {
+            _genId = genId;
+        }
+
+    }
+
 }

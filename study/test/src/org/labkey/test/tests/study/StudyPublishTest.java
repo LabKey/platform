@@ -101,8 +101,8 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String DATE_SHIFT_REQUIRED_VISIT = "101";
     private final ImmutablePair<String, String> UNSHIFTED_DATE_FIELD = new ImmutablePair<>("CPSdt", "Initial Spec Collect Date");
     private final ImmutablePair<String, String> SHIFTED_DATE_FIELD = new ImmutablePair<>("CPScredt", "2a.Alt Creat Coll Date");
-    private HashMap<String, Set<String>> unshiftedDatesByStudy = new HashMap<>();
-    private HashMap<String, Set<String>> preshiftedDatesByStudy = new HashMap<>();
+    private final HashMap<String, Set<String>> unshiftedDatesByStudy = new HashMap<>();
+    private final HashMap<String, Set<String>> preshiftedDatesByStudy = new HashMap<>();
     private final String[] VISITS = {"101", "201", "601", "1301"};
     private final String R_VIEW = "Shared R View";
     private final String R_VIEW2 = "R View on Unpublished Dataset";
@@ -780,6 +780,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Wizard page 7 : Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
         waitForElement(Locator.css(".studyWizardListList"));
+        click(Locator.css(".studyWizardListList .x-grid3-hd-checker  div")); // de-select all
         for (String list : lists)
         {
             _extHelper.selectExtGridItem("name", list, -1, "studyWizardListList", true);
@@ -907,7 +908,9 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Wizard page 10 : Folder Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
+                "Categories",
                 "Container specific module properties",
+                "ETL Definitions",
                 "External schema definitions",
                 "Folder type and active modules",
                 "Full-text search settings",
@@ -917,7 +920,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Webpart properties and layout",
                 "Wikis and their attachments",
                 "Files",
-                "QC State Settings",
+                "Sample Status and QC State Settings",
                 "Sample Types and Data Classes");
         clickButton("Next", 0);
 
@@ -1298,7 +1301,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         folderObjects("Name"),
         studyWizardPublishOptionsList("Name");
 
-        private String labelColumn;
+        private final String labelColumn;
 
         StudyPublishWizardGrid(String labelColumn)
         {

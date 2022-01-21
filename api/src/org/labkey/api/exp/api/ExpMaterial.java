@@ -46,7 +46,11 @@ public interface ExpMaterial extends ExpRunItem
 
     String getRootMaterialLSID();
 
+    void setRootMaterialLSID(String lsid);
+
     String getAliquotedFromLSID();
+
+    void setAliquotedFromLSID(String lsid);
 
     DataState getSampleState();
 

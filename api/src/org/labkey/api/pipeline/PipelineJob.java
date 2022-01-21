@@ -47,6 +47,7 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
@@ -432,7 +433,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /**
      * Set Log file path and clear/reset logger
-     * @param logFile
      */
     private void updateLogFilePath(Path logFile)
     {
@@ -1929,7 +1929,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static ObjectMapper createObjectMapper()
     {
-        ObjectMapper mapper = new ObjectMapper()
+        ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy()
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)

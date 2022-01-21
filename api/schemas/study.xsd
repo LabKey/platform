@@ -238,7 +238,6 @@
 				<xs:element name="queries" minOccurs="0" type="exportDirType" />
 				<xs:element name="views" minOccurs="0" type="exportDirType" />
                 <xs:element name="lists" minOccurs="0" type="exportDirType" />
-				<xs:element name="missingValueIndicators" type="missingValueIndicatorsType" minOccurs="0" />
                 <xs:element name="comments" minOccurs="0">
                     <xs:complexType>
                         <xs:attribute name="participantCommentDatasetId" type="xs:int">

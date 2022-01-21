@@ -703,6 +703,9 @@ public class QueryManager
         if (null == table)
             throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
 
+        if (table.isPublic() && table.getPublicSchemaName() != null && !schemaPath.toString().equalsIgnoreCase(table.getPublicSchemaName()))
+            warnings.add(new QueryParseWarning("(metadata) TableInfo.getPublicSchemaName() does not match: set to '" + table.getPublicSchemaName() + "', expected '" + schemaPath + "'", null, 0,0));
+
         try
         {
             //validate foreign keys and other metadata warnings

@@ -111,10 +111,13 @@ var testMothershipReport = function(type, level, title) {
             else {
                 reportStr = 'An error occurred generating the sample report.';
             }
-            var sampleTab = window.open('about:blank', '_blank');
-            sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level +'</span><br/><br/>');
-            sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
-            sampleTab.document.close();
+            // Use setTimeout() because Safari doesn't let you call window.open in an async callback
+            setTimeout(() => {
+                var sampleTab = window.open('about:blank', '_blank');
+                sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level + '</span><br/><br/>');
+                sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
+                sampleTab.document.close();
+            });
         })
     });
 };

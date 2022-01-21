@@ -80,28 +80,17 @@ public class ModuleContext implements Cloneable
     @SuppressWarnings({"UnusedDeclaration"})
     public void setSchemaVersion(Double schemaVersion)
     {
-        // IMPORTANT check for "upgrade from 20.2" case: at initial startup, before the InstalledVersion column is renamed
-        // to SchemaVersion, this setter will be called with BOTH the InstalledVersion value AND with SchemaVersion (NULL)
-        // because QueryServiceImpl selects "NULL AS SchemaVersion" based on core.xml mentioning the missing column
-        if (null == _installedSchemaVersion)
-        {
-            _installedSchemaVersion = schemaVersion;
-            _originalVersion = schemaVersion;
-        }
+        // Now that we no longer upgrade from 20.2, member should always be null when called
+        assert null == _installedSchemaVersion;
+
+        _installedSchemaVersion = schemaVersion;
+        _originalVersion = schemaVersion;
     }
 
     // For convenience and backwards compatibility, this method returns schema version as a double, returning 0.0 for null
     public double getInstalledVersion()
     {
         return null != _installedSchemaVersion ? _installedSchemaVersion : 0.0;
-    }
-
-    // LEAVE THIS IN PLACE until we stop upgrading from 20.2. Before that upgrade happens, the server loads module contexts
-    // from the old table, which still had an InstalledVersion column.
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setInstalledVersion(double installedVersion)
-    {
-        setSchemaVersion(installedVersion);
     }
 
     // InstalledVersion gets changed after upgrade process... OriginalVersion keeps the version as it existed at server startup
@@ -126,13 +115,13 @@ public class ModuleContext implements Cloneable
         _className = name;
     }
 
-    private static DecimalFormat df2 = new DecimalFormat("0.00#");
-    private static DecimalFormat df3 = new DecimalFormat("0.000");
+    private static final DecimalFormat df2 = new DecimalFormat("0.00#");
+    private static final DecimalFormat df3 = new DecimalFormat("0.000");
 
     public static String formatVersion(double version)
     {
-        // Use three-digit minor versions for 20.000 and later, otherwise two-digit + optional third
-        return (version < 20 ? df2 : df3).format(version);
+        // Use three-digit minor versions for 0.000 and 20.000+, otherwise two-digit + optional third
+        return (version < 20 && version != 0.0 ? df2 : df3).format(version);
     }
 
     public ModuleState getModuleState()

@@ -26,21 +26,18 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.DialectStringHandler;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: kevink
@@ -88,6 +85,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         addTextColumn("URL").setURLTargetWindow("_blank");
         addTextColumn("Author");
         addTextColumn("Maintainer");
+        addColumn("ManageVersion", JdbcType.BOOLEAN);
 
         var orgCol = addTextColumn("Organization");
         orgCol.setURL(StringExpressionFactory.createURL("${OrganizationURL}"));
@@ -126,7 +124,12 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
     private BaseColumnInfo addTextColumn(String name)
     {
-        var col = new BaseColumnInfo(FieldKey.fromParts(name), this, JdbcType.VARCHAR);
+        return addColumn(name, JdbcType.VARCHAR);
+    }
+
+    private BaseColumnInfo addColumn(String name, JdbcType type)
+    {
+        var col = new BaseColumnInfo(FieldKey.fromParts(name), this, type);
         col.setReadOnly(true);
         addColumn(col);
         return col;
@@ -146,6 +149,23 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             sql.append("NULL");
         else
             sql.append(h.quoteStringLiteral(s));
+    }
+
+    private void appendBooleanLiteral(SQLFragment sql, String sep, boolean b)
+    {
+        sql.append(sep);
+
+        SqlDialect dialect = getSqlDialect();
+        String literal = dialect.getBooleanLiteral(b);
+
+        if (dialect.isSqlServer())
+        {
+            sql.append("CAST (").append(literal).append(" AS BIT)");
+        }
+        else
+        {
+            sql.append(literal);
+        }
     }
 
     @NotNull
@@ -172,6 +192,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             appendStringLiteral(h, cte,",",module.getUrl());
             appendStringLiteral(h, cte,",",module.getAuthor());
             appendStringLiteral(h, cte,",",module.getMaintainer());
+            appendBooleanLiteral(cte, ",", module.shouldManageVersion());
             appendStringLiteral(h, cte,",",module.getOrganization());
             appendStringLiteral(h, cte,",",module.getOrganizationUrl());
             appendStringLiteral(h, cte,",",module.getLicense());
@@ -189,6 +210,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(",Url");
         cte.append(",Author");
         cte.append(",Maintainer");
+        cte.append(",ManageVersion");
         cte.append(",Organization, OrganizationURL");
         cte.append(",License, LicenseURL");
         cte.append(",VcsRevision, VcsURL");
@@ -214,7 +236,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
     }
 
     // Format SchemaVersion column using the standard ModuleContext formatting rules: force three-decimal places for >= 20.000,
-    // otherwise suppress trailing zeroes. Also right align the values in the grid.
+    // otherwise suppress trailing zeroes. Also, right align the values in the grid.
     private static class SchemaVersionDisplayColumnFactory implements DisplayColumnFactory
     {
         private final DisplayColumnFactory _factory;

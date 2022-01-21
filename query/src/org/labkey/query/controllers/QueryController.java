@@ -555,7 +555,8 @@ public class QueryController extends SpringActionController
             sb.append("  <td class=\"labkey-column-header\">Product Version</td>");
             sb.append("  <td class=\"labkey-column-header\">Max Connections</td>");
             sb.append("  <td class=\"labkey-column-header\">Active Connections</td>");
-            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td></tr>\n");
+            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td>\n");
+            sb.append("  <td class=\"labkey-column-header\">Max Wait (ms)</td></tr>\n");
 
             int rowCount = 0;
             for (DbScope scope : DbScope.getDbScopes())
@@ -589,7 +590,7 @@ public class QueryController extends SpringActionController
 
                 sb.append(status);
                 sb.append("</td><td>");
-                sb.append(PageFlowUtil.filter(scope.getURL()));
+                sb.append(PageFlowUtil.filter(scope.getDatabaseUrl()));
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDatabaseName()));
                 sb.append("</td><td>");
@@ -602,12 +603,14 @@ public class QueryController extends SpringActionController
                 sb.append(scope.getDataSourceProperties().getNumActive());
                 sb.append("</td><td>");
                 sb.append(scope.getDataSourceProperties().getNumIdle());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getMaxWaitMillis());
                 sb.append("</td></tr>\n");
 
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
 
                 sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">\n");
-                sb.append("  <td colspan=9>\n");
+                sb.append("  <td colspan=\"10\">\n");
                 sb.append("    <table>\n");
 
                 if (null != dsDefs)
@@ -1546,7 +1549,7 @@ public class QueryController extends SpringActionController
 
             sb.append("<tr><td class=\"labkey-form-label\">Scope</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
             sb.append("<tr><td class=\"labkey-form-label\">Dialect</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
-            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getURL()).append("</td></tr>\n");
+            sb.append("<tr><td class=\"labkey-form-label\">URL</td><td>").append(_scope.getDatabaseUrl()).append("</td></tr>\n");
             sb.append("</table>\n");
 
             out.print(sb);

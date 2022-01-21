@@ -894,11 +894,11 @@ public class Query
             if (null == cf && null != cfType)
                 cf = cfType.create(resolvedSchema);
 
-            if (resolvedSchema instanceof UserSchema)
+            if (resolvedSchema instanceof UserSchema userSchema)
             {
                 TableType tableType = lookupMetadataTable(key.getName());
                 boolean forWrite = tableType != null;
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
+                t = userSchema._getTableOrQuery(key.getName(), cf, true, forWrite, resolveExceptions);
             }
             else
             {
@@ -928,13 +928,12 @@ public class Query
             throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 		}
 
-        if (t instanceof TableInfo)
+        if (t instanceof TableInfo tableInfo)
         {
-            TableInfo tableInfo = (TableInfo)t;
             // I don't see why Query is being roped into helping with this??? Can't this be handled on the LinkedSchema side?
             TableType tableType = lookupMetadataTable(tableInfo.getName());
-            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
-                tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
+            if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema userSchema)
+                tableInfo.overlayMetadata(Collections.singletonList(tableType), userSchema, _parseErrors);
             _resolveCache.get(currentSchema).put(cacheKey, new Pair<>(resolvedSchema, tableInfo));
 
             String name = ((TableInfo) t).getName();
@@ -1135,8 +1134,7 @@ public class Query
         private int i=1;
 
         @Override
-        @NotNull
-        public CloseableIterator<Map<String, Object>> iterator()
+        protected CloseableIterator<Map<String, Object>> _iterator(boolean includeRowHash)
         {
             return new _Iterator();
         }
@@ -1152,6 +1150,8 @@ public class Query
             @Override
             public Map<String, Object> next()
             {
+                // Leave this in place: javac complains without this cast. IntelliJ disagrees.
+                //noinspection RedundantCast
                 return _rowMapFactory.getRowMap((Object[])data[i++]);
             }
 
@@ -1281,9 +1281,15 @@ public class Query
         private void assertSqlEquals(Object a, Object b)
         {
             if (null == a)
+            {
                 QueryTestCase.assertNull("Expected NULL value: + sql", b);
+                return;
+            }
             if (null == b)
+            {
                 QueryTestCase.fail("Did not expect null value: " + _sql);
+                return;
+            }
 //            QueryTestCase.assertEquals(sql, _type.getJavaClass(), b.getClass());
             if (a instanceof Number && b instanceof Number)
             {
@@ -1622,6 +1628,8 @@ public class Query
             // TODO: month
             // TODO: monthname
             // TODO: now
+        new MethodSqlTest("SELECT NULLIF(1,1)", JdbcType.INTEGER, null),
+        new MethodSqlTest("SELECT NULLIF('1','2')", JdbcType.VARCHAR, "1"),
         new MethodSqlTest("SELECT ROUND(PI()) FROM R WHERE rowid=1", JdbcType.DOUBLE, 3.0),
             // TODO: power
             // TODO: quarter

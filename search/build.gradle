@@ -1,33 +1,215 @@
+import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
+
 plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="8.10.1"
-ext.mime4jVersion="0.8.3"
+ext.luceneVersion="9.0.0"
+ext.mime4jVersion="0.8.4"
 
 dependencies {
-    external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
-    external "org.apache.lucene:lucene-core:${luceneVersion}"
-    external "org.apache.lucene:lucene-queryparser:${luceneVersion}"
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.lucene:lucene-analysis-common:${luceneVersion}",
+            "Lucene Analyzers",
+            "Apache",
+            "http://lucene.apache.org/java/docs/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Stemming support for full-text search"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.lucene:lucene-core:${luceneVersion}",
+            "Lucene",
+            "Apache",
+            "http://lucene.apache.org/java/docs/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Full-text search"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.lucene:lucene-queryparser:${luceneVersion}",
+            "Lucene Query Parsers",
+            "Apache",
+            "http://lucene.apache.org/java/docs/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Query parser support for full-text search"
+        )
+    )
 
     // tika-parsers.jar includes some simple text parsers plus adapters for many parsing libraries
-    external ("org.apache.tika:tika-parsers:${tikaVersion}") {
-        transitive = false
-    }
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parsers-standard-package:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsers for text simple formats plus adapters for many external parsing libraries"
+        ),
+        {
+            transitive = false
+        }
+    )
+
     // Additional parsing libraries (beyond POI, PDFBox, etc., which are already included in API) that we
     // care about. Adjust these dependencies and versions whenever we upgrade Tika. Or if we want to add or remove a parser.
     // See also tikaConfig.xml to exclude specific parsers or detectors.
-    external "org.apache.commons:commons-compress:${commonsCompressVersion}"
-    external "org.tukaani:xz:${tukaaniXZVersion}"         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
-    external "org.apache.pdfbox:jempbox:1.8.16"
-    external "com.drewnoakes:metadata-extractor:2.8.1"
-    external "org.apache.poi:poi-scratchpad:${poiVersion}"
-    external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
-    external "org.codelibs:jhighlight:1.0.3"
-    external "org.apache.commons:commons-csv:1.8"
-    external "org.apache.james:apache-mime4j-core:${mime4jVersion}"
-    external "org.apache.james:apache-mime4j-dom:${mime4jVersion}"
-    external "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-compress:${commonsCompressVersion}",
+            "Commons Compress",
+            "Apache",
+            "https://commons.apache.org/proper/commons-compress/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Utilities for working with compressed files"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
+            "XZ for Java",
+            "tukaani.org",
+            "https://tukaani.org/xz/java.htm/",
+            "public",
+            "https://tukaani.org/xz/java.html#Licensing",
+            "Transitive dependency of commons-compress to support additional compression types for search"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.pdfbox:jempbox:1.8.16",
+            "jempbox",
+            "Apache",
+            "https://pdfbox.apache.org/2.0/dependencies.html",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "PDFBox dependency"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.drewnoakes:metadata-extractor:2.16.0",
+            "Metadata Extractor",
+            "drewnoakes",
+            "https://github.com/drewnoakes/metadata-extractor",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsers that read metadata from image files"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.poi:poi-scratchpad:${poiVersion}",
+            "Apache POI OOXML",
+            "Apache",
+            "https://poi.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsers for older Microsoft document formats (e.g., PPT, DOC, VSD, PUB)"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.ccil.cowan.tagsoup:tagsoup:1.2.1",
+            "TagSoup",
+            "TagSoup",
+            "http://vrici.lojban.org/~cowan/XML/tagsoup/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser for HTML/XML"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.codelibs:jhighlight:1.0.3",
+            "JHighlight",
+            "codelibs",
+            "https://github.com/codelibs/jhighlight",
+            "CDDL",
+            "https://github.com/codelibs/jhighlight/blob/master/LICENSE_CDDL.txt",
+            "Parsers for Java, HTML, XHTML, XML and LZX"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-csv:1.9.0",
+            "Commons CSV ™",
+            "Apache",
+            "http://commons.apache.org/proper/commons-csv/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsing CSV files via Tika"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.james:apache-mime4j-core:${mime4jVersion}",
+            "Apache James Mime4J",
+            "Apache",
+            "https://james.apache.org/mime4j/index.htm/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser for email messages"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.james:apache-mime4j-dom:${mime4jVersion}",
+            "Apache James Mime4J",
+            "Apache",
+            "https://james.apache.org/mime4j/index.htm/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser for email messages"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.pdfbox:pdfbox:${pdfboxVersion}",
+            "Apache PDFBox®",
+            "PDFBox",
+            "https://pdfbox.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Extract text and produce thumbnails from PDFs"
+        )
+    )
 }
 
 // TODO move resources files into resources directory to avoid this overlap

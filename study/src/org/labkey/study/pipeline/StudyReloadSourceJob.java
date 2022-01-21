@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
-import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -133,12 +132,6 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     public BindException getSpringErrors()
     {
         return _errors;
-    }
-
-    @Override
-    public File getSpecimenArchive() throws ImportException
-    {
-        return _ctx.getSpecimenArchive(_root).toFile();
     }
 
     @Override

@@ -56,7 +56,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
 
     public SpecimenRefreshPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root, SnapshotSettings snapshotSettings)
     {
-        super(source, destination, user, url, root);
+        super("SpecimenRefresh", source, destination, user, url, root);
         _settings = snapshotSettings;
     }
 

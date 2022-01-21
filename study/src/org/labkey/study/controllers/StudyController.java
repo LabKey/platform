@@ -201,8 +201,8 @@ import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
+import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
-import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
@@ -6165,7 +6165,6 @@ public class StudyController extends BaseStudyController
         @Override
         public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
         {
-            ReloadTask task = new ReloadTask();
             String message;
 
             try
@@ -6179,7 +6178,7 @@ public class StudyController extends BaseStudyController
 
                 source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
 
-                ReloadStatus status = task.attemptReload(options, source);
+                ReloadStatus status = StudyReload.attemptReload(options, source);
 
                 message = status.getMessage();
             }

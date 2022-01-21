@@ -395,6 +395,14 @@ public abstract class ContainerFilter
                         return new CurrentAndSubfolders(c, user);
                     }
                 },
+        CurrentAndSubfoldersPlusShared("Current folder, subfolders, and Shared project")
+                {
+                    @Override
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentAndSubfoldersPlusShared(c, user);
+                    }
+                },
         CurrentAndSiblings("Current folder and siblings")
                 {
                     @Override
@@ -1128,6 +1136,34 @@ public abstract class ContainerFilter
             return Type.CurrentPlusProjectAndShared;
         }
     }
+
+
+    public static class CurrentAndSubfoldersPlusShared extends CurrentAndSubfolders
+    {
+        public CurrentAndSubfoldersPlusShared(Container c, User user)
+        {
+            super(c, user);
+        }
+
+        @Override
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        {
+            var containers = super.generateIds(currentContainer, perm, roles);
+            var shared = ContainerManager.getSharedContainer();
+
+            if (shared.hasPermission(_user, perm, roles))
+                containers.add(shared.getEntityId());
+
+            return containers;
+        }
+
+        @Override
+        public Type getType()
+        {
+            return Type.CurrentAndSubfoldersPlusShared;
+        }
+    }
+
 
     public static class AllInProject extends ContainerFilterWithPermission
     {

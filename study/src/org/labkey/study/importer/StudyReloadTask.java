@@ -53,7 +53,6 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
         job.setLogFile(new File(support.getDataDirectory(), FileUtil.makeFileNameWithTimestamp("triggered_study_reload", "log")));
         Map<String, String> params = support.getParameters();
-        StudyReload.ReloadTask reloadTask = new StudyReload.ReloadTask();
         String containerId = getJob().getContainer().getId();
 
         try
@@ -66,7 +65,7 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
                 options.setFailForUndefinedVisits(BooleanUtils.toBoolean(params.get(FAIL_FOR_UNDEFINED_VISITS)));
 
             options.setAnalysisDir(support.getDataDirectoryPath());
-            StudyReload.ReloadStatus status = reloadTask.attemptTriggeredReload(options, "a configured study reload filewatcher");
+            StudyReload.ReloadStatus status = StudyReload.attemptTriggeredReload(options, "a configured study reload filewatcher");
             job.setStatus(status.getMessage());
         }
         catch (ImportException ie)

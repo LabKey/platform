@@ -29,12 +29,6 @@ import java.nio.file.Path;
 */
 public interface SpecimenJobSupport
 {
-    /** A specimen archive as originally delivered. Might be transformed before import */
-    @Deprecated // Prefer the Path version
-    default File getSpecimenArchive() throws ImportException
-    {
-        return getSpecimenArchivePath().toFile();
-    }
     Path getSpecimenArchivePath() throws ImportException;
     boolean isMerge();
     SimpleStudyImportContext getImportContext();

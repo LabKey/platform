@@ -27,17 +27,28 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Encryption.Algorithm;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.labkey.api.reports.RScriptEngine.DOCKER_R_IMAGE_TYPE;
+import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
 {
+    // Most definitions don't require encryption, so retrieve AES128 lazily
+    static final Supplier<Algorithm> AES = () -> {
+        if (!Encryption.isEncryptionPassPhraseSpecified())
+            throw new RuntimeException("Unable to save credentials. EncryptionKey has not been specified in " + AppProps.getInstance().getWebappConfigurationFilename());
+
+        return Encryption.getAES128(ENCRYPTION_MIGRATION_HANDLER);
+    };
+
     private Integer _rowId;
     private String _name;
     private boolean _enabled;
@@ -126,7 +137,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         {
             addIfNotNull(json, "user", getUser());
             if (getPassword() != null)
-                addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(getPassword())));
+                addIfNotNull(json, "password", Base64.encodeBase64String(AES.get().encrypt(getPassword())));
         }
         else
         {
@@ -141,7 +152,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 {
                     addIfNotNull(json, "user", existingDef.getUser());
                     if (existingDef.getPassword() != null)
-                        addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(existingDef.getPassword())));
+                        addIfNotNull(json, "password", Base64.encodeBase64String(AES.get().encrypt(existingDef.getPassword())));
                 }
             }
         }
@@ -192,7 +203,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         {
             String password = json.getString("password");
             if (decrypt)
-                setPassword(Encryption.getAES128().decrypt(Base64.decodeBase64(password)));
+                setPassword(AES.get().decrypt(Base64.decodeBase64(password)));
             else
                 setPassword(password);
         }
@@ -525,7 +536,6 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         return _dockerImageConfig;
     }
 
-
     @Override
     public void setDockerImageConfig(String dockerImageConfig)
     {
@@ -547,6 +557,5 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker R - " + getName(), DOCKER_R_IMAGE_TYPE, "", null));
             }
         }
-
     }
 }

@@ -1905,17 +1905,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var viewReadyFunc = function(){
             grid.getSelectionModel().clearSelections();
-            if (this.settings)
-            {
-                if(!this.settings.lists)
-                {
+            if (this.settings) {
+                if (!this.settings.lists) {
                     this.gridSelectAll(grid);
-                }
-                else
-                {
+                } else {
                     var lists = this.setify(this.settings.lists);
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in lists); }).getRange(), true);
                 }
+            } else {
+                // Issue 44428: select all lists by default for "publish new study from scratch"
+                this.gridSelectAll(grid);
             }
         };
 

@@ -79,7 +79,6 @@ export class  NavigationBarPage extends React.Component<any, State> {
         return (
             <NavigationBar
                 brand={<img src={brandIcon}  height="38px" width="38px"/>}
-                projectName={getServerContext().container.title}
                 menuSectionConfigs={menuSectionConfigs}
                 model={model}
                 showSearchBox={true}

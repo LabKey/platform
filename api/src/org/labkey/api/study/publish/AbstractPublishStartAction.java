@@ -43,6 +43,11 @@ import java.util.Set;
 public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> extends SimpleViewAction<FORM>
 {
     /**
+     * Issue : 44085, the max number of data rows to link before an error is shown
+     */
+    public static final int MAX_ROWS_TO_LINK = 9950;
+
+    /**
      * Returns the ActionURL to post to on success
      */
     protected abstract ActionURL getSuccessUrl(FORM form);

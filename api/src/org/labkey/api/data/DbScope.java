@@ -126,6 +126,7 @@ public class DbScope
     private final String _databaseProductVersion;
     private final String _driverName;
     private final String _driverVersion;
+    private final String _driverLocation;
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
@@ -251,6 +252,7 @@ public class DbScope
         _databaseProductVersion = null;
         _driverName = null;
         _driverVersion = null;
+        _driverLocation = null;
         _schemaCache = null;
         _tableCache = null;
         _rds = false;
@@ -343,10 +345,23 @@ public class DbScope
             _databaseProductName = dbmd.getDatabaseProductName();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
+            _driverLocation = determineDriverLocation();
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
             _rds = _dialect.isRds(this);
             _escape = dbmd.getSearchStringEscape();
+        }
+    }
+
+    private String determineDriverLocation()
+    {
+        try
+        {
+            return getDelegateClass().getProtectionDomain().getCodeSource().getLocation().toString();
+        }
+        catch (Exception ignored)
+        {
+            return "UNKNOWN";
         }
     }
 
@@ -381,7 +396,7 @@ public class DbScope
         return _databaseName;
     }
 
-    public String getURL()
+    public String getDatabaseUrl()
     {
         try
         {
@@ -412,6 +427,11 @@ public class DbScope
     public String getDriverVersion()
     {
         return _driverVersion;
+    }
+
+    public String getDriverLocation()
+    {
+        return _driverLocation;
     }
 
     public LabKeyDataSourceProperties getLabKeyProps()
@@ -977,7 +997,8 @@ public class DbScope
             log.info("Data source " + this +
                     ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
                     ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle());
+                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
+                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
 
             if (_transaction.isEmpty())
             {
@@ -1458,7 +1479,7 @@ public class DbScope
         return _rds;
     }
 
-    public String getSearchStringEscape()
+    public String getDatabaseSearchStringEscape()
     {
         return _escape;
     }

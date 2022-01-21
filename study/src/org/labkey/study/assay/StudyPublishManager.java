@@ -531,7 +531,7 @@ public class StudyPublishManager implements StudyPublishService
         assert pvs.isProvenanceSupported();
 
         String domainName = dataset.getDomain().getName();
-        TableInfo datasetTable = dataset.getDomainKind().getTableInfo(user, targetContainer, domainName);
+        TableInfo datasetTable = dataset.getDomainKind().getTableInfo(user, targetContainer, domainName, null);
         ColumnInfo datasetLsidCol = datasetTable.getColumn("lsid");
         ColumnInfo sourceRowLsidCol = datasetTable.getColumn(SOURCE_ROW_LSID);
         if (sourceRowLsidCol == null)

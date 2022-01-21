@@ -1138,21 +1138,23 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    public int fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
-        fireFileMoveEvent(src.toPath(), dest.toPath(), user, container);
+        return fireFileMoveEvent(src.toPath(), dest.toPath(), user, container);
     }
 
     @Override
-    public void fireFileMoveEvent(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
+    public int fireFileMoveEvent(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
     {
         // Make sure that we've got the best representation of the file that we can
         java.nio.file.Path absSrc = FileUtil.getAbsoluteCaseSensitivePath(container, src);
         java.nio.file.Path absDest = FileUtil.getAbsoluteCaseSensitivePath(container, dest);
+        int result = 0;
         for (FileListener fileListener : _fileListeners)
         {
-            fileListener.fileMoved(absSrc, absDest, user, container);
+            result += fileListener.fileMoved(absSrc, absDest, user, container);
         }
+        return result;
     }
 
     @Override

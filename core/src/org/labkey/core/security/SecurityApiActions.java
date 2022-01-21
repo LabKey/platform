@@ -1388,7 +1388,8 @@ public class SecurityApiActions
 
         protected void writeToAuditLog(Group newGroup, ViewContext viewContext)
         {
-            AuditTypeEvent event = new AuditTypeEvent(GroupManager.GROUP_AUDIT_EVENT, viewContext.getContainer().getId(),"A new security group named " + newGroup.getName() + " was created." );
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "A new security group named " + newGroup.getName() + " was created.");
+            event.setGroup(newGroup.getUserId());
             AuditLogService.get().addEvent(viewContext.getUser(), event);
         }
 

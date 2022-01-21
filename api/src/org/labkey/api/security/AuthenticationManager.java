@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithLink;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -35,6 +36,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -42,9 +44,12 @@ import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
@@ -58,6 +63,9 @@ import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
+import org.labkey.api.security.Encryption.Algorithm;
+import org.labkey.api.security.Encryption.DecryptionException;
+import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -312,6 +320,42 @@ public class AuthenticationManager
         }
     }
 
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource) -> {
+        _log.info("  Attempting to migrate encrypted properties in authentication configurations");
+        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource);
+        TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+        Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap();
+        Map<String, String> saveMap = new HashMap<>();
+
+        map.forEach((key, value) -> {
+            try
+            {
+                _log.info("    Migrating encrypted properties for configuration " + key);
+                String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
+                String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
+                saveMap.put("EncryptedProperties", newEncryptedValue);
+                assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
+                Table.update(null, tinfo, saveMap, key);
+            }
+            catch (DecryptionException e)
+            {
+                _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+            }
+            catch (Exception e)
+            {
+                _log.error("Exception while migrating configuration " + key, e);
+            }
+        });
+        _log.info("  Migration of encrypted properties in authentication configurations is complete");
+    };
+
+    // Register a handler so encrypted properties are migrated whenever the encryption key changes
+    public static void registerEncryptionMigrationHandler()
+    {
+        EncryptionMigrationHandler.registerHandler(ENCRYPTION_MIGRATION_HANDLER);
+    }
+
     public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, AuthLogoType.HEADER);
@@ -351,7 +395,7 @@ public class AuthenticationManager
 
         HtmlStringBuilder html = HtmlStringBuilder.of();
 
-        for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
+        for (SSOAuthenticationConfiguration<?> configuration : ssoConfigurations)
         {
             if (!configuration.isAutoRedirect())
             {
@@ -466,7 +510,7 @@ public class AuthenticationManager
     public static void deleteConfiguration(User user, int rowId)
     {
         // Delete any logos attached to the configuration
-        AuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+        AuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
         AttachmentService.get().deleteAttachments(configuration);
 
         // Delete configuration
@@ -484,17 +528,17 @@ public class AuthenticationManager
         AuditLogService.get().addEvent(user, event);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
+    public static @Nullable SSOAuthenticationConfiguration<?> getActiveSSOConfiguration(@Nullable Integer key)
     {
         return null != key ? AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key) : null;
     }
 
-    public static @NotNull <AC extends AuthenticationConfiguration> Collection<AC> getActiveConfigurations(Class<AC> clazz)
+    public static @NotNull <AC extends AuthenticationConfiguration<?>> Collection<AC> getActiveConfigurations(Class<AC> clazz)
     {
         return AuthenticationConfigurationCache.getActive(clazz);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(int rowId)
+    public static @Nullable SSOAuthenticationConfiguration<?> getSSOConfiguration(int rowId)
     {
         return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, rowId);
     }
@@ -551,9 +595,8 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-    // leave public until upgrade from 19.3 is no longer allowed (and CoreUpgrade migration method is removed)
-    public static final String AUTHENTICATION_CATEGORY = "Authentication";
-    public static final String PROVIDERS_KEY = "Authentication";
+    // Used by start-up properties
+    private static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
@@ -598,7 +641,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("Your account has been deactivated. " + AppProps.getInstance().getAdministratorContactHTML() + " if you need to reactivate this account."));
+                errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
         },
         LoginDisabled
@@ -623,7 +666,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError("The server could not create your account. " + AppProps.getInstance().getAdministratorContactHTML() + " for assistance."));
+                errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
         },
         UserCreationNotAllowed
@@ -631,7 +674,7 @@ public class AuthenticationManager
             @Override
             public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
             {
-                errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
+                errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
         },
         PasswordExpired
@@ -659,6 +702,14 @@ public class AuthenticationManager
         public boolean requiresRedirect()
         {
             return false;
+        }
+    }
+
+    private static final class ContactAnAdministratorError extends LabKeyErrorWithLink
+    {
+        public ContactAnAdministratorError(String message, String adviceTextSuffix)
+        {
+            super(message, "Please contact a system administrator " + adviceTextSuffix, "mailto:" + AppProps.getInstance().getAdministratorContactEmail(true));
         }
     }
 
@@ -962,9 +1013,9 @@ public class AuthenticationManager
     private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "login limiter");
     private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "user limiter");
     private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "password limiter");
-    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + String.valueOf(key), new Rate(60,TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + String.valueOf(key), new Rate(20,TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60,TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20,TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20,TimeUnit.MINUTES));
 
 
     private static Integer _toKey(String s)
@@ -1437,9 +1488,9 @@ public class AuthenticationManager
 
     public static class LinkFactory
     {
-        private final SSOAuthenticationConfiguration _configuration;
+        private final SSOAuthenticationConfiguration<?> _configuration;
 
-        public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider> configuration)
+        public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider<?>> configuration)
         {
             _configuration = configuration;
         }

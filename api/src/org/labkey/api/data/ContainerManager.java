@@ -2785,7 +2785,7 @@ public class ContainerManager
             d.setType(type);
             d.setTitle(title);
             d.setLockState(lockState);
-            d.setExpirationDateLD(expirationDate);
+            d.setExpirationDate(expirationDate);
             return d;
         }
 

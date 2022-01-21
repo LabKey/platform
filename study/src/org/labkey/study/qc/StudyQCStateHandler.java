@@ -61,7 +61,9 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
 
         if (StudyManager.safeIntegersEqual(study.getDefaultPublishDataQCState(), state.getRowId()) ||
                 StudyManager.safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
-                StudyManager.safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
+                StudyManager.safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()) ||
+                !state.isQCState() // retain all sample statuses, even if not attached to a sample
+        )
         {
             return true;
         }

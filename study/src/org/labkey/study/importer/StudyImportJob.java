@@ -41,7 +41,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -76,7 +75,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
     public StudyImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
     {
-        super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
+        super("StudyImport", new ViewBackgroundInfo(c, user, url), pipeRoot);
         _originalFilename = originalFilename;
         String baseLogFileName = StudyPipeline.getLogFilename(studyXml.getParent().resolve("study_load"));
         setupLocalDirectoryAndJobLog(pipeRoot, StudyModule.MODULE_NAME, baseLogFileName);
@@ -191,12 +190,6 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");
-    }
-
-    @Override
-    public File getSpecimenArchive() throws ImportException
-    {
-        return getSpecimenArchivePath().toFile();
     }
 
     @Override

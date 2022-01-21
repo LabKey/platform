@@ -431,7 +431,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _nameGen;
     }
 
-    @Nullable
+    @NotNull
     public NameGenerator getAliquotNameGenerator()
     {
         if (_aliquotNameGen == null)
@@ -464,6 +464,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _aliquotNameGen;
     }
 
+    /*
+     * Check name expression and aliquot name expression for '${genId:minValue(100)}' syntax to return the specified startInd for genId
+     */
+    public long getMinGenId()
+    {
+        long nameGenMin = NameGenerator.getGenIdStartValue(_object.getNameExpression());
+        long aliquotGenMin = NameGenerator.getGenIdStartValue(_object.getAliquotNameExpression());
+        return Math.max(nameGenMin, aliquotGenMin);
+    }
+
     @Override
     public void createSampleNames(@NotNull List<Map<String, Object>> maps,
                                   @Nullable StringExpressionFactory.FieldKeyStringExpression expr,
@@ -489,7 +499,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
-            nameGen.generateNames(state, maps, parentDatas, parentSamples, extraPropsFn, skipDuplicates);
+            nameGen.generateNames(state, maps, parentDatas, parentSamples, List.of(extraPropsFn), skipDuplicates);
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -499,11 +509,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             // Failed to generate a name due to some part of the expression not in the row
             if (hasNameExpression())
-                throw new ExperimentException("Failed to generate name for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("Failed to generate name for sample on row " + e.getRowNumber(), e);
             else if (hasNameAsIdCol())
-                throw new ExperimentException("Name is required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("SampleID or Name is required for sample on row " + e.getRowNumber(), e);
             else
-                throw new ExperimentException("All id columns are required for Sample on row " + e.getRowNumber(), e);
+                throw new ExperimentException("All id columns are required for sample on row " + e.getRowNumber(), e);
         }
     }
 
@@ -527,7 +537,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
-            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, extraPropsFn);
+            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
         }
         catch (NameGenerator.NameGenerationException e)
         {
@@ -538,9 +548,49 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     // The DbSequence used to generate the ${genId} column values
     public DbSequence genIdSequence()
     {
-        return DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        long minGenId = getMinGenId();
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        if (minGenId > 1)
+            seq.ensureMinimum(minGenId - 1);
+        return seq;
     }
 
+    @Override
+    public long getCurrentGenId()
+    {
+        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        if (null == seqRowId)
+            return 0;
+
+        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        return seq.current();
+    }
+
+    @Override
+    public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
+    {
+        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if (!hasSamples(container))
+            {
+                seq.setSequenceValue(newSeqValue);
+                DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+            }
+            else
+                throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
+        }
+        else
+            seq.ensureMinimum(newSeqValue);
+    }
+
+    private boolean hasSamples(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
+    }
 
     @Override
     public void setIdCol1(String s)

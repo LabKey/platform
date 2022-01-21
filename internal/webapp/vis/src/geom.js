@@ -484,6 +484,8 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
  * @param {String} [config.fill] (Optional) A string value used for the fill color in the bar plot. Defaults to white (#ffffff)
  * @param {Number} [config.lineWidth] (Optional) A used to set the width of the lines used in the bar plot. Defaults to 1.
  * @param {Number} [config.opacity] (Optional) A number between 0 and 1 used to set the opacity of the bar plot. Defaults to 1.
+ * @param {Boolean} [config.stacked] (Optional) True to show stacked bars for the individual bar groupings. Note that this also
+ *                                      requires that an xSub aes be defined for the sub-grouping categories.
  * @param {Boolean} [config.showCumulativeTotals] (Optional) True to show cumulative totals next to the individual bars.
  * @param {String} [config.colorTotal] (Optional) A string value used for the line colors in the cumulative bar plot. Defaults to black (#000000)
  * @param {String} [config.fillTotal] (Optional) A string value used for the fill color in the cumulative bar plot. Defaults to black (#000000)
@@ -508,6 +510,7 @@ LABKEY.vis.Geom.BarPlot = function(config){
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.opacityTotal = ('opacityTotal' in config && config.opacityTotal != null && config.opacityTotal != undefined) ? config.opacityTotal : 1;
     this.showCumulativeTotals = ('showCumulativeTotals' in config && config.showCumulativeTotals != null && config.showCumulativeTotals != undefined) ? config.showCumulativeTotals : false;
+    this.stacked = ('stacked' in config && config.stacked != null && config.stacked != undefined) ? config.stacked : false;
     this.showValues = ('showValues' in config && config.showValues != null && config.showValues != undefined) ? config.showValues : false;
 
     return this;
@@ -519,7 +522,11 @@ LABKEY.vis.Geom.BarPlot.prototype.render = function(renderer, grid, scales, data
         return false;
     }
 
-    renderer.renderBarPlotGeom(data, this);
+    if (this.stacked) {
+        renderer.renderStackedBarPlotGeom(data, this);
+    } else {
+        renderer.renderBarPlotGeom(data, this);
+    }
     return true;
 };
 

@@ -19,9 +19,11 @@ package org.labkey.experiment.xar;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -46,17 +48,21 @@ public abstract class AbstractXarImporter
         _job = job;
     }
 
-    protected void checkDataCpasType(String declaredType)
+    protected ExpDataClass checkDataCpasType(String declaredType) throws ExperimentException
     {
+        ExpDataClass result = null;
         if (declaredType != null && !ExpData.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
             // check if this is a reference to a data class
-            if (ExperimentService.get().getDataClass(declaredType) == null)
-                _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Data object.");
+
+            result = ExperimentService.get().getDataClass(declaredType);
+            if (result == null)
+                throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' referenced for Data object.");
         }
+        return result;
     }
 
-    protected ExpSampleTypeImpl checkMaterialCpasType(String declaredType)
+    protected ExpSampleTypeImpl checkMaterialCpasType(String declaredType) throws ExperimentException
     {
         ExpSampleTypeImpl result = null;
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
@@ -64,20 +70,20 @@ public abstract class AbstractXarImporter
             result = SampleTypeServiceImpl.get().getSampleType(declaredType);
             if (result == null)
             {
-                _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
+                throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
             }
         }
         return result;
     }
 
-    protected void checkProtocolApplicationCpasType(String cpasType, Logger logger)
+    protected void checkProtocolApplicationCpasType(String cpasType) throws ExperimentException
     {
         if (cpasType != null &&
                 !ExpProtocol.ApplicationType.ProtocolApplication.toString().equals(cpasType) &&
                 !ExpProtocol.ApplicationType.ExperimentRun.toString().equals(cpasType) &&
                 !ExpProtocol.ApplicationType.ExperimentRunOutput.toString().equals(cpasType))
         {
-            logger.warn("Unrecognized CpasType '" + cpasType + "' loaded for ProtocolApplication object.");
+            throw new ExperimentException("Unrecognized CpasType '" + cpasType + "' loaded for ProtocolApplication object.");
         }
     }
 

@@ -80,6 +80,7 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -709,6 +710,7 @@ public abstract class UploadSamplesHelper
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
+        final Container container;
 
         public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in, Container container)
         {
@@ -716,6 +718,7 @@ public abstract class UploadSamplesHelper
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
+            this.container = container;
         }
 
         @Override
@@ -765,18 +768,24 @@ public abstract class UploadSamplesHelper
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize);
+            addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize, sampletype.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
-            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampletype.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampletype.getRowId());
             dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
-                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()));
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampletype.getContainer()))
+                    .addExtraPropsFn(() -> {
+                        if (container != null)
+                            return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                        else
+                            return Collections.emptyMap();
+                    });
 
             return LoggingDataIterator.wrap(names);
         }
@@ -796,6 +805,7 @@ public abstract class UploadSamplesHelper
         Map<String, String> importAliasMap = null;
         boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
         Set<String> _existingNames = null;
+        List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
         String generatedName = null;
         String generatedLsid = null;
@@ -807,6 +817,12 @@ public abstract class UploadSamplesHelper
             try
             {
                 this.importAliasMap = sampletype.getImportAliasMap();
+                _extraPropsFns.add(() -> {
+                    if (this.importAliasMap != null)
+                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);
+                    else
+                        return Collections.emptyMap();
+                });
             }
             catch (IOException e)
             {
@@ -814,7 +830,10 @@ public abstract class UploadSamplesHelper
             }
             nameGen = sampletype.getNameGenerator();
             aliquotNameGen = sampletype.getAliquotNameGenerator();
-            nameState = nameGen.createState(true);
+            if (nameGen != null)
+                nameState = nameGen.createState(true);
+            else
+                nameState = null;
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             _container = sampletype.getContainer();
             _batchSize = batchSize;
@@ -831,6 +850,12 @@ public abstract class UploadSamplesHelper
         _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
         {
             _allowUserSpecifiedNames = allowUserSpecifiedNames;
+            return this;
+        }
+
+        _GenerateNamesDataIterator addExtraPropsFn(Supplier<Map<String, Object>> extraProps)
+        {
+            _extraPropsFns.add(extraProps);
             return this;
         }
 
@@ -862,13 +887,6 @@ public abstract class UploadSamplesHelper
 
             try
             {
-                Supplier<Map<String, Object>> extraPropsFn = () -> {
-                    if (importAliasMap != null)
-                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
-                    else
-                        return Collections.emptyMap();
-                };
-
                 Object currNameObj = map.get("Name");
                 if (currNameObj != null && !_allowUserSpecifiedNames)
                 {
@@ -886,10 +904,15 @@ public abstract class UploadSamplesHelper
                     }
                 }
 
-                generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);;
-
-                generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                if (nameGen != null)
+                {
+                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
+                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                }
+                else
+                    addRowError("Error creating naming pattern generator.");
             }
+
             catch (NameGenerator.DuplicateNameException dup)
             {
                 addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
@@ -906,7 +929,7 @@ public abstract class UploadSamplesHelper
                     if (sampletype.hasNameExpression())
                         addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                     else if (sampletype.hasNameAsIdCol())
-                        addRowError("Name is required for sample on row " + e.getRowNumber());
+                        addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
                     else
                         addRowError("All id columns are required for sample on row " + e.getRowNumber());
                 }
@@ -1025,12 +1048,12 @@ public abstract class UploadSamplesHelper
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }
                 }
                 else
                 {
-                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows)
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
                         addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
@@ -1053,7 +1076,7 @@ public abstract class UploadSamplesHelper
 
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
-            SimpleConvertColumn c = createConvertColumn(col, fromIndex, true);
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
@@ -1071,10 +1094,5 @@ public abstract class UploadSamplesHelper
             return super.get(i);
         }
 
-        @Override
-        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
-        {
-            return value;
-        }
     }
 }

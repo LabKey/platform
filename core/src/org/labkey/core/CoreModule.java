@@ -161,6 +161,7 @@ import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
+import org.labkey.core.admin.importer.MissingValueImporterFactory;
 import org.labkey.core.admin.importer.ModulePropertiesImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.RoleAssignmentsImporterFactory;
@@ -175,6 +176,7 @@ import org.labkey.core.admin.test.SchemaXMLTestCase;
 import org.labkey.core.admin.usageMetrics.UsageMetricsServiceImpl;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
+import org.labkey.core.admin.writer.MissingValueWriterFactory;
 import org.labkey.core.admin.writer.ModulePropertiesWriterFactory;
 import org.labkey.core.admin.writer.PageWriterFactory;
 import org.labkey.core.admin.writer.RoleAssignmentsWriterFactory;
@@ -204,8 +206,8 @@ import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.qc.CoreQCStateHandler;
-import org.labkey.core.qc.QCStateImporter;
-import org.labkey.core.qc.QCStateWriter;
+import org.labkey.core.qc.DataStateImporter;
+import org.labkey.core.qc.DataStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -395,6 +397,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
+
+        ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
    }
 
     private void registerHealthChecks()
@@ -903,12 +907,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null != fsr)
         {
             fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
+            fsr.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
-            fsr.addFactories(new QCStateWriter.Factory(), new QCStateImporter.Factory());
+            fsr.addFactories(new DataStateWriter.Factory(), new DataStateImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 

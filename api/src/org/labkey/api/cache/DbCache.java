@@ -24,8 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DbCache is a wrapper that allocates a shared transaction-aware cache per TableInfo (for non-transaction use)
- * and a private transaction-aware cache per TableInfo per thread/connection (used for the duration of a transaction).
+ * DbCache associates a DatabaseCache with each participating TableInfo. The Table layer then invalidates the entire
+ * cache anytime it touches (insert, update, delete) that TableInfo. This is easy, but very inefficient. Managers should
+ * use DatabaseCaches directly and handle invalidation themselves.
  *
  * Use CacheManager.getCache() or DatabaseCache instead.
  *
@@ -37,19 +38,10 @@ public class DbCache
 {
     private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(100);
 
-    public static int DEFAULT_CACHE_SIZE = 5000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
-
-
-    public static <K> DatabaseCache<String, K> getCacheGeneric(TableInfo tinfo)
-    {
-        return (DatabaseCache<String, K>)getCache(tinfo, true);
-    }
-
-
-    private static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
+    public static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
     {
         Path cacheKey = tinfo.getNotificationKey();
-        assert null != cacheKey : "DbCache not supported for " + tinfo.toString();
+        assert null != cacheKey : "DbCache not supported for " + tinfo;
 
         synchronized(CACHES)
         {
@@ -117,5 +109,11 @@ public class DbCache
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.removeUsingFilter(new Cache.StringPrefixFilter(name));
+    }
+
+    // Temporary helper to assist with DbCache removal process
+    public static boolean hasCache(TableInfo tinfo)
+    {
+        return null != getCache(tinfo, false);
     }
 }

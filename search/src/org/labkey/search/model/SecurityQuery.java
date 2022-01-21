@@ -24,6 +24,7 @@ import org.apache.lucene.search.ConstantScoreScorer;
 import org.apache.lucene.search.ConstantScoreWeight;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
@@ -137,7 +138,7 @@ class SecurityQuery extends Query
                     {
                         while (NO_MORE_DOCS != (doc = securityContextDocValues.nextDoc()))
                         {
-                            BytesRef bytesRef = securityContextDocValues.binaryValue();
+                            BytesRef bytesRef = securityContextDocValues.lookupOrd(securityContextDocValues.ordValue());
                             String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
 
                             final String containerId;
@@ -189,6 +190,12 @@ class SecurityQuery extends Query
         }
 
         return canRead;
+    }
+
+    @Override
+    public void visit(QueryVisitor visitor)
+    {
+        visitor.visitLeaf(this);
     }
 
     @Override

@@ -37,7 +37,6 @@ import java.util.Map;
  */
 public class ApiJsonWriter extends ApiResponseWriter
 {
-
     //per http://www.iana.org/assignments/media-types/application/
     public static final String CONTENT_TYPE_JSON = "application/json";
 

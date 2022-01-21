@@ -323,10 +323,12 @@ public class ProjectController extends SpringActionController
             if (null == url || url.getExtraPath().equals("/"))
                 return HttpView.redirect(homeURL());
 
-            String pageId1 = url.getParameter("pageId");
-            if (null != pageId1)
+            String pageId = form.getPageId();
+            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
+
+            if (null != pageId)
             {
-                Container childContainer = ContainerManager.getChild(c, pageId1);
+                Container childContainer = ContainerManager.getChild(c, pageId);
                 if (null != childContainer && childContainer.isContainerTab())
                 {
                     // Redirect to child container, but only if user has permission
@@ -337,6 +339,10 @@ public class ProjectController extends SpringActionController
                         throw new RedirectException(new ActionURL(BeginAction.class, c));    // same class with no parameter
                     }
                 }
+
+                // Issue 44445: Redirect to default view if portal page does not exist
+                if (portalPage == null)
+                    throw new RedirectException(new ActionURL(BeginAction.class, c));
             }
 
             PageConfig page = getPageConfig();
@@ -349,7 +355,6 @@ public class ProjectController extends SpringActionController
             Template t = isPrint() ? Template.Print : Template.Home;
             HttpView<?> template = t.getTemplate(getViewContext(), new VBox(), page);
 
-            String pageId = form.getPageId();
             if (pageId == null)
             {
                 pageId = folderType.getDefaultPageId(getViewContext());
@@ -357,7 +362,6 @@ public class ProjectController extends SpringActionController
             Portal.populatePortalView(getViewContext(), pageId, template, isPrint());
 
             // Figure out title
-            Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
             FolderTab folderTab = null;
             if (!DefaultFolderType.DEFAULT_DASHBOARD.equalsIgnoreCase(pageId))
                 folderTab = Portal.getFolderTabFromId(getViewContext(), pageId);
@@ -1534,8 +1538,8 @@ public class ProjectController extends SpringActionController
 
                 if (children.size() > 0)
                 {
-                    // if use has permissions to at least one child container, make sure that at least the parent name is shown
-                    // (even if the user doesn't have perm to that parent container)
+                    // If user has permissions to at least one child container, then make sure that at least the
+                    // parent name is shown (even if the user doesn't have permission in the parent container)
                     resultMap.put("name", container.getName());
                 }
             }
@@ -1571,7 +1575,7 @@ public class ProjectController extends SpringActionController
             for (Container child : parent.getChildren())
             {
                 List<Map<String, Object>> theseChildren = getVisibleChildren(child, user, propertiesToSerialize, depth + 1);
-                if (child.hasPermission(user, ReadPermission.class) || !theseChildren.isEmpty())
+                if ((child.hasPermission(user, ReadPermission.class) && child.getContainerType().includeInAPIResponse()) || !theseChildren.isEmpty())
                 {
                     Map<String, Object> visibleChild = child.toJSON(user, _includeEffectivePermissions);
                     addModuleProperties(child, propertiesToSerialize, visibleChild);

@@ -33,7 +33,6 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -239,9 +238,9 @@
     int pageNo = (offset / hitsPerPage) + 1;
     SearchResult result = null;
     SearchResult navResult = null;
-    String searchFormId = "search-form-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String advFormId = "search-form-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-    String advFormCt = "search-form-ct-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String searchFormId = "search-form-" + getRequestScopedUID();
+    String advFormId = "search-form-" + getRequestScopedUID();
+    String advFormCt = "search-form-ct-" + getRequestScopedUID();
 
     // exceptions for display
     HtmlParseException parseException = null;

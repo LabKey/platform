@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.tika.utils.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -45,6 +46,7 @@ import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -54,7 +56,6 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -341,6 +342,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInDetailsView(statusEnabled);
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
+                ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
                 ret.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
@@ -503,7 +505,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var nameExpression = st.getNameExpression();
                 nameCol.setNameExpression(nameExpression);
                 nameCol.setNullable(true);
-                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression);
+                String nameExpressionPreview = getExpNameExpressionPreview(getUserSchema().getSchemaName(), st.getName(), getUserSchema().getUser());
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression, nameExpressionPreview);
                 nameCol.setDescription(desc);
             }
             else
@@ -604,6 +607,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         statusColInfo.setShownInInsertView(statusEnabled);
         statusColInfo.setShownInUpdateView(statusEnabled);
         statusColInfo.setHidden(!statusEnabled);
+        statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
         statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(),getContainerFilter())
@@ -668,17 +672,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _ss == null ? null : _ss.getDomain();
     }
 
-    public static String appendNameExpressionDescription(String currentDescription, String nameExpression)
+    public static String appendNameExpressionDescription(String currentDescription, String nameExpression, String nameExpressionPreview)
     {
         if (nameExpression == null)
             return currentDescription;
 
         StringBuilder sb = new StringBuilder();
-        if (currentDescription != null && !currentDescription.isEmpty())
-            sb.append(currentDescription).append("\n");
+        if (currentDescription != null && !currentDescription.isEmpty()) {
+            sb.append(currentDescription);
+            if (!currentDescription.endsWith("."))
+                sb.append(".");
+            sb.append("\n");
+        }
 
-        sb.append("If not provided, a unique name will be generated from the expression:\n");
+        sb.append("\nIf not provided, a unique name will be generated from the expression:\n");
         sb.append(nameExpression);
+        sb.append(".");
+        if (!StringUtils.isEmpty(nameExpressionPreview))
+        {
+            sb.append("\nExample of name that will be generated from the current pattern: \n");
+            sb.append(nameExpressionPreview);
+        }
+
         return sb.toString();
     }
 

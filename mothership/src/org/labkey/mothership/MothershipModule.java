@@ -74,7 +74,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 21.000;
+        return 22.000;
     }
 
     @Override
@@ -116,7 +116,13 @@ public class MothershipModule extends DefaultModule
     private void bootstrap(ModuleContext moduleContext)
     {
         Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
-        Group mothershipGroup = SecurityManager.createGroup(c, NAME);
+        final Group mothershipGroup;
+        Integer groupId = SecurityManager.getGroupId(c, NAME, false);
+        // Group will exist in the case where mothership module is deleted and re-added to a deployment
+        if (null != groupId)
+            mothershipGroup = SecurityManager.getGroup(groupId);
+        else
+            mothershipGroup = SecurityManager.createGroup(c, NAME);
         MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityPolicyManager.getPolicy(c));
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);

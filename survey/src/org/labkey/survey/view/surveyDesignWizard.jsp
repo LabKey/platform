@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -36,7 +35,7 @@
     SurveyController.SurveyDesignForm form = me.getModelBean();
 
     String allSchemas = getActionURL().getParameter("allSchemas");
-    String renderId = "survey-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String renderId = "survey-design-panel-" + getRequestScopedUID();
 %>
 <div id="<%= h(renderId)%>" class="dvc"></div>
 <script type="text/javascript">

@@ -17,10 +17,15 @@ package org.labkey.api.settings;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
+import org.labkey.api.admin.AdminBean;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
 
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
@@ -31,7 +36,7 @@ import org.labkey.api.util.PageFlowUtil;
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
+    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
 
     protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
@@ -40,7 +45,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public static final String APPLICATION_MENU_DISPLAY_MODE = "applicationMenuDisplayMode";
     protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
     protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
-    protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
@@ -81,16 +85,15 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         _settingsContainer = getSettingsContainer(c);
     }
 
+    public static void clearCaches()
+    {
+        SHORT_NAME_CACHE.clear();
+    }
+
     @Override
     protected String lookupStringValue(String name, @Nullable String defaultValue)
     {
         return lookupStringValue(_settingsContainer, name, defaultValue);
-    }
-
-    // TODO: Shouldn't this be static?
-    public boolean hasProperties()
-    {
-        return !getProperties(_c).isEmpty();
     }
 
     public String getDescription()
@@ -98,9 +101,15 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
     }
 
-    public String getShortName()
+    public String getUnsubstitutedShortName()
     {
         return lookupStringValue(SYSTEM_SHORT_NAME_PROP, "LabKey Server");
+    }
+
+    public String getShortName()
+    {
+        return SHORT_NAME_CACHE.get(_settingsContainer, null,
+            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName()).eval(AdminBean.getPropertyMap()));
     }
 
     public String getThemeName()
@@ -131,11 +140,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public boolean isDiscussionEnabled()
     {
         return lookupBooleanValue(DISCUSSION_ENABLED_PROP, true);
-    }
-
-    public String getNavigationBarWidth()
-    {
-        return lookupStringValue(NAVIGATION_BAR_WIDTH, "146"); // TODO: Remove this property? There's no way to set it...
     }
 
     public String getUnsubstitutedLogoHref()

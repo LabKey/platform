@@ -31,6 +31,7 @@ import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -107,6 +108,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
+    private SimpleTranslator.RemapMissingBehavior _remapMissingBehavior = null;
 
     /**
      * True if this column isn't really part of the database. It might be a calculated value, or an alternate
@@ -323,7 +325,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         if (col instanceof BaseColumnInfo)
-        {
+        {//TODO why are we doing this? most of the props are the same in both methods
             setExtraAttributesFrom((BaseColumnInfo) col);
             return;
         }
@@ -404,6 +406,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptLabelColumn(col.getConceptLabelColumn());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
     /*
@@ -484,6 +487,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setPrincipalConceptCode(col.getPrincipalConceptCode());
 
         setDerivationDataScope(col.getDerivationDataScope());
+        setScannable(col.isScannable());
     }
 
 
@@ -1129,6 +1133,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _isUserEditable = xmlCol.getIsUserEditable();
         if (xmlCol.isSetScale())
             _scale = xmlCol.getScale();
+        if (xmlCol.isSetScannable())
+            _scannable = xmlCol.getScannable();
         if (xmlCol.isSetDefaultValue())
             _defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())
@@ -2187,5 +2193,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public ColumnLogging getColumnLogging()
     {
         return _columnLogging;
+    }
+
+    @Override
+    public SimpleTranslator.RemapMissingBehavior getRemapMissingBehavior()
+    {
+        return _remapMissingBehavior;
+    }
+
+    @Override
+    public void setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior missingBehavior)
+    {
+        _remapMissingBehavior = missingBehavior;
     }
 }

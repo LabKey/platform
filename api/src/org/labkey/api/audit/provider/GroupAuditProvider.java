@@ -26,7 +26,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
@@ -37,8 +36,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PrincipalIdForeignKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -48,6 +45,9 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -137,13 +137,14 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                 if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Group");
-                    col.setFk(new GroupForeignKey(userSchema));
-                    col.setDisplayColumnFactory(GroupDisplayColumn::new);
+                    col.setFk(new PrincipalIdForeignKey(userSchema));
+                    col.setDisplayColumnFactory(PrincipalUserDisplayColumn::new);
                 }
                 else if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Member");
-                    PrincipalIdForeignKey.initColumn(col);
+                    col.setFk(new PrincipalIdForeignKey(userSchema));
+                    col.setDisplayColumnFactory(PrincipalUserDisplayColumn::new);
                 }
             }
         };
@@ -277,7 +278,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         public static final String NAME = "GroupAuditDomain";
         public static final String NAMESPACE_PREFIX = "Audit-" + NAME;
 
-        private static Set<PropertyDescriptor> _fields;  // TODO: Seems wrong... static + set in constructor?
+        private final Set<PropertyDescriptor> _fields;
 
         public GroupAuditDomainKind()
         {
@@ -318,42 +319,20 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         }
     }
 
-    public static class GroupForeignKey extends LookupForeignKey
+    public static class PrincipalUserDisplayColumn extends DataColumn
     {
-        private final UserSchema _userSchema;
+        private final ColumnInfo _principalId;
 
-        public GroupForeignKey(UserSchema userSchema)
+        public PrincipalUserDisplayColumn(ColumnInfo principalId)
         {
-            super("UserId", "Name");
-            _userSchema = userSchema;
-        }
-
-        @Override
-        public TableInfo getLookupTableInfo()
-        {
-            TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();
-            FilteredTable ret = new FilteredTable<>(tinfoUsers, _userSchema);
-            ret.addWrapColumn(tinfoUsers.getColumn("UserId"));
-            ret.addColumn(ret.wrapColumn("Name", tinfoUsers.getColumn("Name")));
-            ret.setTitleColumn("Name");
-            return ret;
-        }
-    }
-
-    public static class GroupDisplayColumn extends DataColumn
-    {
-        private ColumnInfo _groupId;
-
-        public GroupDisplayColumn(ColumnInfo groupId)
-        {
-            super(groupId);
-            _groupId = groupId;
+            super(principalId);
+            _principalId = principalId;
         }
 
         @Override
         public String getName()
         {
-            return "group";
+            return "principalUser";
         }
 
         @Override
@@ -362,18 +341,21 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             Integer id = (Integer)getBoundColumn().getValue(ctx);
             if (id != null)
             {
-                Group g = SecurityManager.getGroup(id);
-                if (g != null)
+                UserPrincipal p = SecurityManager.getPrincipal(id);
+                if (p != null)
                 {
-                    Container groupContainer = g.isAdministrators() ? ContainerManager.getRoot() : ContainerManager.getForId(g.getContainer());
-                    if (g.isAdministrators() || g.isProjectGroup())
+                    if (p.getPrincipalType() == PrincipalType.GROUP)
                     {
+                        Group g = SecurityManager.getGroup(id);
+                        if (g == null)
+                            return;
+                        Container groupContainer = g.isAdministrators() ? ContainerManager.getRoot() : ContainerManager.getForId(g.getContainer());
                         String displayText = PageFlowUtil.filter(g.getName());
 
                         // Link to security-group action ONLY for standard security groups (not module groups, like actors). See #26351.
                         if (g.getPrincipalType() == PrincipalType.GROUP)
                         {
-                            String groupName = g.isProjectGroup() ? groupContainer.getPath() + "/" + g.getName() : g.getName();
+                            String groupName = g.isProjectGroup() && groupContainer != null ? groupContainer.getPath() + "/" + g.getName() : g.getName();
                             ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
 
                             out.write("<a href=\"");
@@ -388,15 +370,43 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                         }
                         return;
                     }
+                    else
+                    {
+                        var loggedInUser = ctx.getViewContext().getUser();
+                        User u = UserManager.getUser(id);
+                        if (u != null)
+                        {
+                            // don't display anything for the non-user "guest"
+                            if (u.isGuest())
+                                return;
+
+                            String displayText = PageFlowUtil.filter(u.getDisplayName(loggedInUser));
+                            ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, id);
+                            if (url != null)
+                            {
+                                out.write("<a href=\"");
+                                out.write(PageFlowUtil.filter(url));
+                                out.write("\">");
+                                out.write(displayText);
+                                out.write("</a>");
+                            }
+                            else
+                                out.write(displayText);
+                        }
+                        else
+                        {
+                            out.write(p.getName());
+                        }
+                    }
                 }
             }
             out.write("&nbsp;");
         }
 
         @Override
-        public void addQueryColumns(Set<ColumnInfo> set)
+        public void addQueryFieldKeys(Set<FieldKey> keys)
         {
-            set.add(_groupId);
+            keys.add(_principalId.getFieldKey());
         }
     }
 }
