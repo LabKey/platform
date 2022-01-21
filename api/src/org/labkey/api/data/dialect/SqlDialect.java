@@ -80,6 +80,8 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
+    public static final String DEFAULT_DECIMAL_SCALE_PRECISION = "(15,4)";
+
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
