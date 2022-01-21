@@ -330,6 +330,14 @@ public abstract class Method
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("now", new JdbcMethod("now", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("nullif", new Method("nullif", JdbcType.OTHER, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new PassthroughInfo("nullif", null, JdbcType.OTHER);
+            }
+        });
         labkeyMethod.put("pi", new JdbcMethod("pi", JdbcType.DOUBLE, 0, 0));
         labkeyMethod.put("power", new JdbcMethod("power", JdbcType.DOUBLE, 2, 2));
         labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));

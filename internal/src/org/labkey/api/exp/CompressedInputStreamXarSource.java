@@ -2,6 +2,7 @@ package org.labkey.api.exp;
 
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -30,9 +31,9 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
     private final Path _logFile;
     private String _xml;
 
-    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, PipelineJob job)
+    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, PipelineJob job, Container container)
     {
-        super(job.getDescription(), job.getContainer(), job.getUser(), job);
+        super(job.getDescription(), container, job.getUser(), job);
         _xarInputStream = xarInputStream;
         _xmlFile = xarFile;
         _logFile = logFile;

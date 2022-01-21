@@ -15,12 +15,17 @@
  */
 package org.labkey.test.tests.study;
 
+import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.TruncateTableCommand;
+import org.labkey.remoteapi.query.TruncateTableResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
@@ -60,7 +65,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
     @Override
     @LogMethod
-    protected void doVerifySteps()
+    protected void doVerifySteps() throws Exception
     {
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQuery("study", "DEM-1");
@@ -68,7 +73,24 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("view raw table metadata"));
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
 
-        reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX);
+        // Issue: 44363 - we are expecting the import to fail because we are trying to change dataset keys on a
+        // non-empty dataset.
+        Assert.assertTrue("Server errors detected", getServerErrorCount() == 0);
+        reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 2, true);
+        clickAndWait(Locator.linkWithText("ERROR"));
+        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains("ERROR: Unable to change the keys on dataset (DEM-1), because there is still data present. The dataset should be truncated before the import.");
+        resetErrors();
+
+        // truncate the table
+        log("Truncating the table");
+        final Connection cn = WebTestHelper.getRemoteApiConnection(true);
+        TruncateTableCommand cmd = new TruncateTableCommand("study", "DEM-1");
+        TruncateTableResponse resp = cmd.execute(cn, getProjectName() + "/" + getFolderName());
+        Assert.assertTrue("Truncation of DEM-1 table failed", resp.getDeletedRowCount().intValue() == 24);
+
+        // reload should now work
+        deleteAllPipelineJobs();
+        reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 1, false);
 
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
         selectQuery("study", "DEM-1");
