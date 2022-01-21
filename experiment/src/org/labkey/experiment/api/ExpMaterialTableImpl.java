@@ -29,7 +29,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -145,6 +144,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
+
+            if (Column.QueryableInputs.name().equalsIgnoreCase(name))
+            {
+                result = createColumn(Column.QueryableInputs.name(), Column.QueryableInputs);
+                // TODO this can't be added unless the table becomes mutable.  Is it needed?
+//                addMethod(Column.QueryableInputs.name(), new LineageMethod(getContainer(), result, true));
+            }
         }
         return result;
     }
@@ -325,10 +331,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return createAliasColumn(alias, ExperimentService.get()::getTinfoMaterialAliasMap);
 
             case Inputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
+
+            case QueryableInputs:
+                return createLineageColumn(this, alias, true, true);
 
             case Outputs:
-                return createLineageColumn(this, alias, false);
+                return createLineageColumn(this, alias, false, false);
 
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);

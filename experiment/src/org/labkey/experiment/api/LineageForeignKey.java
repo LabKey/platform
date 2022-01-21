@@ -400,7 +400,14 @@ class LineageForeignKey extends AbstractForeignKey
                     // NOTE: We used to cache the lookup fk sql as a materialized query for performance
                     return super.getLookupSql(lookupTable, alias);
                 }
+
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
             };
+
         }
     }
 

@@ -209,4 +209,5 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
         return getSqlDialect().getGroupConcat(sql, false, false, "'" + MultiValuedRenderContext.VALUE_DELIMITER + "'");
     }
+
 }
