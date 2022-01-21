@@ -67,6 +67,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
@@ -94,7 +95,7 @@ import java.util.stream.Collectors;
  */
 public class StorageProvisionerImpl implements StorageProvisioner
 {
-    private static final Logger log = LogManager.getLogger(StorageProvisionerImpl.class);
+    private static final Logger log = LogHelper.getLogger(StorageProvisionerImpl.class, "Creates and maintains DB tables for admin-defined types");
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
     private static final StorageProvisionerImpl instance = new StorageProvisionerImpl();
@@ -125,7 +126,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
             if (null == dd)
             {
-                LogManager.getLogger(StorageProvisionerImpl.class).warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
+                log.warn("Can't find domain descriptor: " + domain.getTypeId() + " " + domain.getTypeURI());
                 transaction.commit();
                 return null;
             }
@@ -233,7 +234,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         if (null == domain)
             return;
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         if (kind == null)
         {
             if (null != domain.getStorageTableName())
@@ -390,7 +391,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     public void addMvIndicator(DomainProperty prop)
     {
         Domain domain = prop.getDomain();
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -525,7 +526,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
      * Generate and execute the appropriate SQL statements to resize properties
      * @param domain to execute within
      */
-    public void resizeProperty(Domain domain, DomainProperty prop, Integer scale) throws ChangePropertyDescriptorException
+    public void resizeProperty(Domain domain, DomainProperty prop, Integer oldScale) throws ChangePropertyDescriptorException
     {
         DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -541,12 +542,37 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 base.add(s.getName()));
 
         if (!base.contains(prop.getName()))
-            resizePropChange.addColumnResize(prop.getPropertyDescriptor(), scale);
+            resizePropChange.addColumnResize(prop.getPropertyDescriptor(), oldScale);
 
         resizePropChange.execute();
     }
 
-    public String makeTableName(DomainKind kind, Domain domain)
+    /**
+     * Generate and execute the appropriate SQL statements to resize properties
+     * @param domain to execute within
+     */
+    public void changePropertyType(Domain domain, DomainProperty prop) throws ChangePropertyDescriptorException
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        // should be in a transaction with propertydescriptor changes
+        if (!scope.isTransactionActive())
+            throw new ChangePropertyDescriptorException("Unable to change property type. Transaction is not active within change scope");
+
+        TableChange propChange = new TableChange(domain, ChangeType.ChangeColumnTypes);
+
+        Set<String> base = Sets.newCaseInsensitiveHashSet();
+        kind.getBaseProperties(domain).forEach(s ->
+                base.add(s.getName()));
+
+        if (!base.contains(prop.getName()))
+            propChange.addColumn(prop.getPropertyDescriptor());
+
+        propChange.execute();
+    }
+
+    public String makeTableName(DomainKind<?> kind, Domain domain)
     {
         String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
         SqlDialect dialect = kind.getScope().getSqlDialect();
@@ -563,7 +589,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @NotNull
     public TableInfo createTableInfoImpl(@NotNull Domain domain)
     {
-        DomainKind kind = getDomainKind(domain);
+        DomainKind<?> kind = getDomainKind(domain);
 
         DbScope scope = kind.getScope();
         String schemaName = kind.getStorageSchemaName();
@@ -608,11 +634,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
     }
 
     @NotNull
-    private static DomainKind getDomainKind(@NotNull Domain domain)
+    private static DomainKind<?> getDomainKind(@NotNull Domain domain)
     {
         if (null == domain)
             throw new NullPointerException("domain is null");
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         if (null == kind)  // TODO: Consider using TableNotFoundException or something similar
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
         return kind;

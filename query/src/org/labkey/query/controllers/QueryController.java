@@ -2007,7 +2007,7 @@ public class QueryController extends SpringActionController
                                                  String regionName, String viewName,
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
-                                                 JSONObject jsonView,
+                                                 boolean hidden, JSONObject jsonView,
                                                  ActionURL srcURL,
                                                  BindException errors)
     {
@@ -2019,7 +2019,7 @@ public class QueryController extends SpringActionController
         }
         String name = StringUtils.trimToNull(viewName);
 
-        boolean isHidden = false;
+        boolean isHidden = hidden;
         CustomView view;
         if (owner == null)
             view = queryDef.getSharedCustomView(name);
@@ -2064,6 +2064,7 @@ public class QueryController extends SpringActionController
 
                 if (owner != null && session)
                     ((CustomViewImpl) view).isSession(true);
+                view.setIsHidden(hidden);
             }
             else if (session != view.isSession())
             {
@@ -2089,7 +2090,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, jsonView, srcURL, errors);
+                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, hidden, jsonView, srcURL, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2224,6 +2225,7 @@ public class QueryController extends SpringActionController
                 boolean shared = jsonView.optBoolean("shared", false);
                 boolean inherit = jsonView.optBoolean("inherit", false);
                 boolean session = jsonView.optBoolean("session", false);
+                boolean hidden = jsonView.optBoolean("hidden", false);
                 // Users may save views to a location other than the current container
                 String containerPath = jsonView.optString("containerPath", getContainer().getPath());
                 Container container;
@@ -2245,7 +2247,7 @@ public class QueryController extends SpringActionController
 
                 Map<String, Object> savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
-                        shared, inherit, session, true, jsonView, null, errors);
+                        shared, inherit, session, true, hidden, jsonView, null, errors);
 
                 if (savedView != null)
                 {

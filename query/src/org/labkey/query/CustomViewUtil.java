@@ -159,6 +159,7 @@ public class CustomViewUtil
             url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, containerFilter);
 
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
+        view.setIsHidden(jsonView.optBoolean("hidden", false));
     }
 
     public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean initializeMissingView, Map<FieldKey, Map<String, Object>> columnMetadata)
