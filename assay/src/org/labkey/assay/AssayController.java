@@ -1619,7 +1619,7 @@ public class AssayController extends SpringActionController
 
                 if (_firstRun != null)
                 {
-                    if (AssayQCService.getProvider().isRequireCommentOnQCStateChange(_firstRun.getProtocol().getContainer()) && form.getComment() == null)
+                    if (AssayQCService.getProvider().isRequireCommentOnQCStateChange(_firstRun.getProtocol().getContainer()) && StringUtils.isBlank(form.getComment()))
                         errors.reject(ERROR_MSG, "A comment is required when changing a QC State for the selected run(s).");
                 }
             }

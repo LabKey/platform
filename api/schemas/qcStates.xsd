@@ -46,7 +46,7 @@
                 <xs:element name="requireCommentOnQCStateChange" type="xs:boolean" default="false" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
-                            This setting determines whether a comment is required when updating an assay run QC state.
+                            This setting determines whether a comment is required when updating a QC state.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
