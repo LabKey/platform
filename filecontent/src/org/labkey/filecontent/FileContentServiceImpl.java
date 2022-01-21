@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,6 +92,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -934,7 +936,7 @@ public class FileContentServiceImpl implements FileContentService
 
     /**
      * Move the file or directory into a ".deleted" directory under the parent directory.
-     * @return True if succesfully moved.
+     * @return True if successfully moved.
      */
     private static boolean moveToDeleted(File fileToMove)
     {
@@ -1304,6 +1306,53 @@ public class FileContentServiceImpl implements FileContentService
         return FileUtil.getAbsolutePath(container, FileUtil.createUri(dataFileUrl));
     }
 
+    @Nullable
+    @Override
+    public String getWebDavUrl(java.nio.file.@NotNull Path path, @NotNull Container container, @NotNull PathType type)
+    {
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(container);
+
+        if (root == null)
+            return null;
+
+        try
+        {
+            path = path.toAbsolutePath();
+
+            // currently, only report if the file is under the parent container
+            if (root.isUnderRoot(path))
+            {
+                String relPath = root.relativePath(path);
+                if (relPath == null)
+                    return null;
+
+                if(!isCloudRoot(container))
+                {
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                }
+                else
+                {
+                    // Do not encode path from S3 folder.  It is already encoded.
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+                }
+
+                return switch (type)
+                        {
+                            case folderRelative -> relPath;
+                            case serverRelative -> Path.parse(root.getWebdavURL()).encode() + relPath;
+                            case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(root.getWebdavURL()).encode() + relPath;
+                            default -> throw new IllegalArgumentException("Unexpected path type: " + type);
+                        };
+            }
+        }
+        catch (InvalidPathException e)
+        {
+            _log.error("Invalid WebDav URL from: " + path, e);
+        }
+
+        return null;
+    }
+
     @Override
     public String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container)
     {
@@ -1510,15 +1559,12 @@ public class FileContentServiceImpl implements FileContentService
         if (!FileUtil.hasCloudScheme(path))
         {
             File file = path.toFile();
-            if (null != file)
-            {
-                String legacyUrl = file.toURI().toString();
-                if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
-                    return true;
+            String legacyUrl = file.toURI().toString();
+            if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
+                return true;
 
-                if (existingUrls.contains(file.getPath()))
-                    return true;
-            }
+            if (existingUrls.contains(file.getPath()))
+                return true;
         }
         return false;
     }
