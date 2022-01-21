@@ -240,7 +240,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public void setHelpTopic(HelpTopic topic)
     {
-        assert null != getPageConfig() : "action not initialized property";
+        assert null != getPageConfig() : "action not initialized properly";
         getPageConfig().setHelpTopic(topic);
     }
 
