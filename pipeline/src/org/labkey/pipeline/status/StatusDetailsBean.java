@@ -1,29 +1,35 @@
 package org.labkey.pipeline.status;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.StringBuilderWriter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.LimitedSizeInputStream;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -31,8 +37,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 
 /**
  * Used for Jackson serialization
- * @see StatusController.Details2Action
- * @see StatusController.StatusDetailLog
+ * @see StatusController.DetailsAction
  */
 @JsonInclude(JsonInclude.Include.NON_NULL) // Don't serialize null values
 public class StatusDetailsBean
@@ -52,6 +57,8 @@ public class StatusDetailsBean
     public final String dataUrl;
     public final String activeHostName;
     public final String filePath;
+
+    public final String webDavURL;
 
     public final StatusDetailsBean parentStatus;
     public final List<StatusDetailsBean> splitStatus;
@@ -92,12 +99,27 @@ public class StatusDetailsBean
         this.log = log;
         this.fetchCount = fetchCount;
         this.queuePosition = queuePosition;
+
+        this.webDavURL = createWebDavURL(psf.lookupContainer());
+    }
+
+    private String createWebDavURL(Container container)
+    {
+        if (filePath != null && container != null)
+        {
+            Path logPath = Path.of(filePath);
+            if (Files.exists(logPath))
+            {
+                return FileContentService.get().getWebDavUrl(logPath, container, FileContentService.PathType.serverRelative);
+            }
+        }
+        return null;
     }
 
     public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset, int fetchCount)
     {
         var statusRuns = ExperimentService.get().getExpRunsForJobId(psf.getRowId()).stream().map(StatusDetailRun::create).collect(toList());
-        var statusFiles = Collections.emptyList();
+        List<StatusDetailFile> statusFiles = Collections.emptyList();
         StatusDetailLog statusLog = null;
 
         String strPath = psf.getFilePath();
@@ -165,6 +187,9 @@ public class StatusDetailsBean
         return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePositions().get(psf.getJobId()));
     }
 
+    /** Issue 44540 - any log files bigger than this will effectively be truncated for the job details page's log view */
+    private static final long MAX_LOG_SIZE = 10_000_000;
+
     // Copy the file content from Path to the PrintWriter,
     // skipping offset characters and closing the PrintWriter when complete.
     private static long transferTo(StringBuilder out, Path p, long offset) throws IOException
@@ -172,13 +197,25 @@ public class StatusDetailsBean
         // Pipeline log files are written in platform default encoding.
         // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
         // Use platform default encoding when reading the log file.
-        try (BufferedReader br = Files.newBufferedReader(p, Charset.defaultCharset());
+        try (LimitedSizeInputStream in = new LimitedSizeInputStream(Files.newInputStream(p), MAX_LOG_SIZE);
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, Charset.defaultCharset()));
              PrintWriter pw = new PrintWriter(new StringBuilderWriter(out)))
         {
             if (offset > 0)
                 br.skip(offset);
 
-            return br.transferTo(pw);
+            try
+            {
+                return br.transferTo(pw);
+            }
+            catch (LimitedSizeInputStream.LimitReachedException e)
+            {
+                String extraMessage = System.lineSeparator() + System.lineSeparator() +
+                        "Log file viewing is capped at " + MAX_LOG_SIZE + " bytes. Download the raw file to view the remainder."
+                        + System.lineSeparator();
+                out.append(extraMessage);
+                return e.getBytesRead() + extraMessage.getBytes(Charset.defaultCharset()).length;
+            }
         }
     }
 
@@ -208,11 +245,6 @@ public class StatusDetailsBean
         public final String name;
         public final ActionURL viewUrl;
         public final ActionURL downloadUrl;
-
-        public StatusDetailFile(Container c, int rowId, File file)
-        {
-            this(c, rowId, file.getName());
-        }
 
         public StatusDetailFile(Container c, int rowId, Path path)
         {
@@ -255,4 +287,15 @@ public class StatusDetailsBean
         }
     }
 
+    public @Nullable URLHelper getWebDavUrl()
+    {
+        try
+        {
+            return webDavURL == null ? null : new URLHelper(webDavURL);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
 }
