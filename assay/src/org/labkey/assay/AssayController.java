@@ -332,6 +332,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
+        assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
