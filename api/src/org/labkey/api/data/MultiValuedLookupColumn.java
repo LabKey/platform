@@ -210,9 +210,4 @@ public class MultiValuedLookupColumn extends LookupColumn
         return getSqlDialect().getGroupConcat(sql, false, false, "'" + MultiValuedRenderContext.VALUE_DELIMITER + "'");
     }
 
-    @Override
-    public boolean isSortable()
-    {
-        return false;
-    }
 }
