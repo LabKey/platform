@@ -829,8 +829,12 @@ public class IssuesController extends SpringActionController
                             issuesForm.setOldValues(prevIssue);
                     }
                     IssueObject issue = issuesForm.getBean();
-                    IssueListDef formIssueListDef = IssueServiceImpl.getIssueListDef(getContainer(), issue);
-                    IssueListDef issueListDef = formIssueListDef != null ? formIssueListDef : defaultIssueListDef;
+                    IssueListDef issueListDef = IssueServiceImpl.getIssueListDef(getContainer(), issue);
+                    if (issueListDef == null)
+                    {
+                        issueListDef = defaultIssueListDef;
+                        issue.setIssueDefId(issueListDef.getRowId());
+                    }
 
                     // bind the user schema table to the form bean, so we can get typed properties
                     UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
