@@ -29,11 +29,9 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -125,13 +123,13 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     }
 
 
-    protected MutableColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
+    protected MutableColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs, boolean asMultiValued)
     {
         var ret = table.wrapColumn(alias, table.getRealTable().getColumn("objectid"));
-        if (1==1) // use LineageDisplayColumn
-            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs));
-        else    // use MultiValueForeignKey
+        if (asMultiValued) // use MultiValueForeignKey
             ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(),new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs));
+        else // use LineageDisplayColumn
+            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs));
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);

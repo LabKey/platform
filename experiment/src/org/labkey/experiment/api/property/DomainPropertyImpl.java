@@ -20,13 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -44,6 +48,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -549,6 +554,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getDefaultValueType();
     }
 
+    @Override
     public void setDefaultValueType(String defaultValueTypeName)
     {
         if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
@@ -735,7 +741,7 @@ public class DomainPropertyImpl implements DomainProperty
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(getContainer(), getPropertyId());
         DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
 
-        DomainKind kind = getDomain().getDomainKind();
+        DomainKind<?> kind = getDomain().getDomainKind();
         if (null != kind)
             kind.deletePropertyDescriptor(getDomain(), user, _pd);
         OntologyManager.removePropertyDescriptorFromDomain(this);
@@ -751,9 +757,23 @@ public class DomainPropertyImpl implements DomainProperty
         {
             PropertyType oldType = _pdOld.getPropertyType();
             PropertyType newType = _pd.getPropertyType();
-            if (oldType.getStorageType() != newType.getStorageType())
+            boolean changedType = false;
+            if (oldType.getJdbcType() != newType.getJdbcType())
             {
-                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
+                if (newType.getJdbcType().isText() ||
+                        (oldType.getJdbcType().isInteger() && newType.getJdbcType().isNumeric()))
+                {
+                    changedType = true;
+                    if (newType.getJdbcType().isText())
+                    {
+                        // Remove any previously set formatting string as it won't apply to a text field
+                        _pd.setFormat(null);
+                    }
+                }
+                else
+                {
+                    throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
+                }
             }
 
             OntologyManager.validatePropertyDescriptor(_pd);
@@ -776,11 +796,48 @@ public class DomainPropertyImpl implements DomainProperty
                 if (propRenamed)
                     StorageProvisionerImpl.get().renameProperty(this.getDomain(), this, _pdOld, mvDropped);
 
-                if (propResized)
+                if (changedType)
+                {
+                    StorageProvisionerImpl.get().changePropertyType(this.getDomain(), this);
+                    if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
+                    {
+                        updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
+                                _pd.getStorageColumnName(), _pdOld.getFormat());
+                    }
+                }
+                else if (propResized)
                     StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
 
                 if (mvAdded)
                     StorageProvisionerImpl.get().addMvIndicator(this);
+            }
+            else if (changedType)
+            {
+                if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isText())
+                {
+                    new SqlExecutor(OntologyManager.getExpSchema()).execute(
+                            new SQLFragment("UPDATE ").
+                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(" SET StringValue = DateTimeValue, DateTimeValue = NULL WHERE PropertyId = ?").
+                                    add(_pdOld.getPropertyId()));
+                }
+                else if (!oldType.getJdbcType().isText() && newType.getJdbcType().isText())
+                {
+                    new SqlExecutor(OntologyManager.getExpSchema()).execute(
+                            new SQLFragment("UPDATE ").
+                                    append(OntologyManager.getTinfoObjectProperty().getSelectName()).
+                                    append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
+                                    add(_pdOld.getPropertyId()));
+                }
+                else
+                {
+                    throw new ChangePropertyDescriptorException("Cannot convert from " + oldType.getJdbcType() + " to " + newType.getJdbcType() + " for non-provisioned table");
+                }
+            }
+
+            if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
+            {
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat());
             }
         }
         else
@@ -801,6 +858,28 @@ public class DomainPropertyImpl implements DomainProperty
         }
 
         DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
+    }
+
+    /**
+     * Format values in columns that were just converted from booleans to strings with the DB's default type conversion.
+     * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
+     * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
+     */
+    private void updateBooleanValue(String schemaTable, String column, String formatString)
+    {
+        column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);
+        BooleanFormat f = BooleanFormat.getInstance(formatString);
+        String trueValue = StringUtils.trimToNull(f.format(true));
+        String falseValue = StringUtils.trimToNull(f.format(false));
+        String nullValue = StringUtils.trimToNull(f.format(null));
+        SQLFragment sql = new SQLFragment("UPDATE ").append(schemaTable).append(" SET ").
+                append(column).append(" = CASE WHEN ").
+                append(column).append(" IN ('1', 'true') THEN ? WHEN ").
+                append(column).append(" IN ('0', 'false') THEN ? ELSE ? END");
+        sql.add(trueValue);
+        sql.add(falseValue);
+        sql.add(nullValue);
+        new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
     }
 
     @Override

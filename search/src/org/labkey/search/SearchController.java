@@ -119,7 +119,7 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleRedirectAction
+    public class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
@@ -256,8 +256,9 @@ public class SearchController extends SpringActionController
         {
         }
 
-        public AdminAction(PageConfig pageConfig)
+        public AdminAction(ViewContext ctx, PageConfig pageConfig)
         {
+            setViewContext(ctx);
             setPageConfig(pageConfig);
         }
 
@@ -385,18 +386,18 @@ public class SearchController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class IndexContentsAction extends SimpleViewAction
+    public class IndexContentsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/search/view/exportContents.jsp");
+            return new JspView<>("/org/labkey/search/view/exportContents.jsp");
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            new AdminAction(getPageConfig()).addNavTrail(root);
+            new AdminAction(getViewContext(), getPageConfig()).addNavTrail(root);
             root.addChild("Index Contents");
         }
     }

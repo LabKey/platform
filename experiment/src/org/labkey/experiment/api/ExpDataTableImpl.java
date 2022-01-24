@@ -568,10 +568,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return wrapColumn(alias, _rootTable.getColumn("Generated"));
 
             case Inputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
 
             case Outputs:
-                return createLineageColumn(this, alias, true);
+                return createLineageColumn(this, alias, true, false);
 
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
@@ -825,7 +825,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             if (data == null)
                 return null;
 
-            return data.getWebDavURL(_relative ? ExpData.PathType.folderRelative : ExpData.PathType.serverRelative);
+            return data.getWebDavURL(_relative ? FileContentService.PathType.folderRelative : FileContentService.PathType.serverRelative);
         }
 
         @Override
@@ -876,7 +876,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
                 PipeRoot pr = PipelineService.get().getPipelineRootSetting(getProject());
 
-                return pr.getWebdavURL() + getUrlRelative();
+                return org.labkey.api.util.Path.parse(pr.getWebdavURL()).encode() + getUrlRelative();
             }
 
             public String getUrlRelative()
