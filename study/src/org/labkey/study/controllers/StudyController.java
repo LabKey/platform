@@ -3413,18 +3413,6 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public boolean hasQcStateDefaultsPanel()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean hasDataVisibilityPanel()
-        {
-            return true;
-        }
-
-        @Override
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
@@ -3447,6 +3435,12 @@ public class StudyController extends BaseStudyController
                 return getQCStateFilteredURL(successUrl, PUBLIC_STATES_LABEL, DATASET_DATAREGION_NAME, getContainer());
 
             return successUrl;
+        }
+
+        @Override
+        public boolean hasQcStateDefaultsPanel()
+        {
+            return true;
         }
 
         @Override
@@ -3478,6 +3472,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        public boolean hasDataVisibilityPanel()
+        {
+            return true;
+        }
+
+        @Override
         public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
@@ -3499,6 +3499,18 @@ public class StudyController extends BaseStudyController
             panelHtml.append("  </table>");
 
             return panelHtml.toString();
+        }
+
+        @Override
+        public boolean hasRequiresCommentPanel()
+        {
+            return false;
+        }
+
+        @Override
+        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        {
+            throw new IllegalStateException("This action does not support a requires comment panel.");
         }
     }
 

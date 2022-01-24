@@ -107,17 +107,25 @@
         if (manageAction.hasQcStateDefaultsPanel())
         {
     %>
-    <labkey:panel title="<%=defaultStatesPanelTitle%>">
-        <%= text(manageAction.getQcStateDefaultsPanel(container, qcStateHandler)) %>
-    </labkey:panel>
+            <labkey:panel title="<%=defaultStatesPanelTitle%>">
+                <%= text(manageAction.getQcStateDefaultsPanel(container, qcStateHandler)) %>
+            </labkey:panel>
     <%
         }
         if (manageAction.hasDataVisibilityPanel())
         {
     %>
-    <labkey:panel title="Data visibility">
-        <%= text(manageAction.getDataVisibilityPanel(container, qcStateHandler)) %>
-    </labkey:panel>
+            <labkey:panel title="Data visibility">
+                <%= text(manageAction.getDataVisibilityPanel(container, qcStateHandler)) %>
+            </labkey:panel>
+    <%
+        }
+        if (manageAction.hasRequiresCommentPanel())
+        {
+    %>
+            <labkey:panel title="QC State Comments">
+                <%= text(manageAction.getRequiresCommentPanel(container, qcStateHandler)) %>
+            </labkey:panel>
     <%
         }
     %>

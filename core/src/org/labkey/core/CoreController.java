@@ -2528,6 +2528,7 @@ public class CoreController extends SpringActionController
     public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultQCState;
+        private boolean _requireCommentOnQCStateChange;
 
         public Integer getDefaultQCState()
         {
@@ -2537,6 +2538,16 @@ public class CoreController extends SpringActionController
         public void setDefaultQCState(Integer defaultQCState)
         {
             _defaultQCState = defaultQCState;
+        }
+
+        public boolean isRequireCommentOnQCStateChange()
+        {
+            return _requireCommentOnQCStateChange;
+        }
+
+        public void setRequireCommentOnQCStateChange(boolean requireCommentOnQCStateChange)
+        {
+            _requireCommentOnQCStateChange = requireCommentOnQCStateChange;
         }
     }
 
@@ -2552,12 +2563,6 @@ public class CoreController extends SpringActionController
         public boolean hasQcStateDefaultsPanel()
         {
             return true;
-        }
-
-        @Override
-        public boolean hasDataVisibilityPanel()
-        {
-            return false;
         }
 
         @Override
@@ -2581,9 +2586,44 @@ public class CoreController extends SpringActionController
         }
 
         @Override
+        public boolean hasDataVisibilityPanel()
+        {
+            return false;
+        }
+
+        @Override
         public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
-            throw new IllegalStateException("This action does not support a data visibility panel");
+            throw new IllegalStateException("This action does not support a data visibility panel.");
+        }
+
+        @Override
+        public boolean hasRequiresCommentPanel()
+        {
+            return true;
+        }
+
+        @Override
+        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        {
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">This setting determines whether a comment is required when updating an assay run QC state.");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Require Comment on QC State Change:</th>");
+            panelHtml.append("          <td>");
+            panelHtml.append("              <select name=\"requireCommentOnQCStateChange\">");
+            panelHtml.append("                  <option value=\"false\">No</option>");
+            String selectedText = (qcStateHandler.isRequireCommentOnQCStateChange(container)) ? " selected" : "";
+            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">Yes</option>");
+            panelHtml.append("              </select>");
+            panelHtml.append("          </td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
         }
 
         @Override
