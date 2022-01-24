@@ -60,12 +60,6 @@ public class FormattedHtml
         this(html, isVolatile, Collections.emptySet(), Collections.emptySet(), clientDependencies);
     }
 
-    @Deprecated // use HtmlString
-    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
-    {
-        this(null==html ? null : HtmlString.unsafe(html), isVolatile, wikiDependencies, anchors, clientDependencies);
-    }
-
     public FormattedHtml(HtmlString html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull Set<String> anchors, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
         _html = null==html ? HtmlString.EMPTY_STRING : html;
