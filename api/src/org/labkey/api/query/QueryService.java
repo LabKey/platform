@@ -141,6 +141,8 @@ public interface QueryService
 
     void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException;
 
+    TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList);
+
     /**
      * Get the list of custom views.
      * If schema, query, or owner is null, return custom views for all schemas/queries/users.
