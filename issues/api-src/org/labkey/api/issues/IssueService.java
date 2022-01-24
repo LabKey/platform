@@ -35,17 +35,15 @@ public interface IssueService
     Issue getIssue(Container container, User user, Integer issueId);
 
     /**
-     * Returns an existing issue, optionally merging in properties that represent updates that will
+     * Returns an existing issue merging in properties that represent updates that will
      * be made to the existing issue. The returned issue can then be updated using any of the save methods
      * in this interface.
-     * @param container
-     * @param user
      * @param issueId - The id of the issue to fetch
      * @param updates - The map which represents the changes to the existing issue that should be applied.
      * @return
      */
     @Nullable
-    Issue getIssue(Container container, User user, Integer issueId, Map<String, Object> updates);
+    Issue getIssueForUpdate(Container container, User user, Integer issueId, Map<String, Object> updates);
 
     // Returns the ID of the requested issue list definition
     Integer getIssueDefinitionId(Container container, String name);

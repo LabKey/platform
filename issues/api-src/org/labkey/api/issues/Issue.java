@@ -241,7 +241,7 @@ public interface Issue
 
                 // remove entries with null values
                 bean.forEach((k, v) -> {if (v != null) updates.put(k, v);});
-                Issue updatedIssue = IssueService.get().getIssue(_container, _user, _issueId, updates);
+                Issue updatedIssue = IssueService.get().getIssueForUpdate(_container, _user, _issueId, updates);
                 if (updatedIssue == null)
                     throw new NotFoundException("Existing issue with id: " + _issueId + " was not found");
 

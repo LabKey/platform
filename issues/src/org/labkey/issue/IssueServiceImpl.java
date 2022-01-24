@@ -316,7 +316,7 @@ public class IssueServiceImpl implements IssueService
     }
 
     @Override
-    public @Nullable Issue getIssue(Container container, User user, Integer issueId, Map<String, Object> bean)
+    public @Nullable Issue getIssueForUpdate(Container container, User user, Integer issueId, Map<String, Object> bean)
     {
         IssueObject issue = IssueManager.getIssue(container, user, issueId);
         if (issue != null)
