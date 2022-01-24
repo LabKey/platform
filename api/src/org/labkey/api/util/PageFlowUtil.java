@@ -2227,7 +2227,7 @@ public class PageFlowUtil
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationsByUser(null, user.getUserId(), true).size()));
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationCountByUser(null, user.getUserId(), true)));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");

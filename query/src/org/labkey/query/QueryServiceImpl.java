@@ -2297,7 +2297,7 @@ public class QueryServiceImpl implements QueryService
         return createTable(schema, sql, null, false);
     }
 
-    private TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
+    public TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
     {
         Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
