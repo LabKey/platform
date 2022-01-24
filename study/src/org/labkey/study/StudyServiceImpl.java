@@ -837,7 +837,7 @@ public class StudyServiceImpl implements StudyService
         }
         catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
-            throw new IllegalStateException("Unable to construct class instance.");
+            throw new IllegalStateException("Unable to construct class instance.", e);
         }
     }
 
