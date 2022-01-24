@@ -218,9 +218,8 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 debug("No such file " + labsFile + " so not parsing supplemental lab information");
             }
 
-            try (InputStream is = Files.newInputStream(input))
+            try (ExcelLoader loader = ExcelLoader.create(input, true, null))
             {
-                ExcelLoader loader = new ExcelLoader(is, true, null);
                 loader.setInferTypes(false);
 
                 // Create a ZIP archive with the appropriate TSVs

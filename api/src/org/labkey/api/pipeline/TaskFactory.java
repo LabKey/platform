@@ -87,7 +87,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     int getAutoRetry();
 
-    public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException;
+    WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException;
 
     void setDeclaringModule(Module declaringModule);
 
@@ -97,5 +97,5 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
     /**
      * Location name for task to run on the LabKey Server itself (inside the Tomcat process).
      */
-    static final String WEBSERVER = "webserver";
+    String WEBSERVER = "webserver";
 }

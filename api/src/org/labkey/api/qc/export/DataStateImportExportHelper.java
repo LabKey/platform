@@ -62,4 +62,5 @@ public interface DataStateImportExportHelper
     void setDefaultDirectEntryQCState(Container container, User user, Integer stateId);
     void setShowPrivateDataByDefault(Container container, User user, boolean showPrivate);
     void setBlankQCStatePublic(Container container, User user, boolean isPublic);
+    void setRequireCommentOnQCStateChange(Container container, User user, boolean requireCommentOnQCStateChange);
 }

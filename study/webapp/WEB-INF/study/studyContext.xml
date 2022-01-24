@@ -12,7 +12,6 @@
                 <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
                 <bean class="org.labkey.api.specimen.pipeline.StudyImportSpecimenTask$Factory"/>
             </list>
         </property>
@@ -47,30 +46,6 @@
                         <list>
                             <bean id="standaloneDatasetTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneDatasetTask</value></constructor-arg>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-
-                <!-- Study reload source job pipeline -->
-                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.StudyReloadSourceJob"/>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="createReloadSource" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyReloadSourceTask</value></constructor-arg>
-                            </bean>
-                            <bean id="reloadInitialTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportInitialTask</value></constructor-arg>
-                            </bean>
-                            <bean id="reloadDatasetTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
-                            </bean>
-                            <bean id="reloadSpecimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StudyImportSpecimenTask</value></constructor-arg>
-                            </bean>
-                            <bean id="reloadFinalTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>

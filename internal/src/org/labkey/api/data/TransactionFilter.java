@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.util.FileUtil;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -35,6 +37,8 @@ public class TransactionFilter implements Filter
     @Override
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException
     {
+        // Is it worth creating another filter for this?  It is in the spirit of per-request resource tracking.
+        FileUtil.startRequest();
         try
         {
             chain.doFilter(req, resp);
@@ -43,6 +47,7 @@ public class TransactionFilter implements Filter
         {
             DbScope.closeAllConnectionsForCurrentThread();
         }
+        FileUtil.stopRequest();
     }
 
     @Override

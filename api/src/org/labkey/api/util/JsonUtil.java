@@ -38,7 +38,7 @@ import java.util.List;
 public class JsonUtil
 {
     // Default ObjectMapper configured for the common case.
-    // The ObjectMapper is threadsafe and can be shared across requests
+    // The ObjectMapper is thread-safe and can be shared across requests
     // but shouldn't be mutated. If you need to reconfigure the ObjectMapper,
     // create a new instance by calling <code>ObjectMapper.copy()</code>.
     public static final ObjectMapper DEFAULT_MAPPER;

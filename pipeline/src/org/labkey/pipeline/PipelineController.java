@@ -1370,7 +1370,7 @@ public class PipelineController extends SpringActionController
                 return ss.runStudyImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), errors, pipelineRoot, options);
             }
             else
-                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), errors, pipelineRoot, options);
+                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), pipelineRoot, options);
         }
 
         @Override

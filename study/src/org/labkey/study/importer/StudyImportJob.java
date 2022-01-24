@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
@@ -190,17 +189,5 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");
-    }
-
-    @Override
-    public Path getSpecimenArchivePath() throws ImportException
-    {
-        return _ctx.getSpecimenArchive(_root);
-    }
-
-    @Override
-    public boolean isMerge()
-    {
-        return false;
     }
 }
