@@ -229,7 +229,8 @@ public class ExcelFactory
             OPCPackage opc = readOPCPackage(file);
             return new XSSFWorkbook(opc)
             {
-                // This overload is here to make it easy to see which code pats are inadvertently loading spreadsheet data the expensive way!
+                // This overload is here to make it easy to see which code paths are inadvertently loading spreadsheet data the expensive way!
+
                 @Override
                 public void parseSheet(Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
                 {
