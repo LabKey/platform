@@ -269,6 +269,10 @@ public class SystemMaintenance
         /**
          * Specify if the task is meant to be configurable / recurring and therefore shown in the group of maintenance
          * tasks that can be enabled / disabled as part of the daily/nightly schedule.
+         *
+         * Note: If your task is associated with a Java upgrade code method then you probably don't need to override
+         * this or have a maintenance task at all. Administrators can now invoke any Java upgrade code methods from
+         * the link on the SQL Scripts page.
          */
         default boolean isRecurring()
         {

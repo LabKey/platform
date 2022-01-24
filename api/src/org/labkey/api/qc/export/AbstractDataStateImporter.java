@@ -91,6 +91,7 @@ public abstract class AbstractDataStateImporter
 
         helper.setShowPrivateDataByDefault(ctx.getContainer(), ctx.getUser(), qcXml.getShowPrivateDataByDefault());
         helper.setBlankQCStatePublic(ctx.getContainer(), ctx.getUser(), qcXml.getBlankQCStatePublic());
+        helper.setRequireCommentOnQCStateChange(ctx.getContainer(), ctx.getUser(), qcXml.getRequireCommentOnQCStateChange());
     }
 
     @NotNull

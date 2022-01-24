@@ -104,7 +104,6 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
         return getFailView(form, errors);
     }
 
-
     @Override
     protected String getCommandClassMethodName()
     {
@@ -116,12 +115,10 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
         return defaultBindParameters(getCommand(), m);
     }
 
-
     /**
      * View with text and buttons.  Should NOT include &lt;form&gt; 
      */
     public abstract ModelAndView getConfirmView(FORM form, BindException errors) throws Exception;
-
 
     /**
      * may call throwRedirect() on success
@@ -139,7 +136,6 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 
     /* Generic version of validate */
     public abstract void validateCommand(FORM form, Errors errors);
-
 
     @NotNull
     public abstract URLHelper getSuccessURL(FORM form);

@@ -150,6 +150,10 @@
 </labkey:form>
 <labkey:form name="systemMaintenance" action="<%=urlFor(SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
 
+<%
+    if (!singleUseTasks.isEmpty())
+    {
+%>
 <div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Special Maintenance and Upgrade Tasks</h3>
@@ -168,14 +172,17 @@
                     description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
                 else
                     description = HtmlStringBuilder
-                            .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
-                            .append(task.getDescription())
-                            .append(HtmlString.unsafe("</span>"));
+                        .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
+                        .append(task.getDescription())
+                        .append(HtmlString.unsafe("</span>"));
                 %><div><%=description%></div><%
             }
         %>
     </div>
 </div>
+<%
+    }
+%>
 
 <script type="text/javascript">
 
