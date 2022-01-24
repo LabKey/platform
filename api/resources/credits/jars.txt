@@ -59,5 +59,5 @@ thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.c
 tika-core-2.2.1.jar|Tika|2.2.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
 validation-api-1.1.0.Final.jar|Bean Validation API (JSR 303)|1.1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xercesImpl-2.12.1.jar|Xerces|2.12.1|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
-xmlbeans-3.0.1.jar|XMLBeans|3.0.1|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
+xmlbeans-3.1.0.jar|XMLBeans|3.1.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 {table}
