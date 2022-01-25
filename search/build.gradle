@@ -110,6 +110,19 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.apache.pdfbox:pdfbox-tools:${pdfboxVersion}",
+            "Apache PDFBox®",
+            "PDFBox",
+            "https://pdfbox.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "PDFBox dependency for PDF OCR"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "com.drewnoakes:metadata-extractor:2.16.0",
             "Metadata Extractor",
             "drewnoakes",
