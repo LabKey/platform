@@ -18,6 +18,7 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BooleanFormat;
@@ -802,7 +803,7 @@ public class DomainPropertyImpl implements DomainProperty
                     if (_pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
                     {
                         updateBooleanValue(_domain.getDomainKind().getStorageSchemaName() + "." + _domain.getStorageTableName(),
-                                _pd.getStorageColumnName(), _pdOld.getFormat());
+                                _pd.getStorageColumnName(), _pdOld.getFormat(), null);
                     }
                 }
                 else if (propResized)
@@ -829,6 +830,11 @@ public class DomainPropertyImpl implements DomainProperty
                                     append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
+                else //noinspection StatementWithEmptyBody
+                    if (oldType.getJdbcType().isInteger() && newType.getJdbcType().isReal())
+                {
+                    // Since exp.ObjectProperty stores these types in the same column, there's nothing for us to do
+                }
                 else
                 {
                     throw new ChangePropertyDescriptorException("Cannot convert from " + oldType.getJdbcType() + " to " + newType.getJdbcType() + " for non-provisioned table");
@@ -837,7 +843,7 @@ public class DomainPropertyImpl implements DomainProperty
 
             if (changedType && _pdOld.getJdbcType() == JdbcType.BOOLEAN && _pd.getJdbcType().isText())
             {
-                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat());
+                updateBooleanValue(OntologyManager.getTinfoObjectProperty().getSelectName(), "StringValue", _pdOld.getFormat(), new SQLFragment("PropertyId = ?", _pdOld.getPropertyId()));
             }
         }
         else
@@ -865,7 +871,7 @@ public class DomainPropertyImpl implements DomainProperty
      * Postgres will now have 'true' and 'false', and SQLServer will have '0' and '1'. Use the format string to use the
      * preferred format, and standardize on 'true' and 'false' in the absence of an explicitly configured format.
      */
-    private void updateBooleanValue(String schemaTable, String column, String formatString)
+    private void updateBooleanValue(String schemaTable, String column, String formatString, @Nullable SQLFragment whereClause)
     {
         column = OntologyManager.getExpSchema().getSqlDialect().makeLegalIdentifier(column);
         BooleanFormat f = BooleanFormat.getInstance(formatString);
@@ -879,6 +885,11 @@ public class DomainPropertyImpl implements DomainProperty
         sql.add(trueValue);
         sql.add(falseValue);
         sql.add(nullValue);
+        if (whereClause != null)
+        {
+            sql.append(" WHERE ");
+            sql.append(whereClause);
+        }
         new SqlExecutor(OntologyManager.getExpSchema()).execute(sql);
     }
 
