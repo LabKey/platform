@@ -1281,9 +1281,15 @@ public class Query
         private void assertSqlEquals(Object a, Object b)
         {
             if (null == a)
+            {
                 QueryTestCase.assertNull("Expected NULL value: + sql", b);
+                return;
+            }
             if (null == b)
+            {
                 QueryTestCase.fail("Did not expect null value: " + _sql);
+                return;
+            }
 //            QueryTestCase.assertEquals(sql, _type.getJavaClass(), b.getClass());
             if (a instanceof Number && b instanceof Number)
             {
@@ -1622,6 +1628,8 @@ public class Query
             // TODO: month
             // TODO: monthname
             // TODO: now
+        new MethodSqlTest("SELECT NULLIF(1,1)", JdbcType.INTEGER, null),
+        new MethodSqlTest("SELECT NULLIF('1','2')", JdbcType.VARCHAR, "1"),
         new MethodSqlTest("SELECT ROUND(PI()) FROM R WHERE rowid=1", JdbcType.DOUBLE, 3.0),
             // TODO: power
             // TODO: quarter

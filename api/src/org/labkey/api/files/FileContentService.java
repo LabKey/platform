@@ -314,6 +314,11 @@ public interface FileContentService
      */
     String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container);
 
+    enum PathType { full, serverRelative, folderRelative }
+
+    @Nullable
+    String getWebDavUrl(@NotNull Path path, @NotNull Container container, @NotNull PathType type);
+
     /**
      * Ensure an entry in the exp.data table exists for all files in the container's file root.
      */

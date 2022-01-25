@@ -4,10 +4,10 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Simple implementation of LoggerWriter that uses the regular logger.
- * */
+ */
 public class SimpleLoggerWriter implements LoggerWriter
 {
-    private Logger _log;
+    private final Logger _log;
 
     public SimpleLoggerWriter(Logger log)
     {

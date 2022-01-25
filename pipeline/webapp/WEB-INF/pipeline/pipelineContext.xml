@@ -9,6 +9,7 @@
                 <bean class="org.labkey.pipeline.analysis.CommandTaskImpl$Factory"/>
                 <bean class="org.labkey.pipeline.analysis.ConvertTaskFactory"/>
                 <bean class="org.labkey.pipeline.importer.FolderImportTask$Factory"/>
+                <bean class="org.labkey.pipeline.importer.GenerateFolderArchiveTask$Factory"/>
 
                 <!-- For unit-testing purposes -->
                 <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory" />
@@ -46,6 +47,9 @@
                     <constructor-arg type="java.lang.Class" value="org.labkey.pipeline.importer.FolderImportJob"/>
                     <property name="taskProgressionSpec">
                         <list>
+                            <bean id="generateFolderArchiveTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.GenerateFolderArchiveTask</value></constructor-arg>
+                            </bean>
                             <bean id="dummy" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportTask</value></constructor-arg>
                             </bean>

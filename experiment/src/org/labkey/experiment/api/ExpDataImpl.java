@@ -602,7 +602,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     @Override
     @Nullable
-    public String getWebDavURL(@NotNull PathType type)
+    public String getWebDavURL(@NotNull FileContentService.PathType type)
     {
         java.nio.file.Path path = getFilePath();
         if (path == null)
@@ -610,50 +610,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return null;
         }
 
-        if (getContainer() == null)
+        Container c = getContainer();
+        if (c == null)
         {
             return null;
         }
 
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(getContainer());
-        if (root == null)
-            return null;
-
-        try
-        {
-            path = path.toAbsolutePath();
-
-            //currently only report if the file is under the container for this ExpData
-            if (root.isUnderRoot(path))
-            {
-                String relPath = root.relativePath(path);
-                if (relPath == null)
-                    return null;
-
-                if(!FileContentService.get().isCloudRoot(getContainer()))
-                {
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
-                }
-                else
-                {
-                    // Do not encode path from S3 folder.  It is already encoded.
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
-                }
-                switch (type)
-                {
-                    case folderRelative: return relPath;
-                    case serverRelative: return root.getWebdavURL() + relPath;
-                    case full: return AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
-                    default:
-                        throw new IllegalArgumentException("Unexpected path type: " + type);
-                }
-            }
-        }
-        catch (InvalidPathException e)
-        {
-            LOG.error("Invalid path for expData: " + getRowId(), e);
-        }
-        return null;
+        return FileContentService.get().getWebDavUrl(path, c, type);
     }
 
     public void index(SearchService.IndexTask task)

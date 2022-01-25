@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.SecurityManager.ViewFactory" %>
@@ -27,9 +28,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
-<%@ page import="org.labkey.api.study.StudyReloadSource" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
@@ -116,7 +117,7 @@
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
     int numDatasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER).size();
-    Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
+    Collection<FolderArchiveSource> reloadSources = PipelineService.get().getFolderArchiveSources(getContainer());
 
     ComplianceService complianceService = ComplianceService.get();
     String maxAllowedPhi = complianceService.getMaxAllowedPhi(c, getUser()).name();

@@ -1018,39 +1018,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         List<String> sql = new ArrayList<>();
         switch (change.getType())
         {
-            case CreateTable:
-                sql.addAll(getCreateTableStatements(change));
-                break;
-            case DropTable:
-                sql.add("DROP TABLE " + makeTableIdentifier(change));
-                break;
-            case AddColumns:
-                sql.addAll(getAddColumnsStatements(change));
-                break;
-            case DropColumns:
-                sql.add(getDropColumnsStatement(change));
-                break;
-            case RenameColumns:
-                sql.addAll(getRenameColumnsStatement(change));
-                break;
-            case DropIndicesByName:
-                sql.addAll(getDropIndexByNameStatements(change));
-                break;
-            case DropIndices:
-                sql.addAll(getDropIndexStatements(change));
-                break;
-            case AddIndices:
-                sql.addAll(getCreateIndexStatements(change));
-                break;
-            case ResizeColumns:
-                sql.add(getResizeColumnStatement(change));
-                break;
-            case DropConstraints:
-                sql.addAll(getDropConstraintsStatement(change));
-                break;
-            case AddConstraints:
-                sql.addAll(getAddConstraintsStatement(change));
-                break;
+            case CreateTable -> sql.addAll(getCreateTableStatements(change));
+            case DropTable -> sql.add("DROP TABLE " + makeTableIdentifier(change));
+            case AddColumns -> sql.addAll(getAddColumnsStatements(change));
+            case DropColumns -> sql.add(getDropColumnsStatement(change));
+            case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
+            case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
+            case DropIndices -> sql.addAll(getDropIndexStatements(change));
+            case AddIndices -> sql.addAll(getCreateIndexStatements(change));
+            case ResizeColumns, ChangeColumnTypes -> sql.add(getChangeColumnTypeStatement(change));
+            case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
+            case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
+            default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
         }
 
         return sql;
@@ -1082,27 +1061,38 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     /**
-     * Generate the Alter Table statement to change the size of a column
+     * Generate the Alter Table statement to change the size or type of a column
      *
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
-     * @param change
-     * @return
      */
-    private String getResizeColumnStatement(TableChange change)
+    private String getChangeColumnTypeStatement(TableChange change)
     {
         StringBuilder sb = new StringBuilder();
         String comma = "";
 
         //Postgres allows executing multiple Alter Column statements under one Alter Table
         //  Reducing column size may cause a rebuild of the data so it can be expensive
-        sb.append( String.format("ALTER TABLE %s.%s ", change.getSchemaName(), change.getTableName()));
+        sb.append( String.format("ALTER TABLE %s ", makeTableIdentifier(change)));
         for (PropertyStorageSpec column : change.getColumns())
         {
-            //Using the common default max size to make type change to text
-            String dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                    getSqlTypeName(JdbcType.LONGVARCHAR) :
-                    getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+            String dbType;
+            if (column.getJdbcType().isText())
+            {
+                //Using the common default max size to make type change to text
+                dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                        getSqlTypeName(JdbcType.LONGVARCHAR) :
+                        getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+            }
+            else if (column.getJdbcType().isDecimal())
+            {
+                dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
+            }
+            else
+            {
+                dbType = getSqlTypeName(column.getJdbcType());
+
+            }
 
             sb.append(comma);
             comma = ", ";
@@ -1342,7 +1332,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (prop.getJdbcType() == JdbcType.VARCHAR && prop.getSize() != -1 && prop.getSize() <= SqlDialect.MAX_VARCHAR_SIZE)
             colSpec.add("(" + prop.getSize() + ")");
         else if (prop.getJdbcType() == JdbcType.DECIMAL)
-            colSpec.add("(15,4)");
+            colSpec.add(DEFAULT_DECIMAL_SCALE_PRECISION);
 
         if (prop.isPrimaryKey() || !prop.isNullable())
             colSpec.add("NOT NULL");
