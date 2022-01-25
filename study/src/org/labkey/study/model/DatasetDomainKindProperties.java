@@ -2,6 +2,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -80,11 +81,11 @@ public class DatasetDomainKindProperties implements Cloneable
             _category = ds.getViewCategory().getLabel();
         }
 
-        ExpProtocol protocol = (ExpProtocol)ds.resolvePublishSource();
-        if (protocol != null)
+        ExpObject source = ds.resolvePublishSource();
+        if (source instanceof ExpProtocol)
         {
-            _sourceAssayName = protocol.getName();
-            _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol).getLocalURIString();
+            _sourceAssayName = source.getName();
+            _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(source.getContainer(), (ExpProtocol) source).getLocalURIString();
         }
 
         if (null != ds.getDomain())
