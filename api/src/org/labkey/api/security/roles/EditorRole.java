@@ -27,6 +27,8 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.UpdateSampleStatusPermission;
+import org.labkey.api.security.permissions.WorkflowJobPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
@@ -47,7 +49,9 @@ public class EditorRole extends AbstractRole
                 EditSharedViewPermission.class,
                 ShareReportPermission.class, EditSharedReportPermission.class,
                 SharedParticipantGroupPermission.class,
-                ManagePicklistsPermission.class
+                ManagePicklistsPermission.class,
+                WorkflowJobPermission.class,
+                UpdateSampleStatusPermission.class
         );
     }
 
