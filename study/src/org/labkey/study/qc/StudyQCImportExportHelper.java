@@ -35,6 +35,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
 
         qcXml.setShowPrivateDataByDefault(study.isShowPrivateDataByDefault());
         qcXml.setBlankQCStatePublic(study.isBlankQCStatePublic());
+        qcXml.setRequireCommentOnQCStateChange(false);
 
         // set the default states for each import type
         DataState pipelineImportState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPipelineQCState());
@@ -136,5 +137,11 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
             study.setBlankQCStatePublic(isPublic);
             StudyManager.getInstance().updateStudy(user, study);
         }
+    }
+
+    @Override
+    public void setRequireCommentOnQCStateChange(Container container, User user, boolean requireCommentOnQCStateChange)
+    {
+
     }
 }

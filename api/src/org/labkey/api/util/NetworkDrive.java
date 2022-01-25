@@ -16,9 +16,9 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,7 +90,7 @@ public class NetworkDrive
         if (p.exitValue() != 0)
         {
             int count;
-            char buffer[] = new char[4096];
+            char[] buffer = new char[4096];
 
             InputStreamReader reader = new InputStreamReader(p.getErrorStream(), StandardCharsets.US_ASCII);
             StringBuilder errors = new StringBuilder();
@@ -112,7 +112,7 @@ public class NetworkDrive
         p.waitFor();
     }
 
-    private static Logger _log = LogManager.getLogger(NetworkDrive.class);
+    private static final Logger _log = LogHelper.getLogger(NetworkDrive.class, "Network drive errors");
 
     /**
      * @return whether the file exists, mounting the drive if needed

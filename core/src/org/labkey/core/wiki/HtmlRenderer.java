@@ -206,7 +206,7 @@ public class HtmlRenderer implements WikiRenderer
             volatilePage = false;
         }
 
-        return new FormattedHtml(innerHtml.toString(), volatilePage, wikiDependencies, Collections.emptySet(), cds);
+        return new FormattedHtml(HtmlString.unsafe(innerHtml.toString()), volatilePage, wikiDependencies, Collections.emptySet(), cds);
     }
 
 
