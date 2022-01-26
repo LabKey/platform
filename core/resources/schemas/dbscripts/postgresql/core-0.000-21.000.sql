@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* core-0.00-15.30.sql */
-
 CREATE DOMAIN public.UNIQUEIDENTIFIER AS VARCHAR(36);
 CREATE DOMAIN public.ENTITYID AS VARCHAR(36);
 CREATE DOMAIN public.USERID AS INT;
@@ -34,6 +32,8 @@ CREATE TABLE core.Logins
   Verification VARCHAR(64),
   LastChanged TIMESTAMP NULL,
   PreviousCrypts VARCHAR(1000),
+  RequestedEmail VARCHAR(255),
+  VerificationTimeout TIMESTAMP,
 
   CONSTRAINT PK_Logins PRIMARY KEY (Email)
 );
@@ -90,6 +90,7 @@ CREATE TABLE core.UsersData
   IM VARCHAR(64)  NULL,
   Description VARCHAR(255),
   LastLogin TIMESTAMP,
+  ExpirationDate TIMESTAMP,
 
   CONSTRAINT PK_UsersData PRIMARY KEY (UserId),
   CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
@@ -125,7 +126,7 @@ CREATE TABLE core.Modules
 (
   Name VARCHAR(255),
   ClassName VARCHAR(255),
-  InstalledVersion FLOAT8,
+  SchemaVersion FLOAT8 NULL,
   Enabled BOOLEAN DEFAULT '1',
   AutoUninstall BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
   Schemas VARCHAR(4000) NULL,                    -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
@@ -268,19 +269,19 @@ CREATE TABLE core.PortalPages
   Permanent BOOLEAN NOT NULL DEFAULT false, -- may not be renamed,hidden,deleted (w/o changing folder type)
   Properties TEXT,
 
-  CONSTRAINT PK_PortalPages PRIMARY KEY (Container, PageId),
-  CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-  CONSTRAINT UQ_PortalPage UNIQUE (Container, Index)
+  CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 );
 
-CLUSTER PK_PortalPages ON core.PortalPages;
+-- We don't normally designate a column as "PRIMARY KEY", since it generates an unpredictable PK name. But all existing
+-- deployments already have this, so keep it for consistency
+ALTER TABLE core.portalpages ADD COLUMN rowId SERIAL PRIMARY KEY;
+
 CREATE INDEX IX_PortalPages_EntityId ON core.PortalPages(EntityId);
 
 CREATE TABLE core.PortalWebParts
 (
   RowId SERIAL NOT NULL,
   Container ENTITYID NOT NULL,
-  PageId VARCHAR(50) NOT NULL,
   Index INT NOT NULL,
   Name VARCHAR(64),
   Location VARCHAR(16),    -- 'body', 'left', 'right'
@@ -288,17 +289,18 @@ CREATE TABLE core.PortalWebParts
   Permanent BOOLEAN NOT NULL DEFAULT FALSE,
   Permission VARCHAR(256),
   PermissionContainer ENTITYID,
+  PortalPageId INTEGER NOT NULL,
 
   CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId),
   CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-  CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId),
+  CONSTRAINT fk_portalwebpartpages FOREIGN KEY (PortalPageId) REFERENCES core.portalpages (RowId),
   CONSTRAINT FK_PortalWebParts_PermissionContainer FOREIGN KEY (PermissionContainer) REFERENCES core.containers (EntityId) MATCH SIMPLE ON UPDATE NO ACTION ON DELETE SET NULL
 );
 
 CREATE INDEX IX_PortalWebParts ON core.PortalWebParts(Container);
 CLUSTER IX_PortalWebParts ON core.PortalWebParts;
 
--- represents a grouping category for views (reports etc.)
+-- represents a grouping category for reports and datasets
 CREATE TABLE core.ViewCategory
 (
   RowId SERIAL,
@@ -348,11 +350,167 @@ CREATE TABLE core.ShortURL
   CONSTRAINT UQ_ShortURL_ShortURL UNIQUE (ShortURL)
 );
 
+CREATE TABLE core.Notifications
+(
+  RowId SERIAL,
+  Container ENTITYID NOT NULL,
+  CreatedBy USERID,
+  Created TIMESTAMP,
+
+  UserId USERID NOT NULL,
+  ObjectId VARCHAR(64) NOT NULL,
+  Type VARCHAR(200) NOT NULL,
+  ReadOn TIMESTAMP,
+  ActionLinkText VARCHAR(2000),
+  ActionLinkURL VARCHAR(4000),
+  Content TEXT,
+  ContentType VARCHAR(100),
+
+  CONSTRAINT PK_Notifications PRIMARY KEY (RowId),
+  CONSTRAINT FK_Notifications_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+  CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
+);
+
+CREATE TABLE core.QCState
+(
+  RowId SERIAL,
+  Label VARCHAR(64) NULL,
+  Description VARCHAR(500) NULL,
+  Container ENTITYID NOT NULL,
+  PublicData BOOLEAN NOT NULL,
+  CONSTRAINT PK_QCState PRIMARY KEY (RowId),
+  CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
+);
+
+CREATE TABLE core.APIKeys
+(
+    RowId SERIAL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    Crypt VARCHAR(100),
+    Expiration TIMESTAMP NULL,
+
+    CONSTRAINT PK_APIKeys PRIMARY KEY (RowId),
+    CONSTRAINT UQ_CRYPT UNIQUE (Crypt)
+);
+
+CREATE TABLE core.ReportEngines
+(
+  RowId SERIAL,
+  Name VARCHAR(255) NOT NULL,
+  CreatedBy USERID,
+  ModifiedBy USERID,
+  Created TIMESTAMP,
+  Modified TIMESTAMP,
+
+  Enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  Type VARCHAR(64) NOT NULL,
+  Description VARCHAR(255),
+  Configuration TEXT,
+
+  CONSTRAINT PK_ReportEngines PRIMARY KEY (RowId),
+  CONSTRAINT UQ_Name_Type UNIQUE (Name, Type)
+);
+
+CREATE TABLE core.ReportEngineMap
+(
+  EngineId INTEGER NOT NULL,
+  Container ENTITYID NOT NULL,
+  EngineContext VARCHAR(64) NOT NULL DEFAULT 'report',
+
+  CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext),
+  CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
+);
+
+CREATE TABLE core.PrincipalRelations
+(
+  userid USERID NOT NULL,
+  otherid USERID NOT NULL,
+  relationship VARCHAR(100) NOT NULL,
+  created TIMESTAMP,
+
+  CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
+);
+
+CREATE TABLE core.AuthenticationConfigurations
+(
+    RowId SERIAL,
+    EntityId ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+
+    Provider VARCHAR(64) NOT NULL,
+    Description VARCHAR(255) NOT NULL,
+    Enabled BOOLEAN NOT NULL,
+    AutoRedirect BOOLEAN NOT NULL DEFAULT FALSE,
+    SortOrder SMALLINT NOT NULL DEFAULT 32767, -- ensure that new configurations appear at the bottom of the list by default
+    Properties TEXT,
+    EncryptedProperties TEXT,
+
+    CONSTRAINT PK_AuthenticationConfigurations PRIMARY KEY (RowId)
+);
+
+CREATE TABLE core.EmailOptions
+(
+    EmailOptionId INT4 NOT NULL,
+    EmailOption VARCHAR(50),
+    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
+
+    CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
+);
+
+INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
+INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
+INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
+INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
+INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
+
+-- new file email notification options
+INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES
+                                                                     (512, 'No Email', 'files'),
+                                                                     (513, '15 minute digest', 'files'),
+                                                                     (514, 'Daily digest', 'files');
+
+-- sample manager email notification options
+INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (701, 'No Email', 'samplemanager');
+INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (702, 'All emails', 'samplemanager');
+
+-- labbook email notification options
+INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (801, 'No Email', 'labbook');
+INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (802, 'All emails', 'labbook');
+
+CREATE TABLE core.EmailPrefs
+(
+    Container ENTITYID,
+    UserId USERID,
+    EmailOptionId INT4 NOT NULL,
+    LastModifiedBy USERID,
+    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
+    SrcIdentifier VARCHAR(100) NOT NULL, -- allow subscriptions to multiple forums within a single container
+
+    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier),
+    CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
+    CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES core.EmailOptions (EmailOptionId)
+);
+
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process. See implementations
 -- of the UpgradeCode interface for more details.
 CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
 DECLARE note TEXT := 'Empty function that signals script runner to execute Java upgrade code. See implementations of UpgradeCode.java.';
+BEGIN
+END
+$$ LANGUAGE plpgsql;
+
+-- This empty stored procedure is a synonym for core.executeJavaUpgradeCode(), but is meant to denote Java code that is used to
+-- initialize data in a schema (e.g., pre-populating a table with values), not transform existing data. We mark these cases with
+-- a different procedure name because our bootstrap scripts still need to invoke them, as opposed to invocations of upgrade code
+-- which we remove from bootstrap scripts. See implementations of the UpgradeCode interface to find the initialization code.
+CREATE FUNCTION core.executeJavaInitializationCode(text) RETURNS void AS $$
+DECLARE note TEXT := 'Empty function that signals script runner to execute Java initialization code. See implementations of UpgradeCode.java.';
 BEGIN
 END
 $$ LANGUAGE plpgsql;
@@ -380,28 +538,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE core.Notifications
-(
-  RowId SERIAL,
-  Container ENTITYID NOT NULL,
-  CreatedBy USERID,
-  Created TIMESTAMP,
-
-  UserId USERID NOT NULL,
-  ObjectId VARCHAR(64) NOT NULL,
-  Type VARCHAR(200) NOT NULL,
-  Description TEXT,
-  ReadOn TIMESTAMP,
-  ActionLinkText VARCHAR(2000),
-  ActionLinkURL VARCHAR(4000),
-
-  CONSTRAINT PK_Notifications PRIMARY KEY (RowId),
-  CONSTRAINT FK_Notifications_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-  CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
-);
-
-/* core-15.30-16.10.sql */
-
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
 CREATE FUNCTION core.bulkImport(text, text, text, boolean = false) RETURNS void AS $$
@@ -409,21 +545,6 @@ DECLARE note TEXT := 'Empty function that signals script runner to bulk import a
 BEGIN
 END
 $$ LANGUAGE plpgsql;
-
-/* core-16.10-16.20.sql */
-
-ALTER TABLE core.Notifications ADD Content TEXT;
-ALTER TABLE core.Notifications ADD ContentType VARCHAR(100);
-
-UPDATE core.Notifications SET Content = Description, ContentType='text/plain';
-ALTER TABLE core.Notifications DROP COLUMN Description;
-
-ALTER TABLE core.Logins ADD RequestedEmail VARCHAR(255);
-ALTER TABLE core.Logins ADD VerificationTimeout TIMESTAMP;
-
-/* core-16.30-17.10.sql */
-
-ALTER TABLE core.UsersData ADD ExpirationDate TIMESTAMP;
 
 -- Add ability to drop columns
 CREATE FUNCTION core.fn_dropifexists(
@@ -565,259 +686,3 @@ END;
 $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
-
-/* core-17.20-17.30.sql */
-
-CREATE TABLE core.QCState
-(
-  RowId SERIAL,
-  Label VARCHAR(64) NULL,
-  Description VARCHAR(500) NULL,
-  Container ENTITYID NOT NULL,
-  PublicData BOOLEAN NOT NULL,
-  CONSTRAINT PK_QCState PRIMARY KEY (RowId),
-  CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
-);
-
-/* core-17.30-18.10.sql */
-
-CREATE TABLE core.APIKeys
-(
-    CreatedBy USERID,
-    Created TIMESTAMP,
-    Crypt VARCHAR(100),
-    Expiration TIMESTAMP NULL,
-
-    CONSTRAINT PK_APIKeys PRIMARY KEY (Crypt)
-);
-
-ALTER TABLE core.APIKeys
-    ADD COLUMN RowId SERIAL,
-    DROP CONSTRAINT PK_APIKeys,
-    ADD CONSTRAINT PK_APIKeys PRIMARY KEY (RowId),
-    ADD CONSTRAINT UQ_CRYPT UNIQUE (Crypt);
-
-/* core-18.20-18.30.sql */
-
-UPDATE core.principals SET type = 'g' WHERE name = 'Developers' AND userid < 0;
-
-CREATE TABLE core.ReportEngines
-(
-  RowId SERIAL,
-  Name VARCHAR(255) NOT NULL,
-  CreatedBy USERID,
-  ModifiedBy USERID,
-  Created TIMESTAMP,
-  Modified TIMESTAMP,
-
-  Enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  Type VARCHAR(64) NOT NULL,
-  Description VARCHAR(255),
-  Configuration TEXT,
-
-  CONSTRAINT PK_ReportEngines PRIMARY KEY (RowId),
-  CONSTRAINT UQ_Name_Type UNIQUE (Name, Type)
-);
-
-CREATE TABLE core.ReportEngineMap
-(
-  EngineId INTEGER NOT NULL,
-  Container ENTITYID NOT NULL,
-
-  CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container),
-  CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
-);
-
-CREATE TABLE core.PrincipalRelations
-(
-  userid USERID NOT NULL,
-  otherid USERID NOT NULL,
-  relationship VARCHAR(100) NULL,
-  created TIMESTAMP,
-
-  CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
-);
-
-SELECT core.fn_dropifexists('PrincipalRelations', 'core', 'TABLE', NULL);
-
-CREATE TABLE core.PrincipalRelations
-(
-  userid USERID NOT NULL,
-  otherid USERID NOT NULL,
-  relationship VARCHAR(100) NOT NULL,
-  created TIMESTAMP,
-
-  CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
-);
-
-/* core-18.30-19.10.sql */
-
-SELECT core.fn_dropifexists('portalwebparts', 'core', 'CONSTRAINT', 'fk_portalwebpartpages');
-SELECT core.fn_dropifexists('portalpages', 'core', 'CONSTRAINT', 'pk_portalpages');
-SELECT core.fn_dropifexists('portalpages', 'core', 'CONSTRAINT', 'uq_portalpage');
-ALTER TABLE core.portalpages ADD COLUMN rowId SERIAL PRIMARY KEY;
-ALTER TABLE core.portalwebparts ADD COLUMN portalPageId INTEGER;
-UPDATE core.portalwebparts web SET portalPageId = page.rowId
-    FROM core.portalpages page
-    WHERE web.pageId = page.pageId;
-ALTER TABLE core.portalwebparts DROP COLUMN pageId;
-ALTER TABLE core.portalwebparts ALTER COLUMN portalPageId SET NOT NULL;
-ALTER TABLE core.portalwebparts ADD CONSTRAINT fk_portalwebpartpages FOREIGN KEY (portalPageId) REFERENCES core.portalpages (rowId);
-
--- Fix webparts that referenced incorrect portal pages
-UPDATE core.portalwebparts parts
-    SET portalPageId = (SELECT rowId AS newPortalPageId FROM core.portalpages p2
-                        WHERE p2.pageid = page.pageid AND p2.Container = parts.Container)
-FROM core.portalpages page
-WHERE page.rowid = parts.portalpageid AND page.Container <> parts.Container;
-
-UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.SeeUserDetailsRole' WHERE role = 'org.labkey.api.security.roles.SeeEmailAddressesRole';
-
-UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.QCAnalystRole' WHERE role = 'org.labkey.api.security.roles.QCEditorRole';
-
-ALTER TABLE core.ReportEngineMap DROP CONSTRAINT PK_ReportEngineMap;
-ALTER TABLE core.ReportEngineMap ADD EngineContext VARCHAR(64) NOT NULL DEFAULT 'report';
-ALTER TABLE core.ReportEngineMap ADD CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext);
-
-/* core-19.10-19.20.sql */
-
-SELECT core.fn_dropifexists('*', 'ms1', 'schema', null);
-
-/* core-19.20-19.30.sql */
-
--- This empty stored procedure is a synonym for core.executeJavaUpgradeCode(), but is meant to denote Java code that is used to
--- initialize data in a schema (e.g., pre-populating a table with values), not transform existing data. We mark these cases with
--- a different procedure name because our bootstrap scripts still need to invoke them, as opposed to invocations of upgrade code
--- which we remove from bootstrap scripts. See implementations of the UpgradeCode interface to find the initialization code.
-CREATE FUNCTION core.executeJavaInitializationCode(text) RETURNS void AS $$
-DECLARE note TEXT := 'Empty function that signals script runner to execute Java initialization code. See implementations of UpgradeCode.java.';
-BEGIN
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TABLE core.AuthenticationConfigurations
-(
-    RowId SERIAL,
-    EntityId ENTITYID NOT NULL,
-    CreatedBy USERID,
-    Created TIMESTAMP,
-    ModifiedBy USERID,
-    Modified TIMESTAMP,
-
-    Provider VARCHAR(64) NOT NULL,
-    Description VARCHAR(255) NOT NULL,
-    Enabled BOOLEAN NOT NULL,
-    AutoRedirect BOOLEAN NOT NULL DEFAULT FALSE,
-    SortOrder INTEGER NOT NULL DEFAULT 0,
-    Properties TEXT,
-    EncryptedProperties TEXT,
-
-    CONSTRAINT PK_AuthenticationConfigurations PRIMARY KEY (RowId)
-);
-
-/*
-    For LabKey 19.3.x and earlier, the email preferences tables lived in the 'comm' schema and were managed by the
-    announcements module. As of 20.1.0, the core module now manages these tables in the 'core' schema. This script
-    moves or creates the tables, as appropriate. Once we no longer upgrade from 19.3.x, we can remove the conditionals.
- */
-DO $$
-BEGIN
-
-    IF (SELECT EXISTS (SELECT * FROM pg_tables WHERE schemaname = 'comm' AND tablename = 'emailoptions')) THEN
-
-        ALTER TABLE comm.EmailOptions SET SCHEMA core;
-        ALTER TABLE comm.EmailFormats SET SCHEMA core;
-        ALTER TABLE comm.PageTypes SET SCHEMA core;
-        ALTER TABLE comm.EmailPrefs SET SCHEMA core;
-
-    ELSE
-
-        CREATE TABLE core.EmailOptions
-        (
-            EmailOptionId INT4 NOT NULL,
-            EmailOption VARCHAR(50),
-            Type VARCHAR(60) NOT NULL DEFAULT 'messages',
-
-            CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
-        );
-
-        INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
-        INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
-        INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
-        INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
-        INSERT INTO core.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
-
-        -- new file email notification options
-        INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES
-        (512, 'No Email', 'files'),
-        (513, '15 minute digest', 'files'),
-        (514, 'Daily digest', 'files');
-
-        CREATE TABLE core.EmailFormats
-        (
-            EmailFormatId INT4 NOT NULL,
-            EmailFormat VARCHAR(20),
-
-            CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
-        );
-
-        INSERT INTO core.EmailFormats (EmailFormatId, EmailFormat) VALUES (0, 'Plain Text');
-        INSERT INTO core.EmailFormats (EmailFormatId, EmailFormat) VALUES (1, 'HTML');
-
-        CREATE TABLE core.PageTypes
-        (
-            PageTypeId INT4 NOT NULL,
-            PageType VARCHAR(20),
-
-            CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
-        );
-
-        INSERT INTO core.PageTypes (PageTypeId, PageType) VALUES (0, 'Message');
-        INSERT INTO core.PageTypes (PageTypeId, PageType) VALUES (1, 'Wiki');
-
-        CREATE TABLE core.EmailPrefs
-        (
-            Container ENTITYID,
-            UserId USERID,
-            EmailOptionId INT4 NOT NULL,
-            EmailFormatId INT4 NOT NULL,
-            PageTypeId INT4 NOT NULL,
-            LastModifiedBy USERID,
-            Type VARCHAR(60) NOT NULL DEFAULT 'messages',
-            SrcIdentifier VARCHAR(100) NOT NULL, -- allow subscriptions to multiple forums within a single container
-
-            CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier),
-            CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-            CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
-            CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES core.EmailOptions (EmailOptionId),
-            CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES core.EmailFormats (EmailFormatId),
-            CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES core.PageTypes (PageTypeId)
-        );
-
-    END IF;
-
-END $$;
-
-ALTER TABLE core.EmailPrefs DROP CONSTRAINT FK_EmailPrefs_PageTypes;
-ALTER TABLE core.EmailPrefs DROP COLUMN PageTypeId;
-DROP TABLE core.PageTypes;
-
-ALTER TABLE core.EmailPrefs DROP CONSTRAINT FK_EmailPrefs_EmailFormats;
-ALTER TABLE core.EmailPrefs DROP COLUMN EmailFormatId;
-DROP TABLE core.EmailFormats;
-
--- sample manager email notification options
-INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (701, 'No Email', 'samplemanager');
-INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (702, 'All emails', 'samplemanager');
-
--- Change SortOrder type to SMALLINT and default to MAX_SMALL_INT to ensure that new configurations appear at the bottom of the list by default
-SELECT core.fn_dropifexists('AuthenticationConfigurations', 'core', 'DEFAULT', 'SortOrder');
-ALTER TABLE core.AuthenticationConfigurations ALTER COLUMN SortOrder TYPE SMALLINT;
-ALTER TABLE core.AuthenticationConfigurations ALTER COLUMN SortOrder SET DEFAULT 32767;
-
-ALTER TABLE core.Modules RENAME COLUMN InstalledVersion TO SchemaVersion;
-ALTER TABLE core.Modules ALTER COLUMN SchemaVersion DROP NOT NULL;
-
--- labbook email notification options
-INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (801, 'No Email', 'labbook');
-INSERT INTO core.emailOptions (EmailOptionId, EmailOption, Type) VALUES (802, 'All emails', 'labbook');
