@@ -555,7 +555,6 @@ CREATE PROCEDURE core.bulkImport(@schema VARCHAR(200), @table VARCHAR(200), @fil
 
 GO
 
--- Add ability to drop columns
 CREATE PROCEDURE [core].[fn_dropifexists] (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL, @printCmds BIT = 0)
 AS
 BEGIN
@@ -900,6 +899,6 @@ BEGIN
     RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN', 16,1, @objtype )
 
   RETURN @ret_code;
-END
+END;
 
 GO
