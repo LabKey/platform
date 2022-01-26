@@ -341,13 +341,16 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         DataRegionTable dataregion = new DataRegionTable(regionName, getDriver());
         DatasetFacetPanel facetPanel = dataregion.openSideFilterPanel();
 
-        PagingWidget pagingWidget = dataregion.getPagingWidget();
-
         waitForElement(Locator.paginationText(24));
+
+        log(String.format("Filter for '%s'.", GROUP1A));
         facetPanel.clickGroupLabel(GROUP1A);
-        Assert.assertFalse(pagingWidget.getComponentElement().isDisplayed());
+
+        log(String.format("Check that links '%s' and '%s' are present.", PTIDS[0], PTIDS[1]));
         waitForElement(Locator.linkWithText(PTIDS[0]));
-        assertElementPresent(Locator.linkWithText(PTIDS[1]));
+        waitForElement(Locator.linkWithText(PTIDS[1]));
+
+        log("Verify that the correct filter was applied by making sure no other rows are present.");
         assertEquals("Wrong number of rows after filter", 2, dataregion.getDataRowCount());
 
         facetPanel.getGroupCheckbox(GROUP1B).check(); // GROUP1A OR GROUP1B
