@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -423,7 +424,7 @@ public class ExperimentJSONConverter
                 obj.put(ProvenanceService.PROVENANCE_OBJECT_INPUTS,
                         Collections.unmodifiableList(inputSet.stream()
                                 .map(Pair::getKey)
-                                .map(ExperimentJSONConverter::serializeProvenanceObject)
+                                .map((objectUri -> serializeProvenanceObject(objectUri, false)))
                                 .collect(Collectors.toList())));
             }
         }
@@ -463,18 +464,25 @@ public class ExperimentJSONConverter
     {
         var map = new HashMap<String, Object>();
         if (pair.first != null)
-            map.put("from", serializeProvenanceObject(pair.first));
+            map.put("from", serializeProvenanceObject(pair.first, true));
         if (pair.second != null)
-            map.put("to", serializeProvenanceObject(pair.second));
+            map.put("to", serializeProvenanceObject(pair.second, true));
         return map;
     }
 
-    // For now, just return the lsid if it isn't null
-    // CONSIDER: Use LsidManager to find the object and call serialize() ?
-    private static Object serializeProvenanceObject(String objectUri)
+    private static Object serializeProvenanceObject(String objectUri, boolean asJSON)
     {
         if (objectUri == null)
             return null;
+
+        if (asJSON)
+        {
+            Identifiable obj = LsidManager.get().getObject(objectUri);
+            if (obj == null)
+                return null;
+
+            return serializeIdentifiableBean(obj);
+        }
 
         return objectUri;
     }
