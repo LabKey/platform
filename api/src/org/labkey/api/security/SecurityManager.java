@@ -3047,7 +3047,7 @@ public class SecurityManager
             return Set.of();
 
         Container c = ContainerManager.getForId(policy.getContainerId());
-        if (null != c && (principal instanceof User && c.isForbiddenProject((User) principal)))
+        if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
         var granted = policy.getOwnPermissions(principal);
