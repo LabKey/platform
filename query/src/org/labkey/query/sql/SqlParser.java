@@ -47,6 +47,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -962,7 +963,7 @@ public class SqlParser
             case TIMESTAMP_LITERAL:
             case DATE_LITERAL:
             {
-                String s = QString.unquote(first(children).getTokenText());
+                String s = LabKeySql.unquoteString(first(children).getTokenText());
                 try
                 {
                     if (node.getType() == TIMESTAMP_LITERAL)
