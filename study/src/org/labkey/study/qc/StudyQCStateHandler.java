@@ -106,6 +106,12 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
     }
 
     @Override
+    public boolean isRequireCommentOnQCStateChange(Container container)
+    {
+        return false;
+    }
+
+    @Override
     public @Nullable String getStateChangeError(Container container, DataState state, Map<String, Object> rowUpdates)
     {
         return null;

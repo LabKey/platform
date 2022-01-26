@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -424,7 +425,7 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
+        public @NotNull ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
             return new BeginAction(getViewContext()).getUrl();
         }

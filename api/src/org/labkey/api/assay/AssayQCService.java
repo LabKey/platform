@@ -120,6 +120,12 @@ public interface AssayQCService
     void setIsBlankQCStatePublic(Container container, boolean isPublic);
 
     /**
+     * Gets/sets whether or not a comment is required on a QC State change
+     */
+    boolean isRequireCommentOnQCStateChange(Container container);
+    void setRequireCommentOnQCStateChange(Container container, boolean requireCommentOnQCStateChange);
+
+    /**
      * Returns the warnings view if the specified run has a current QC state associated with it
      */
     @Nullable
@@ -206,6 +212,17 @@ public interface AssayQCService
 
         @Override
         public void setIsBlankQCStatePublic(Container container, boolean isPublic)
+        {
+        }
+
+        @Override
+        public boolean isRequireCommentOnQCStateChange(Container container)
+        {
+            return false;
+        }
+
+        @Override
+        public void setRequireCommentOnQCStateChange(Container container, boolean isPublic)
         {
         }
     }

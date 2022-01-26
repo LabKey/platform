@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -91,7 +92,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -1104,25 +1104,32 @@ public class PropertyController extends SpringActionController
             File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
             DataLoader loader = null;
 
-            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
-            // Allow preview only for files under the pipeline root.
-            if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
+            try
             {
-                loader = DataLoader.get().createLoader(file, null, true, null, null);
-            }
-            else if (fileMap.size() == 1)
-            {
-                Optional<MultipartFile> opt = fileMap.values().stream().findAny();
-                MultipartFile postedFile = opt.orElse(null);
-                if (postedFile != null)
-                    loader = DataLoader.get().createLoader(postedFile, true, null, null);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
-            }
+                PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+                // Allow preview only for files under the pipeline root.
+                if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
+                {
+                    loader = DataLoader.get().createLoader(file, null, true, null, null);
+                }
+                else if (fileMap.size() == 1)
+                {
+                    Optional<MultipartFile> opt = fileMap.values().stream().findAny();
+                    MultipartFile postedFile = opt.orElse(null);
+                    if (postedFile != null)
+                        loader = DataLoader.get().createLoader(postedFile, true, null, null);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
+                }
 
-            return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
+                return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
+            }
+            finally
+            {
+                IOUtils.closeQuietly(loader);
+            }
         }
 
         private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, String domainKindName) throws IOException

@@ -258,13 +258,10 @@ public class QueryModule extends DefaultModule
             folderRegistry.addFactories(new ExternalSchemaDefWriterFactory(), new ExternalSchemaDefImporterFactory());
         }
 
-        // support importing Queries, Custom Views, and Reports from the study archive for backwards compatibility
+        // support importing dataset & report categories from the /study subfolder for backward compatibility
         StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
         if (null != studyRegistry)
         {
-            studyRegistry.addImportFactory(new QueryImporter.Factory());
-            studyRegistry.addImportFactory(new CustomViewImporter.Factory());
-            studyRegistry.addImportFactory(new ReportImporter.Factory());
             studyRegistry.addImportFactory(new ViewCategoryImporter.Factory());
         }
 

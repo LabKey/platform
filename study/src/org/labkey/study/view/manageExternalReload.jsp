@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.StudyReloadSource" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
+    Collection<FolderArchiveSource> reloadSources = PipelineService.get().getFolderArchiveSources(getContainer());
 %>
 
 <p/><div class="labkey-title-area-line"></div>
@@ -33,7 +33,7 @@
 </div><p/>
 <table>
     <%
-        for (StudyReloadSource source : reloadSources)
+        for (FolderArchiveSource source : reloadSources)
         {
             ActionURL manageAction = source.getManageAction(getContainer(), getUser());
             if (source.isEnabled(getContainer()) && manageAction != null)

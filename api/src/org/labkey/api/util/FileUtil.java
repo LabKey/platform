@@ -54,6 +54,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,6 +69,32 @@ public class FileUtil
     private static final Logger LOG = LogManager.getLogger(FileUtil.class);
 
     private static File _tempDir = null;
+
+    private static ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(() -> new HashSet<>());
+
+    public static void startRequest()
+    {
+        tempPaths.get().clear();
+    }
+
+    public static void stopRequest()
+    {
+        var paths = tempPaths.get();
+        assert paths.isEmpty();
+        for (Path p : paths)
+        {
+            try
+            {
+                Files.deleteIfExists(p);
+            }
+            catch (IOException x)
+            {
+                /* pass */
+            }
+        }
+        paths.clear();
+    }
+
 
     @Deprecated
     public static boolean deleteDirectoryContents(File dir)
@@ -1138,6 +1165,29 @@ quickScan:
         }
 
         return _tempDir;
+    }
+
+
+    public static File createTempFile(String prefix, String suffix) throws IOException
+    {
+        return createTempFile(prefix, suffix, false);
+    }
+
+    public static File createTempFile(String prefix, String suffix, boolean threadLocal) throws IOException
+    {
+        var ret = File.createTempFile(prefix, suffix);
+        if (threadLocal)
+            tempPaths.get().add(ret.toPath());
+        return ret;
+    }
+
+    public static void deleteTempFile(File f)
+    {
+        if (null != f && f.isFile())
+        {
+            f.delete();
+            tempPaths.get().remove(f.toPath());
+        }
     }
 
 

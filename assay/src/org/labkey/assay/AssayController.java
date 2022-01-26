@@ -332,6 +332,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
+        assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
@@ -1598,6 +1599,8 @@ public class AssayController extends SpringActionController
     @RequiresPermission(QCAnalystPermission.class)
     public class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
     {
+        ExpRun _firstRun;
+
         @Override
         public void validateForm(UpdateQCStateForm form, Errors errors)
         {
@@ -1605,31 +1608,34 @@ public class AssayController extends SpringActionController
                 errors.reject(ERROR_MSG, "QC State cannot be blank");
             if (form.getRuns().isEmpty())
                 errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+            else
+            {
+                for (int id : form.getRuns())
+                {
+                    // just get the first run
+                    _firstRun = ExperimentService.get().getExpRun(id);
+                    if (_firstRun != null)
+                        break;
+                }
+
+                if (_firstRun != null)
+                {
+                    if (AssayQCService.getProvider().isRequireCommentOnQCStateChange(_firstRun.getProtocol().getContainer()) && StringUtils.isBlank(form.getComment()))
+                        errors.reject(ERROR_MSG, "A comment is required when changing a QC State for the selected run(s).");
+                }
+            }
         }
 
         @Override
         public ApiSimpleResponse execute(UpdateQCStateForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            if (form.getRuns() != null)
+            if (form.getRuns() != null && _firstRun != null)
             {
-                AssayQCService svc = AssayQCService.getProvider();
-                ExpRun run = null;
+                DataState state = DataStateManager.getInstance().getStateForRowId(_firstRun.getProtocol().getContainer(), form.getState());
+                if (state != null)
+                    AssayQCService.getProvider().setQCStates(_firstRun.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
 
-                for (int id : form.getRuns())
-                {
-                    // just get the first run
-                    run = ExperimentService.get().getExpRun(id);
-                    if (run != null)
-                        break;
-                }
-
-                if (run != null)
-                {
-                    DataState state = DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), form.getState());
-                    if (state != null)
-                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
-                }
                 response.put("success", true);
             }
             return response;
