@@ -31,6 +31,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Tuple3;
 import org.springframework.validation.Errors;
 
@@ -88,15 +89,22 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         issueId = issue.getIssueId();
         _issueDefId = issue.getIssueDefId();
         _issueDefName = issue.getIssueDefName();
-        _properties.putAll(issue.getProperties());
-        duplicates = new ArrayList<>(issue.getDuplicates());
-        relatedIssues = new TreeSet<>(issue.getRelatedIssues());
+        if (issue.getProperties() != null)
+            _properties.putAll(issue.getProperties());
+        if (issue.getDuplicates() != null)
+            duplicates = new ArrayList<>(issue.getDuplicates());
+        if (issue.getRelatedIssues() != null)
+            relatedIssues = new TreeSet<>(issue.getRelatedIssues());
         related = issue.getRelated();
         setContainerId(issue.getContainerId());
 
-        if (issue instanceof IssueObject io)
+        if (issue instanceof Entity entity)
         {
-            io.copyTo(this);
+            setEntityId(entity.getEntityId());
+            setCreatedBy(entity.getCreatedBy());
+            setCreated(entity.getCreated());
+            setModifiedBy(entity.getModifiedBy());
+            setModified(entity.getModified());
         }
     }
 
@@ -531,6 +539,14 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
     public List<ValidEmail> getNotifyListEmail()
     {
         return getNotifyListEmail(getNotifyList(), null);
+    }
+
+    @Override
+    public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
+    {
+        return getNotifyListUserEmails(getNotifyList(), null).stream()
+                .map(t -> new Pair<>(t.second, t.third))
+                .collect(Collectors.toList());
     }
 
     public static List<ValidEmail> getNotifyListEmail(String notifyList, @Nullable Errors errors)
