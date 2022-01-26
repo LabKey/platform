@@ -210,6 +210,20 @@ dependencies {
             "Extract text and produce thumbnails from PDFs"
         )
     )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.pdfbox:pdfbox-tools:${pdfboxVersion}",
+            "PDFBox Tools",
+            "PDFBox",
+            "https://pdfbox.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "PDFBox dependency"
+        )
+    )
+
 }
 
 // TODO move resources files into resources directory to avoid this overlap
