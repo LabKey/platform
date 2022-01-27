@@ -4,6 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 
+/**
+ * Here are some SQL helpers for use when writing LABKEY sql.
+ * When writing SQL for postgres or sql server, please use the appropriate SqlDialect.
+ */
 public class LabKeySql
 {
     static public @NotNull String unquoteString(@NotNull String str)
