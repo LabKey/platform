@@ -18,7 +18,6 @@ package org.labkey.api.view;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
@@ -26,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ import java.util.Set;
  */
 public abstract class BaseWebPartFactory implements WebPartFactory
 {
-    private static final Logger LOG = LogManager.getLogger(Portal.class);
+    private static final Logger LOG = LogHelper.getLogger(Portal.class, "Creates web parts based on configurations");
     private static final Set<String> defaultAllowableScopes = PageFlowUtil.set("folder");
 
     private final boolean _editable;
@@ -143,7 +143,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return part;
     }
 
-    protected void populateProperties(WebPartView view, Map<String, String> properties)
+    protected void populateProperties(WebPartView<?> view, Map<String, String> properties)
     {
         for (Map.Entry<String, String> entry : properties.entrySet())
         {
@@ -157,11 +157,11 @@ public abstract class BaseWebPartFactory implements WebPartFactory
                 {
                     // Unfortunately, we have to catch Exception here, since BeanUtils throws RuntimeExceptions
                     // for various failures.
-                    LOG.error("Couldn't set property " + entry.getKey() + " to value " + entry.getValue(), e);
+                    LOG.warn("Couldn't set property " + entry.getKey() + " on " + view.getClass() + " to value " + entry.getValue(), e);
                 }
             }
             else
-                view.addObject(entry.getKey(), entry.getValue());
+                view.getViewContext().put(entry.getKey(), entry.getValue());
         }
     }
 
