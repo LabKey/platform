@@ -13,7 +13,7 @@ public class LabKeySql
     static public @NotNull String unquoteString(@NotNull String str)
     {
         if (str.length() < 2 || !str.startsWith("'") || !str.endsWith("'"))
-            throw new IllegalArgumentException("Expected identifier to be surrounded by single quotes");
+            throw new IllegalArgumentException("Expected string to be surrounded by single quotes");
         str = str.substring(1, str.length() - 1);
         str = StringUtils.replace(str, "''", "'");
         return str;
