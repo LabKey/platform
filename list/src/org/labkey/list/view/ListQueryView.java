@@ -104,6 +104,4 @@ public class ListQueryView extends QueryView
             }
         };
     }
-
-    // TODO: Figure out how to get details/edit columns to link the folder in the data row.
 }

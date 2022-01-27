@@ -308,7 +308,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public ContainerContext getContainerContext()
     {
-        return _list != null ? _userSchema.getContainer() : null;
+        if (_list == null)
+            return null;
+        return new ContainerContext.FieldKeyContext(new FieldKey(null, "Container"));
     }
 
     @Override
