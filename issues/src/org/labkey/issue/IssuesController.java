@@ -42,6 +42,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -160,6 +161,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class IssuesController extends SpringActionController
 {
@@ -2068,6 +2070,8 @@ public class IssuesController extends SpringActionController
         {
             User user = getUser();
             IssueObject issue = getIssue(issueIdForm.getIssueId(), false);
+            if (issue == null)
+                throw new NotFoundException("The issue : " + issueIdForm.getIssueId() + " was not found.");
 
             BeanMap wrapper = new BeanMap(issue);
             JSONObject jsonIssue = new JSONObject(wrapper);
@@ -2086,10 +2090,19 @@ public class IssuesController extends SpringActionController
                 JSONObject jsonComment = new JSONObject(new BeanMap(c));
                 jsonComment.put("createdByName", c.getCreatedByName(user));
                 jsonComment.put("comment", c.getHtmlComment());
+
+                // attachments
+                List<Attachment> attachments = new ArrayList<>(AttachmentService.get().getAttachments(new CommentAttachmentParent(c)));
+                if (!attachments.isEmpty())
+                {
+                    // just return the attachment names
+                    jsonComment.put("attachments", attachments.stream()
+                            .map(Attachment::getName)
+                            .collect(Collectors.toList()));
+                }
                 comments.put(comments.length(),  jsonComment);
                 userIds.add(c.getCreatedBy());
                 userIds.add(c.getModifiedBy());
-                // ATTACHMENTS
             }
             jsonIssue.put("users", getUsers(userIds));
             jsonIssue.put("success", Boolean.TRUE);
