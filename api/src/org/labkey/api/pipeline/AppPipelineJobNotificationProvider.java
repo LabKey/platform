@@ -54,6 +54,8 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         Start, Success, Error
     }
 
+    protected abstract ActionURL getAppURL(Container c);
+
     @Override
     public void onJobQueued(PipelineJob job)
     {
@@ -139,8 +141,6 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
         return null;
     }
-
-    protected abstract ActionURL getAppURL(Container c);
 
     private void notifyJobStatusChange(Container container, ImportNotify status)
     {
@@ -301,5 +301,4 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
         DefaultPipelineJobNotificationProvider.sendJobNotification(job, n);
     }
-
 }
