@@ -49,7 +49,6 @@ import java.util.Set;
 public interface SpecimenService
 {
     String SAMPLE_TYPE_NAME = "Study Specimens";
-    String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     static void setInstance(SpecimenService serviceImpl)
     {
