@@ -20,10 +20,9 @@
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
-<%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
-<%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
@@ -40,6 +39,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.SpecimenManager" %>
+<%@ page import="org.labkey.specimen.SpecimenModule" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
@@ -345,8 +345,10 @@
 <%
             }
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(SpecimenService.CREATE_SPECIMEN_STUDY))
+            // TODO: Remove this and all associated code
+            if (false)
             {
+                String ignored = SpecimenModule.CREATE_SPECIMEN_STUDY;
 %>              <%= button("Create Study").href("javascript:void(0)").onClick("showNewStudyWizard();") %>
 <%
             }

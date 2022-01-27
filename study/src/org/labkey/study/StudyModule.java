@@ -419,8 +419,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
-        AdminConsole.addExperimentalFeatureFlag(SpecimenService.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
-            "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
 
