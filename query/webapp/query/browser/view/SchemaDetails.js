@@ -163,8 +163,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
 
         var children = [];
 
-        if (schema.menu && schema.menu.items)
-        {
+        if (schema.menu && schema.menu.items) {
             for (var i=0; i < schema.menu.items.length; i++) {
                 children.push(LABKEY.Utils.textLink(schema.menu.items[i]));
             }
