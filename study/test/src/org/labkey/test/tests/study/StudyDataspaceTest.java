@@ -203,7 +203,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         clickButton("Export");
 
         // Load study in another folder
-        _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
+        _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), SUBFOLDER_STUDY5, "Collaboration", null, true);
         clickFolder(SUBFOLDER_STUDY5);
         setPipelineRoot(StudyHelper.getStudySubfolderPath());

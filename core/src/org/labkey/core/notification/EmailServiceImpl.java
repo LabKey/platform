@@ -25,6 +25,7 @@ import org.junit.rules.ExpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailService;
@@ -335,7 +336,7 @@ public class EmailServiceImpl implements EmailService
         public void testEmailAttachments() throws MessagingException, IOException
         {
             EmailMessage msg = getBaseMessage();
-            File attachment = JunitUtil.getSampleData(null, PROTOCOL_ATTACHMENT_PATH);
+            File attachment = JunitUtil.getSampleData(ModuleLoader.getInstance().getModule("Study"), PROTOCOL_ATTACHMENT_PATH);
 
             assertTrue("Couldn't find " + attachment, attachment.isFile());
 

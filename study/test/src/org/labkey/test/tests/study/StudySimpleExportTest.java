@@ -529,11 +529,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         }
         clickButton("Submit");
 
-        log("Study Properties: export study folder to the pipeline as indiviual files");
+        log("Study Properties: export study folder to the pipeline as individual files");
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Study Properties: verify xml file was created in export");
-        _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
+        _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
         createSubfolderAndImportStudyFromPipeline("Study Properties");
