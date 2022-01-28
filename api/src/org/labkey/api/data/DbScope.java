@@ -1051,6 +1051,16 @@ public class DbScope
         if (!conn.getAutoCommit())
             throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
 
+        return wrap(conn, type, log);
+    }
+
+    @NotNull
+    public ConnectionWrapper wrap(Connection conn, ConnectionType type, @Nullable Logger log) throws SQLException
+    {
+        if (conn instanceof ConnectionWrapper wrapper)
+        {
+            return wrapper;
+        }
         //
         // Handle one time per-connection setup
         // relies on pool implementation reusing same connection/wrapper instances
