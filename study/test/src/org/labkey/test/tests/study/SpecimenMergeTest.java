@@ -38,9 +38,9 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected static final String PROJECT_NAME = "SpecimenMergeTest";
     protected static final String FOLDER_NAME = "My Study";
 
-    protected static final File LAB19_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab19.specimens");
-    protected static final File LAB20_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab20.specimens");
-    protected static final File LAB21_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab21.specimens");
+    protected static final File LAB19_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab19.specimens");
+    protected static final File LAB20_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab20.specimens");
+    protected static final File LAB21_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab21.specimens");
 
     protected static final File SPECIMEN_TEMP_DIR = StudyHelper.getStudyTempDir();
     protected int pipelineJobCount = 3;

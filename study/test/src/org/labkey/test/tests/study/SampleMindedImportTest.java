@@ -57,7 +57,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        File specimenDir = StudyHelper.getFolderArchiveFile("study/specimens");
+        File specimenDir = StudyHelper.getSpecimenArchiveFile("");
         File specimenArchive = new File(specimenDir, "SampleMindedExport.specimens");
         specimenArchive.delete();
 
@@ -92,7 +92,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
 
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
-        _fileBrowserHelper.uploadFile(StudyHelper.getFolderArchiveFile("study/specimens/" + FILE));
+        _fileBrowserHelper.uploadFile(StudyHelper.getSpecimenArchiveFile(FILE));
         _fileBrowserHelper.importFile(FILE, "Import Specimen Data");
         clickButton("Start Import");
         waitForPipelineJobsToComplete(1, "Import specimens: SampleMindedExport.xlsx", false);
