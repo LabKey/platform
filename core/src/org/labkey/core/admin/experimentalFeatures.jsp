@@ -44,7 +44,7 @@
     <strong>WARNING</strong>:
     These experimental features may change, break, or disappear at any time.
     We make absolutely no guarantees about what may happen if you turn on these experimental
-    features.  Enabling or disabling some features will require a restart of the server.
+    features. Enabling or disabling some features will require a restart of the server.
 </p>
 <div class="list-group">
 <% for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags()) { %>

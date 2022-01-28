@@ -17,9 +17,9 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.SortedDocValues;
 import org.apache.lucene.search.ConstantScoreScorer;
 import org.apache.lucene.search.ConstantScoreWeight;
 import org.apache.lucene.search.IndexSearcher;
@@ -127,7 +127,7 @@ class SecurityQuery extends Query
                 int maxDoc = reader.maxDoc();
                 FixedBitSet bits = new FixedBitSet(maxDoc);
 
-                SortedDocValues securityContextDocValues = reader.getSortedDocValues(FIELD_NAME.securityContext.name());
+                BinaryDocValues securityContextDocValues = reader.getBinaryDocValues(FIELD_NAME.securityContext.name());
 
                 try
                 {
@@ -138,7 +138,7 @@ class SecurityQuery extends Query
                     {
                         while (NO_MORE_DOCS != (doc = securityContextDocValues.nextDoc()))
                         {
-                            BytesRef bytesRef = securityContextDocValues.lookupOrd(securityContextDocValues.ordValue());
+                            BytesRef bytesRef = securityContextDocValues.binaryValue();
                             String securityContext = StringUtils.trimToNull(bytesRef.utf8ToString());
 
                             final String containerId;

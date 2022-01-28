@@ -125,8 +125,9 @@ public class ScriptReorderer
             // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
             patterns.add(new SqlPattern("(DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (.+?) (.+?) \\1 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (\\S+) (.+?) \\2 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?( VOLATILE)?( COST \\d+)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
             patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("DO (\\S+) (.+?) END \\1" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
 
         patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " ADD CONSTRAINT \\w+ FOREIGN KEY \\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\)" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
@@ -204,8 +205,8 @@ public class ScriptReorderer
                         tableName = _schema.getName() + "." + tableName2;
                         tableName2 = null;
 
-                        // Since future references to the old name will actual refer to a new table, we don't want to intermingle
-                        // the previous statements with any subsequent statements. Create a demarcation point by moving to a new,
+                        // Since any future references to the old name will actually refer to a new table, we don't want to intermingle
+                        // the previous statements with subsequent statements. Create a demarcation point by moving to a new,
                         // empty statement list that will contain the rename and all subsequent statements.
                         newStatementList();
                     }

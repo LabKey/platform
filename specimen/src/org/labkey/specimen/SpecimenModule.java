@@ -29,6 +29,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
@@ -72,6 +73,8 @@ import java.util.Set;
 public class SpecimenModule extends SpringModule
 {
     public static final String NAME = "Specimen";
+    // TODO: Delete this and all associated code
+    public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     @Override
     public String getName()
@@ -195,6 +198,10 @@ public class SpecimenModule extends SpringModule
             new SpecimenSchemaImporter(),
             new SpecimenSettingsImporter()
         ));
+
+        // TODO: Remove this... we're no longer respecting this flag
+        AdminConsole.addExperimentalFeatureFlag(CREATE_SPECIMEN_STUDY, "Create Specimen Study",
+    "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
     }
 
     @Override
