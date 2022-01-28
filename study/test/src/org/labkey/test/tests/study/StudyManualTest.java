@@ -30,8 +30,8 @@ import java.sql.Timestamp;
 
 public abstract class StudyManualTest extends StudyTest
 {
-    private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/datasets/schema.tsv");
-    protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
+    private final File CRF_SCHEMAS = StudyHelper.getFolderArchiveFile("study/datasets/schema.tsv");
+    protected final File VISIT_MAP = StudyHelper.getFolderArchiveFile("study/v068_visit_map.xml");
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
@@ -105,7 +105,7 @@ public abstract class StudyManualTest extends StudyTest
         clickButton("Save");
 
         // upload datasets:
-        setPipelineRoot(StudyHelper.getPipelinePath());
+        setPipelineRoot(StudyHelper.getStudySubfolderPath());
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
         clickButton("Process and Import Data");

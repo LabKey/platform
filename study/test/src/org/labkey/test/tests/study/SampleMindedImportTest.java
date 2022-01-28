@@ -19,11 +19,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        File specimenDir = TestFileUtils.getSampleData("study/specimens");
+        File specimenDir = StudyHelper.getFolderArchiveFile("study/specimens");
         File specimenArchive = new File(specimenDir, "SampleMindedExport.specimens");
         specimenArchive.delete();
 
@@ -92,7 +92,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
 
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
-        _fileBrowserHelper.uploadFile(TestFileUtils.getSampleData("study/specimens/" + FILE));
+        _fileBrowserHelper.uploadFile(StudyHelper.getFolderArchiveFile("study/specimens/" + FILE));
         _fileBrowserHelper.importFile(FILE, "Import Specimen Data");
         clickButton("Start Import");
         waitForPipelineJobsToComplete(1, "Import specimens: SampleMindedExport.xlsx", false);

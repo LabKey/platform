@@ -19,7 +19,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
@@ -39,14 +38,14 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected static final String PROJECT_NAME = "SpecimenMergeTest";
     protected static final String FOLDER_NAME = "My Study";
 
-    protected static final File LAB19_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab19.specimens");
-    protected static final File LAB20_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab20.specimens");
-    protected static final File LAB21_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab21.specimens");
+    protected static final File LAB19_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab19.specimens");
+    protected static final File LAB20_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab20.specimens");
+    protected static final File LAB21_SPECIMENS = StudyHelper.getFolderArchiveFile("study/specimens/lab21.specimens");
 
     protected static final File SPECIMEN_TEMP_DIR = StudyHelper.getStudyTempDir();
     protected int pipelineJobCount = 3;
 
-    protected final String _studyDataRoot = StudyHelper.getPipelinePath();
+    protected final String _studyDataRoot = StudyHelper.getStudySubfolderPath();
 
     @Override
     public List<String> getAssociatedModules()

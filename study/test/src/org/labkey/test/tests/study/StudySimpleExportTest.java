@@ -96,7 +96,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
         initTest.initializeFolder();
-        initTest.setPipelineRoot(StudyHelper.getPipelinePath());
+        initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
@@ -162,7 +162,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
     }
 
     @Test
@@ -1003,7 +1003,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
-        setPipelineRoot(StudyHelper.getPipelinePath());
+        setPipelineRoot(StudyHelper.getStudySubfolderPath());
         importFolderFromPipeline("/export/folder.xml");
     }
 
