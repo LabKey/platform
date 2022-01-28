@@ -1498,9 +1498,10 @@ public class QueryController extends SpringActionController
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {
-                        // Only link to tables and views (not indexes or sequences)
+                        // Only link to tables and views (not indexes or sequences). And only if they're defined in the query schema.
+                        String name = rs.getString(3);
                         String type = rs.getString(4);
-                        return "TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type);
+                        return ("TABLE".equalsIgnoreCase(type) || "VIEW".equalsIgnoreCase(type)) && qs.getTableNames().contains(name);
                     }
                 };
             }
