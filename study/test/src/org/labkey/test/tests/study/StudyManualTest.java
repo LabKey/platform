@@ -30,8 +30,8 @@ import java.sql.Timestamp;
 
 public abstract class StudyManualTest extends StudyTest
 {
-    private final File CRF_SCHEMAS = StudyHelper.getFolderArchiveFile("study/datasets/schema.tsv");
-    protected final File VISIT_MAP = StudyHelper.getFolderArchiveFile("study/v068_visit_map.xml");
+    private final File CRF_SCHEMAS = TestFileUtils.getSampleData("studies/StudyFiles/schema.tsv");
+    protected final File VISIT_MAP = TestFileUtils.getSampleData("studies/StudyFiles/v068_visit_map.xml");
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
