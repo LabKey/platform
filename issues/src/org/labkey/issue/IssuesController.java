@@ -2054,7 +2054,7 @@ public class IssuesController extends SpringActionController
                 var user = UserManager.getUser(userId);
 
                 if (user != null)
-                    users.put(String.valueOf(user.getUserId()), User.getUserProps(user, currentUser, null, false));
+                    users.put(String.valueOf(user.getUserId()), User.getUserProps(user, currentUser, getContainer(), false));
             }
             return users;
         }
@@ -2070,6 +2070,11 @@ public class IssuesController extends SpringActionController
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
+            if (!SecurityManager.canSeeUserDetails(getContainer(), getUser()))
+            {
+                jsonIssue.remove("notifyListUserEmail");
+                jsonIssue.remove("notifyListEmail");
+            }
             var userIds = new HashSet<Integer>();
             userIds.add(issue.getAssignedTo());
             userIds.add(issue.getCreatedBy());
