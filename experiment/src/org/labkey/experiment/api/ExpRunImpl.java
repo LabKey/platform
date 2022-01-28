@@ -328,7 +328,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public void delete(User user)
     {
-        if (!getContainer().hasPermission(user, DeletePermission.class))
+        if (!canDelete(user))
         {
             throw new UnauthorizedException();
         }
