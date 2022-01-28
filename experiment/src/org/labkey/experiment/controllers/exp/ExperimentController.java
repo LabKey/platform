@@ -3077,7 +3077,7 @@ public class ExperimentController extends SpringActionController
             }
             if (!run.canDelete(getUser()))
                 throw new UnauthorizedException("You do not have permission to delete "
-                        + (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs") + " runs in this container.");
+                        + (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs") + " in this container.");
 
             run.delete(getUser());
             return new ApiSimpleResponse("success", true);
