@@ -337,12 +337,6 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
     }
 
-    @Override
-    public Connection getConnection() throws SQLException
-    {
-        return super.getConnection();
-    }
-
     public TableSelector setForDisplay(boolean forDisplay)
     {
         _forDisplay = forDisplay;
