@@ -157,13 +157,23 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
     },
 
     formatSchemaLinks : function(schema) {
-        if (!schema || !schema.menu || !schema.menu.items || 0 == schema.menu.items.length) {
+        if (!schema) {
             return;
         }
 
         var children = [];
-        for (var i=0; i < schema.menu.items.length; i++) {
-            children.push(LABKEY.Utils.textLink(schema.menu.items[i]));
+
+        if (schema.menu && schema.menu.items) {
+            for (var i=0; i < schema.menu.items.length; i++) {
+                children.push(LABKEY.Utils.textLink(schema.menu.items[i]));
+            }
+        }
+
+        if (LABKEY.devMode || LABKEY.Security.currentUser.isDeveloper) {
+            children.push(LABKEY.Utils.textLink({
+                href: LABKEY.ActionURL.buildURL('query', 'rawSchemaMetaData', undefined, {schemaName: schema.schemaName}),
+                text: 'view raw schema metadata'
+            }));
         }
 
         return {
