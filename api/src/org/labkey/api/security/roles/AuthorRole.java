@@ -22,6 +22,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.study.Dataset;
 
 /*
@@ -37,7 +38,8 @@ public class AuthorRole extends AbstractRole
             ReadPermission.class,
             ReadSomePermission.class,
             InsertPermission.class,
-            ShareReportPermission.class
+            ShareReportPermission.class,
+            SampleWorkflowJobPermission.class
         );
     }
 
