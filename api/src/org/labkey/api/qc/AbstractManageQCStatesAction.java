@@ -32,10 +32,12 @@ import java.util.Set;
 @RequiresPermission(AdminPermission.class)
 public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDataStatesForm> extends FormViewAction<FORM>
 {
-    public abstract String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
-    public abstract String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasQcStateDefaultsPanel();
+    public abstract String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasDataVisibilityPanel();
+    public abstract String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract boolean hasRequiresCommentPanel();
+    public abstract String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
 
     protected DataStateHandler _dataStateHandler;
 

@@ -17,9 +17,9 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.cloud.CloudArchiveImporterSupport;
+import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.springframework.validation.BindException;
 
 /*
@@ -44,5 +44,4 @@ public interface StudyJobSupport extends SpecimenJobSupport, CloudArchiveImporte
 
     @Deprecated
     BindException getSpringErrors();
-
 }

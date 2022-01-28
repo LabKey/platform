@@ -114,7 +114,7 @@ public interface ContainerType extends Serializable
     /**
      * @return The permission class needed to create this container type
      */
-    public Class<? extends Permission> getPermissionNeededToCreate();
+    Class<? extends Permission> getPermissionNeededToCreate();
 
     /**
      *

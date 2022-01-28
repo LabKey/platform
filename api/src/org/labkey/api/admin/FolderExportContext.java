@@ -32,12 +32,13 @@ import java.util.Set;
  */
 public class FolderExportContext extends AbstractFolderContext
 {
-    private String _format = "new";
-    private boolean _includeSubfolders = false;
-    private PHI _phiLevel = null;
-    private boolean _shiftDates = false;
-    private boolean _alternateIds = false;
-    private boolean _maskClinic = false;
+    private final String _format;
+    private final PHI _phiLevel;
+    private final boolean _shiftDates;
+    private final boolean _alternateIds;
+    private final boolean _maskClinic;
+
+    private boolean _includeSubfolders;
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
@@ -81,7 +82,7 @@ public class FolderExportContext extends AbstractFolderContext
     }
 
     @Override
-    public boolean  isIncludeSubfolders()
+    public boolean isIncludeSubfolders()
     {
         return _includeSubfolders;
     }
