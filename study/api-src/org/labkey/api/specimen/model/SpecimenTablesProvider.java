@@ -51,7 +51,7 @@ public class SpecimenTablesProvider
     public static final String SPECIMENREQUEST_TABLENAME = "SpecimenRequest";
     public static final String VIALREQUEST_TABLENAME = "VialRequest";
 
-    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.HOUR, "Specimen domain creation", null);
+    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Specimen domain creation", null);
 
     private final Container _container;
     private final User _user;
@@ -86,34 +86,35 @@ public class SpecimenTablesProvider
         AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
 
-        Domain domain = PropertyService.get().getDomain(_container, domainURI);
-        if (null == domain && create)
+        Domain ret = PropertyService.get().getDomain(_container, domainURI);
+        if (null == ret && create)
         {
-            // Multiple threads attempting to create the table will result in a constraint violation or a deadlock. We
-            // can't retry on PostgreSQL (SQLException kills the transaction), so use a blocking cache to ensure that
-            // only one thread creates and the others wait.
-            domain = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
+            // Multiple threads attempting to create the domain and provisioned table may result in a constraint
+            // violation or a deadlock. We can't retry on PostgreSQL (SQLException kills the transaction), so use a
+            // blocking cache to designate one thread as the creator and force all others to wait.
+            ret = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
                 try (var ignore = SpringActionController.ignoreSqlUpdates())
                 {
-                    Domain domain1 = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
+                    Domain domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
                     // Add properties for all required fields
-                    for (PropertyStorageSpec propSpec : domainKind.getBaseProperties(domain1))
+                    for (PropertyStorageSpec propSpec : domainKind.getBaseProperties(domain))
                     {
-                        DomainProperty prop = domain1.addProperty(propSpec);
+                        DomainProperty prop = domain.addProperty(propSpec);
                         prop.setRequired(true);
                     }
 
                     // Add optional fields to table
                     for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
                     {
-                        domain1.addProperty(propSpec);
+                        domain.addProperty(propSpec);
                     }
 
-                    domain1.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
-                    domain1.save(_user);
+                    domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
+                    domain.save(_user);
 
-                    return domain1;
+                    // Refresh the domain. save() doesn't populate provisioned schema & table names, e.g.
+                    return PropertyService.get().getDomain(_container, domainURI);
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
@@ -124,8 +125,10 @@ public class SpecimenTablesProvider
                     throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.", e);
                 }
             });
+
+            assert null != ret; // We just created this domain!
         }
-        return domain;
+        return ret;
     }
 
     @NotNull
@@ -158,6 +161,7 @@ public class SpecimenTablesProvider
                 if (null != domain)
                 {
                     domain.delete(_user);
+                    DOMAIN_CREATION_CACHE.remove(domain.getTypeURI());
                 }
             }
             catch (DomainNotFoundException | RuntimeSQLException e)
