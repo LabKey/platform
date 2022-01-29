@@ -373,7 +373,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             gate = _canAccessPhi;
         else if (DeletePermission.class.equals(perm))
             gate = _canAccessPhi && _list.getAllowDelete();
-        return gate && _list.getContainer().hasPermission(user, perm);
+        return gate && getContainer().hasPermission(user, perm);
     }
 
     @Override
