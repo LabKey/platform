@@ -18,6 +18,8 @@ package org.labkey.api.specimen.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -45,9 +47,11 @@ public class SpecimenTablesProvider
     public static final String PRIMARYTYPE_TABLENAME = "SpecimenPrimaryType";
     public static final String DERIVATIVETYPE_TABLENAME = "SpecimenDerivative";
     public static final String ADDITIVETYPE_TABLENAME = "SpecimenAdditive";
-    public static  final String SPECIMENVIALCOUNT_TABLENAME = "SpecimenVialCount";
+    public static final String SPECIMENVIALCOUNT_TABLENAME = "SpecimenVialCount";
     public static final String SPECIMENREQUEST_TABLENAME = "SpecimenRequest";
     public static final String VIALREQUEST_TABLENAME = "VialRequest";
+
+    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.HOUR, "Specimen domain creation", null);
 
     private final Container _container;
     private final User _user;
@@ -82,39 +86,44 @@ public class SpecimenTablesProvider
         AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
 
-        // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
-        // We can't try again, but tell the user to try the operation again
         Domain domain = PropertyService.get().getDomain(_container, domainURI);
         if (null == domain && create)
         {
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
-            {
-                domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
-
-                // Add properties for all required fields
-                for (PropertyStorageSpec propSpec : domainKind.getBaseProperties(domain))
+            // Multiple threads attempting to create the table will result in a constraint violation or a deadlock. We
+            // can't retry on PostgreSQL (SQLException kills the transaction), so use a blocking cache to ensure that
+            // only one thread creates and the others wait.
+            domain = DOMAIN_CREATION_CACHE.get(domainURI, null, (key, argument) -> {
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
                 {
-                    DomainProperty prop = domain.addProperty(propSpec);
-                    prop.setRequired(true);
-                }
+                    Domain domain1 = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
-                // Add optional fields to table
-                for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
+                    // Add properties for all required fields
+                    for (PropertyStorageSpec propSpec : domainKind.getBaseProperties(domain1))
+                    {
+                        DomainProperty prop = domain1.addProperty(propSpec);
+                        prop.setRequired(true);
+                    }
+
+                    // Add optional fields to table
+                    for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
+                    {
+                        domain1.addProperty(propSpec);
+                    }
+
+                    domain1.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
+                    domain1.save(_user);
+
+                    return domain1;
+                }
+                catch (ChangePropertyDescriptorException e)
                 {
-                    domain.addProperty(propSpec);
+                    throw new RuntimeException(e);
                 }
-
-                domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
-                domain.save(_user);
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (RuntimeSQLException e)
-            {
-                throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.", e);
-            }
+                catch (RuntimeSQLException e)
+                {
+                    throw new RuntimeException("Cannot create domain for table. Another process may be creating it or may have deleted it. Please try your action again.", e);
+                }
+            });
         }
         return domain;
     }
