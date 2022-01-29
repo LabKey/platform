@@ -796,6 +796,15 @@ public class DbScope
             {
                 closer.close();
             }
+        },
+        /** Someone else is going to be responsible for closing the connection */
+        Piggyback()
+        {
+            @Override
+            void close(DbScope scope, Connection conn, Closer closer) throws SQLException
+            {
+                // Intentional no-op
+            }
         };
 
         abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;

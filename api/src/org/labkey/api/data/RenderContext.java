@@ -412,7 +412,7 @@ public class RenderContext implements Map<String, Object>, Serializable
                         Connection conn = r.getStatement().getConnection();
                         if (conn != null && !conn.isClosed())
                         {
-                            return getScope().wrap(conn, DbScope.ConnectionType.Pooled, null);
+                            return getScope().wrap(conn, DbScope.ConnectionType.Piggyback, null);
                         }
                     }
                     return super.getConnection();
