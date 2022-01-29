@@ -407,10 +407,10 @@ public class RenderContext implements Map<String, Object>, Serializable
                 {
                     // Issue 44749. Piggyback on the primary results DB connection if possible so that we don't end
                     // up using two concurrently
-                    if (r != null)
+                    if (r != null && r.getStatement() != null)
                     {
                         Connection conn = r.getStatement().getConnection();
-                        if (!conn.isClosed())
+                        if (conn != null && !conn.isClosed())
                         {
                             return getScope().wrap(conn, DbScope.ConnectionType.Pooled, null);
                         }
