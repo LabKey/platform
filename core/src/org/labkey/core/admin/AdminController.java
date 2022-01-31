@@ -6796,7 +6796,7 @@ public class AdminController extends SpringActionController
                     form.setFolderType(folderType.getName());
                 }
             }
-            JspView statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            JspView<ManageFoldersForm> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
