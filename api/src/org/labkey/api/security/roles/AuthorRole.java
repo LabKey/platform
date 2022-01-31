@@ -38,8 +38,7 @@ public class AuthorRole extends AbstractRole
             ReadPermission.class,
             ReadSomePermission.class,
             InsertPermission.class,
-            ShareReportPermission.class,
-            SampleWorkflowJobPermission.class
+            ShareReportPermission.class
         );
     }
 
