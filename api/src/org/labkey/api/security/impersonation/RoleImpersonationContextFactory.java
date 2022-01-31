@@ -39,7 +39,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -138,9 +140,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     private String getRolesDisplayString(Set<String> roleNames)
     {
-        Set<String> roleDisplayNames = new HashSet<>();
-        for (String name : roleNames)
-            roleDisplayNames.add(RoleManager.getRole(name).getName());
+        Set<String> roleDisplayNames = roleNames.stream()
+                .map(RoleManager::getRole)
+                .filter(Objects::nonNull)
+                .map(Role::getName)
+                .collect(Collectors.toSet());
 
         if (roleDisplayNames.isEmpty())
             return "";
