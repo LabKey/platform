@@ -106,8 +106,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
             metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
             metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
-            Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
-            metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
+            metrics.put("recentAvgSessionDuration", UserManager.getAverageSessionDuration());
             metrics.put("mostRecentLogin", DateUtil.formatDateISO8601(UserManager.getMostRecentLogin()));
 
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());

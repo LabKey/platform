@@ -62,6 +62,8 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -84,6 +86,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class UserManager
 {
@@ -417,26 +421,34 @@ public class UserManager
         return Math.toIntExact((long) result.getValue());
     }
 
-    public static Integer getAverageSessionDuration(Date since)
+    /** Of authenticated users, tallied when their session ends */
+    private static final AtomicLong _sessionCount = new AtomicLong();
+    /** In minutes */
+    private static final AtomicLong _totalSessionDuration = new AtomicLong();
+
+    public static class SessionListener implements HttpSessionListener
     {
-        TableInfo uat = getUserAuditSchemaTableInfo();
-        SQLFragment loginSql = uat.getSqlDialect().limitRows(new SQLFragment("SELECT Created"),
-                new SQLFragment("FROM ").append(uat, "logins"),
-                new SQLFragment("WHERE Comment LIKE '%").append(UserAuditEvent.LOGGED_IN).append("%'")
-                        .append(" AND \"user\" = logouts.\"user\"")
-                        .append(" AND Created >= ?")
-                        .append(" AND Created < logouts.Created").add(since),
-                "ORDER BY Created DESC",
-                null, 1, 0);
-        loginSql.prepend(new SQLFragment("("));
-        loginSql.append(")");
+        @Override
+        public void sessionCreated(HttpSessionEvent event)
+        {
 
-        SQLFragment sql = new SQLFragment("SELECT AVG(Duration) FROM (SELECT ");
-        sql.append(uat.getSqlDialect().getDateDiff(Calendar.MINUTE, new SQLFragment("Created"), loginSql)).append(" AS Duration\n");
-        sql.append("FROM ").append(uat, "logouts");
-        sql.append(" WHERE Comment LIKE '%").append(UserAuditEvent.LOGGED_OUT).append("%' AND Created >= ?) x").add(since);
+        }
 
-        return new SqlSelector(uat.getSchema(), sql).getObject(Integer.class);
+        @Override
+        public void sessionDestroyed(HttpSessionEvent event)
+        {
+            // Issue 44761 - track session duration for authenticated users
+            if (event.getSession().getAttribute(SecurityManager.USER_ID_KEY) != null)
+            {
+                _sessionCount.incrementAndGet();
+                _totalSessionDuration.addAndGet((TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime())));
+            }
+        }
+    }
+
+    public static Integer getAverageSessionDuration()
+    {
+        return _sessionCount.get() == 0 ? null : (int)(_totalSessionDuration.get() / _sessionCount.get());
     }
 
     public static User getGuestUser()
