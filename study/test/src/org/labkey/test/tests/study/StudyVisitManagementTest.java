@@ -19,15 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.remoteapi.CommandException;
-import org.labkey.remoteapi.CommandResponse;
-import org.labkey.remoteapi.Connection;
-import org.labkey.remoteapi.PostCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -45,7 +40,6 @@ import org.labkey.test.util.core.webdav.WebDavUploadHelper;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +55,6 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     private final File DATASETS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Datasets.folder.zip");
     private final File SPECIMENS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Specimens.folder.zip");
     private final File EXPLODED_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement.folder");
-    private final File EXPLODED_FOLDER_STUDYLOAD_TXT = TestFileUtils.getSampleData("study/StudyVisitManagement.folder/studyload.txt");
 
     private final String SPECIMEN_UNDEFINED_VISIT_MSG = "The following undefined visits exist in the specimen data:";
     private final String DATASET_UNDEFINED_VISIT_MSG = "The following undefined visits exist in the dataset data:";
@@ -181,7 +174,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         List<String> undefinedVisits = Arrays.asList("601.0", "701.0");
         verifyUndefinedVisitError(errorMsgPrefix, definedVisits, undefinedVisits);
 
-        // them import the full archive, expecting this to succeed
+        // then import the full archive, expecting this to succeed
         deleteSingleVisit("2 week Post-V#1");
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 2, true);
         definedVisits = Arrays.asList("301.0 - 391.0", "401.0", "411.0 - 491.0", "501.0", "601.0 - 691.0", "701.0");
@@ -210,14 +203,6 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         checkExpectedErrors(numExpectedErrors);
     }
 
-    public File getModifiedStudyReloadTxt()
-    {
-        File file = TestFileUtils.getSampleData("study/StudyVisitManagement.folder/studyload.txt");
-        file.setLastModified((new Date()).getTime());
-
-        return file;
-    }
-
     @Test
     public void testFailForUndefinedVisitsReload() throws IOException
     {
@@ -232,17 +217,10 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // delete some visits so that the reload will have the failure case
         deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
 
-        // enable study reloading and attempt now, which will say that studyload.txt not found
-        attemptStudyReloadNow("Error: Could not find file studyload.txt in the pipeline root for Study 001", true);
-
         // change pipeline root and then attempt reload again
         new WebDavUploadHelper(getProjectName() + "/" + folderName).uploadDirectoryContents(EXPLODED_FOLDER_ARCHIVE);
-        goToModule("Pipeline");
-        clickButton("Process and Import Data");
-        _fileBrowserHelper.uploadFile(EXPLODED_FOLDER_STUDYLOAD_TXT, null, null, true);
-        attemptStudyReloadNow("Reloading Study 001", true);
-        //goToModule("Pipeline");
-        waitForPipelineJobsToComplete(2, "Study reload", true);
+        startFolderImport(true);
+        waitForPipelineJobsToComplete(2, "Folder import", true);
 
         // verify the expected import failure message and defined visits
         definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0");
@@ -250,39 +228,27 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         verifyUndefinedVisitError(DATASET_UNDEFINED_VISIT_MSG, definedVisits, undefinedVisits);
 
         // test reload again with the failure bit unset
-        goToModule("Pipeline");
-        clickButton("Process and Import Data");
-        _fileBrowserHelper.uploadFile(getModifiedStudyReloadTxt(), null, null, true);
-        attemptStudyReloadNow("Reloading Study 001", false);
+        startFolderImport(false);
+        waitForPipelineJobsToComplete(3, "Folder import", true);
 
         // verify undefined visits now created
-        goToModule("Pipeline");
-        waitForPipelineJobsToComplete(3, "Study reload", true);
         definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0", "601.0", "701.0");
         verifyStudyVisits(definedVisits, null);
 
-        checkExpectedErrors(5);
+        checkExpectedErrors(6);
     }
 
-    private void attemptStudyReloadNow(String expectedMsg, boolean failForUndefinedVisits) throws IOException
+    private void startFolderImport(boolean failForUndefinedVisits)
     {
-        Connection cn = createDefaultConnection();
-        PostCommand reloadStudy = new PostCommand("study", "checkForReload");
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("failForUndefinedVisits", failForUndefinedVisits ? "true" : "false");
-        reloadStudy.setJsonObject(jsonObject);
+        goToModule("Pipeline");
+        clickButton("Process and Import Data");
+        _fileBrowserHelper.selectFileBrowserItem("folder.xml");
+        _fileBrowserHelper.selectImportDataAction("Import Folder");
 
-        try
-        {
-            CommandResponse r = reloadStudy.execute(cn, getCurrentContainerPath());
-            assertEquals(expectedMsg, r.getText());
-        }
-        catch (IOException | CommandException e)
-        {
-            throw new RuntimeException("Failed to reload study", e);
-        }
-
-        goBack();
+        StartImportPage importPage = new StartImportPage(getDriver());
+        importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
+        importPage.clickStartImport();
+        waitForElement(Locators.bodyTitle("Data Pipeline"));
     }
 
     private void verifyUndefinedVisitError(String errorMsgPrefix, @NotNull List<String> definedVisits, @Nullable List<String> undefinedVisits)
