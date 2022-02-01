@@ -2821,7 +2821,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
     
 
-    private static Package _java_lang = java.lang.String.class.getPackage();
+    private static final Package _java_lang = java.lang.String.class.getPackage();
 
     private void _logStatement(String sql, @Nullable SQLException x, int rowsAffected, QueryLogging queryLogging)
     {
@@ -2884,7 +2884,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             logEntry.append(" time ").append(DateUtil.formatDuration(elapsed));
 
         if (-1 != rowsAffected)
-            logEntry.append("\n    " + rowsAffected + " rows affected");
+            logEntry.append("\n    ").append(rowsAffected).append(" rows affected");
 
         logEntry.append("\n    ");
         logEntry.append(sql.trim().replace("\n", "\n    "));
@@ -2895,7 +2895,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             {
                 try
                 {
-                    Object o = i <= _parameters.size() ? _parameters.get(i) : null;
+                    Object o = _parameters.get(i);
                     String value;
                     if (o == null)
                         value = "NULL";
@@ -2909,7 +2909,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                         value = value.substring(0, 100) + ". . .";
                     logEntry.append("\n    --[").append(i).append("] ");
                     logEntry.append(value);
-                    Class c = null==o ? null : o.getClass();
+                    Class<?> c = null==o ? null : o.getClass();
                     if (null != c && c != String.class && c != Integer.class)
                         logEntry.append(" :").append(c.getPackage() == _java_lang ? c.getSimpleName() : c.getName());
                 }

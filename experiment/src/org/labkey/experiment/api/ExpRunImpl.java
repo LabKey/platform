@@ -58,6 +58,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
@@ -327,7 +328,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public void delete(User user)
     {
-        if (!getContainer().hasPermission(user, DeletePermission.class))
+        if (!canDelete(user))
         {
             throw new UnauthorizedException();
         }
@@ -552,6 +553,15 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         clearCache();
 
         ExperimentRunGraph.clearCache(getContainer());
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        boolean isWorkflow = ExpProtocol.isSampleWorkflowProtocol(getProtocol().getLSID());
+        if (isWorkflow && getContainer().hasPermission(user, SampleWorkflowJobPermission.class))
+            return true;
+        return !isWorkflow && getContainer().hasPermission(user, DeletePermission.class);
     }
 
     // Clean up DataInput and MaterialInput exp.object and properties

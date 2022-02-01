@@ -99,12 +99,10 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpRun> reorderedRuns = allRuns.stream()
-                    .filter((run -> !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) &&
-                            !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .filter((run -> !ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .collect(Collectors.toList());
             List<ExpRun> smJobRuns = allRuns.stream()
-                    .filter((run -> run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) ||
-                            run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .filter((run -> ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID())))
                     .collect(Collectors.toList());
             reorderedRuns.addAll(smJobRuns);
             return reorderedRuns;
@@ -123,15 +121,11 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // the sm template tasks can make reference to assay designs, so we will put all the SM Job and Task Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.
             List<ExpProtocol> reorderedProtocols = protocols.stream()
-                    .filter((protocol ->
-                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) &&
-                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    .filter((protocol -> !ExpProtocol.isSampleWorkflowProtocol(protocol.getLSID()))
                     )
                     .collect(Collectors.toList());
             protocols.stream()
-                    .filter(protocol ->
-                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) ||
-                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    .filter(protocol -> ExpProtocol.isSampleWorkflowTaskProtocol(protocol.getLSID()))
                     .forEach(reorderedProtocols::add);
             return reorderedProtocols.stream()
                     .map(ExpObject::getRowId)
