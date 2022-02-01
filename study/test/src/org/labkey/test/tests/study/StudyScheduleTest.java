@@ -18,7 +18,6 @@ package org.labkey.test.tests.study;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ext4.RadioButton;
 import org.labkey.test.pages.study.DatasetDesignerPage;
@@ -28,6 +27,7 @@ import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -291,7 +291,7 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
-                File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
+                File file = StudyHelper.getFolderArchiveFile("study/datasets/plate002.tsv");
                 datasetDesignerPage = new DatasetDesignerPage(getDriver());
                 datasetDesignerPage.getFieldsPanel()
                         .setInferFieldFile(file);
@@ -377,7 +377,7 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
-                File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
+                File file = StudyHelper.getFolderArchiveFile("study/datasets/plate002.tsv");
                 datasetDesignerPage = new DatasetDesignerPage(getDriver());
                 datasetDesignerPage.getFieldsPanel()
                         .setInferFieldFile(file);

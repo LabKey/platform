@@ -44,6 +44,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -74,6 +75,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
@@ -1387,7 +1389,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             List<Attachment> attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 0 attached documents", 0, attachedFiles.size());
 
-            AttachmentFile file = new FileAttachmentFile(JunitUtil.getSampleData(null, "study/Protocol.txt"));
+            AttachmentFile file = new FileAttachmentFile(JunitUtil.getSampleData(ModuleLoader.getInstance().getModule(StudyModule.class), "study/Protocol.txt"));
             testStudy.attachProtocolDocument(Collections.singletonList(file), _context.getUser());
             attachedFiles = testStudy.getProtocolDocuments();
             assertEquals("Expected 1 attached document", 1, attachedFiles.size());

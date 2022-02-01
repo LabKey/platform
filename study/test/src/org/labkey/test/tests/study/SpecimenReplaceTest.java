@@ -19,9 +19,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 
@@ -29,10 +29,10 @@ import java.io.File;
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class SpecimenReplaceTest extends SpecimenMergeTest
 {
-    protected static final File LAB_EDITED_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab19edit.specimens");
-    protected static final File LAB15_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab15.specimens");
-    protected static final File LAB20_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab20.specimens");
-    protected static final File LAB21_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab21.specimens");
+    protected static final File LAB_EDITED_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab19edit.specimens");
+    protected static final File LAB15_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab15.specimens");
+    protected static final File LAB20_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab20.specimens");
+    protected static final File LAB21_SPECIMENS = StudyHelper.getSpecimenArchiveFile("lab21.specimens");
 
     @Override
     @Test
