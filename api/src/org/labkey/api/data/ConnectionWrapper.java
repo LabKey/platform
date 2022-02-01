@@ -73,7 +73,6 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
-    private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);
     private static final boolean _explicitLogger = initializeExplicitLogger();
     private static final AtomicLong COUNTER = new AtomicLong(0);
 
@@ -103,9 +102,9 @@ public class ConnectionWrapper implements java.sql.Connection
     private static boolean initializeExplicitLogger()
     {
         var loggerContext = (LoggerContext) LogManager.getContext(false);
-        var loggerConfig = loggerContext.getConfiguration().getLoggerConfig(_logDefault.getName());
+        var loggerConfig = loggerContext.getConfiguration().getLoggerConfig(LOG.getName());
 
-        return _logDefault.getLevel() != null || loggerConfig.getParent() != null  && loggerConfig.getParent().getName().equals("org.labkey.api.data");
+        return LOG.getLevel() != null || loggerConfig.getParent() != null  && loggerConfig.getParent().getName().equals("org.labkey.api.data");
     }
 
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, ConnectionType type, @Nullable Logger log)
@@ -120,7 +119,7 @@ public class ConnectionWrapper implements java.sql.Connection
         _allocatingThreadName = Thread.currentThread().getName();
         _referencingThreadNames.add(_allocatingThreadName);
 
-        _openConnections.put(this,  new Pair<>(Thread.currentThread(), new Throwable()));
+        _openConnections.put(this, new Pair<>(Thread.currentThread(), new Throwable()));
 
         _log = log != null ? log : getConnectionLogger();
     }
@@ -130,7 +129,7 @@ public class ConnectionWrapper implements java.sql.Connection
     static Logger getConnectionLogger()
     {
         if (_explicitLogger)
-            return _logDefault;
+            return LOG;
         StackTraceElement[] stes = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : stes)
         {
@@ -140,7 +139,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (className.endsWith("Controller") && !className.startsWith("org.labkey.api.view"))
                 return LogManager.getLogger(className);
         }
-        return _logDefault;
+        return LOG;
     }
 
 
@@ -158,7 +157,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public static boolean dumpOpenConnections()
     {
-        return dumpOpenConnections(_logDefault);
+        return dumpOpenConnections(LOG);
     }
 
     public static boolean dumpOpenConnections(@NotNull LoggerWriter logWriter)
@@ -185,7 +184,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public static boolean dumpLeaksForThread(Thread t)
     {
-        return dumpLeaksForThread(t, _logDefault);
+        return dumpLeaksForThread(t, LOG);
     }
 
     public static boolean dumpLeaksForThread(Thread t, Logger log)
@@ -891,7 +890,7 @@ public class ConnectionWrapper implements java.sql.Connection
     {
         if (!isClosed())
         {
-            LOG.error("Connection was not closed! " + toString());
+            LOG.error("Connection was not closed! " + this);
             realClose();
         }
 

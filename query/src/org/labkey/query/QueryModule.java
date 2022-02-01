@@ -258,11 +258,13 @@ public class QueryModule extends DefaultModule
             folderRegistry.addFactories(new ExternalSchemaDefWriterFactory(), new ExternalSchemaDefImporterFactory());
         }
 
-        // support importing dataset & report categories from the /study subfolder for backward compatibility
         StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
         if (null != studyRegistry)
         {
+            // support importing dataset & report categories from study archives. TODO: Remove
             studyRegistry.addImportFactory(new ViewCategoryImporter.Factory());
+            // temporary: enables query validation option (postProcess()) when loading study archives. TODO: remove
+            studyRegistry.addImportFactory(new QueryImporter.Factory());
         }
 
         SearchService ss = SearchService.get();

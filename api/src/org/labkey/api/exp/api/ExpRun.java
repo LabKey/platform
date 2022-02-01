@@ -123,4 +123,6 @@ public interface ExpRun extends ExpObject, Identifiable
     void setWorkflowTask(@Nullable ExpProtocolApplication workflowTask);
 
     @Nullable ExpProtocolApplication getWorkflowTask();
+
+    boolean canDelete(User user);
 }

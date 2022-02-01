@@ -135,10 +135,10 @@
                         <list>
                             <bean class="org.labkey.api.formSchema.CheckboxField">
                                 <constructor-arg index="0" value="skipQueryValidation"/>
-                                <constructor-arg index="1" value="Validate All Queries After Reload"/>
+                                <constructor-arg index="1" value="Skip Query Validation After Reload"/>
                                 <constructor-arg index="2" value="false" />
                                 <constructor-arg index="3" value="false"/>
-                                <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                                <constructor-arg index="4" value="Enable to skip validation of queries after reload is complete"/>
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">

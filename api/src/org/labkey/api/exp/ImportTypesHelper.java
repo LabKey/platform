@@ -482,6 +482,9 @@ public class ImportTypesHelper
                             // UNDONE: don't import date format until we have default format for study
                             // UNDONE: it looks bad to have mixed formats
                             break;
+                        case BOOLEAN:
+                            _format = format;
+                            break;
                         case STRING:
                         case MULTI_LINE:
                         default:
