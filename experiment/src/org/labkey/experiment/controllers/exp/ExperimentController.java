@@ -5022,9 +5022,14 @@ public class ExperimentController extends SpringActionController
             List<ExpMaterial> materials = form.lookupMaterials();
 
             Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
+            List<ExpMaterial> lockedSamples = new ArrayList<>();
             for (int i = 0; i < materials.size(); i++)
             {
                 ExpMaterial m = materials.get(i);
+                if (!m.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                {
+                    lockedSamples.add(m);
+                }
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
@@ -5032,6 +5037,12 @@ public class ExperimentController extends SpringActionController
                     inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
                 inputMaterials.put(materials.get(i), inputRole);
+            }
+
+            if (!lockedSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.EditLineage));
+                return false;
             }
 
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
