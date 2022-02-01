@@ -1353,38 +1353,37 @@ quickScan:
     public static class TempTextFileWrapper implements Closeable
     {
         final int characterLimitInMemory;
-        ByteBuffer _byteBuffer = null;
-        CharBuffer _charBuffer = null;
-//        int _maxPosition = 0;
+        final ByteBuffer _byteBuffer;
+        final CharBuffer _charBuffer;
         FileWriter _fileWriter = null;
         FileReader _fileReader = null;
         File _tmpFile = null;
+        boolean closed = false;             // so we can ignore multiple calls to close
 
-        Writer _writer;
-        Reader _reader;
+        Writer _writer = null;
+        Reader _reader = null;
 
         public TempTextFileWrapper(int characterLimitInMemory)
         {
             this.characterLimitInMemory = characterLimitInMemory;
+            this._byteBuffer = ByteBuffer.allocate(characterLimitInMemory * 2);
+            this._charBuffer = _byteBuffer.asCharBuffer();
         }
 
         public TempTextFileWrapper(CharBuffer charBuffer)
         {
-            this._charBuffer = charBuffer;
             this.characterLimitInMemory = charBuffer.capacity();
+            this._byteBuffer = null;
+            this._charBuffer = charBuffer;
         }
 
 
         public Writer getWriter()
         {
-            // should only ask for _writer once
-            assert null == _writer;
+            if (null != _writer || closed)
+                throw new IllegalStateException(closed ? "TempTextFileWrapper is closed" : "getWriter() called twice");
+
             // CONSIDER ByteBuffer.allocateDirect(), for now caller can pass in a direct buffer if desired
-            if (null == _charBuffer)
-            {
-                _byteBuffer = ByteBuffer.allocate(characterLimitInMemory * 2);
-                _charBuffer = _byteBuffer.asCharBuffer();
-            }
             _writer = new Writer()
             {
                 boolean closed = false;
@@ -1398,7 +1397,6 @@ quickScan:
                     {
                         var l = Math.min(_charBuffer.remaining(), len);
                         _charBuffer.put(cbuf, off, l);
-//                        _maxPosition = Math.max(_maxPosition, _charBuffer.position());
                         if (l == len)
                             return;
                         off += l;
@@ -1447,8 +1445,9 @@ quickScan:
 
         public Reader getReader()
         {
-            // should only ask for _reader once
-            assert null == _reader;
+            if (null != _reader || closed)
+                throw new IllegalStateException(closed ? "TempTextFileWrapper is closed" : "getReader() called twice");
+
             _reader = new Reader()
             {
                 @Override
@@ -1488,18 +1487,21 @@ quickScan:
         @Override
         public void close() throws IOException
         {
-            if (null != _fileReader)
-                IOUtils.closeQuietly(_fileReader);
-            _fileReader = null;
-            if (null != _fileWriter)
-                IOUtils.closeQuietly(_fileWriter);
-            _fileWriter = null;
-            if (null != _tmpFile)
-                FileUtil.deleteTempFile(_tmpFile);
-            _tmpFile = null;
-            if (null != _byteBuffer && _byteBuffer.isDirect())
-                MappedBufferCleaner.freeBuffer(_byteBuffer);
-            _byteBuffer = null;
+            if (!closed)
+            {
+                closed = true;
+                if (null != _fileReader)
+                    IOUtils.closeQuietly(_fileReader);
+                _fileReader = null;
+                if (null != _fileWriter)
+                    IOUtils.closeQuietly(_fileWriter);
+                _fileWriter = null;
+                if (null != _tmpFile)
+                    FileUtil.deleteTempFile(_tmpFile);
+                _tmpFile = null;
+                if (null != _byteBuffer && _byteBuffer.isDirect())
+                    MappedBufferCleaner.freeBuffer(_byteBuffer);
+            }
         }
     }
 
