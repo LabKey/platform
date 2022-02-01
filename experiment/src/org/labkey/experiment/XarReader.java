@@ -23,7 +23,33 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.fhcrc.cpas.exp.xml.*;
+import org.fhcrc.cpas.exp.xml.ContactType;
+import org.fhcrc.cpas.exp.xml.DataBaseType;
+import org.fhcrc.cpas.exp.xml.DataClassType;
+import org.fhcrc.cpas.exp.xml.DataProtocolInputType;
+import org.fhcrc.cpas.exp.xml.DataType;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.fhcrc.cpas.exp.xml.ExperimentLogEntryType;
+import org.fhcrc.cpas.exp.xml.ExperimentRunType;
+import org.fhcrc.cpas.exp.xml.ExperimentType;
+import org.fhcrc.cpas.exp.xml.ImportAlias;
+import org.fhcrc.cpas.exp.xml.InputOutputRefsType;
+import org.fhcrc.cpas.exp.xml.MaterialBaseType;
+import org.fhcrc.cpas.exp.xml.MaterialProtocolInputType;
+import org.fhcrc.cpas.exp.xml.MaterialType;
+import org.fhcrc.cpas.exp.xml.PropertyCollectionType;
+import org.fhcrc.cpas.exp.xml.PropertyObjectDeclarationType;
+import org.fhcrc.cpas.exp.xml.PropertyObjectType;
+import org.fhcrc.cpas.exp.xml.ProtocolActionSetType;
+import org.fhcrc.cpas.exp.xml.ProtocolActionType;
+import org.fhcrc.cpas.exp.xml.ProtocolApplicationBaseType;
+import org.fhcrc.cpas.exp.xml.ProtocolBaseType;
+import org.fhcrc.cpas.exp.xml.SampleSetType;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.fhcrc.cpas.exp.xml.SimpleValueCollectionType;
+import org.fhcrc.cpas.exp.xml.SimpleValueType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
@@ -86,7 +112,30 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.AliasInsertHelper;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.DataInput;
+import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.IdentifiableEntity;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialInput;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.ProtocolAction;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
+import org.labkey.experiment.api.ProtocolApplication;
+import org.labkey.experiment.api.RunItem;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -121,8 +170,6 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
-import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX;
-import static org.labkey.api.exp.api.ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -1347,7 +1394,7 @@ public class XarReader extends AbstractXarImporter
         if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
                 !material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
             return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.EditLineage);
-        if ((protocolLSID.contains(SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) || protocolLSID.contains(SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+        if ((ExpProtocol.isSampleWorkflowProtocol(protocolLSID))
                 && !material.isOperationPermitted(SampleTypeService.SampleOperations.AddToWorkflow))
             return SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddToWorkflow);
         return null;

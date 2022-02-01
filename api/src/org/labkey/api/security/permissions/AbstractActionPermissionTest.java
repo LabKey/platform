@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -66,45 +67,51 @@ public abstract class AbstractActionPermissionTest extends Assert
     private static final String SUBMITTER_EMAIL = "submitter@actionpermission.test";
     private static final String TRUSTED_EDITOR_EMAIL = "trustededitor@actionpermission.test";
     private static final String TRUSTED_AUTHOR_EMAIL = "trustedauthor@actionpermission.test";
-    private static final String[] ALL_EMAILS = {
+    protected static final String[] LKS_ROLE_EMAILS = {
             SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL, FOLDER_ADMIN_EMAIL, EDITOR_EMAIL,
             AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL, TRUSTED_EDITOR_EMAIL, TRUSTED_AUTHOR_EMAIL
     };
 
-    private static Container _c;
-    private static Map<String, User> _users;
+    protected static Container _c;
+    protected static Map<String, User> _users;
     private static final @Nullable Role TRUSTED_ANALYST_ROLE = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
 
     @BeforeClass
     public static void initialize()
     {
-        cleanupUsers(ALL_EMAILS);
+        cleanupUsers(LKS_ROLE_EMAILS);
         Container junit = JunitUtil.getTestContainer();
-        _c = ContainerManager.createContainer(junit, "ActionPermissionTest-" + GUID.makeGUID());
-        _users = createUsers(ALL_EMAILS);
+        _c = ContainerManager.createContainer(junit, "ActionPermissionTest-" + GUID.makeGUID(), null, null, NormalContainerType.NAME, TestContext.get().getUser());
+        _users = createUsersInLKSRoles(_c);
+    }
 
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(_c, _c.getPolicy());
-        policy.addRoleAssignment(_users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
-        policy.addRoleAssignment(_users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
-        policy.addRoleAssignment(_users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
-        policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
-        policy.addRoleAssignment(_users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
-        policy.addRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
-        policy.addRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
+    protected static Map<String, User> createUsersInLKSRoles(Container c)
+    {
+        Map<String, User> users = createUsers(LKS_ROLE_EMAILS);
+
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
+        policy.addRoleAssignment(users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
+        policy.addRoleAssignment(users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
+        policy.addRoleAssignment(users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
+        policy.addRoleAssignment(users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
+        policy.addRoleAssignment(users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
+        policy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
+        policy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
         SecurityPolicyManager.savePolicy(policy);
 
-        MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(_c.getProject(), _c.getProject().getPolicy());
-        projectPolicy.addRoleAssignment(_users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
+        MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(c.getProject(), c.getProject().getPolicy());
+        projectPolicy.addRoleAssignment(users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
 
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
-        rootPolicy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
-        rootPolicy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        rootPolicy.addRoleAssignment(users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
+        rootPolicy.addRoleAssignment(users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
         if (null != TRUSTED_ANALYST_ROLE)
         {
-            rootPolicy.addRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
-            rootPolicy.addRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
+            rootPolicy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
+            rootPolicy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
         }
         SecurityPolicyManager.savePolicy(rootPolicy);
+        return users;
     }
 
     @AfterClass
@@ -122,13 +129,18 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
         SecurityPolicyManager.savePolicy(rootPolicy);
 
-        cleanupUsers(ALL_EMAILS);
+        cleanupUsers(LKS_ROLE_EMAILS);
+    }
+
+    protected Container getContainer()
+    {
+        return _c;
     }
 
     @Test
     public abstract void testActionPermissions();
 
-    private static void cleanupUsers(String[] userEmails)
+    protected static void cleanupUsers(String[] userEmails)
     {
         //clean up users in case this failed part way through
         try
@@ -144,7 +156,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         {}
     }
 
-    private static Map<String, User> createUsers(String[] userEmails)
+    protected static Map<String, User> createUsers(String[] userEmails)
     {
         Map<String, User> users = new HashMap<>();
 
@@ -373,7 +385,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    private void assertPermission(Container c, PermissionCheckableAction action, User... users)
+    protected void assertPermission(Container c, PermissionCheckableAction action, User... users)
     {
         assertPermission(HttpUtil.Method.POST, c, action, users);
     }
@@ -396,7 +408,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         }
     }
 
-    private void assertNoPermission(Container c, PermissionCheckableAction action, User... users)
+    protected void assertNoPermission(Container c, PermissionCheckableAction action, User... users)
     {
         for (User u : users)
         {
