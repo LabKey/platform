@@ -210,6 +210,12 @@ public class IssueServiceImpl implements IssueService
         }
         else
         {
+            if (issueObject.getIssueId() != 0)
+            {
+                errors.reject(ERROR_MSG, "IssueId must not be set when creating new issues");
+                return;
+            }
+
             if (issueListDef == null && defaultIssueListDef == null)
             {
                 errors.reject(ERROR_MSG, "IssueDefName or IssueDefId is required when creating new issues");

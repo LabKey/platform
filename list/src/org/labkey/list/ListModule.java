@@ -137,13 +137,6 @@ public class ListModule extends SpringModule
             folderRegistry.addFactories(new FolderListWriter.Factory(), new FolderListImporter.Factory());
         }
 
-        // support importing lists from the study archive for backwards compatibility
-        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
-        if (null != studyRegistry)
-        {
-            studyRegistry.addImportFactory(new FolderListImporter.Factory());
-        }                  
-
         SearchService ss = SearchService.get();
         if (null != ss)
         {

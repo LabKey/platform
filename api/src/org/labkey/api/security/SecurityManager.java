@@ -162,7 +162,7 @@ public class SecurityManager
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
     public static final String API_KEY = "apikey";
 
-    private static final String USER_ID_KEY = User.class.getName() + "$userId";
+    public static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";

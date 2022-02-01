@@ -96,7 +96,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
         initTest.initializeFolder();
-        initTest.setPipelineRoot(StudyHelper.getPipelinePath());
+        initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
@@ -162,7 +162,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
     }
 
     @Test
@@ -529,11 +529,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         }
         clickButton("Submit");
 
-        log("Study Properties: export study folder to the pipeline as indiviual files");
+        log("Study Properties: export study folder to the pipeline as individual files");
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Study Properties: verify xml file was created in export");
-        _fileBrowserHelper.selectFileBrowserItem("export/study/study.xml");
+        _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
         createSubfolderAndImportStudyFromPipeline("Study Properties");
@@ -1003,7 +1003,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolderName, "Collaboration", null, true);
         clickFolder(subfolderName);
-        setPipelineRoot(StudyHelper.getPipelinePath());
+        setPipelineRoot(StudyHelper.getStudySubfolderPath());
         importFolderFromPipeline("/export/folder.xml");
     }
 
