@@ -2943,7 +2943,7 @@ public class SecurityManager
                     if (null == role)
                     {
                         // Issue 36611: The provisioner startup properties break deployment of older products
-                        _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                        _log.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
                         continue;
                     }
                     policy.addRoleAssignment(user, role);
