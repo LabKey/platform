@@ -774,7 +774,7 @@ public class ListDefinitionImpl implements ListDefinition
     public ActionURL urlFor(Class<? extends Controller> actionClass, Container c)
     {
         ActionURL ret = new ActionURL(actionClass, c);
-        ret.addParameter("listId", getListId());
+        ret.addParameter("name", getName());
         return ret;
     }
 
