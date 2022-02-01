@@ -3051,7 +3051,7 @@ public class SecurityManager
             return Set.of();
 
         var granted = policy.getOwnPermissions(principal);
-        principal.getContextualRoles(policy).forEach(r -> granted.addAll(r.getPermissions()));
+        principal.getContextualRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
         if (null != contextualRoles)
             contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
         if (principal instanceof User)
