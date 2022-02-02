@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
@@ -48,7 +49,7 @@ import java.util.Collections;
 public class FolderXarImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter<Folder> create()
+    public FolderImporter create()
     {
         return new FolderXarImporter();
     }
@@ -59,7 +60,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         return 70;
     }
 
-    public static class FolderXarImporter implements FolderImporter<Folder>
+    public static class FolderXarImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -74,7 +75,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (!isValidForImportArchive(ctx))
             {
@@ -160,13 +161,13 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY) != null;
         }

@@ -48,8 +48,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
@@ -201,8 +199,6 @@ import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
-import org.labkey.study.importer.StudyReload;
-import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
@@ -233,7 +229,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -4037,32 +4032,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
-    {
-        @Override
-        public ActionURL getRedirectURL(PipelinePathForm form)
-        {
-            Container c = getContainer();
-            Path studyPath = form.getValidatedSinglePath(c);
-            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyPath, true, null, false);
-        }
-
-        @Override
-        protected ModelAndView getErrorView(Exception e, BindException errors) throws Exception
-        {
-            try
-            {
-                throw e;
-            }
-            catch (ImportException sie)
-            {
-                errors.reject("studyImport", e.getMessage());
-                return new SimpleErrorView(errors);
-            }
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
     {
@@ -6050,32 +6019,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ReloadForm
-    {
-        private boolean _queryValidation;
-        private boolean _failForUndefinedVisits;
-
-        public boolean isQueryValidation()
-        {
-            return _queryValidation;
-        }
-
-        public void setQueryValidation(boolean queryValidation)
-        {
-            _queryValidation = queryValidation;
-        }
-
-        public boolean isFailForUndefinedVisits()
-        {
-            return _failForUndefinedVisits;
-        }
-
-        public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
-        {
-            _failForUndefinedVisits = failForUndefinedVisits;
-        }
-    }
-
     private static class DatasetDetailRedirectForm extends ReturnUrlForm
     {
         private String _datasetId;
@@ -6166,42 +6109,6 @@ public class StudyController extends BaseStudyController
             }
 
             return url;
-        }
-    }
-
-
-    @RequiresLogin
-    @RequiresPermission(AdminPermission.class)
-    public class CheckForReloadAction extends MutatingApiAction<ReloadForm>
-    {
-        @Override
-        public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
-        {
-            String message;
-
-            try
-            {
-                User user = getUser();
-                ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
-                options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
-                options.setSkipQueryValidation(!form.isQueryValidation());
-
-                final String source;
-
-                source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
-
-                ReloadStatus status = StudyReload.attemptReload(options, source);
-
-                message = status.getMessage();
-            }
-            catch (ImportException e)
-            {
-                message = "Error: " + e.getMessage();
-            }
-
-            // Plain text response for scripts
-            sendPlainText(message);
-            return null;
         }
     }
 

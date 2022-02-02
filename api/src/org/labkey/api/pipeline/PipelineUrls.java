@@ -42,7 +42,7 @@ public interface PipelineUrls extends UrlProvider
 
     ActionURL urlActions(Container container);
 
-    ActionURL urlStartFolderImport(Container container, @NotNull Path archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
+    ActionURL urlStartFolderImport(Container container, @NotNull Path archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder);
 
     ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl);
 

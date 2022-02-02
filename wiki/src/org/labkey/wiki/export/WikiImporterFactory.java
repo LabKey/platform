@@ -18,6 +18,7 @@ package org.labkey.wiki.export;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
@@ -34,7 +35,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.wiki.WikiType;
 import org.labkey.data.xml.wiki.WikisDocument;
 import org.labkey.data.xml.wiki.WikisType;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.model.Wiki;
@@ -63,7 +64,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         return new WikiImporter();
     }
 
-    private static class WikiImporter implements FolderImporter<FolderDocument.Folder>
+    private static class WikiImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -78,7 +79,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (isValidForImportArchive(ctx))
             {
@@ -143,7 +144,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private void setParents(ImportContext<FolderDocument.Folder> ctx, Map<Wiki, String> parentsToBeSet)
+        private void setParents(FolderImportContext ctx, Map<Wiki, String> parentsToBeSet)
         {
             for (Map.Entry<Wiki, String> entry : parentsToBeSet.entrySet())
             {
@@ -163,7 +164,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, ImportContext ctx, int displayOrder) throws IOException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, ImportContext<Folder> ctx, int displayOrder) throws IOException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();
@@ -236,13 +237,13 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptySet();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getDir("wikis") != null;
         }
