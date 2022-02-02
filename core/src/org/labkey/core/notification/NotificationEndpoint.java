@@ -126,6 +126,11 @@ public class NotificationEndpoint extends Endpoint
         {
             HttpSession session = (HttpSession) request.getHttpSession();
             User user = SecurityManager.getSessionUser(session);
+            if (user != null && !user.isActive())
+            {
+                session.invalidate();
+                user = null;
+            }
 
             // config.getUserProperties() is backed by a ConcurrentHashMap which does not allow null keys or values.
             if (session != null)

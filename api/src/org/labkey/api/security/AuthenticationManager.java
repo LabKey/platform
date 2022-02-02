@@ -1135,7 +1135,7 @@ public class AuthenticationManager
     }
 
 
-    public static URLHelper logout(@NotNull User user, HttpServletRequest request, URLHelper returnURL)
+    public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnURL)
     {
         URLHelper ret = null;
         HttpSession session = request.getSession(false);

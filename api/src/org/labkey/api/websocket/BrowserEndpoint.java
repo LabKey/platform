@@ -75,6 +75,11 @@ public abstract class BrowserEndpoint extends Endpoint
         {
             HttpSession httpSession = (HttpSession) request.getHttpSession();
             User user = SecurityManager.getSessionUser(httpSession);
+            if (user != null && !user.isActive())
+            {
+                httpSession.invalidate();
+                user = null;
+            }
 
             config.getUserProperties().put("requestHeaders", request.getHeaders());
             if (httpSession != null)

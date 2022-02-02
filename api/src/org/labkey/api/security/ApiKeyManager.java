@@ -137,7 +137,10 @@ public class ApiKeyManager
             t.commit();
         }
 
-        return null != userId ? UserManager.getUser(userId) : null;
+        User user = null != userId ? UserManager.getUser(userId) : null;
+        if (user != null && !user.isActive())
+            return null;
+        return user;
     }
 
     private static final String API_KEY_SCOPE = "ApiKey";
