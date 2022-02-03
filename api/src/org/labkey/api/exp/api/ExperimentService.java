@@ -29,6 +29,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
+import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -64,6 +65,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -791,6 +793,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
+
+    List<QueryViewProvider<ExpRun>> getRunInputsViewProviders();
+
+    List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
+
+    void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
+
+    void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
 
     class XarExportOptions
     {
