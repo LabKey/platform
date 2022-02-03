@@ -103,6 +103,14 @@ abstract public class DomainKind<T>  implements Handler<String>
      */
     abstract public Set<String> getReservedPropertyNames(Domain domain);
 
+    /**
+     * Override this function if the user is necessary for getReservedPropertyNames
+     */
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
+    {
+        return getReservedPropertyNames(domain);
+    }
+
     public Set<String> getReservedPropertyNamePrefixes()
     {
         return Collections.emptySet();

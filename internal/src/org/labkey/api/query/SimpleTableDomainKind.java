@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -64,8 +65,13 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     {
     }
 
-    // uck. To get from a Domain to the SimpleTable we need to parse the Domain's type uri.
     public SimpleUserSchema.SimpleTable getTable(Domain domain)
+    {
+        return getTable(domain, null);
+    }
+
+    // uck. To get from a Domain to the SimpleTable we need to parse the Domain's type uri.
+    public SimpleUserSchema.SimpleTable getTable(Domain domain, @Nullable User user)
     {
         String domainURI = domain.getTypeURI();
         if (domainURI == null)
@@ -80,7 +86,9 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
             String queryName = lsid.getObjectId();
 
             // HACK: have to reach out to get the user
-            User user = HttpView.currentContext().getUser();
+            if (user == null)
+                user = HttpView.currentContext().getUser();
+
             UserSchema schema = QueryService.get().getUserSchema(user, domain.getContainer(), schemaName);
             if (schema != null)
             {
@@ -175,7 +183,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        SimpleUserSchema.SimpleTable table = getTable(domain);
+        SimpleUserSchema.SimpleTable table = getTable(domain, containerUser.getUser());
         if (table == null)
             return null;
 
@@ -235,7 +243,13 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        SimpleUserSchema.SimpleTable table = getTable(domain);
+        return getReservedPropertyNames(domain, null);
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain, @Nullable User user)
+    {
+        SimpleUserSchema.SimpleTable table = getTable(domain, user);
         if (table != null)
         {
             // return the set of built-in column names.
