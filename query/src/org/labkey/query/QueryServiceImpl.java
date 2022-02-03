@@ -140,6 +140,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -2619,10 +2620,15 @@ public class QueryServiceImpl implements QueryService
         }
 
         SQLFragment fromFrag = new SQLFragment("FROM ");
-        Set<FieldKey> fieldKeySet = allColumns.stream()
+        Set<FieldKey> fieldKeySet = new TreeSet<>();
+        allColumns.stream()
                 .map(col -> col instanceof WrappedColumn ? ((WrappedColumn) col).getWrappedColumn() : col)
-                .map(ColumnInfo::getFieldKey)
-                .collect(Collectors.toSet());
+                .forEach(col -> {
+                    var fk = col.getFieldKey();
+                    fieldKeySet.add(fk);
+                    if (null != fk.getParent())
+                        fieldKeySet.add(fk.getRootFieldKey());
+                });
         SQLFragment getfromsql = table.getFromSQL(tableAlias, fieldKeySet);
         fromFrag.append(getfromsql);
         fromFrag.append(" ");

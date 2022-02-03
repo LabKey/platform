@@ -574,7 +574,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.WorkflowTask));
         setDefaultVisibleColumns(defaultVisibleColumns);
+
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        return wrapColumn("_ExpRunTableImpl_object", _rootTable.getColumn("objectid"));
+    }
+
 
     /**
      * This DisplayColumn renders a list of RunGroups.  The url expression

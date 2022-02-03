@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -197,8 +198,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
         QueryService.get().addCompareType(new LineageCompareType());
-        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), null, 2, 3);
-        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), null, 2, 3);
+        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());

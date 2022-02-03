@@ -23,25 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -103,6 +85,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -154,6 +137,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         return result;
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        return wrapColumn("_ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
+    }
+
 
     @Override
     public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
@@ -643,11 +634,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Properties);
 
         var colInputs = addColumn(Column.Inputs);
-        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true), Set.of(colInputs.getFieldKey()));
 
         var colOutputs = addColumn(Column.Outputs);
-        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
+        addExpObjectMethod();
 
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"), NullResult);
@@ -793,22 +785,61 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setDefaultVisibleColumns(visibleColumns);
     }
 
+
     @NotNull
     @Override
     public SQLFragment getFromSQL(String alias)
     {
+        return getFromSQL(alias, null);
+    }
+
+
+    // These are mostly fields that are wrapped by fields with different names (see createColumn())
+    // we could handle each case separately, but this is easier
+    static final Set<FieldKey> wrappedFieldKeys = Set.of(
+            new FieldKey(null, "objectid"),
+            new FieldKey(null, "LSID"),                 // Flag
+            new FieldKey(null, "rootMaterialLsid"),     // IsAliquot
+            new FieldKey(null, "SourceApplicationId"),  // SourceProtocolApplication
+            new FieldKey(null, "runId"),                // Run, RunApplication
+            new FieldKey(null, "CpasType"));            // SampleSet
+    static final Set<FieldKey> ALL_COLUMNS = Set.of();
+
+
+    @NotNull Set<FieldKey> computeInnerSelectedColumns(Set<FieldKey> selectedColumns)
+    {
+        if (null == selectedColumns)
+            return ALL_COLUMNS;
+        selectedColumns = new TreeSet<>(selectedColumns);
+        selectedColumns.addAll(wrappedFieldKeys);
+        if (null != getFilter())
+            selectedColumns.addAll(getFilter().getAllFieldKeys());
+        return selectedColumns;
+    }
+
+
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
+
+        selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
         SQLFragment sql = new SQLFragment();
+        sql.appendComment("<ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
         sql.append("(SELECT ");
         String comma = "";
         for (String dataCol : dataCols)
         {
-            sql.append(comma).append("m.").append(dataCol);
-            comma = ", ";
+            // don't need to generate SQL for columns that aren't selected
+            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, dataCol)))
+            {
+                sql.append(comma).append("m.").append(dataCol);
+                comma = ", ";
+            }
         }
         if (null != provisioned)
         {
@@ -818,22 +849,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
-                sql.append(comma);
-                if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
-                || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
-                || propertyColumn.isUniqueIdField())
+                // don't need to generate SQL for columns that aren't selected
+                if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(propertyColumn.getFieldKey()) || propertyColumn.isMvIndicatorColumn())
                 {
-                    sql.append(propertyColumn.getValueSql("self"));
-                }
-                else
-                {
-                    sql.append("(CASE WHEN ")
-                            .append("m.rootMaterialLsid IS NULL THEN ")
-                            .append(propertyColumn.getValueSql("self"))
-                            .append(" ELSE ")
-                            .append(propertyColumn.getValueSql("root"))
-                            .append(" END) AS ")
-                            .append(propertyColumn.getSelectName());
+                    sql.append(comma);
+                    if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
+                            || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
+                            || propertyColumn.isUniqueIdField())
+                    {
+                        sql.append(propertyColumn.getValueSql("self"));
+                    }
+                    else
+                    {
+                        sql.append("(CASE WHEN ")
+                                .append("m.rootMaterialLsid IS NULL THEN ")
+                                .append(propertyColumn.getValueSql("self"))
+                                .append(" ELSE ")
+                                .append(propertyColumn.getValueSql("root"))
+                                .append(" END) AS ")
+                                .append(propertyColumn.getSelectName());
+                    }
+                    comma = ", ";
                 }
             }
         }
@@ -848,6 +884,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
+        sql.appendComment("</ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
 
         return sql;
     }

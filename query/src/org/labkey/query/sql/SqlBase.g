@@ -188,6 +188,8 @@ ESCAPE : 'escape';
 EVERY : 'every';
 EXCEPT : 'except';
 EXISTS : 'exists';
+EXPDESCENDANTSOF : 'expdescendantsof';
+EXPANCESTORSOF : 'expancestorsof';
 FALSE : 'false';
 FROM : 'from';
 FULL : 'full';
@@ -669,7 +671,8 @@ likeEscape
 
 
 inList
-	: compoundExpr -> ^(IN_LIST compoundExpr)
+	: (EXPDESCENDANTSOF|EXPANCESTORSOF)^ OPEN! subQuery CLOSE!
+	| compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 
 

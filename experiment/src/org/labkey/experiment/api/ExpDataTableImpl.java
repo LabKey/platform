@@ -95,6 +95,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
@@ -160,11 +161,21 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.Properties);
 
         var colInputs = addColumn(Column.Inputs);
-        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true), Set.of(colInputs.getFieldKey()));
 
         var colOutputs = addColumn(Column.Outputs);
-        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false), Set.of(colOutputs.getFieldKey()));
+
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        return wrapColumn("_ExpDataTableImpl_object_", _rootTable.getColumn("objectid"));
+    }
+
 
     public List<String> addFileColumns(boolean isFilesTable)
     {

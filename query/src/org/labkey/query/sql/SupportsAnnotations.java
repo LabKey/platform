@@ -15,6 +15,8 @@
  */
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
 /**
@@ -25,5 +27,5 @@ import java.util.Map;
 public interface SupportsAnnotations
 {
     void setAnnotations(Map<String,Object> a);
-    Map<String,Object> getAnnotations();
+    @NotNull Map<String,Object> getAnnotations();
 }

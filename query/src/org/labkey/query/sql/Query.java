@@ -311,6 +311,10 @@ public class Query
             if (_parseErrors.isEmpty() && null != _queryRoot)
                 _queryRoot.declareFields();
 		}
+        catch (QueryParseException qpe)
+        {
+            _parseErrors.add(qpe);
+        }
         catch (UnauthorizedException ex)
         {
             throw ex;
