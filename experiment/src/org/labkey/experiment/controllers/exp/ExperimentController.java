@@ -4933,6 +4933,7 @@ public class ExperimentController extends SpringActionController
     {
         private List<ExpMaterial> _materials;
         private ActionURL _successUrl;
+        private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
 
         @Override
         public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
@@ -5012,28 +5013,36 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(DeriveMaterialForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        public void validateCommand(DeriveMaterialForm form, Errors errors)
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
-            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
+            List<ExpMaterial> lockedSamples = new ArrayList<>();
             for (int i = 0; i < materials.size(); i++)
             {
                 ExpMaterial m = materials.get(i);
+                if (!m.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                {
+                    lockedSamples.add(m);
+                }
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
                     ExpSampleType st = m.getSampleType();
                     inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
-                inputMaterials.put(materials.get(i), inputRole);
+                _inputMaterials.put(materials.get(i), inputRole);
             }
 
+            if (!lockedSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.EditLineage));
+            }
+        }
+
+        @Override
+        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        {
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
@@ -5047,7 +5056,7 @@ public class ExperimentController extends SpringActionController
                 if (!valid)
                     return false;
 
-                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
+                allProperties = helper.getSampleProperties(getViewContext().getRequest(), _inputMaterials.keySet());
             }
             catch (DuplicateMaterialException e)
             {
@@ -5088,7 +5097,7 @@ public class ExperimentController extends SpringActionController
                     outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
                 }
 
-                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+                ExperimentService.get().deriveSamples(_inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
 
                 tx.commit();
 
