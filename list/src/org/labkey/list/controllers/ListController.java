@@ -47,13 +47,10 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.list.ListDefinition;
@@ -535,45 +532,6 @@ public class ListController extends SpringActionController
     }
 
 
-    // Unfortunate query hackery that orders details columns based on default view
-    // TODO: Fix this... build into InsertView (or QueryInsertView or something)
-    private void setDisplayColumnsFromDefaultView(int listId, DataRegion rgn)
-    {
-        ListQueryView lqv = new ListQueryView(new ListQueryForm(listId, getViewContext()), null);
-        List<DisplayColumn> defaultGridColumns = lqv.getDisplayColumns();
-        List<DisplayColumn> displayColumns = new ArrayList<>(defaultGridColumns.size());
-
-        // Save old grid column list
-        List<String> currentColumns = rgn.getDisplayColumnNames();
-
-        rgn.setTable(lqv.getTable());
-
-        for (DisplayColumn dc : defaultGridColumns)
-        {
-            assert null != dc;
-
-            // Occasionally in production this comes back null -- not sure why.  See #8088
-            if (null == dc)
-                continue;
-
-            if (dc instanceof UrlColumn)
-                continue;
-
-            if (dc.getColumnInfo() != null && dc.getColumnInfo().isShownInDetailsView())
-            {
-                displayColumns.add(dc);
-            }
-        }
-
-        rgn.setDisplayColumns(displayColumns);
-
-        // Add all columns that aren't in the default grid view
-        for (String columnName : currentColumns)
-            if (null == rgn.getDisplayColumn(columnName))
-                rgn.addColumn(rgn.getTable().getColumn(columnName));
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ListDefinitionForm>
     {
@@ -607,7 +565,6 @@ public class ListController extends SpringActionController
 
             bb.add(gridButton);
             details.getDataRegion().setButtonBar(bb);
-            setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion());
 
             VBox view = new VBox();
             ListItem item;

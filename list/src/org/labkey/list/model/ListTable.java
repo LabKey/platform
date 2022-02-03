@@ -20,10 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -80,9 +81,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _canAccessPhi;
 
-    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
+    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain, @Nullable ContainerFilter cf)
     {
-        super(StorageProvisioner.createTableInfo(domain), schema);  // domain passed separately to allow @NotNull verification
+        super(StorageProvisioner.createTableInfo(domain), schema, cf);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -308,7 +309,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public ContainerContext getContainerContext()
     {
-        return _list != null ? _userSchema.getContainer() : null;
+        if (_list == null)
+            return null;
+        return new ContainerContext.FieldKeyContext(new FieldKey(null, "Container"));
     }
 
     @Override
@@ -375,7 +378,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             gate = _canAccessPhi;
         else if (DeletePermission.class.equals(perm))
             gate = _canAccessPhi && _list.getAllowDelete();
-        return gate && _list.getContainer().hasPermission(user, perm);
+        return gate && getContainer().hasPermission(user, perm);
     }
 
     @Override
