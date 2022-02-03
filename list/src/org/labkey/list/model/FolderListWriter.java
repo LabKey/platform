@@ -47,7 +47,7 @@ public class FolderListWriter extends BaseFolderWriter
     {
         Container c = ctx.getContainer();
 
-        if (ListService.get().hasLists(c, false))
+        if (ListService.get().hasLists(c, true))
         {
             VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 
