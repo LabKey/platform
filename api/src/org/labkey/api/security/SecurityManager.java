@@ -510,11 +510,6 @@ public class SecurityManager
 
         if (null != sessionUser)
         {
-            if (!sessionUser.isActive())
-            {
-                SecurityManager.logoutUser(request, sessionUser, null);
-                return null;
-            }
             // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
             // group memberships are calculated on every request (but just once)
             assert sessionUser._groups == null;
