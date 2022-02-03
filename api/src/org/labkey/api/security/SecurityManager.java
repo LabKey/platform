@@ -116,6 +116,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.websocket.server.HandshakeRequest;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
@@ -450,7 +451,30 @@ public class SecurityManager
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
 
-    public static User getSessionUser(HttpSession session)
+    public static User getSessionUser(HttpServletRequest request)
+    {
+        User sessionUser = getSessionUser(request.getSession(false));
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            SecurityManager.logoutUser(request, sessionUser, null);
+            return null;
+        }
+        return sessionUser;
+    }
+
+    public static User getSessionUser(HandshakeRequest request)
+    {
+        HttpSession session = (HttpSession) request.getHttpSession();
+        User sessionUser = getSessionUser(session);
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            session.invalidate();
+            return null;
+        }
+        return sessionUser;
+    }
+
+    private static User getSessionUser(HttpSession session)
     {
         User sessionUser = null;
 
@@ -482,7 +506,7 @@ public class SecurityManager
 
         User u = null;
         HttpSession session = request.getSession(false);
-        User sessionUser = getSessionUser(session);
+        User sessionUser = getSessionUser(request);
 
         if (null != sessionUser)
         {
