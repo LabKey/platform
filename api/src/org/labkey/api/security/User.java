@@ -602,7 +602,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         JSONObject props = new JSONObject();
 
         props.put("id", user.getUserId());
-        if (container == null || SecurityManager.canSeeUserDetails(container, currentUser))
+        // check for permission to see user details, users can always see their own details
+        if (container == null || currentUser.equals(user) || SecurityManager.canSeeUserDetails(container, currentUser))
         {
             props.put("email", user.getEmail());
             props.put("phone", user.getPhone());
