@@ -1067,7 +1067,8 @@ public class PropertyController extends SpringActionController
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
             DomainKind domainKind = domainKindName == null ? null : PropertyService.get().getDomainKindByName(domainKindName);
-            Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null, null);
+            Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null, getUser());
+
             Set<String> reservedPrefixes = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNamePrefixes();
 
             if (loader != null)
