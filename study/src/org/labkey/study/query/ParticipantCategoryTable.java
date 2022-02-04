@@ -79,6 +79,10 @@ public class ParticipantCategoryTable extends BaseStudyTable
 
         ActionURL deleteRowsURL = new ActionURL(ParticipantGroupController.DeleteParticipantCategories.class, schema.getContainer());
         setDeleteURL(new DetailsURL(deleteRowsURL, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
+
+        String detailsString = "query/detailsQueryRow.view?schemaName=" + StudySchema.getInstance().getSchemaName() +
+                "&queryName=" + StudySchema.getInstance().getTableInfoParticipantCategory().getName() + "&RowId=${rowId}";
+        setDetailsURL(DetailsURL.fromString(detailsString, getContainerContext()));
     }
 
     @Override
