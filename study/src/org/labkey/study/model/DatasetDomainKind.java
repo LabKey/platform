@@ -488,7 +488,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
                 {
-                    Set<String> reservedNames = getReservedPropertyNames(newDomain, null);
+                    Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
                     Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();

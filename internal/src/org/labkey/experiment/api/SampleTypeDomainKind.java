@@ -383,7 +383,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
         Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
         Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
-
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 

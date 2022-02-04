@@ -405,7 +405,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         {
             Domain d = list.getDomain();
 
-            Set<String> reservedNames = getReservedPropertyNames(d, null);
+            Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
