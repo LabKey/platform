@@ -16,6 +16,8 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -36,6 +38,9 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by adam on 6/5/2016.
@@ -112,6 +117,13 @@ public class TestSsoController extends SpringActionController
         public String getProvider()
         {
             return TestSsoProvider.NAME;
+        }
+
+        @Override
+        @SuppressWarnings("UnusedDeclaration")
+        public @Nullable String getProperties()
+        {
+            return null != _domain ? new JSONObject(Map.of("domain", _domain)).toString() : null;
         }
     }
 }

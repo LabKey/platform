@@ -12,6 +12,8 @@ public abstract class SaveConfigurationForm
     private String _description;
     private boolean _enabled = true;
 
+    protected String _domain; // Member and getters for this are provided for convenience, but each supporting subclass must add this to its custom properties map
+
     public Integer getRowId()
     {
         return _configuration;
@@ -52,6 +54,21 @@ public abstract class SaveConfigurationForm
     public void setEnabled(boolean enabled)
     {
         _enabled = enabled;
+    }
+
+    public String getDomain()
+    {
+        return _domain;
+    }
+
+    public void setDomain(String domain)
+    {
+        _domain = domain;
+    }
+
+    public @Nullable String getProperties()
+    {
+        return null;
     }
 
     public @Nullable String getEncryptedProperties()
