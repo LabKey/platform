@@ -55,7 +55,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -64,7 +63,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -231,7 +229,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> properties = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec pss : BASE_PROPERTIES)
@@ -407,7 +405,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         {
             Domain d = list.getDomain();
 
-            Set<String> reservedNames = getReservedPropertyNames(d);
+            Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();

@@ -18,6 +18,7 @@ package org.labkey.assay;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 
 import java.util.Set;
 
@@ -41,7 +42,7 @@ public class DefaultAssayDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return getAssayReservedPropertyNames();
     }

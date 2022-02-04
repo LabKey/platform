@@ -52,7 +52,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -1068,7 +1067,8 @@ public class PropertyController extends SpringActionController
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
             DomainKind domainKind = domainKindName == null ? null : PropertyService.get().getDomainKindByName(domainKindName);
-            Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null);
+            Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null, getUser());
+
             Set<String> reservedPrefixes = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNamePrefixes();
 
             if (loader != null)
