@@ -52,13 +52,13 @@ public class ListServiceImpl implements ListService
     @Override
     public Map<String, ListDefinition> getLists(Container container)
     {
-        return getLists(container, null, false);
+        return getLists(container, null);
     }
 
     @Override
-    public Map<String, ListDefinition> getLists(Container container, boolean includePicklists, boolean includeProjectAndShared)
+    public Map<String, ListDefinition> getLists(Container container, @Nullable User user)
     {
-        return getLists(container, null, false, includePicklists, includeProjectAndShared);
+        return getLists(container, user, false);
     }
 
     @Override
@@ -67,7 +67,14 @@ public class ListServiceImpl implements ListService
         return getLists(container, user, checkVisibility, true, true);
     }
 
-    private Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists, boolean includeProjectAndShared)
+    @Override
+    public Map<String, ListDefinition> getLists(
+        Container container,
+        @Nullable User user,
+        boolean checkVisibility,
+        boolean includePicklists,
+        boolean includeProjectAndShared
+    )
     {
         Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
         for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists, includeProjectAndShared))
@@ -115,9 +122,16 @@ public class ListServiceImpl implements ListService
     @Nullable
     public ListDefinition getList(Container container, String name)
     {
+        return getList(container, name, true);
+    }
+
+    @Override
+    @Nullable
+    public ListDefinition getList(Container container, String name, boolean includeProjectAndShared)
+    {
         if (name != null)
         {
-            for (ListDef def : ListManager.get().getLists(container))
+            for (ListDef def : ListManager.get().getLists(container, includeProjectAndShared))
             {
                 // DB stores actual name, but can be referenced with different case (#24476)
                 if (name.equalsIgnoreCase(def.getName()))
