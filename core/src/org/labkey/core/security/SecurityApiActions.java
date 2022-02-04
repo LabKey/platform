@@ -588,9 +588,8 @@ public class SecurityApiActions
                 //Study datasets use special logic for determining read/write so we need to ask it directly.
                 //this needs to be fixed in a future release so that we can treat all securable resources the same.
                 Collection<Class<? extends Permission>> permissions;
-                if (resource instanceof Dataset)
+                if (resource instanceof Dataset ds)
                 {
-                    Dataset ds = (Dataset)resource;
                     permissions = ds.getPermissions(user);
                 }
                 else
