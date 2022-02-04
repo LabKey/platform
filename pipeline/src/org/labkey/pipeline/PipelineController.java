@@ -1213,14 +1213,15 @@ public class PipelineController extends SpringActionController
     }
 
     /**
-     * Landing page for ImportFolderFromPipelineAction and  StudyController.ImportStudyFromPipelineAction
+     * Landing page for ImportFolderFromPipelineAction
      */
     @RequiresPermission(AdminPermission.class)
     public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
     {
+        private final List<Container> _importContainers = new ArrayList<>();
+
         private String _navTrail = "Import Folder";
         private java.nio.file.Path _archiveFile;
-        private List<Container> _importContainers = new ArrayList<>();
 
         @Override
         public void validateCommand(StartFolderImportForm form, Errors errors)

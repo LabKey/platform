@@ -18,12 +18,11 @@ package org.labkey.api.protein;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -87,13 +86,6 @@ public interface ProteinService
 
     /** Get seqId for the sequence -- there may be more than one if organism matches */
     List<Integer> getProteinSeqId(String sequence);
-
-    interface QueryViewProvider<FormType>
-    {
-        String getDataRegionName();
-        @Nullable
-        QueryView createView(ViewContext viewContext, FormType form, BindException errors);
-    }
 
     interface FormViewProvider<FormType>
     {

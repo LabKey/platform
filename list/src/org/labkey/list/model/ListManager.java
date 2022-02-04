@@ -130,25 +130,28 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getPicklists(Container container)
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
-        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
-        return scopedLists.stream().filter(ListDef::isPicklist).collect(Collectors.toList());
+        return getLists(container).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
     }
 
     public Collection<ListDef> getLists(Container container)
     {
-        return getLists(container, null, false, true);
+        return getLists(container, true);
     }
 
-    public Collection<ListDef> getLists(Container container, boolean includePicklists)
+    public Collection<ListDef> getLists(Container container, boolean includeProjectAndShared)
     {
-        return getLists(container, null, false, includePicklists);
+        return getLists(container, null, false, true, includeProjectAndShared);
     }
 
-    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
+    public Collection<ListDef> getLists(
+        @NotNull Container container,
+        @Nullable User user,
+        boolean checkVisibility,
+        boolean includePicklists,
+        boolean includeProjectAndShared
+    )
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
-        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
+        Collection<ListDef> scopedLists = getAllScopedLists(container, includeProjectAndShared);
         if (!includePicklists)
             scopedLists = scopedLists.stream().filter(listDef -> !listDef.isPicklist()).collect(Collectors.toList());
         if (checkVisibility)
@@ -157,30 +160,44 @@ public class ListManager implements SearchService.DocumentProvider
             return scopedLists;
     }
 
-    private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
+    /**
+     * Returns all list definitions defined within the scope of the container. This can optionally include list
+     * definitions from the container's project as well as the Shared folder. In the event of a name collision the
+     * closest container's list definition will be returned (i.e. container > project > Shared).
+     */
+    private Collection<ListDef> getAllScopedLists(@NotNull Container container, boolean includeProjectAndShared)
     {
-        // Workbooks can see parent lists. In the event of a name collision, the child workbook list wins.
-        // In future, may add additional ways to cross-folder scope lists
+        List<ListDef> ownLists = _listDefCache.get(container.getId());
+        Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
+
+        if (includeProjectAndShared)
+        {
+            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer().getId()))
+                listDefMap.put(sharedList.getName(), sharedList);
+
+            Container project = container.getProject();
+            if (project != null)
+            {
+                for (ListDef projectList : _listDefCache.get(project.getId()))
+                    listDefMap.put(projectList.getName(), projectList);
+            }
+        }
+
+        // Workbooks can see parent lists.
         if (container.isWorkbook())
         {
-            List<ListDef> parentLists = _listDefCache.get(container.getParent().getId());
-            if (ownLists.size() > 0 && parentLists.size() > 0)
+            Container parent = container.getParent();
+            if (parent != null)
             {
-                Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
-                for (ListDef def : parentLists)
-                {
-                    listDefMap.put(def.getName(), def);
-                }
-                for (ListDef def : ownLists)
-                {
-                    listDefMap.put(def.getName(), def);
-                }
-                return listDefMap.values();
+                for (ListDef parentList : _listDefCache.get(parent.getId()))
+                    listDefMap.put(parentList.getName(), parentList);
             }
-            else if (parentLists.size() > 0)
-                return parentLists;
         }
-        return ownLists;
+
+        for (ListDef ownList : ownLists)
+            listDefMap.put(ownList.getName(), ownList);
+
+        return listDefMap.values();
     }
 
     /**

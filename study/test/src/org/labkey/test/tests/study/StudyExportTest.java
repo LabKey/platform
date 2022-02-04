@@ -114,8 +114,8 @@ public class StudyExportTest extends StudyManualTest
         Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
         waitForElement(gridRow);
         click(gridRow);
-        _fileBrowserHelper.selectImportDataAction("Import Study");
-        waitForText("Import Study from Pipeline");
+        _fileBrowserHelper.selectImportDataAction("Import Folder");
+        waitForText("Import Folder from Pipeline");
         clickButton("Start Import");
 
         // wait for study & specimen (maybe) load

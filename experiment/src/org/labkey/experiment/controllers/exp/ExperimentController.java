@@ -83,6 +83,7 @@ import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Identifiable;
@@ -1521,7 +1522,7 @@ public class ExperimentController extends SpringActionController
             String focus = form.getFocus();
             String focusType = form.getFocusType();
 
-            ExpRunImpl experimentRun = form.lookupRun();
+            ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
 
             ExperimentRunGraph.RunGraphFiles files;
@@ -1564,7 +1565,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
-            _experimentRun = form.lookupRun();
+            _experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), _experimentRun, getViewContext());
 
             VBox vbox = new VBox();
@@ -1810,9 +1811,39 @@ public class ExperimentController extends SpringActionController
             runMaterialOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             HBox inputsView = new HBox(runDataInputsView, runMaterialInputsView);
-            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredInputsView = new HBox();
 
-            return new VBox(toggleView, inputsView, outputsView, applicationsView);
+            var expService = ExperimentService.get();
+            expService.getRunInputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredInputsView.addView(queryView);
+                }
+            });
+            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredOutputsView = new HBox();
+            expService.getRunOutputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredOutputsView.addView(queryView);
+                }
+            });
+
+            var vBox = new VBox();
+            vBox.addView(toggleView);
+            vBox.addView(inputsView);
+            if (!registeredInputsView.isEmpty())
+                vBox.addView(registeredInputsView);
+            vBox.addView(outputsView);
+            if (!registeredOutputsView.isEmpty())
+                vBox.addView(registeredOutputsView);
+            vBox.addView(applicationsView);
+
+            return vBox;
         }
     }
 
@@ -4933,6 +4964,7 @@ public class ExperimentController extends SpringActionController
     {
         private List<ExpMaterial> _materials;
         private ActionURL _successUrl;
+        private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
 
         @Override
         public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
@@ -5012,28 +5044,36 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(DeriveMaterialForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        public void validateCommand(DeriveMaterialForm form, Errors errors)
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
-            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
+            List<ExpMaterial> lockedSamples = new ArrayList<>();
             for (int i = 0; i < materials.size(); i++)
             {
                 ExpMaterial m = materials.get(i);
+                if (!m.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                {
+                    lockedSamples.add(m);
+                }
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
                     ExpSampleType st = m.getSampleType();
                     inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
-                inputMaterials.put(materials.get(i), inputRole);
+                _inputMaterials.put(materials.get(i), inputRole);
             }
 
+            if (!lockedSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.EditLineage));
+            }
+        }
+
+        @Override
+        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        {
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
@@ -5047,7 +5087,7 @@ public class ExperimentController extends SpringActionController
                 if (!valid)
                     return false;
 
-                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
+                allProperties = helper.getSampleProperties(getViewContext().getRequest(), _inputMaterials.keySet());
             }
             catch (DuplicateMaterialException e)
             {
@@ -5088,7 +5128,7 @@ public class ExperimentController extends SpringActionController
                     outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
                 }
 
-                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+                ExperimentService.get().deriveSamples(_inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
 
                 tx.commit();
 
@@ -6635,7 +6675,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 
@@ -6674,7 +6714,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 

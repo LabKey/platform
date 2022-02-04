@@ -92,6 +92,8 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
         for (String message : options.getMessages())
             _ctx.getLogger().info(message);
+
+        throw new IllegalStateException("StudyImport shouldn't be used!! Inform Adam.");
     }
 
     private static ImportOptions cloneImportOptions(StudyImportContext ctx)

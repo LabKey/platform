@@ -59,7 +59,6 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
-        disableContainerFilterSelection();
     }
 
     @Override
