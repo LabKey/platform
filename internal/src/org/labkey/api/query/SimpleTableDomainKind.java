@@ -241,13 +241,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
-    {
-        return getReservedPropertyNames(domain, null);
-    }
-
-    @Override
-    public Set<String> getReservedPropertyNames(Domain domain, @Nullable User user)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         SimpleUserSchema.SimpleTable table = getTable(domain, user);
         if (table != null)

@@ -56,7 +56,7 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
             }
 
             @Override
-            public Set<String> getReservedPropertyNames(Domain domain)
+            public Set<String> getReservedPropertyNames(Domain domain, User user)
             {
                 return null;
             }

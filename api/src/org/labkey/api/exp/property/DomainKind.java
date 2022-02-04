@@ -101,15 +101,7 @@ abstract public class DomainKind<T>  implements Handler<String>
      * the names of columns from the hard table underlying this type
      * @return set of strings containing the names. This will be compared ignoring case
      */
-    abstract public Set<String> getReservedPropertyNames(Domain domain);
-
-    /**
-     * Override this function if the user is necessary for getReservedPropertyNames
-     */
-    public Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return getReservedPropertyNames(domain);
-    }
+    abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
 
     public Set<String> getReservedPropertyNamePrefixes()
     {

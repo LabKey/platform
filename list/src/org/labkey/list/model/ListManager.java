@@ -1162,7 +1162,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (null != ti)
         {
             Map<String, String> recordChangedMap = new CaseInsensitiveHashMap<>();
-            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain());
+            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), null);
 
             // Match props to columns
             for (Map.Entry<String, Object> entry : props.entrySet())
