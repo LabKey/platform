@@ -7090,7 +7090,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain, null);
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
