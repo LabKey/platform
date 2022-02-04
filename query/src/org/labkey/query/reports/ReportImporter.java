@@ -18,8 +18,8 @@ package org.labkey.query.reports;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -34,7 +34,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -50,7 +49,7 @@ import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADA
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class ReportImporter implements FolderImporter<Folder>
+public class ReportImporter implements FolderImporter
 {
     @Override
     public String getDataType()
@@ -65,7 +64,7 @@ public class ReportImporter implements FolderImporter<Folder>
     }
 
     @Override
-    public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
+    public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
         {
@@ -106,7 +105,7 @@ public class ReportImporter implements FolderImporter<Folder>
 
     @Override
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
     {
         // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
         // fire the query change listeners for older archives to fix-up these dataset label references
@@ -143,7 +142,7 @@ public class ReportImporter implements FolderImporter<Folder>
     }
 
     @Override
-    public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
+    public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return ctx.getDir("reports") != null;
     }
@@ -151,7 +150,7 @@ public class ReportImporter implements FolderImporter<Folder>
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override
-        public FolderImporter<Folder> create()
+        public FolderImporter create()
         {
             return new ReportImporter();
         }

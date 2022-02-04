@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -42,9 +41,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -81,7 +77,6 @@ import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -102,10 +97,8 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.springframework.validation.BindException;
 
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -564,20 +557,6 @@ public class StudyServiceImpl implements StudyService
     public Set<? extends Study> getAllStudies(Container root)
     {
         return StudyManager.getInstance().getAllStudies(root);
-    }
-
-    @Override
-    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
-    {
-        try
-        {
-            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot, options));
-            return true;
-        }
-        catch (PipelineValidationException e)
-        {
-            return false;
-        }
     }
 
     @Override

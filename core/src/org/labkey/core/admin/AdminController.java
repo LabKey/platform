@@ -4557,7 +4557,6 @@ public class AdminController extends SpringActionController
             User user = getUser();
             Container container = getContainer();
             PipeRoot pipelineRoot;
-            boolean isStudy = false;
             Path pipelineUnzipDir;  // Should be local & writable
             PipelineUrls pipelineUrlProvider;
 
@@ -4607,16 +4606,11 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            // get the main xml file from the unzipped import archive
+            // get the folder.xml file from the unzipped import archive
             Path archiveXml = pipelineUnzipDir.resolve("folder.xml");
             if (!Files.exists(archiveXml))
             {
-                archiveXml = pipelineUnzipDir.resolve( "study.xml");
-                isStudy = true;
-            }
-            if (!Files.exists(archiveXml))
-            {
-                errors.reject("folderImport", "This archive doesn't contain a folder.xml or study.xml file.");
+                errors.reject("folderImport", "This archive doesn't contain a folder.xml file.");
                 return false;
             }
 
@@ -4630,16 +4624,13 @@ public class AdminController extends SpringActionController
             if (form.isAdvancedImportOptions())
             {
                 // archiveFile is the zip of the source template folder located in the current container's unzip dir
-                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), fiConfig.archiveFile, isStudy, options, fiConfig.fromTemplateSourceFolder);
+                _successURL = pipelineUrlProvider.urlStartFolderImport(getContainer(), fiConfig.archiveFile, options, fiConfig.fromTemplateSourceFolder);
                 return true;
             }
 
             // finally, create the study or folder import pipeline job
             _successURL = pipelineUrlProvider.urlBegin(container);
-            if (isStudy)
-                StudyService.get().runStudyImportJob(container, user, url, archiveXml, fiConfig.originalFileName, errors, pipelineRoot, options);
-            else
-                PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, pipelineRoot, options);
+            PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, pipelineRoot, options);
 
             return !errors.hasErrors();
         }

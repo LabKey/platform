@@ -1294,8 +1294,6 @@ public class PipelineController extends SpringActionController
         @Override
         public ModelAndView getView(StartFolderImportForm form, boolean reshow, BindException errors)
         {
-            if (form.isAsStudy())
-                _navTrail = "Import Study";
             _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
 
             // Remove as part of Issue #43835
@@ -1317,7 +1315,7 @@ public class PipelineController extends SpringActionController
                 // iterate over the selected containers, or just the current container in the default case, and unzip the archive if necessary
                 for (Container container : _importContainers)
                 {
-                    java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, form.isAsStudy() ? "study.xml" : "folder.xml", errors);
+                    java.nio.file.Path archiveXml = PipelineManager.getArchiveXmlFile(container, _archiveFile, "folder.xml", errors);
                     if (errors.hasErrors())
                         return false;
 
@@ -1338,7 +1336,7 @@ public class PipelineController extends SpringActionController
                     if (null != complianceService)
                         options.setActivity(complianceService.getCurrentActivity(getViewContext()));
 
-                    success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container), form.isAsStudy(), errors);
+                    success = success && createImportPipelineJob(container, user, options, containerArchiveXmlMap.get(container));
                 }
             }
 
@@ -1354,24 +1352,12 @@ public class PipelineController extends SpringActionController
             return success;
         }
 
-        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, java.nio.file.Path archiveXml, boolean asStudy, BindException errors)
+        private boolean createImportPipelineJob(Container container, User user, ImportOptions options, java.nio.file.Path archiveXml)
         {
             PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
             ActionURL url = getViewContext().getActionURL();
 
-            if (asStudy)
-            {
-                StudyService ss = StudyService.get();
-                if (ss == null)
-                {
-                    errors.reject(ERROR_MSG, "Study import failed, Study service not enabled.");
-                    return false;
-                }
-
-                return ss.runStudyImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), errors, pipelineRoot, options);
-            }
-            else
-                return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), pipelineRoot, options);
+            return PipelineService.get().runFolderImportJob(container, user, url, archiveXml, _archiveFile.getFileName().toString(), pipelineRoot, options);
         }
 
         @Override
@@ -1403,7 +1389,6 @@ public class PipelineController extends SpringActionController
     {
         private boolean _fromZip;
         private boolean _fromTemplateSourceFolder;
-        private boolean _asStudy;
         private String _filePath;
         private boolean _validateQueries;
         private boolean _createSharedDatasets;
@@ -1492,16 +1477,6 @@ public class PipelineController extends SpringActionController
         public void setFolderRowIds(List<Integer> folderRowIds)
         {
             _folderRowIds = folderRowIds;
-        }
-
-        public boolean isAsStudy()
-        {
-            return _asStudy;
-        }
-
-        public void setAsStudy(boolean asStudy)
-        {
-            _asStudy = asStudy;
         }
 
         public boolean isFromZip()
@@ -1755,11 +1730,9 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlStartFolderImport(Container container, @NotNull java.nio.file.Path archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
+        public ActionURL urlStartFolderImport(Container container, @NotNull java.nio.file.Path archiveFile, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
-            if (asStudy)
-                url.addParameter("asStudy", true);
 
             return addStartImportParameters(url, archiveFile, options, fromTemplateSourceFolder);
         }
