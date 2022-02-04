@@ -677,7 +677,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain, null);
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
+
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
