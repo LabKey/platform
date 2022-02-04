@@ -800,6 +800,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             new FieldKey(null, "objectid"),
             new FieldKey(null, "LSID"),                 // Flag
             new FieldKey(null, "rootMaterialLsid"),     // IsAliquot
+            new FieldKey(null, "aliquotedfromlsid"),    // AliquotedFrom
             new FieldKey(null, "SourceApplicationId"),  // SourceProtocolApplication
             new FieldKey(null, "runId"),                // Run, RunApplication
             new FieldKey(null, "CpasType"));            // SampleSet
