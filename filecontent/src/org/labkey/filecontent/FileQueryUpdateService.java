@@ -109,6 +109,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
         Map<String, Object> rowMap = new HashMap<>();
         Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+
+        // Since we are fetching the "urlValue" of field properties we need to
+        // include any columns needed by the URL renderers to resolve.
+        for (ColumnInfo col : cols.values())
+            col.getRenderer().addQueryFieldKeys(queryColumns);
+        cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+
         try (Results results = new TableSelector(getQueryTable(), cols.values(), filter, null).getResults())
         {
             if (results.next())
