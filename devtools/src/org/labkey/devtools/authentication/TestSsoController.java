@@ -39,7 +39,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -56,7 +55,7 @@ public class TestSsoController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class TestSsoAction extends SimpleViewAction<AuthenticationConfigurationForm>
+    public static class TestSsoAction extends SimpleViewAction<AuthenticationConfigurationForm>
     {
         @Override
         public ModelAndView getView(AuthenticationConfigurationForm form, BindException errors)
@@ -80,6 +79,7 @@ public class TestSsoController extends SpringActionController
             return _email;
         }
 
+        @SuppressWarnings("unused")
         public void setEmail(String email)
         {
             _email = email;
@@ -88,7 +88,7 @@ public class TestSsoController extends SpringActionController
 
     @AllowedDuringUpgrade
     @RequiresNoPermission
-    public class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
+    public static class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
     {
         @Override
         public @NotNull AuthenticationResponse validateAuthentication(TestSsoForm form, BindException errors) throws Exception
@@ -103,7 +103,7 @@ public class TestSsoController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class TestSsoSaveConfigurationAction extends SsoSaveConfigurationAction<TestSsoSaveConfigurationForm, TestSsoConfiguration>
+    public static class TestSsoSaveConfigurationAction extends SsoSaveConfigurationAction<TestSsoSaveConfigurationForm, TestSsoConfiguration>
     {
         @Override
         public void validate(TestSsoSaveConfigurationForm form, Errors errors)
