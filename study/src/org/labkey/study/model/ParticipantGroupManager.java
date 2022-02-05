@@ -118,7 +118,7 @@ public class ParticipantGroupManager
 
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
     {
-        ParticipantCategoryImpl category = ParticipantCategoryCache.getParticipantCategoryForLabel(c, label);
+        ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
         if (category != null)
             return category;
 
@@ -150,7 +150,7 @@ public class ParticipantGroupManager
             return _getParticipantCategories(c, user);
 
         List<ParticipantCategoryImpl> categories = new ArrayList<>();
-        Collection<ParticipantCategoryImpl> types = ParticipantCategoryCache.getParticipantCategoryForType(c, type);
+        Collection<ParticipantCategoryImpl> types = ParticipantGroupCache.getParticipantCategoryForType(c, type);
         if (types != null)
             categories.addAll(types);
 
@@ -163,7 +163,7 @@ public class ParticipantGroupManager
             return _getParticipantCategories(c, user);
 
         List<ParticipantCategoryImpl> categories = new ArrayList<>();
-        ParticipantCategoryImpl category = ParticipantCategoryCache.getParticipantCategoryForLabel(c, label);
+        ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
         if (category != null)
             categories.add(category);
 
@@ -437,17 +437,12 @@ public class ParticipantGroupManager
 
     private List<ParticipantCategoryImpl> _getParticipantCategories(Container c, User user)
     {
-        Collection<ParticipantCategoryImpl> categories = ParticipantCategoryCache.getParticipantCategories(c);
+        Collection<ParticipantCategoryImpl> categories = ParticipantGroupCache.getParticipantCategories(c);
         List<ParticipantCategoryImpl> filtered = new ArrayList<>();
 
         // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
         categories.stream().filter(category -> category.canRead(c, user)).forEach(category -> {
-            ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
-
-            List<ParticipantGroup> list = getParticipantGroups(c, user, pc);
-            // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
-            pc.setGroups(list.toArray(new ParticipantGroup[list.size()]));
-            filtered.add(pc);
+            filtered.add(category);
         });
         return filtered;
     }
@@ -479,7 +474,7 @@ public class ParticipantGroupManager
                             "the API to create categories and groups separately.");
             }
             transaction.commit();
-            ParticipantCategoryCache.uncache(c);
+            ParticipantGroupCache.uncache(c);
 
             if (def.isNew())
                 errors = fireCreatedCategory(user, ret);
@@ -517,7 +512,7 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
             transaction.commit();
-            ParticipantCategoryCache.uncache(c);
+            ParticipantGroupCache.uncache(c);
 
             if (def.isNew())
                 errors = fireCreatedCategory(user, ret);
@@ -742,7 +737,6 @@ public class ParticipantGroupManager
             // clear the category->group cache if the category has been changed for this group
             if (curGroup != null && (curGroup.getCategoryId() != group.getCategoryId()))
             {
-                ParticipantCategoryImpl category = ParticipantCategoryCache.getParticipantCategory(c, curGroup.getCategoryId());
                 ParticipantGroupCache.uncache(c);
             }
 
@@ -881,7 +875,7 @@ public class ParticipantGroupManager
     @Nullable
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
     {
-        return ParticipantCategoryCache.getParticipantCategory(c, rowId);
+        return ParticipantGroupCache.getParticipantCategory(c, rowId);
     }
 
     public ParticipantGroup getParticipantGroup(Container container, User user, int rowId)
@@ -912,7 +906,9 @@ public class ParticipantGroupManager
     {
         if (!def.isNew())
         {
-            return ParticipantGroupCache.getParticipantGroupsForCategory(c, def.getRowId()).stream().toList();
+            ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategory(c, def.getRowId());
+            if (category != null)
+                return Arrays.stream(category.getGroups()).toList();
         }
         return Collections.emptyList();
     }
@@ -1010,9 +1006,10 @@ public class ParticipantGroupManager
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").append(" WHERE RowId = ?");
             executor.execute(sql.getSQL(), def.getRowId());
 
-            ParticipantGroupCache.uncache(c);
-            ParticipantCategoryCache.uncache(c);
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.categoryDeleted(c, user, def);
+            AuditLogService.get().addEvent(user, event);
 
+            ParticipantGroupCache.uncache(c);
             transaction.commit();
 
             List<Throwable> errors = fireDeleteCategory(user, def);
@@ -1059,9 +1056,11 @@ public class ParticipantGroupManager
                     // delete the participant category
                     SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
                     executor.execute(sqlCat.getSQL(), cat.getRowId());
-                    ParticipantCategoryCache.uncache(c);
                 }
             }
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.groupDeleted(c, user, group);
+            AuditLogService.get().addEvent(user, event);
+
             transaction.commit();
             ParticipantGroupCache.uncache(c);
         }
@@ -1165,8 +1164,7 @@ public class ParticipantGroupManager
 
     public void clearCache(Container c)
     {
-        ParticipantCategoryCache.uncache(c);
-        ParticipantCategoryCache.uncache(c);
+        ParticipantGroupCache.uncache(c);
     }
 
     public static class ParticipantGroupTestCase extends Assert

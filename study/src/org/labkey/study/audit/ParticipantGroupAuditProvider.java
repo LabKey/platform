@@ -217,13 +217,23 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         {
             ObjectFactory<ParticipantCategoryImpl> factory = ObjectFactory.Registry.getFactory(ParticipantCategoryImpl.class);
             String comment = "The participant category was " + (prevCategory == null ? "created" : "modified");
-            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newCategory.getRowId());
+            var event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newCategory.getRowId());
 
             if (prevCategory != null)
                 event.setOldRecordMap(createEncodedRecordMap(c, factory.toMap(prevCategory, null)));
             event.setNewRecordMap(createEncodedRecordMap(c, factory.toMap(newCategory, null)));
 
             return event;
+        }
+
+        public static ParticipantGroupAuditEvent categoryDeleted(
+                Container c,
+                User user,
+                ParticipantCategoryImpl category)
+        {
+            return new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c,
+                    "The participant category : " + category.getLabel() + " was deleted",
+                    category.getRowId());
         }
 
         @Nullable
@@ -235,7 +245,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         {
             ObjectFactory<ParticipantGroup> factory = ObjectFactory.Registry.getFactory(ParticipantGroup.class);
             String comment = "The participant group was " + (prevGroup == null ? "created" : "modified");
-            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newGroup.getCategoryId());
+            var event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newGroup.getCategoryId());
             event.setParticipantGroup(newGroup.getRowId());
 
             event.setNewRecordMap(createEncodedRecordMap(c, factory.toMap(newGroup, null)));
@@ -245,6 +255,19 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
                 if (event.getNewRecordMap().equals(event.getOldRecordMap()))
                     return null;
             }
+
+            return event;
+        }
+
+        public static ParticipantGroupAuditEvent groupDeleted(
+                Container c,
+                User user,
+                ParticipantGroup group)
+        {
+            var event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c,
+                    "The participant group : " + group.getLabel() + " was deleted",
+                    group.getCategoryId());
+            event.setParticipantGroup(group.getRowId());
 
             return event;
         }
@@ -264,7 +287,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
             }
             Map<String, Object> filteredMap = bean.entrySet().stream()
                     .filter(e -> _allowedFields.contains(e.getKey()))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() != null ? e.getValue() : ""));
 
             return AbstractAuditTypeProvider.encodeForDataMap(c, filteredMap);
         }

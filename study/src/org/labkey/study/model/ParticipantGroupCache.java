@@ -31,16 +31,22 @@ public class ParticipantGroupCache
 
     private static class ParticipantGroupCollections
     {
-        private final Map<Integer, ParticipantGroup> _rowIdMap;
-        private final Map<String, ParticipantGroup> _labelMap;
-        private final Map<Integer, Collection<ParticipantGroup>> _categoryMap;
+        private final Map<Integer, ParticipantCategoryImpl> _categoryRowIdMap;
+        private final Map<String, ParticipantCategoryImpl> _categoryLabelMap;
+        private final Map<String, Collection<ParticipantCategoryImpl>> _typeMap;
+        private final Map<Integer, ParticipantGroup> _groupRowIdMap;
+        private final Map<String, ParticipantGroup> _groupLabelMap;
 
         private ParticipantGroupCollections(Container c)
         {
-            Map<Integer, ParticipantGroup> rowIdMap = new HashMap<>();
-            Map<String, ParticipantGroup> labelMap = new HashMap<>();
+            Map<Integer, ParticipantGroup> groupRowIdMap = new HashMap<>();
+            Map<String, ParticipantGroup> groupLabelMap = new HashMap<>();
             Map<Integer, Collection<ParticipantGroup>> categoryMap = new HashMap<>();
+            Map<Integer, ParticipantCategoryImpl> categoryRowIdMap = new HashMap<>();
+            Map<String, ParticipantCategoryImpl> categoryLabelMap = new HashMap<>();
+            Map<String, Collection<ParticipantCategoryImpl>> typeMap = new HashMap<>();
 
+            // collect the participant groups in this container
             new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), SimpleFilter.createContainerFilter(c), null).forEach(ParticipantGroup.class, group -> {
                 // get the participants assigned to this group
                 Filter filter = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
@@ -51,59 +57,101 @@ public class ParticipantGroupCache
                 if (category != null)
                     group.setCategoryLabel(category.getLabel());
 
-                rowIdMap.put(group.getRowId(), group);
-                labelMap.put(group.getLabel(), group);
+                groupRowIdMap.put(group.getRowId(), group);
+                groupLabelMap.put(group.getLabel(), group);
                 categoryMap.computeIfAbsent(group.getCategoryId(), (l) -> new ArrayList<>()).add(group);
             });
 
-            _rowIdMap = Collections.unmodifiableMap(rowIdMap);
-            _labelMap = Collections.unmodifiableMap(labelMap);
-            _categoryMap = Collections.unmodifiableMap(categoryMap);
+            // collect the participant categories in this container
+            new TableSelector(ParticipantGroupManager.getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(c), null).forEach(ParticipantCategoryImpl.class, pc -> {
+
+                // attach groups to this category
+                if (categoryMap.containsKey(pc.getRowId()))
+                    pc.setGroups(categoryMap.get(pc.getRowId()).toArray(ParticipantGroup[]::new));
+                else
+                    pc.setGroups(new ParticipantGroup[0]);
+                categoryRowIdMap.put(pc.getRowId(), pc);
+                categoryLabelMap.put(pc.getLabel(), pc);
+                typeMap.computeIfAbsent(pc.getType(), (l) -> new ArrayList<>()).add(pc);
+            });
+
+            _categoryRowIdMap = Collections.unmodifiableMap(categoryRowIdMap);
+            _categoryLabelMap = Collections.unmodifiableMap(categoryLabelMap);
+            _typeMap = Collections.unmodifiableMap(typeMap);
+
+            _groupRowIdMap = Collections.unmodifiableMap(groupRowIdMap);
+            _groupLabelMap = Collections.unmodifiableMap(groupLabelMap);
         }
 
-        private @Nullable ParticipantGroup getForRowId(int rowId)
+        private @Nullable ParticipantGroup getGroupForRowId(int rowId)
         {
-            return _rowIdMap.get(rowId);
+            return _groupRowIdMap.get(rowId);
         }
 
-        private @Nullable ParticipantGroup getForLabel(String name)
+        private @Nullable ParticipantGroup getGroupForLabel(String name)
         {
-            return _labelMap.get(name);
-        }
-
-        private @Nullable Collection<ParticipantGroup> getParticipantGroupsForCategory(int categoryId)
-        {
-            return _categoryMap.get(categoryId);
+            return _groupLabelMap.get(name);
         }
 
         private @NotNull Collection<ParticipantGroup> getParticipantGroups()
         {
-            return _rowIdMap.values();
+            return _groupRowIdMap.values();
+        }
+
+        private @Nullable ParticipantCategoryImpl getCategoryForRowId(int rowId)
+        {
+            return _categoryRowIdMap.get(rowId);
+        }
+
+        private @Nullable ParticipantCategoryImpl getCategoryForLabel(String label)
+        {
+            return _categoryLabelMap.get(label);
+        }
+
+        private @Nullable Collection<ParticipantCategoryImpl> getCategoryForType(String type)
+        {
+            return _typeMap.get(type);
+        }
+
+        private @NotNull Collection<ParticipantCategoryImpl> getParticipantCategories()
+        {
+            return _categoryRowIdMap.values();
         }
     }
 
     static @Nullable ParticipantGroup getParticipantGroup(Container c, int rowId)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c).getForRowId(rowId);
+        return PARTICIPANT_GROUP_CACHE.get(c).getGroupForRowId(rowId);
     }
 
     static @Nullable ParticipantGroup getParticipantGroup(Container c, String label)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c).getForLabel(label);
-    }
-
-    static @NotNull Collection<ParticipantGroup> getParticipantGroupsForCategory(Container c, int categoryId)
-    {
-        Collection<ParticipantGroup> groups = PARTICIPANT_GROUP_CACHE.get(c).getParticipantGroupsForCategory(categoryId);
-        if (groups != null)
-            return groups;
-
-        return Collections.emptyList();
+        return PARTICIPANT_GROUP_CACHE.get(c).getGroupForLabel(label);
     }
 
     static @NotNull Collection<ParticipantGroup> getParticipantGroups(Container c)
     {
         return PARTICIPANT_GROUP_CACHE.get(c).getParticipantGroups();
+    }
+
+    static @Nullable ParticipantCategoryImpl getParticipantCategory(Container c, int rowId)
+    {
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForRowId(rowId);
+    }
+
+    static @Nullable ParticipantCategoryImpl getParticipantCategoryForLabel(Container c, String label)
+    {
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForLabel(label);
+    }
+
+    static @Nullable Collection<ParticipantCategoryImpl> getParticipantCategoryForType(Container c, String type)
+    {
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForType(type);
+    }
+
+    static @NotNull Collection<ParticipantCategoryImpl> getParticipantCategories(Container c)
+    {
+        return PARTICIPANT_GROUP_CACHE.get(c).getParticipantCategories();
     }
 
     public static void uncache(Container c)
