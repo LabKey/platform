@@ -138,7 +138,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
-        addAllowablePermission(DataClassReadPermission.class);
         // leaving commented out until branch that supports merge for data classes is merged
 //        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
 //        setImportURL(new DetailsURL(url));
@@ -544,8 +543,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (perm == ReadPermission.class)
         {
             if (_dataClass.isMedia())
-                return super.hasPermission(user, MediaReadPermission.class);
-            return super.hasPermission(user, DataClassReadPermission.class);
+                return getContainer().hasPermission(user, MediaReadPermission.class);
+            return getContainer().hasPermission(user, DataClassReadPermission.class);
         }
         return super.hasPermission(user, perm);
     }

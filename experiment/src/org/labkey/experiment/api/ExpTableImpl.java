@@ -77,7 +77,6 @@ abstract public class ExpTableImpl<C extends Enum>
         setName(name);
         _allowablePermissions.add(DeletePermission.class);
         _allowablePermissions.add(ReadPermission.class);
-        _allowablePermissions.add(DataClassReadPermission.class);
     }
 
     @Override
