@@ -2912,7 +2912,7 @@ public class QueryController extends SpringActionController
 
     @CSRF(CSRF.Method.NONE) // No need for CSRF token --- this is a non-mutating action that supports POST to allow for large payloads, see #36056
     @ActionNames("selectRows, getQuery")
-    @RequiresAnyOf({ReadPermission.class, MediaReadPermission.class, NotebookReadPermission.class, DataClassReadPermission.class, AssayReadPermission.class})
+    @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)
     public class SelectRowsAction extends ReadOnlyApiAction<APIQueryForm>

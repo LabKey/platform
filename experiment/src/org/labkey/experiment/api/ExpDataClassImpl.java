@@ -145,6 +145,12 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         _object.setCategory(category);
     }
 
+    @Override
+    public boolean isMedia()
+    {
+        return ExpSchema.DataClassCategoryType.media.name().equalsIgnoreCase(getCategory());
+    }
+
     @Nullable
     @Override
     public ExpSampleType getSampleType()

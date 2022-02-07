@@ -87,6 +87,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -137,6 +138,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(DataClassReadPermission.class);
         // leaving commented out until branch that supports merge for data classes is merged
 //        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
 //        setImportURL(new DetailsURL(url));
@@ -540,7 +542,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (perm == ReadPermission.class)
+        {
+            if (_dataClass.isMedia())
+                return super.hasPermission(user, MediaReadPermission.class);
             return super.hasPermission(user, DataClassReadPermission.class);
+        }
         return super.hasPermission(user, perm);
     }
 
