@@ -276,7 +276,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setGridURL(gridURL);
 
         if (null != colKey)
-            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getAlias())));
+            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getName())));
 
         if (!listDef.getAllowUpload() || !_canAccessPhi)
             setImportURL(LINK_DISABLER);

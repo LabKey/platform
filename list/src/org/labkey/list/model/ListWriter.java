@@ -90,7 +90,7 @@ public class ListWriter
     {
         // We exclude picklists because they contain just sampleIds, which will be different in the new container.
         // Picklists are meant to be transient, so not including them in the export makes sense.
-        Map<String, ListDefinition> lists = ListService.get().getLists(c, false, true);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false, false, true);
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())

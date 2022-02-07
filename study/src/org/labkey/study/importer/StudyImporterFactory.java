@@ -21,8 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cloud.CloudArchiveImporterSupport;
@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.pipeline.StudyImportSpecimenTask;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.FileUtil;
@@ -37,13 +38,11 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
-import org.labkey.api.specimen.pipeline.StudyImportSpecimenTask;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
+import org.labkey.study.writer.StudySerializationRegistry;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -63,7 +62,7 @@ import java.util.TreeMap;
 public class StudyImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter<?> create()
+    public FolderImporter create()
     {
         return new StudyFolderImporter();
     }
@@ -74,7 +73,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         return 60;
     }
 
-    public static class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
+    public static class StudyFolderImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -89,7 +88,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
@@ -177,27 +176,24 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
-        @Nullable
         @Override
-        public Map<String, Boolean> getChildrenDataTypes(ImportContext ctx) throws ImportException
+        public @Nullable Map<String, Boolean> getChildrenDataTypes(String archiveFilePath, User user, Container container) throws ImportException, IOException
         {
-            StudyImportContext sCtx = null;
-            if (ctx instanceof StudyImportContext)
-                sCtx = (StudyImportContext)ctx;
+            StudyImportContext sCtx = getImportContext(archiveFilePath, user, container);
 
             Map<String, Boolean> dataTypes = new TreeMap<>();
-            for (InternalStudyImporter studyImporter : StudySerializationRegistryImpl.get().getInternalStudyImporters())
+            for (InternalStudyImporter studyImporter : StudySerializationRegistry.get().getInternalStudyImporters())
             {
                 if (studyImporter.getDataType() != null)
                     dataTypes.put(studyImporter.getDataType(), sCtx != null && studyImporter.isValidForImportArchive(sCtx, sCtx.getRoot()));
             }
 
-            for (SimpleStudyImporter importer : StudySerializationRegistryImpl.get().getSimpleStudyImporters())
+            for (SimpleStudyImporter importer : StudySerializationRegistry.get().getSimpleStudyImporters())
             {
                 if (importer.getDataType() != null)
                     dataTypes.put(importer.getDataType(), sCtx != null && importer.isValidForImportArchive(sCtx, sCtx.getRoot()));
@@ -210,8 +206,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             return dataTypes;
         }
 
-        @Override
-        public ImportContext getImporterSpecificImportContext(String archiveFilePath, User user, Container container) throws IOException
+        @Nullable StudyImportContext getImportContext(String archiveFilePath, User user, Container container) throws IOException
         {
             if (archiveFilePath != null)
             {
@@ -231,7 +226,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getDir("study") != null;
         }

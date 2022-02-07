@@ -18,8 +18,8 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
@@ -30,7 +30,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
@@ -52,7 +52,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         return new FolderTypeImporter();
     }
 
-    public class FolderTypeImporter implements FolderImporter<FolderDocument.Folder>
+    public static class FolderTypeImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -67,10 +67,10 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             Container c = ctx.getContainer();
-            FolderDocument.Folder folderXml = ctx.getXml();
+            Folder folderXml = ctx.getXml();
             ctx.getLogger().debug("[" + c.getPath() + "] Importing folder properties from: " + root.getLocation());
 
             if (folderXml.isSetDefaultDateFormat())
@@ -191,13 +191,13 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getXml() != null;
         }

@@ -1379,8 +1379,6 @@ api/src/org/labkey/api/study/StudyCachable.java -text
 api/src/org/labkey/api/study/StudyEntity.java -text
 api/src/org/labkey/api/study/StudyFolderTabs.java -text
 api/src/org/labkey/api/study/StudyManagementOption.java -text
-api/src/org/labkey/api/study/StudyReloadSource.java -text
-api/src/org/labkey/api/study/StudySerializationRegistry.java -text
 api/src/org/labkey/api/study/StudySnapshotType.java -text
 api/src/org/labkey/api/study/StudyUrls.java -text
 api/src/org/labkey/api/study/Treatment.java -text
@@ -3173,11 +3171,7 @@ study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
-study/src/org/labkey/study/importer/StudyImportJob.java -text
-study/src/org/labkey/study/importer/StudyImportProvider.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
-study/src/org/labkey/study/importer/StudyReload.java -text
-study/src/org/labkey/study/importer/StudyReloadTask.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/TopLevelStudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
@@ -3245,9 +3239,6 @@ study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
 study/src/org/labkey/study/pipeline/StandaloneDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyImportDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
-study/src/org/labkey/study/pipeline/StudyReloadSourceJob.java -text
-study/src/org/labkey/study/pipeline/StudyReloadSourceJobSupport.java -text
-study/src/org/labkey/study/pipeline/StudyReloadSourceTask.java -text
 study/src/org/labkey/study/PurgeParticipantsMaintenanceTask.java -text
 study/src/org/labkey/study/query/AbstractSpecimenTable.java -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
@@ -3437,7 +3428,6 @@ study/src/org/labkey/study/writer/ProtocolDocumentWriter.java -text
 study/src/org/labkey/study/writer/SchemaXmlWriter.java -text
 study/src/org/labkey/study/writer/StudyArchiveDataTypes.java -text
 study/src/org/labkey/study/writer/StudyExportContext.java -text
-study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyViewsWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyWriterFactory.java -text
@@ -3468,15 +3458,6 @@ study/test/sampledata/study/commondata/Specimens.tsv -text
 study/test/sampledata/study/commondata/TM-1.tsv -text
 study/test/sampledata/study/commondata/URF-1.tsv -text
 study/test/sampledata/study/commondata/VAC-1.tsv -text
-study/test/sampledata/study/StudyVisitManagement.folder/cohorts.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/datasets/datasets_manifest.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/datasets/datasets_metadata.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/datasets/Study.dataset -text
-study/test/sampledata/study/StudyVisitManagement.folder/properties/study_metadata.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/specimens/specimen_settings.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/specimens/specimens_metadata.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/study.xml -text
-study/test/sampledata/study/StudyVisitManagement.folder/visit_map.xml -text
 study/test/src/org/labkey/test/pages/AssayQueryConfig.java -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
 study/test/src/org/labkey/test/pages/ProgressReportConfigPage.java -text
@@ -3490,7 +3471,6 @@ study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/ProgressReportTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
-study/test/src/org/labkey/test/tests/study/StudyCheckForReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyContinuousTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDateBasedTest.java -text

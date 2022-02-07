@@ -44,7 +44,7 @@
     String importFormId = "pipelineImportForm";
 
     boolean canCreateSharedDatasets = false;
-    if (bean.isAsStudy() && !c.isProject() && null != project && project != c)
+    if (!c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
@@ -61,7 +61,6 @@
 <labkey:errors/>
 <labkey:form id="<%=importFormId%>" action="<%=urlFor(StartFolderImportAction.class)%>" method="post">
     <input type="hidden" name="fromZip" value=<%=bean.isFromZip()%>>
-    <input type="hidden" name="asStudy" value=<%=bean.isAsStudy()%>>
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>
     <div id="startPipelineImportForm"></div>
 </labkey:form>

@@ -124,9 +124,9 @@ public class ListManagerSchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (null != settings.getQueryName() && settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
+        if (LIST_MANAGER.equalsIgnoreCase(settings.getQueryName()))
         {
-            return new QueryView(this, settings, errors)
+            QueryView qv = new QueryView(this, settings, errors)
             {
                 QuerySettings s = getSettings();
 
@@ -235,6 +235,15 @@ public class ListManagerSchema extends UserSchema
                     }
                 }
             };
+
+            qv.setAllowableContainerFilterTypes(
+                ContainerFilter.Type.Current,
+                ContainerFilter.Type.CurrentAndSubfolders,
+                ContainerFilter.Type.CurrentPlusProjectAndShared,
+                ContainerFilter.Type.AllFolders
+            );
+
+            return qv;
         }
         return super.createView(context, settings, errors);
     }
