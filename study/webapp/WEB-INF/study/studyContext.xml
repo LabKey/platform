@@ -8,7 +8,6 @@
             <list>
                 <bean class="org.labkey.study.importer.StudyImportFinalTask$Factory"/>
                 <bean class="org.labkey.study.importer.StudyImportInitialTask$Factory"/>
-                <bean class="org.labkey.study.importer.StudyReloadTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
@@ -18,27 +17,6 @@
 
         <property name="pipelines">
             <list>
-                <!-- Study import job pipeline -->
-                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.study.importer.StudyImportJob"/>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="initialTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportInitialTask</value></constructor-arg>
-                            </bean>
-                            <bean id="datasetTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
-                            </bean>
-                            <bean id="specimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StudyImportSpecimenTask</value></constructor-arg>
-                            </bean>
-                            <bean id="finalTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalTask</value></constructor-arg>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-
                 <!-- Standalone dataset import pipeline -->
                 <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
                     <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.DatasetBatch"/>
@@ -104,49 +82,6 @@
                                 <constructor-arg index="2" value="false" />
                                 <constructor-arg index="3" value="true"/>
                                 <constructor-arg index="4" value="Enable to allow domain updates"/>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-
-                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
-                    <constructor-arg value="StudyReloadTask"/>
-                    <property name="description" value="Reload study"/>
-                    <property name="protocolObjectId" value="study.studyArchiveReload"/>
-                    <property name="protocolName" value="Study Archive Reload"/>
-                    <property name="protocolFactoryName" value="studyReload"/>
-                    <property name="defaultDisplayState" value="hidden"/>
-                    <property name="allowForTriggerConfiguration" value="true"/>
-                    <property name="moveAvailable" value="false"/>
-                    <property name="initialInputExts">
-                        <list>
-                            <ref bean="txtFileType"/>
-                        </list>
-                    </property>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="studyReloadTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyReloadTask</value></constructor-arg>
-                            </bean>
-                        </list>
-                    </property>
-                    <property name="helpText" value="The selected Pipeline task should only be initiated on a studyload.txt file underneath a pipeline root, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
-                    <property name="customFields">
-                        <list>
-                            <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <constructor-arg index="0" value="skipQueryValidation"/>
-                                <constructor-arg index="1" value="Skip Query Validation After Reload"/>
-                                <constructor-arg index="2" value="false" />
-                                <constructor-arg index="3" value="false"/>
-                                <constructor-arg index="4" value="Enable to skip validation of queries after reload is complete"/>
-                            </bean>
-
-                            <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <constructor-arg index="0" value="failForUndefinedVisits"/>
-                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
-                                <constructor-arg index="2" value="false" />
-                                <constructor-arg index="3" value="false"/>
-                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
                             </bean>
                         </list>
                     </property>

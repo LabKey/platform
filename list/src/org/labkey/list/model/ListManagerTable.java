@@ -15,7 +15,6 @@
  */
 package org.labkey.list.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -34,7 +33,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HtmlString;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -155,11 +153,5 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
-    }
-
-    @Override
-    public List<FieldKey> getDefaultVisibleColumns()
-    {
-        return super.getDefaultVisibleColumns();
     }
 }
