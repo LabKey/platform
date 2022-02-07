@@ -71,6 +71,7 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -91,7 +92,6 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -131,7 +131,9 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class FileContentController extends SpringActionController
@@ -1229,57 +1231,75 @@ public class FileContentController extends SpringActionController
         @Override
         public ApiResponse execute(CustomPropertiesForm form, BindException errors)
         {
+            // TODO: Expose custom properties on files via Query and use SelectRows API.
+            // This action is responsible for way too much logic for constructing the custom properties query
+            // and is fragile in the face of underlying query changes.
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<Map<String, Object>> rows = new ArrayList<>();
+
+            if (form.getCustomProperties() == null || form.getCustomProperties().length == 0)
+            {
+                response.put("rows", Collections.emptyList());
+                response.put("success", true);
+                return response;
+            }
+
             TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
+            Set<FieldKey> fieldKeys = tableInfo.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
 
             // add lookup display columns
-            List<ColumnInfo> columns = new ArrayList<>(tableInfo.getColumns());
-            if (form.getCustomProperties() != null)
-            {
-                Arrays.stream(form.getCustomProperties())
-                        .map(tableInfo::getColumn)
-                        .filter(column -> null != column && column.getDisplayField() != null)
-                        .map(ColumnInfo::getDisplayField)
-                        .forEach(columns::add);
-            }
+            Arrays.stream(form.getCustomProperties())
+                    .map(tableInfo::getColumn)
+                    .filter(Objects::nonNull)
+                    .map(ColumnInfo::getDisplayField)
+                    .filter(Objects::nonNull)
+                    .map(ColumnInfo::getFieldKey)
+                    .forEach(fieldKeys::add);
+
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
+            for (ColumnInfo col : columns.values())
+                col.getRenderer().addQueryFieldKeys(fieldKeys);
+            columns = QueryService.get().getColumns(tableInfo, fieldKeys);
 
             // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
             final int MAX_ROW_COUNT = 10000;
+            final FieldKey dataFileURLFieldKey = new FieldKey(null, ExpDataTable.Column.DataFileUrl.name());
+            final FieldKey nameFieldKey = new FieldKey(null, ExpDataTable.Column.Name.name());
+            final FieldKey rowIdFieldKey = new FieldKey(null, ExpDataTable.Column.RowId.name());
 
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("dataFileUrl"), null, CompareType.NONBLANK);
+            List<Map<String, Object>> rows = new ArrayList<>();
+            SimpleFilter filter = new SimpleFilter(dataFileURLFieldKey, null, CompareType.NONBLANK);
 
-            new TableSelector(tableInfo, columns, filter, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
+            new TableSelector(tableInfo, columns.values(), filter, null).setMaxRows(MAX_ROW_COUNT).forEachResults(result ->
             {
-                Object encodedUrl = data.get("dataFileUrl");
+                Map<FieldKey, Object> data = result.getFieldKeyRowMap();
                 Map<String, Object> row = new HashMap<>();
-                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
+
+                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) data.get(dataFileURLFieldKey));
                 row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
-                row.put("rowId", data.get("RowId"));
-                row.put("name", data.get("Name"));
-                if (null != form.getCustomProperties())
+                row.put("rowId", data.get(rowIdFieldKey));
+                row.put("name", data.get(nameFieldKey));
+
+                for (String property : form.getCustomProperties())
                 {
-                    for (String property : form.getCustomProperties())
+                    ColumnInfo column = tableInfo.getColumn(property);
+                    if (null != column)
                     {
-                        ColumnInfo column = tableInfo.getColumn(property);
-                        if (null != column)
-                        {
-                            ColumnInfo displayColumn = column.getDisplayField();
+                        Map<String, Object> map = new HashMap<>();
+                        ColumnInfo displayColumn = column.getDisplayField();
 
-                            Map<String, Object> map = new HashMap<>();
-                            if (displayColumn != null)
-                                map.put("displayValue", data.get(displayColumn.getAlias()));
-                            map.put("value", data.get(column.getAlias()));
-                            StringExpression url = column.getEffectiveURL();
-                            if (null != url)
-                                map.put("url", url.eval(data));
-
-                            row.put(property, map);
-                        }
+                        if (displayColumn != null)
+                            map.put("displayValue", data.get(displayColumn.getFieldKey()));
+                        map.put("value", data.get(column.getFieldKey()));
+                        var url = column.getEffectiveURL();
+                        if (url != null)
+                            map.put("url", url.eval(data));
+                        row.put(property, map);
                     }
-                    rows.add(row);
                 }
+
+                rows.add(row);
             });
+
             response.put("rows", rows);
             response.put("success", true);
             return response;

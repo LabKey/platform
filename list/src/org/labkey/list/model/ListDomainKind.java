@@ -367,7 +367,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new ApiUsageException("List name must not be null");
         if (name.length() > MAX_NAME_LENGTH)
             throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name) != null)
+        if (ListService.get().getList(container, name, false) != null)
             throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
             throw new ApiUsageException("List keyName must not be null");
@@ -496,7 +496,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
-                else if (ListService.get().getList(container, update.getName()) != null)
+                else if (ListService.get().getList(container, update.getName(), false) != null)
                 {
                     return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }
