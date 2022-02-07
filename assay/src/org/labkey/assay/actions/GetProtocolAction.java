@@ -27,6 +27,7 @@ import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
@@ -35,7 +36,7 @@ import org.labkey.assay.AssayDomainServiceImpl;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
-@RequiresPermission(ReadPermission.class)
+@RequiresPermission(AssayReadPermission.class)
 public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.DesignerForm>
 {
     public static class DesignerForm extends GWTProtocol

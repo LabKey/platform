@@ -47,6 +47,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
@@ -272,7 +273,7 @@ abstract public class ExpTableImpl<C extends Enum>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (perm == ReadPermission.class || getUpdateService() != null)
+        if (perm == ReadPermission.class || perm == DataClassReadPermission.class || getUpdateService() != null)
         {
             Set<Role> roles = null;
             if (_userSchema instanceof UserSchema.HasContextualRoles)

@@ -32,6 +32,10 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.AssayController;
 
@@ -125,4 +129,12 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         super.setContainerFilter(filter);
     }
 
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm == ReadPermission.class)
+            return super.hasPermission(user, AssayReadPermission.class);
+
+        return super.hasPermission(user, perm);
+    }
 }

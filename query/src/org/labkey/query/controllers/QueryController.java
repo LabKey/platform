@@ -77,12 +77,16 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
@@ -163,6 +167,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.print.attribute.standard.Media;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -2907,7 +2912,7 @@ public class QueryController extends SpringActionController
 
     @CSRF(CSRF.Method.NONE) // No need for CSRF token --- this is a non-mutating action that supports POST to allow for large payloads, see #36056
     @ActionNames("selectRows, getQuery")
-    @RequiresPermission(ReadPermission.class)
+    @RequiresAnyOf({ReadPermission.class, MediaReadPermission.class, NotebookReadPermission.class, DataClassReadPermission.class, AssayReadPermission.class})
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)
     public class SelectRowsAction extends ReadOnlyApiAction<APIQueryForm>

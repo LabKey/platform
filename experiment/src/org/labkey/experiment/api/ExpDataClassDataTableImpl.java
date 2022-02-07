@@ -84,7 +84,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.Pair;
@@ -530,6 +534,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public boolean hasDbTriggers()
     {
         return super.hasDbTriggers() || _dataClass.getTinfo().hasDbTriggers();
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm == ReadPermission.class)
+            return super.hasPermission(user, DataClassReadPermission.class);
+        return super.hasPermission(user, perm);
     }
 
     //

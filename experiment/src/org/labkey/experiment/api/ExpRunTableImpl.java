@@ -33,6 +33,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -51,6 +52,9 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -115,6 +119,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     {
         return _experiment;
     }
+
+//    @Override
+//    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+//    {
+//        DomainKind domainKind = getDomain().getDomainKind();
+//        if (domainKind != null && domainKind instanceof AssayRunDomainKind)
+//            return super.hasPermission(user, AssayReadPermission.class);
+//
+//        return super.hasPermission(user, perm);
+//    }
 
     @Override
     public void setInputMaterial(ExpMaterial material)
