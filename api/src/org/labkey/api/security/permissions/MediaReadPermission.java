@@ -1,6 +1,9 @@
 package org.labkey.api.security.permissions;
 
-public class MediaReadPermission extends AbstractPermission
+// We extend ReadPermission because in FilteredTable.hasPermission, we check
+//      if (ReadPermission.class.isAssignableFrom(perm)) ...
+// as a gate to checking the user schema and contextual roles
+public class MediaReadPermission extends ReadPermission
 {
     public MediaReadPermission()
     {
