@@ -88,7 +88,6 @@ import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -141,7 +140,6 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
@@ -192,7 +190,6 @@ import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
 import java.util.ArrayList;
@@ -292,8 +289,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
-
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
 
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
@@ -361,7 +356,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
-        PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
         // This is in the First group because when a container is deleted,
         // the Experiment listener needs to be called after the Study listener,

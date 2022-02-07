@@ -19,14 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.MissingValueIndicatorsType;
 
 import java.util.Collection;
@@ -41,12 +40,12 @@ import java.util.Map;
 public class MissingValueImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter<Folder> create()
+    public FolderImporter create()
     {
         return new MissingValueImporter();
     }
 
-    public static class MissingValueImporter implements FolderImporter<Folder>
+    public static class MissingValueImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -61,7 +60,7 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(@Nullable PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
+        public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
@@ -108,13 +107,13 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getXml() != null && (
                 /* folder namespace version */ ctx.getXml().getMissingValueIndicator() != null ||

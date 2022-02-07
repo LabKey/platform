@@ -20,8 +20,8 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
@@ -37,7 +37,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartCache;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.PagesDocument;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ import java.util.Map;
 public class PageImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter<?> create()
+    public FolderImporter create()
     {
         return new PageImporter();
     }
@@ -83,7 +83,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
     }
 
 
-    public static class PageImporter implements FolderImporter<FolderDocument.Folder>
+    public static class PageImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -98,11 +98,11 @@ public class PageImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (isValidForImportArchive(ctx))
             {
-                FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
+                Folder.Pages pagesXml = ctx.getXml().getPages();
 
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
@@ -202,13 +202,13 @@ public class PageImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getXml() != null && ctx.getXml().getPages() != null;
         }

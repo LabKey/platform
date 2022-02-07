@@ -22,7 +22,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.DatasetDefinitionImporter;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -117,11 +116,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            StudyImportContext ctx;
-            if (job instanceof StudyImportJob)
-                ctx = ((StudyImportJob)job).getImportContext();
-            else
-                ctx = new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
+            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
 
             return new StudyImportDatasetTask(this, job, ctx);
         }

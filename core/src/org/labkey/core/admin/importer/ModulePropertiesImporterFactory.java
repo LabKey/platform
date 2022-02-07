@@ -18,8 +18,8 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -27,7 +27,6 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.ModulePropertiesType;
 import org.labkey.folder.xml.ModulePropertyType;
 
@@ -42,12 +41,12 @@ import java.util.Collections;
 public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter<FolderDocument.Folder> create()
+    public FolderImporter create()
     {
         return new ModulePropertiesImporter();
     }
 
-    public static class ModulePropertiesImporter implements  FolderImporter<FolderDocument.Folder>
+    public static class ModulePropertiesImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -62,7 +61,7 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (isValidForImportArchive(ctx))
             {
@@ -95,13 +94,13 @@ public class ModulePropertiesImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getXml() != null && ctx.getXml().getModuleProperties() != null;
         }
