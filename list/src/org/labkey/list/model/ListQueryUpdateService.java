@@ -41,6 +41,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -51,7 +52,11 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
@@ -61,8 +66,10 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Nick Arnold
@@ -147,7 +154,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        List<Map<String, Object>> result = this._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+        List<Map<String, Object>> result = this._insertRowsUsingDIB(getListUser(user, container), container, rows, context, extraScriptContext);
 
         if (null != result)
         {
@@ -172,13 +179,32 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+    private User getListUser(User user, Container container)
+    {
+        if (_list.isPicklist() && container.hasPermission(user, ManagePicklistsPermission.class))
+        {
+            // if the list is a picklist and you have permission to manage picklists, that equates
+            // to having editor permission.
+            Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+            contextualRoles.addAll(user.getContextualRoles(container.getPolicy()));
+            Role editorRole = RoleManager.getRole(EditorRole.class);
+            if (!contextualRoles.contains(editorRole))
+            {
+                contextualRoles.add(RoleManager.getRole(EditorRole.class));
+                return new LimitedUser(user, user.getGroups(), contextualRoles, false);
+            }
+            return user;
+        }
+        return user;
+    }
+
     @Override
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        return super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+        return super._insertRowsUsingDIB(getListUser(user, container), container, rows, context, extraScriptContext);
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
@@ -187,25 +213,26 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
+        User updatedUser = getListUser(user, container);
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
         context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
         context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
         setAttachmentDirectory(attachmentDir);
-        TableInfo ti = _list.getTable(user);
+        TableInfo ti = _list.getTable(updatedUser);
 
         if (null != ti)
         {
             try (DbScope.Transaction transaction = ti.getSchema().getScope().ensureTransaction())
             {
-                int inserted = _importRowsUsingDIB(user, container, loader, null, context, new HashMap<>());
+                int inserted = _importRowsUsingDIB(updatedUser, container, loader, null, context, new HashMap<>());
 
                 if (!errors.hasErrors())
                 {
                     //Make entry to audit log if anything was inserted
                     if (inserted > 0)
-                        ListManager.get().addAuditEvent(_list, user, (useMerge ? "Bulk imported " : "Bulk inserted ") + inserted + " rows to list.");
+                        ListManager.get().addAuditEvent(_list, updatedUser, (useMerge ? "Bulk imported " : "Bulk inserted ") + inserted + " rows to list.");
 
                     transaction.commit();
                     ListManager.get().indexList(_list, false); // TODO: Add to a post-commit task?
@@ -225,9 +252,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                          @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         if (!_list.isVisible(user))
-            throw new UnauthorizedException("You do not have permission to update data into this table.");
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
 
-        return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        return _importRowsUsingDIB(getListUser(user, container), container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
@@ -239,7 +266,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(getListUser(user, container), container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list, false);
         return count;
@@ -253,7 +280,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to update data into this table.");
 
-        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+        List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
             ListManager.get().indexList(_list, false);
         return result;
@@ -330,7 +357,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (null == newRowKey && null != oldRowKey)
             rowCopy.put(_list.getKeyName(), oldRowKey);
 
-        Map<String, Object> result = super.updateRow(user, container, rowCopy, oldRow, true);
+        Map<String, Object> result = super.updateRow(getListUser(user, container), container, rowCopy, oldRow, true);
 
         if (null != result)
         {
@@ -421,7 +448,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
-        Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
+        Map<String, Object> result = super.deleteRow(getListUser(user, container), container, oldRowMap);
 
         if (null != result)
         {
@@ -506,7 +533,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         try (DbScope.Transaction transaction = getDbTable().getSchema().getScope().ensureTransaction())
         {
             deleteRelatedListData(user, container);
-            result = super.truncateRows(user, container);
+            result = super.truncateRows(getListUser(user, container), container);
             ListManager.get().addAuditEvent(_list, user, "Deleted " + result + " rows from list.");
             transaction.commit();
         }

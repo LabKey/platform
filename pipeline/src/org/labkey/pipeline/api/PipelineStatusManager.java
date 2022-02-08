@@ -597,7 +597,7 @@ public class PipelineStatusManager
             // Delete the associated ExpRuns.
             // The runs must be deleted before the provider's preDeleteStatusFile is called
             if (deleteExpRuns)
-                deleteAssocatedRuns(container, user, deleteable);
+                deleteAssociatedRuns(container, user, deleteable);
 
             SQLFragment sql = new SQLFragment();
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
@@ -658,7 +658,7 @@ public class PipelineStatusManager
         }
     }
 
-    private static void deleteAssocatedRuns(Container container, User user, Set<PipelineStatusFile> deleteable)
+    private static void deleteAssociatedRuns(Container container, User user, Set<PipelineStatusFile> deleteable)
     {
         for (PipelineStatusFile pipelineStatusFile : deleteable)
         {

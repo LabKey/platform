@@ -42,13 +42,16 @@ public interface ListService
     }
 
     Map<String, ListDefinition> getLists(Container container);
-    Map<String, ListDefinition> getLists(Container container, boolean includePicklists);
-    Map<String, ListDefinition> getLists(Container container, User user, boolean checkVisibility);
+    Map<String, ListDefinition> getLists(Container container, @Nullable User user);
+    Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility);
+    Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists, boolean includeProjectAndShared);
     boolean hasLists(Container container);
+    boolean hasLists(Container container, boolean includeProjectAndShared);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo, @Nullable ListDefinition.Category category);
     ListDefinition getList(Container container, int listId);
     @Nullable ListDefinition getList(Container container, String name);
+    @Nullable ListDefinition getList(Container container, String name, boolean includeProjectAndShared);
     ListDefinition getList(Domain domain);
     ActionURL getManageListsURL(Container container);
     UserSchema getUserSchema(User user, Container container);

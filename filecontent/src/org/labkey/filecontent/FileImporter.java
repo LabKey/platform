@@ -16,11 +16,11 @@
 package org.labkey.filecontent;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.api.ExperimentService;
@@ -30,6 +30,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +39,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,7 +48,7 @@ import static org.labkey.filecontent.FileWriter.DIR_NAME;
  * Imports into the webdav file root for the folder.
  * Created by Josh on 11/1/2016.
  */
-public class FileImporter implements FolderImporter<XmlObject>
+public class FileImporter implements FolderImporter
 {
     /** Milliseconds between log progress messages */
     public static final long LOG_INTERVAL = TimeUnit.MINUTES.toMillis(2);
@@ -66,7 +66,7 @@ public class FileImporter implements FolderImporter<XmlObject>
     }
 
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext<XmlObject> ctx, VirtualFile root) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile filesVF = root.getDir(DIR_NAME);
         if (filesVF != null)
@@ -88,7 +88,6 @@ public class FileImporter implements FolderImporter<XmlObject>
                 ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
                 service.ensureFileData(table);
             }
-
         }
     }
 
@@ -126,7 +125,7 @@ public class FileImporter implements FolderImporter<XmlObject>
 
     @NotNull
     @Override
-    public Collection<PipelineJobWarning> postProcess(ImportContext<XmlObject> ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }
@@ -145,5 +144,4 @@ public class FileImporter implements FolderImporter<XmlObject>
             return 60;
         }
     }
-
 }

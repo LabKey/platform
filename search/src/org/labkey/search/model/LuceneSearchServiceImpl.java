@@ -114,11 +114,15 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -462,6 +466,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
         FileStream fs = null;
+        _BodyContentHandler handler = null;
 
         try
         {
@@ -525,16 +530,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 keywordsMed.append(" ").append(description);
 
             final String type = r.getContentType();
-            final String body;
 
             String title = (String)props.get(PROPERTY.title.toString());
 
             // Don't load content of images or zip files (for now), but allow searching by name and properties
-            if (isImage(type) || isZip(type))
-            {
-                body = "";
-            }
-            else
+            if (!isImage(type) && !isZip(type))
             {
                 InputStream is = fs.openInputStream();
 
@@ -554,9 +554,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (r.getContentType().startsWith("text"))
                     metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                handler = _BodyContentHandler.create();     // no write limit on the handler -- rely on file size check to limit content
                 parse(r, fs, is, handler, metadata, isTooBig(fs, type));
-                body = handler.toString();
 
                 if (StringUtils.isBlank(title))
                     title = metadata.get(TikaCoreProperties.TITLE);
@@ -585,9 +584,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String identifiersLo = StringUtils.join(c.getParsedPath(), " ");
 
             // Use summary text provided by the document props, otherwise use the document body
-            String summary = StringUtils.trimToNull(Objects.toString(props.get(PROPERTY.summary.toString()), null));
-            if (summary == null)
-                summary = body;
+            String summary = StringUtils.trimToEmpty(Objects.toString(props.get(PROPERTY.summary.toString()), null));
+            if (StringUtils.isEmpty(summary) && null != handler)
+                summary = handler.getSummary();
 
             // extract and trim summary
             summary = extractSummary(summary, title);
@@ -628,7 +627,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
             addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
 
-            doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
+            if (null != handler)
+                doc.add(new TextField(FIELD_NAME.body.toString(), handler.getReader()));
+            else
+                doc.add(new TextField(FIELD_NAME.body.toString(), "", Field.Store.NO));
 
             addTerms(doc, FIELD_NAME.keywordsLo, PROPERTY.keywordsLo, props, null);
             addTerms(doc, FIELD_NAME.keywordsMed, PROPERTY.keywordsMed, props, keywordsMed.toString());
@@ -728,6 +730,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
+            if (null != handler)
+                IOUtils.closeQuietly(handler);
             if (null != fs)
             {
                 try
@@ -2125,6 +2129,50 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (IOException x)
         {
             /* pass */
+        }
+    }
+
+
+    // to avoid generating a lot of garbage, try to avoid excessive allocating and freeing a lot of ByteBuffers
+    static final ThreadLocal<SoftReference<ByteBuffer>> bufferStash = ThreadLocal.withInitial(() -> new SoftReference<>(null));
+
+    static class _BodyContentHandler extends BodyContentHandler implements Closeable
+    {
+        final FileUtil.TempTextFileWrapper tempFileWrapper;
+        final ByteBuffer byteBuffer;
+
+        static _BodyContentHandler create() throws IOException
+        {
+            var ref = bufferStash.get();
+            var buf = null == ref ? null : ref.get();
+            if (null == buf)
+                buf = ByteBuffer.allocate(128*1024);
+            return new _BodyContentHandler(buf, new FileUtil.TempTextFileWrapper(buf.asCharBuffer()));
+        }
+
+        _BodyContentHandler(ByteBuffer buf, FileUtil.TempTextFileWrapper tempFileWrapper)
+        {
+            super(tempFileWrapper.getWriter());
+            this.byteBuffer = buf;
+            this.tempFileWrapper = tempFileWrapper;
+        }
+
+        public String getSummary()
+        {
+            return tempFileWrapper.getSummary(SUMMARY_LENGTH+100);
+        }
+
+        public Reader getReader() throws IOException
+        {
+            return tempFileWrapper.getReader();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            tempFileWrapper.close();
+            byteBuffer.clear();
+            bufferStash.set(new SoftReference<>(byteBuffer));
         }
     }
 }

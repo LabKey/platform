@@ -40,9 +40,10 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyPHIExportTest extends StudyExportTest
 {
-    private String idPreface = "P!@#$%^&*(";
-    private int idLength = 7;
-    private Map<String,String> _originalFirstMouseStats;
+    private final String idPreface = "P!@#$%^&*(";
+    private final int idLength = 7;
+
+    private Map<String, String> _originalFirstMouseStats;
 
     @Override
     protected void doCreateSteps()
@@ -129,7 +130,7 @@ public class StudyPHIExportTest extends StudyExportTest
         waitForElement(fileRow);
         click(fileRow);
 
-        _fileBrowserHelper.selectImportDataAction("Import Study");
+        _fileBrowserHelper.selectImportDataAction("Import Folder");
         clickButton("Start Import"); // Validate queries page
     }
 

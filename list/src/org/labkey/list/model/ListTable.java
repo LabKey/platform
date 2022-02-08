@@ -20,10 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -47,6 +48,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -79,9 +81,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _canAccessPhi;
 
-    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
+    public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain, @Nullable ContainerFilter cf)
     {
-        super(StorageProvisioner.createTableInfo(domain), schema);  // domain passed separately to allow @NotNull verification
+        super(StorageProvisioner.createTableInfo(domain), schema, cf);
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
@@ -274,7 +276,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setGridURL(gridURL);
 
         if (null != colKey)
-            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getAlias())));
+            setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), "pk", colKey.getFieldKey()));
 
         if (!listDef.getAllowUpload() || !_canAccessPhi)
             setImportURL(LINK_DISABLER);
@@ -307,7 +309,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public ContainerContext getContainerContext()
     {
-        return _list != null ? _userSchema.getContainer() : null;
+        if (_list == null)
+            return null;
+        return new ContainerContext.FieldKeyContext(new FieldKey(null, "Container"));
     }
 
     @Override
@@ -365,12 +369,16 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        // currently, picklists don't contain PHI and can always be deleted
+        if (_list.isPicklist() && InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm))
+            return _list.getContainer().hasPermission(user, ManagePicklistsPermission.class);
+
         boolean gate = true;
         if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm))
             gate = _canAccessPhi;
         else if (DeletePermission.class.equals(perm))
             gate = _canAccessPhi && _list.getAllowDelete();
-        return gate && _list.getContainer().hasPermission(user, perm);
+        return gate && getContainer().hasPermission(user, perm);
     }
 
     @Override

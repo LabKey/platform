@@ -72,7 +72,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -256,13 +255,6 @@ public class QueryModule extends DefaultModule
             folderRegistry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
             folderRegistry.addFactories(new ViewCategoryWriter.Factory(), new ViewCategoryImporter.Factory());
             folderRegistry.addFactories(new ExternalSchemaDefWriterFactory(), new ExternalSchemaDefImporterFactory());
-        }
-
-        // support importing dataset & report categories from the /study subfolder for backward compatibility
-        StudySerializationRegistry studyRegistry = StudySerializationRegistry.get();
-        if (null != studyRegistry)
-        {
-            studyRegistry.addImportFactory(new ViewCategoryImporter.Factory());
         }
 
         SearchService ss = SearchService.get();

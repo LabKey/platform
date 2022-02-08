@@ -22,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
@@ -37,7 +37,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.viewCategory.CategoriesDocument;
 import org.labkey.folder.xml.viewCategory.CategoryType;
 import org.labkey.folder.xml.viewCategory.ViewCategoryType;
@@ -51,9 +50,7 @@ import java.util.Collections;
  * Date: Oct 21, 2011
  */
 
-// This is not designated <Folder> because a StudyImportContext is passed in the case of a study archive import. Once
-// we stop supporting view_categories.xml in the study folder we can switch this to <Folder> and remove the hacks in
-// getXmlBean().
+// Once we stop supporting view_categories.xml in the study folder we can remove the hacks in getXmlBean() and process()
 public class ViewCategoryImporter implements FolderImporter
 {
     @Override
@@ -66,7 +63,7 @@ public class ViewCategoryImporter implements FolderImporter
     public String getDataType() { return FolderArchiveDataTypes.VIEW_CATEGORIES; }
 
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -97,19 +94,19 @@ public class ViewCategoryImporter implements FolderImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return getXmlBean(ctx) != null;
     }
 
-    private @Nullable XmlObject getXmlBean(ImportContext ctx) throws ImportException
+    private @Nullable XmlObject getXmlBean(FolderImportContext ctx) throws ImportException
     {
         try
         {
-            if (ctx.getXml() != null && ctx.getXml() instanceof Folder folderXml)
+            if (ctx.getXml() != null)
             {
                 // New folder archives export the category xml file at the root with a "categories" element in folder.xml
-                FolderDocument.Folder.Categories categories = folderXml.getCategories();
+                FolderDocument.Folder.Categories categories = ctx.getXml().getCategories();
 
                 if (null != categories)
                 {
@@ -123,14 +120,12 @@ public class ViewCategoryImporter implements FolderImporter
                 VirtualFile study = ctx.getDir("study");
                 return null != study ? study.getXmlBean(ViewCategoryWriter.FILE_NAME) : null;
             }
-
-            // Backward compatibility: Really old study archive might have the category xml file at the root of the study node
-            return ctx.getRoot().getXmlBean(ViewCategoryWriter.FILE_NAME);
         }
-        catch (IOException e)
+        catch (IOException ignored)
         {
-            return null;
         }
+
+        return null;
     }
 
     private void process(Container c, User user, Logger logger, @NotNull CategoriesDocument doc) throws Exception
@@ -200,7 +195,7 @@ public class ViewCategoryImporter implements FolderImporter
     }
 
     @Override
-    public @NotNull Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
+    public @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
     {
         return Collections.emptyList();
     }

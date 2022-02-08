@@ -18,24 +18,15 @@ package org.labkey.list.view;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DetailsColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.list.model.ListQuerySchema;
 import org.springframework.validation.BindException;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class ListQueryView extends QueryView
 {
@@ -59,7 +50,6 @@ public class ListQueryView extends QueryView
     {
         setShowExportButtons(_list.getAllowExport());
         setShowUpdateColumn(true);
-        disableContainerFilterSelection();
     }
 
     @Override
@@ -89,20 +79,5 @@ public class ListQueryView extends QueryView
     public ListDefinition getList()
     {
         return _list;
-    }
-
-    @Override
-    protected DisplayColumn createDetailsColumn(StringExpression urlDetails, TableInfo table)
-    {
-        return new DetailsColumn(urlDetails, table)
-        {
-            @Override
-            public boolean areURLExpressionValuesPresent(RenderContext ctx)
-            {
-                Set<FieldKey> fieldKeys = new HashSet<>();
-                table.getPkColumns().forEach(column -> fieldKeys.add(new FieldKey(null, column.getAlias())));
-                return getURLExpression().canRender(fieldKeys);
-            }
-        };
     }
 }

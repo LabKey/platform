@@ -2,9 +2,9 @@ package org.labkey.experiment.samples;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -38,9 +38,8 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
         return getDataType().toLowerCase();
     }
 
-
     @Override
-    public void process(@Nullable PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
+    public void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
 

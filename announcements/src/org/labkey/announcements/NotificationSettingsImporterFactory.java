@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -28,7 +28,6 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.NotificationsType;
 
 import java.util.Collection;
@@ -46,7 +45,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
         return new NotificationSettingsImporter();
     }
 
-    public static class NotificationSettingsImporter implements FolderImporter<Folder>
+    public static class NotificationSettingsImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -61,7 +60,7 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (isValidForImportArchive(ctx))
             {
@@ -94,13 +93,13 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getXml() != null && ctx.getXml().isSetNotifications();
         }
