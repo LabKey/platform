@@ -192,7 +192,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                     // do nothing
                 }
 
-                return _nameGenerator.generateName(_state, context, null, parentSamples, List.of(_genIdFn)); // todo add alias
+                return _nameGenerator.generateName(_state, context, null, parentSamples, extraPropsFns); // todo add alias
             }
             catch (NameGenerator.NameGenerationException e)
             {
