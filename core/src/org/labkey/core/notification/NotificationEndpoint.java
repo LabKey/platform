@@ -125,7 +125,7 @@ public class NotificationEndpoint extends Endpoint
         public void modifyHandshake(ServerEndpointConfig config, HandshakeRequest request, HandshakeResponse response)
         {
             HttpSession session = (HttpSession) request.getHttpSession();
-            User user = SecurityManager.getSessionUser(session);
+            User user = SecurityManager.getSessionUser(request);
 
             // config.getUserProperties() is backed by a ConcurrentHashMap which does not allow null keys or values.
             if (session != null)

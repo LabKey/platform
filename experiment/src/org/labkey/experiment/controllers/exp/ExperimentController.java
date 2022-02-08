@@ -56,12 +56,34 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Identifiable;
@@ -72,7 +94,27 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunAttachmentParent;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExpRunItem;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.ResolveLsidsForm;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -123,6 +165,7 @@ import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -133,6 +176,7 @@ import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
@@ -176,7 +220,29 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.*;
+import org.labkey.experiment.ChooseExperimentTypeBean;
+import org.labkey.experiment.ConfirmDeleteView;
+import org.labkey.experiment.CustomPropertiesView;
+import org.labkey.experiment.DataClassWebPart;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
+import org.labkey.experiment.ExperimentRunDisplayColumn;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.LineageGraphDisplayColumn;
+import org.labkey.experiment.MoveRunsBean;
+import org.labkey.experiment.ParentChildView;
+import org.labkey.experiment.ProtocolApplicationDisplayColumn;
+import org.labkey.experiment.ProtocolDisplayColumn;
+import org.labkey.experiment.ProtocolWebPart;
+import org.labkey.experiment.RunGroupWebPart;
+import org.labkey.experiment.SampleTypeDisplayColumn;
+import org.labkey.experiment.SampleTypeWebPart;
+import org.labkey.experiment.StandardAndCustomPropertiesView;
+import org.labkey.experiment.XarExportPipelineJob;
+import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -1456,7 +1522,7 @@ public class ExperimentController extends SpringActionController
             String focus = form.getFocus();
             String focusType = form.getFocusType();
 
-            ExpRunImpl experimentRun = form.lookupRun();
+            ExpRunImpl experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
 
             ExperimentRunGraph.RunGraphFiles files;
@@ -1499,7 +1565,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
-            _experimentRun = form.lookupRun();
+            _experimentRun = (ExpRunImpl) form.lookupRun();
             ensureCorrectContainer(getContainer(), _experimentRun, getViewContext());
 
             VBox vbox = new VBox();
@@ -1745,9 +1811,39 @@ public class ExperimentController extends SpringActionController
             runMaterialOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             HBox inputsView = new HBox(runDataInputsView, runMaterialInputsView);
-            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredInputsView = new HBox();
 
-            return new VBox(toggleView, inputsView, outputsView, applicationsView);
+            var expService = ExperimentService.get();
+            expService.getRunInputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredInputsView.addView(queryView);
+                }
+            });
+            HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
+            HBox registeredOutputsView = new HBox();
+            expService.getRunOutputsViewProviders().forEach(provider ->
+            {
+                var queryView = provider.createView(getViewContext(), expRun, errors);
+                if (queryView != null)
+                {
+                    registeredOutputsView.addView(queryView);
+                }
+            });
+
+            var vBox = new VBox();
+            vBox.addView(toggleView);
+            vBox.addView(inputsView);
+            if (!registeredInputsView.isEmpty())
+                vBox.addView(registeredInputsView);
+            vBox.addView(outputsView);
+            if (!registeredOutputsView.isEmpty())
+                vBox.addView(registeredOutputsView);
+            vBox.addView(applicationsView);
+
+            return vBox;
         }
     }
 
@@ -2923,7 +3019,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
     public class DeleteSelectedExpRunsAction extends AbstractDeleteAction
     {
         @Override
@@ -2943,6 +3039,11 @@ public class ExperimentController extends SpringActionController
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run != null)
                 {
+                    if (!run.canDelete(getUser()))
+                        throw new UnauthorizedException("You do not have permission to delete " +
+                                (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
+                                + " in " + run.getContainer());
+
                     runs.add(run);
                 }
             }
@@ -2994,7 +3095,7 @@ public class ExperimentController extends SpringActionController
     /**
      * Separate delete action from the client API
      */
-    @RequiresPermission(DeletePermission.class)
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
         @Override
@@ -3005,17 +3106,17 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException("Could not find run with ID " + form.getRunId());
             }
-            if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-            {
-                throw new UnauthorizedException("Not permitted");
-            }
+            if (!run.canDelete(getUser()))
+                throw new UnauthorizedException("You do not have permission to delete "
+                        + (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs") + " in this container.");
+
             run.delete(getUser());
             return new ApiSimpleResponse("success", true);
         }
     }
 
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresAnyOf({DeletePermission.class, SampleWorkflowJobPermission.class})
     public class DeleteRunsAction extends AbstractDeleteAPIAction
     {
         @Override
@@ -4863,6 +4964,7 @@ public class ExperimentController extends SpringActionController
     {
         private List<ExpMaterial> _materials;
         private ActionURL _successUrl;
+        private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
 
         @Override
         public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
@@ -4942,28 +5044,36 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(DeriveMaterialForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        public void validateCommand(DeriveMaterialForm form, Errors errors)
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
-            Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
+            List<ExpMaterial> lockedSamples = new ArrayList<>();
             for (int i = 0; i < materials.size(); i++)
             {
                 ExpMaterial m = materials.get(i);
+                if (!m.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+                {
+                    lockedSamples.add(m);
+                }
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
                     ExpSampleType st = m.getSampleType();
                     inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
-                inputMaterials.put(materials.get(i), inputRole);
+                _inputMaterials.put(materials.get(i), inputRole);
             }
 
+            if (!lockedSamples.isEmpty())
+            {
+                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.EditLineage));
+            }
+        }
+
+        @Override
+        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
+        {
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
@@ -4977,7 +5087,7 @@ public class ExperimentController extends SpringActionController
                 if (!valid)
                     return false;
 
-                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
+                allProperties = helper.getSampleProperties(getViewContext().getRequest(), _inputMaterials.keySet());
             }
             catch (DuplicateMaterialException e)
             {
@@ -5018,7 +5128,7 @@ public class ExperimentController extends SpringActionController
                     outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
                 }
 
-                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+                ExperimentService.get().deriveSamples(_inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
 
                 tx.commit();
 
@@ -6565,7 +6675,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 
@@ -6604,7 +6714,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
-                ExpRunImpl run = form.lookupRun();
+                ExpRun run = form.lookupRun();
                 if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException("Not permitted");
 

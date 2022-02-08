@@ -20,7 +20,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -57,7 +56,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         return 100;
     }
 
-    public class SubfolderImporter implements FolderImporter<FolderDocument.Folder>
+    public static class SubfolderImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -72,7 +71,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             VirtualFile subfoldersDir = ctx.getDir("subfolders");
 
@@ -160,7 +159,7 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }

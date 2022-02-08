@@ -32,7 +32,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.writer.StudySerializationRegistryImpl;
+import org.labkey.study.writer.StudySerializationRegistry;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -77,7 +77,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
         // Construct all the SimpleStudyImporters that are designated as "Early"
-        List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistryImpl.get().getSimpleStudyImporters().stream()
+        List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistry.get().getSimpleStudyImporters().stream()
             .filter(ssi -> ssi.getTiming() == SimpleStudyImporter.Timing.Early)
             .toList();
 
@@ -187,7 +187,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         processImporter(ctx, job, errors, new TopLevelStudyPropertiesImporter());
 
         // study.objective, study.personnel, and study.studyproperties tables
-        new StudyPropertiesImporter().process(ctx, ctx.getRoot(), errors);
+        new StudyPropertiesImporter().process(ctx, ctx.getRoot());
 
         // check for legacy QC states file in study
         processImporter(ctx, job, errors, new StudyQcStatesImporter());

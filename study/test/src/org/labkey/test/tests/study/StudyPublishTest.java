@@ -910,7 +910,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
                 "Categories",
                 "Container specific module properties",
-                "ETL Definitions",
                 "External schema definitions",
                 "Folder type and active modules",
                 "Full-text search settings",
@@ -920,7 +919,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Webpart properties and layout",
                 "Wikis and their attachments",
                 "Files",
-                "Sample Status and QC State Settings",
+                "QC State Settings",
                 "Sample Types and Data Classes");
         clickButton("Next", 0);
 

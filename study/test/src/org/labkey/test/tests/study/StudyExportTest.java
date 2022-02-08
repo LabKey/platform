@@ -79,7 +79,7 @@ public class StudyExportTest extends StudyManualTest
         if (_studyHelper.isSpecimenModulePresent())
         {
             // import the specimens and wait for both datasets & specimens to load
-            SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()),
+            SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getStudySubfolderPath()),
                 StudyHelper.SPECIMEN_ARCHIVE_A, ARCHIVE_TEMP_DIR, getFolderName(), ++jobCount);
             specimenImporter.importAndWaitForComplete();
         }
@@ -114,8 +114,8 @@ public class StudyExportTest extends StudyManualTest
         Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
         waitForElement(gridRow);
         click(gridRow);
-        _fileBrowserHelper.selectImportDataAction("Import Study");
-        waitForText("Import Study from Pipeline");
+        _fileBrowserHelper.selectImportDataAction("Import Folder");
+        waitForText("Import Folder from Pipeline");
         clickButton("Start Import");
 
         // wait for study & specimen (maybe) load
@@ -387,7 +387,7 @@ public class StudyExportTest extends StudyManualTest
         BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
-        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_B, ARCHIVE_TEMP_DIR, getFolderName(), 4);
+        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getStudySubfolderPath()), StudyHelper.SPECIMEN_ARCHIVE_B, ARCHIVE_TEMP_DIR, getFolderName(), 4);
         importer.importAndWaitForComplete();
 
         // verify that comments remain after second specimen load
@@ -629,6 +629,6 @@ public class StudyExportTest extends StudyManualTest
     {
         super.doCleanup(afterTest);
 
-        TestFileUtils.deleteDir(new File(StudyHelper.getPipelinePath() + "export"));
+        TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
     }
 }

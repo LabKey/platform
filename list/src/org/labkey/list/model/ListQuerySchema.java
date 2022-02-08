@@ -84,7 +84,7 @@ public class ListQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return ListManager.get().getLists(getContainer(), getUser(), false, true)
+        return ListManager.get().getLists(getContainer(), getUser(), false, true, true)
             .stream()
             .map(ListDef::getName)
             .collect(Collectors.toSet());
@@ -112,7 +112,7 @@ public class ListQuerySchema extends UserSchema
             {
                 try
                 {
-                    return new ListTable(this, def, def.getDomain());
+                    return new ListTable(this, def, def.getDomain(), cf);
                 }
                 catch (IllegalStateException e)
                 {

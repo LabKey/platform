@@ -20,8 +20,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tika.io.MappedBufferCleaner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -30,18 +30,27 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.FileVisitResult;
@@ -66,17 +75,18 @@ import java.util.stream.Stream;
  */
 public class FileUtil
 {
-    private static final Logger LOG = LogManager.getLogger(FileUtil.class);
+    private static final Logger LOG = LogHelper.getLogger(FileUtil.class, "FileUtil.java logger");
 
     private static File _tempDir = null;
 
-    private static ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(() -> new HashSet<>());
+    private static final ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(HashSet::new);
 
     public static void startRequest()
     {
         tempPaths.get().clear();
     }
 
+    @SuppressWarnings("RedundantOperationOnEmptyContainer")
     public static void stopRequest()
     {
         var paths = tempPaths.get();
@@ -141,15 +151,18 @@ public class FileUtil
         if (dir.isDirectory())
         {
             String[] children = dir.list();
-            for (String aChildren : children)
+            if (null != children)
             {
-                boolean success = true;
-                File child = new File(dir, aChildren);
-                if (child.isDirectory())
-                    success = deleteDir(child);
-                if (!success)
+                for (String aChildren : children)
                 {
-                    return false;
+                    boolean success = true;
+                    File child = new File(dir, aChildren);
+                    if (child.isDirectory())
+                        success = deleteDir(child);
+                    if (!success)
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -340,7 +353,7 @@ public class FileUtil
     {
         if (name != null && name.lastIndexOf('.') != -1)
         {
-            return name.substring(name.lastIndexOf('.') + 1, name.length());
+            return name.substring(name.lastIndexOf('.') + 1);
         }
         return null;
     }
@@ -1329,6 +1342,170 @@ quickScan:
     }
 
 
+    /* If you have a write once, read once text file/stream, you can use this class.
+     * It wraps the calls to create and delete a temp file, and also will use
+     * direct to cache the first portion of the file to avoid hitting the
+     * file system if the file is smaller.
+     *
+     * The caller needs to call close() on this object or the Reader returned
+     * by getReader().  Calling close on both is OK.
+     */
+    public static class TempTextFileWrapper implements Closeable
+    {
+        final int characterLimitInMemory;
+        final ByteBuffer _byteBuffer;
+        final CharBuffer _charBuffer;
+        FileWriter _fileWriter = null;
+        FileReader _fileReader = null;
+        File _tmpFile = null;
+        boolean closed = false;             // so we can ignore multiple calls to close
+
+        Writer _writer = null;
+        Reader _reader = null;
+
+        public TempTextFileWrapper(int characterLimitInMemory)
+        {
+            this.characterLimitInMemory = characterLimitInMemory;
+            this._byteBuffer = ByteBuffer.allocate(characterLimitInMemory * 2);
+            this._charBuffer = _byteBuffer.asCharBuffer();
+        }
+
+        public TempTextFileWrapper(CharBuffer charBuffer)
+        {
+            this.characterLimitInMemory = charBuffer.capacity();
+            this._byteBuffer = null;
+            this._charBuffer = charBuffer;
+        }
+
+
+        public Writer getWriter()
+        {
+            if (null != _writer || closed)
+                throw new IllegalStateException(closed ? "TempTextFileWrapper is closed" : "getWriter() called twice");
+
+            // CONSIDER ByteBuffer.allocateDirect(), for now caller can pass in a direct buffer if desired
+            _writer = new Writer()
+            {
+                boolean closed = false;
+
+                @Override
+                public void write(@NotNull char[] cbuf, int off, int len) throws IOException
+                {
+                    if (closed)
+                        throw new IOException("Writer is closed");
+                    if (_charBuffer.remaining() > 0)
+                    {
+                        var l = Math.min(_charBuffer.remaining(), len);
+                        _charBuffer.put(cbuf, off, l);
+                        if (l == len)
+                            return;
+                        off += l;
+                        len -= l;
+                    }
+                    if (null == _fileWriter)
+                    {
+                        assert null == _tmpFile;
+                        _tmpFile = FileUtil.createTempFile("tika", ".tmp.txt");
+                        _fileWriter = new FileWriter(_tmpFile, StringUtilsLabKey.DEFAULT_CHARSET);
+                    }
+                    _fileWriter.write(cbuf, off, len);
+                }
+
+                @Override
+                public void flush() throws IOException
+                {
+                    if (null != _fileWriter)
+                        _fileWriter.flush();
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                    if (null != _fileWriter)
+                    {
+                        _fileWriter.flush();
+                        _fileWriter.close();
+                    }
+                    _fileWriter = null;
+                    closed = true;
+                }
+            };
+            return _writer;
+        }
+
+        private void _prepareToRead()
+        {
+            if (null != _writer)
+            {
+                IOUtils.closeQuietly(_writer);
+                _writer = null;
+                _charBuffer.flip();
+            }
+        }
+
+        public Reader getReader()
+        {
+            if (null != _reader || closed)
+                throw new IllegalStateException(closed ? "TempTextFileWrapper is closed" : "getReader() called twice");
+
+            _reader = new Reader()
+            {
+                @Override
+                public int read(@NotNull char[] cbuf, int off, int len) throws IOException
+                {
+                    _prepareToRead();
+
+                    if (0 < _charBuffer.remaining())
+                    {
+                        var l = Math.min(len, _charBuffer.remaining());
+                        var ret = _charBuffer.get(cbuf, off, l);
+                        return l;
+                    }
+                    if (null == _fileReader && null != _tmpFile)
+                        _fileReader = new FileReader(_tmpFile, StringUtilsLabKey.DEFAULT_CHARSET);
+                    if (null == _fileReader)
+                        return -1;
+                    return _fileReader.read(cbuf, off, len);
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                    TempTextFileWrapper.this.close();
+                }
+            };
+            return _reader;
+        }
+
+        public String getSummary(int length)
+        {
+            _prepareToRead();
+            var l = Math.min(_charBuffer.limit(), length);
+            return _charBuffer.slice(0,l).toString();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            if (!closed)
+            {
+                closed = true;
+                if (null != _fileReader)
+                    IOUtils.closeQuietly(_fileReader);
+                _fileReader = null;
+                if (null != _fileWriter)
+                    IOUtils.closeQuietly(_fileWriter);
+                _fileWriter = null;
+                if (null != _tmpFile)
+                    FileUtil.deleteTempFile(_tmpFile);
+                _tmpFile = null;
+                if (null != _byteBuffer && _byteBuffer.isDirect())
+                    MappedBufferCleaner.freeBuffer(_byteBuffer);
+            }
+        }
+    }
+
+
     public static class TestCase extends Assert
     {
         private static final File ROOT;
@@ -1396,6 +1573,60 @@ quickScan:
             assertEquals("file:/ with drive letter not conformed to file:///","file:///C:/my/single/file/path", uriToString(URI.create("file:/C:/my/single/file/path")));
             assertEquals("File uri with host not as expected", "file://localhost:8080/my/host/file/path", uriToString(URI.create("file://localhost:8080/my/host/file/path")));
             assertEquals("Schemed URI not as expected","http://localhost:8080/my/triple/file/path?query=abcd#anchor", uriToString(URI.create("http://localhost:8080/my/triple/file/path?query=abcd#anchor")));
+        }
+
+        @Test
+        public void testTempFileWrapper() throws IOException
+        {
+            try
+            {
+                FileUtil.startRequest();
+                var sonnet = """
+                                From fairest creatures we desire increase,
+                                That thereby beauty's rose might never die,
+                                But as the riper should by time decease,
+                                His tender heir might bear his memory:
+                                But thou contracted to thine own bright eyes,
+                                Feed'st thy light's flame with self-substantial fuel,
+                                Making a famine where abundance lies,
+                                Thy self thy foe, to thy sweet self too cruel:
+                                Thou that art now the world's fresh ornament,
+                                And only herald to the gaudy spring,
+                                Within thine own bud buriest thy content,
+                                And tender churl mak'st waste in niggarding:
+                                Pity the world, or else this glutton be,
+                                To eat the world's due, by the grave and thee.
+                        """;
+                try (var tf = new TempTextFileWrapper(64))
+                {
+                    var w = tf.getWriter();
+                    for (var l : StringUtils.split(sonnet, '\n'))
+                        w.write(l + "\n");
+                    var r = new BufferedReader(tf.getReader());
+                    String l, lines = "";
+                    while (null != (l = r.readLine()))
+                        lines = lines + l + "\n";
+                    assertEquals(sonnet.trim(), lines.trim());
+                    assertEquals(sonnet.substring(0, 64), tf.getSummary(100));
+                }
+                try (var tf = new TempTextFileWrapper(900))
+                {
+                    var w = tf.getWriter();
+                    for (var l : StringUtils.split(sonnet, '\n'))
+                        w.write(l + "\n");
+                    var r = new BufferedReader(tf.getReader());
+                    String l, lines = "";
+                    while (null != (l = r.readLine()))
+                        lines = lines + l + "\n";
+                    assertEquals(sonnet.trim(), lines.trim());
+                    assertEquals(sonnet.substring(0, 100), tf.getSummary(100));
+                }
+            }
+            finally
+            {
+                // make sure we did not leave any temp files lying around
+                FileUtil.stopRequest();
+            }
         }
     }
 }

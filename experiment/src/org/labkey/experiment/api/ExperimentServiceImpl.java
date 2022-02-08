@@ -96,8 +96,10 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
@@ -214,6 +216,9 @@ public class ExperimentServiceImpl implements ExperimentService
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
+
+    private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
+    private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
 
     private Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
@@ -3180,7 +3185,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public void verifyRunEdges(ExpRunImpl run)
+    public void verifyRunEdges(ExpRun run)
     {
         syncRunEdges(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer(), false, true, null);
     }
@@ -3808,6 +3813,11 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
+
+                        if (!run.canDelete(user))
+                            throw new UnauthorizedException("You do not have permission to delete " +
+                                    (ExpProtocol.isSampleWorkflowProtocol(run.getProtocol().getLSID()) ? "jobs" : "runs")
+                                    + " in " + run.getContainer());
                         StudyPublishService publishService = StudyPublishService.get();
                         if (publishService != null)
                         {
@@ -7712,6 +7722,38 @@ public class ExperimentServiceImpl implements ExperimentService
     public boolean useUXDomainDesigner()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
+    }
+
+    /*
+    * this is used to register a query view in experiment-ShowRunText.view and this expects
+    * the query to have RunId column
+    * */
+    @Override
+    public void registerRunInputsViewProvider(@NotNull QueryViewProvider<ExpRun> provider)
+    {
+        _runInputsQueryViews.add(provider);
+    }
+
+    /*
+     * this is used to register a query view in experiment-ShowRunText.view and this expects
+     * the query to have RunId column
+     * */
+    @Override
+    public void registerRunOutputsViewProvider(@NotNull QueryViewProvider<ExpRun> provider)
+    {
+        _runOutputsQueryViews.add(provider);
+    }
+
+    @Override
+    public List<QueryViewProvider<ExpRun>> getRunInputsViewProviders()
+    {
+        return Collections.unmodifiableList(_runInputsQueryViews);
+    }
+
+    @Override
+    public List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders()
+    {
+        return Collections.unmodifiableList(_runOutputsQueryViews);
     }
 
     public static class TestCase extends Assert
