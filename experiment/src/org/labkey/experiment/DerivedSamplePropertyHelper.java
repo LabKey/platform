@@ -38,6 +38,7 @@ import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 
 /**
  * Gets the sample-specific values from user-provided information when creating child samples from an existing set
@@ -174,7 +177,22 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             try
             {
-                return _nameGenerator.generateName(_state, context, null, parentSamples, List.of(_genIdFn));
+                List<Supplier<Map<String, Object>>> extraPropsFns = new ArrayList<>();
+                extraPropsFns.add(_genIdFn);
+
+                try
+                {
+                    Map<String, String> importAlias = _sampleType.getImportAliasMap();
+                    extraPropsFns.add(() ->
+                        Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAlias)
+                    );
+                }
+                catch (IOException e)
+                {
+                    // do nothing
+                }
+
+                return _nameGenerator.generateName(_state, context, null, parentSamples, List.of(_genIdFn)); // todo add alias
             }
             catch (NameGenerator.NameGenerationException e)
             {
