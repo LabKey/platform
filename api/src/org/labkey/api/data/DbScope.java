@@ -801,13 +801,24 @@ public class DbScope
         Piggyback()
         {
             @Override
-            void close(DbScope scope, Connection conn, Closer closer) throws SQLException
+            void close(DbScope scope, Connection conn, Closer closer)
             {
                 // Intentional no-op
+            }
+
+            @Override
+            public void trackConnection(Map<ConnectionWrapper, Pair<java.lang.Thread, Throwable>> _openConnections, ConnectionWrapper wrapper)
+            {
+                // Intentional no-op - rely on the originating ConnectionWrapper to do the tracking for us
             }
         };
 
         abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;
+
+        public void trackConnection(Map<ConnectionWrapper, Pair<java.lang.Thread, Throwable>> _openConnections, ConnectionWrapper wrapper)
+        {
+            _openConnections.put(wrapper, Pair.of(java.lang.Thread.currentThread(), new Throwable()));
+        }
     }
 
     private class ConnectionHolder
