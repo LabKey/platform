@@ -833,29 +833,19 @@ public class DataRegion extends DisplayElement
 
             if (countAggregate)
             {
-                if (baseAggregates.isEmpty() && _complete && results.getSize() >= 0)
-                {
-                    // Issue 44749. Don't need to do a separate aggregate query as we already know how many rows
-                    // came back and that it was the complete results
-                    _totalRows = Long.valueOf(results.getSize());
-                    _aggregateResults = Collections.emptyMap();
-                }
-                else
-                {
-                    List<Aggregate> newAggregates = new LinkedList<>(baseAggregates);
+                List<Aggregate> newAggregates = new LinkedList<>(baseAggregates);
 
-                    newAggregates.add(Aggregate.createCountStar());
-                    _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-                    List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
+                newAggregates.add(Aggregate.createCountStar());
+                _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
+                List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
 
-                    //Issue 14863: add null check
-                    if (result != null && result.size() > 0)
-                    {
-                        Aggregate.Result countStarResult = result.get(0);
-                        _totalRows = 0L;
-                        if (countStarResult.getValue() instanceof Number)
-                            _totalRows = ((Number) countStarResult.getValue()).longValue();
-                    }
+                //Issue 14863: add null check
+                if (result != null && result.size() > 0)
+                {
+                    Aggregate.Result countStarResult = result.get(0);
+                    _totalRows = 0L;
+                    if (countStarResult.getValue() instanceof Number)
+                        _totalRows = ((Number) countStarResult.getValue()).longValue();
                 }
             }
             else
