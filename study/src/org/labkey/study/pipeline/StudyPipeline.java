@@ -23,7 +23,6 @@ import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -47,7 +46,6 @@ public class StudyPipeline extends PipelineProvider
     {
         super("Study", owningModule);
     }
-
 
     @Override
     public void updateFileProperties(final ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
@@ -73,19 +71,6 @@ public class StudyPipeline extends PipelineProvider
 
         handleDatasetFiles(context, study, directory, files, includeAll);
     }
-
-
-    @Deprecated //use getLogFilename and place file at piperoot
-    public static File logForInputFile(File f, PipeRoot pipeRoot)
-    {
-        return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
-    }
-
-    public static String getLogFilename(java.nio.file.Path path)
-    {
-        return FileUtil.makeFileNameWithTimestamp(path.getFileName().toString());
-    }
-
 
     public static File lockForDataset(Study study, File f)
     {

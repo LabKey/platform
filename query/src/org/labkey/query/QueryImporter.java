@@ -83,7 +83,7 @@ public class QueryImporter implements FolderImporter
     }
 
     @Override
-    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, IOException, SQLException, ImportException
+    public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws ServletException, IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
         {
@@ -310,14 +310,14 @@ public class QueryImporter implements FolderImporter
             sb.append("and ");
         if (metadataFileName != null)
             sb.append("metadata \"").append(metadataFileName).append("\" ");
-        sb.append("for \"" + schemaName + "." + queryName + "\": ");
+        sb.append("for \"").append(schemaName).append(".").append(queryName).append("\": ");
         sb.append(msg);
         return sb.toString();
     }
 
     @Override
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
     {
         List<PipelineJobWarning> warnings = new ArrayList<>();
 
@@ -331,7 +331,7 @@ public class QueryImporter implements FolderImporter
         else
         {
             // check that each meta xml file was applied to a built-in table after import of all data structures has completed
-            QueryImportContext qic = (QueryImportContext)ctx.getContext(QueryImportContext.class);
+            QueryImportContext qic = ctx.getContext(QueryImportContext.class);
             if (qic != null)
             {
                 for (Map.Entry<String, QueryDocument> entry : qic.unresolvedMetadataFiles.entrySet())
@@ -407,7 +407,7 @@ public class QueryImporter implements FolderImporter
     }
 
     @Override
-    public boolean isValidForImportArchive(ImportContext ctx) throws ImportException
+    public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return ctx.getDir("queries") != null;
     }

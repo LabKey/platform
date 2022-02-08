@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
@@ -35,7 +36,7 @@ import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
 import org.labkey.data.xml.externalSchema.ExternalSchemaType;
 import org.labkey.data.xml.externalSchema.LinkedSchemaDocument;
 import org.labkey.data.xml.externalSchema.LinkedSchemaType;
-import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.query.controllers.AbstractExternalSchemaForm;
 import org.labkey.query.controllers.ExternalSchemaForm;
 import org.labkey.query.controllers.LinkedSchemaForm;
@@ -60,7 +61,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         return new ExternalSchemaDefImporter();
     }
 
-    public class ExternalSchemaDefImporter implements FolderImporter<FolderDocument.Folder>
+    public static class ExternalSchemaDefImporter implements FolderImporter
     {
         @Override
         public String getDataType()
@@ -75,7 +76,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception
         {
             if (isValidForImportArchive(ctx))
             {
@@ -100,7 +101,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             }
         }
 
-        private void importSchema(ImportContext<FolderDocument.Folder> ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
+        private void importSchema(ImportContext<Folder> ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
         {
             XmlObject schemaXmlFile = externalSchemaDir.getXmlBean(schemaFileName);
             String relativePath = root.getRelativePath(schemaFileName);
@@ -198,13 +199,13 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
 
         @NotNull
         @Override
-        public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root)
+        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public boolean isValidForImportArchive(ImportContext<FolderDocument.Folder> ctx) throws ImportException
+        public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
             return ctx.getDir("externalSchemas") != null;
         }
