@@ -778,7 +778,7 @@ public class DomainPropertyImpl implements DomainProperty
             }
 
             // Issue 44711: Prevent attachment and file field types from being converted to a different type
-            if ("file".equalsIgnoreCase(oldType.getInputType()) && oldType != newType)
+            if (PropertyType.FILE_LINK.getInputType().equalsIgnoreCase(oldType.getInputType()) && oldType != newType)
                 throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.name() + " to " + newType.name() + ".");
 
             OntologyManager.validatePropertyDescriptor(_pd);
