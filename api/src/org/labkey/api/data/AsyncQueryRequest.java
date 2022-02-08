@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -24,7 +25,6 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 
 import javax.servlet.http.HttpServletResponse;
@@ -36,7 +36,7 @@ import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
 {
-    private static final Logger _log = LogHelper.getLogger(AsyncQueryRequest.class, "Runs DB queries on a background thread");
+    private static final Logger _log = LogManager.getLogger(AsyncQueryRequest.class);
 
     private static class CancelledException extends RuntimeException
     {
@@ -161,14 +161,15 @@ public class AsyncQueryRequest<T>
 
                     if (_exception instanceof RuntimeSQLException)
                         _exception = ((RuntimeSQLException)_exception).getSQLException();
-                    if (_exception instanceof SQLException sqlE)
+                    if (_exception instanceof SQLException)
                     {
+                        SQLException sqlE = (SQLException) _exception;
                         SQLException sqlE2 = new SQLException(sqlE.getMessage(), sqlE.getSQLState(), sqlE.getErrorCode());
                         sqlE2.setNextException(sqlE);
                         throw sqlE2;
                     }
 
-                    throw UnexpectedException.wrap(_exception);
+                    throw new UnexpectedException(_exception);
                 }
 
                 if (clientDisconnectException == null)

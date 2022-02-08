@@ -40,7 +40,6 @@ import org.springframework.validation.ObjectError;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -399,25 +398,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (!aggregates.isEmpty())
         {
-            Results r = getResults();
-            TableSelector selector = new TableSelector(tinfo, cols, filter, null)
-            {
-                @Override
-                public Connection getConnection() throws SQLException
-                {
-                    // Issue 44749. Piggyback on the primary results DB connection if possible so that we don't end
-                    // up using two concurrently
-                    if (r != null && r.getStatement() != null)
-                    {
-                        Connection conn = r.getStatement().getConnection();
-                        if (conn != null && !conn.isClosed())
-                        {
-                            return getScope().wrap(conn, DbScope.ConnectionType.Piggyback, null);
-                        }
-                    }
-                    return super.getConnection();
-                }
-            }.setNamedParameters(parameters);
+            TableSelector selector = new TableSelector(tinfo, cols, filter, null).setNamedParameters(parameters);
 
             if (async)
                 return selector.getAggregatesAsync(aggregates, getViewContext().getResponse());

@@ -119,7 +119,7 @@ public class ConnectionWrapper implements java.sql.Connection
         _allocatingThreadName = Thread.currentThread().getName();
         _referencingThreadNames.add(_allocatingThreadName);
 
-        type.trackConnection(_openConnections, this);
+        _openConnections.put(this, new Pair<>(Thread.currentThread(), new Throwable()));
 
         _log = log != null ? log : getConnectionLogger();
     }
