@@ -72,7 +72,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
     @Override
     public <K extends AuditTypeEvent> Class<K> getEventClass()
     {
-        return null;
+        return (Class<K>) ParticipantGroupAuditEvent.class;
     }
 
     @Override
