@@ -43,7 +43,7 @@ pdfbox-2.0.25.jar|Apache PDFBox®|2.0.25|{link:PDFBox|https://pdfbox.apache.org/
 poi-4.1.2.jar|Apache POI|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-4.1.2.jar|Apache POI OOXML|4.1.2|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|klum|Provide polling file watcher for cifs file systems
-postgresql-42.3.1.jar|PostgreSQL JDBC Driver|42.3.1|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
+postgresql-42.3.2.jar|PostgreSQL JDBC Driver|42.3.2|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
@@ -56,8 +56,8 @@ spring-tx-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.spr
 spring-web-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
 spring-webmvc-4.3.20.RELEASE.jar|Spring Framework|4.3.20|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
-tika-core-2.2.1.jar|Tika|2.2.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
+tika-core-2.3.0.jar|Tika|2.3.0|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
 validation-api-1.1.0.Final.jar|Bean Validation API (JSR 303)|1.1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xercesImpl-2.12.1.jar|Xerces|2.12.1|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
-xmlbeans-3.1.0.jar|XMLBeans|3.1.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
+xmlbeans-5.0.3.jar|XMLBeans|5.0.3|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 {table}

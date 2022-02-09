@@ -119,10 +119,10 @@ public class ExcelFactory
                 this._sharedStrings = null;
             else
             {
-                var items = sharedStrings.getItems();
+                var items = sharedStrings.getSharedStringItems();
                 String[] strings = new String[items.size()];
                 for (int i = 0; i < items.size(); i++)
-                    strings[i] = items.get(i).getT();
+                    strings[i] = items.get(i).getString();
                 this._sharedStrings = strings;
             }
         }

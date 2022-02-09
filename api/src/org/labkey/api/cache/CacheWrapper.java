@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
-import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.Filter;
 import org.labkey.api.view.ViewServlet;
 

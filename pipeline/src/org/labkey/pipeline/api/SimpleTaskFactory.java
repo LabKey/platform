@@ -164,7 +164,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             else if (xfileOutput.isSetOutputLocation())
             {
                 OutputLocationType xoutputLoc = xfileOutput.xgetOutputLocation();
-                switch (xoutputLoc.enumValue().intValue())
+                switch (xoutputLoc.getEnumValue().intValue())
                 {
                     case OutputLocationType.INT_ANALYSIS:
                         taskPath.setOutputLocation(OutputLocation.ANALYSIS_DIR);
