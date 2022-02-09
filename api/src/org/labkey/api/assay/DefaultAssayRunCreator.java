@@ -28,7 +28,6 @@ import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
@@ -71,7 +70,6 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -1209,8 +1207,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 boolean skipError = false;
                 if (lookup != null)
                 {
-                    Container container = lookup.getContainer() != null ? lookup.getContainer() : context.getContainer();
-                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), context.getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, value);
+                    Object remappedValue = OntologyManager.getRemappedValueForLookup(context.getUser(), context.getContainer(), cache, lookup, value);
                     if (remappedValue != null)
                         skipError = true;
                 }
