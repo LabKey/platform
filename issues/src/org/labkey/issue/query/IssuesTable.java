@@ -131,11 +131,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         IssuesQuerySchema schema = getUserSchema();
         Set<String> baseProps = new CaseInsensitiveHashSet();
         Map<String, String> colNameMap = new HashMap<>();
-        for (String colName : getDomainKind().getReservedPropertyNames(getDomain()))
+        for (String colName : getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()))
         {
             colNameMap.put(colName.toLowerCase(), colName);
         }
-        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain()));
+        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()));
 
         setDescription("Contains a row for each issue created in this folder.");
 

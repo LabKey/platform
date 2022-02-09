@@ -45,7 +45,7 @@ public class AssayPlateDataDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return getAssayReservedPropertyNames();
     }
