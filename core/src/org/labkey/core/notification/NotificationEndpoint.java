@@ -137,9 +137,6 @@ public class NotificationEndpoint extends Endpoint
 
     private boolean isSameHttpSession(HttpSession session)
     {
-        if (session == null)
-            return false;
-
         HttpSession boundSession = (HttpSession)this.session.getUserProperties().get("httpSession");
         return boundSession != null && boundSession.getId().equals(session.getId());
     }
@@ -200,7 +197,7 @@ public class NotificationEndpoint extends Endpoint
         return false;
     }
 
-    private static void doClose(int userId, @Nullable HttpSession httpSession, String message)
+    private static void doClose(int userId, HttpSession httpSession, String message)
     {
         // Close WebSockets for the user AND httpSession
         final CloseReason reason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, message);
@@ -264,7 +261,7 @@ public class NotificationEndpoint extends Endpoint
         sendEvent(userIds, clazz.getCanonicalName());
     }
 
-    public static void close(int userId, @Nullable HttpSession session, String message)
+    public static void close(int userId, HttpSession session, String message)
     {
         doClose(userId, session, message);
     }

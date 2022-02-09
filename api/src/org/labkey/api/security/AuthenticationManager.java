@@ -98,6 +98,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -127,6 +128,7 @@ public class AuthenticationManager
     private static final Logger _log = LogManager.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
+    private static final List<LogoutHandler> _logoutHandlers = new ArrayList<>();
 
     public enum AuthLogoType
     {
@@ -512,6 +514,11 @@ public class AuthenticationManager
 
         AuthenticationProviderCache.clear();
         AuthenticationConfigurationCache.clear();
+    }
+
+    public static void registerLogoutHandler(LogoutHandler handler)
+    {
+        _logoutHandlers.add(handler);
     }
 
 
@@ -1177,11 +1184,10 @@ public class AuthenticationManager
 
         if (null != session && !user.isGuest())
         {
-            // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
-
-            // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
-            NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
+            for (LogoutHandler handler : _logoutHandlers)
+            {
+                handler.handleLogout(user, session);
+            }
 
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
 

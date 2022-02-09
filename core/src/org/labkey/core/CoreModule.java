@@ -25,6 +25,7 @@ import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
+import org.labkey.api.admin.notification.NotificationLogoutHandler;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
@@ -326,6 +327,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("product", ProductController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
+        AuthenticationManager.registerLogoutHandler(new NotificationLogoutHandler());
         AttachmentService.setInstance(new AttachmentServiceImpl());
         AnalyticsService.setInstance(new AnalyticsServiceImpl());
         RhinoService.register();

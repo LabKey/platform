@@ -153,5 +153,5 @@ public interface NotificationService
      * cleanly close any websockets associated with the userId
      * If session is provided, only WebSockets associated with the HttpSession will close.
      */
-    void closeServerEvents(int userId, @Nullable HttpSession session, Enum e);
+    void closeServerEvents(int userId, HttpSession session, Enum e);
 }
