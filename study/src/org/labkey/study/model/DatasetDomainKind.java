@@ -282,7 +282,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public abstract Set<String> getReservedPropertyNames(Domain domain);
+    public abstract Set<String> getReservedPropertyNames(Domain domain, User user);
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
@@ -489,7 +489,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
                 {
-                    Set<String> reservedNames = getReservedPropertyNames(newDomain);
+                    Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
                     Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
                     Set<String> existingProperties = newDomain.getProperties().stream().map(o -> o.getName().toLowerCase()).collect(Collectors.toSet());
                     Map<DomainProperty, Object> defaultValues = new HashMap<>();
