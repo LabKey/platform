@@ -1804,7 +1804,7 @@ renaming a property AND toggling mvindicator on in the same change.
                 }
 
                 @Override
-                public Set<String> getReservedPropertyNames(Domain domain)
+                public Set<String> getReservedPropertyNames(Domain domain, User user)
                 {
                     return Set.of();
                 }
