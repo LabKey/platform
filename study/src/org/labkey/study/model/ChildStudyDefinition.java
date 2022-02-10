@@ -47,6 +47,7 @@ public class ChildStudyDefinition
     private Integer[] _lists;
     private String[] _views;
     private String[] _reports;
+    private String[] _queries;
     private int[] _datasets = new int[0];
     private boolean update;
     private int _updateDelay;
@@ -66,6 +67,7 @@ public class ChildStudyDefinition
     private boolean _folderPropsAll;
     private boolean _viewsAll;
     private boolean _reportsAll;
+    private boolean _queriesAll;
 
     public String getName()
     {
@@ -229,8 +231,16 @@ public class ChildStudyDefinition
         return _reports;
     }
 
-    public void setReports(String[] views){
-        _reports = views;
+    public void setReports(String[] reports){
+        _reports = reports;
+    }
+
+    public String[] getQueries(){
+        return _queries;
+    }
+
+    public void setQueries(String[] queries){
+        _queries = queries;
     }
 
     public String[] getViews(){
@@ -342,6 +352,16 @@ public class ChildStudyDefinition
     public void setReportsAll(boolean reportsAll)
     {
         _reportsAll = reportsAll;
+    }
+
+    public boolean isQueriesAll()
+    {
+        return _queriesAll;
+    }
+
+    public void setQueriesAll(boolean queriesAll)
+    {
+        _queriesAll = queriesAll;
     }
 
     public boolean isParticipantGroupsAll()
