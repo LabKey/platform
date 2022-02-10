@@ -1,14 +1,14 @@
 package org.labkey.api.admin.notification;
 
 import org.labkey.api.security.AuthNotify;
-import org.labkey.api.security.LogoutHandler;
+import org.labkey.api.security.SessionEventHandler;
 import org.labkey.api.security.User;
 
 import javax.servlet.http.HttpSession;
 
-public class NotificationLogoutHandler implements LogoutHandler
+public class NotificationSessionEventHandler implements SessionEventHandler
 {
-    public void handleLogout(User user, HttpSession session)
+    public void handleSessionDestroyed(User user, HttpSession session)
     {
         // notify websocket clients associated with this http session, the user has logged out
         NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);

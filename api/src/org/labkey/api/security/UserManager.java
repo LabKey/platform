@@ -62,6 +62,7 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
@@ -102,6 +103,8 @@ public class UserManager
     public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
+
+    private static final List<SessionEventHandler> _sessionEventHandlers = new CopyOnWriteArrayList<>();
 
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
@@ -420,6 +423,11 @@ public class UserManager
         return Math.toIntExact((long) result.getValue());
     }
 
+    public static void registerSessionEventHandler(SessionEventHandler handler)
+    {
+        _sessionEventHandlers.add(handler);
+    }
+
     /** Of authenticated users, tallied when their session ends */
     private static final AtomicLong _sessionCount = new AtomicLong();
     /** In minutes */
@@ -436,11 +444,19 @@ public class UserManager
         @Override
         public void sessionDestroyed(HttpSessionEvent event)
         {
+            HttpSession session = event.getSession();
+            Integer userId = (Integer) event.getSession().getAttribute(SecurityManager.USER_ID_KEY);
             // Issue 44761 - track session duration for authenticated users
             if (event.getSession().getAttribute(SecurityManager.USER_ID_KEY) != null)
             {
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet((TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime())));
+                User user = getUser(userId);
+
+                for (SessionEventHandler sessionEventHandler : _sessionEventHandlers)
+                {
+                    sessionEventHandler.handleSessionDestroyed(user, session);
+                }
             }
         }
     }

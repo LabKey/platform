@@ -98,7 +98,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -128,7 +127,6 @@ public class AuthenticationManager
     private static final Logger _log = LogManager.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
-    private static final List<LogoutHandler> _logoutHandlers = new ArrayList<>();
 
     public enum AuthLogoType
     {
@@ -515,12 +513,6 @@ public class AuthenticationManager
         AuthenticationProviderCache.clear();
         AuthenticationConfigurationCache.clear();
     }
-
-    public static void registerLogoutHandler(LogoutHandler handler)
-    {
-        _logoutHandlers.add(handler);
-    }
-
 
     public static void deleteConfiguration(User user, int rowId)
     {
@@ -1184,11 +1176,6 @@ public class AuthenticationManager
 
         if (null != session && !user.isGuest())
         {
-            for (LogoutHandler handler : _logoutHandlers)
-            {
-                handler.handleLogout(user, session);
-            }
-
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
 
             Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
