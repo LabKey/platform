@@ -787,7 +787,13 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 8 : Grid Views
+        // Wizard page 8 : Queries
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
+        waitForElement(Locator.css(".studyWizardQueryList"));
+        click(Locator.css(".studyWizardQueryList .x-grid3-hd-checker  div")); // de-select all
+        clickButton("Next", 0);
+
+        // Wizard page 9 : Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
         assertTextNotPresent(R_VIEW_UNSHARED);
@@ -797,7 +803,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard Page 9 : Reports and Charts
+        // Wizard Page 10 : Reports and Charts
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
@@ -807,12 +813,12 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 10 : Folder Objects
+        // Wizard page 11 : Folder Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
         click(Locator.css(".folderObjects .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 11 : Publish Options
+        // Wizard page 12 : Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
@@ -892,20 +898,26 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardListList, "CustomIndexing", "Indexed as one doc", "List To Delete", "List1");
         clickButton("Next", 0);
 
-        // Wizard page 8 : Grid Views
+        // Wizard page 8 : Queries
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
+        waitForElement(Locator.css(".studyWizardQueryList"));
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardQueryList, "..."); // TODO
+        clickButton("Next", 0);
+
+        // Wizard page 9 : Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardViewList, "Shared Custom View");
         clickButton("Next", 0);
 
-        // Wizard Page 9 : Reports and Charts
+        // Wizard Page 10 : Reports and Charts
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardReportList, "Shared Mouse Report", "Shared Time Chart");
         clickButton("Next", 0);
 
-        // Wizard page 10 : Folder Objects
+        // Wizard page 11 : Folder Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
                 "Categories",
@@ -923,7 +935,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Sample Types and Data Classes");
         clickButton("Next", 0);
 
-        // Wizard page 11 : Publish Options
+        // Wizard page 12 : Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
@@ -1295,6 +1307,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         studyWizardVisitList("Label"),
         studyObjects("Name"),
         studyWizardListList("Name"),
+        studyWizardQueryList("Query Name"),
         studyWizardViewList("Name"),
         studyWizardReportList("Name"),
         folderObjects("Name"),
