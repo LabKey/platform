@@ -706,7 +706,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             clickButton("Next", 0);
         }
 
-        // Wizard page 1 : General Setup
+        // General Setup
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'General Setup']"));
         setFormElement(Locator.name("studyName"), name);
         setFormElement(Locator.name("studyDescription"), description);
@@ -715,7 +715,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         selectLocation(location);
         clickButton("Next", 0);
 
-        // Wizard page 2 : Mice
+        // Mice
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Mice']"));
         waitForElement(Locator.css(".studyWizardParticipantList"));
         if (groups != null && groups.length > 0)
@@ -737,7 +737,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 3 : Datasets
+        // Datasets
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Datasets']"));
         waitForElement(Locator.css(".studyWizardDatasetList"));
         for (String dataset : datasets)
@@ -748,7 +748,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             click(Locator.css(".studyWizardDatasetList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 4 : Visits
+        // Visits
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Visits']"));
         waitForElement(Locator.css(".studyWizardVisitList"));
         clickButton("Next", 0);
@@ -765,19 +765,17 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         if (_studyHelper.isSpecimenModulePresent())
         {
-            // Wizard page 5 : Specimens
+            // Specimens
             waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
             if (!includeSpecimens) uncheckCheckbox(Locator.name("includeSpecimens"));
             if (refreshSpecimens) checkCheckbox(Locator.radioButtonByNameAndValue("specimenRefresh", "true"));
             clickButton("Next", 0);
         }
 
-        // Wizard Page 6 : Study Objects
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        click(Locator.css(".studyObjects .x-grid3-hd-checker  div"));
-        clickButton("Next", 0);
+        // Study Objects
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyObjects));
 
-        // Wizard page 7 : Lists
+        // Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
         waitForElement(Locator.css(".studyWizardListList"));
         click(Locator.css(".studyWizardListList .x-grid3-hd-checker  div")); // de-select all
@@ -787,13 +785,13 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 8 : Queries
+        // Queries
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
         waitForElement(Locator.css(".studyWizardQueryList"));
         click(Locator.css(".studyWizardQueryList .x-grid3-hd-checker  div")); // de-select all
         clickButton("Next", 0);
 
-        // Wizard page 9 : Grid Views
+        // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
         assertTextNotPresent(R_VIEW_UNSHARED);
@@ -803,7 +801,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard Page 10 : Reports and Charts
+        // Reports and Charts
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
@@ -813,12 +811,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
         clickButton("Next", 0);
 
-        // Wizard page 11 : Folder Objects
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
-        click(Locator.css(".folderObjects .x-grid3-hd-checker  div"));
-        clickButton("Next", 0);
+        // Folder Objects
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.folderObjects));
 
-        // Wizard page 12 : Publish Options
+        // Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
@@ -855,31 +851,31 @@ public class StudyPublishTest extends StudyPHIExportTest
         _extHelper.waitForExtDialog("Republish Study");
 
 
-        // Wizard page 1 : General Setup
+        // General Setup
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'General Setup']"));
         setFormElement(Locator.name("studyName"), newName);
         clickButton("Next", 0);
 
-        // Wizard page 2 : Mice
+        // Mice
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Mice']"));
         waitForElement(Locator.css(".studyWizardParticipantList"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardParticipantList, GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardParticipantList, GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
         clickButton("Next", 0);
 
-        // Wizard page 3 : Datasets
+        // Datasets
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Datasets']"));
         waitForElement(Locator.css(".studyWizardDatasetList"));
         // TODO: Issue 22787: Study republish includes unselected datasets
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardDatasetList, ArrayUtils.addAll(DATASETS, PUB1_DEPENDENT_DATASETS));
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardDatasetList, ArrayUtils.addAll(DATASETS, PUB1_DEPENDENT_DATASETS));
         clickButton("Next", 0);
 
-        // Wizard page 4 : Visits
+        // Visits
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Visits']"));
         waitForElement(Locator.css(".studyWizardVisitList"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardVisitList, "Screening", "Grp1:F/U/Grp2:V#2", "G1: V#2/G2: V#3");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardVisitList, "Screening", "Grp1:F/U/Grp2:V#2", "G1: V#2/G2: V#3");
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens, if present & active
+        // Specimens, if present & active
         if (_studyHelper.isSpecimenModuleActive())
         {
             waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
@@ -887,39 +883,39 @@ public class StudyPublishTest extends StudyPHIExportTest
             clickButton("Next", 0);
         }
 
-        // Wizard Page 6 : Study Objects
+        // Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Treatment Data");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Treatment Data");
         clickButton("Next", 0);
 
-        // Wizard page 7 : Lists
+        // Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
         waitForElement(Locator.css(".studyWizardListList"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardListList, "CustomIndexing", "Indexed as one doc", "List To Delete", "List1");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardListList, "CustomIndexing", "Indexed as one doc", "List To Delete", "List1");
         clickButton("Next", 0);
 
-        // Wizard page 8 : Queries
+        // Queries
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
         waitForElement(Locator.css(".studyWizardQueryList"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardQueryList, "..."); // TODO
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardQueryList, "..."); // TODO
         clickButton("Next", 0);
 
-        // Wizard page 9 : Grid Views
+        // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
         waitForElement(Locator.css(".studyWizardViewList"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardViewList, "Shared Custom View");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardViewList, "Shared Custom View");
         clickButton("Next", 0);
 
-        // Wizard Page 10 : Reports and Charts
+        // Reports and Charts
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
         waitForElement(Locator.css(".studyWizardReportList"));
         waitForElement(Locator.css(".studyWizardReportList .x-grid3-col-1")); // Make sure grid is filled in
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardReportList, "Shared Mouse Report", "Shared Time Chart");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardReportList, "Shared Mouse Report", "Shared Time Chart");
         clickButton("Next", 0);
 
-        // Wizard page 11 : Folder Objects
+        // Folder Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.folderObjects,
                 "Categories",
                 "Container specific module properties",
                 "External schema definitions",
@@ -935,11 +931,11 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Sample Types and Data Classes");
         clickButton("Next", 0);
 
-        // Wizard page 12 : Publish Options
+        // Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList"));
         waitForElement(Locator.css(".studyWizardPublishOptionsList .x-grid3-col-1")); // Make sure grid is filled in
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardPublishOptionsList, "Use Alternate Mouse IDs", "Shift Mouse Dates");
         //goToProjectHome();
     }
 
@@ -1289,7 +1285,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
     }
 
-    private void verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid grid, String... expectedCheckboxes)
+    private void verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel grid, String... expectedCheckboxes)
     {
         Locator.CssLocator gridLoc = Locator.css("div." + grid.name());
         WebElement columnHeader = gridLoc.append(Locator.css("tr.x-grid3-hd-row > td")).withText(grid.getLabelColumn()).findElement(getDriver());
@@ -1298,31 +1294,5 @@ public class StudyPublishTest extends StudyPHIExportTest
         List<WebElement> selectedRows = selectedLabelLoc.findElements(getDriver());
         Set<String> selectedLabels = new HashSet<>(getTexts(selectedRows));
         assertEquals("Wizard has wrong checkboxes checked", new HashSet<>(Arrays.asList(expectedCheckboxes)), selectedLabels);
-    }
-
-    private enum StudyPublishWizardGrid
-    {
-        studyWizardParticipantList("Mouse Group"),
-        studyWizardDatasetList("Label"),
-        studyWizardVisitList("Label"),
-        studyObjects("Name"),
-        studyWizardListList("Name"),
-        studyWizardQueryList("Query Name"),
-        studyWizardViewList("Name"),
-        studyWizardReportList("Name"),
-        folderObjects("Name"),
-        studyWizardPublishOptionsList("Name");
-
-        private final String labelColumn;
-
-        StudyPublishWizardGrid(String labelColumn)
-        {
-            this.labelColumn = labelColumn;
-        }
-
-        public String getLabelColumn()
-        {
-            return labelColumn;
-        }
     }
 }
