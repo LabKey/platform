@@ -476,5 +476,46 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
+    <!-- Intermediate type introduced only to remove the 'outputs' element from base TaskType -->
+    <xs:complexType name="AssayImportRunTaskIntermediateType" abstract="true">
+        <xs:complexContent>
+            <xs:restriction base="p:TaskType">
+                <xs:sequence>
+                    <xs:group ref="InfoGroup"/>
+                    <xs:element name="author" type="xs:string" minOccurs="0"/>
+                    <xs:element name="location" type="xs:string" minOccurs="0"/>
+                    <xs:element name="inputs" type="InputsType" minOccurs="0"/>
+                    <!-- removed 'outputs' element -->
+                </xs:sequence>
+                <xs:attributeGroup ref="NameVersionAttrGroup"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="AssayImportRunTaskType">
+        <xs:annotation>
+            <xs:documentation>Import an output file from a previous task into the target assay.</xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="p:AssayImportRunTaskIntermediateType">
+                <xs:sequence>
+                    <xs:element name="providerName" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>Either an assay provider name or a job parameter name enclosed in ${}.
+                                If not provided, the assay provider will be looked up using the "${providerName}" parameter.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="protocolName" type="xs:string" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>Either an assay protocol name or a job parameter name enclosed in ${}.
+                                If not provided, the assay protocol will be looked up using the "${protocolName}" parameter.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>
 

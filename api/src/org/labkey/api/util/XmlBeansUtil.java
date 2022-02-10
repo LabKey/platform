@@ -42,7 +42,7 @@ public class XmlBeansUtil
     {
     }
 
-    // Standard options used by study export.
+    // Standard options used by folder export
     public static XmlOptions getDefaultSaveOptions()
     {
         XmlOptions options = new XmlOptions();
