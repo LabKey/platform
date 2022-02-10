@@ -447,7 +447,7 @@ public class UserManager
             HttpSession session = event.getSession();
             Integer userId = (Integer) event.getSession().getAttribute(SecurityManager.USER_ID_KEY);
             // Issue 44761 - track session duration for authenticated users
-            if (event.getSession().getAttribute(SecurityManager.USER_ID_KEY) != null)
+            if (userId != null)
             {
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet((TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime())));
