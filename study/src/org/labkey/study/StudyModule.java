@@ -121,6 +121,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.ExperimentListenerImpl;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.PublishAuditProvider;
+import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.DatasetController;
@@ -371,6 +372,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
+        AuditLogService.get().registerAuditType(new ParticipantGroupAuditProvider());
 
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new ExternalReport());
