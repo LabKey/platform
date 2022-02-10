@@ -154,7 +154,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         return _reservedNames;
     }
