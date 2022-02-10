@@ -1423,34 +1423,23 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }, this);
 
         panel.on('activate', function(){
-            // Filter out the views that will not be exported.
-            var listQueries = {},
-                studyQueries = {},
-                i;
-            
-            for(i = 0; i < this.selectedLists.length; i++){
-                listQueries[this.selectedLists[i].data.name] = this.selectedLists[i].data.name;
+            // Filter out the views that will not be exported because the relevant schema/query was not selected for export
+            var includedQueryKeys = [];
+            for (var i = 0; i < this.selectedQueries.length; i++) {
+                includedQueryKeys.push(this.selectedQueries[i].data.key);
             }
-
-            if (this.info.datasets)
-            {
-                for(i = 0; i < this.info.datasets.length; i++){
-                    studyQueries[this.info.datasets[i].data.Name] = this.info.datasets[i].data.Name;
-                }
+            for (var i = 0; i < this.selectedLists.length; i++) {
+                includedQueryKeys.push('lists||' + this.selectedLists[i].data.name);
+            }
+            for (var i = 0; i < this.info.datasets.length; i++) {
+                includedQueryKeys.push('study||' + this.info.datasets[i].data.Name);
             }
 
             viewsStore.filterBy(function(record){
-                var schemaName = record.get('schemaName'),
-                    queryName = record.get('queryName');
-
-                if(record.get('type') === 'Query' && record.get('shared')){
-                    if(schemaName == 'lists'){
-                        return listQueries[record.get('queryName')] != undefined;
-                    } else if(schemaName == 'study'){
-                        return studyQueries[record.get('queryName')] != undefined;
-                    }
+                if (record.get('type') === 'Query' && record.get('shared')) {
+                    var queryKey = record.get('schemaName') + '||' + record.get('queryName');
+                    return includedQueryKeys.indexOf(queryKey) > -1;
                 }
-
                 return false;
             }, this);
         }, this);
@@ -2015,13 +2004,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             grid.getSelectionModel().clearSelections();
             if (this.settings)
             {
-                console.log(this.settings);
-                if (!this.settings.queries)
-                {
+                if (this.settings.queries === undefined) {
+                    // no-op for snapshot settings created before query selection was included
+                } else if (this.settings.queries === null) {
                     this.gridSelectAll(grid);
-                }
-                else
-                {
+                } else {
                     var queries = this.setify(this.settings.queries);
                     grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['key'] in queries); }).getRange(), true);
                 }
