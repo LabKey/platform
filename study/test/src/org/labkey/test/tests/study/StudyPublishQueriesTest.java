@@ -25,7 +25,7 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
 {
     public static final String PROJECT_NAME = "StudyPublishQueriesTestProject";
     public static final String USER_DEFINED_QUERY = "MyUserDefinedQuery";
-    public static final List<String> SCHEMA_NAMES = Arrays.asList("assay.General", "core", "study");
+    public static final List<String> SCHEMA_NAMES = Arrays.asList("wiki", "core", "study");
 
     @BeforeClass
     public static void setupProject()
@@ -103,17 +103,17 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
         publishStudy(folderName, true);
         clickFolder(folderName);
         verifyQueriesExist(SCHEMA_NAMES);
-        verifyRepublishQuerySelections(folderName, "assay.General", "core", "study");
+        verifyRepublishQuerySelections(folderName, "wiki", "core", "study");
     }
 
     @Test
     public void testPublishStudyWithSubsetOfQueries()
     {
         String folderName = "Subset Queries";
-        publishStudy(folderName, false, "assay.General||" + USER_DEFINED_QUERY, "study||" + USER_DEFINED_QUERY);
+        publishStudy(folderName, false, "wiki||" + USER_DEFINED_QUERY, "study||" + USER_DEFINED_QUERY);
         clickFolder(folderName);
-        verifyQueriesExist(Arrays.asList("assay.General", "study"));
-        verifyRepublishQuerySelections(folderName, "assay.General", "study");
+        verifyQueriesExist(Arrays.asList("wiki", "study"));
+        verifyRepublishQuerySelections(folderName, "wiki", "study");
     }
 
     private void verifyQueriesExist(List<String> expectedSchemaNames)
