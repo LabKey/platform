@@ -1431,8 +1431,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             for (var i = 0; i < this.selectedLists.length; i++) {
                 includedQueryKeys.push('lists||' + this.selectedLists[i].data.name);
             }
-            for (var i = 0; i < this.info.datasets.length; i++) {
-                includedQueryKeys.push('study||' + this.info.datasets[i].data.Name);
+            if (this.info.datasets) {
+                for (var i = 0; i < this.info.datasets.length; i++) {
+                    includedQueryKeys.push('study||' + this.info.datasets[i].data.Name);
+                }
             }
 
             viewsStore.filterBy(function(record){
