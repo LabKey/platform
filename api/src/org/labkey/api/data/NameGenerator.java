@@ -876,17 +876,26 @@ public class NameGenerator
                             throw new UnsupportedOperationException(errorMsg);
                     }
 
-                    if (_parentTable == null && domainFields.isEmpty())
+                    if (isLineagePart)
                     {
-                        String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
-                        if (_validateSyntax)
-                            _syntaxErrors.add(errorMsg);
-                        else
-                            throw new UnsupportedOperationException(errorMsg);
+                        boolean isInput = sTok.startsWith(INPUT_PARENT.toLowerCase());
+                        boolean isMaterial = sTok.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase());
+                        Object preview = isInput ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
+                        previewCtx.put(fkTok.toString(), preview);
                     }
+                    else
+                    {
+                        if (_parentTable == null && domainFields.isEmpty())
+                        {
+                            String errorMsg = "Parent table is required for name expressions with lookups: " + fkTok + ".";
+                            if (_validateSyntax)
+                                _syntaxErrors.add(errorMsg);
+                            else
+                                throw new UnsupportedOperationException(errorMsg);
+                        }
 
-                    if (!isLineagePart)
                         lookups.add(fkTok);
+                    }
                 }
             }
         }
@@ -2269,7 +2278,7 @@ public class NameGenerator
 
             validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
 
-            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Parent input does not exist: Inputs/SampleTypeNotExist"));
+            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Lineage lookup field does not exist: Inputs/SampleTypeNotExist"));
         }
 
         @Test
