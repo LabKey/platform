@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
 import java.util.Set;
@@ -42,7 +43,7 @@ public class AssayRunDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> result = getAssayReservedPropertyNames();
         for (ExpRunTable.Column column : ExpRunTable.Column.values())
