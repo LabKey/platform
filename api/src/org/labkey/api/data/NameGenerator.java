@@ -570,7 +570,25 @@ public class NameGenerator
                 .filter(s -> !s.isEmpty());
     }
 
-    public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases)
+    public static boolean isLineageInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        return isLineageToken(token, importAliases) || isLineageInputWithDataType(token.toString().split("/"), currentDataTypeName, container, user);
+    }
+
+    public static boolean isLineageLookup(List<String> fieldParts, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        if (!isLineageToken(fieldParts.get(0), importAliases))
+            return false;
+
+        if (fieldParts.size() == 2 && isLineageInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, container, user))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean isLineageToken(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString();
         Map<String, String> aliasesInsensitive = new CaseInsensitiveHashMap<>();
@@ -583,15 +601,41 @@ public class NameGenerator
                 || aliasesInsensitive.containsKey(sTok);
     }
 
-    /**
-     * @param inputDataTypeOrLookupField For syntax with 2 parts, the sencond part can be either a lookup field or a data type: Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup, MaterialInputs/SampleType1
-     */
-    private Object getLineageLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String inputDataTypeOrLookupField, User user)
+    public static boolean isLineageInputWithDataType(String[] parts, @Nullable String currentDataTypeName, Container container, User user)
+    {
+        if (parts.length != 2)
+            return false;
+
+        String inputToken = parts[0];
+        String dataType = parts[1];
+
+        boolean isInput = INPUT_PARENT.equalsIgnoreCase(inputToken);
+        boolean isData = ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(inputToken);
+        boolean isMaterial = ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(inputToken);
+
+        if (!(isInput || isData || isMaterial))
+            return false;
+
+        if (dataType.equalsIgnoreCase(currentDataTypeName))
+            return true;
+
+        if (isMaterial || isInput)
+        {
+            if (SampleTypeService.get().getSampleType(container, user, dataType) != null)
+                return true;
+
+            if (isMaterial)
+                return false;
+        }
+
+        return ExperimentService.get().getDataClass(container, user, dataType) != null;
+    }
+
+    private Object getLineageLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
     {
         boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
         boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
-        boolean isInput = isMaterial && isData; // "Inputs"
-        switch (inputDataTypeOrLookupField.toLowerCase())
+        switch (lookupField.toLowerCase())
         {
             case "rowid":
             case "createdby":
@@ -600,7 +644,7 @@ public class NameGenerator
             case "name":
             case "lsid":
             case "description":
-                return "parent" + inputDataTypeOrLookupField;
+                return "parent" + lookupField;
             case "created":
                 return PREVIEW_DATE_VALUE;
             case "modified":
@@ -636,15 +680,6 @@ public class NameGenerator
             return null;
         }
 
-        // Inputs/SampleType1
-        if (inputDataType == null)
-        {
-            List<String> dataTypeNames = dataTypes.stream().map(Identifiable::getName).toList();
-
-            if (dataTypeNames.contains(inputDataTypeOrLookupField) || inputDataTypeOrLookupField.equals(currentDataType))
-                return isInput ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
-        }
-
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
@@ -661,9 +696,9 @@ public class NameGenerator
                 List<? extends DomainProperty> domainProperties = domain.getProperties();
                 for (DomainProperty domainProperty : domainProperties)
                 {
-                    if (domainProperty.getName().equalsIgnoreCase(inputDataTypeOrLookupField))
+                    if (domainProperty.getName().equalsIgnoreCase(lookupField))
                     {
-                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), inputDataTypeOrLookupField);
+                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
                         if (result instanceof String)
                             return "parent" + result;
                         return result;
@@ -673,10 +708,7 @@ public class NameGenerator
 
         }
 
-        if (inputDataType == null)
-            _syntaxErrors.add("Parent input does not exist: " + fkTok.toString());
-        else
-            _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
+        _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
         return null;
     }
 
@@ -735,7 +767,7 @@ public class NameGenerator
                 }
 
                 String sTok = token.toString().toLowerCase();
-                if (isLineageInput(sTok, importAliases))
+                if (isLineageInput(sTok, importAliases, _currentDataTypeName, _container, user))
                 {
                     isLineagePart = true;
                     hasLineageInputs = true;
@@ -783,12 +815,11 @@ public class NameGenerator
                         continue;
                     }
 
-                    boolean isLineageLookup = isLineageInput(fieldParts.get(0), importAliases);
+                    boolean isLineageLookup = isLineageLookup(fieldParts, importAliases, _currentDataTypeName, _container, user);
 
                     if (isLineageLookup)
                     {
-                        if (fieldParts.size() == 2) //can either be lineage inputs or lookup: Inputs/name, Inputs/SampleType1
-                            hasLineageInputs = true;
+
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
@@ -854,7 +885,8 @@ public class NameGenerator
                             throw new UnsupportedOperationException(errorMsg);
                     }
 
-                    lookups.add(fkTok);
+                    if (!isLineagePart)
+                        lookups.add(fkTok);
                 }
             }
         }
@@ -1546,6 +1578,9 @@ public class NameGenerator
                             inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
                         });
                     }
+
+                    if (value instanceof String) // convert "parent1,parent2" to [parent1, parent2]
+                        inputs.computeIfAbsent(parts[0] + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
             }
         }
