@@ -70,7 +70,8 @@ public class ListDefinitionImpl implements ListDefinition
 {
     private static final Logger LOG = LogManager.getLogger(ListDefinitionImpl.class);
 
-    static public ListDefinitionImpl of(ListDef def)
+    @Nullable
+    static public ListDefinitionImpl of(@Nullable ListDef def)
     {
         if (def == null)
             return null;

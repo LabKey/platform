@@ -371,7 +371,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // currently, picklists don't contain PHI and can always be deleted
         if (_list.isPicklist() && InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm))
-            return _list.getContainer().hasPermission(user, ManagePicklistsPermission.class);
+            return getContainer().hasPermission(user, ManagePicklistsPermission.class);
 
         boolean gate = true;
         if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm))

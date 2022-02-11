@@ -122,7 +122,9 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
                 {
                     Integer listId = (Integer) ctx.get("ListID");
                     ListDef listDef = ListManager.get().getList(ctx.getContainer(), listId);
-                    ListDefinition list = new ListDefinitionImpl(listDef);
+                    ListDefinition list = ListDefinitionImpl.of(listDef);
+                    if (list == null)
+                        return 0;
                     return new TableSelector(list.getTable(userSchema.getUser())).getRowCount();
                 }
 
