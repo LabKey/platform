@@ -248,7 +248,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         doubleClick(projectTreeNode);
         clickButton("Next", 0);
 
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardMouseList));
+        // Pandas
+        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Pandas']"));
+        clickButton("Next", 0);
+
+        // Datasets
         _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardDatasetList), true);
 
         // Visits
