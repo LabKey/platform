@@ -117,7 +117,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     public static File createFile(ExpProtocol protocol, File dir, String extension)
     {
         Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss");
+        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss-SSS");
         int id = 0;
 
         String protocolName = protocol.getName();

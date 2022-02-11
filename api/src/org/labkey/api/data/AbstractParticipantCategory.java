@@ -194,6 +194,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         _rowId = copy._rowId;
         _ownerId = copy._ownerId;
         _label = copy._label;
+        _groups = copy._groups;
     }
 
     @Override
