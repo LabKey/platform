@@ -46,6 +46,7 @@ import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -2649,11 +2650,29 @@ public class OntologyManager
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable String ownerObjectLsid, boolean insertNullValues) throws ValidationException
     {
         ObjectProperty oprop;
+        RemapCache cache = new RemapCache();
+
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), container, pd.getContainer());
 
-            oprop = new ObjectProperty(lsid, container, pd, value);
+            try
+            {
+                oprop = new ObjectProperty(lsid, container, pd, value);
+            }
+            catch (ConversionException x)
+            {
+                // Issue 43529: Assay run property with large lookup doesn't resolve text input by value
+                // Attempt to resolve lookups by display value and then try creating the ObjectProperty again
+                if (pd.getLookup() != null)
+                {
+                    Object remappedValue = getRemappedValueForLookup(user, container, cache, pd.getLookup(), value);
+                    if (remappedValue != null)
+                        value = remappedValue;
+                }
+                oprop = new ObjectProperty(lsid, container, pd, value);
+            }
+
             if (value != null || insertNullValues)
             {
                 oprop.setPropertyId(pd.getPropertyId());
@@ -2670,6 +2689,12 @@ public class OntologyManager
             transaction.commit();
         }
         return oprop;
+    }
+
+    public static Object getRemappedValueForLookup(User user, Container container, RemapCache cache, Lookup lookup, Object value)
+    {
+        Container lkContainer = lookup.getContainer() != null ? lookup.getContainer() : container;
+        return cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
     public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)

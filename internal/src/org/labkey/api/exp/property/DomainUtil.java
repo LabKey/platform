@@ -260,7 +260,7 @@ public class DomainUtil
         d.setFields(list);
 
         // Handle reserved property names
-        Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
+        Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain, user);
         d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
         d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes());
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
@@ -546,7 +546,7 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null);
+        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null, user);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -578,7 +578,7 @@ public class DomainUtil
         }
 
         DomainKind<?> kind = d.getDomainKind();
-        ValidationException validationException = validateProperties(d, update, kind, orig);
+        ValidationException validationException = validateProperties(d, update, kind, orig, user);
 
         if (validationException.hasErrors())
         {
@@ -1096,9 +1096,9 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
