@@ -590,6 +590,7 @@ public class NameGenerator
     {
         boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
         boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
+        boolean isInput = isMaterial && isData; // "Inputs"
         switch (inputDataTypeOrLookupField.toLowerCase())
         {
             case "rowid":
@@ -641,7 +642,7 @@ public class NameGenerator
             List<String> dataTypeNames = dataTypes.stream().map(Identifiable::getName).toList();
 
             if (dataTypeNames.contains(inputDataTypeOrLookupField) || inputDataTypeOrLookupField.equals(currentDataType))
-                return isMaterial && isData ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
+                return isInput ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
         }
 
         for (ExpObject dataType : dataTypes)
