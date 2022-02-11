@@ -892,10 +892,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Queries
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
-        waitForElement(Locator.css(".studyWizardQueryList"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardQueryList, "..."); //TODO
-        clickButton("Next", 0);
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardQueryList));
 
         // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
