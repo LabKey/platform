@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -212,14 +213,22 @@ public class NameGenerator
 
     private final List<? extends GWTPropertyDescriptor> _domainProperties; // used for name expression validation at creation time, before the tableInfo is available
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
+    private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
     {
         _parentTable = parentTable;
         _container = container;
         _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
+        _currentDataTypeName = currentDataTypeName;
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -239,6 +248,7 @@ public class NameGenerator
         _container = container;
         _validateSyntax = false;
         _domainProperties = null;
+        _currentDataTypeName = null;
         initialize(null);
     }
 
@@ -267,7 +277,7 @@ public class NameGenerator
         _previewName = previewName;
     }
 
-    public static NameExpressionValidationResult getValidationMessages(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    public static NameExpressionValidationResult getValidationMessages(@Nullable String currentDataTypeName, @NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
     {
         List<String> errorMessages = getMismatchedTagErrors(nameExpression);
         Pair<List<String>, List<String>> reservedFieldResults = getReservedFieldValidationResults(nameExpression);
@@ -278,15 +288,15 @@ public class NameGenerator
 
         warningMessages.addAll(getFieldMissingBracesWarnings(nameExpression, properties, importAliases));
 
-        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container);
+        NameExpressionValidationResult fieldMessages = getSubstitutionPartValidationResults(nameExpression, properties, importAliases, container, currentDataTypeName);
         errorMessages.addAll(fieldMessages.errors());
         warningMessages.addAll(fieldMessages.warnings());
         return new NameExpressionValidationResult(errorMessages, warningMessages, fieldMessages.previews());
     }
 
-    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container)
+    static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container, @Nullable String currentDataTypeName)
     {
-        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties);
+        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties, currentDataTypeName);
         return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
     }
 
@@ -573,11 +583,14 @@ public class NameGenerator
                 || aliasesInsensitive.containsKey(sTok);
     }
 
-    private Object getLineageLookupTokenPreview(FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String lookupField, User user)
+    /**
+     * @param inputDataTypeOrLookupField For syntax with 2 parts, the sencond part can be either a lookup field or a data type: Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup, MaterialInputs/SampleType1
+     */
+    private Object getLineageLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, String inputDataTypeOrLookupField, User user)
     {
         boolean isMaterial = inputPrefix.toLowerCase().startsWith("materialinputs") || inputPrefix.toLowerCase().startsWith("inputs");
         boolean isData = inputPrefix.toLowerCase().startsWith("datainputs") || inputPrefix.toLowerCase().startsWith("inputs");
-        switch (lookupField)
+        switch (inputDataTypeOrLookupField.toLowerCase())
         {
             case "rowid":
             case "createdby":
@@ -586,7 +599,7 @@ public class NameGenerator
             case "name":
             case "lsid":
             case "description":
-                return "parent" + lookupField;
+                return "parent" + inputDataTypeOrLookupField;
             case "created":
                 return PREVIEW_DATE_VALUE;
             case "modified":
@@ -622,6 +635,15 @@ public class NameGenerator
             return null;
         }
 
+        // Inputs/SampleType1
+        if (inputDataType == null)
+        {
+            List<String> dataTypeNames = dataTypes.stream().map(Identifiable::getName).toList();
+
+            if (dataTypeNames.contains(inputDataTypeOrLookupField) || inputDataTypeOrLookupField.equals(currentDataType))
+                return isMaterial && isData ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
+        }
+
         for (ExpObject dataType : dataTypes)
         {
             Domain domain = null;
@@ -638,9 +660,9 @@ public class NameGenerator
                 List<? extends DomainProperty> domainProperties = domain.getProperties();
                 for (DomainProperty domainProperty : domainProperties)
                 {
-                    if (domainProperty.getName().equalsIgnoreCase(lookupField))
+                    if (domainProperty.getName().equalsIgnoreCase(inputDataTypeOrLookupField))
                     {
-                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), lookupField);
+                        Object result = getNamePartPreviewValue(domainProperty.getPropertyType(), inputDataTypeOrLookupField);
                         if (result instanceof String)
                             return "parent" + result;
                         return result;
@@ -650,7 +672,10 @@ public class NameGenerator
 
         }
 
-        _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
+        if (inputDataType == null)
+            _syntaxErrors.add("Parent input does not exist: " + fkTok.toString());
+        else
+            _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
         return null;
     }
 
@@ -761,6 +786,8 @@ public class NameGenerator
 
                     if (isLineageLookup)
                     {
+                        if (fieldParts.size() == 2) //can either be lineage inputs or lookup: Inputs/name, Inputs/SampleType1
+                            hasLineageInputs = true;
                         String alias = fieldParts.get(0);
                         boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
 
@@ -774,22 +801,22 @@ public class NameGenerator
                             lineageLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
                             String[] inputParts = dataTypeToken.split("/");
-                            lookupValuePreview = getLineageLookupTokenPreview(fkTok, inputParts[0], inputParts[1], lookupField, user);
+                            lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, inputParts[0], inputParts[1], lookupField, user);
                         }
                         else if (!isParentAlias && fieldParts.size() <= 3)
                         {
                             if (fieldParts.size() == 2)
                             {
-                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup
+                                // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup, MaterialInputs/SampleType1
                                 lineageLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
+                                lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), null, fieldParts.get(1), user);
                             }
                             else if (fieldParts.size() == 3)
                             {
                                 // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
                                 lineageLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
-                                lookupValuePreview = getLineageLookupTokenPreview(fkTok, fieldParts.get(0), fieldParts.get(1), fieldParts.get(2), user);
+                                lookupValuePreview = getLineageLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), fieldParts.get(1), fieldParts.get(2), user);
                             }
                         }
                         else
@@ -1508,6 +1535,7 @@ public class NameGenerator
                 {
                     Collection<String> parents = parentNames(value, colName);
                     inputs.get(INPUT_PARENT).addAll(parents);
+                    inputs.computeIfAbsent(INPUT_PARENT + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
                     inputs.get(inputsCategory).addAll(parents);
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
                     if (parentImportAliases != null)
@@ -2156,7 +2184,7 @@ public class NameGenerator
         private void validateNameResult(String expression, NameExpressionValidationResult expectedResult, @Nullable Map<String, String> importAliases, @Nullable List<GWTPropertyDescriptor> fields)
         {
             Container c = JunitUtil.getTestContainer();
-            NameExpressionValidationResult results = getValidationMessages(expression, fields, importAliases, c);
+            NameExpressionValidationResult results = getValidationMessages("SampleTypeBeingCreated", expression, fields, importAliases, c);
             assertEquals(expectedResult, results);
         }
 
@@ -2204,6 +2232,8 @@ public class NameGenerator
             validateNameResult("S-${parentAlias/a/b}", withErrors("Only one level of lookup is supported for lineage input: parentAlias/a/b."), Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"));
 
             validateNameResult("S-${Inputs/a/b/d}", withErrors("Only one level of lookup is supported for lineage input: Inputs/a/b/d."));
+
+            validateNameResult("S-${Inputs/SampleTypeNotExist}", withErrors("Parent input does not exist: Inputs/SampleTypeNotExist"));
         }
 
         @Test
@@ -2318,7 +2348,10 @@ public class NameGenerator
 
             // with input
             verifyPreview("S-${Inputs}", "S-Parent101");
+            verifyPreview("S-${Inputs/SampleTypeBeingCreated}", "S-Parent101");
+            verifyPreview("S-${MaterialInputs/SampleTypeBeingCreated}", "S-Sample101");
             verifyPreview("S-${Inputs/name}", "S-parentname");
+            verifyPreview("S-${Inputs/SampleTypeBeingCreated/name}", "S-parentname");
             verifyPreview("S-${parentAlias}", "S-Parent101", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
             verifyPreview("S-${parentAlias/name}", "S-parentname", Collections.singletonMap("parentAlias", "MaterialInputs/SampleTypeA"), null);
         }
