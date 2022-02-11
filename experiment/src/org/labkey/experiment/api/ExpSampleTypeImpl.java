@@ -562,14 +562,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (null == seqRowId)
             return 0;
 
-        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
         return seq.current();
     }
 
     @Override
     public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
         long current = seq.current();
         if (newSeqValue < current)
         {
@@ -582,7 +582,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
         }
         else
+        {
             seq.ensureMinimum(newSeqValue);
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+        }
     }
 
     private boolean hasSamples(Container container)
