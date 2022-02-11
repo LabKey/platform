@@ -856,7 +856,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Mice
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Mice']"));
         waitForElement(Locator.css(".studyWizardParticipantList"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardParticipantList, GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardMouseList, GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
         clickButton("Next", 0);
 
         // Datasets
