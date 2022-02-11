@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.7.2",
-    "@labkey/components": "2.129.1-fb-issue44742.1",
+    "@labkey/components": "2.131.1-fb-issue44742.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
