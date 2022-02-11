@@ -221,7 +221,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
@@ -382,7 +382,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         SampleTypeService ss = SampleTypeService.get();
         ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
         Domain stDomain = sampleType != null ? sampleType.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain));
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(stDomain, user));
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 

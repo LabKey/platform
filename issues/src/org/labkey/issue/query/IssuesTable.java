@@ -55,7 +55,6 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -75,7 +74,6 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueListDef;
@@ -133,11 +131,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         IssuesQuerySchema schema = getUserSchema();
         Set<String> baseProps = new CaseInsensitiveHashSet();
         Map<String, String> colNameMap = new HashMap<>();
-        for (String colName : getDomainKind().getReservedPropertyNames(getDomain()))
+        for (String colName : getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()))
         {
             colNameMap.put(colName.toLowerCase(), colName);
         }
-        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain()));
+        baseProps.addAll(getDomainKind().getReservedPropertyNames(getDomain(), schema.getUser()));
 
         setDescription("Contains a row for each issue created in this folder.");
 
