@@ -2733,6 +2733,7 @@ public class ReportsController extends SpringActionController
 
                 info.put("name", type.getName());
                 info.put("visible", visible);
+                info.put("description", type.getDescription());
 
                 types.put(type.getName(), info);
 

@@ -367,7 +367,6 @@ export class App extends React.Component<any, State> {
                 {selected === 'PageDetailHeader' &&
                     this.renderPanel('PageDetailHeader',
                         <PageDetailHeader
-                            user={ctx.user}
                             iconDir={'_images'}
                             title={'Page Detail Header'}
                             subTitle={'With a subtitle'}

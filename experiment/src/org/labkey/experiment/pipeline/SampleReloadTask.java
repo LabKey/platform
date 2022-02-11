@@ -122,7 +122,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
                 try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, job.getContainer(), null))
                 {
                     DomainKind domainKind = PropertyService.get().getDomainKindByName(SampleTypeDomainKind.NAME);
-                    Set<String> reservedProps = domainKind.getReservedPropertyNames(null);
+                    Set<String> reservedProps = domainKind.getReservedPropertyNames(null, job.getUser());
                     reservedProps.remove("name");
                     List<GWTPropertyDescriptor> props = new ArrayList<>();
                     boolean hasNameField = false;

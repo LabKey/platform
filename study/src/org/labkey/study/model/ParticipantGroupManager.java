@@ -18,9 +18,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.CacheManager;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
@@ -28,12 +26,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -63,6 +59,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
+import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DataspaceQuerySchema;
@@ -93,28 +90,23 @@ public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
     private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
-    private static final Cache<String, List<ParticipantGroup>> GROUP_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache", null);
-    private static final Cache<Container, List<ParticipantCategoryImpl>> CATEGORY_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache", (key, argument) -> {
-        TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(key), null);
-
-        return Collections.unmodifiableList(selector.getArrayList(ParticipantCategoryImpl.class));
-    });
-
     private static final String PARTICIPANT_GROUP_SESSION_KEY = "LABKEY.sharedStudyParticipantFilter.";
 
-    private ParticipantGroupManager(){}
+    private ParticipantGroupManager()
+    {
+    }
 
     public static ParticipantGroupManager getInstance()
     {
         return _instance;
     }
 
-    public TableInfo getTableInfoParticipantGroup()
+    public static TableInfo getTableInfoParticipantGroup()
     {
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroup");
     }
 
-    public TableInfo getTableInfoParticipantGroupMap()
+    public static TableInfo getTableInfoParticipantGroupMap()
     {
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
@@ -126,11 +118,10 @@ public class ParticipantGroupManager
 
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
     {
-        for (ParticipantCategoryImpl category : _getParticipantCategories(c, user))
-        {
-            if (label.equals(category.getLabel()))
-                return category;
-        }
+        ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
+        if (category != null)
+            return category;
+
         ParticipantCategoryImpl def = new ParticipantCategoryImpl();
         def.setContainer(c.getId());
         def.setLabel(label);
@@ -158,13 +149,12 @@ public class ParticipantGroupManager
         if (type == null)
             return _getParticipantCategories(c, user);
 
-        List<ParticipantCategoryImpl> filtered = new ArrayList<>();
-        for (ParticipantCategoryImpl category : _getParticipantCategories(c, user))
-        {
-            if (type.equals(category.getType()))
-                filtered.add(category);
-        }
-        return filtered;
+        List<ParticipantCategoryImpl> categories = new ArrayList<>();
+        Collection<ParticipantCategoryImpl> types = ParticipantGroupCache.getParticipantCategoryForType(c, type);
+        if (types != null)
+            categories.addAll(types);
+
+        return categories;
     }
 
     public List<ParticipantCategoryImpl> getParticipantCategoriesByLabel(final Container c, final User user, @Nullable String label)
@@ -172,13 +162,12 @@ public class ParticipantGroupManager
         if (label == null)
             return _getParticipantCategories(c, user);
 
-        List<ParticipantCategoryImpl> filtered = new ArrayList<>();
-        for (ParticipantCategoryImpl category : _getParticipantCategories(c, user))
-        {
-            if (label.equals(category.getLabel()))
-                filtered.add(category);
-        }
-        return filtered;
+        List<ParticipantCategoryImpl> categories = new ArrayList<>();
+        ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
+        if (category != null)
+            categories.add(category);
+
+        return categories;
     }
 
     public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter,
@@ -448,17 +437,12 @@ public class ParticipantGroupManager
 
     private List<ParticipantCategoryImpl> _getParticipantCategories(Container c, User user)
     {
-        List<ParticipantCategoryImpl> categories = CATEGORY_CACHE.get(c);
+        Collection<ParticipantCategoryImpl> categories = ParticipantGroupCache.getParticipantCategories(c);
         List<ParticipantCategoryImpl> filtered = new ArrayList<>();
 
         // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
         categories.stream().filter(category -> category.canRead(c, user)).forEach(category -> {
-            ParticipantCategoryImpl pc = new ParticipantCategoryImpl(category);
-
-            List<ParticipantGroup> list = getParticipantGroups(c, user, pc);
-            // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
-            pc.setGroups(list.toArray(new ParticipantGroup[list.size()]));
-            filtered.add(pc);
+            filtered.add(category);
         });
         return filtered;
     }
@@ -490,7 +474,7 @@ public class ParticipantGroupManager
                             "the API to create categories and groups separately.");
             }
             transaction.commit();
-            CATEGORY_CACHE.remove(c);
+            ParticipantGroupCache.uncache(c);
 
             if (def.isNew())
                 errors = fireCreatedCategory(user, ret);
@@ -501,7 +485,7 @@ public class ParticipantGroupManager
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
+                    throw (RuntimeException) first;
                 else
                     throw new RuntimeException(first);
             }
@@ -528,7 +512,7 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
             transaction.commit();
-            CATEGORY_CACHE.remove(c);
+            ParticipantGroupCache.uncache(c);
 
             if (def.isNew())
                 errors = fireCreatedCategory(user, ret);
@@ -539,7 +523,7 @@ public class ParticipantGroupManager
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
+                    throw (RuntimeException) first;
                 else
                     throw new RuntimeException(first);
             }
@@ -564,10 +548,19 @@ public class ParticipantGroupManager
                 throw new ValidationException("You must be in the Editor role or an Admin to create a shared participant category");
         }
 
+        ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event;
         if (def.isNew())
+        {
             ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
+            event = ParticipantGroupAuditProvider.EventFactory.categoryChange(c, user, null, ret);
+        }
         else
+        {
+            ParticipantCategoryImpl prev = getParticipantCategory(c, user, def.getRowId());
             ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
+            event = ParticipantGroupAuditProvider.EventFactory.categoryChange(c, user, prev, ret);
+        }
+        AuditLogService.get().addEvent(user, event);
 
         return ret;
     }
@@ -593,10 +586,21 @@ public class ParticipantGroupManager
             }
 
             ParticipantGroup ret;
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event;
             if (group.isNew())
+            {
                 ret = Table.insert(user, getTableInfoParticipantGroup(), group);
+                event = ParticipantGroupAuditProvider.EventFactory.groupChange(c, user, null, ret);
+            }
             else
+            {
+                ParticipantGroup prev = getParticipantGroup(c, user, group.getRowId());
                 ret = Table.update(user, getTableInfoParticipantGroup(), group, group.getRowId());
+                event = ParticipantGroupAuditProvider.EventFactory.groupChange(c, user, prev, ret);
+                deleteGroupParticipants(c, user, prev);
+            }
+            if (event != null)
+                AuditLogService.get().addEvent(user, event);
 
             // add the mapping from group to participants
             SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
@@ -613,13 +617,12 @@ public class ParticipantGroupManager
                 {
                     // issue 38130 - we may have already emptied out the participant IDs in this group and put it back in the
                     // cache
-                    GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+                    ParticipantGroupCache.uncache(c);
                     throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
                 }
-
                 executor.execute(sql.getSQL(), group.getRowId(), id, participantIdMap.get(id));
             }
-            GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+            ParticipantGroupCache.uncache(c);
 
             transaction.commit();
             return ret;
@@ -629,8 +632,9 @@ public class ParticipantGroupManager
     /**
      * For dataspace folders, participants may come from multiple subfolders. We want to preserve this
      * So pull participants and containers via the user schema which should be properly filtered.
-     *
+     * <p>
      * TODO: Really need to pass in containers for each participant rather than rely on uniqueness of ids
+     *
      * @return
      */
     private Map<String, String> getParticipantIdMap(Container c, User user, ParticipantGroup group)
@@ -638,13 +642,13 @@ public class ParticipantGroupManager
         final String subjectColumnName = StudyService.get().getSubjectColumnName(c);
         final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
 
-        StudyQuerySchema schema = (StudyQuerySchema)QueryService.get().getUserSchema(user, c, "study");
+        StudyQuerySchema schema = (StudyQuerySchema) QueryService.get().getUserSchema(user, c, "study");
 
         // We want the DataspaceSchema or StudySchema, but without the session filters applied
         // TODO we need a way to ask for this w/o having to 'undo' the session filters
         schema.setSessionParticipantGroup(null);
         if (schema instanceof DataspaceQuerySchema)
-            ((DataspaceQuerySchema)schema).clearSessionContainerFilter();
+            ((DataspaceQuerySchema) schema).clearSessionContainerFilter();
 
         TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
         String[] participantIds = group.getParticipantIds();
@@ -684,7 +688,7 @@ public class ParticipantGroupManager
 
     public boolean getSessionParticipantGroupShowMessage(Container c, HttpServletRequest request)
     {
-        Boolean b = (Boolean)SessionHelper.getAttribute(request, PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage", false);
+        Boolean b = (Boolean) SessionHelper.getAttribute(request, PARTICIPANT_GROUP_SESSION_KEY + c.getRowId() + ".showMessage", false);
 
         return b == Boolean.TRUE;
     }
@@ -698,9 +702,9 @@ public class ParticipantGroupManager
         ParticipantGroup group = null;
         Object o = session.getAttribute(PARTICIPANT_GROUP_SESSION_KEY + c.getRowId());
         if (o instanceof Integer)
-            group = getParticipantGroup(c, user, (Integer)o);
+            group = getParticipantGroup(c, user, (Integer) o);
         else if (o instanceof ParticipantGroup)
-            group = (ParticipantGroup)o;
+            group = (ParticipantGroup) o;
         return group;
     }
 
@@ -726,13 +730,15 @@ public class ParticipantGroupManager
             if (!group.isNew())
             {
                 curGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
-                deleteGroupParticipants(c, user, curGroup);
+                //deleteGroupParticipants(c, user, curGroup);
             }
             ret = _setParticipantGroup(c, user, group, true);
 
             // clear the category->group cache if the category has been changed for this group
             if (curGroup != null && (curGroup.getCategoryId() != group.getCategoryId()))
-                GROUP_CACHE.remove(getCacheKey(curGroup.getCategoryId()));
+            {
+                ParticipantGroupCache.uncache(c);
+            }
 
             transaction.commit();
         }
@@ -750,7 +756,9 @@ public class ParticipantGroupManager
         return modifyParticipantCategory(c, user, def, participants, Modification.REMOVE);
     }
 
-    private enum Modification {ADD, REMOVE}
+    private enum Modification
+    {ADD, REMOVE}
+
     private ParticipantCategoryImpl modifyParticipantCategory(Container c, User user, ParticipantCategoryImpl def, String[] participants, Modification modification) throws ValidationException
     {
         List<ValidationError> validationErrors = new ArrayList<>();
@@ -784,7 +792,7 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
             }
             transaction.commit();
-            GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+            ParticipantGroupCache.uncache(c);
 
             //Reselect
             ret = getParticipantCategory(c, user, def.getRowId());
@@ -795,7 +803,7 @@ public class ParticipantGroupManager
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
+                    throw (RuntimeException) first;
                 else
                     throw new RuntimeException(first);
             }
@@ -833,7 +841,7 @@ public class ParticipantGroupManager
                 executor.execute(sql.getSQL(), group.getRowId(), id, group.getContainerId());
                 group.addParticipantId(id);
             }
-            GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+            ParticipantGroupCache.uncache(c);
 
             transaction.commit();
         }
@@ -849,7 +857,7 @@ public class ParticipantGroupManager
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSchema().getSqlDialect()));
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-        GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+        ParticipantGroupCache.uncache(c);
     }
 
 
@@ -861,44 +869,18 @@ public class ParticipantGroupManager
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
         executor.execute(sql.getSQL(), group.getRowId());
-        GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
+        ParticipantGroupCache.uncache(c);
     }
 
+    @Nullable
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
     {
-        for (ParticipantCategoryImpl category : getParticipantCategories(c, user, false))
-        {
-            if (category.getRowId() == rowId)
-                return category;
-        }
-        return null;
+        return ParticipantGroupCache.getParticipantCategory(c, rowId);
     }
 
     public ParticipantGroup getParticipantGroup(Container container, User user, int rowId)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-
-        Integer categoryId = new TableSelector(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null).getObject(Integer.class);
-
-        if (null != categoryId)
-        {
-            ParticipantCategoryImpl category = getParticipantCategory(container, user, categoryId);
-
-            if (category != null)
-            {
-                // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
-                // but will save us time later.
-                List<ParticipantGroup> groups = getParticipantGroups(container, user, category);
-                for (ParticipantGroup group : groups)
-                {
-                    if (group.getRowId() == rowId)
-                        return group;
-                }
-            }
-        }
-
-        return null;
+        return ParticipantGroupCache.getParticipantGroup(container, rowId);
     }
 
     public ParticipantGroup getParticipantGroupFromGroupRowId(Container container, User user, int rowId)
@@ -920,33 +902,13 @@ public class ParticipantGroupManager
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(String.class);
     }
 
-
-    private static final CacheLoader<String, List<ParticipantGroup>> GROUP_LOADER = (key, argument) -> {
-        final ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
-        final List<ParticipantGroup> groups = new ArrayList<>();
-
-        Filter filter = new SimpleFilter(FieldKey.fromParts("categoryId"), def.getRowId());
-        new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(ParticipantGroup.class, group -> {
-            // get the participants assigned to this group
-            Filter filter1 = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
-            Set<String> participants = new HashSet<>();
-            participants.addAll((new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), Collections.singleton("participantId"), filter1, new Sort("participantId")).getArrayList(String.class)));
-
-            group.setParticipantSet(participants);
-            group.setCategoryLabel(def.getLabel());
-            groups.add(group);
-        });
-
-        return Collections.unmodifiableList(groups);
-    };
-
     public List<ParticipantGroup> getParticipantGroups(final Container c, User user, ParticipantCategoryImpl def)
     {
         if (!def.isNew())
         {
-            String cacheKey = getCacheKey(def);
-
-            return GROUP_CACHE.get(cacheKey, def, GROUP_LOADER);
+            ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategory(c, def.getRowId());
+            if (category != null)
+                return Arrays.stream(category.getGroups()).toList();
         }
         return Collections.emptyList();
     }
@@ -1044,9 +1006,10 @@ public class ParticipantGroupManager
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").append(" WHERE RowId = ?");
             executor.execute(sql.getSQL(), def.getRowId());
 
-            GROUP_CACHE.remove(getCacheKey(def));
-            CATEGORY_CACHE.remove(c);
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.categoryDeleted(c, user, def);
+            AuditLogService.get().addEvent(user, event);
 
+            ParticipantGroupCache.uncache(c);
             transaction.commit();
 
             List<Throwable> errors = fireDeleteCategory(user, def);
@@ -1054,7 +1017,7 @@ public class ParticipantGroupManager
             {
                 Throwable first = errors.get(0);
                 if (first instanceof RuntimeException)
-                    throw (RuntimeException)first;
+                    throw (RuntimeException) first;
                 else
                     throw new RuntimeException(first);
             }
@@ -1085,7 +1048,7 @@ public class ParticipantGroupManager
 
             // if this is a list type of group (we automatically create a category of the same name), clean up
             // the associated category if it is not referenced
-            if(cat.getType().equals("list"))
+            if (cat.getType().equals("list"))
             {
                 List<ParticipantGroup> groups = getParticipantGroups(c, user, cat);
                 if (groups.size() == 1 && groups.get(0).equals(group))
@@ -1093,13 +1056,13 @@ public class ParticipantGroupManager
                     // delete the participant category
                     SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
                     executor.execute(sqlCat.getSQL(), cat.getRowId());
-                    CATEGORY_CACHE.remove(c);
                 }
             }
-
-            GROUP_CACHE.remove(getCacheKey(cat));
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.groupDeleted(c, user, group);
+            AuditLogService.get().addEvent(user, event);
 
             transaction.commit();
+            ParticipantGroupCache.uncache(c);
         }
     }
 
@@ -1135,16 +1098,6 @@ public class ParticipantGroupManager
         return ptids;
     }
 
-    private String getCacheKey(ParticipantCategoryImpl def)
-    {
-        return "ParticipantCategory-" + def.getRowId();
-    }
-
-    private String getCacheKey(int categoryId)
-    {
-        return "ParticipantCategory-" + categoryId;
-    }
-
     public static void addCategoryListener(ParticipantCategoryListener listener)
     {
         _listeners.add(listener);
@@ -1161,7 +1114,8 @@ public class ParticipantGroupManager
 
         for (ParticipantCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryDeleted(user, category);
             }
             catch (Throwable t)
@@ -1178,7 +1132,8 @@ public class ParticipantGroupManager
 
         for (ParticipantCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryUpdated(user, category);
             }
             catch (Throwable t)
@@ -1195,7 +1150,8 @@ public class ParticipantGroupManager
 
         for (ParticipantCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryCreated(user, category);
             }
             catch (Throwable t)
@@ -1208,8 +1164,7 @@ public class ParticipantGroupManager
 
     public void clearCache(Container c)
     {
-        GROUP_CACHE.clear();
-        CATEGORY_CACHE.remove(c);
+        ParticipantGroupCache.uncache(c);
     }
 
     public static class ParticipantGroupTestCase extends Assert

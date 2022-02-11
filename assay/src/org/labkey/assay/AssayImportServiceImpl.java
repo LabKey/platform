@@ -254,7 +254,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
                 Domain domain = provider.getResultsDomain(protocol);
 
-                Set<String> reservedNames = domain.getDomainKind().getReservedPropertyNames(domain);
+                Set<String> reservedNames = domain.getDomainKind().getReservedPropertyNames(domain, null);
 
                 return domain.getTypeURI();
             }
