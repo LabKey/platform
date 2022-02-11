@@ -343,7 +343,11 @@
                     },
                     function () {
                         e.target.innerHTML = "Copy failed. Ensure the browser's security policy allows clipboard APIs and the page is using HTTPS.";
-                    });
+                    }).catch(function(error) {
+                        console.log(error);
+                        e.target.innerText = "Copy failed: " + error;
+                    }
+            );
         }
     }
 
