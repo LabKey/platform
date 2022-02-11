@@ -301,14 +301,19 @@ public class ListController extends SpringActionController
         private boolean canDelete(int listId)
         {
             ListDef listDef = ListManager.get().getList(getContainer(), listId);
+            ListDefinitionImpl list = ListDefinitionImpl.of(listDef);
+
+            if (list == null)
+                return false;
+
             boolean isPicklist = listDef.getCategory() != null;
             if (isPicklist)
             {
                 boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
-                return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && getContainer().hasPermission(getUser(), AdminPermission.class));
+                return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && list.getContainer().hasPermission(getUser(), AdminPermission.class));
 
             }
-            return getContainer().hasPermission(getUser(), DesignListPermission.class);
+            return list.getContainer().hasPermission(getUser(), DesignListPermission.class);
         }
 
         @Override
