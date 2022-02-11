@@ -773,7 +773,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
 
         // Study Objects
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyObjects));
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyObjects), true);
 
         // Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
@@ -786,10 +786,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Queries
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
-        waitForElement(Locator.css(".studyWizardQueryList"));
-        click(Locator.css(".studyWizardQueryList .x-grid3-hd-checker  div")); // de-select all
-        clickButton("Next", 0);
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardQueryList));
 
         // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
@@ -812,7 +809,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Folder Objects
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.folderObjects));
+        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.folderObjects), true);
 
         // Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
@@ -897,7 +894,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Queries
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Queries']"));
         waitForElement(Locator.css(".studyWizardQueryList"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardQueryList, "..."); // TODO
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardQueryList, "..."); //TODO
         clickButton("Next", 0);
 
         // Grid Views
