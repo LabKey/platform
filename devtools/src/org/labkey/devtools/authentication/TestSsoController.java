@@ -16,8 +16,6 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -120,10 +118,9 @@ public class TestSsoController extends SpringActionController
         }
 
         @Override
-        @SuppressWarnings("UnusedDeclaration")
-        public @Nullable String getProperties()
+        public @NotNull Map<String, Object> getPropertyMap()
         {
-            return null != _domain ? new JSONObject(Map.of("domain", _domain)).toString() : null;
+            return null != _domain ? Map.of("domain", _domain) : Map.of();
         }
     }
 }

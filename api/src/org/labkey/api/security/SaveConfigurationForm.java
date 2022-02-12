@@ -1,10 +1,14 @@
 package org.labkey.api.security;
 
+import com.google.gwt.thirdparty.guava.common.base.Objects;
 import org.apache.commons.codec.binary.Base64;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+
+import java.util.Map;
 
 public abstract class SaveConfigurationForm
 {
@@ -66,17 +70,32 @@ public abstract class SaveConfigurationForm
         _domain = domain;
     }
 
-    public @Nullable String getProperties()
+    public @NotNull Map<String, Object> getPropertyMap()
     {
-        return null;
+        return Map.of();
     }
 
-    public @Nullable String getEncryptedProperties()
+    @SuppressWarnings("UnusedDeclaration")
+    public final @Nullable String getProperties()
     {
-        return null;
+        Map<String, Object> map = getPropertyMap();
+        assert Objects.equal(getDomain(), map.get("domain")) : "Inconsistency between getDomain() and map.get(\"domain\")";
+        return map.isEmpty() ? null : new JSONObject(map).toString();
     }
 
-    protected String encodeEncryptedProperties(JSONObject map)
+    public @NotNull Map<String, Object> getEncryptedPropertyMap()
+    {
+        return Map.of();
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public final @Nullable String getEncryptedProperties()
+    {
+        Map<String, Object> map = getEncryptedPropertyMap();
+        return map.isEmpty() ? null : encodeEncryptedProperties(new JSONObject(map));
+    }
+
+    private String encodeEncryptedProperties(JSONObject map)
     {
         if (Encryption.isEncryptionPassPhraseSpecified())
         {
