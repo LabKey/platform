@@ -21,7 +21,6 @@ import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
-import org.apache.poi.poifs.filesystem.NotOLE2FileException;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -244,8 +243,11 @@ public class ExcelFactory
             {
                 return WorkbookFactory.create(file);
             }
-            catch (NotOLE2FileException|UnsupportedFileFormatException not_ole2_either)
+            catch (UnsupportedFileFormatException|IOException not_ole2_either)
             {
+                if (not_ole2_either instanceof IOException && !not_ole2_either.getMessage().contains("unsupported file type"))
+                    throw not_ole2_either;
+
                 try (FileInputStream fis = new FileInputStream(file))
                 {
                     return new JxlWorkbook(fis);
@@ -575,18 +577,24 @@ public class ExcelFactory
     /** Supports .xls (BIFF8 only), and .xlsx */
     public static JSONArray convertExcelToJSON(InputStream in, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(WorkbookFactory.create(in), extended, -1);
+        try (Workbook workbook = WorkbookFactory.create(in))
+        {
+            return convertExcelToJSON(workbook, extended, -1);
+        }
     }
 
     /** Supports both new and old style .xls (BIFF5 and BIFF8), and .xlsx because we can reopen the stream if needed */
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, -1);
+        return convertExcelToJSON(excelFile, extended, -1);
     }
 
     public static JSONArray convertExcelToJSON(File excelFile, boolean extended, int maxRows) throws IOException, InvalidFormatException
     {
-        return convertExcelToJSON(ExcelFactory.create(excelFile), extended, maxRows);
+        try (Workbook workbook = ExcelFactory.create(excelFile))
+        {
+            return convertExcelToJSON(workbook, extended, maxRows);
+        }
     }
 
     /** Supports .xls (BIFF8 only) and .xlsx */
