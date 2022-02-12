@@ -34,7 +34,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     @Override
     public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
-        return new TestSsoConfiguration(this, cs.getStandardSettings());
+        return new TestSsoConfiguration(this, cs.getStandardSettings(), cs.getProperties());
     }
 
     @Override
@@ -61,6 +61,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     public @NotNull JSONArray getSettingsFields()
     {
         return new JSONArray()
-            .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false));
+            .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false))
+            .put(SettingsField.getStandardDomainField());
     }
 }

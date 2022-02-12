@@ -222,8 +222,8 @@ public class AuthenticationManager
 
         if (!activeDomains.isEmpty())
         {
-            // At the moment, only LDAP configurations can be associated with a domain, so we call out LDAP below
-            builder.append(" except those with email addresses that are configured for LDAP authentication (those ending in ");
+            // LDAP and SSO configurations can be associated with email domains
+            builder.append(" except those with email addresses that are associated with LDAP or SSO configurations (those ending in ");
             builder.append(
                 activeDomains.stream()
                     .map(d->"@" + d)
@@ -236,7 +236,7 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
-    // Ignores domain = "*"
+    // Ignores domain == "*"
     public static boolean isLdapEmail(ValidEmail email)
     {
         String emailAddress = email.getEmailAddress();
