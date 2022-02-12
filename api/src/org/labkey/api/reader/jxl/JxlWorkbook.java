@@ -19,6 +19,7 @@ import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.SpreadsheetVersion;
+import org.apache.poi.ss.formula.EvaluationWorkbook;
 import org.apache.poi.ss.formula.udf.UDFFinder;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
@@ -52,7 +53,8 @@ public class JxlWorkbook implements Workbook
         WorkbookSettings settings = new WorkbookSettings();
         settings.setGCDisabled(true);
 
-        try {
+        try
+        {
             _workbook = jxl.Workbook.getWorkbook(dataFile, settings);
         }
         catch (BiffException e)
@@ -205,13 +207,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public short getNumberOfFonts()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public Font getFontAt(short idx)
+    public int getNumberOfFonts()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -241,31 +237,7 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public Name getNameAt(int nameIndex)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public Name createName()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public int getNameIndex(String name)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public void removeName(int index)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public void removeName(String name)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -467,6 +439,12 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
+    public EvaluationWorkbook createEvaluationWorkbook()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
     public int getNumberOfFontsAsInt()
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -477,4 +455,6 @@ public class JxlWorkbook implements Workbook
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
+
+
 }
