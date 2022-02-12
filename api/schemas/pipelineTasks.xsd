@@ -419,7 +419,8 @@
         </xs:choice>
     </xs:complexType>
 
-    <!-- Pipeline-specific task definitions. Previously defined in pipeline/pipelineTasks.xsd. This stopped working on XMLBeans 5.0.3. -->
+    <!-- Pipeline-specific task definitions. Previously defined in pipeline/pipelineTasks.xsd, but defining these in a
+         separate, module-based file stopped working on XMLBeans 5.0.3. -->
 
     <xs:complexType name="ExecTaskType">
         <xs:complexContent>
@@ -479,7 +480,8 @@
         </xs:simpleContent>
     </xs:complexType>
 
-    <!-- Assay-specific task definitions. Previously defined in assay/assayPipelineTasks.xsd. This stopped working on XMLBeans 5.0.3. -->
+    <!-- Assay-specific task definitions. Previously defined in assay/assayPipelineTasks.xsd, but defining these in a
+         separate, module-based file stopped working on XMLBeans 5.0.3. -->
 
     <!-- Intermediate type introduced only to remove the 'outputs' element from base TaskType -->
     <xs:complexType name="AssayImportRunTaskIntermediateType" abstract="true">

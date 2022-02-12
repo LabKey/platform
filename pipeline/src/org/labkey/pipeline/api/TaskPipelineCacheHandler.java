@@ -50,7 +50,9 @@ import java.util.stream.Stream;
     {
         Object result = unmodifiable(resources
             .filter(getFilter(PIPELINE_CONFIG_EXTENSION))
+            .peek(resource -> LOG.info("Resource: " + resource))
             .map(resource -> loadPipelineConfig(module, resource))
+            .peek(pipeline -> LOG.info("Pipeline: " + pipeline))
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(TaskPipeline::getId, Function.identity())));
 
