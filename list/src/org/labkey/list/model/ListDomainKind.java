@@ -56,7 +56,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
-import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -65,7 +64,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -232,7 +230,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> properties = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec pss : BASE_PROPERTIES)
@@ -367,7 +365,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new ApiUsageException("List name must not be null");
         if (name.length() > MAX_NAME_LENGTH)
             throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
-        if (ListService.get().getList(container, name) != null)
+        if (ListService.get().getList(container, name, false) != null)
             throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
             throw new ApiUsageException("List keyName must not be null");
@@ -408,7 +406,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         {
             Domain d = list.getDomain();
 
-            Set<String> reservedNames = getReservedPropertyNames(d);
+            Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
             Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -496,7 +494,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
-                else if (ListService.get().getList(container, update.getName()) != null)
+                else if (ListService.get().getList(container, update.getName(), false) != null)
                 {
                     return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }

@@ -1083,7 +1083,8 @@ public class ParticipantGroupController extends BaseStudyController
                         oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
 
                     group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
-                    category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+                    // make a copy since we might mutate it below
+                    category = new ParticipantCategoryImpl(ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId()));
 
                     // if the category shared bit has changed, resave the category
                     if (form.getCategoryOwnerId() != category.getOwnerId())

@@ -224,7 +224,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public Set<String> getReservedPropertyNames(Domain domain)
+    public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> names = new HashSet<>();
         names.add(COMMENTS);
