@@ -898,9 +898,9 @@ public class SecurityManager
             return _email;
         }
 
-        public boolean isLdapEmail()
+        public boolean isLdapOrSsoEmail()
         {
-            return AuthenticationManager.isLdapEmail(_email);
+            return AuthenticationManager.isLdapOrSsoEmail(_email);
         }
 
         public String getVerification()
@@ -1006,7 +1006,7 @@ public class SecurityManager
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            if (createLogin && !status.isLdapEmail())
+            if (createLogin && !status.isLdapOrSsoEmail())
             {
                 String verification = SecurityManager.createLogin(email);
                 status.setVerification(verification);
@@ -2392,10 +2392,10 @@ public class SecurityManager
 
             User newUser = newUserStatus.getUser();
 
-            if (newUserStatus.isLdapEmail())
+            if (newUserStatus.isLdapOrSsoEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP or SSO.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP or SSO.");
             }
             else if (sendMail)
             {
