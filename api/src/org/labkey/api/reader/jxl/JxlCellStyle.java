@@ -80,7 +80,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public short getFontIndex()
+    public int getFontIndex()
     {
         return 0;
     }
@@ -131,12 +131,6 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public HorizontalAlignment getAlignmentEnum()
-    {
-        return getAlignment();
-    }
-
-    @Override
     public void setWrapText(boolean wrapped)
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -165,12 +159,6 @@ public class JxlCellStyle implements CellStyle
     {
         jxl.format.VerticalAlignment jxlVerticalAlignment = (_format != null ? _format.getVerticalAlignment() : jxl.format.VerticalAlignment.TOP);
         return VERTICAL_ALIGNMENT_MAP.get(jxlVerticalAlignment);
-    }
-
-    @Override
-    public VerticalAlignment getVerticalAlignmentEnum()
-    {
-        return getVerticalAlignment();
     }
 
     @Override
@@ -206,19 +194,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public BorderStyle getBorderLeftEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public BorderStyle getBorderRight()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public BorderStyle getBorderRightEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -230,19 +206,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public BorderStyle getBorderTopEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public BorderStyle getBorderBottom()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public BorderStyle getBorderBottomEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -308,12 +272,6 @@ public class JxlCellStyle implements CellStyle
     {
         int ordinal = (_format != null ? _format.getPattern().getValue() : 0);
         return FillPatternType.forInt(ordinal);
-    }
-
-    @Override
-    public FillPatternType getFillPatternEnum()
-    {
-        return getFillPattern();
     }
 
     @Override

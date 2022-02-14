@@ -88,12 +88,6 @@ public class JxlCell implements Cell
     }
 
     @Override
-    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
-    {
-        return getCellType();
-    }
-
-    @Override
     public org.apache.poi.ss.usermodel.CellType getCellType()
     {
         CellType type = _cell.getType();
@@ -113,12 +107,6 @@ public class JxlCell implements Cell
             return org.apache.poi.ss.usermodel.CellType.STRING;
 
         return org.apache.poi.ss.usermodel.CellType.STRING;
-    }
-
-    @Override
-    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
-    {
-        return getCachedFormulaResultType();
     }
 
     @Override
@@ -239,16 +227,13 @@ public class JxlCell implements Cell
     @Override
     public RichTextString getRichStringCellValue()
     {
-        switch(getCellType()) {
-            case BLANK:
-                return new JxlRichTextString("");
-            case STRING:
-                return new JxlRichTextString(_cell.getContents());
-            case FORMULA:
-                return null;
-            default:
-                throw new IllegalStateException("Expected string cell type, got '" + _cell.getType() + "'");
-        }
+        return switch (getCellType())
+        {
+            case BLANK -> new JxlRichTextString("");
+            case STRING -> new JxlRichTextString(_cell.getContents());
+            case FORMULA -> null;
+            default -> throw new IllegalStateException("Expected string cell type, got '" + _cell.getType() + "'");
+        };
     }
 
     private static class JxlRichTextString implements RichTextString
@@ -429,4 +414,6 @@ public class JxlCell implements Cell
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
+
+
 }
