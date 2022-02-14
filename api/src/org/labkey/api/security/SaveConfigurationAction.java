@@ -22,7 +22,7 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
 {
     protected @Nullable AC _configuration = null;
 
-    // TODO: Consider removing this -- _configuration is never used (??)
+    // TODO: Consider removing this -- _configuration only used in SAML
     private void initializeConfiguration(F form)
     {
         Integer rowId = form.getConfiguration();

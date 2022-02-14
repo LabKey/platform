@@ -6,7 +6,7 @@ plugins {
 }
 
 ext.luceneVersion="9.0.0"
-ext.mime4jVersion="0.8.4"
+ext.mime4jVersion="0.8.6"
 
 dependencies {
     BuildUtils.addExternalDependency(
