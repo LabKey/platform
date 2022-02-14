@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,7 +59,8 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.permissions.DataClassReadPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
@@ -81,7 +81,6 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,7 +100,20 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
     private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
-    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+        }
+    };
+    public static final SearchService.SearchCategory expMediaDataCategory = new SearchService.SearchCategory("mediaData", "ExpData for media objects") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     /** Cache this because it can be expensive to recompute */
     private Boolean _finalRunOutput;
@@ -699,7 +711,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // === Stored, not indexed
 
-        props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
+        if (dc != null && dc.isMedia())
+            props.put(SearchService.PROPERTY.categories.toString(), expMediaDataCategory.toString());
+        else
+            props.put(SearchService.PROPERTY.categories.toString(), expDataCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
@@ -774,10 +789,27 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return NAME;
         }
 
+        private ExpDataClass getDataClass()
+        {
+            if (HttpView.hasCurrentView())
+            {
+                ViewContext ctx = HttpView.currentContext();
+                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
+                if (dataclass != null)
+                    return ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
+            }
+            return null;
+        }
+
         @Nullable
         @Override
         public String getCategories()
         {
+            ExpDataClass dataClass = getDataClass();
+
+            if (dataClass != null && dataClass.isMedia())
+                return expMediaDataCategory.getName();
+
             return expDataCategory.getName();
         }
 
@@ -792,18 +824,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         @Override
         public String getResultNameSingular()
         {
-            if (HttpView.hasCurrentView())
-            {
-                ViewContext ctx = HttpView.currentContext();
-                String dataclass = ctx.getActionURL().getParameter(PROPERTY);
-                if (dataclass != null)
-                {
-                    ExpDataClass dc = ExperimentService.get().getDataClass(ctx.getContainer(), ctx.getUser(), dataclass);
-                    if (dc != null)
-                        return dc.getName();
-                }
-            }
-
+            ExpDataClass dc = getDataClass();
+            if (dc != null)
+                return dc.getName();
             return "data";
         }
 

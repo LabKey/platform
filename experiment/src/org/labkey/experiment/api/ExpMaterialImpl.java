@@ -56,6 +56,7 @@ import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
@@ -82,6 +83,13 @@ import java.util.stream.Collectors;
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory("media", "Media samples"){
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)
     {
@@ -415,7 +423,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             identifiersHi.addAll(aliases);
         }
 
-
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
         props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
@@ -439,6 +446,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleType st = getSampleType();
         if (null != st)
         {
+            if (st.isMedia())
+                props.put(SearchService.PROPERTY.categories.toString(), mediaSearchCategory.toString());
             String sampleTypeName = st.getName();
             ActionURL show = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()).addParameter("rowId", st.getRowId());
             NavTree t = new NavTree("SampleType - " + sampleTypeName, show);
