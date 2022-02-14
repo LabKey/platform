@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.7.2",
-    "@labkey/components": "2.131.0-fb-coreComponentsEditableGrid.0",
+    "@labkey/components": "2.131.0-fb-coreComponentsEditableGrid.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
