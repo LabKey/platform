@@ -66,12 +66,20 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
         const orderedRows = dataKeys?.toJS();
         const rows = data?.toJS();
         if (orderedRows !== undefined && rows !== undefined) {
-            setDataModel(dataModel.mutate({ orderedRows, rows }));
+            setDataModel((current: QueryModel) => {
+                return current.mutate({ orderedRows, rows })
+            });
         }
 
-        // console.log('editorModelChanges', editorModelChanges?.cellValues?.toJS());
-        setEditorModel(editorModel.merge(editorModelChanges) as EditorModel);
-    }, [editorModel, dataModel]);
+        setEditorModel((current: EditorModel) => {
+            return current.merge(editorModelChanges) as EditorModel;
+        });
+    },
+        // Note editorModel and dataModel are not set as deps here because we want to make sure to always use the
+        // current state object in the case when the onGridChange callback is being called back to back from the
+        // EditableGridPanel (note the use of the function param version of the setDataModel() and setEditorModel()
+        []
+    );
 
     if (model.loadErrors?.length > 0) {
         return <Alert>{model.loadErrors.join(' ')}</Alert>;
@@ -82,7 +90,6 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
     if (error) {
         return <Alert>{error}</Alert>;
     }
-    // console.log('editorModel', editorModel?.cellValues?.toJS());
 
     return (
         <EditableGridPanel
