@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
@@ -46,16 +47,25 @@ public class PdLookupForeignKey extends AbstractForeignKey
     Container _currentContainer;
     private Container _targetContainer;
 
-    static public PdLookupForeignKey create(QuerySchema sourceSchema, @NotNull PropertyDescriptor pd)
+    static public PdLookupForeignKey create(@NotNull QuerySchema sourceSchema, @NotNull PropertyDescriptor pd)
     {
         return create(sourceSchema, sourceSchema.getUser(), sourceSchema.getContainer(), pd);
     }
 
-    static public PdLookupForeignKey create(QuerySchema sourceSchema, @NotNull User user, @NotNull Container container, @NotNull PropertyDescriptor pd)
+    static public PdLookupForeignKey create(@NotNull QuerySchema sourceSchema, @NotNull User user, @NotNull Container container, @NotNull PropertyDescriptor pd)
+    {
+        return create(sourceSchema, user, container, pd, null);
+    }
+
+    static public PdLookupForeignKey create(
+        @NotNull QuerySchema sourceSchema,
+        @NotNull User user,
+        @NotNull Container container,
+        @NotNull PropertyDescriptor pd,
+        @Nullable ContainerFilter cf
+    )
     {
         assert container != null : "Container cannot be null";
-
-        Container currentContainer = container;
         Container targetContainer = pd.getLookupContainer() == null ? null : ContainerManager.getForId(pd.getLookupContainer());
         String lookupSchemaName = pd.getLookupSchema();
         String lookupQuery = pd.getLookupQuery();
@@ -71,24 +81,37 @@ public class PdLookupForeignKey extends AbstractForeignKey
                 lookupQuery = lookup.getQueryName();
             }
         }
-        ContainerFilter cf;
+
         if ("core".equalsIgnoreCase(lookupSchemaName) && "Containers".equalsIgnoreCase(lookupQuery))
             cf = new ContainerFilter.AllFolders(user);
-        else
-            cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer!=null ? targetContainer : container);
+        else if (cf == null)
+            cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer != null ? targetContainer : container);
 
-        return new PdLookupForeignKey(sourceSchema, currentContainer, user, cf, pd, lookupSchemaName, lookupQuery, targetContainer);
+        return new PdLookupForeignKey(sourceSchema, container, user, cf, pd, lookupSchemaName, lookupQuery, targetContainer);
     }
 
+    protected PdLookupForeignKey(@NotNull QuerySchema sourceSchema, @NotNull PropertyDescriptor pd)
+    {
+        this(sourceSchema, sourceSchema.getContainer(), sourceSchema.getUser(), null, pd, pd.getLookupSchema(), pd.getLookupQuery(), ContainerManager.getForId(pd.getLookupContainer()));
+    }
 
-    public PdLookupForeignKey(QuerySchema sourceSchema, Container currentContainer, @NotNull User user, ContainerFilter cf, PropertyDescriptor pd, String lookupSchemaName, String lookupQuery, Container targetContainer)
+    private PdLookupForeignKey(
+        @NotNull QuerySchema sourceSchema,
+        Container currentContainer,
+        @NotNull User user,
+        @Nullable ContainerFilter cf,
+        PropertyDescriptor pd,
+        String lookupSchemaName,
+        String lookupQuery,
+        @Nullable Container targetContainer
+    )
     {
         super(sourceSchema, cf, lookupSchemaName, lookupQuery, null);
         _pd = pd;
         _user = user;
         assert currentContainer != null : "Container cannot be null";
         _currentContainer = currentContainer;
-        _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
+        _targetContainer = targetContainer;
     }
 
 
