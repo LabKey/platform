@@ -48,24 +48,20 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
         // need at least one visit for the publish study wizard
         _studyHelper.goToManageVisits().goToImportVisitMap();
         setFormElement(Locator.name("content"),
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<visitMap xmlns=\"http://labkey.org/study/xml\">\n" +
-                "  <visit label=\"Test Visit1\" typeCode=\"X\" sequenceNum=\"1.0\" maxSequenceNum=\"1.0\"/>\n" +
-                "  <visit label=\"Test Visit2\" typeCode=\"X\" sequenceNum=\"2.0\" maxSequenceNum=\"2.0\"/>\n" +
-                "  <visit label=\"Test Visit3\" typeCode=\"X\" sequenceNum=\"3.0\" maxSequenceNum=\"3.0\"/>\n" +
-                "</visitMap>"
+            """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <visitMap xmlns="http://labkey.org/study/xml">
+                    <visit label="Test Visit1" typeCode="X" sequenceNum="1.0" maxSequenceNum="1.0"/>
+                    <visit label="Test Visit2" typeCode="X" sequenceNum="2.0" maxSequenceNum="2.0"/>
+                    <visit label="Test Visit3" typeCode="X" sequenceNum="3.0" maxSequenceNum="3.0"/>
+                </visitMap>
+            """
         );
         clickButton("Import");
 
         // create user defined queries of the same name in different schemas
         for (String schemaName : SCHEMA_NAMES)
             createQuery(getProjectName(), USER_DEFINED_QUERY, schemaName, "SELECT 'Test from " + schemaName + " schema'", null, false);
-    }
-
-    @Override // TODO delete me
-    protected void doCleanup(boolean afterTest)
-    {
-        super.doCleanup(afterTest);
     }
 
     @Override

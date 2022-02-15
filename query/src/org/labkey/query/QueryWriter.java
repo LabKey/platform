@@ -70,9 +70,9 @@ public class QueryWriter extends BaseFolderWriter
         List<QueryDefinition> queries = new ArrayList<>(QueryServiceImpl.get().getQueryDefsAndMetadataOverrides(ctx.getUser(), c));
         FileNameUniquifier fileNameUniquifier = new FileNameUniquifier();
 
-        if (ctx.getClass().equals(FolderExportContext.class))
+        if (ctx instanceof FolderExportContext feCtx)
         {
-            Set<String> queryKeysToExport = ((FolderExportContext)ctx).getQueryKeys();
+            Set<String> queryKeysToExport = feCtx.getQueryKeys();
             if (queryKeysToExport != null)
                 queries.removeIf(queryDef -> !queryKeysToExport.contains(queryDef.getQueryKey()));
         }
