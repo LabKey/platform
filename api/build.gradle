@@ -29,7 +29,7 @@ List apache = [
         "org.apache.httpcomponents:httpclient:${httpclientVersion}",
         "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
         "org.apache.poi:poi:${poiVersion}",
-//        "org.apache.poi:poi-ooxml:${poiVersion}", // included separately below so we can exclude the newer version of xmlbeans that is buggy wrt line endings
+        "org.apache.poi:poi-ooxml:${poiVersion}",
         "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
 ]
 
@@ -83,7 +83,6 @@ List others = [
         "net.sf.jtidy:jtidy:${jtidyVersion}",
         "org.quartz-scheduler:quartz:${quartzVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
-        "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
@@ -163,11 +162,6 @@ dependencies {
     external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
       exclude group: "org.json", module:"json"
-    }
-    external ("org.apache.poi:poi-ooxml:${poiVersion}") {
-        // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
-        // dependency here in favor of the explicit dependency with a different version.
-        exclude group: "org.apache.xmlbeans", module: "xmlbeans"
     }
     external("net.sourceforge.jexcelapi:jxl:${jxlVersion}") {
         // exclude this because it brings older version of log4j
