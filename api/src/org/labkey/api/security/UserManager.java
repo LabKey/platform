@@ -104,8 +104,6 @@ public class UserManager
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 
-    private static final List<SessionEventHandler> _sessionEventHandlers = new CopyOnWriteArrayList<>();
-
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
      * {@link #addUserListener(UserListener)}
@@ -423,11 +421,6 @@ public class UserManager
         return Math.toIntExact((long) result.getValue());
     }
 
-    public static void registerSessionEventHandler(SessionEventHandler handler)
-    {
-        _sessionEventHandlers.add(handler);
-    }
-
     /** Of authenticated users, tallied when their session ends */
     private static final AtomicLong _sessionCount = new AtomicLong();
     /** In minutes */
@@ -451,12 +444,6 @@ public class UserManager
             {
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet((TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime())));
-                User user = getUser(userId);
-
-                for (SessionEventHandler sessionEventHandler : _sessionEventHandlers)
-                {
-                    sessionEventHandler.handleSessionDestroyed(user, session);
-                }
             }
         }
     }

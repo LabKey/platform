@@ -135,12 +135,6 @@ public class NotificationEndpoint extends Endpoint
         }
     }
 
-    private boolean isSameHttpSession(HttpSession session)
-    {
-        HttpSession boundSession = (HttpSession)this.session.getUserProperties().get("httpSession");
-        return boundSession != null && boundSession.getId().equals(session.getId());
-    }
-
     interface Fn
     {
         void apply() throws IOException, IllegalStateException;
@@ -197,20 +191,6 @@ public class NotificationEndpoint extends Endpoint
         return false;
     }
 
-    private static void doClose(int userId, HttpSession httpSession, String message)
-    {
-        // Close WebSockets for the user AND httpSession
-        final CloseReason reason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, message);
-        long count = getEndpoints(userId)
-                .stream()
-                .filter(e -> e.isSameHttpSession(httpSession))
-                .map(e -> e.safely(() -> e.session.close(reason)))
-                .count();
-
-        if (count == 0)
-            LOG.debug("WebSocket: no sessions to close for " + userId + " (" + (httpSession != null ? httpSession.getId() : "all sessions") + "): " + message);
-    }
-
     private static void sendEvent(int userId, String eventName)
     {
         sendEvent(Collections.singletonList(userId), eventName);
@@ -259,11 +239,6 @@ public class NotificationEndpoint extends Endpoint
     public static void sendEvent(List<Integer> userIds, Class clazz)
     {
         sendEvent(userIds, clazz.getCanonicalName());
-    }
-
-    public static void close(int userId, HttpSession session, String message)
-    {
-        doClose(userId, session, message);
     }
 
     static
