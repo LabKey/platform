@@ -25,8 +25,7 @@
      <property name="test" value="${src}/test"/>
      <property name="conf" value="./conf"/>
      <property name="jar" value="./lib"/>
-     <property name="version" value="1.0"/>
-     <property name="status" value=".3"/>
+     <property name="version" value="1.0.3"/>
    </target>
 
    <target name="prepare" depends="init">
@@ -50,19 +49,19 @@
        <formatter usefile="false" type="plain"/>
        <test name="org.radeox.test.${testTarget}"/>
        <classpath refid="classpath"/>
-       <classpath location="../lib/radeox-${version}${status}.jar"/>
+       <classpath location="../lib/radeox-${version}.jar"/>
     </junit>
   </target>
 
   <target name="jar-api" depends="compile">
-    <jar destfile="../lib/radeox-api-${version}${status}.jar" excludes="**/CVS"
+    <jar destfile="../lib/radeox-api-${version}.jar" excludes="**/CVS"
       manifest="${src}/META-INF/manifest.radeox-api">
       <fileset dir="${out}/" includes="org/radeox/api/**"/>
     </jar>
   </target>
 
   <target name="jar" depends="compile" description="build radeox.jar" >
-    <jar destfile="../lib/radeox-${version}${status}.jar" excludes="**/CVS"
+    <jar destfile="../lib/radeox-${version}.jar" excludes="**/CVS"
       manifest="${src}/META-INF/manifest.radeox">
       <fileset dir="${out}/" includes="**"/>
       <fileset dir="${src}" includes="META-INF/**"/>
@@ -76,8 +75,8 @@
    <delete failonerror="false" includeEmptyDirs="true">
       <fileset dir="${out}" includes="**"/>
    </delete>
-    <tar destfile="../radeox-${version}${status}-src.tgz" compression="gzip">
-      <tarfileset dir="." prefix="radeox-${version}${status}" mode="700">
+    <tar destfile="../radeox-${version}-src.tgz" compression="gzip">
+      <tarfileset dir="." prefix="radeox-${version}" mode="700">
         <include name="Changes.txt"/>
         <include name="conf/**"/>
         <include name="src/**"/>
@@ -95,7 +94,7 @@
   <target name="example" depends="jar">
     <java classname="org.radeox.example.InteractiveExample">
       <classpath refid="classpath"/>
-       <classpath location="../lib/radeox-${version}${status}.jar"/>
+       <classpath location="../lib/radeox-${version}.jar"/>
     </java>
   </target>
 
@@ -105,7 +104,7 @@
       <fileset dir="${out}" includes="**" excludes="CVS"/>
     </delete>
     <delete failonerror="false">
-      <fileset dir="${jar}" includes="radeox-${version}${status}.jar"/>
+      <fileset dir="${jar}" includes="radeox-${version}.jar"/>
     </delete>
   </target>
 
