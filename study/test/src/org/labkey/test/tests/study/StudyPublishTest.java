@@ -773,7 +773,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
 
         // Study Objects
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyObjects), true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyObjects, true);
 
         // Lists
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
@@ -786,7 +786,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Queries
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardQueryList));
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardQueryList);
 
         // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
@@ -809,7 +809,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Folder Objects
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.folderObjects), true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.folderObjects, true);
 
         // Publish Options
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
@@ -856,7 +856,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Mice
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Mice']"));
         waitForElement(Locator.css(".studyWizardParticipantList"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyWizardMouseList, GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
+        verifyPublishWizardSelectedCheckboxes(StudyHelper.participantList("Mouse", "Mice"), GROUP1_NAME + " (" + GROUP1_PTIDS.length + " mice)");
         clickButton("Next", 0);
 
         // Datasets
@@ -892,7 +892,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickButton("Next", 0);
 
         // Queries
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardQueryList));
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardQueryList);
 
         // Grid Views
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
@@ -1279,7 +1279,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         }
     }
 
-    private void verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel grid, String... expectedCheckboxes)
+    private void verifyPublishWizardSelectedCheckboxes(StudyHelper.IPanel grid, String... expectedCheckboxes)
     {
         Locator.CssLocator gridLoc = Locator.css("div." + grid.name());
         WebElement columnHeader = gridLoc.append(Locator.css("tr.x-grid3-hd-row > td")).withText(grid.getLabelColumn()).findElement(getDriver());

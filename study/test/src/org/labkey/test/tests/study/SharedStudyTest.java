@@ -249,11 +249,10 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickButton("Next", 0);
 
         // Pandas
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Pandas']"));
-        clickButton("Next", 0);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.participantList("Panda", "Pandas"));
 
         // Datasets
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardDatasetList), true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardDatasetList, true);
 
         // Visits
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Visits']"));
@@ -267,9 +266,9 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         // Specimens, if present & active
         if (_studyHelper.isSpecimenModuleActive())
-            _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studySpecimens));
+            _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studySpecimens);
 
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyObjects), true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyObjects, true);
 
         _studyHelper.advanceThroughPublishStudyWizard(
                 Arrays.asList(
@@ -277,8 +276,8 @@ public class SharedStudyTest extends BaseWebDriverTest
                     StudyHelper.Panel.studyWizardViewList, StudyHelper.Panel.studyWizardReportList
                 )
         );
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.folderObjects), true);
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardPublishOptionsList));
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.folderObjects, true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardPublishOptionsList);
         waitForPipelineJobsToComplete(1, "Publish Study", false);
 
         // verify that published study description has correct number visits, and number participants

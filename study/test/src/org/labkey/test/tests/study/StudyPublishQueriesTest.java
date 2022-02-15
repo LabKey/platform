@@ -192,9 +192,7 @@ public class StudyPublishQueriesTest extends BaseWebDriverTest
                 StudyHelper.Panel.studyWizardDatasetList
         ));
         // visits is the only one we need to select all from in these cases
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(
-                StudyHelper.Panel.studyWizardVisitList
-        ), true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardVisitList, true);
         _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(
                 StudyHelper.Panel.studyObjects,
                 StudyHelper.Panel.studyWizardListList

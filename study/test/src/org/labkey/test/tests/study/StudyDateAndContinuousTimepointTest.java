@@ -145,7 +145,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         clickButton("Next", 0);
 
         //participants
-        _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studyWizardParticipantList));
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardParticipantList);
 
         //Datasets
         _extHelper.selectExtGridItem("Label", datasetName, -1, "studyWizardDatasetList", true);
@@ -162,9 +162,9 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
 
         //specimens, if present & active
         if (_studyHelper.isSpecimenModuleActive())
-            _studyHelper.advanceThroughPublishStudyWizard(Arrays.asList(StudyHelper.Panel.studySpecimens));
+            _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studySpecimens);
 
-        List<StudyHelper.Panel> wizardPanels = Arrays.asList(
+        List<StudyHelper.IPanel> wizardPanels = Arrays.asList(
                 StudyHelper.Panel.studyObjects, StudyHelper.Panel.studyWizardListList, StudyHelper.Panel.studyWizardQueryList,
                 StudyHelper.Panel.studyWizardViewList, StudyHelper.Panel.studyWizardReportList, StudyHelper.Panel.folderObjects,
                 StudyHelper.Panel.studyWizardPublishOptionsList);
