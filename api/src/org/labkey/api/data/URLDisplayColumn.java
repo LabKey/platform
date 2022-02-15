@@ -26,6 +26,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 
+/**
+ * URLDisplayColumn allows for a grid cell to render a thumbnail image and/or a popup tooltip image, both via
+ * url paths to image files. There are also optional properties that can set the heigh/width of the image in the display
+ * along with the onClick behavior and target.
+ */
 public class URLDisplayColumn extends AbstractFileDisplayColumn
 {
     public static class Factory implements DisplayColumnFactory
@@ -238,7 +243,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             {
                 String open = "window.location = '" + url + "'";
                 if (_urlTarget != null)
-                    open = "window.open('" + url + "', '" + _urlTarget + "') || window.location.replace('" + url + "');";
+                    open = "window.open('" + url + "', '" + _urlTarget + "', 'noopener,noreferrer') || window.location.replace('" + url + "');";
                 return open;
             }
             return null;
