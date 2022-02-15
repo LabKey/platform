@@ -279,11 +279,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private static LoginUrlsImpl getUrls()
-    {
-        return new LoginUrlsImpl();
-    }
-
     private static boolean authenticate(LoginForm form, BindException errors, HttpServletRequest request)
     {
         if (request != null)
@@ -319,7 +314,7 @@ public class LoginController extends SpringActionController
                 else
                 {
                     // Explicit test for valid email
-                    new ValidEmail(form.getEmail());
+                    ValidEmail email = new ValidEmail(form.getEmail());
 
                     if (status.requiresRedirect())
                     {
@@ -327,7 +322,8 @@ public class LoginController extends SpringActionController
                     }
                     else
                     {
-                        status.addUserErrorMessage(errors, result);
+                        // Pass in normalized email address, but only if user provided a full email address
+                        status.addUserErrorMessage(errors, result, form.getEmail().contains("@") ? email.getEmailAddress() : null, form.getReturnURLHelper());
                     }
                 }
             }
@@ -1808,7 +1804,7 @@ public class LoginController extends SpringActionController
         {
             if (!SecurityManager.loginExists(email))
             {
-                if (AuthenticationManager.isLdapEmail(email))
+                if (AuthenticationManager.isLdapOrSsoEmail(email))
                     errors.reject("setPassword", "Your account will authenticate using LDAP and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");

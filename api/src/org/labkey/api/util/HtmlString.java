@@ -93,6 +93,7 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
         return null==html ? "" : html.toString();
     }
 
+    // For a Stream variant, see LabKeyCollectors.joining()
     public static HtmlString join(Iterable<HtmlString> htmlStrings, HtmlString delimiter)
     {
         HtmlString sep = HtmlString.EMPTY_STRING;
