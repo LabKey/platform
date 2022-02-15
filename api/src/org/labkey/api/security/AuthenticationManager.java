@@ -238,6 +238,12 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
+    @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
+    public static boolean isLdapEmail(ValidEmail email)
+    {
+        return isLdapOrSsoEmail(email);
+    }
+
     // Ignores domain == "*"
     public static boolean isLdapOrSsoEmail(ValidEmail email)
     {

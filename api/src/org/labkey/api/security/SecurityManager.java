@@ -898,6 +898,12 @@ public class SecurityManager
             return _email;
         }
 
+        @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
+        public boolean isLdapEmail()
+        {
+            return isLdapOrSsoEmail();
+        }
+
         public boolean isLdapOrSsoEmail()
         {
             return AuthenticationManager.isLdapOrSsoEmail(_email);
