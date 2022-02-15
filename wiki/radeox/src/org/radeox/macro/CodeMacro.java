@@ -124,7 +124,7 @@ public class CodeMacro extends LocalePreserved {
     if (params.getLength() == 0 || !formatters.containsKey(params.get("0"))) {
       formatter = (SourceCodeFormatter) formatters.get(initialContext.get(RenderContext.DEFAULT_FORMATTER));
       if (null == formatter) {
-        System.err.println("Formatter not found.");
+        log.warn("Formatter not found.");
         formatter = (SourceCodeFormatter) formatters.get("java");
       }
     } else {
