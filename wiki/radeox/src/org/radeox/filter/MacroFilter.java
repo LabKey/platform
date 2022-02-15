@@ -89,18 +89,12 @@ public class MacroFilter extends RegexTokenFilter {
       // {$peng} are variables not macros.
       if (!command.startsWith("$")) {
         MacroParameter mParams = context.getMacroParameter();
-//        System.err.println("count="+result.groups());
-//        System.err.println("1: "+result.group(1));
-//        System.err.println("2: "+result.group(2));
         switch(result.groups()) {
           case 3:
             mParams.setContent(result.group(3));
             mParams.setContentStart(result.beginOffset(3));
             mParams.setContentEnd(result.endOffset(3));
           case 2: mParams.setParams(result.group(2));
-            // Still left from ORO
-//          case 2: System.out.println(result.group(1));
-//          case 1: System.out.println(result.group(0));
         }
         mParams.setStart(result.beginOffset(0));
         mParams.setEnd(result.endOffset(0));

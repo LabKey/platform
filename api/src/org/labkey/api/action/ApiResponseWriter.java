@@ -532,6 +532,11 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 jsonError.put("adviceHref", errorWithLink.getAdviceHref());
             }
 
+            if (error instanceof LabKeyErrorWithHtml errorWithHtml)
+            {
+                jsonError.put("html", errorWithHtml.getHtml());
+            }
+
             if (null == exceptionMessage)
                 exceptionMessage = msg;
 
