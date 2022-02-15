@@ -62,7 +62,6 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
