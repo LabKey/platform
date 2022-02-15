@@ -30,6 +30,7 @@ List apache = [
         "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
         "org.apache.poi:poi:${poiVersion}",
         "org.apache.poi:poi-ooxml:${poiVersion}",
+        "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
         "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
 ]
 
@@ -157,8 +158,6 @@ dependencies {
     // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
     api "javax.servlet:servlet-api:${servletApiVersion}"
     api "com.sun.mail:jakarta.mail:${javaMailVersion}"
-
-    creditable "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}"
 
     external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
