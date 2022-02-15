@@ -27,7 +27,8 @@ import org.labkey.api.view.ViewContext;
  */
 public class InheritedQueryDataViewProvider extends AbstractQueryDataViewProvider
 {
-    public static final DataViewProvider.Type TYPE = new ProviderType("queries (inherited)", "Inherited Custom Views", false);
+    public static final DataViewProvider.Type TYPE = new ProviderType("grid views (inherited)", "Inherited grid views can be shown if the " +
+            "custom view in the parent folder has been saved with the inherit check box selected. Only certain data types can be inherited.", false);
 
     @Override
     public DataViewProvider.Type getType()

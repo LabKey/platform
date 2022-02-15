@@ -60,7 +60,6 @@ import org.labkey.pipeline.xml.TaskRefType;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;

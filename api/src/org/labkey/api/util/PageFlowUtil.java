@@ -71,6 +71,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -150,6 +151,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.Attribute.valign;
@@ -820,6 +822,10 @@ public class PageFlowUtil
         catch (IllegalArgumentException x)
         {
             throw new IOException(x);
+        }
+        catch (ZipException x)
+        {
+            throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
         }
     }
 
