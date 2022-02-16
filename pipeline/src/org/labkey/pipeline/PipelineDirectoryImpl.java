@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
@@ -99,6 +98,17 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                     {
+                        _files.put(file.getFileName().toString(), file);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc)
+                    {
+                        // Issue 44843 - be tolerant of not being able to get the full metadata (which we aren't even using)
+                        // Don't output a full stack trace since it'll be very verbose
+                        LOG.warn("Failed to visit " + file + " in container " + _root.getContainer().getPath() +
+                                ". Its permissions may prevent retrieving metadata. Error: " + exc);
                         _files.put(file.getFileName().toString(), file);
                         return FileVisitResult.CONTINUE;
                     }
@@ -209,7 +219,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             if (filter.accept(f))
                 listFiles.add(f);
         }
-        return listFiles.toArray(new File[listFiles.size()]);
+        return listFiles.toArray(new File[0]);
     }
 
     public void orderActions()
@@ -261,6 +271,7 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             super(f.getPath());
         }
 
+        @Override
         public boolean isFile()
         {
             return !isDirectory();
