@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Type;
@@ -214,7 +213,7 @@ public class TableInfoWriter
         }
 
         // GWT PropertyEditor always saves Attachment columns with DefaultValueType set to FIXED_EDITABLE. That's a bug we should fix,
-        // but we'll workaround it here for now. Also, consider Type.allowsDefaultValue() to generalize this concept.
+        // but we'll work around it here for now. Also, consider Type.allowsDefaultValue() to generalize this concept.
         if (t != Type.AttachmentType)
         {
             DefaultValueType defaultValueType = column.getDefaultValueType();
