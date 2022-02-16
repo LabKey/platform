@@ -26,6 +26,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 
+/**
+ * URLDisplayColumn allows for a grid cell to render a thumbnail image and/or a popup tooltip image, both via
+ * url paths to image files. There are also optional properties that can set the heigh/width of the image in the display
+ * along with the onClick behavior and target.
+ */
 public class URLDisplayColumn extends AbstractFileDisplayColumn
 {
     public static class Factory implements DisplayColumnFactory
@@ -53,15 +58,21 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     private static final String THUMBNAIL_IMAGE_URL = "thumbnailImageUrl";
     private static final String THUMBNAIL_IMAGE_WIDTH = "thumbnailImageWidth";
     private static final String THUMBNAIL_IMAGE_HEIGHT = "thumbnailImageHeight";
+    private static final String USE_THUMBNAIL_IMAGE_URL_ONCLICK = "useThumbnailImageUrlOnClick";
+    private static final String RENDER_POPUP_IMAGE = "renderPopupImage";
     private static final String POPUP_IMAGE_URL = "popupImageUrl";
     private static final String POPUP_IMAGE_WIDTH = "popupImageWidth";
     private static final String POPUP_IMAGE_HEIGHT = "popupImageHeight";
+    private static final String URL_TARGET = "urlTarget";
 
     private static final String UNSCALED = "auto";
 
     private MultiValuedMap<String, String> _properties;
     private String _thumbnailHeight;
+    private boolean _useThumbnailImageUrlOnClick = true;
+    private boolean _renderPopupImage = true;
     private String _popupHeight;
+    private String _urlTarget;
 
     public URLDisplayColumn(ColumnInfo col, MultiValuedMap properties)
     {
@@ -71,8 +82,11 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         {
             _thumbnailHeight = _properties.get(THUMBNAIL_IMAGE_HEIGHT).stream().findFirst().orElse(null);
             _thumbnailWidth = _properties.get(THUMBNAIL_IMAGE_WIDTH).stream().findFirst().orElse(null);
+            _useThumbnailImageUrlOnClick = Boolean.parseBoolean(_properties.get(USE_THUMBNAIL_IMAGE_URL_ONCLICK).stream().findFirst().orElse("true"));
+            _renderPopupImage = Boolean.parseBoolean(_properties.get(RENDER_POPUP_IMAGE).stream().findFirst().orElse("true"));
             _popupHeight = _properties.get(POPUP_IMAGE_HEIGHT).stream().findFirst().orElse(null);
             _popupWidth = _properties.get(POPUP_IMAGE_WIDTH).stream().findFirst().orElse(null);
+            _urlTarget = _properties.get(URL_TARGET).stream().findFirst().orElse(null);
 
             // if any of the sizes are blank, default to auto
             if (_thumbnailHeight != null && StringUtils.isBlank(_thumbnailHeight)) _thumbnailHeight = UNSCALED;
@@ -187,7 +201,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             if (_popupIconUrl != null)
                 return _popupIconUrl.trim().length() > 0;
             else
-                return super.renderPopupImage();
+                return _renderPopupImage;
         }
 
         @Override
@@ -222,8 +236,17 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         @Override
         public String createClickScript()
         {
-            String url = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
-            return url == null ? null : "window.location = '" + url + "'";
+            String url = _useThumbnailImageUrlOnClick && _fileIconUrl != null
+                    ? ensureAbsoluteUrl(_ctx, _fileIconUrl)
+                    : _url != null ? ensureAbsoluteUrl(_ctx, _url) : null;
+            if (url != null)
+            {
+                String open = "window.location = '" + url + "'";
+                if (_urlTarget != null)
+                    open = "window.open('" + url + "', '" + _urlTarget + "', 'noopener,noreferrer') || window.location.replace('" + url + "');";
+                return open;
+            }
+            return null;
         }
     }
 }

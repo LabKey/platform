@@ -1,8 +1,7 @@
 package org.radeox.util;
 
-import org.labkey.api.util.StringUtilsLabKey;
-
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.net.URL;
 import java.util.*;
 
@@ -48,7 +47,7 @@ public class Service {
         while (providerFiles.hasMoreElements()) {
           try {
             URL url = (URL) providerFiles.nextElement();
-            Reader reader = new InputStreamReader(url.openStream(), StringUtilsLabKey.DEFAULT_CHARSET);
+            Reader reader = new InputStreamReader(url.openStream(), StandardCharsets.UTF_8);
             if (instantiate) {
               loadResource(reader, classLoader, providers);
             } else {
@@ -67,7 +66,7 @@ public class Service {
           is = classLoader.getResourceAsStream(providerFile);
         }
         if (is != null) {
-          Reader reader = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET);
+          Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
           loadResource(reader, classLoader, providers);
         }
       }
@@ -118,9 +117,9 @@ public class Service {
         // stick it into our vector...
         providers.add(obj);
       } catch (InstantiationException e) {
-        e.printStackTrace();
+        throw new RuntimeException(e);
       } catch (IllegalAccessException e) {
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
       //Logger.debug("Service: loaded "+ obj.getClass().getName());
     }
