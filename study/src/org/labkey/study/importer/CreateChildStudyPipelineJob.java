@@ -205,6 +205,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     }
                 }
 
+                // Issue 44866: preserve order for the datasets based on display order, even if not all are selected
+                List<DatasetDefinition> orderedDatasets = datasets.stream().sorted(StudyManager.DATASET_ORDER_COMPARATOR).toList();
+
                 // log selected settings to the pipeline job log file
                 _form.logSelections(getLogger());
 
@@ -234,7 +237,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                         dataTypes, _form.getExportPhiLevel(),
                         new ParticipantMapper(sourceStudy, user, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
+                        _form.isMaskClinic(), orderedDatasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)
