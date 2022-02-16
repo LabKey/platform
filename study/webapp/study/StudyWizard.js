@@ -213,6 +213,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 panelType: 'lists',
                 active: this.mode == 'publish'
             },
+            queries: {
+                panelType: 'queries',
+                active: this.mode == 'publish'
+            },
             views: {
                 panelType: 'views',
                 active: this.mode == 'publish'
@@ -296,6 +300,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.pageOptions.specimens.active) this.steps.push(this.getSpecimensPanel());
         if(this.pageOptions.studyProps.active) this.steps.push(this.getStudyPropsPanel());
         if(this.pageOptions.lists.active) this.steps.push(this.getListsPanel());
+        if(this.pageOptions.queries.active) this.steps.push(this.getQueriesPanel());
         if(this.pageOptions.views.active) this.steps.push(this.getViewsPanel());
         if(this.pageOptions.reports.active) this.steps.push(this.getReportsPanel());
         if(this.pageOptions.folderProps.active) this.steps.push(this.getFolderPropsPanel());
@@ -341,6 +346,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             specimens: {value: 'Specimens', currentStep: false},
             studyProps: {value: 'Study Objects', currentStep: false},
             lists: {value: 'Lists', currentStep: false},
+            queries: {value: 'Queries', currentStep: false},
             views: {value: 'Grid Views', currentStep: false},
             reports: {value: 'Reports and Charts', currentStep: false},
             folderProps: {value: 'Folder Objects', currentStep: false},
@@ -1417,34 +1423,25 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }, this);
 
         panel.on('activate', function(){
-            // Filter out the views that will not be exported.
-            var listQueries = {},
-                studyQueries = {},
-                i;
-            
-            for(i = 0; i < this.selectedLists.length; i++){
-                listQueries[this.selectedLists[i].data.name] = this.selectedLists[i].data.name;
+            // Filter out the views that will not be exported because the relevant schema/query was not selected for export
+            var includedQueryKeys = [];
+            for (var i = 0; i < this.selectedQueries.length; i++) {
+                includedQueryKeys.push(this.selectedQueries[i].data.key);
             }
-
-            if (this.info.datasets)
-            {
-                for(i = 0; i < this.info.datasets.length; i++){
-                    studyQueries[this.info.datasets[i].data.Name] = this.info.datasets[i].data.Name;
+            for (var i = 0; i < this.selectedLists.length; i++) {
+                includedQueryKeys.push('lists||' + this.selectedLists[i].data.name);
+            }
+            if (this.info.datasets) {
+                for (var i = 0; i < this.info.datasets.length; i++) {
+                    includedQueryKeys.push('study||' + this.info.datasets[i].data.Name);
                 }
             }
 
             viewsStore.filterBy(function(record){
-                var schemaName = record.get('schemaName'),
-                    queryName = record.get('queryName');
-
-                if(record.get('type') === 'Query' && record.get('shared')){
-                    if(schemaName == 'lists'){
-                        return listQueries[record.get('queryName')] != undefined;
-                    } else if(schemaName == 'study'){
-                        return studyQueries[record.get('queryName')] != undefined;
-                    }
+                if (record.get('type') === 'Query' && record.get('shared')) {
+                    var queryKey = record.get('schemaName') + '||' + record.get('queryName');
+                    return includedQueryKeys.indexOf(queryKey) > -1;
                 }
-
                 return false;
             }, this);
         }, this);
@@ -1941,6 +1938,109 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         return panel;
     },
 
+    getQueriesPanel: function(){
+        this.selectedQueries = [];
+
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Queries'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the queries you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedQueries = selModel.getSelections();
+                    this.selectedQueriesAll = selModel.getCount() == queriesStore.getCount();
+                },
+                scope: this
+            }
+        });
+
+        var queriesStore = new Ext.data.Store({
+            proxy: new Ext.data.HttpProxy({
+                url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', undefined, {
+                    allUserDefined: true,
+                    showHidden: false
+                })
+            }),
+            reader: new Ext.data.JsonReader({
+                fields: [
+                    {name : 'description'},
+                    {name : 'key'},
+                    {name : 'queryName'},
+                    {name : 'schemaName'},
+                ]
+            }),
+            autoLoad: true,
+            sortInfo: {field: 'queryName', direction: 'ASC'}
+        });
+
+        var grid = new Ext.grid.EditorGridPanel({
+            viewConfig : {forceFit : true},
+            store: queriesStore,
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Query Name', width: 200, sortable: true, dataIndex: 'queryName', renderer: Ext.util.Format.htmlEncode},
+                {header: 'Schema Name', width: 120, sortable: true, dataIndex:'schemaName', renderer: Ext.util.Format.htmlEncode},
+                {header: 'Description', sortable: true, dataIndex: 'description', renderer: Ext.util.Format.htmlEncode}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardQueryList',
+            flex: 1,
+            bbarCfg: [{hidden:true}],
+            tbarCfg: [{hidden:true}]
+        });
+
+        items.push(grid);
+
+        var viewReadyFunc = function(){
+            grid.getSelectionModel().clearSelections();
+            if (this.settings)
+            {
+                if (this.settings.queries === undefined) {
+                    // no-op for snapshot settings created before query selection was included
+                } else if (this.settings.queries === null) {
+                    this.gridSelectAll(grid);
+                } else {
+                    var queries = this.setify(this.settings.queries);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['key'] in queries); }).getRange(), true);
+                }
+            }
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
+
+        this.pageOptions.queries.value = this.selectedQueries;
+
+        var panel = new Ext.Panel({
+            border: false,
+            name: "Queries",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+
+        panel.on('afterrender', function(cmp) {
+            // 22656: Going back to "Previous Settings" and selecting a different snapshot doesn't reflect in republish study wizard
+            // NOTE: this is wired up on the afterrender such that it doesn't fire the first time the component shows. The first showing is handled by viewready on the grid.
+            this.on('settingsChange', viewReadyFunc, this);
+        }, this);
+
+        return panel;
+    },
+
     getFolderPropsPanel : function(){
         var items = [];
 
@@ -2280,6 +2380,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.pageOptions.visits.value = this.selectedVisits;
         this.pageOptions.lists.value = this.selectedLists;
+        this.pageOptions.queries.value = this.selectedQueries;
         this.pageOptions.views.value = this.selectedViews;
         this.pageOptions.reports.value = this.selectedReports;
 
@@ -2336,6 +2437,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     id = Ext.id();
                     hiddenFields.push(id);
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
+                }
+            }
+            if(this.pageOptions.queries.active){
+                for(i = 0; i < this.selectedQueries.length; i++){
+                    var list = this.selectedQueries[i];
+                    id = Ext.id();
+                    hiddenFields.push(id);
+                    this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'queries', value: list.data.key});
+                }
+
+                if (this.selectedQueriesAll) {
+                    params.queriesAll = true;
                 }
             }
             if(this.pageOptions.views.active){

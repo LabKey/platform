@@ -222,6 +222,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (_form.getLists() != null)
                     folderExportContext.setListIds(_form.getLists());
 
+                if (_form.getQueries() != null)
+                    folderExportContext.setQueryKeys(_form.getQueries());
+
                 if (_form.getViews() != null)
                     folderExportContext.setViewIds(_form.getViews());
 
@@ -372,6 +375,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (form.getReports() != null)
         {
             dataTypes.add(FolderArchiveDataTypes.REPORTS_AND_CHARTS);
+        }
+
+        if (form.getQueries() != null)
+        {
+            dataTypes.add(FolderArchiveDataTypes.QUERIES);
         }
 
         if (form.getViews() != null)
