@@ -69,6 +69,8 @@ public interface ExpDataClass extends ExpObject
 
     void setCategory(String category);
 
+    boolean isMedia();
+
     //
     // URLS
     //

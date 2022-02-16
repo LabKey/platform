@@ -296,6 +296,115 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return result;
     }
 
+    private void addDataResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver()
+        {
+            @Override
+            public WebdavResource resolve(@NotNull String resourceIdentifier)
+            {
+                ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                if (data == null)
+                    return null;
+
+                return data.createDocument();
+            }
+
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
+                if (data == null)
+                    return null;
+
+                return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
+            }
+        });
+    }
+
+    private void addDataClassResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
+                if (dataClass == null)
+                    return null;
+
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                //Need to map to proper Icon
+                properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
+
+                return properties;
+            }
+        });
+    }
+
+    private void addSampleTypeResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
+                if (sampleType == null)
+                    return null;
+
+                Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                //Need to map to proper Icon
+                properties.put("type", "sampleSet");
+
+                return properties;
+            }
+        });
+    }
+
+    private void addSampleResourceResolver(String categoryName)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        ss.addResourceResolver(categoryName, new SearchService.ResourceResolver(){
+            @Override
+            public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+            {
+                int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                if (rowId == 0)
+                    return null;
+
+                ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
+                if (material == null)
+                    return null;
+
+                return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
+            }
+        });
+    }
+
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
@@ -303,87 +412,23 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != ss)
         {
 //            ss.addSearchCategory(OntologyManager.conceptCategory);
+            ss.addSearchCategory(ExpSampleTypeImpl.searchCategory);
+            ss.addSearchCategory(ExpSampleTypeImpl.mediaSearchCategory);
             ss.addSearchCategory(ExpMaterialImpl.searchCategory);
+            ss.addSearchCategory(ExpMaterialImpl.mediaSearchCategory);
+            ss.addSearchCategory(ExpDataClassImpl.SEARCH_CATEGORY);
+            ss.addSearchCategory(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY);
             ss.addSearchCategory(ExpDataImpl.expDataCategory);
+            ss.addSearchCategory(ExpDataImpl.expMediaDataCategory);
             ss.addSearchResultTemplate(new ExpDataImpl.DataSearchResultTemplate());
-            ss.addResourceResolver("data", new SearchService.ResourceResolver()
-            {
-                @Override
-                public WebdavResource resolve(@NotNull String resourceIdentifier)
-                {
-                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
-                    if (data == null)
-                        return null;
-
-                    return data.createDocument();
-                }
-
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    ExpDataImpl data = ExpDataImpl.fromDocumentId(resourceIdentifier);
-                    if (data == null)
-                        return null;
-
-                    return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
-                }
-            });
-            ss.addResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName(), new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(ExpDataClassImpl.SEARCH_CATEGORY.getName() + ":", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
-                    if (dataClass == null)
-                        return null;
-
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
-
-                    //Need to map to proper Icon
-                    properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
-
-                    return properties;
-                }
-            });
-            ss.addResourceResolver(ExpSampleTypeImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("materialSource:", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(rowId);
-                    if (sampleType == null)
-                        return null;
-
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleType, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
-
-                    //Need to map to proper Icon
-                    properties.put("type", "sampleSet");
-
-                    return properties;
-                }
-            });
-
-            ss.addResourceResolver("material", new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("material:", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
-                    if (material == null)
-                        return null;
-
-                    return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
-                }
-            });
+            addDataResourceResolver(ExpDataImpl.expDataCategory.getName());
+            addDataResourceResolver(ExpDataImpl.expMediaDataCategory.getName());
+            addDataClassResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName());
+            addDataClassResourceResolver(ExpDataClassImpl.MEDIA_SEARCH_CATEGORY.getName());
+            addSampleTypeResourceResolver(ExpSampleTypeImpl.searchCategory.getName());
+            addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
+            addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
+            addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
             ss.addDocumentProvider(this);
         }
 

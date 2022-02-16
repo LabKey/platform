@@ -71,7 +71,7 @@ public class ProductRegistry
 
         _productMap.put(provider.getProductId(), provider);
         _moduleProviderMap.put(provider.getModuleName(), provider);
-        provider.getSectionNames().forEach(name -> _sectionMap.put(name, provider));
+        provider.getSectionNames(null).forEach(name -> _sectionMap.put(name, provider));
     }
 
     public void unregisterMenuItemsProvider(ProductMenuProvider provider)
@@ -81,7 +81,7 @@ public class ProductRegistry
             _productMap.remove(provider.getProductId());
             _moduleProviderMap.remove(provider.getModuleName());
         }
-        provider.getSectionNames().forEach((name) -> {
+        provider.getSectionNames(null).forEach((name) -> {
             _sectionMap.remove(name);
         });
     }
@@ -219,7 +219,7 @@ public class ProductRegistry
             }
 
             @Override
-            public @NotNull Collection<String> getSectionNames()
+            public @NotNull Collection<String> getSectionNames(@Nullable ViewContext viewContext)
             {
                 return _sectionNames;
             }

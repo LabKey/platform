@@ -33,6 +33,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -51,9 +53,10 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -114,6 +117,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public ExpExperiment getExperiment()
     {
         return _experiment;
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        Domain domain = getDomain();
+        if (domain != null)
+        {
+            DomainKind<?> domainKind = domain.getDomainKind();
+            if (!domainKind.hasPermission(user, getContainer(), perm))
+                return false;
+        }
+
+        return super.hasPermission(user, perm);
     }
 
     @Override
