@@ -108,29 +108,13 @@ public class PublishResultsQueryView extends QueryView
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
     private final boolean _includeTimestamp;
-    private final Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
+    private final Map<StudyPublishService.LinkToStudyKeys, FieldKey> _additionalColumns;
     private final Map<String, Object> _hiddenFormFields;
     private final Set<String> _hiddenColumnCaptions;
     private final FieldKey _objectIdFieldKey;
     private final Dataset.PublishSource _publishSource;
 
     private List<ActionButton> _buttons = null;
-
-    public enum ExtraColFieldKeys
-    {
-        SourceId,               // the source ID for the published rows, eg. runId or sampleId
-        ObjectId,               // the identifier for the result row
-        ParticipantId,
-        VisitId,
-        Date,
-        SpecimenId,             // legacy specimen match columns
-        SpecimenMatch,
-        SpecimenPtid,
-        SpecimenVisit,
-        SpecimenDate,
-        TargetStudy,            // for assays the run level target study value
-        SampleId
-    }
 
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
                                    Dataset.PublishSource publishSource,
@@ -144,7 +128,7 @@ public class PublishResultsQueryView extends QueryView
                                    boolean mismatched,
                                    boolean showSpecimenMatch,
                                    boolean includeTimestamp,
-                                   Map<ExtraColFieldKeys, FieldKey> additionalColumns,
+                                   Map<StudyPublishService.LinkToStudyKeys, FieldKey> additionalColumns,
                                    Map<String, Object> hiddenFormFields,
                                    Set<String> hiddenColumnCaptions)
     {
@@ -986,9 +970,9 @@ public class PublishResultsQueryView extends QueryView
         
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
         ColumnInfo objectIdCol = colInfos.get(_objectIdFieldKey);
-        if (_additionalColumns.containsKey(ExtraColFieldKeys.ObjectId))
-            objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
-        ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ParticipantId));
+        if (_additionalColumns.containsKey(StudyPublishService.LinkToStudyKeys.ObjectId))
+            objectIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.ObjectId));
+        ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.ParticipantId));
         if (ptidCol == null)
         {
             //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
@@ -996,16 +980,16 @@ public class PublishResultsQueryView extends QueryView
             ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
         }
 
-        ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SourceId));
-        ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.VisitId));
-        ColumnInfo dateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.Date));
-        ColumnInfo specimenIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenId));
-        ColumnInfo matchCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenMatch));
-        ColumnInfo specimenPTIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenPtid));
-        ColumnInfo specimenVisitCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenVisit));
-        ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenDate));
-        ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.TargetStudy));
-        ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SampleId));
+        ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SourceId));
+        ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.VisitId));
+        ColumnInfo dateCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.Date));
+        ColumnInfo specimenIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenId));
+        ColumnInfo matchCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenMatch));
+        ColumnInfo specimenPTIDCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenPtid));
+        ColumnInfo specimenVisitCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenVisit));
+        ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SpecimenDate));
+        ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.TargetStudy));
+        ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(StudyPublishService.LinkToStudyKeys.SampleId));
 
         // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
         List<ColumnInfo> timepointCols = selectColumns.stream()

@@ -36,7 +36,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -69,6 +68,23 @@ public interface StudyPublishService
     // auto link to study target which defaults to the study in the folder the import occurs, using the shared folder
     // which should be safe from collisions since we don't allow assay creation there
     Container AUTO_LINK_TARGET_IMPORT_FOLDER = ContainerManager.getSharedContainer();
+
+    // special fields that are used during the link to study process
+    enum LinkToStudyKeys
+    {
+        SourceId,               // the source ID for the published rows, eg. runId or sampleId
+        ObjectId,               // the identifier for the result row
+        ParticipantId,
+        VisitId,
+        Date,
+        SpecimenId,             // legacy specimen match columns
+        SpecimenMatch,
+        SpecimenPtid,
+        SpecimenVisit,
+        SpecimenDate,
+        TargetStudy,            // for assays the run level target study value
+        SampleId
+    }
 
     static void setInstance(StudyPublishService serviceImpl)
     {
@@ -112,7 +128,7 @@ public interface StudyPublishService
     /**
      * Automatically link sample type data to a study if the design is set up to do so
      */
-    void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user);
+    void autoLinkSampleType(ExpSampleType sampleType, List<Map<FieldKey, Object>> results, Container container, User user);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
@@ -147,5 +163,5 @@ public interface StudyPublishService
      *
      * @param qs an optional query settings if custom view fields should be additionally inspected for publish relevant columns.
      */
-    Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container, ExpSampleType sampleType, @Nullable QuerySettings qs);
+    Map<LinkToStudyKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container, ExpSampleType sampleType, @Nullable QuerySettings qs);
 }

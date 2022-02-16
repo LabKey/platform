@@ -185,17 +185,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
 
         UserSchema userSchema = getQueryTable().getUserSchema();
-        if (InventoryService.get() != null && userSchema != null)
-        {
-            ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
-        }
-
         if (userSchema != null)
         {
-            dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
-        }
+            ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
+            if (InventoryService.get() != null)
+                dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
 
+            if (sampleType.getAutoLinkTargetContainer() != null)
+                dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
+        }
         return dib;
     }
 
