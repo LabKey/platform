@@ -999,7 +999,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             ResultSetUtil.close(rs);
             ResultSetUtil.close(stmt);
-            schema.getScope().releaseConnection(conn);
+            if (conn != null)
+            {
+                schema.getScope().releaseConnection(conn);
+            }
         }
     }
 
