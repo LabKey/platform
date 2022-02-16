@@ -36,6 +36,21 @@ public class SettingsField extends HashMap<String, Object>
         return sf;
     }
 
+    public static SettingsField getStandardDomainField()
+    {
+        return SettingsField.of(
+            "domain",
+            SettingsField.FieldType.input,
+            "Associated email domain",
+            "Email domain that indicates which users are expected to authenticate using this configuration. " +
+                "For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org are presumed to authenticate using this configuration. " +
+                "This is often left blank, but if provided, LabKey will suggest this authentication method to users with the specified domain if they fail an authentication attempt using a different configuration. " +
+                "LabKey will also not create database logins when administrators add user accounts with this email domain.",
+            false,
+            ""
+        );
+    }
+
     /*
         If set on a checkbox field, the checkbox state will determine the visibility of all subsequent fields.
      */

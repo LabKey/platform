@@ -48,6 +48,7 @@ import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -62,6 +63,7 @@ class SecurityQuery extends Query
     private final Container _currentContainer;
     private final boolean _recursive;
 
+    private final HashMap<String, Set<String>> _categoryContainers = new HashMap<>();
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private final InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
@@ -100,6 +102,11 @@ class SecurityQuery extends Query
             if (searchRoot.hasPermission(user, ReadPermission.class))
                 _containerIds.put(searchRoot.getId(), searchRoot);
         }
+        SearchService.get().getSearchCategories().forEach(
+                category -> {
+                    _categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, _containerIds));
+                }
+        );
     }
 
 
@@ -115,6 +122,15 @@ class SecurityQuery extends Query
             public boolean isCacheable(LeafReaderContext ctx)
             {
                 return false;
+            }
+
+            private boolean isReadable(String containerId, String categories)
+            {
+//                return _containerIds.containsKey(containerId);
+                if (StringUtils.isEmpty(categories) || !_categoryContainers.containsKey(categories))
+                    return _containerIds.containsKey(containerId);
+                else
+                    return _categoryContainers.get(categories).contains(containerId);
             }
 
             @Override
@@ -143,21 +159,21 @@ class SecurityQuery extends Query
 
                             final String containerId;
                             final String resourceId;
-
-                            // SecurityContext is usually just a container ID, but in some cases it adds a resource ID.
-                            if (securityContext.length() > 36)
-                            {
-                                containerId = securityContext.substring(0, 36);
-                                resourceId = securityContext.substring(37);
-                            }
+                            final String categories;
+                            String[] parts = StringUtils.split(securityContext, "|");
+                            // SecurityContext is usually just a container ID and a string of categories, but in some cases it adds a resource ID.
+                            containerId = parts[0];
+                            if (parts.length > 1)
+                                categories = parts[1];
                             else
-                            {
-                                containerId = securityContext;
+                                categories = null;
+                            if (parts.length > 2)
+                                resourceId = parts[2];
+                            else
                                 resourceId = null;
-                            }
 
                             // Must have read permission on the container (always). Must also have read permissions on resource ID, if non-null.
-                            if (_containerIds.containsKey(containerId) && (null == resourceId || canReadResource(resourceId, containerId)))
+                            if (isReadable(containerId, categories) && (null == resourceId || canReadResource(resourceId, containerId)))
                                 bits.set(doc);
                         }
                     }

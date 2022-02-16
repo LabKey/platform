@@ -14,6 +14,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -144,7 +145,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         clickButton("Next", 0);
 
         //participants
-        clickButton("Next", 0);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardParticipantList);
 
         //Datasets
         _extHelper.selectExtGridItem("Label", datasetName, -1, "studyWizardDatasetList", true);
@@ -161,34 +162,13 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
 
         //specimens, if present & active
         if (_studyHelper.isSpecimenModuleActive())
-        {
-            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-            clickButton("Next", 0);
-        }
+            _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studySpecimens);
 
-        //Study object
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        clickButton("Next", 0);
-
-        //lists
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Lists']"));
-        clickButton("Next", 0);
-
-        // Wizard page 8 : Grid Views
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Grid Views']"));
-        clickButton("Next", 0);
-
-        // Wizard Page 9 : Reports and Charts
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Reports and Charts']"));
-        clickButton("Next", 0);
-
-        // Wizard page 10 : Folder Objects
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
-        clickButton("Next", 0);
-
-        // Wizard page 11 : Publish Options
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Publish Options']"));
-        clickButton("Finish");
+        List<StudyHelper.IPanel> wizardPanels = Arrays.asList(
+                StudyHelper.Panel.studyObjects, StudyHelper.Panel.studyWizardListList, StudyHelper.Panel.studyWizardQueryList,
+                StudyHelper.Panel.studyWizardViewList, StudyHelper.Panel.studyWizardReportList, StudyHelper.Panel.folderObjects,
+                StudyHelper.Panel.studyWizardPublishOptionsList);
+        _studyHelper.advanceThroughPublishStudyWizard(wizardPanels);
 
         waitForPipelineJobsToComplete(1, "publish study", false);
 

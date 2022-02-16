@@ -16,7 +16,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -36,7 +35,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -72,6 +70,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     private boolean _userDefinedQuery;
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
+
     private static final Logger log = LogHelper.getLogger(MetadataTableJSON.class, "Visual editor support for table/query metadata");
 
     @Override
@@ -431,7 +430,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             // Set the conditional formats
             if (shouldStoreValue(metadataColumnJSON.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
             {
-                ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn);
+                ConditionalFormat.convertToXML(metadataColumnJSON.getConditionalFormats(), xmlColumn, xmlTable.getTableName());
             }
 
             // Set conceptURI

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.LabKeyErrorWithLink;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
@@ -36,6 +37,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -222,8 +224,8 @@ public class AuthenticationManager
 
         if (!activeDomains.isEmpty())
         {
-            // At the moment, only LDAP configurations can be associated with a domain, so we call out LDAP below
-            builder.append(" except those with email addresses that are configured for LDAP authentication (those ending in ");
+            // LDAP and SSO configurations can be associated with email domains
+            builder.append(" except those with email addresses that are associated with LDAP or SSO configurations (those ending in ");
             builder.append(
                 activeDomains.stream()
                     .map(d->"@" + d)
@@ -236,8 +238,14 @@ public class AuthenticationManager
         return builder.getHtmlString();
     }
 
-    // Ignores domain = "*"
+    @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
     public static boolean isLdapEmail(ValidEmail email)
+    {
+        return isLdapOrSsoEmail(email);
+    }
+
+    // Ignores domain == "*"
+    public static boolean isLdapOrSsoEmail(ValidEmail email)
     {
         String emailAddress = email.getEmailAddress();
         return AuthenticationConfigurationCache.getActiveDomains().stream()
@@ -463,7 +471,7 @@ public class AuthenticationManager
                     return HttpView.redirect(result.getRedirectURL());
                 }
 
-                primaryResult.getStatus().addUserErrorMessage(errors, primaryResult);
+                primaryResult.getStatus().addUserErrorMessage(errors, primaryResult, null, null);
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -623,7 +631,7 @@ public class AuthenticationManager
         Success
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 throw new IllegalStateException("Shouldn't be adding an error message in success case");
             }
@@ -631,15 +639,42 @@ public class AuthenticationManager
         BadCredentials
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
-                errors.reject(ERROR_MSG, "The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+                errors.addError(new LabKeyError("The email address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off."));
+
+                // Provide additional guidance on failed login, pointing user toward the SSO configuration(s) claiming their email domain
+                if (null != fullEmailAddress && null != returnURL)
+                {
+                    String domain = fullEmailAddress.split("@")[1]; // Callers must ensure that fullEmailAddress includes @
+                    Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationConfigurationCache.getActiveConfigurationsForDomain(domain).stream()
+                        .filter(ac -> ac instanceof SSOAuthenticationConfiguration)
+                        .map(ac -> (SSOAuthenticationConfiguration)ac)
+                        .toList();
+
+                    if (!ssoConfigs.isEmpty())
+                    {
+                        String message = "Based on your email domain, you should sign in using " + ssoConfigs.stream()
+                            .map(AuthenticationConfiguration::getDescription)
+                            .collect(Collectors.joining(" or ")) + ": ";
+
+                        HtmlString logos = ssoConfigs.stream()
+                            .map(ac -> ac.getLinkFactory().getLink(returnURL, AuthLogoType.LOGIN_PAGE))
+                            .filter(Objects::nonNull) // Only those with a login page logo
+                            .collect(LabKeyCollectors.joining(HtmlString.unsafe("&nbsp;&nbsp;")));
+
+                         errors.addError(new LabKeyErrorWithHtml(
+                            message,
+                            logos
+                         ));
+                    }
+                }
             }
         },
         InactiveUser
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
@@ -647,7 +682,7 @@ public class AuthenticationManager
         LoginDisabled
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
                 errors.reject(ERROR_MSG, errorMessage);
@@ -656,7 +691,7 @@ public class AuthenticationManager
         LoginPaused
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
             }
@@ -664,7 +699,7 @@ public class AuthenticationManager
         UserCreationError
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
@@ -672,7 +707,7 @@ public class AuthenticationManager
         UserCreationNotAllowed
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
             {
                 errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
@@ -695,7 +730,7 @@ public class AuthenticationManager
         };
 
         // Add an appropriate error message to display to the user
-        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result)
+        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
         {
         }
 

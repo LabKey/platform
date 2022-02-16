@@ -27,6 +27,7 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
@@ -163,6 +164,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.print.attribute.standard.Media;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1039,7 +1041,7 @@ public class QueryController extends SpringActionController
             _schema = (UserSchema)querySchema;
 
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            List<XmlValidationError> xmlErrors = new ArrayList<>();
+            List<XmlError> xmlErrors = new ArrayList<>();
             options.setErrorListener(xmlErrors);
             try
             {
@@ -1051,7 +1053,7 @@ public class QueryController extends SpringActionController
                     {
                         tablesDoc.validate(options);
                         TablesType tablesType = tablesDoc.getTables();
-                        if(tablesType != null)
+                        if (tablesType != null)
                         {
                             for (TableType tableType : tablesType.getTableArray())
                             {
@@ -1060,7 +1062,6 @@ public class QueryController extends SpringActionController
                                     if (!Objects.equals(tableType.getTableName(), form.getQueryName()))
                                     {
                                         errors.reject(ERROR_MSG, "Table name in the XML metadata must match the table/query name: " + form.getQueryName());
-
                                     }
 
                                     TableType.Columns tableColumns = tableType.getColumns();
@@ -1099,7 +1100,7 @@ public class QueryController extends SpringActionController
                 throw new RuntimeValidationException(e);
             }
 
-            for (XmlValidationError xmle : xmlErrors)
+            for (XmlError xmle : xmlErrors)
             {
                 errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
             }

@@ -105,6 +105,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -206,7 +207,7 @@ public class AssayController extends SpringActionController
     /**
      * This method represents the point of entry into the pageflow
      */
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         @Override
@@ -227,7 +228,7 @@ public class AssayController extends SpringActionController
     // Action for the "Assay" tab. Same as BeginAction, but tricks AppBar into leaving BeginAction links in the NavTrail,
     // which keeps the tests happy. Assay refactor necessitated this. We might want to update the tests to click the tab,
     // then remove this hack.
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class TabAction extends BeginAction
     {
     }
@@ -278,7 +279,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public static class AssayListAction extends MutatingApiAction<AssayListForm>
     {
         @Override
@@ -484,7 +485,7 @@ public class AssayController extends SpringActionController
         return propertyList;
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class ChooseCopyDestinationAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -552,7 +553,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -749,7 +750,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class AssayFileDuplicateCheckAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -1301,7 +1302,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class ShowUploadJobsAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
@@ -1463,7 +1464,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class GetQCStateAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -1533,7 +1534,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
     {
         @Override
@@ -1674,7 +1675,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AssayReadPermission.class)
     public class GetValidPublishTargetsAction extends ReadOnlyApiAction
     {
         @Override

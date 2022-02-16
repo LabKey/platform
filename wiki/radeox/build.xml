@@ -7,13 +7,12 @@
 <project basedir="." default="compile" name="Radeox">
 
   <path id="classpath">
-    <pathelement location="lib/picocontainer.jar"/>
     <pathelement location="lib/groovy.jar"/>
     <pathelement location="lib/asm.jar"/>
     <pathelement location="lib/asm-util.jar"/>
     <pathelement location="lib/commons-logging.jar"/>
-    <pathelement location="lib/junit.jar"/>
-    <pathelement location="lib/junitperf.jar"/>
+    <pathelement location="lib/junit-4.7.jar"/>
+    <pathelement location="lib/junitperf-1.9.1.jar"/>
     <!-- <pathelement location="lib/jython.jar"/> -->
     <!-- <pathelement location="lib/javax.servlet.jar"/> -->
   </path>
@@ -26,8 +25,7 @@
      <property name="test" value="${src}/test"/>
      <property name="conf" value="./conf"/>
      <property name="jar" value="./lib"/>
-     <property name="version" value="1.0"/>
-     <property name="status" value="-BETA-2"/>
+     <property name="version" value="1.0.4"/>
    </target>
 
    <target name="prepare" depends="init">
@@ -36,34 +34,27 @@
    </target>
 
    <target name="compile" depends="prepare">
-     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}"/>
+     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}" target="16" source="16" />
    </target>
-
-  <target name="compile-test" depends="prepare">
-     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}">
-        <include name="org/radeox/test/**"/>
-        <include name="radeox/test/**"/>
-     </javac>
-  </target>
 
   <target name="test" depends="jar" description="run compliance tests">
     <junit printsummary="true">
        <formatter usefile="false" type="plain"/>
        <test name="org.radeox.test.${testTarget}"/>
        <classpath refid="classpath"/>
-       <classpath location="../lib/radeox.jar"/>
+       <classpath location="../lib/radeox-${version}.jar"/>
     </junit>
   </target>
 
   <target name="jar-api" depends="compile">
-    <jar destfile="../lib/radeox-api.jar" excludes="**/CVS"
+    <jar destfile="../lib/radeox-api-${version}.jar" excludes="**/CVS"
       manifest="${src}/META-INF/manifest.radeox-api">
       <fileset dir="${out}/" includes="org/radeox/api/**"/>
     </jar>
   </target>
 
   <target name="jar" depends="compile" description="build radeox.jar" >
-    <jar destfile="../lib/radeox.jar" excludes="**/CVS"
+    <jar destfile="../lib/radeox-${version}.jar" excludes="**/CVS"
       manifest="${src}/META-INF/manifest.radeox">
       <fileset dir="${out}/" includes="**"/>
       <fileset dir="${src}" includes="META-INF/**"/>
@@ -73,12 +64,12 @@
     </jar>
   </target>
 
-  <target name="dist" depends="clean, jar, jar-api, javadoc, test">
+  <target name="dist" depends="clean, jar, jar-api">
    <delete failonerror="false" includeEmptyDirs="true">
       <fileset dir="${out}" includes="**"/>
    </delete>
-    <tar destfile="../radeox-${version}${status}-src.tgz" compression="gzip">
-      <tarfileset dir="." prefix="radeox-${version}${status}" mode="700">
+    <tar destfile="../radeox-${version}-src.tgz" compression="gzip">
+      <tarfileset dir="." prefix="radeox-${version}" mode="700">
         <include name="Changes.txt"/>
         <include name="conf/**"/>
         <include name="src/**"/>
@@ -96,7 +87,7 @@
   <target name="example" depends="jar">
     <java classname="org.radeox.example.InteractiveExample">
       <classpath refid="classpath"/>
-       <classpath location="../lib/radeox.jar"/>
+       <classpath location="../lib/radeox-${version}.jar"/>
     </java>
   </target>
 
@@ -106,7 +97,7 @@
       <fileset dir="${out}" includes="**" excludes="CVS"/>
     </delete>
     <delete failonerror="false">
-      <fileset dir="${jar}" includes="radeox-${version}${status}.jar"/>
+      <fileset dir="${jar}" includes="radeox-${version}.jar"/>
     </delete>
   </target>
 

@@ -186,4 +186,9 @@ public interface QueryDefinition
     boolean isMetadataEditable();
     ViewOptions getViewOptions();
     void setMetadataTableMap(Map<String, TableType> metadataTableMap);
+
+    /**
+     * Return a query key that is based on the schema path and name of the QueryDefinition.
+     */
+    String getQueryKey();
 }

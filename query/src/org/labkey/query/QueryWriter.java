@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -38,6 +39,7 @@ import org.labkey.folder.xml.FolderDocument;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -67,6 +69,13 @@ public class QueryWriter extends BaseFolderWriter
         // get all custom queries and metadata xml overrides of built-in tables that have been overridden
         List<QueryDefinition> queries = new ArrayList<>(QueryServiceImpl.get().getQueryDefsAndMetadataOverrides(ctx.getUser(), c));
         FileNameUniquifier fileNameUniquifier = new FileNameUniquifier();
+
+        if (ctx instanceof FolderExportContext feCtx)
+        {
+            Set<String> queryKeysToExport = feCtx.getQueryKeys();
+            if (queryKeysToExport != null)
+                queries.removeIf(queryDef -> !queryKeysToExport.contains(queryDef.getQueryKey()));
+        }
 
         if (queries.size() > 0)
         {
