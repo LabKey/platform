@@ -256,7 +256,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         return result;
     }
 
-    public static void convertToXML(List<? extends GWTConditionalFormat> formats, ColumnType xmlColumn)
+    public static void convertToXML(List<? extends GWTConditionalFormat> formats, ColumnType xmlColumn, String tableName)
     {
         if (xmlColumn.isSetConditionalFormats())
         {
@@ -268,7 +268,7 @@ public class ConditionalFormat extends GWTConditionalFormat
             ConditionalFormatsType xmlFormats = xmlColumn.addNewConditionalFormats();
             if (!addToXML(formats, xmlFormats))
             {
-                LOG.warn("One or more invalid conditional formats were discovered on column \"" + xmlColumn.getColumnName() + "\"");
+                LOG.warn("One or more invalid conditional formats were discovered on table \"" + tableName + "\", column \"" + xmlColumn.getColumnName() + "\"");
             }
         }
     }

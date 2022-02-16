@@ -230,7 +230,7 @@ public class TableInfoWriter
             }
         }
 
-        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
+        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml, column.getParentTable().getName());
 
         List<? extends IPropertyValidator> validators = column.getValidators();
 
