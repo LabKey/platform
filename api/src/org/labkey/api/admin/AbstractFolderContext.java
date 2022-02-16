@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.util.Set;
 
@@ -27,7 +28,7 @@ import java.util.Set;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public abstract class AbstractFolderContext extends AbstractImportContext<FolderDocument.Folder, FolderDocument>
+public abstract class AbstractFolderContext extends AbstractImportContext<Folder, FolderDocument>
 {
     public enum ExportType
     {
@@ -42,7 +43,7 @@ public abstract class AbstractFolderContext extends AbstractImportContext<Folder
 
     // Folder node -- interesting to any top-level writer that needs to set info into folder.xml
     @Override
-    public FolderDocument.Folder getXml() throws ImportException
+    public Folder getXml() throws ImportException
     {
         return getDocument().getFolder();
     }

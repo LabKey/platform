@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class QueryDataViewProvider extends AbstractQueryDataViewProvider
 {
-    public static final DataViewProvider.Type TYPE = new ProviderType("queries", "Custom Views", true);
+    public static final DataViewProvider.Type TYPE = new ProviderType("grid views", "", true);
 
     @Override
     public DataViewProvider.Type getType()

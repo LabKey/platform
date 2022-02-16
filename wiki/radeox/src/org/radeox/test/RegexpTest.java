@@ -24,7 +24,6 @@
  */
 package org.radeox.test;
 
-import org.labkey.api.util.StringUtilsLabKey;
 import org.radeox.EngineManager;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.context.RenderContext;
@@ -36,6 +35,8 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 
+import java.nio.charset.StandardCharsets;
+
 public class RegexpTest {
   public static void main(String[] args) {
     //System.out.print("Press enter ...");
@@ -46,15 +47,11 @@ public class RegexpTest {
 //    }
 
     String file = args.length > 0 ? args[0] : "conf/wiki.txt";
-    try {
-      System.setOut(new PrintStream(System.out, true, StringUtilsLabKey.DEFAULT_CHARSET.name()));
-    } catch (UnsupportedEncodingException e) {
-      // this should never happen
-    }
+    System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
 
     StringBuffer tmp = new StringBuffer();
     try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StringUtilsLabKey.DEFAULT_CHARSET));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
       char[] buffer = new char[1024];
       int n = 0;
       while ((n = reader.read(buffer)) != -1) {

@@ -37,7 +37,7 @@
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 
-    ActionURL returnURL = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getRowId())
+    ActionURL returnURL = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getProtocol().getRowId())
             .addParameter("uploadAttemptID", bean.getUploadAttemptID());
 
     if (bean.getTransformResult().getWarnings() != null)

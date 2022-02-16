@@ -1411,7 +1411,7 @@ public class QueryServiceImpl implements QueryService
                 }
 
                 for (ColumnInfo column : pkColumns)
-                    pkColumnMap.add(new FieldKey(null, column.getAlias()));
+                    pkColumnMap.add(new FieldKey(null, column.getName()));
 
                 titleURL = table.getDetailsURL(pkColumnMap, null);
             }

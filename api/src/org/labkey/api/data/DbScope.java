@@ -1045,7 +1045,7 @@ public class DbScope
         }
         catch (SQLException e)
         {
-            throw new ConfigurationException("Can't create a database connection to " + getDataSource().toString(), e);
+            throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
         if (!conn.getAutoCommit())

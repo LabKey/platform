@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
@@ -39,7 +38,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -55,7 +53,6 @@ import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -628,8 +625,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     boolean skipError = false;
                     if (dp.getLookup() != null)
                     {
-                        Container container = dp.getLookup().getContainer() != null ? dp.getLookup().getContainer() : getContainer();
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(dp.getLookup().getSchemaName()), dp.getLookup().getQueryName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                        Object remappedValue = OntologyManager.getRemappedValueForLookup(user, getContainer(), cache, dp.getLookup(), value);
                         if (remappedValue != null)
                         {
                             value = remappedValue;

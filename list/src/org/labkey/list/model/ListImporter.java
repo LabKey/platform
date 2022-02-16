@@ -98,7 +98,7 @@ public class ListImporter
     {
         //Since we don't have a definition here, try to get one from the fileName & context
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false);
+        Map<String, ListDefinition> lists = getLists(c, user);
         ListDefinition def = lists.get(FileUtil.getBaseName(fileName));
 
         if (_importContext.getInputDataMap() != null)
@@ -354,7 +354,7 @@ public class ListImporter
             }
         }
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false);
+        Map<String, ListDefinition> lists = getLists(c, user);
         int failedLists = 0;
         int successfulLists = 0;
         for (String listName : lists.keySet())
@@ -537,7 +537,7 @@ public class ListImporter
 
         TablesType tablesXml = tablesDoc.getTables();
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false);
+        Map<String, ListDefinition> lists = getLists(c, user);
 
         for (TableType tableType : tablesXml.getTableArray())
         {
@@ -600,6 +600,12 @@ public class ListImporter
                 queryDef.setMetadataXml(null);
             */
         }
+    }
+
+    private Map<String, ListDefinition> getLists(Container c, User u)
+    {
+        // When importing lists we do not want to resolve lists in other containers
+        return ListService.get().getLists(c, u, false, true, false);
     }
 
     // This is a general-purpose validator importing class that should work for datasets and specimens as well as lists,

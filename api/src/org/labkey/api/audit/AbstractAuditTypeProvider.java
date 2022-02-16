@@ -56,7 +56,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -85,6 +84,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_IMPERSONATED_BY = "ImpersonatedBy";
     public static final String COLUMN_NAME_PROJECT_ID = "ProjectId";
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
+    public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
@@ -362,7 +362,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         // add a column to show the differences between old and new values
         if (oldCol != null && newCol != null)
-            table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
+            table.addColumn(new DataMapDiffColumn(table, COLUMN_NAME_DATA_CHANGES, oldCol, newCol));
     }
 
     @Override

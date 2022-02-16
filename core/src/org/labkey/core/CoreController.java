@@ -45,7 +45,6 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -1851,7 +1850,7 @@ public class CoreController extends SpringActionController
             if (null == registry)
                 throw new RuntimeException();
 
-            List<FolderImporter<?>> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
+            List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
                 registeredImporters.sort(new ImporterAlphaComparator());
 
@@ -1868,7 +1867,7 @@ public class CoreController extends SpringActionController
         private static final String DESCRIPTION_KEY = "description";
         private static final String IS_VALID_FOR_ARCHIVE_KEY = "isValidForImportArchive";
 
-        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception
         {
             return getSelectableImporters(form, registeredImporters, true, null);
         }
@@ -1878,18 +1877,18 @@ public class CoreController extends SpringActionController
             return FileUtil.hasCloudScheme(form.getArchiveFilePath());
         }
 
-        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters) throws Exception
         {
-            ImportContext folderImportCtx = getFolderImportContext(form);
+            FolderImportContext folderImportCtx = getFolderImportContext(form);
             boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
 
             return getSelectableImporters(form, registeredImporters, isZipArchive, folderImportCtx);
         }
 
-        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter> registeredImporters, boolean isZipOrCloudArchive, @Nullable FolderImportContext folderImportCtx) throws Exception
         {
             List<Map<String, Object>> selectableImporters = new ArrayList<>();
-            for (FolderImporter<?> importer : registeredImporters)
+            for (FolderImporter importer : registeredImporters)
             {
                 if (importer.getDataType() != null)
                 {
@@ -1900,15 +1899,14 @@ public class CoreController extends SpringActionController
             return selectableImporters;
         }
 
-        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter<?> importer, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter importer, boolean isZipOrCloudArchive, @Nullable FolderImportContext folderImportCtx) throws Exception
         {
             Map<String, Object> importerMap = new HashMap<>();
             importerMap.put(DATATYPE_KEY, importer.getDataType());
             importerMap.put(DESCRIPTION_KEY, importer.getDescription());
             importerMap.put(IS_VALID_FOR_ARCHIVE_KEY, isZipOrCloudArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
 
-            ImportContext ctx = isZipOrCloudArchive ? folderImportCtx : getImporterSpecificImportContext(form, importer, folderImportCtx);
-            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
+            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(form.getArchiveFilePath(), getUser(), getContainer());
             if (childrenDataTypes != null)
             {
                 importerMap.put("children", getChildProps(childrenDataTypes, isZipOrCloudArchive));
@@ -1932,13 +1930,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    private ImportContext<?> getImporterSpecificImportContext(FolderImporterForm form, FolderImporter<?> importer, ImportContext<?> defaultCtx) throws IOException
-    {
-        ImportContext<?> ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
-        return ctx != null ? ctx : defaultCtx;
-    }
-
-    private ImportContext getFolderImportContext(FolderImporterForm form) throws IOException
+    private FolderImportContext getFolderImportContext(FolderImporterForm form) throws IOException
     {
         VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
         if (vf != null)
@@ -1953,11 +1945,11 @@ public class CoreController extends SpringActionController
 
     private boolean isZipArchive(FolderImporterForm form) throws IOException
     {
-        // consider this a zip archive if the file ends with .zip and isn't sitting next to a folder.xml or study.xml file
+        // consider this a zip archive if the file ends with .zip and isn't sitting next to a folder.xml
         if (form.getArchiveFilePath() != null && form.getArchiveFilePath().toLowerCase().endsWith(".zip"))
         {
             VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
-            return null != vf && vf.getXmlBean("folder.xml") == null && vf.getXmlBean("study.xml") == null;
+            return null != vf && vf.getXmlBean("folder.xml") == null;
         }
         return false;
     }
@@ -1976,7 +1968,7 @@ public class CoreController extends SpringActionController
         return null;
     }
 
-    private class ImporterAlphaComparator implements Comparator<FolderImporter>
+    private static class ImporterAlphaComparator implements Comparator<FolderImporter>
     {
         @Override
         public int compare(FolderImporter o1, FolderImporter o2)

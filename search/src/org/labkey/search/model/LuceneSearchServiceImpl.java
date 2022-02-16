@@ -1855,13 +1855,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "jar_sample.jar", 712120, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator", "public synchronized class ApiVersionException extends CommandException", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
             add(map, "jpg_sample.jpg", 0);
-            add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
+            add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array");
             add(map, "mov_sample.mov", 0);
             add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 110, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 148, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 38, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2233, "for JDBC Login support", "Container of parent, if parent has no ACLs");

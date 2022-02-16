@@ -116,9 +116,9 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.websocket.server.HandshakeRequest;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -451,7 +451,30 @@ public class SecurityManager
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
 
-    public static User getSessionUser(HttpSession session)
+    public static User getSessionUser(HttpServletRequest request)
+    {
+        User sessionUser = getSessionUser(request.getSession(false));
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            SecurityManager.logoutUser(request, sessionUser, null);
+            return null;
+        }
+        return sessionUser;
+    }
+
+    public static User getSessionUser(HandshakeRequest request)
+    {
+        HttpSession session = (HttpSession) request.getHttpSession();
+        User sessionUser = getSessionUser(session);
+        if (sessionUser != null && !sessionUser.isActive())
+        {
+            session.invalidate();
+            return null;
+        }
+        return sessionUser;
+    }
+
+    private static User getSessionUser(HttpSession session)
     {
         User sessionUser = null;
 
@@ -483,7 +506,7 @@ public class SecurityManager
 
         User u = null;
         HttpSession session = request.getSession(false);
-        User sessionUser = getSessionUser(session);
+        User sessionUser = getSessionUser(request);
 
         if (null != sessionUser)
         {
@@ -875,9 +898,15 @@ public class SecurityManager
             return _email;
         }
 
+        @Deprecated // Left behind for backwards compatibility. Remove once mGAP adjusts usages.
         public boolean isLdapEmail()
         {
-            return AuthenticationManager.isLdapEmail(_email);
+            return isLdapOrSsoEmail();
+        }
+
+        public boolean isLdapOrSsoEmail()
+        {
+            return AuthenticationManager.isLdapOrSsoEmail(_email);
         }
 
         public String getVerification()
@@ -983,7 +1012,7 @@ public class SecurityManager
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            if (createLogin && !status.isLdapEmail())
+            if (createLogin && !status.isLdapOrSsoEmail())
             {
                 String verification = SecurityManager.createLogin(email);
                 status.setVerification(verification);
@@ -2369,10 +2398,10 @@ public class SecurityManager
 
             User newUser = newUserStatus.getUser();
 
-            if (newUserStatus.isLdapEmail())
+            if (newUserStatus.isLdapOrSsoEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP or SSO.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP or SSO.");
             }
             else if (sendMail)
             {

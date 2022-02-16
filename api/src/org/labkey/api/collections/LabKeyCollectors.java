@@ -6,6 +6,8 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -107,6 +109,22 @@ public class LabKeyCollectors
     public static Collector<String, ?, Set<String>> toCaseInsensitiveHashSet()
     {
         return Collectors.toCollection(CaseInsensitiveHashSet::new);
+    }
+
+    /**
+     * Returns a {@link Collector} that joins {@link HtmlString}s into a single {@link HtmlString} separated by delimiter
+     */
+    public static Collector<HtmlString, HtmlStringBuilder, HtmlString> joining(HtmlString delimiter) {
+        return Collector.of(
+            HtmlStringBuilder::of,
+            (builder, hs) -> {
+                if (!builder.isEmpty())
+                    builder.append(delimiter);
+                builder.append(hs);
+            },
+            (h1, h2) -> { h1.append(h2.getHtmlString()); return h1; },
+            HtmlStringBuilder::getHtmlString
+        );
     }
 
     public static class TestCase extends Assert

@@ -18,7 +18,6 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -27,7 +26,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
@@ -37,9 +35,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.FolderTab;
-import org.springframework.validation.BindException;
 
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -174,8 +170,6 @@ public interface StudyService
     Set<? extends Study> getAllStudies(Container root, User user);
 
     Set<? extends Study> getAllStudies(Container root);
-
-    boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 

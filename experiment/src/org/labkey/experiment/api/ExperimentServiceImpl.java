@@ -96,7 +96,6 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryViewProvider;
@@ -7117,7 +7116,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain);
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();

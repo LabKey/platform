@@ -72,7 +72,6 @@ public abstract class LocaleRegexReplaceFilter extends RegexReplaceFilter {
 
     String match = inputMessages.getString(getLocaleKey()+".match");
     String print = outputMessages.getString(getLocaleKey()+".print");
-    //System.err.println(getLocaleKey()+": match="+match+" pattern="+print);
     addRegex(match, print, isSingleLine() ? RegexReplaceFilter.SINGLELINE : RegexReplaceFilter.MULTILINE);
   }
 }
