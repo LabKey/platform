@@ -1503,6 +1503,8 @@ public class ExperimentServiceImpl implements ExperimentService
         // First attempt to resolve by name.
         try
         {
+            // TODO, rowId is not found for samples newly created in the same import.
+            // This is causing name patterns containing lineage lookup to fail to generate the correct names if the child samples and their parents are created from the same import file
             Integer rowId = (sampleTypeName == null) ?
                     cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName) :
                     cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleTypeName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
