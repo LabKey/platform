@@ -37,6 +37,7 @@ import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriterFactory;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -95,7 +96,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
             FolderExportContext ctx = new FolderExportContext(user, sourceStudy.getContainer(), dataTypes, "new", false, _settings.getPhiLevel(), _settings.isShiftDates(), _settings.isUseAlternateParticipantIds(),
                     _settings.isMaskClinic(), new PipelineJobLoggerGetter(this));
 
-            Set<DatasetDefinition> datasets = Collections.emptySet();
+            List<DatasetDefinition> datasets = Collections.emptyList();
 
             StudyExportContext studyCtx = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                     dataTypes, _settings.getPhiLevel(),
