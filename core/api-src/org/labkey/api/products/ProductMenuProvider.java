@@ -61,7 +61,7 @@ public abstract class ProductMenuProvider
     }
 
     @NotNull
-    public abstract Collection<String> getSectionNames();
+    public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);
 
     @Nullable
     public abstract MenuSection getSection(@NotNull ViewContext context, @NotNull String sectionName, @Nullable Integer itemLimit);
@@ -82,6 +82,6 @@ public abstract class ProductMenuProvider
     @NotNull
     public List<MenuSection> getSections(@NotNull ViewContext context, Integer itemLimit)
     {
-        return getSections(context, getSectionNames(), itemLimit);
+        return getSections(context, getSectionNames(context), itemLimit);
     }
 }
