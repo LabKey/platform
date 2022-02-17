@@ -76,11 +76,13 @@ public class QuerySelectView extends QueryRelation
     public static QuerySelectView create(Query query, TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                            int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
     {
+        if (null == selectColumns)
+            selectColumns = table.getColumns();
         return new QuerySelectView(query, table.getUserSchema(), table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging);
     }
 
 
-    QuerySelectView(Query query, QuerySchema schema, TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+    QuerySelectView(Query query, QuerySchema schema, TableInfo table, Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
     {
         super(query, schema, "QueryView");
