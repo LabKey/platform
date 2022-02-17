@@ -403,6 +403,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         {
             TableSelector selector = new TableSelector(tinfo, cols, filter, null)
             {
+                private boolean _shouldClose = true;
                 @Override
                 public Connection getConnection() throws SQLException
                 {
@@ -416,11 +417,22 @@ public class RenderContext implements Map<String, Object>, Serializable
                             Connection c = statement.getConnection();
                             if (!c.isClosed())
                             {
+                                _shouldClose = false;
                                 return c;
                             }
                         }
                     }
                     return super.getConnection();
+                }
+
+                @Override
+                protected void close(@Nullable ResultSet rs, @Nullable Connection conn)
+                {
+                    // Don't close if we're just borrowing someone else's connection
+                    if (_shouldClose)
+                    {
+                        super.close(rs, conn);
+                    }
                 }
             };
 
