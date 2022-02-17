@@ -52,9 +52,9 @@ public class ReportWriter extends BaseFolderWriter
     {
         Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), ctx.getContainer()));
 
-        if (ctx.getClass().equals(FolderExportContext.class))
+        if (ctx instanceof FolderExportContext feCtx)
         {
-            Set<String> reportsToExport = ((FolderExportContext)ctx).getReportIds();
+            Set<String> reportsToExport = feCtx.getReportIds();
             if (reportsToExport != null)
             {
                 reports.removeIf(reportObj -> !reportsToExport.contains(reportObj.getDescriptor().getEntityId()));

@@ -205,6 +205,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     }
                 }
 
+                // Issue 44866: preserve order for the datasets based on display order, even if not all are selected
+                List<DatasetDefinition> orderedDatasets = datasets.stream().sorted(StudyManager.DATASET_ORDER_COMPARATOR).toList();
+
                 // log selected settings to the pipeline job log file
                 _form.logSelections(getLogger());
 
@@ -222,6 +225,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (_form.getLists() != null)
                     folderExportContext.setListIds(_form.getLists());
 
+                if (_form.getQueries() != null)
+                    folderExportContext.setQueryKeys(_form.getQueries());
+
                 if (_form.getViews() != null)
                     folderExportContext.setViewIds(_form.getViews());
 
@@ -231,7 +237,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 StudyExportContext studyExportContext = new StudyExportContext(sourceStudy, user, sourceStudy.getContainer(),
                         dataTypes, _form.getExportPhiLevel(),
                         new ParticipantMapper(sourceStudy, user, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
-                        _form.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
+                        _form.isMaskClinic(), orderedDatasets, new PipelineJobLoggerGetter(this)
                 );
 
                 if (selectedVisits != null)
@@ -372,6 +378,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (form.getReports() != null)
         {
             dataTypes.add(FolderArchiveDataTypes.REPORTS_AND_CHARTS);
+        }
+
+        if (form.getQueries() != null)
+        {
+            dataTypes.add(FolderArchiveDataTypes.QUERIES);
         }
 
         if (form.getViews() != null)

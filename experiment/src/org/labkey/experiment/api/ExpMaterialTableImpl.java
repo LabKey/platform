@@ -64,6 +64,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -938,6 +939,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         else
         {
+            if (_ss.isMedia() && perm == ReadPermission.class)
+                return getContainer().hasPermission(user, MediaReadPermission.class);
             return super.hasPermission(user, perm);
         }
     }

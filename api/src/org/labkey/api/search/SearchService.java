@@ -34,6 +34,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
@@ -261,6 +262,21 @@ public interface SearchService
         public String toString()
         {
             return _name;
+        }
+
+        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        {
+            Set<String> containerIds = new HashSet<>();
+            containers.forEach((id, container) -> {
+                if (container.hasPermission(user, perm))
+                    containerIds.add(id);
+            });
+            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
+        }
+
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return containers.keySet();
         }
     }
 

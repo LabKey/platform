@@ -1045,6 +1045,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     @Override
+    public String getQueryKey()
+    {
+        return getSchemaPath().toString() + "||" + getName();
+    }
+
+    @Override
     public ViewOptions getViewOptions()
     {
         return new ViewOptionsImpl(getMetadataXml());

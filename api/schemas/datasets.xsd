@@ -14,18 +14,6 @@
 	<xs:element name="datasets">
 		<xs:complexType>
 			<xs:all>
-                <xs:element name="categories" minOccurs="0">
-                    <xs:annotation>
-                        <xs:documentation>
-                             Categories are used to organize datasets. Each dataset can belong to one category.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:complexType>
-                        <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                            <xs:element name="category" type="xs:string"/>
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
 				<xs:element name="datasets" minOccurs="0">
 					<xs:complexType>
 						<xs:sequence minOccurs="0" maxOccurs="unbounded">
@@ -111,22 +99,6 @@
 					</xs:complexType>
 				</xs:element>
 			</xs:all>
-			<xs:attribute name="defaultDateFormat" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
-                         Indicates the default date format. See
-                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top" rel="noopener noreferrer">Date and Number Formats</a>.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
-			<xs:attribute name="defaultNumberFormat" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
-                        Indicates the default number format. See
-                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top" rel="noopener noreferrer">Date and Number Formats</a>.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
 			<xs:attribute name="metaDataFile" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>

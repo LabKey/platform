@@ -65,6 +65,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
@@ -115,7 +116,14 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    public static final SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay");
+    public static final SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
+    };
+
     public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
 
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
