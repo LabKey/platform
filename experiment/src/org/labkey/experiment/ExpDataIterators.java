@@ -428,6 +428,7 @@ public class ExpDataIterators
                         _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
                             try
                             {
+                                // derived samples can't be linked until after the transaction is committed
                                 StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _keys, _container, _user);
                             }
                             catch (ExperimentException e)
