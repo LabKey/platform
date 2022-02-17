@@ -149,7 +149,7 @@ public class Query
     boolean _strictColumnList = false;
     String _debugName = null;
 	String _querySource;
-    ArrayList<QParameter> _parameters;
+    ArrayList<QParameter> _parameters = new ArrayList<>();
     private final Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     // for displaying dependency graph in UI

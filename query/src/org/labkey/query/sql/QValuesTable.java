@@ -152,7 +152,7 @@ public class QValuesTable extends QTable
 
 
         @Override
-        protected void declareFields()
+        public void declareFields()
         {
         }
 

@@ -126,7 +126,7 @@ public class QueryUnion extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         for (QueryRelation term : _termList)
         {

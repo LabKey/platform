@@ -1083,7 +1083,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private boolean _declareCalled = false;
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         if (_declareCalled)
             return;

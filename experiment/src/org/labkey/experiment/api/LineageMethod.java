@@ -46,15 +46,13 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  */
 /*package*/ class LineageMethod extends AbstractTableMethodInfo
 {
-    private Container _container;
     private ColumnInfo _lsidColumn;
     private boolean _parents;
 
-    LineageMethod(Container c, ColumnInfo lsidColumn, boolean parents)
+    LineageMethod(ColumnInfo lsidColumn, boolean parents)
     {
         super(JdbcType.VARCHAR);
 
-        _container = c;
         _lsidColumn = lsidColumn;
         _parents = parents;
     }

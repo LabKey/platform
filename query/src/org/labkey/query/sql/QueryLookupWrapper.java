@@ -122,7 +122,7 @@ public class QueryLookupWrapper extends QueryRelation
 
     
     @Override
-    void declareFields()
+    public void declareFields()
     {
         _log.debug("declareFields " + this.toStringDebug());
 

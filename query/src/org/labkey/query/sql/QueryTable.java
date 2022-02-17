@@ -110,7 +110,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         _log.debug("declareFields " + toStringDebug());
     }

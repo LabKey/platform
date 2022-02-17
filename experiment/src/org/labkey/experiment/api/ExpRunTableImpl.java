@@ -50,6 +50,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -582,7 +583,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     @Override
     public ColumnInfo getExpObjectColumn()
     {
-        return wrapColumn("_ExpRunTableImpl_object", _rootTable.getColumn("objectid"));
+        var ret = wrapColumn("_ExpRunTableImpl_object", _rootTable.getColumn("objectid"));
+        ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+        return ret;
     }
 
 

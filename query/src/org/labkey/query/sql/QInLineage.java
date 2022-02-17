@@ -27,6 +27,7 @@ import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.query.QueryServiceImpl;
 
 
 final public class QInLineage extends QExpr
@@ -54,7 +55,9 @@ final public class QInLineage extends QExpr
         var RHS = ((QQuery) getLastChild());
 
         // LHS should be a 'lineage object', e.g. the result of calling {ExtTable}.expObject()
-        ColumnInfo lhsCol = !(LHS instanceof QMethodCall) ? null : LHS.createColumnInfo(sqlti, "_", query);
+        ColumnInfo lhsCol = null;
+        if (LHS instanceof QueryServiceImpl.QColumnInfo || LHS instanceof QMethodCall)
+            lhsCol = LHS.createColumnInfo(sqlti, "_", query);
         if (lhsCol == null || !StringUtils.equals(lhsCol.getConceptURI(), BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
         {
             query.getParseErrors().add(new QueryParseException(operator() + " requires argument to be a lineage object", null, getLine(), getColumn()));
