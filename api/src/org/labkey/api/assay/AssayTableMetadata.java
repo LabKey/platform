@@ -107,18 +107,10 @@ public class AssayTableMetadata
     /** @return The Date or Visit FieldKey. */
     public FieldKey getVisitIDFieldKey(TimepointType timepointType)
     {
-        if (timepointType == TimepointType.DATE)
-        {
-            return new FieldKey(_specimenDetailParentFieldKey, AbstractAssayProvider.DATE_PROPERTY_NAME);
-        }
-        else if (timepointType == TimepointType.VISIT)
-        {
+        if (timepointType.isVisitBased())
             return new FieldKey(_specimenDetailParentFieldKey, AbstractAssayProvider.VISITID_PROPERTY_NAME);
-        }
         else
-        {
-            return null;
-        }
+            return new FieldKey(_specimenDetailParentFieldKey, AbstractAssayProvider.DATE_PROPERTY_NAME);
     }
 
     public FieldKey getRunFieldKeyFromResults()
