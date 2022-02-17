@@ -25,7 +25,7 @@
      <property name="test" value="${src}/test"/>
      <property name="conf" value="./conf"/>
      <property name="jar" value="./lib"/>
-     <property name="version" value="1.0.3"/>
+     <property name="version" value="1.0.4"/>
    </target>
 
    <target name="prepare" depends="init">
@@ -34,15 +34,8 @@
    </target>
 
    <target name="compile" depends="prepare">
-     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}"/>
+     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}" target="16" source="16" />
    </target>
-
-<!--  <target name="compile-test" depends="prepare">-->
-<!--     <javac srcdir="${src}" destdir="${out}" classpathref="classpath" debug="${debug}">-->
-<!--        <include name="org/radeox/test/**"/>-->
-<!--        <include name="radeox/test/**"/>-->
-<!--     </javac>-->
-<!--  </target>-->
 
   <target name="test" depends="jar" description="run compliance tests">
     <junit printsummary="true">

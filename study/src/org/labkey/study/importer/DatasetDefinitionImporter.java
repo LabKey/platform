@@ -81,40 +81,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
                 if (null != manifestDatasetsXml)
                 {
-                    Container c = ctx.getContainer();
-
-                    // This is only for backwards compatibility; we now export default formats to folder.xml
-                    if (manifestDatasetsXml.isSetDefaultDateFormat())
-                    {
-                        try
-                        {
-                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultDateFormat());
-                            WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, manifestDatasetsXml.getDefaultDateFormat());
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
-                        }
-                    }
-
-                    // This is only for backwards compatibility; we now export default formats to folder.xml
-                    if (manifestDatasetsXml.isSetDefaultNumberFormat())
-                    {
-                        try
-                        {
-                            ctx.getLogger().debug("[" + c.getPath() + "] Default date format from dataset metadata (obsolete): " + manifestDatasetsXml.getDefaultNumberFormat());
-                            WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, manifestDatasetsXml.getDefaultNumberFormat());
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
-                        }
-                    }
-
                     DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
-
                     extraProps = getDatasetImportProperties(manifestDatasetsXml);
-
                     orderedIds = new ArrayList<>(datasets.length);
 
                     for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)

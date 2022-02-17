@@ -47,7 +47,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            'radeox:radeox:1.0.3',
+            'radeox:radeox:1.0.4',
             "Radeox",
             "Radeox",
             "http://www.radeox.org/",

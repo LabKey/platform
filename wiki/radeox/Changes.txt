@@ -1,3 +1,7 @@
+1.0.4 2022-02-16
+
+- Target Java 16
+
 1.0.3 2022-02-11
 
 - Stop logging StackOverflowErrors to std err and trim up some other System.out/System.err usage (LabKey issue 24827)

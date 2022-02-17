@@ -57,9 +57,9 @@ public class CustomViewWriter extends BaseFolderWriter
         User user = ctx.getUser();
         Set<String> viewsToExport = null;
 
-        if (ctx.getClass().equals(FolderExportContext.class))
+        if (ctx instanceof FolderExportContext feCtx)
         {
-           viewsToExport = ((FolderExportContext)ctx).getViewIds();
+           viewsToExport = feCtx.getViewIds();
         }
 
         // TODO: Export views from external schemas as well?

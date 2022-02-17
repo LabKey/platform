@@ -15,7 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 /**
@@ -27,7 +30,11 @@ public class SharedViewEditorRole extends AbstractRole
     {
         super("Shared View Editor", "Shared view editors may create and update shared custom grid views",
                 ReadPermission.class,
-                EditSharedViewPermission.class);
+                AssayReadPermission.class,
+                DataClassReadPermission.class,
+                EditSharedViewPermission.class,
+                MediaReadPermission.class
+        );
         excludeGuests();
     }
 }

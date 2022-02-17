@@ -43,8 +43,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -178,7 +180,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm);
+        if (!isAllowedPermission(perm))
+            return false;
+        if (perm == ReadPermission.class)
+            return _userSchema.getContainer().hasPermission(user, DataClassReadPermission.class);
+        return _userSchema.getContainer().hasPermission(user, perm);
     }
 
 

@@ -177,6 +177,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2214,7 +2215,15 @@ public class StudyManager
         }
 
         // sort by display order, category, and dataset ID
-        combined.sort((o1, o2) ->
+        combined.sort(DATASET_ORDER_COMPARATOR);
+
+        return Collections.unmodifiableList(combined);
+    }
+
+    public static final Comparator<DatasetDefinition> DATASET_ORDER_COMPARATOR = new Comparator<>()
+    {
+        @Override
+        public int compare(DatasetDefinition o1, DatasetDefinition o2)
         {
             if (o1.getDisplayOrder() != 0 || o2.getDisplayOrder() != 0)
                 return o1.getDisplayOrder() - o2.getDisplayOrder();
@@ -2230,11 +2239,8 @@ public class StudyManager
                 return o1.getCategory().compareTo(o2.getCategory());
 
             return o1.getDatasetId() - o2.getDatasetId();
-        });
-
-        return Collections.unmodifiableList(combined);
-    }
-
+        }
+    };
 
     /**
      * Get the list of datasets that are 'shadowed' by the list of local dataset definitions or for any local dataset in the study.

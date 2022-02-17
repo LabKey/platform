@@ -49,7 +49,7 @@ public class StudyExportContext extends SimpleStudyExportContext
         this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, List<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, dataTypes, PHI.NotPHI, new ParticipantMapper(study, false, false), false, logger);
         setDatasets(initDatasets);
@@ -63,7 +63,7 @@ public class StudyExportContext extends SimpleStudyExportContext
             initializeDatasets(study);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, Set<DatasetDefinition> initDatasets, LoggerGetter logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, List<DatasetDefinition> initDatasets, LoggerGetter logger)
     {
         this(study, user, c, dataTypes, phiLevel, participantMapper, maskClinic, logger);
         setDatasets(initDatasets);
@@ -113,7 +113,7 @@ public class StudyExportContext extends SimpleStudyExportContext
         return _datasetIds;
     }
 
-    public void setDatasets(Set<DatasetDefinition> datasets)
+    public void setDatasets(List<DatasetDefinition> datasets)
     {
         _datasets.clear();
         _datasetIds.clear();

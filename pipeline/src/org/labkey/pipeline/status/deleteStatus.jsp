@@ -139,7 +139,7 @@
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
 %>
-<p>Delete selected pipeline jobs? Only inactive jobs (e.g. Complete, Canceled) may be deleted.</p>
+<p>Delete the <%= files.size() %> selected pipeline job<%= h(files.size() == 1 ? "" : "s")%>? Only inactive jobs (e.g. Complete, Canceled) may be deleted.</p>
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
