@@ -192,7 +192,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
 
             if (sampleType.getAutoLinkTargetContainer() != null)
-                dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
+                dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
         }
         return dib;
     }

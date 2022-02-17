@@ -128,7 +128,13 @@ public interface StudyPublishService
     /**
      * Automatically link sample type data to a study if the design is set up to do so
      */
-    void autoLinkSampleType(ExpSampleType sampleType, List<Map<FieldKey, Object>> results, Container container, User user);
+    void autoLinkSamples(ExpSampleType sampleType, List<Map<FieldKey, Object>> results, Container container, User user);
+
+    /**
+     * Automatically link derived samples, this will potentially pull in fields from the parent sample that
+     * are configured in the default view.
+     */
+    void autoLinkDerivedSamples(ExpSampleType sampleType, List<Integer> keys, Container container, User user) throws ExperimentException;
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);

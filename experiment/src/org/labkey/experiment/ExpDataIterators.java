@@ -67,6 +67,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -358,10 +359,12 @@ public class ExpDataIterators
         private final Container _container;
         private final User _user;
         private final ExpSampleType _sampleType;
+        private final UserSchema _schema;
 
-        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user, ExpSampleType sampleType)
+        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, UserSchema schema, Container container, User user, ExpSampleType sampleType)
         {
             _in = in;
+            _schema = schema;
             _container = container;
             _user = user;
             _sampleType = sampleType;
@@ -371,7 +374,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), context, _container, _user, _sampleType));
+            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), context, _schema, _container, _user, _sampleType));
         }
     }
 
@@ -382,15 +385,33 @@ public class ExpDataIterators
         final ExpSampleType _sampleType;
         final MapDataIterator _data;
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
+        final List<Integer> _keys = new ArrayList<>();
+        final UserSchema _schema;
+        private boolean _isDerivation = false;
+        private Integer _rowIdCol;
 
-        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, Container container, User user,  ExpSampleType sampleType)
+        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
             super(di);
 
+            _schema = schema;
             _container = container;
             _user = user;
             _sampleType = sampleType;
             _data = (MapDataIterator)di;
+
+            Map<String, Integer> nameMap = DataIteratorUtil.createColumnNameMap(di);
+            _rowIdCol = nameMap.get("rowid");
+
+            for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(di).entrySet())
+            {
+                String name = entry.getKey();
+                if (UploadSamplesHelper.isInputOutputHeader(name) || equalsIgnoreCase("parent", name))
+                {
+                    _isDerivation = true;
+                    break;
+                }
+            }
         }
 
         @Override
@@ -401,11 +422,29 @@ public class ExpDataIterators
             if (!hasNext)
             {
                 if (!_rows.isEmpty())
-                    StudyPublishService.get().autoLinkSampleType(_sampleType, _rows, _container, _user);
+                {
+                    if (_isDerivation)
+                    {
+                        _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                            try
+                            {
+                                StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _keys, _container, _user);
+                            }
+                            catch (ExperimentException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }, DbScope.CommitTaskOption.POSTCOMMIT);
+                    }
+                    else
+                        StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                }
                 return false;
             }
             _rows.add(_data.getMap().entrySet().stream()
                     .collect(Collectors.toMap(e -> FieldKey.fromParts(e.getKey()), Map.Entry::getValue)));
+            if (_isDerivation)
+                _keys.add((Integer)get(_rowIdCol));
 
             return true;
         }
@@ -647,7 +686,6 @@ public class ExpDataIterators
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
                         _candidateAliquotLsids.add(lsid);
-
                 }
                 else if (!_skipAliquot && _context.getInsertOption().mergeRows)
                 {
