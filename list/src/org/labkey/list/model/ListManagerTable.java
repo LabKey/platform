@@ -17,7 +17,9 @@ package org.labkey.list.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -26,8 +28,10 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HtmlString;
@@ -115,17 +119,29 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
                 {
                     super.addQueryFieldKeys(keys);
                     keys.add(FieldKey.fromParts("ListID"));
+                    keys.add(FieldKey.fromParts("Container"));
                 }
 
                 @Override
                 public Object getValue(RenderContext ctx)
                 {
                     Integer listId = (Integer) ctx.get("ListID");
-                    ListDef listDef = ListManager.get().getList(ctx.getContainer(), listId);
-                    ListDefinition list = ListDefinitionImpl.of(listDef);
+                    String listContainerId = (String) ctx.get("Container");
+                    Container listContainer = ContainerManager.getForId(listContainerId);
+                    if (listId == null || listContainer == null)
+                        return 0;
+
+                    ListDefinition list = ListService.get().getList(listContainer, listId);
                     if (list == null)
                         return 0;
-                    return new TableSelector(list.getTable(userSchema.getUser())).getRowCount();
+
+                    User user = userSchema.getUser();
+                    ContainerFilter cf = ListService.get().getPicklistContainerFilter(getContainer(), user, list);
+                    if (cf == null)
+                        cf = getContainerFilter();
+
+                    TableInfo listTable = list.getTable(user, listContainer, cf);
+                    return new TableSelector(listTable).getRowCount();
                 }
 
                 @Override

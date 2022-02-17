@@ -81,6 +81,32 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _canAccessPhi;
 
+    // NK: Picklists are instances of Lists that are utilized to group Samples. As such, they are utilized
+    // in more specific ways than Lists in our system and necessitate a different collection of default
+    // columns. Having these columns declared here may not be ideal, however, until Picklists have their own
+    // standalone implementation this is the best place for broad support across folders, views, etc.
+    private static final String PICKLIST_SAMPLE_ID = "SampleID";
+    private static final List<FieldKey> defaultPicklistVisibleColumns = new ArrayList<>();
+
+    static
+    {
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Name"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "LabelColor"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleSet"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "SampleState"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StoredAmount"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Units"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "freezeThawCount"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageStatus"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "checkedOutBy"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "Created"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "CreatedBy"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageLocation"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageRow"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "StorageCol"));
+        defaultPicklistVisibleColumns.add(FieldKey.fromParts(PICKLIST_SAMPLE_ID, "isAliquot"));
+    }
+
     public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain, @Nullable ContainerFilter cf)
     {
         super(StorageProvisioner.createTableInfo(domain), schema, cf);
@@ -296,6 +322,14 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         }
 
         _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
+    }
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        if (_list != null && _list.isPicklist())
+            return defaultPicklistVisibleColumns;
+        return super.getDefaultVisibleColumns();
     }
 
     @Override

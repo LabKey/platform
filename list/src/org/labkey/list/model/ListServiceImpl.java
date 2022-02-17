@@ -17,11 +17,13 @@
 package org.labkey.list.model;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.TemplateInfo;
@@ -112,6 +114,7 @@ public class ListServiceImpl implements ListService
     }
 
     @Override
+    @Nullable
     public ListDefinition getList(Container container, int listId)
     {
         ListDef def = ListManager.get().getList(container, listId);
@@ -186,5 +189,18 @@ public class ListServiceImpl implements ListService
     public UserSchema getUserSchema(User user, Container container)
     {
         return new ListQuerySchema(user, container);
+    }
+
+    @Override
+    @Nullable
+    public ContainerFilter getPicklistContainerFilter(Container container, User user, @NotNull ListDefinition list)
+    {
+        if (container == null || user == null || !list.isPicklist() || container.isRoot())
+            return null;
+
+        if (container.isProject())
+            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
+
+        return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
     }
 }

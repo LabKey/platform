@@ -16,8 +16,10 @@
 
 package org.labkey.api.exp.list;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.UserSchema;
@@ -49,12 +51,15 @@ public interface ListService
     boolean hasLists(Container container, boolean includeProjectAndShared);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType);
     ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo, @Nullable ListDefinition.Category category);
-    ListDefinition getList(Container container, int listId);
+    @Nullable ListDefinition getList(Container container, int listId);
     @Nullable ListDefinition getList(Container container, String name);
     @Nullable ListDefinition getList(Container container, String name, boolean includeProjectAndShared);
     ListDefinition getList(Domain domain);
     ActionURL getManageListsURL(Container container);
     UserSchema getUserSchema(User user, Container container);
+
+    /** Picklists can specify different container filtering configurations depending on the container context */
+    @Nullable ContainerFilter getPicklistContainerFilter(Container container, User user, @NotNull ListDefinition list);
 
     void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception;
 }
