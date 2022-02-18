@@ -54,17 +54,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
 
     static public PdLookupForeignKey create(@NotNull QuerySchema sourceSchema, @NotNull User user, @NotNull Container container, @NotNull PropertyDescriptor pd)
     {
-        return create(sourceSchema, user, container, pd, null);
-    }
-
-    static public PdLookupForeignKey create(
-        @NotNull QuerySchema sourceSchema,
-        @NotNull User user,
-        @NotNull Container container,
-        @NotNull PropertyDescriptor pd,
-        @Nullable ContainerFilter cf
-    )
-    {
         assert container != null : "Container cannot be null";
         Container targetContainer = pd.getLookupContainer() == null ? null : ContainerManager.getForId(pd.getLookupContainer());
         String lookupSchemaName = pd.getLookupSchema();
@@ -82,9 +71,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
             }
         }
 
+        ContainerFilter cf;
         if ("core".equalsIgnoreCase(lookupSchemaName) && "Containers".equalsIgnoreCase(lookupQuery))
             cf = new ContainerFilter.AllFolders(user);
-        else if (cf == null)
+        else
             cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer != null ? targetContainer : container);
 
         return new PdLookupForeignKey(sourceSchema, container, user, cf, pd, lookupSchemaName, lookupQuery, targetContainer);

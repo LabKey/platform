@@ -224,7 +224,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setFieldKey(new FieldKey(null,pd.getName()));
-                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter());
+                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"));
 
                         if (pd.isMvEnabled())
                         {
@@ -261,6 +261,12 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             col.setURL(StringExpressionFactory.createURL(
                                 ListController.getDownloadURL(listDef, "${EntityId}", "${" + col.getName() + "}")
                             ));
+                        }
+
+                        if (_list.isPicklist() && PICKLIST_SAMPLE_ID.equalsIgnoreCase(pd.getName()))
+                        {
+                            if (col.getFk() instanceof PdLookupForeignKey)
+                                ((PdLookupForeignKey) col.getFk()).setContainerFilter(getContainerFilter());
                         }
                     }
 
