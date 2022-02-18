@@ -141,7 +141,4 @@ public interface SpecimenService
 
     @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
     void fireSpecimensChanged(Container c, User user, Logger logger);
-
-    @Migrate // Remove after specimen module refactor
-    Class<? extends Controller> getManageSpecimenWebPartActionClass();
 }

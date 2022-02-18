@@ -35,7 +35,7 @@ import java.util.regex.Matcher;
 * Time: 3:17:44 PM
 */
 
-// This task is used to import datasets as part of study import/reload.  StudyImportJob is the associated pipeline job.
+// This task is used to import datasets as part of folder import/reload. FolderImportJob is the associated pipeline job.
 public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImportDatasetTask.Factory>
 {
     private StudyImportDatasetTask(Factory factory, PipelineJob job, StudyImportContext ctx)
@@ -105,7 +105,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         return getJob().getJobSupport(StudyJobSupport.class).getStudy();
     }
 
-
+    // TODO: I think this can be deleted since StudyImportDatasetTask is
     public static class Factory extends AbstractDatasetImportTaskFactory<Factory>
     {
         public Factory()
