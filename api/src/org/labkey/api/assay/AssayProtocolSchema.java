@@ -71,8 +71,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -676,7 +676,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 User user = context.getUser();
 
                 // Don't bother checking for elided rows if the user doesn't at least have ReadPermission
-                if (!context.getContainer().hasPermission(user, ReadPermission.class))
+                if (!context.getContainer().hasPermission(user, AssayReadPermission.class))
                     return;
 
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
