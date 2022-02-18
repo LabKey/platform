@@ -442,8 +442,11 @@ public class ExpDataIterators
                 }
                 return false;
             }
-            _rows.add(_data.getMap().entrySet().stream()
-                    .collect(Collectors.toMap(e -> FieldKey.fromParts(e.getKey()), Map.Entry::getValue)));
+            Map<FieldKey, Object> row = new HashMap<>();
+            for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
+                row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
+            _rows.add(row);
+
             if (_isDerivation)
                 _keys.add((Integer)get(_rowIdCol));
 
