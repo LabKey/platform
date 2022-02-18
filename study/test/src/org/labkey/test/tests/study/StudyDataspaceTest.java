@@ -207,7 +207,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), SUBFOLDER_STUDY5, "Collaboration", null, true);
         clickFolder(SUBFOLDER_STUDY5);
         setPipelineRoot(StudyHelper.getStudySubfolderPath());
-        importFolderFromPipeline("/export/folder.xml", 1, false);
+        importFolderFromPipeline("/export/folder.xml", 1, false, false);
         clickFolder(SUBFOLDER_STUDY5);
         assertTextPresent("tracks data in", "over 6 time points", "Data is present for 3 Participants");
         verifyLabResultsDataset(6, null);
