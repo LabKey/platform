@@ -105,7 +105,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         return getJob().getJobSupport(StudyJobSupport.class).getStudy();
     }
 
-    // TODO: I think this can be deleted since StudyImportDatasetTask is
+    // TODO: I think this can be deleted since StudyImportDatasetTask is no longer invoked by any task pipelines
     public static class Factory extends AbstractDatasetImportTaskFactory<Factory>
     {
         public Factory()
