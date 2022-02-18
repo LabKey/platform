@@ -148,22 +148,22 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return selectColumns;
     }
 
-    private static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    private static Map<FieldKey, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
-        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
+        Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         ColumnInfo existing;
 
         for (ColumnInfo column : arrColumns)
         {
-            existing = columns.get(column.getAlias());
+            existing = columns.get(column.getFieldKey());
             assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getAlias(), column);
+            columns.put(column.getFieldKey(), column);
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
             {
-                existing = columns.get(displayColumn.getAlias());
+                existing = columns.get(displayColumn.getFieldKey());
                 assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getAlias(), displayColumn);
+                columns.put(displayColumn.getFieldKey(), displayColumn);
             }
         }
 
@@ -510,7 +510,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         {
             if (_forDisplay)
             {
-                Map<String, ColumnInfo> map = getDisplayColumnsList(_columns);
+                Map<FieldKey, ColumnInfo> map = getDisplayColumnsList(_columns);
 
                 // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
                 // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()

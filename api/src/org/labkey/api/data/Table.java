@@ -1075,7 +1075,7 @@ public class Table
     }
 
 
-    public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
+    public static void ensureRequiredColumns(TableInfo table, Map<FieldKey, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
         Set<FieldKey> requiredColumns = new HashSet<>();
@@ -1098,14 +1098,14 @@ public class Table
 
         for (ColumnInfo column : allColumns)
         {
-            if (cols.containsKey(column.getAlias()))
+            if (cols.containsKey(column.getFieldKey()))
                 continue;
             if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
             else if (column.isVersionColumn())
-                cols.put(column.getAlias(), column);
+                cols.put(column.getFieldKey(), column);
         }
     }
 
