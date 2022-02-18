@@ -40,7 +40,10 @@ import org.springframework.validation.ObjectError;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -398,7 +401,42 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (!aggregates.isEmpty())
         {
-            TableSelector selector = new TableSelector(tinfo, cols, filter, null).setNamedParameters(parameters);
+            TableSelector selector = new TableSelector(tinfo, cols, filter, null)
+            {
+                private boolean _shouldClose = true;
+                @Override
+                public Connection getConnection() throws SQLException
+                {
+                    // Issue 44749 - piggyback on the primary ResultSet's connection when possible so that we're not using
+                    // two connections concurrently for a single grid render
+                    if (_results != null)
+                    {
+                        Statement statement = _results.getStatement();
+                        if (statement != null)
+                        {
+                            Connection c = statement.getConnection();
+                            if (!c.isClosed())
+                            {
+                                _shouldClose = false;
+                                return c;
+                            }
+                        }
+                    }
+                    return super.getConnection();
+                }
+
+                @Override
+                protected void close(@Nullable ResultSet rs, @Nullable Connection conn)
+                {
+                    // Don't close if we're just borrowing someone else's connection
+                    if (_shouldClose)
+                    {
+                        super.close(rs, conn);
+                    }
+                }
+            };
+
+            selector.setNamedParameters(parameters);
 
             if (async)
                 return selector.getAggregatesAsync(aggregates, getViewContext().getResponse());
