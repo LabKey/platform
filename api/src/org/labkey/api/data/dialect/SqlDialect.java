@@ -344,9 +344,10 @@ public abstract class SqlDialect
     public static boolean isCancelException(SQLException x)
     {
         String sqlState = x.getSQLState();
-        if (null == sqlState || !sqlState.startsWith("57"))
+        if (null == sqlState)
             return false;
-        return sqlState.equals("57014"); // TODO verify SQL Server
+        return sqlState.equals("57014") || // Postgres
+               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
 
