@@ -28,6 +28,7 @@ import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.exp.api.ExpLineageForeignKey;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -39,6 +40,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -50,13 +52,14 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
  * User: kevink
  * Date: 3/22/16
  */
-class LineageForeignKey extends AbstractForeignKey
+class LineageForeignKey extends AbstractForeignKey implements ExpLineageForeignKey
 {
     private final boolean _useLineageDisplayColumn;
     private final ExpTableImpl _seedTable;
     private final SQLFragment _seedSql;
     private final UserSchema _userSchema;
     private final boolean _parents;
+    private final List<String> _singleValueForeignKeys = new ArrayList<>();
 
     /* generate a ForeignKey that returns a wrapper over objectid with a LineageDisplayColumn */
     public static LineageForeignKey createWithDisplayColumn(UserSchema schema, ExpTableImpl seedTable, boolean parents)
@@ -78,6 +81,11 @@ class LineageForeignKey extends AbstractForeignKey
         _userSchema = schema;
         _parents = parents;
         this._useLineageDisplayColumn = useLineageDisplayColumn;
+    }
+
+    public void setSingleValueForeignKey(String table)
+    {
+        _singleValueForeignKeys.add(table);
     }
 
     @Override
@@ -292,21 +300,28 @@ class LineageForeignKey extends AbstractForeignKey
 
         void addLineageColumn(String name, Integer depth, String expType, String cpasType, String runProtocolLsid, String lookupColumnName)
         {
-//            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
-            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
+            if (_singleValueForeignKeys.contains(name))
+            {
+                col.setFk(new _SingleValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid, name));
+            }
+            else
+            {
+                col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
+            }
             applyDisplayColumn(col, depth, expType, cpasType, lookupColumnName);
             addColumn(col);
         }
     }
-
 
     private class _MultiValuedForeignKey extends MultiValuedForeignKey
     {
         final Integer depth;
         final String expType;
         final String cpasType;
+
+        boolean _singleValueColumn = false;
 
         public _MultiValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType, String runProtocolLsid)
         {
@@ -368,7 +383,7 @@ class LineageForeignKey extends AbstractForeignKey
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            if (_useLineageDisplayColumn)
+            if (_useLineageDisplayColumn && !_singleValueColumn)
             {
                 FieldKey aliasFieldKey = new FieldKey(parent.getFieldKey(), StringUtils.defaultString(displayField,"Name"));
                 var alias = new _AliasedParentColumn(parent, aliasFieldKey, depth, expType, cpasType, aliasFieldKey.getName());
@@ -395,7 +410,7 @@ class LineageForeignKey extends AbstractForeignKey
             return new MultiValuedLookupColumn(parent, childKey, junctionKey, fk, lookupColumn)
             {
                 @Override
-                protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+                public SQLFragment getLookupSql(TableInfo lookupTable, String alias)
                 {
                     // NOTE: We used to cache the lookup fk sql as a materialized query for performance
                     return super.getLookupSql(lookupTable, alias);
@@ -411,6 +426,62 @@ class LineageForeignKey extends AbstractForeignKey
         }
     }
 
+    private class _SingleValuedForeignKey extends _MultiValuedForeignKey
+    {
+        private final String _singleValueName;
+
+        public _SingleValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType, String runProtocolLsid, String name)
+        {
+            super(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid);
+            _singleValueName = name;
+        }
+
+        private _SingleValuedForeignKey(_SingleValuedForeignKey from, FieldKey parent, Map<FieldKey, FieldKey> mapping)
+        {
+            super(from, parent, mapping);
+            _singleValueName = from._singleValueName;
+        }
+
+        @Override
+        protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+        {
+            return new MultiValuedLookupColumn(parent, childKey, junctionKey, fk, lookupColumn, true)
+            {
+                @Override
+                protected SQLFragment getAggregateFunction(SQLFragment sql, String sqlTypeName)
+                {
+                    if ("nvarchar".equalsIgnoreCase(sqlTypeName) || "varchar".equalsIgnoreCase(sqlTypeName))
+                    {
+                        SQLFragment caseSql = new SQLFragment("(CASE WHEN COUNT(").append(sql);
+                        caseSql.append(") > 1 THEN '#Error: Multiple values not supported for ").append(_singleValueName);
+                        caseSql.append("' ELSE ").append(super.getAggregateFunction(sql, sqlTypeName));
+                        caseSql.append(" END) ");
+                        return caseSql;
+                    }
+                    else
+                    {
+                        SQLFragment caseSql = new SQLFragment("(CASE WHEN COUNT(").append(sql);
+                        caseSql.append(") > 1 THEN NULL ELSE ").append(super.getAggregateFunction(sql, sqlTypeName));
+                        caseSql.append(" END) ");
+                        return caseSql;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+        {
+            _singleValueColumn = true;
+            return super.createLookupColumn(parent, displayField);
+        }
+
+        @Override
+        public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+        {
+            return new _SingleValuedForeignKey(this, parent, mapping);
+        }
+    }
 
     private class ByTypeLineageForeignKey extends AbstractForeignKey
     {

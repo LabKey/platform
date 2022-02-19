@@ -36,6 +36,20 @@ public class MultiValuedLookupColumn extends LookupColumn
     private final ColumnInfo _display;
     private final ForeignKey _rightFk;
     private final ColumnInfo _junctionKey;
+    private final boolean _singleValue;
+
+    public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display, boolean singleValue)
+    {
+        super(parentPkColumn, childKey, display);
+        _display = display;
+        _rightFk = fk;
+        _junctionKey = junctionKey;
+        _singleValue = singleValue;
+        copyAttributesFrom(display);
+        copyURLFrom(display, parentPkColumn.getFieldKey(), null);
+        // NOTE: Changing the type to a VARCHAR causes MultiValueRenderContext.get() type conversion to be skipped and we don't want that.
+        //setJdbcType(JdbcType.VARCHAR);
+    }
 
     public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
@@ -43,16 +57,18 @@ public class MultiValuedLookupColumn extends LookupColumn
         _display = display;
         _rightFk = fk;
         _junctionKey = junctionKey;
+        _singleValue = false;
         copyAttributesFrom(display);
         copyURLFrom(display, parentPkColumn.getFieldKey(), null);
-        // NOTE: Changing the type to a VARCHAR causes MultiValueRenderContext.get() type conversion to be skipped and we don't want that.
-        //setJdbcType(JdbcType.VARCHAR);
     }
 
     // We don't traverse FKs from a multi-valued column
     @Override
     public ForeignKey getFk()
     {
+        if (_singleValue)
+            return super.getFk();
+
         return null;
     }
 
@@ -83,7 +99,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
 
-    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+    public SQLFragment getLookupSql(TableInfo lookupTable, String alias)
     {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
@@ -141,7 +157,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             col.declareJoins(baseJoinTarget, joins);
             if (groupConcat)
             {
-                strJoin.append(getAggregateFunction(valueSql));
+                strJoin.append(getAggregateFunction(valueSql, lc.getSqlTypeName()));
             }
             else
             {
@@ -204,7 +220,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     // By default, use GROUP_CONCAT aggregate function, which returns a comma-separated list of values.  Override this
     // and (for non-varchar aggregate function) getSqlTypeName() to apply a different aggregate.
-    protected SQLFragment getAggregateFunction(SQLFragment sql)
+    protected SQLFragment getAggregateFunction(SQLFragment sql, String sqlTypeName)
     {
         // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
         return getSqlDialect().getGroupConcat(sql, false, false, "'" + MultiValuedRenderContext.VALUE_DELIMITER + "'");
