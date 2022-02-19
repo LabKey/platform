@@ -121,7 +121,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());
         _containerHelper.createSubfolder(getProjectName(), STUDY1, "Study");
-        importFolderFromPipeline("folder.xml", 1, false);
+        importFolderFromPipeline("folder.xml", 1, false, false);
 
         _containerHelper.createSubfolder(getProjectName(), STUDY2, "Study");
         clickButton("Create Study");
