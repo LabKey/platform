@@ -56,6 +56,7 @@ import java.util.Set;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
+    public static final String SCHEMA_METADATA_NAME = "SampleData";
     public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = LogManager.getLogger(SamplesSchema.class);

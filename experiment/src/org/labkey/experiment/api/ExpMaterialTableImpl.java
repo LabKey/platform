@@ -71,7 +71,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
@@ -90,6 +92,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -98,6 +101,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1026,5 +1030,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {}
         templates.add(Pair.of("Download Template", url.toString()));
         return templates;
+    }
+
+    @Override
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        if (SamplesSchema.SCHEMA_NAME.equals(schema.getName()))
+        {
+            Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, SamplesSchema.SCHEMA_METADATA_NAME, false, false, errors, null);
+            if (null != metadata)
+            {
+                overlayMetadata(metadata, schema, errors);
+            }
+        }
+        super.overlayMetadata(tableName, schema, errors);
     }
 }
