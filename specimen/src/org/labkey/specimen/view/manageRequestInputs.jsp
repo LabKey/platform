@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
+<%@ page import="org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>

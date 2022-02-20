@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
+<%@ page import="org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>

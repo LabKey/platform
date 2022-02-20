@@ -5,7 +5,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
 
@@ -37,4 +39,23 @@ public interface SpecimenMigrationService
     void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                boolean syncParticipantVisit) throws PipelineJobException;
 
+    default void clearRequestCaches(Container c)
+    {
+        // No-op if specimen module isn't present
+    }
+
+    default SpecimenRequest getRequest(Container c, int rowId)
+    {
+        throw new IllegalStateException("Specimen module is not present!");
+    }
+
+    default void clearGroupedValuesForColumn(Container container)
+    {
+        // No-op if specimen module isn't present
+    }
+
+    default void updateVialCounts(Container container, User user)
+    {
+        // No-op if specimen module isn't present
+    }
 }

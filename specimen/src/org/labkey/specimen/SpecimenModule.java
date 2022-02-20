@@ -30,14 +30,14 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
@@ -61,6 +61,7 @@ import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
+import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.specimen.view.SpecimenSearchWebPartFactory;
 import org.labkey.specimen.view.SpecimenToolsWebPartFactory;
 import org.labkey.specimen.view.SpecimenWebPartFactory;
@@ -178,13 +179,37 @@ public class SpecimenModule extends SpringModule
             {
                 AbstractSpecimenTask.doImport(inputFile, job, ctx, merge, syncParticipantVisit);
             }
+
+            @Override
+            public void clearRequestCaches(Container c)
+            {
+                SpecimenRequestManager.get().clearCaches(c);
+            }
+
+            @Override
+            public SpecimenRequest getRequest(Container c, int rowId)
+            {
+                return SpecimenRequestManager.get().getRequest(c, rowId);
+            }
+
+            @Override
+            public void clearGroupedValuesForColumn(Container container)
+            {
+                SpecimenRequestManager.get().clearGroupedValuesForColumn(container);
+            }
+
+            @Override
+            public void updateVialCounts(Container container, User user)
+            {
+                SpecimenRequestManager.get().updateVialCounts(container, user);
+            }
         });
      }
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        ContainerManager.addContainerListener(SpecimenRequestManager.get());
+        ContainerManager.addContainerListener(new SpecimenRequestContainerListener());
 
         StudyService.get().registerStudyTabProvider(tabs->tabs.add(new SpecimensPage("Specimen Data")));
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());

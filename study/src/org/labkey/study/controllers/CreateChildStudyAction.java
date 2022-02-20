@@ -34,7 +34,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.ImportTemplate;
@@ -167,7 +167,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
             if (null != form.getRequestId())
             {
-                SpecimenRequest request = SpecimenRequestManager.get().getRequest(sourceContainer, form.getRequestId());
+                SpecimenRequest request = SpecimenMigrationService.get().getRequest(sourceContainer, form.getRequestId());
 
                 if (null == request)
                 {

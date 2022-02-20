@@ -181,7 +181,7 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);
 
-        SpecimenRequestManager.get().clearCaches(visit.getContainer());
+        SpecimenMigrationService.get().clearRequestCaches(visit.getContainer());
     }
 
     @Nullable
@@ -248,7 +248,7 @@ public class SpecimenManager
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragment);
 
         if (clearCaches)
-            SpecimenRequestManager.get().clearCaches(vial.getContainer());
+            SpecimenMigrationService.get().clearRequestCaches(vial.getContainer());
     }
 
     public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
@@ -307,7 +307,7 @@ public class SpecimenManager
         // VIEW: if this view gets removed, remove this line
         assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
 
-        SpecimenRequestManager.get().clearGroupedValuesForColumn(c);
+        SpecimenMigrationService.get().clearGroupedValuesForColumn(c);
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)

@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +9,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -30,6 +29,15 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.AmbiguousLocationException;
+import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.RequestedSpecimens;
+import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.specimen.SpecimenRequestException;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
@@ -51,7 +59,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -67,7 +74,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SpecimenRequestManager implements ContainerManager.ContainerListener
+public class SpecimenRequestManager
 {
     private static final SpecimenRequestManager INSTANCE = new SpecimenRequestManager();
 
@@ -87,37 +94,6 @@ public class SpecimenRequestManager implements ContainerManager.ContainerListene
         _requestHelper = new QueryHelper<>(() -> SpecimenSchema.get().getTableInfoSampleRequest(), SpecimenRequest.class);
 
         initGroupedValueAllowedColumnMap();
-    }
-
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-        clearCaches(c);
-    }
-
-    @Override
-    public void containerDeleted(Container c, User user)
-    {
-        clearCaches(c);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
-        clearCaches(c);
-    }
-
-    @NotNull
-    @Override
-    public Collection<String> canMove(Container c, Container newParent, User user)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-        clearCaches((Container)evt.getSource());
     }
 
     public List<SpecimenRequestStatus> getRequestStatuses(Container c, User user)
