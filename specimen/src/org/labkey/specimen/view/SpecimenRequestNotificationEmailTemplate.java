@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.specimen.actions.SpecimenController;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.function.Function;
 
@@ -49,21 +45,48 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
     private NotificationBean _notification;
     private User _originatingUser;
 
-    /** Instead of in-lining a long String, we store the default body template as a module resource */
-    // TODO: Use a text block once we support source=15
     private static String loadBody()
     {
-        try
-        {
-            try (InputStream is = ModuleLoader.getInstance().getModule("Specimen").getModuleResource("notification.txt").getInputStream())
-            {
-                return PageFlowUtil.getStreamContentsAsString(is);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new UnexpectedException(e);
-        }
+        return
+            """
+            <div>
+                <br>
+                Specimen request #^specimenRequestNumber^ was ^simpleStatus^ in ^studyName^.
+                <br>
+                <br>
+            </div>
+            <table width="500px">
+                <tr>
+                    <td valign="top"><b>Request&nbsp;Details</b></td>
+                </tr>
+                <tr>
+                    <td valign="top"><b>Specimen&nbsp;Request</b></td>
+                    <td align="left">^specimenRequestNumber^</td>
+                </tr>
+                <tr>
+                    <td valign="top"><b>Destination</b></td>
+                    <td align="left">^destinationLocation^</td>
+                </tr>
+                <tr>
+                    <td valign="top"><b>Status</b></td>
+                    <td align="left">^status^</td>
+                </tr>
+                <tr>
+                    <td valign="top"><b>Modified&nbsp;by</b></td>
+                    <td align="left">^modifiedBy^</td>
+                </tr>
+                <tr>
+                    <td valign="top"><b>Action</b></td>
+                    <td align="left">^action^</td>
+                </tr>
+                ^attachments|<tr><td valign="top"><b>Attachments</b></td><td align="left">%s</td></tr>^
+            </table>
+            ^comments|<p><b>Current&nbsp;Comments</b><br>%s</p>^
+            <p>
+                ^requestDescription^
+            </p>
+            ^specimenList^
+            """;
     }
 
     public SpecimenRequestNotificationEmailTemplate()
@@ -93,7 +116,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
         }
 
         @Override
-        public final Type getValue(Container c)
+        public Type getValue(Container c)
         {
             // No request available, so can't come up with an actual value
             if (_notification == null)
@@ -141,7 +164,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
             StringBuilder sb = new StringBuilder();
             for (Attachment att : attachments)
             {
-                sb.append(new LinkBuilder(att.getName()).href(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
+                sb.append(new LinkBuilder(att.getName()).href(SpecimenController.getDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
                 sb.append("<br>");
             }
             return sb.toString();

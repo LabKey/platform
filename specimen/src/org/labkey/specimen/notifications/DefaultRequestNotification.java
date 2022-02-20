@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.notifications;
+package org.labkey.specimen.notifications;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;

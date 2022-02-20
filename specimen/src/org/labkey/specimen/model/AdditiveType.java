@@ -13,37 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Map;
 
-/*
- * User: brittp
- * Date: Dec 18, 2008
- * Time: 12:48:03 PM
- */
-
-public class DerivativeType extends AbstractStudyCachable<DerivativeType>
+public class AdditiveType extends AbstractStudyCachable<AdditiveType>
 {
     private long _rowId; // serial NOT NULL,
     private Container _container; // entityid NOT NULL,
-    private String _ldmsDerivativeCode; // character varying(5),
-    private String _labwareDerivativeCode; // character varying(5),
-    private String _derivative; // character varying(100),
+    private String _ldmsAdditiveCode; // character varying(5),
+    private String _labwareAdditiveCode; // character varying(5),
+    private String _additive; // character varying(100),
     private int _externalId; // integer NOT NULL default 0
 
-    public DerivativeType(Container container, Map<String, Object> map)
+    public AdditiveType(Container container, Map<String, Object> map)
     {
         super();
-        _rowId = (int) map.get(DerivativeTypeDomainKind.ROWID);
+        _rowId = (int) map.get(AdditiveTypeDomainKind.ROWID);
         _container = container;
-        _ldmsDerivativeCode = (String) map.get(DerivativeTypeDomainKind.LDMSDERIVATIVECODE);
-        _labwareDerivativeCode = (String) map.get(DerivativeTypeDomainKind.LABWAREDERIVATIVECODE);
-        _derivative = (String) map.get(DerivativeTypeDomainKind.DERIVATIVE);
-        _externalId = (int) map.get(DerivativeTypeDomainKind.EXTERNALID);
+        _ldmsAdditiveCode = (String) map.get(AdditiveTypeDomainKind.LDMSADDITIVECODE);
+        _labwareAdditiveCode = (String) map.get(AdditiveTypeDomainKind.LABWAREADDITIVECODE);
+        _additive = (String) map.get(AdditiveTypeDomainKind.ADDITIVE);
+        _externalId = (int) map.get(AdditiveTypeDomainKind.EXTERNALID);
     }
 
     @Override
@@ -84,33 +79,33 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
         _container = container;
     }
 
-    public String getLdmsDerivativeCode()
+    public String getLdmsAdditiveCode()
     {
-        return _ldmsDerivativeCode;
+        return _ldmsAdditiveCode;
     }
 
-    public void setLdmsDerivativeCode(String ldmsDerivativeCode)
+    public void setLdmsAdditiveCode(String ldmsAdditiveCode)
     {
-        _ldmsDerivativeCode = ldmsDerivativeCode;
+        _ldmsAdditiveCode = ldmsAdditiveCode;
     }
 
-    public String getLabwareDerivativeCode()
+    public String getLabwareAdditiveCode()
     {
-        return _labwareDerivativeCode;
+        return _labwareAdditiveCode;
     }
 
-    public void setLabwareDerivativeCode(String labwareDerivativeCode)
+    public void setLabwareAdditiveCode(String labwareAdditiveCode)
     {
-        _labwareDerivativeCode = labwareDerivativeCode;
+        _labwareAdditiveCode = labwareAdditiveCode;
     }
 
-    public String getDerivative()
+    public String getAdditive()
     {
-        return _derivative;
+        return _additive;
     }
 
-    public void setDerivative(String derivative)
+    public void setAdditive(String additive)
     {
-        _derivative = derivative;
+        _additive = additive;
     }
 }

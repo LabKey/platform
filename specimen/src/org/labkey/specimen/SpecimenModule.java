@@ -36,10 +36,8 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.specimen.importer.AbstractSpecimenTask;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
@@ -52,6 +50,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
+import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
@@ -140,12 +139,6 @@ public class SpecimenModule extends SpringModule
             public ActionURL getSelectedSpecimensURL(Container c)
             {
                 return new ActionURL(SpecimenController.SelectedSpecimensAction.class, c);
-            }
-
-            @Override
-            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
-            {
-                return SpecimenController.getDownloadURL(event, name);
             }
 
             @Override

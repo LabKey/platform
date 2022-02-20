@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.notifications;
+package org.labkey.specimen.notifications;
 
 import javax.mail.Address;
 

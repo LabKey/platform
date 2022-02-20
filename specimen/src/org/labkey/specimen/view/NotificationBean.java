@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
@@ -8,12 +8,12 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.notifications.DefaultRequestNotification;
 
 import java.util.List;
 

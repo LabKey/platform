@@ -37,8 +37,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
@@ -397,7 +397,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.isIncludeSpecimens())
         {
-            dataTypes.add(SpecimenArchiveDataTypes.SPECIMENS);
+            dataTypes.add(SpecimenMigrationService.SPECIMENS_ARCHIVE_TYPE);
         }
 
         return dataTypes;

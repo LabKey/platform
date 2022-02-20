@@ -115,7 +115,6 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
@@ -4767,6 +4766,19 @@ public class StudyManager
     public static class StudyUpgradeCode implements UpgradeCode
     {
         @SuppressWarnings({"UnusedDeclaration"})
+        public void moveSpecimenTemplatePropertiesAgain(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                // SpecimenRequestNotificationEmailTemplate was moved to specimen module in 22.3; move its template properties to the new location
+                EmailTemplateService.get().relocateEmailTemplateProperties(
+                    "org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate",
+                    "org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate"
+                );
+            }
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
         public void addImportHashColumn(final ModuleContext context)
         {
             if (null!=context && context.isNewInstall())
@@ -4786,8 +4798,11 @@ public class StudyManager
         {
             if (!context.isNewInstall())
             {
-                // SpecimenRequestNotificationEmailTemplate was moved to the specimen module in 21.3; move its template properties to the new location
-                EmailTemplateService.get().relocateEmailTemplateProperties("org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate", SpecimenRequestNotificationEmailTemplate.class);
+                // SpecimenRequestNotificationEmailTemplate was moved to study API in 21.3; move its template properties to the new location
+                EmailTemplateService.get().relocateEmailTemplateProperties(
+                    "org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate",
+                    "org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate"
+                );
                 StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
             }
         }
