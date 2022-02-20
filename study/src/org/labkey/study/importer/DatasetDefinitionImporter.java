@@ -20,8 +20,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.data.Container;
-import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -29,8 +27,8 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.pipeline.DatasetInferSchemaReader;
-import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument;
@@ -119,8 +117,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 // infer column metadata
                 List<String> readerErrors = new ArrayList<>();
 
-                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
-                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
+                VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(ctx, ctx.getRoot());
+                String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(ctx);
 
                 if (datasetsDirectory != null)
                 {
@@ -151,8 +149,8 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
      */
     private boolean hasDatasetDefinitionFile(StudyImportContext ctx) throws ImportException
     {
-        VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(ctx, ctx.getRoot());
-        String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(ctx);
+        VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(ctx, ctx.getRoot());
+        String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(ctx);
 
         if (datasetsDirectory != null && datasetsFileName != null)
         {

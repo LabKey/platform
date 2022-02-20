@@ -17,8 +17,8 @@
 package org.labkey.specimen.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
+import org.labkey.specimen.importer.AbstractSpecimenTask;
+import org.labkey.specimen.importer.AbstractSpecimenTaskFactory;
 
 /*
 * User: adam

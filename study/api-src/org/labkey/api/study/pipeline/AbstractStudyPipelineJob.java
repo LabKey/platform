@@ -25,7 +25,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.pipeline.StudyImportSpecimenTask;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.FileUtil;
@@ -113,11 +113,16 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
 
     protected void importSpecimenData(Study destStudy, VirtualFile studyDir) throws Exception
     {
-        StudyDocument studyDoc = getStudyDocument(studyDir);
-        if (studyDoc != null)
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+
+        if (sms != null)
         {
-            SimpleStudyImportContext ctx = new SimpleStudyImportContext(getUser(), destStudy.getContainer(), studyDoc,null, new PipelineJobLoggerGetter(this), studyDir);
-            StudyImportSpecimenTask.doImport(null, this, ctx, false, true);
+            StudyDocument studyDoc = getStudyDocument(studyDir);
+            if (studyDoc != null)
+            {
+                SimpleStudyImportContext ctx = new SimpleStudyImportContext(getUser(), destStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
+                sms.importSpecimenArchive(null, this, ctx, false, true);
+            }
         }
     }
 
