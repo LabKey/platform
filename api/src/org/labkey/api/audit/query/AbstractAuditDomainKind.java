@@ -75,9 +75,9 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     static
     {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
-        // The default type here for an autoincrement field from the database is INTEGER.  If supplying a RowId
+        // The default type here for an autoincrement field from the database is BIGINT.  If supplying a RowId
         // through a DbSequence, override getBaseFields and set the type to JdbcType.BIGINT without autoincrement
-        baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
+        baseFields.add(createFieldSpec("RowId", JdbcType.BIGINT, true, true));       // pk
         baseFields.add(createFieldSpec("Container", JdbcType.GUID).setNullable(false));
         baseFields.add(createFieldSpec("Comment", JdbcType.VARCHAR));
         baseFields.add(createFieldSpec("EventType", JdbcType.VARCHAR));
