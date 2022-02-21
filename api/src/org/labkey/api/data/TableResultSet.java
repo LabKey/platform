@@ -16,7 +16,9 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -45,4 +47,10 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
     {
         return getSize();
     }
+
+    /** @return the DB connection associated with this ResultSet. May be null if not backed by an active connection.
+     * Implementations should prefer to return ConnectionWrapper instead of the underlying connection as it has
+     * more context. */
+    @Nullable
+    Connection getConnection() throws SQLException;
 }

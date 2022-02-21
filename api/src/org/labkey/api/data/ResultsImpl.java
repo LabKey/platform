@@ -28,6 +28,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -146,6 +147,27 @@ public class ResultsImpl implements Results, DataIterator
         }
     }
 
+    @Override
+    public @NotNull Connection getConnection()
+    {
+        Connection result = null;
+        try
+        {
+            if (_rs instanceof TableResultSet trs)
+            {
+                result = trs.getConnection();
+            }
+            if (result == null)
+            {
+                result = _rs.getStatement().getConnection();
+            }
+            return result;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     @Deprecated
     public ResultsImpl(RenderContext ctx)
