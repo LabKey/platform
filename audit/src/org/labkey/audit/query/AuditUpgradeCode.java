@@ -28,7 +28,7 @@ public class AuditUpgradeCode implements UpgradeCode
             SQLFragment sql = new SQLFragment();
             tableNames.forEach(tableName -> {
                 if (isPostgres)
-                    sql.append("ALTER TABLE audit.").append(tableName).append("ALTER COLUMN RowId TYPE BIGINT;\n");
+                    sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId TYPE BIGINT;\n");
                 else
                 {
                     String pkName = tableName + "_pk";
