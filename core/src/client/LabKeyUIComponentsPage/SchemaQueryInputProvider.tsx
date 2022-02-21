@@ -1,6 +1,6 @@
 import React, {ChangeEvent} from 'react';
 import {Col, FormControl, Row, Button} from "react-bootstrap";
-import {Alert, getStateQueryGridModel, QueryConfig, QueryGridModel, SchemaQuery} from "@labkey/components";
+import {Alert, QueryConfig, SchemaQuery} from "@labkey/components";
 
 const Context = React.createContext<SchemaQueryInputContext>(undefined);
 const SchemaQueryInputContextProvider = Context.Provider;
@@ -11,7 +11,6 @@ interface State {
     schemaName: string,
     queryName: string,
     error: string,
-    model: QueryGridModel,
     queryConfig: QueryConfig,
 }
 
@@ -23,7 +22,6 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
             queryName: undefined,
             schemaName: undefined,
             error: undefined,
-            model: undefined,
             queryConfig: undefined,
         };
 
@@ -32,7 +30,6 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
             this.setState(() => ({
                 ...this.state,
                 error: undefined,
-                model: undefined,
                 queryConfig: undefined,
                 [name]: value
             }));
@@ -41,17 +38,16 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
         onApply = () => {
             const { schemaName, queryName } = this.state;
 
-            let error, model, queryConfig;
+            let error, queryConfig;
             if (!schemaName || !queryName) {
                 error = 'You must enter a schema/query to view the QueryGridPanel.'
             }
             else {
                 const schemaQuery = SchemaQuery.create(schemaName, queryName);
-                model = getStateQueryGridModel('components-querygridmodel', schemaQuery, {isPaged: true});
                 queryConfig = { id: `components-queryconfig-${schemaName}-${queryName}`, schemaQuery };
             }
 
-            this.setState(() => ({model, queryConfig, error}));
+            this.setState(() => ({queryConfig, error}));
         };
 
         render() {
