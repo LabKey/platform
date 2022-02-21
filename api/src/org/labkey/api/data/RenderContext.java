@@ -411,15 +411,11 @@ public class RenderContext implements Map<String, Object>, Serializable
                     // two connections concurrently for a single grid render
                     if (_results != null)
                     {
-                        Statement statement = _results.getStatement();
-                        if (statement != null)
+                        Connection c = _results.getConnection();
+                        if (c != null && !c.isClosed())
                         {
-                            Connection c = statement.getConnection();
-                            if (!c.isClosed())
-                            {
-                                _shouldClose = false;
-                                return c;
-                            }
+                            _shouldClose = false;
+                            return c;
                         }
                     }
                     return super.getConnection();
