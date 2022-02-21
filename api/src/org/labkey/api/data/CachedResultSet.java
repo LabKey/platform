@@ -39,6 +39,7 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
@@ -166,8 +167,13 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return this;
     }
 
+    @Override
+    public @Nullable Connection getConnection() throws SQLException
+    {
+        return null;
+    }
 
-    //
+//
     // ResultSet
     //
 

@@ -65,14 +65,31 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         this(null, null, rs, maxRows, queryLogging);
     }
 
-
     public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows, QueryLogging queryLogging)
     {
         super(rs, queryLogging);
         MemTracker.getInstance().put(this);
         _debugCreated = MiniProfiler.getTroubleshootingStackTrace();
         _maxRows = maxRows;
-        _connection = connection;
+        try
+        {
+            if (connection != null)
+            {
+                _connection = connection;
+            }
+            else if (rs.getStatement() != null)
+            {
+                _connection = rs.getStatement().getConnection();
+            }
+            else
+            {
+                _connection = null;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         _scope = scope;
     }
 
@@ -201,5 +218,11 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
             _log.error("ResultSet was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_debugCreated));
         }
         super.finalize();
+    }
+
+    @Override
+    public @Nullable Connection getConnection()
+    {
+        return _connection;
     }
 }
