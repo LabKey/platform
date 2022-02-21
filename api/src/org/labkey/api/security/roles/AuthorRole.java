@@ -19,10 +19,13 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.study.Dataset;
 
 /*
@@ -35,10 +38,14 @@ public class AuthorRole extends AbstractRole
     {
         super("Author", "Authors may read and add information in some cases, but may update and delete only information they added. Supported for only " +
                         "Message Boards. See the online documentation for details.",
-            ReadPermission.class,
-            ReadSomePermission.class,
-            InsertPermission.class,
-            ShareReportPermission.class
+                ReadPermission.class,
+                ReadSomePermission.class,
+                AssayReadPermission.class,
+                DataClassReadPermission.class,
+                MediaReadPermission.class,
+                NotebookReadPermission.class,
+                InsertPermission.class,
+                ShareReportPermission.class
         );
     }
 

@@ -42,6 +42,7 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
+    private Set<String> _queryKeys;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
@@ -126,6 +127,16 @@ public class FolderExportContext extends AbstractFolderContext
     public void setReportIds(String[] reportIds)
     {
         _reportIds = new HashSet<>(Arrays.asList(reportIds));
+    }
+
+    public Set<String> getQueryKeys()
+    {
+        return _queryKeys;
+    }
+
+    public void setQueryKeys(String[] queryKeys)
+    {
+        _queryKeys = new HashSet<>(Arrays.asList(queryKeys));
     }
 
     public Set<String> getViewIds()

@@ -2888,7 +2888,7 @@ public class ReportsController extends SpringActionController
             String typeName = type.getName();
 
             if (typeName.equalsIgnoreCase("reports") ||
-                typeName.equalsIgnoreCase("queries"))
+                typeName.equalsIgnoreCase("grid views"))
             {
                 props.put(typeName, "1");
             }

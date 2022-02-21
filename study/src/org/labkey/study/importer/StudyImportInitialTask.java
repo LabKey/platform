@@ -16,18 +16,12 @@
 
 package org.labkey.study.importer;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.pipeline.AbstractTaskFactory;
-import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
-import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -37,8 +31,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
-import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 
 /*
@@ -46,33 +38,13 @@ import java.util.List;
 * Date: Aug 31, 2009
 * Time: 9:12:22 AM
 */
-public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialTask.Factory>
+public class StudyImportInitialTask
 {
-    private StudyImportInitialTask(Factory factory, PipelineJob job)
+    private StudyImportInitialTask()
     {
-        super(factory, job);
     }
 
     private static final int DELAY_INCREMENT = 10;
-
-    @Override
-    @NotNull
-    public RecordedActionSet run() throws PipelineJobException
-    {
-        PipelineJob job = getJob();
-        StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
-        StudyImportContext ctx = support.getImportContext();
-
-        if (support.useLocalImportDir(job, ctx.getRoot().getLocation()))
-        {
-            Path dirPath = FileUtil.getPath(job.getContainer(), FileUtil.createUri(ctx.getRoot().getLocation()));
-            job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(job, dirPath.resolve(support.getOriginalFilename()), support.getSpringErrors());
-        }
-
-        doImport(job, ctx, support.getSpringErrors(), support.getOriginalFilename());
-
-        return new RecordedActionSet();
-    }
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
@@ -214,44 +186,5 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     {
         ObjectError firstError = errors.getAllErrors().get(0);
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());
-    }
-
-
-    public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
-    {
-        public Factory()
-        {
-            super(StudyImportInitialTask.class);
-        }
-
-        @Override
-        public PipelineJob.Task createTask(PipelineJob job)
-        {
-            return new StudyImportInitialTask(this, job);
-        }
-
-        @Override
-        public List<FileType> getInputTypes()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<String> getProtocolActionNames()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public String getStatusName()
-        {
-            return "LOAD STUDY";
-        }
-
-        @Override
-        public boolean isJobComplete(PipelineJob job)
-        {
-            return false;
-        }
     }
 }

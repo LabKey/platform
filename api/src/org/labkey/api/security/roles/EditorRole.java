@@ -21,14 +21,17 @@ import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.UpdateSampleStatusPermission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
@@ -43,15 +46,21 @@ public class EditorRole extends AbstractRole
     public EditorRole()
     {
         super("Editor", "Editors may read, add, update and delete information.",
-                ReadPermission.class, ReadSomePermission.class, 
-                InsertPermission.class, UpdatePermission.class,
+                ReadPermission.class,
+                ReadSomePermission.class,
+                AssayReadPermission.class,
+                DataClassReadPermission.class,
+                MediaReadPermission.class,
+                NotebookReadPermission.class,
+                InsertPermission.class,
+                UpdatePermission.class,
                 DeletePermission.class,
                 EditSharedViewPermission.class,
-                ShareReportPermission.class, EditSharedReportPermission.class,
+                ShareReportPermission.class,
+                EditSharedReportPermission.class,
                 SharedParticipantGroupPermission.class,
                 ManagePicklistsPermission.class,
-                SampleWorkflowJobPermission.class,
-                UpdateSampleStatusPermission.class
+                SampleWorkflowJobPermission.class
         );
     }
 

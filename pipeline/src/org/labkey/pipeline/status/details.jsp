@@ -333,13 +333,21 @@
 
     function copyLogText(e) {
         if (logDataEl) {
-            navigator.clipboard.writeText(logDataEl.innerText).then(function () {
-                let orig = e.target.innerHTML;
-                e.target.innerHTML = "Copied!";
-                setTimeout(function () {
-                    e.target.innerHTML = orig;
-                }, 2000);
-            });
+            navigator.clipboard.writeText(logDataEl.innerText).then(
+                    function () {
+                        let orig = e.target.innerHTML;
+                        e.target.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            e.target.innerHTML = orig;
+                        }, 2000);
+                    },
+                    function () {
+                        e.target.innerHTML = "Copy failed. Ensure the browser's security policy allows clipboard APIs and the page is using HTTPS.";
+                    }).catch(function(error) {
+                        console.log(error);
+                        e.target.innerText = "Copy failed: " + error;
+                    }
+            );
         }
     }
 

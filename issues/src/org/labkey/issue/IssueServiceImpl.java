@@ -155,7 +155,7 @@ public class IssueServiceImpl implements IssueService
                     change += " as " + resolution; // Issue 12273
                 }
                 changeSummary.sendUpdateEmail(container, user, issueObject.getComment(),
-                        new ActionURL(IssuesController.DetailsAction.class, container),
+                        new ActionURL(IssuesController.DetailsAction.class, container).addParameter("issueId", issueObject.getIssueId()),
                         change, attachments);
 
                 if (!errors.hasErrors())

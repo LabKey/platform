@@ -58,6 +58,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -85,7 +86,15 @@ import java.util.stream.Collectors;
 public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
 {
     private static final String categoryName = "materialSource";
+    private static final String mediaCategoryName = "mediaMaterialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
+    public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Set of Media Samples") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
+    };
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
     public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
@@ -562,14 +571,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (null == seqRowId)
             return 0;
 
-        DbSequence seq = DbSequenceManager.get(getContainer(), SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
         return seq.current();
     }
 
     @Override
     public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.get(container, SEQUENCE_PREFIX, getRowId());
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
         long current = seq.current();
         if (newSeqValue < current)
         {
@@ -582,7 +591,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
         }
         else
+        {
             seq.ensureMinimum(newSeqValue);
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
+        }
     }
 
     private boolean hasSamples(Container container)
@@ -812,7 +824,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         // Name is identifier with highest weight
         identifiersHi.add(getName());
 
-        props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+        if (isMedia())
+            props.put(SearchService.PROPERTY.categories.toString(), mediaSearchCategory.toString());
+        else
+            props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), "Sample Type - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 

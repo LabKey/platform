@@ -39,6 +39,7 @@ import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -120,7 +121,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());
         _containerHelper.createSubfolder(getProjectName(), STUDY1, "Study");
-        importFolderFromPipeline("folder.xml", 1, false);
+        importFolderFromPipeline("folder.xml", 1, false, false);
 
         _containerHelper.createSubfolder(getProjectName(), STUDY2, "Study");
         clickButton("Create Study");
@@ -238,7 +239,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickButton("Publish Study", 0);
         _extHelper.waitForExtDialog("Publish Study");
 
-        // Wizard page 1 : General Setup
+        // General Setup
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'General Setup']"));
         setFormElement(Locator.name("studyName"), studyPublishedFromDataspace);
         clickButton("Change", 0);
@@ -247,16 +248,13 @@ public class SharedStudyTest extends BaseWebDriverTest
         doubleClick(projectTreeNode);
         clickButton("Next", 0);
 
-        // Wizard page 2 : Mice
-        clickButton("Next", 0);
+        // Pandas
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.participantList("Panda", "Pandas"));
 
-        // Wizard page 3 : Datasets
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Datasets']"));
-        waitForElement(Locator.css(".studyWizardDatasetList"));
-        click(Locator.css(".studyWizardDatasetList .x-grid3-hd-checker  div"));
-        clickButton("Next", 0);
+        // Datasets
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardDatasetList, true);
 
-        // Wizard page 4 : Visits
+        // Visits
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Visits']"));
         waitForElement(Locator.css(".studyWizardVisitList"));
         clickButton("Next", 0);
@@ -266,40 +264,27 @@ public class SharedStudyTest extends BaseWebDriverTest
         click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens, if present & active
+        // Specimens, if present & active
         if (_studyHelper.isSpecimenModuleActive())
-        {
-            clickButton("Next", 0);
-        }
+            _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studySpecimens);
 
-        // Wizard Page 6 : Study Objects
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        click(Locator.css(".studyObjects .x-grid3-hd-checker  div"));
-        clickButton("Next", 0);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyObjects, true);
 
-        // Wizard page 7 : Lists
-        clickButton("Next", 0);
-
-        // Wizard page 8 : Grid Views
-        clickButton("Next", 0);
-
-        // Wizard Page 9 : Reports and Charts
-        clickButton("Next", 0);
-
-        // Wizard page 10 : Folder Objects
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
-        click(Locator.css(".folderObjects .x-grid3-hd-checker  div"));
-        clickButton("Next", 0);
-
-        // Wizard page 11 : Publish Options
-        clickButton("Finish");
+        _studyHelper.advanceThroughPublishStudyWizard(
+                Arrays.asList(
+                    StudyHelper.Panel.studyWizardListList, StudyHelper.Panel.studyWizardQueryList,
+                    StudyHelper.Panel.studyWizardViewList, StudyHelper.Panel.studyWizardReportList
+                )
+        );
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.folderObjects, true);
+        _studyHelper.advanceThroughPublishStudyWizard(StudyHelper.Panel.studyWizardPublishOptionsList);
         waitForPipelineJobsToComplete(1, "Publish Study", false);
 
-        //verfiy that published study description has correct number visits, and number participants
+        // verify that published study description has correct number visits, and number participants
         beginAt("/" + nonDataspaceProject + "/" + studyPublishedFromDataspace + "/project-begin.view?");
         assertTextPresent("over 6 visits. Data is present for 6 Pandas.");
 
-        // verfiy that published study description has correct dataset
+        // verify that published study description has correct dataset
         clickAndWait(Locator.linkContainingText("dataset")); // Might be '1 dataset' or '2 datasets'
         clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 

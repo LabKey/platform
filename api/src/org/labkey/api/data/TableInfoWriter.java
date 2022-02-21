@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Type;
@@ -81,11 +80,12 @@ public class TableInfoWriter
         String columnName = column.getName();
         columnXml.setColumnName(columnName);
 
-        Class clazz = column.getJavaClass();
+        Class<?> clazz = column.getJavaClass();
         Type t = Type.getTypeByClass(clazz);
+        String parentTableName = null != column.getParentTable() ? column.getParentTable().getName() : "<UNKNOWN>";
 
         if (null == t)
-            throw new IllegalStateException(columnName + " in table " + column.getParentTable().getName() + " has unknown java class " + clazz.getName());
+            throw new IllegalStateException(columnName + " in table " + parentTableName + " has unknown java class " + clazz.getName());
 
         columnXml.setDatatype(t.getSqlTypeName());
 
@@ -214,7 +214,7 @@ public class TableInfoWriter
         }
 
         // GWT PropertyEditor always saves Attachment columns with DefaultValueType set to FIXED_EDITABLE. That's a bug we should fix,
-        // but we'll workaround it here for now. Also, consider Type.allowsDefaultValue() to generalize this concept.
+        // but we'll work around it here for now. Also, consider Type.allowsDefaultValue() to generalize this concept.
         if (t != Type.AttachmentType)
         {
             DefaultValueType defaultValueType = column.getDefaultValueType();
@@ -231,7 +231,7 @@ public class TableInfoWriter
             }
         }
 
-        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
+        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml, parentTableName);
 
         List<? extends IPropertyValidator> validators = column.getValidators();
 

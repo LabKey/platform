@@ -164,6 +164,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.print.attribute.standard.Media;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -4627,7 +4628,7 @@ public class QueryController extends SpringActionController
         {
             LinkedSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic("linkedSchemas");
+            setHelpTopic("filterSchema");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }

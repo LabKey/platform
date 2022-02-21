@@ -256,7 +256,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         return result;
     }
 
-    public static void convertToXML(List<? extends GWTConditionalFormat> formats, ColumnType xmlColumn)
+    public static void convertToXML(List<? extends GWTConditionalFormat> formats, ColumnType xmlColumn, String tableName)
     {
         if (xmlColumn.isSetConditionalFormats())
         {
@@ -266,7 +266,10 @@ public class ConditionalFormat extends GWTConditionalFormat
         if (!formats.isEmpty())
         {
             ConditionalFormatsType xmlFormats = xmlColumn.addNewConditionalFormats();
-            addToXML(formats, xmlFormats);
+            if (!addToXML(formats, xmlFormats))
+            {
+                LOG.warn("One or more invalid conditional formats were discovered on table \"" + tableName + "\", column \"" + xmlColumn.getColumnName() + "\"");
+            }
         }
     }
 
@@ -280,7 +283,10 @@ public class ConditionalFormat extends GWTConditionalFormat
         if (!formats.isEmpty())
         {
             ConditionalFormatsType xmlFormats = xmlProp.addNewConditionalFormats();
-            addToXML(formats, xmlFormats);
+            if (!addToXML(formats, xmlFormats))
+            {
+                LOG.warn("One or more invalid conditional formats were discovered on property \"" + xmlProp.getName() + "\"");
+            }
         }
     }
 
@@ -309,17 +315,20 @@ public class ConditionalFormat extends GWTConditionalFormat
         return getParsedColor(getBackgroundColor());
     }
 
-    private static void addToXML(List<? extends GWTConditionalFormat> formats, ConditionalFormatsType xmlFormats)
+    // Returns true if all formats were valid and successfully serialized to XML
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean addToXML(List<? extends GWTConditionalFormat> formats, ConditionalFormatsType xmlFormats)
     {
+        boolean success = true;
+
         for (GWTConditionalFormat baseFormat : formats)
         {
             ConditionalFormat format = new ConditionalFormat(baseFormat);
-            ConditionalFormatType xmlFormat = xmlFormats.addNewConditionalFormat();
             SimpleFilter simpleFilter = format.getSimpleFilter();
+            // issue 20350 and subsequent failures - don't create a conditional format until we know the filter has clauses.
             if (null != simpleFilter.getClauses() && !simpleFilter.getClauses().isEmpty())
             {
-                // issue 20350 - don't add a <filters> element until we know the filter
-                // has clauses.
+                ConditionalFormatType xmlFormat = xmlFormats.addNewConditionalFormat();
                 xmlFormat.addNewFilters();
                 for (FilterClause filterClause : simpleFilter.getClauses())
                 {
@@ -338,27 +347,33 @@ public class ConditionalFormat extends GWTConditionalFormat
                         throw new IllegalArgumentException("Unsupported filter clause: " + filterClause);
                     }
                 }
+                if (format.isBold())
+                {
+                    xmlFormat.setBold(true);
+                }
+                if (format.isItalic())
+                {
+                    xmlFormat.setItalics(true);
+                }
+                if (format.isStrikethrough())
+                {
+                    xmlFormat.setStrikethrough(true);
+                }
+                if (format.getBackgroundColor() != null)
+                {
+                    xmlFormat.setBackgroundColor(format.getBackgroundColor());
+                }
+                if (format.getTextColor() != null)
+                {
+                    xmlFormat.setTextColor(format.getTextColor());
+                }
             }
-            if (format.isBold())
+            else
             {
-                xmlFormat.setBold(true);
-            }
-            if (format.isItalic())
-            {
-                xmlFormat.setItalics(true);
-            }
-            if (format.isStrikethrough())
-            {
-                xmlFormat.setStrikethrough(true);
-            }
-            if (format.getBackgroundColor() != null)
-            {
-                xmlFormat.setBackgroundColor(format.getBackgroundColor());
-            }
-            if (format.getTextColor() != null)
-            {
-                xmlFormat.setTextColor(format.getTextColor());
+                success = false;
             }
         }
+
+        return success;
     }
 }

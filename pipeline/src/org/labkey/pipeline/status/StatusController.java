@@ -743,7 +743,9 @@ public class StatusController extends SpringActionController
         @Override
         public void validateCommand(ConfirmDeleteStatusForm form, Errors errors)
         {
-            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
+            // Don't clear the state yet because we're just validating at this point. We'll clear it as part of the
+            // delete itself. See issue 44873
+            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), false);
 
             try
             {
