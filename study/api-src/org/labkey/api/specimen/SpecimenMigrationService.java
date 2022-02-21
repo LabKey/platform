@@ -1,10 +1,16 @@
 package org.labkey.api.specimen;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
+
+import java.nio.file.Path;
 
 // Temporary service that provides entry points to ease migration of code from study module to specimen module
 // These should all go away once the migration is complete
@@ -27,4 +33,8 @@ public interface SpecimenMigrationService
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getSpecimensURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+
+    void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
+                               boolean syncParticipantVisit) throws PipelineJobException;
+
 }

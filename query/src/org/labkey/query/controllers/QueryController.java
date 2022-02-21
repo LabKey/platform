@@ -4628,7 +4628,7 @@ public class QueryController extends SpringActionController
         {
             LinkedSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic("linkedSchemas");
+            setHelpTopic("filterSchema");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }

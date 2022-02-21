@@ -16,21 +16,15 @@
 
 package org.labkey.study.importer;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.pipeline.AbstractTaskFactory;
-import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporter.Timing;
-import org.labkey.api.util.FileType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.StudySerializationRegistry;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -39,23 +33,10 @@ import java.util.List;
 * Date: Aug 31, 2009
 * Time: 9:12:22 AM
 */
-public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.Factory>
+public class StudyImportFinalTask
 {
-    private StudyImportFinalTask(Factory factory, PipelineJob job)
+    private StudyImportFinalTask()
     {
-        super(factory, job);
-    }
-
-    @Override
-    @NotNull
-    public RecordedActionSet run() throws PipelineJobException
-    {
-        PipelineJob job = getJob();
-        StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
-
-        doImport(job, support.getImportContext(), support.getSpringErrors());
-
-        return new RecordedActionSet();
     }
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors) throws PipelineJobException
@@ -112,44 +93,6 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         {
             for (SimpleStudyImporter importer : simpleStudyImporters)
                 importer.postHandling(ctx);
-        }
-    }
-
-    public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
-    {
-        public Factory()
-        {
-            super(StudyImportFinalTask.class);
-        }
-
-        @Override
-        public PipelineJob.Task createTask(PipelineJob job)
-        {
-            return new StudyImportFinalTask(this, job);
-        }
-
-        @Override
-        public List<FileType> getInputTypes()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<String> getProtocolActionNames()
-        {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public String getStatusName()
-        {
-            return "STUDY IMPORT";    // TODO: RELOAD?
-        }
-
-        @Override
-        public boolean isJobComplete(PipelineJob job)
-        {
-            return false;
         }
     }
 }
