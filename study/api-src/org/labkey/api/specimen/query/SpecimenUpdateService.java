@@ -122,7 +122,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
             for (Vial vial : vials)
                 SpecimenManager.get().deleteSpecimen(vial, false);
-            SpecimenMigrationService.get().clearRequestCaches(container);
+
+            SpecimenMigrationService SMS = SpecimenMigrationService.get();
+            if (null != SMS)
+                SMS.clearRequestCaches(container);
 
             // Force recalculation of requestability and specimen table
             EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);

@@ -38,18 +38,7 @@ public interface SpecimenMigrationService
     void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                boolean syncParticipantVisit) throws PipelineJobException;
 
-    default void clearRequestCaches(Container c)
-    {
-        // No-op if specimen module isn't present
-    }
-
-    default void clearGroupedValuesForColumn(Container container)
-    {
-        // No-op if specimen module isn't present
-    }
-
-    default void updateVialCounts(Container container, User user)
-    {
-        // No-op if specimen module isn't present
-    }
+    void clearRequestCaches(Container c);
+    void clearGroupedValuesForColumn(Container container);
+    void updateVialCounts(Container container, User user);
 }

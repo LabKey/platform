@@ -16,18 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.SpecimenManager" %>
+<%@ page import="org.labkey.specimen.SpecimenRequestManager.SpecimenRequestInput" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.CreateSpecimenRequestForm" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.HandleCreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.NewRequestBean" %>

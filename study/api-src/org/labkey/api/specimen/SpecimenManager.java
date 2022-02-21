@@ -307,7 +307,9 @@ public class SpecimenManager
         // VIEW: if this view gets removed, remove this line
         assert set.add(SpecimenSchema.get().getSchema().getTable("LockedSpecimens"));
 
-        SpecimenMigrationService.get().clearGroupedValuesForColumn(c);
+        SpecimenMigrationService SMS = SpecimenMigrationService.get();
+        if (null != SMS)
+            SMS.clearGroupedValuesForColumn(c);
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash)

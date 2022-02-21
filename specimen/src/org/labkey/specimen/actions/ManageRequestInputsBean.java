@@ -1,8 +1,8 @@
 package org.labkey.specimen.actions;
 
 import org.labkey.api.data.Container;
-import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.SpecimenRequestManager;
 
 import java.sql.SQLException;
 

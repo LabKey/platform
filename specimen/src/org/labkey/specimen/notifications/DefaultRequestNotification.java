@@ -25,13 +25,13 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.specimen.Vial;
-import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.model.SpecimenRequestEvent;
 
 import java.io.IOException;
 import java.sql.SQLException;
