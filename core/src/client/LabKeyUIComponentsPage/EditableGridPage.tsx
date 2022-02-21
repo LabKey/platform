@@ -42,7 +42,7 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
 
     useEffect(() => {
         (async () => {
-            if (!isLoading(model.rowsLoadingState) && !editorModel) {
+            if (!model.isLoading && !editorModel) {
                 try {
                     const editorModelData = await loadEditorModelData(model);
                     setEditorModel(new EditorModel({
