@@ -66,9 +66,13 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
@@ -2207,6 +2211,10 @@ public class SecurityController extends SpringActionController
             RoleManager.testPermissionsInAdminRoles(true,
                 ReadPermission.class,
                 ReadSomePermission.class,
+                AssayReadPermission.class,
+                DataClassReadPermission.class,
+                MediaReadPermission.class,
+                NotebookReadPermission.class,
                 InsertPermission.class,
                 UpdatePermission.class,
                 DeletePermission.class,
