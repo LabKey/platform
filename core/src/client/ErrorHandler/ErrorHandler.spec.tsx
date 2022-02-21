@@ -8,13 +8,15 @@ import { ErrorDetails, ErrorType } from './model';
 
 describe('ErrorHandler', () => {
     test('Not found exception', () => {
+        const notFoundMessage = 'Oops! The requested page cannot be found.';
         const errorDetails: ErrorDetails = {
             errorType: ErrorType.notFound,
             errorCode: '123XYZ',
             message: 'This is a not found exception',
         };
         const wrapper = mount(<ErrorHandler context={{ errorDetails }} />);
-        expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
+        expect(wrapper.find('.labkey-error-heading').text().includes(errorDetails.message)).toBeTruthy();
+        expect(wrapper.find('.labkey-error-subheading').text().includes(notFoundMessage)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });
