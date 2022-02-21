@@ -38,7 +38,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
@@ -75,7 +74,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -247,11 +245,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (!participantGroups.isEmpty())
                 {
                     studyExportContext.setParticipants(getGroupParticipants(_form, participantGroups, studyExportContext));
-                }
-                else if (null != _form.getVials())
-                {
-                    studyExportContext.setParticipants(getSpecimenParticipants(_form));
-                    studyExportContext.setVials(_form.getVials());
                 }
 
                 // This "study XML modifier" will replace exported source study properties with the values entered in the wizard
@@ -621,22 +614,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 return (List<String>)selector.getCollection(String.class);
         }
         return Collections.emptyList();
-    }
-
-    private List<String> getSpecimenParticipants(ChildStudyDefinition form)
-    {
-        Set<String> ptids = new HashSet<>();
-
-        for (Vial vial : form.getVials())
-        {
-            String ptid = vial.getPtid();
-
-            // PTID can be null
-            if (null != ptid)
-                ptids.add(vial.getPtid());
-        }
-
-        return new LinkedList<>(ptids);
     }
 
     /**

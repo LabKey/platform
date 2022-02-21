@@ -1,11 +1,11 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.audit.AuditTypeEvent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
+import static org.labkey.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
 
 public class SpecimenCommentAuditEvent extends AuditTypeEvent
 {

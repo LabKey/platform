@@ -1,6 +1,7 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
 

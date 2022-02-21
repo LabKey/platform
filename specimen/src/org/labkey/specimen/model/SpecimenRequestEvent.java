@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentParent;

@@ -63,7 +63,6 @@
     {
         dependencies.add("clientapi/ext3");
         dependencies.add("FileUploadField.js");
-        dependencies.add("study/StudyWizard.js");
     }
 %>
 <%
@@ -182,23 +181,6 @@
     function setCookieToRequestId(requestId)
     {
         LABKEY.Utils.setCookie("selectedRequest", requestId, true);
-    }
-
-    function showNewStudyWizard()
-    {
-        Ext.onReady(function(){
-            var wizard = new LABKEY.study.CreateStudyWizard({
-                mode : 'specimen',
-                allowRefresh : false,
-                requestId : <%=bean.getSpecimenRequest().getRowId()%>,
-                studyName : <%=q(availableStudyName)%>
-            });
-
-            wizard.on('success', function(info){}, this);
-
-            // run the wizard
-            wizard.show();
-        });
     }
 
 </script>
@@ -342,14 +324,6 @@
                 You must add specimens before submitting your request.<br><br>
                 <%=specimenSearchButton%>
                 <%=importVialIdsButton%>
-<%
-            }
-
-            // TODO: Remove this and all associated code
-            if (false)
-            {
-                String ignored = SpecimenModule.CREATE_SPECIMEN_STUDY;
-%>              <%= button("Create Study").href("javascript:void(0)").onClick("showNewStudyWizard();") %>
 <%
             }
 %>

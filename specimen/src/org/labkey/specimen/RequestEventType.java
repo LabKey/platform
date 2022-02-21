@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 public enum RequestEventType
 {

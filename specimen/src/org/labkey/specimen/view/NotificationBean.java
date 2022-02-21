@@ -7,7 +7,7 @@ import org.labkey.api.security.User;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.PageFlowUtil;

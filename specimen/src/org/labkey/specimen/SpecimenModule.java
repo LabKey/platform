@@ -36,8 +36,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
-import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
@@ -184,12 +183,6 @@ public class SpecimenModule extends SpringModule
             public void clearRequestCaches(Container c)
             {
                 SpecimenRequestManager.get().clearCaches(c);
-            }
-
-            @Override
-            public SpecimenRequest getRequest(Container c, int rowId)
-            {
-                return SpecimenRequestManager.get().getRequest(c, rowId);
             }
 
             @Override

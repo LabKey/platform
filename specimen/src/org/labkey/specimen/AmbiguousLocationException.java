@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.specimen.location.LocationImpl;

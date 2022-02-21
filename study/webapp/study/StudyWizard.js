@@ -39,18 +39,6 @@ LABKEY.study.openRepublishStudyWizard = function(snapshotId, availableContainerN
                 maxAllowedPhi: maxAllowedPhi
             };
 
-            //issue 22070: specimen study republish needs to include requestId
-            if (row.Type == 'specimen')
-            {
-                if (!settings.specimenRequestId) {
-                    config.mode = 'publish';
-                }
-                else {
-                    config.requestId = settings.specimenRequestId;
-                    config.allowRefresh = false;
-                }
-            }
-
             // issue 22076: snapshot settings prior to 15.1 didn't have type specific so we guess between publish and ancillary
             if (row.Type == undefined && settings.visits == null) {
                 config.mode = 'ancillary';
@@ -144,7 +132,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         Ext.apply(this, config);
         this.pageOptions = this.initPageOptions();
-        this.requestId = config.requestId;
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
                 '<div class="labkey-ancillary-wizard-background">',
@@ -187,7 +174,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             name: {
                 panelType: 'name',
-                active: this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen'
+                active: this.mode == 'publish' || this.mode == 'ancillary'
             },
             participants: {
                 panelType: 'participants',
@@ -195,7 +182,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             datasets: {
                 panelType: 'datasets',
-                active: this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen'
+                active: this.mode == 'publish' || this.mode == 'ancillary'
             },
             visits: {
                 panelType: 'visits',
@@ -388,9 +375,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
         else if (this.mode == "ancillary") {
             title ='Create Ancillary Study';
-        }
-        else if (this.mode == "specimen") {
-            title = (this.settings ? 'Republish' : 'Publish') + ' Specimen Study';
         }
         else {
             title = (this.settings ? 'Republish' : 'Publish') + ' Study';
@@ -2383,12 +2367,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.pageOptions.queries.value = this.selectedQueries;
         this.pageOptions.views.value = this.selectedViews;
         this.pageOptions.reports.value = this.selectedReports;
-
-        if(this.requestId){
-            id = Ext.id();
-            hiddenFields.push(id);
-            this.nameFormPanel.add({xtype: 'hidden', id : id, name : 'requestId', value : this.requestId});
-        }
 
         if (this.pageOptions.studyProps.active && this.selectedStudyObjects)
         {

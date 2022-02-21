@@ -31,8 +31,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.specimen.SpecimenCommentAuditDomainKind;
-import org.labkey.api.specimen.SpecimenCommentAuditEvent;
 import org.labkey.api.util.Link;
 import org.labkey.api.view.ActionURL;
 import org.labkey.specimen.actions.SpecimenController;
@@ -43,8 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.COLUMN_NAME_VIAL_ID;
-import static org.labkey.api.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
+import static org.labkey.specimen.SpecimenCommentAuditDomainKind.COLUMN_NAME_VIAL_ID;
+import static org.labkey.specimen.SpecimenCommentAuditDomainKind.SPECIMEN_COMMENT_EVENT;
 
 /**
  * User: klum

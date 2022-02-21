@@ -1,4 +1,4 @@
-package org.labkey.api.specimen;
+package org.labkey.specimen;
 
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.exp.PropertyDescriptor;

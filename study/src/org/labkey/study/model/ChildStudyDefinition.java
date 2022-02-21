@@ -17,7 +17,6 @@ package org.labkey.study.model;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.PHI;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.StudySnapshotType;
 
 import java.util.ArrayList;
@@ -56,10 +55,6 @@ public class ChildStudyDefinition
 
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
-
-    private Integer _requestId;  // RowId of a specimen request
-    private String[] _specimenIds = null;  // List of globally unique specimen IDs
-    private List<Vial> _vials = null;
 
     // used to persist the snapshot settings (i.e. all vs selected subset)
     private boolean _participantGroupsAll;
@@ -269,39 +264,6 @@ public class ChildStudyDefinition
     public void setSpecimenRefresh(boolean specimenRefresh)
     {
         _specimenRefresh = specimenRefresh;
-    }
-
-    // Callers can post either a specimen request id OR an array of SpecimenIds; either will cause us to resolve
-    // to a Specimen[] which is set back on the form and used to drive the child study creation process.
-
-    public Integer getRequestId()
-    {
-        return _requestId;
-    }
-
-    public void setRequestId(Integer requestId)
-    {
-        _requestId = requestId;
-    }
-
-    public String[] getSpecimenIds()
-    {
-        return _specimenIds;
-    }
-
-    public void setSpecimenIds(String[] specimenIds)
-    {
-        _specimenIds = specimenIds;
-    }
-
-    public List<Vial> getVials()
-    {
-        return _vials;
-    }
-
-    public void setVials(List<Vial> vials)
-    {
-        _vials = vials;
     }
 
     public StudySnapshotType getMode()

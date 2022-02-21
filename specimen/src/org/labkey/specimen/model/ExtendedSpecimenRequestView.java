@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.labkey.api.data.Entity;
 

@@ -25,7 +25,7 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
