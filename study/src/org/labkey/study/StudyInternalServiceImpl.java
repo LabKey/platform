@@ -86,7 +86,7 @@ public class StudyInternalServiceImpl implements StudyInternalService
     @Override
     public String getParticipantCommentProperty(Study study)
     {
-        return ((StudyImpl)study).getParticipantCommentProperty();
+        return study.getParticipantCommentProperty();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class StudyInternalServiceImpl implements StudyInternalService
     @Override
     public String getParticipantVisitCommentProperty(Study study)
     {
-        return ((StudyImpl)study).getParticipantVisitCommentProperty();
+        return study.getParticipantVisitCommentProperty();
     }
 
     @Override

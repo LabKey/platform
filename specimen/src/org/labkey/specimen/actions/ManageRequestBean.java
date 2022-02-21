@@ -11,7 +11,6 @@ import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.Button;
 import org.labkey.api.view.ActionURL;
@@ -22,6 +21,7 @@ import org.labkey.specimen.actions.SpecimenController.ImportVialIdsAction;
 import org.labkey.specimen.actions.SpecimenController.OverviewAction;
 import org.labkey.specimen.actions.SpecimenController.RemoveRequestSpecimensAction;
 import org.labkey.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
 import java.util.ArrayList;
 import java.util.HashMap;

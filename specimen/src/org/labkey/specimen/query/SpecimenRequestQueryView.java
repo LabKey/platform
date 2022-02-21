@@ -31,7 +31,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.query.BaseSpecimenQueryView;
-import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
@@ -45,6 +44,7 @@ import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
 import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
 import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
+import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
 import java.io.IOException;
 import java.io.Writer;
