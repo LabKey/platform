@@ -416,13 +416,6 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         NotificationEndpoint.sendEvent(userIds, clazz);
     }
 
-    @Override
-    public void closeServerEvents(int userId, @Nullable HttpSession session, Enum e)
-    {
-        NotificationEndpoint.close(userId, session, e.getClass().getCanonicalName() + "#" + e.name());
-    }
-
-
     private TableInfo getTable()
     {
         return CoreSchema.getInstance().getTableInfoNotifications();
