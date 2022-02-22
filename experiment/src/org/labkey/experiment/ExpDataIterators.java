@@ -15,12 +15,10 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -45,6 +43,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
@@ -68,11 +67,10 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -89,7 +87,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -361,139 +358,98 @@ public class ExpDataIterators
         private final DataIteratorBuilder _in;
         private final Container _container;
         private final User _user;
-        private final TableInfo _expTable;
-        private final boolean _isSample;
+        private final ExpSampleType _sampleType;
+        private final UserSchema _schema;
 
-        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, boolean isSample, Container container, User user, TableInfo expTable)
+        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, UserSchema schema, Container container, User user, ExpSampleType sampleType)
         {
             _in = in;
+            _schema = schema;
             _container = container;
             _user = user;
-            _expTable = expTable;
-            _isSample = isSample;
+            _sampleType = sampleType;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(pre, context, _isSample, _container, _user, _expTable));
+            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), context, _schema, _container, _user, _sampleType));
         }
     }
 
     private static class AutoLinkToStudyDataIterator extends WrapperDataIterator
     {
-        final DataIteratorContext _context;
-        final boolean _isSample;
         final Container _container;
         final User _user;
-        final TableInfo _expTable;
+        final ExpSampleType _sampleType;
+        final MapDataIterator _data;
+        final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
+        final List<Integer> _keys = new ArrayList<>();
+        final UserSchema _schema;
+        private boolean _isDerivation = false;
+        private Integer _rowIdCol;
 
-        Study _study;
-        final Supplier<Object> _participantIDCol;
-        final Supplier<Object> _dateCol;
-        final Supplier<Object> _visitIdCol;
-        final Supplier<Object> _lsidCol;
-        final Supplier<Object> _rowIdCol;
-        final List<Map<String, Object>> _rows = new ArrayList<>();
-
-        final String PARTICIPANT = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
-        final String DATE = StudyPublishService.DATE_PROPERTY_NAME;
-        final String VISIT = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
-        final String LSID = StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
-        final String ROWID = ExpMaterialTable.Column.RowId.toString();
-
-        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, boolean isSample, Container container, User user,  TableInfo expTable)
+        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
             super(di);
-            _context = context;
 
-            _isSample = isSample;
+            _schema = schema;
             _container = container;
             _user = user;
-            _expTable = expTable;
+            _sampleType = sampleType;
+            _data = (MapDataIterator)di;
 
-            if (_expTable instanceof  ExpMaterialTableImpl)
+            Map<String, Integer> nameMap = DataIteratorUtil.createColumnNameMap(di);
+            _rowIdCol = nameMap.get("rowid");
+
+            for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(di).entrySet())
             {
-                @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
-                StudyService studyService = StudyService.get();
-                if (_study == null && targetContainer != null && studyService != null) {
-                    _study = studyService.getStudy(targetContainer);
+                String name = entry.getKey();
+                if (UploadSamplesHelper.isInputOutputHeader(name) || equalsIgnoreCase("parent", name))
+                {
+                    _isDerivation = true;
+                    break;
                 }
-                // Issue43234: Support '(Data import folder)' auto-link option
-                if (_study == null && targetContainer == StudyPublishService.AUTO_LINK_TARGET_IMPORT_FOLDER && studyService != null)
-                    _study = studyService.getStudy(container);
             }
-            final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
-            _dateCol = map.get(DATE) != null ? di.getSupplier(map.get(DATE)) : null;
-            _visitIdCol = map.get(visitName) != null ? di.getSupplier(map.get(visitName)) : null;
-            _lsidCol = map.get("LSID") != null ? di.getSupplier(map.get("LSID")) : null;
-            _rowIdCol = map.get(ROWID) != null ? di.getSupplier(map.get(ROWID)) : null;
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
         }
 
         @Override
         public boolean next() throws BatchValidationException
         {
-            boolean hasNext = super.next();
-
-            // if there is no _study set to auto-link, then skip processing
-            if (getErrors().hasErrors() || !(_expTable instanceof ExpMaterialTableImpl) || _study == null)
-                return hasNext;
-
-            ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
+            boolean hasNext = _data.next();
 
             if (!hasNext)
             {
-                if (_rows.size() > 0 && _isSample)
-                    StudyPublishService.get().autoLinkSampleType(sampleType, _rows, _container, _user);
+                if (!_rows.isEmpty())
+                {
+                    if (_isDerivation)
+                    {
+                        _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                            try
+                            {
+                                // derived samples can't be linked until after the transaction is committed
+                                StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _keys, _container, _user);
+                            }
+                            catch (ExperimentException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }, DbScope.CommitTaskOption.POSTCOMMIT);
+                    }
+                    else
+                        StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
+                }
                 return false;
             }
+            Map<FieldKey, Object> row = new HashMap<>();
+            for (Map.Entry<String, Object> entry : _data.getMap().entrySet())
+                row.put(FieldKey.fromParts(entry.getKey()), entry.getValue());
+            _rows.add(row);
 
-            boolean isVisitBased = _study.getTimepointType().isVisitBased();
-            boolean haveVisitCol = isVisitBased ? _visitIdCol != null : _dateCol != null;
-            if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && haveVisitCol)
-            {
-                String participantId = _participantIDCol.get() != null ? _participantIDCol.get().toString() : null;
-                Object date = _dateCol != null ? _dateCol.get() : null;
-                Object visit = _visitIdCol != null ? _visitIdCol.get(): null;
-                Object lsid = _lsidCol.get();
-                int rowId = ((Number) _rowIdCol.get()).intValue();
+            if (_isDerivation)
+                _keys.add((Integer)get(_rowIdCol));
 
-                // Only link rows that have a participant and a visit/date. Return if this is not the case
-                if (participantId == null || (isVisitBased && visit == null) || (!isVisitBased && date == null))
-                    return true;
-
-                Float visitId = null;
-                Date dateId = null;
-
-                // 13647: Conversion exception in auto link to study
-                if (isVisitBased)
-                {
-                    visitId = Float.parseFloat(visit.toString());
-                }
-                else
-                {
-                    dateId = (Date) ConvertUtils.convert(date.toString(), Date.class);
-                }
-
-                Map<String,Object> row = new HashMap<>();
-                row.put(PARTICIPANT, participantId);
-                row.put(LSID, lsid);
-                row.put(ROWID, rowId);
-                if (visitId != null)
-                    row.put(VISIT, visitId);
-                if (dateId != null)
-                    row.put(DATE, dateId);
-
-                _rows.add(row);
-            }
             return true;
         }
     }
@@ -734,7 +690,6 @@ public class ExpDataIterators
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
                         _candidateAliquotLsids.add(lsid);
-
                 }
                 else if (!_skipAliquot && _context.getInsertOption().mergeRows)
                 {

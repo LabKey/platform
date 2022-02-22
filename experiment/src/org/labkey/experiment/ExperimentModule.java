@@ -522,9 +522,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
+                    assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+
                     results.put("assay", assayMetrics);
                 }
 
+                results.put("autoLinkedSampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class));
                 results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
                 results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));

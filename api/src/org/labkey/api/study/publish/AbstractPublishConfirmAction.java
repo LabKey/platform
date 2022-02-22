@@ -191,7 +191,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
      * Generate the map of field keys which will be added to publish results query view to represent the subject,
      * timepoint editable columns etc.
      */
-    protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
+    protected abstract Map<StudyPublishService.LinkToStudyKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
      * Perform the link to study operation
