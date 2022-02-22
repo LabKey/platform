@@ -802,6 +802,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // we could handle each case separately, but this is easier
     static final Set<FieldKey> wrappedFieldKeys = Set.of(
             new FieldKey(null, "objectid"),
+            new FieldKey(null, "RowId"),
             new FieldKey(null, "LSID"),                 // Flag
             new FieldKey(null, "rootMaterialLsid"),     // IsAliquot
             new FieldKey(null, "aliquotedfromlsid"),    // AliquotedFrom

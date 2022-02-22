@@ -1053,7 +1053,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             String conceptURI = xmlCol.getConceptURI();
             // User can not set this concepturi, it only applies to exp.object.objectid
             if (!StringUtils.equalsIgnoreCase(conceptURI,BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
-                setConceptURI(xmlCol.getConceptURI());
+                setConceptURI(conceptURI);
         }
         if (xmlCol.isSetRangeURI())
             _rangeURI = xmlCol.getRangeURI();
