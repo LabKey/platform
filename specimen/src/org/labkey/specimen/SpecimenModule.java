@@ -25,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryView;
@@ -36,10 +38,12 @@ import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
+import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -65,6 +69,7 @@ import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -173,6 +178,12 @@ public class SpecimenModule extends SpringModule
                 url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
                 return url;
+            }
+
+            @Override
+            public void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge, boolean syncParticipantVisit) throws PipelineJobException
+            {
+                AbstractSpecimenTask.doImport(inputFile, job, ctx, merge, syncParticipantVisit);
             }
         });
      }

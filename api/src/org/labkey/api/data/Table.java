@@ -469,7 +469,7 @@ public class Table
                 // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
                 if (Level.WARN.isMoreSpecificThan(logLevel))
                 {
-                    _log.warn("SQL Exception", e);
+                    _log.warn("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
                     _logQuery(Level.WARN, sql, conn);
                 }
             }
@@ -478,7 +478,7 @@ public class Table
                 // Log this SQLException if log level is ERROR or lower.
                 if (Level.ERROR.isMoreSpecificThan(logLevel))
                 {
-                    _log.error("SQL Exception", e);
+                    _log.error("SQL Exception" + (e.getSQLState() == null ? "" : (" with SQLState: " + e.getSQLState())), e);
                     _logQuery(Level.ERROR, sql, conn);
                 }
             }

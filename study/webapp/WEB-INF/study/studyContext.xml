@@ -6,12 +6,8 @@
     <bean id="studyPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
         <property name="factoryImpls">
             <list>
-                <bean class="org.labkey.study.importer.StudyImportFinalTask$Factory"/>
-                <bean class="org.labkey.study.importer.StudyImportInitialTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
-                <bean class="org.labkey.api.specimen.pipeline.StudyImportSpecimenTask$Factory"/>
             </list>
         </property>
 

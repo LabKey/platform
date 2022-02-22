@@ -34,6 +34,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -368,7 +369,7 @@ abstract public class DomainKind<T>  implements Handler<String>
         return null;
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull UserSchema userSchema)
     {
         return true;
     }

@@ -80,11 +80,12 @@ public class TableInfoWriter
         String columnName = column.getName();
         columnXml.setColumnName(columnName);
 
-        Class clazz = column.getJavaClass();
+        Class<?> clazz = column.getJavaClass();
         Type t = Type.getTypeByClass(clazz);
+        String parentTableName = null != column.getParentTable() ? column.getParentTable().getName() : "<UNKNOWN>";
 
         if (null == t)
-            throw new IllegalStateException(columnName + " in table " + column.getParentTable().getName() + " has unknown java class " + clazz.getName());
+            throw new IllegalStateException(columnName + " in table " + parentTableName + " has unknown java class " + clazz.getName());
 
         columnXml.setDatatype(t.getSqlTypeName());
 
@@ -230,7 +231,7 @@ public class TableInfoWriter
             }
         }
 
-        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml, column.getParentTable().getName());
+        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml, parentTableName);
 
         List<? extends IPropertyValidator> validators = column.getValidators();
 

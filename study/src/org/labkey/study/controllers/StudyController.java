@@ -135,6 +135,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -145,7 +146,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -623,7 +623,7 @@ public class StudyController extends BaseStudyController
             bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             bean.stats = form.getVisitStatistics();
-            bean.showSpecimens = SpecimenService.get() != null;
+            bean.showSpecimens = SpecimenManager.get().isSpecimenModuleActive(getContainer());
 
             if (QCStateManager.getInstance().showStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());

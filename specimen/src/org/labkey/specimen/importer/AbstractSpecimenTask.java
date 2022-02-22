@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.importer;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +26,8 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.specimen.importer.SpecimenImporter;
+import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
+import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
@@ -115,13 +117,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     public static void doImport(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                 boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
     {
-        if (SpecimenService.get() == null)
-        {
-            return;
-        }
-
         // do nothing if we've specified data types and specimen is not one of them
-        if (!ctx.isDataTypeSelected(StudyImportSpecimenTask.getType()))
+        if (!ctx.isDataTypeSelected(SpecimenArchiveDataTypes.SPECIMENS))
             return;
 
         try

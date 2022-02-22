@@ -29,17 +29,20 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
+import org.labkey.study.importer.DatasetDefinitionImporter;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudyArchiveDataTypes;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 
 /**
@@ -49,9 +52,9 @@ import java.util.Set;
  */
 public abstract class AbstractDatasetImportTask<FactoryType extends AbstractDatasetImportTaskFactory<FactoryType>> extends PipelineJob.Task<TaskFactory>
 {
-    transient private StudyManager _studyManager = StudyManager.getInstance();
-    transient private CohortManager _cohortManager = CohortManager.getInstance();
-    StudyImportContext _ctx;
+    transient private final StudyManager _studyManager = StudyManager.getInstance();
+
+    protected final StudyImportContext _ctx;
 
     public AbstractDatasetImportTask(FactoryType factory, PipelineJob job, StudyImportContext ctx)
     {
@@ -66,11 +69,6 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     protected StudyManager getStudyManager()
     {
         return _studyManager;
-    }
-
-    protected CohortManager getCohortManager()
-    {
-        return _cohortManager;
     }
 
     @Override
@@ -93,7 +91,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job,
                                                    StudyImportContext ctx, StudyImpl study, boolean syncParticipantVisit)
     {
-        if (!ctx.isDataTypeSelected(StudyImportDatasetTask.getType()))
+        if (!ctx.isDataTypeSelected(StudyArchiveDataTypes.DATASET_DATA))
             return Collections.emptyList();
 
         if (null == datasetsDirectory || null == datasetsFileName)
@@ -204,6 +202,37 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         }
     }
 
+    public static boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
+    {
+        VirtualFile datasetsDir = getDatasetsDirectory(ctx, root);
+        if (datasetsDir != null && getDatasetsFileName(ctx) != null)
+        {
+            // check if we have at least one file in the datasetsDir that we can parse
+            for (String fileName : datasetsDir.list())
+            {
+                Matcher m = DatasetFileReader.DEFAULT_PATTERN.matcher(fileName);
+                if (m.find())
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static String getDatasetsFileName(StudyImportContext ctx) throws ImportException
+    {
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
+
+        if (null != datasetsXml && null != datasetsXml.getDefinition())
+            return datasetsXml.getDefinition().getFile();
+
+        return null;
+    }
+
+    public static VirtualFile getDatasetsDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException
+    {
+        return DatasetDefinitionImporter.getDatasetDirectory(ctx, root);
+    }
 
     public enum Action implements SafeToRenderEnum
     {

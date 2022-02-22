@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.audit.AuditUrls"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.exp.property.Domain"%>
 <%@ page import="org.labkey.api.reports.model.ViewCategory"%>
-<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.Cohort"%>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.study.controllers.DatasetController.BulkDatasetDeleteAction" %>
@@ -32,16 +30,13 @@
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetDisplayOrderAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageUndefinedTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
+<%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.audit.AuditUrls" %>
-<%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -58,8 +53,6 @@
         if (null == d || 0 == d.getProperties().size())
             countUndefined++;
     }
-    String dateTimeFormat = DateUtil.getDateTimeFormatString(c);
-    String numberFormat = Formats.getNumberFormatString(c);
 %>
 <table class="lk-fields-table">
     <tr>
@@ -124,26 +117,6 @@
         <td><%= link("View Audit Events ", PageFlowUtil.urlProvider(AuditUrls.class).getAuditLog(getContainer(), DatasetAuditProvider.DATASET_AUDIT_EVENT, null, null))%></td>
     </tr>
 </table>
-<%
-    FrameFactoryClassic.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null);
-%>
-<labkey:errors/>
-<%
-    AdminUrls urls = urlProvider(AdminUrls.class);
-    String name = c.isProject() ? "project" : "folder";
-    ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderSettingsURL(c);
-%>
-<labkey:form id="manageTypesForm" action="<%=urlFor(ManageTypesAction.class)%>" method="POST">
-    <table class="lk-fields-table">
-        <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
-        <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
-        <tr><td colspan="2"><br>Default formats can be changed via the <%=link(name + " settings page", url)%></td></tr>
-    </table>
-</labkey:form>
-<%
-    FrameFactoryClassic.endTitleFrame(out);
-%>
-
 <%
     FrameFactoryClassic.startTitleFrame(out, "Datasets", null, null, "datasets");
 %>

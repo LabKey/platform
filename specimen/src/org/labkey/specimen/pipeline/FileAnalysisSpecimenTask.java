@@ -1,6 +1,5 @@
 package org.labkey.specimen.pipeline;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -12,15 +11,13 @@ import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
+import org.labkey.specimen.importer.AbstractSpecimenTask;
+import org.labkey.specimen.importer.AbstractSpecimenTaskFactory;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

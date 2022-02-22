@@ -28,6 +28,7 @@ import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -71,8 +72,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -676,7 +677,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 User user = context.getUser();
 
                 // Don't bother checking for elided rows if the user doesn't at least have ReadPermission
-                if (!context.getContainer().hasPermission(user, ReadPermission.class))
+                if (!context.getContainer().hasPermission(user, AssayReadPermission.class))
                     return;
 
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
@@ -711,17 +712,17 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     try
                                     {
-                                        // Issue 40921: Getting all results for the data region requires an operation that iterates
-                                        // through and counts the total rows in the data region. getAggregateResults
-                                        // with ALL_ROWS will perform this calculation
-                                        int maxRows = dataRegion.getSettings().getMaxRows();
-                                        dataRegion.getSettings().setMaxRows(Table.ALL_ROWS);
-                                        dataRegion.getAggregateResults(renderContext);
-                                        dataRegion.getSettings().setMaxRows(maxRows);
+                                        // Get a fresh set of aggregates from the render context. We're applying
+                                        // a different set of filters based on QC state than the main DataRegion
+                                        Aggregate countAgg = Aggregate.createCountStar();
+                                        Map<String, List<Aggregate.Result>> allAggResults = renderContext.getAggregates(dataRegion.getDisplayColumns(), dataRegion.getTable(), dataRegion.getSettings(), dataRegion.getName(), Collections.singletonList(countAgg), dataRegion.getQueryParameters(), dataRegion.isAllowAsync());
+                                        List<Aggregate.Result> aggResults = allAggResults.get(countAgg.getFieldKey().toString());
+                                        assert aggResults.size() == 1 : "Expected a single aggregate result but got " + aggResults.size();
+                                        int totalRows = ((Number)aggResults.get(0).getValue()).intValue();
 
-                                        if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
+                                        if (totalRows < rowCount)
                                         {
-                                            long count = rowCount - dataRegion.getTotalRows();
+                                            long count = rowCount - totalRows;
                                             String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
                                                     : "There is one row not shown due to unapproved QC state.";
                                             DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);

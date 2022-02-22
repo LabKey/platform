@@ -61,7 +61,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
-import org.labkey.study.pipeline.StudyImportDatasetTask;
+import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.StudyArchiveDataTypes;
@@ -501,10 +501,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             if (importContext != null)
             {
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
-                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(importContext, studyDir);
-                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(importContext);
+                VirtualFile datasetsDirectory = AbstractDatasetImportTask.getDatasetsDirectory(importContext, studyDir);
+                String datasetsFileName = AbstractDatasetImportTask.getDatasetsFileName(importContext);
 
-                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy, true);
+                AbstractDatasetImportTask.doImport(datasetsDirectory, datasetsFileName, this, importContext, destStudy, true);
             }
             importParticipantGroups(vf, errors, importContext);
         }

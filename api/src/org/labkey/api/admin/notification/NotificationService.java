@@ -149,9 +149,4 @@ public interface NotificationService
     void sendServerEvent(List<Integer> userIds, Enum e);
 
     void sendServerEvent(List<Integer> userIds, Class clazz);
-    /**
-     * cleanly close any websockets associated with the userId
-     * If session is provided, only WebSockets associated with the HttpSession will close.
-     */
-    void closeServerEvents(int userId, @Nullable HttpSession session, Enum e);
 }
