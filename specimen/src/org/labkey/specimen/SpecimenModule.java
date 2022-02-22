@@ -56,6 +56,7 @@ import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SampleMindedTransform;
 import org.labkey.specimen.pipeline.SampleMindedTransformTask;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.view.ManageSpecimenView;
@@ -195,6 +196,12 @@ public class SpecimenModule extends SpringModule
             public void updateVialCounts(Container container, User user)
             {
                 SpecimenRequestManager.get().updateVialCounts(container, user);
+            }
+
+            @Override
+            public void purgeRequestRequirementsAndActors(Container container)
+            {
+                SpecimenRequestRequirementProvider.get().purgeContainer(container);
             }
         });
      }

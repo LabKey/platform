@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.requirements;
+package org.labkey.specimen.requirements;
 
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;

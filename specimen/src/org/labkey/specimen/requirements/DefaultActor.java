@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.requirements;
+package org.labkey.specimen.requirements;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
@@ -29,7 +29,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 

@@ -41,4 +41,5 @@ public interface SpecimenMigrationService
     void clearRequestCaches(Container c);
     void clearGroupedValuesForColumn(Container container);
     void updateVialCounts(Container container, User user);
+    void purgeRequestRequirementsAndActors(Container container);
 }

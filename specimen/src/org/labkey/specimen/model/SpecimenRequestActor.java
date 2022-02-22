@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.requirements.DefaultActor;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
+import org.labkey.specimen.requirements.DefaultActor;
 
 /**
  * User: brittp

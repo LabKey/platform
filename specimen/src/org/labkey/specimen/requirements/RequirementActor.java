@@ -14,35 +14,40 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.requirements;
+package org.labkey.specimen.requirements;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Location;
 
 /**
  * User: brittp
  * Date: Jun 4, 2007
- * Time: 2:31:52 PM
+ * Time: 2:56:54 PM
  */
-public interface Requirement<R extends Requirement>
+public interface RequirementActor<A extends RequirementActor>
 {
-    String getOwnerEntityId();
-
-    void setOwnerEntityId(String entityId);
+    Object getPrimaryKey();
 
     Container getContainer();
 
-    Object getActorPrimaryKey();
+    String getGroupName();
 
-    boolean isComplete();
+    void addMembers(Location location, User... users);
 
-    R update(User user);
+    User[] getMembers();
 
-    R createMutable();
+    User[] getMembers(Location location);
 
-    boolean isEqual(R requirement);
+    void removeMembers(User... members);
+
+    void removeMembers(Location location, User... members);
+
+    void deleteAllGroups();
+
+    A create(User user);
+
+    A update(User user);
 
     void delete();
-
-    R persist(User user, String ownerEntityId);
 }

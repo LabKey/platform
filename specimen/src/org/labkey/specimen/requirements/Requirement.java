@@ -14,14 +14,35 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.requirements;
+package org.labkey.specimen.requirements;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 
 /**
  * User: brittp
  * Date: Jun 4, 2007
- * Time: 3:21:36 PM
+ * Time: 2:31:52 PM
  */
-public interface RequirementType
+public interface Requirement<R extends Requirement>
 {
-    String name();
+    String getOwnerEntityId();
+
+    void setOwnerEntityId(String entityId);
+
+    Container getContainer();
+
+    Object getActorPrimaryKey();
+
+    boolean isComplete();
+
+    R update(User user);
+
+    R createMutable();
+
+    boolean isEqual(R requirement);
+
+    void delete();
+
+    R persist(User user, String ownerEntityId);
 }

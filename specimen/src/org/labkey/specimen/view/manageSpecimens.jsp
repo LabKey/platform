@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
@@ -42,6 +41,7 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageSpecimenWebPartAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusesAction" %>
+<%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

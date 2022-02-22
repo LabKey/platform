@@ -14,40 +14,14 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.requirements;
-
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.study.Location;
+package org.labkey.specimen.requirements;
 
 /**
  * User: brittp
  * Date: Jun 4, 2007
- * Time: 2:56:54 PM
+ * Time: 3:21:36 PM
  */
-public interface RequirementActor<A extends RequirementActor>
+public interface RequirementType
 {
-    Object getPrimaryKey();
-
-    Container getContainer();
-
-    String getGroupName();
-
-    void addMembers(Location location, User... users);
-
-    User[] getMembers();
-
-    User[] getMembers(Location location);
-
-    void removeMembers(User... members);
-
-    void removeMembers(Location location, User... members);
-
-    void deleteAllGroups();
-
-    A create(User user);
-
-    A update(User user);
-
-    void delete();
+    String name();
 }

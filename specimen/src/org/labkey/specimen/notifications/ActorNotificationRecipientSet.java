@@ -20,14 +20,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
 import org.labkey.specimen.actions.ShowGroupMembersAction;
+import org.labkey.specimen.model.SpecimenRequestActor;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 
 /**
  * User: brittp

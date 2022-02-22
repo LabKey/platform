@@ -39,7 +39,6 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
@@ -52,6 +51,7 @@ import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.model.AdditiveType;
 import org.labkey.specimen.model.DerivativeType;
+import org.labkey.specimen.requirements.SpecimenRequest;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 import org.springframework.validation.BindException;
 
