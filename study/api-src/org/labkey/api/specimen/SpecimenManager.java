@@ -181,7 +181,9 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);
 
-        SpecimenMigrationService.get().clearRequestCaches(visit.getContainer());
+        SpecimenMigrationService SMS = SpecimenMigrationService.get();
+        if (null != SMS)
+            SMS.clearRequestCaches(visit.getContainer());
     }
 
     @Nullable
@@ -248,7 +250,11 @@ public class SpecimenManager
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(sqlFragment);
 
         if (clearCaches)
-            SpecimenMigrationService.get().clearRequestCaches(vial.getContainer());
+        {
+            SpecimenMigrationService SMS = SpecimenMigrationService.get();
+            if (null != SMS)
+                SMS.clearRequestCaches(vial.getContainer());
+        }
     }
 
     public void deleteAllSpecimenData(Container c, Set<TableInfo> set, User user)
