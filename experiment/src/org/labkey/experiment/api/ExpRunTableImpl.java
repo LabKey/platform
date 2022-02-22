@@ -126,7 +126,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (domain != null)
         {
             DomainKind<?> domainKind = domain.getDomainKind();
-            if (!domainKind.hasPermission(user, getContainer(), perm))
+            if (!domainKind.hasPermission(user, perm, _userSchema))
                 return false;
         }
 

@@ -2966,7 +2966,7 @@ public class QueryController extends SpringActionController
                 response = new ApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
-                        form.isIncludeDisplayValues());
+                        form.isIncludeDisplayValues(), form.isIncludeMetadata());
             }
             response.includeStyle(form.isIncludeStyle());
 
@@ -4628,7 +4628,7 @@ public class QueryController extends SpringActionController
         {
             LinkedSchemaDef def = getDef(form, reshow);
 
-            setHelpTopic("linkedSchemas");
+            setHelpTopic("filterSchema");
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), def, false), errors);
         }
     }

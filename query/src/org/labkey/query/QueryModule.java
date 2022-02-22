@@ -219,6 +219,8 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, "Subfolder data in LabKey Products",
+                "View and interact with data from subfolders of a Product Project.", false);
     }
 
 
@@ -385,9 +387,10 @@ public class QueryModule extends DefaultModule
     @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
-        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        JSONObject json = super.getPageContextJson(context);
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
+        json.put(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, QueryService.get().isProductSubfolderDataEnabled());
 
         return json;
     }

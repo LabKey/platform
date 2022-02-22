@@ -37,11 +37,13 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -245,10 +247,15 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container container, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull UserSchema userSchema)
     {
         if (perm == ReadPermission.class)
-            return container.hasPermission(user, AssayReadPermission.class);
-        return super.hasPermission(user, container, perm);
+        {
+            Set<Role> roles = null;
+            if (userSchema instanceof UserSchema.HasContextualRoles)
+                roles = ((UserSchema.HasContextualRoles) userSchema).getContextualRoles();
+            return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, roles);
+        }
+        return super.hasPermission(user, perm, userSchema);
     }
 }

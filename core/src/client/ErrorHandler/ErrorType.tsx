@@ -7,7 +7,7 @@ import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
 
-const ERROR_HEADING = 'Oops! An error has occurred.';
+const ERROR_HEADING = () => <>'Oops! An error has occurred.'</>
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
@@ -35,13 +35,15 @@ const DETAILS_SUB_INSTRUCTION = (
     </>
 );
 
-const NOTFOUND_HEADING = 'Oops! The requested page cannot be found.';
+const NOTFOUND_HEADING = (errorMessage?: string) => (<>
+        {errorMessage !== undefined ?
+            errorMessage : 'Oops! The requested page cannot be found.'}
+    </>);
+
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>
         {errorMessage !== undefined
-            ? errorMessage.endsWith('.')
-                ? errorMessage
-                : errorMessage + '.'
+            ? 'Oops! The requested page cannot be found.'
             : 'It seems like something went wrong.'}
     </>
 );
@@ -171,7 +173,7 @@ const PERMISSION_DETAILS = () => (
     </>
 );
 
-const CONFIGURATION_HEADING = 'Oops! A server configuration error has occurred.';
+const CONFIGURATION_HEADING = () => 'Oops! A server configuration error has occurred.';
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
         {'The requested page cannot be found. '}
@@ -243,7 +245,7 @@ const EXECUTION_DETAILS = (errorDetails: ErrorDetails) => <pre>{errorDetails.sta
 
 type ErrorTypeInfo = {
     details: (errorDetails?: ErrorDetails) => ReactNode;
-    heading: string;
+    heading: (errorMessage?: string) => ReactNode;
     subHeading: (errorMessage?: string) => ReactNode;
     imagePath: string;
     instruction: (errorDetails?: ErrorDetails) => ReactNode;
@@ -284,7 +286,7 @@ export const getErrorHeading = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <div className="labkey-error-heading">{info.heading}</div>;
+    return <div className="labkey-error-heading">{info.heading(errorDetails.message)}</div>;
 };
 
 export const getImage = (errorDetails: ErrorDetails): ReactNode => {
