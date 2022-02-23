@@ -156,8 +156,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         for (ColumnInfo column : arrColumns)
         {
             ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            // NOTE : temporarily disable assert for merge to develop
             // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
-            assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+            // assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
             if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
                 throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
         }
