@@ -531,7 +531,6 @@ public class AssayController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic("");
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy Assay Design");
