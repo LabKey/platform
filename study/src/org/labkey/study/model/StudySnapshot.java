@@ -327,7 +327,6 @@ public class StudySnapshot
 
         private void loadSpecimens(ChildStudyDefinition def, boolean refresh)
         {
-            specimenRequestId = def.getRequestId();
             includeSpecimens = def.isIncludeSpecimens();
             specimenRefresh = refresh;
         }
@@ -550,9 +549,11 @@ public class StudySnapshot
             return queries;
         }
 
+        /* We no longer read or write this property, but it might exist in old, serialized settings. */
+        @JsonIgnore
         public Integer getSpecimenRequestId()
         {
-            return specimenRequestId;
+            return -1;
         }
     }
 }

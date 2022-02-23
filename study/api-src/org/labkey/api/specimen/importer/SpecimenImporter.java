@@ -60,7 +60,7 @@ import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventDateComparator;
 import org.labkey.api.specimen.SpecimenEventManager;
-import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimenTableManager;
 import org.labkey.api.specimen.Vial;
@@ -424,7 +424,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 {
                     _iTimer.setPhase(ImportPhases.ClearCaches);
                     StudyInternalService.get().clearCaches(getContainer());
-                    SpecimenRequestManager.get().clearCaches(getContainer());
+                    SpecimenMigrationService.get().clearRequestCaches(getContainer());
 
                     info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
                 }
@@ -813,7 +813,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
-        SpecimenRequestManager.get().clearCaches(getContainer());
+        SpecimenMigrationService.get().clearRequestCaches(getContainer());
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
@@ -1089,7 +1089,7 @@ public class SpecimenImporter extends SpecimenTableManager
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         info("Updating cached vial counts...");
 
-        SpecimenRequestManager.get().updateVialCounts(getContainer(), getUser());
+        SpecimenMigrationService.get().updateVialCounts(getContainer(), getUser());
 
         info("Vial count update complete.");
     }

@@ -33,12 +33,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.importer.ImportTemplate;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -53,7 +49,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -158,48 +153,6 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
                 delim = "\n";
             }
             throw new IllegalArgumentException(sb.toString());
-        }
-
-        if (null != form.getRequestId() || null != form.getSpecimenIds())
-        {
-            form.setIncludeSpecimens(true);
-            SpecimenManagerNew sm = SpecimenManagerNew.get();
-
-            if (null != form.getRequestId())
-            {
-                SpecimenRequest request = SpecimenRequestManager.get().getRequest(sourceContainer, form.getRequestId());
-
-                if (null == request)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Unable to locate specimen request with id " + form.getRequestId());
-                }
-                else
-                {
-                    List<Vial> vials = request.getVials();
-
-                    if (0 == vials.size())
-                        errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
-                    else
-                        form.setVials(vials);
-                }
-            }
-            else
-            {
-                String[] specimenIds = form.getSpecimenIds();
-                List<Vial> list = new ArrayList<>(specimenIds.length);
-                User user = getUser();
-                for (String specimenId : specimenIds)
-                {
-                    Vial vial = sm.getVial(sourceContainer, user, specimenId);
-
-                    if (null == vial)
-                        LOG.error("Specimen ID " + specimenId + " not found!!");
-                    else
-                        list.add(vial);
-                }
-
-                form.setVials(list);
-            }
         }
     }
 

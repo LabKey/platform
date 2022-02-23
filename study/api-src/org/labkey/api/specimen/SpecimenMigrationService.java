@@ -5,8 +5,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
 
@@ -26,15 +26,20 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
+    String SPECIMENS_ARCHIVE_TYPE = "Specimens";
+
     ActionURL getBeginURL(Container c);
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
     ActionURL getSelectedSpecimensURL(Container c);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
-    ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getSpecimensURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
     void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                boolean syncParticipantVisit) throws PipelineJobException;
 
+    void clearRequestCaches(Container c);
+    void clearGroupedValuesForColumn(Container container);
+    void updateVialCounts(Container container, User user);
+    void purgeRequestRequirementsAndActors(Container container);
 }
