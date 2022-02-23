@@ -27,6 +27,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
+import org.labkey.test.pages.admin.ExportFolderPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -172,35 +173,17 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         // Export archive without Treatment, Product, etc.
         clickFolder(FOLDER_STUDY5);
-        goToFolderManagement(); //todo: refactor to use page class (folderExportPage?)
-        clickAndWait(Locator.linkWithText("Export"));
+        ExportFolderPage exportFolderPage = goToFolderManagement().goToExportTab();
 
-        scrollIntoView(Ext4Helper.Locators.checkbox(this, "Assay Schedule"));
-        int tries = 1;
-        while(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Assay Schedule")) && tries <= 5)
-        {
-            _ext4Helper.uncheckCheckbox(Ext4Helper.Locators.checkbox(this, "Assay Schedule"));
-            tries++;
-            sleep(250);
-        }
+        exportFolderPage.includeObject("Assay Schedule", false);
+        exportFolderPage.includeObject("Treatment Data", false);
 
-        if(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Assay Schedule")))
-            Assert.fail("Did not remove the Assay Schedule form the export (uncheck failed).");
+        Assert.assertFalse("Did not remove the Assay Schedule form the export (uncheck failed).",
+                _ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Assay Schedule")));
+        Assert.assertFalse("Did not remove the Treatment Data form the export (uncheck failed).",
+                _ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Treatment Data")));
 
-        scrollIntoView(Ext4Helper.Locators.checkbox(this, "Treatment Data"));
-        tries = 1;
-        while(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Treatment Data")) && tries <= 5)
-        {
-            _ext4Helper.uncheckCheckbox(Ext4Helper.Locators.checkbox(this, "Treatment Data"));
-            tries++;
-            sleep(250);
-        }
-
-        if(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Treatment Data")))
-            Assert.fail("Did not remove the Treatment Data form the export (uncheck failed).");
-
-        checkRadioButton(Locator.tagWithClass("table", "export-location").index(0));
-        clickButton("Export");
+        exportFolderPage.exportToPipelineAsIndividualFiles();
 
         // Load study in another folder
         _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
