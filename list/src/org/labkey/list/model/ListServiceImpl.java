@@ -31,6 +31,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -195,6 +196,9 @@ public class ListServiceImpl implements ListService
     @Nullable
     public ContainerFilter getPicklistContainerFilter(Container container, User user, @NotNull ListDefinition list)
     {
+        if (!QueryService.get().isProductSubfolderDataEnabled())
+            return null;
+
         if (container == null || user == null || !list.isPicklist() || container.isRoot())
             return null;
 
