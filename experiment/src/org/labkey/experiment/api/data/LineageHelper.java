@@ -59,25 +59,8 @@ public class LineageHelper
         return options;
     }
 
-    static SQLFragment createInSQL(SQLFragment fieldKeyFrag, SQLFragment lsidFrag, ExpLineageOptions options)
+    static SQLFragment createInSQL(SQLFragment fieldKeyFrag, String lsidStr, ExpLineageOptions options)
     {
-        String lsidStr = lsidFrag.getRawSQL();
-
-        // FIXME remove the quote workaround from client and here when parser is able to parse parts correctly
-        // https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39996
-        // our parser is currently not able to parse a where clause whose value contains special character such as :
-        // Fail to parse
-                // (ExpChildOf(resultsample.LSID, urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522) OR ExpChildOf(Run.runsample.LSID, urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522))
-        // Workaround on client side (add quotes) so it can be parsed
-                // (ExpChildOf(resultsample.LSID, 'urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522') OR ExpChildOf(Run.runsample.LSID, 'urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522'))
-        if (lsidStr != null)
-        {
-            if ((lsidStr.startsWith("'") && lsidStr.endsWith("'")) || ((lsidStr.startsWith("\"") && lsidStr.endsWith("\""))))
-            {
-                lsidStr = lsidStr.substring(1, lsidStr.length() - 1);
-            }
-        }
-
         ExpRunItem start = getStart(lsidStr);
         SQLFragment tree = createExperimentTreeSQLLsidSeeds(start, options);
 

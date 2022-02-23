@@ -52,7 +52,7 @@ abstract public class QNode implements Cloneable
 	private int _column;
 	private boolean _hasTransformableAggregate = false;     // Children have an aggregate, such as Median, that may require the tree to be transformed
 
-	private Class _validChildrenClass = QNode.class;
+	private Class<? extends QNode> _validChildrenClass = QNode.class;
 	private LinkedList<QNode> _children = new LinkedList<>();
 
 	protected QNode()
@@ -76,7 +76,7 @@ abstract public class QNode implements Cloneable
         }
 	}
 	
-	protected QNode(Class validChildrenClass)
+	protected QNode(Class<? extends QNode> validChildrenClass)
 	{
 		_validChildrenClass = validChildrenClass;
 	}
@@ -122,7 +122,7 @@ abstract public class QNode implements Cloneable
         return builder.getText();
     }
 
-    public <C> C getChildOfType(Class<C> clazz)
+    public <C extends QNode> C getChildOfType(Class<C> clazz)
     {
         for (QNode child : children())
         {
@@ -210,15 +210,13 @@ abstract public class QNode implements Cloneable
 
     static Object constant(Object o)
     {
-        if (o instanceof CommonToken)
+        if (o instanceof CommonToken t)
         {
-            CommonToken t = (CommonToken)o;
             if (t.getType() == IDENT)
                 return t.getText();
         }
-        if (o instanceof CommonTree)
+        if (o instanceof CommonTree n)
         {
-            CommonTree n = (CommonTree)o;
             switch (n.getType())
             {
                 case QUOTED_STRING:
@@ -228,7 +226,7 @@ abstract public class QNode implements Cloneable
                 case TRUE:
                 case FALSE:
                     o = new QBoolean();
-                    ((QString)o).from(n);
+                    ((QBoolean)o).from(n);
                     break;
                 case NUM_DOUBLE:
                 case NUM_FLOAT:
@@ -324,26 +322,6 @@ abstract public class QNode implements Cloneable
 	}
 
 
-//    public boolean equalsTree(QNode that)
-//    {
-//        if (this == that)
-//            return true;
-//		if (getTokenType() != that.getTokenType() || !StringUtils.equals(getTokenText(), that.getTokenText()))
-//			return false;
-//		if (_children.size() != that._children.size())
-//			return false;
-//
-//		Iterator<QNode> a = (Iterator<QNode>)_children.iterator();
-//		Iterator<QNode> b = (Iterator<QNode>)that._children.iterator();
-//		while (a.hasNext())
-//		{
-//			if (a.next().equalsTree(b.next()))
-//				return false;
-//		}
-//        return true;
-//    }
-
-
     public void dump(PrintWriter out)
     {
         dump(out, "\n", new IdentityHashMap<>());
@@ -430,8 +408,7 @@ abstract public class QNode implements Cloneable
         private QExpr bind(String x)
         {
             QNode node = parse(x);
-            QExpr expr = resolveFields((QExpr)node, null, null);
-            return expr;
+            return resolveFields((QExpr)node, null, null);
         }
 
         private void test(String t)

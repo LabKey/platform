@@ -16,12 +16,18 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -43,6 +49,7 @@ import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -415,4 +422,65 @@ abstract public class ExpTableImpl<C extends Enum>
         }
     }
 
+    protected void addExpObjectMethod()
+    {
+        ColumnInfo expObject = getExpObjectColumn();
+        final String expObjectColumnName = null == expObject ? null : expObject.getName();
+        addMethod("expObject", new ExpObjectTableMethodInfo(expObjectColumnName), Set.of());
+    }
+
+    private class ExpObjectTableMethodInfo extends AbstractTableMethodInfo
+    {
+        private final String _expObjectColumnName;
+
+        public ExpObjectTableMethodInfo(String expObjectColumnName)
+        {
+            super(JdbcType.INTEGER);
+            _expObjectColumnName = expObjectColumnName;
+        }
+
+        @Override
+        public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
+        {
+            return new SQLFragment(tableAlias + "." + StringUtils.defaultString(_expObjectColumnName, "_exptable_object_"));
+        }
+
+        @Override
+        public MutableColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        {
+            var objectColumn = getExpObjectColumn();
+            if (null == _expObjectColumnName)
+                return new NullColumnInfo(parentTable, "_exptable_object_", JdbcType.INTEGER);
+            var ret = super.createColumnInfo(parentTable, arguments, "_exptable_object_");
+            ((MutableColumnInfo)ret).setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+            ((MutableColumnInfo)ret).setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
+            {
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    return 0;
+                }
+
+                @Override
+                public Object getDisplayValue(RenderContext ctx)
+                {
+                    var v = super.getValue(ctx);
+                    return null == v ? v : "lineage object";
+                }
+
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
+
+                @Override
+                public boolean isFilterable()
+                {
+                    return false;
+                }
+            });
+            return ret;
+        }
+    }
 }

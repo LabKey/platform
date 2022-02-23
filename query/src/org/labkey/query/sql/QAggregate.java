@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
@@ -436,16 +437,16 @@ public class QAggregate extends QExpr
     }
 
     @Override
-    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
-        var ret = super.createColumnInfo(table, alias, query);
+        var ret = (MutableColumnInfo)super.createColumnInfo(table, alias, query);
         if (getType().isPropagateAttributes())
         {
             List<QNode> children = childList();
             if (children.size() == 1 && children.get(0) instanceof QField)
             {
                 QField field = (QField) children.get(0);
-                field.getRelationColumn().copyColumnAttributesTo(ret);
+                field.getRelationColumn().copyColumnAttributesTo((BaseColumnInfo)ret);
                 // but not these attributes, maybe I should have a white-list instead of a black-list
                 ret.setLabel(null);
                 ret.setURL(null);

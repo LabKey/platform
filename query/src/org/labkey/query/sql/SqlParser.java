@@ -28,7 +28,6 @@ import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +55,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
@@ -96,7 +96,7 @@ public class SqlParser
     public static final String IFDEFINED_METHOD_NAME = "ifdefined";
 
 
-    private static final Logger _log = LogManager.getLogger(SqlParser.class);
+    private static final Logger _log = LogHelper.getLogger(SqlParser.class, "LabKey SQL parser");
 
     ArrayList<Exception> _parseErrors;
     List<QueryParseException> _parseWarnings;
@@ -807,6 +807,11 @@ public class SqlParser
         {
             assert 1 == node.getChildCount();
             return convertParseTree((CommonTree)node.getChild(0), true);
+        }
+        if (node.getToken().getType() == EXPDESCENDANTSOF || node.getToken().getType() == EXPANCESTORSOF)
+        {
+            assert 1 == node.getChildCount();
+            return convertParseTree((CommonTree)node.getChild(0), false);
         }
 
         LinkedList<QNode> l = new LinkedList<>();
@@ -1673,7 +1678,7 @@ public class SqlParser
             case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT:
             case BETWEEN: case NOT_BETWEEN:
             case PLUS: case MINUS: case UNARY_MINUS: case STAR: case DIV: case MODULO: case CONCAT:
-            case NOT: case AND: case OR: case LIKE: case NOT_LIKE: case IN: case NOT_IN:
+            case NOT: case AND: case OR: case LIKE: case NOT_LIKE:
             case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);
                 assert op != null : "No Operation found for type " + type + ". If you are on a development system, you may need to rebuild";
@@ -1684,9 +1689,18 @@ public class SqlParser
                 }
                 q = op.expr();
                 break;
-//            case ESCAPE:
-//                _parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
-//              return null;
+            case IN: case NOT_IN:
+                CommonTree right = (CommonTree)node.getChild(1);
+                if (right.getToken().getType() == EXPANCESTORSOF || right.getToken().getType() == EXPDESCENDANTSOF)
+                {
+                    node.setChild(1, right.getChild(0));
+                    q = new QInLineage(type==IN, right.getToken().getType() == EXPANCESTORSOF);
+                }
+                else
+                {
+                    q = Operator.ofTokenType(type).expr();
+                }
+                break;
             case DECLARATION:
                 return new QUnknownNode();
             case WITH:
@@ -2155,7 +2169,7 @@ public class SqlParser
         }
 
         @Override
-        public Map<String, Object> getAnnotations()
+        public @NotNull Map<String, Object> getAnnotations()
         {
             return _annotations;
         }

@@ -418,6 +418,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull
     ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
 
+    @NotNull
+    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options);
+
     /**
      * The following methods return TableInfo's suitable for using in queries.
      * These TableInfo's initially have no columns, but have methods to

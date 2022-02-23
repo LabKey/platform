@@ -16,13 +16,13 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
@@ -46,21 +46,19 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
  */
 /*package*/ class LineageMethod extends AbstractTableMethodInfo
 {
-    private Container _container;
     private ColumnInfo _lsidColumn;
     private boolean _parents;
 
-    LineageMethod(Container c, ColumnInfo lsidColumn, boolean parents)
+    LineageMethod(ColumnInfo lsidColumn, boolean parents)
     {
         super(JdbcType.VARCHAR);
 
-        _container = c;
         _lsidColumn = lsidColumn;
         _parents = parents;
     }
 
     @Override
-    public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+    public MutableColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
     {
         var col = super.createColumnInfo(parentTable, arguments, alias);
         ForeignKey fk = new LookupForeignKey("self_lsid", "Name")

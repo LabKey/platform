@@ -16,12 +16,12 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
@@ -52,7 +52,7 @@ abstract public class AbstractMethodInfo implements MethodInfo
     }
 
     @Override
-    public BaseColumnInfo createColumnInfo(TableInfo parentTable, final ColumnInfo[] arguments, String alias)
+    public MutableColumnInfo createColumnInfo(TableInfo parentTable, final ColumnInfo[] arguments, String alias)
     {
         return new ExprColumn(parentTable, alias, new SQLFragment("{{" + this.getClass().getSimpleName() + "}}"), getSqlType(arguments))
         {
@@ -77,7 +77,7 @@ abstract public class AbstractMethodInfo implements MethodInfo
         {
             ret.add(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
         }
-        return ret.toArray(new SQLFragment[ret.size()]);
+        return ret.toArray(new SQLFragment[0]);
     }
 
     @Override

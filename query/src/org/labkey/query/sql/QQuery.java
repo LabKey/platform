@@ -31,6 +31,7 @@ public class QQuery extends QExpr
 
     public QQuery(QueryRelation query)
     {
+        super(QNode.class);
         _select = query;
     }
 

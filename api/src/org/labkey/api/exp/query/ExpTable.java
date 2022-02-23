@@ -110,4 +110,11 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     {
         // by default we do nothing
     }
+
+
+    /** returns a column that wraps objectid, this is only required to support the expObject() table method */
+    default ColumnInfo getExpObjectColumn()
+    {
+        return null;
+    }
 }

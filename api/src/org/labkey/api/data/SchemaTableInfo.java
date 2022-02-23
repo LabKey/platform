@@ -709,12 +709,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public MethodInfo getMethod(String name)
-    {
-        return null;
-    }
-
-    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         if (_defaultVisibleColumns != null)
