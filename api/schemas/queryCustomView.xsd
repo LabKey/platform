@@ -131,6 +131,8 @@
             <xsd:enumeration value="concept:notinsubtree"/>
             <xsd:enumeration value="q"/>
             <xsd:enumeration value="where"/>
+            <xsd:enumeration value="inexpancestorsof"/>
+            <xsd:enumeration value="inexpdescendantsof"/>
         </xsd:restriction>
     </xsd:simpleType>
 

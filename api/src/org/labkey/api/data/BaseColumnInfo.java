@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,10 +42,12 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
@@ -77,7 +78,7 @@ import java.util.stream.Collectors;
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
-    private static final Logger LOG = LogManager.getLogger(ColumnInfo.class);
+    private static final Logger LOG = LogHelper.getLogger(ColumnInfo.class, "BaseColumnInfo logger");
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey _fieldKey;
@@ -529,9 +530,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         StringExpression url = col.getURL();
-        if (url instanceof FieldKeyStringExpression)
+        if (url instanceof FieldKeyStringExpression fkse)
         {
-            FieldKeyStringExpression fkse = (FieldKeyStringExpression)url;
             if (fkse.validateFieldKeys(remap.keySet()))
             {
                 StringExpression mapped = (fkse).remapFieldKeys(null, remap);
@@ -906,7 +906,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             if (getInputType().equalsIgnoreCase("textarea"))
                 _inputLength = 60;
             else
-                _inputLength = _scale > 40 ? 40 : _scale;
+                _inputLength = Math.min(_scale, 40);
         }
 
         return _inputLength;
@@ -983,15 +983,15 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         xmlCol.setColumnName(getName());
         if (full)
         {
-            if (_fk instanceof SchemaForeignKey)
+            if (_fk instanceof SchemaForeignKey sfk)
             {
-                SchemaForeignKey sfk = (SchemaForeignKey) _fk;
                 org.labkey.data.xml.ColumnType.Fk xmlFk = xmlCol.addNewFk();
                 xmlFk.setFkColumnName(sfk.getLookupColumnName());
                 xmlFk.setFkTable(sfk._tableName);
-                DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName, DbSchemaType.Unknown);
+                var lkti = sfk.getLookupTableInfo();
+                DbSchema fkDbOwnerSchema = null == lkti ? null : lkti.getSchema().getScope().getSchema(sfk._dbSchemaName, DbSchemaType.Unknown);
 
-                if (fkDbOwnerSchema != getParentTable().getSchema())
+                if (null != fkDbOwnerSchema && fkDbOwnerSchema != getParentTable().getSchema())
                 {
                     xmlFk.setFkDbSchema(fkDbOwnerSchema.getName());
                 }
@@ -1049,7 +1049,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         checkLocked();
 
         if (xmlCol.isSetConceptURI())
-            setConceptURI(xmlCol.getConceptURI());
+        {
+            String conceptURI = xmlCol.getConceptURI();
+            // User can not set this concepturi, it only applies to exp.object.objectid
+            if (!StringUtils.equalsIgnoreCase(conceptURI,BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI))
+                setConceptURI(conceptURI);
+        }
         if (xmlCol.isSetRangeURI())
             _rangeURI = xmlCol.getRangeURI();
 
@@ -1580,7 +1585,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             TableInfo lookupTable = getLookupTableInfo();
             if (lookupTable == null)

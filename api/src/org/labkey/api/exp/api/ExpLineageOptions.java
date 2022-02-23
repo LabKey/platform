@@ -28,6 +28,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
+    private boolean _onlyReturnObjectId = false;
     private String _runProtocolLsid;
 
     public ExpLineageOptions()
@@ -112,6 +113,25 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public void setUseObjectIds(boolean useObjectIds)
     {
         _useObjectIds = useObjectIds;
+    }
+
+    /**
+     *  Use setOnlySelectObjectId() if you only care about the set of objectids returned form the lineage query.
+     *
+     * NOTE: that also means that there is no implicit container filter on the result.  The
+     * edges table does not know about containers, and we are not joining to the experiments
+     * tables to find a container.
+     */
+    public void setOnlySelectObjectId(boolean returnObjectId)
+    {
+        // obviously not interested in reconstructing the hierarchy, so use the lookup query
+        _forLookup = true;
+        _onlyReturnObjectId = returnObjectId;
+    }
+
+    public boolean isOnlySelectObjectId()
+    {
+        return _onlyReturnObjectId;
     }
 
     public String getRunProtocolLsid()

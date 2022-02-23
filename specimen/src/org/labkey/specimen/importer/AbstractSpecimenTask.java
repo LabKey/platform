@@ -27,7 +27,6 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
@@ -40,6 +39,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.specimen.writer.SpecimenArchiveDataTypes;
 
 import java.io.File;
 import java.io.IOException;

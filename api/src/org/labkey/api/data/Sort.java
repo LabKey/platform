@@ -42,7 +42,7 @@ public class Sort
         ASC('+'),
         DESC('-');
 
-        private char dir;
+        private final char dir;
         SortDirection(char dir)
         {
             this.dir = dir;
@@ -82,8 +82,8 @@ public class Sort
         }
      }
 
-    private static String SORT_KEY = ".sort";
-    private List<SortField> _sortList = new ArrayList<>();
+    private static final String SORT_KEY = ".sort";
+    private final List<SortField> _sortList = new ArrayList<>();
 
     public static class SortFieldBuilder
     {
@@ -450,7 +450,7 @@ public class Sort
         return sb.toString();
     }
 
-    public Set<FieldKey> getRequiredColumns(Map<String, ? extends ColumnInfo> columns)
+    public Set<FieldKey> getRequiredColumns(Map<FieldKey, ? extends ColumnInfo> columns)
     {
         if (null == _sortList || _sortList.size() == 0)
             return Collections.emptySet();
@@ -463,7 +463,7 @@ public class Sort
             requiredFieldKeys.add(sf.getFieldKey());
 
             String columnName = sf.getColumnName();
-            ColumnInfo col = columns.get(columnName);
+            ColumnInfo col = columns.get(new FieldKey(null,columnName));
             if (col != null && col.isMvEnabled())
             {
                 // Note: The columns we're passed won't necessarily contain

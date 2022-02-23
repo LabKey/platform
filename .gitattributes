@@ -2167,7 +2167,6 @@ experiment/src/org/labkey/experiment/controllers/exp/ApplicationOutputGrid.java 
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentController.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentForm.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentMembershipDisplayColumnFactory.java -text
-experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunForm.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGraphView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGroupsView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentUpdateView.java -text
@@ -3237,7 +3236,6 @@ study/src/org/labkey/study/pipeline/FileAnalysisDatasetTask.java -text
 study/src/org/labkey/study/pipeline/MasterPatientIndexUpdateTask.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
 study/src/org/labkey/study/pipeline/StandaloneDatasetTask.java -text
-study/src/org/labkey/study/pipeline/StudyImportDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
 study/src/org/labkey/study/PurgeParticipantsMaintenanceTask.java -text
 study/src/org/labkey/study/query/AbstractSpecimenTable.java -text
@@ -3668,8 +3666,6 @@ wiki/radeox/src/org/radeox/engine/BaseRenderEngine.java -text
 wiki/radeox/src/org/radeox/engine/context/BaseInitialRenderContext.java -text
 wiki/radeox/src/org/radeox/engine/context/BaseRenderContext.java -text
 wiki/radeox/src/org/radeox/EngineManager.java -text
-wiki/radeox/src/org/radeox/example/InteractiveExample.java -text
-wiki/radeox/src/org/radeox/example/PicoExample.java -text
 wiki/radeox/src/org/radeox/example/RadeoxTemplateEngine.java -text
 wiki/radeox/src/org/radeox/example/RenderEngineExample.java -text
 wiki/radeox/src/org/radeox/example/XSLTExtension.java -text

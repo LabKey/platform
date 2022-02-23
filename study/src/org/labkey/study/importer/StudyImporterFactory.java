@@ -31,7 +31,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.FileUtil;
@@ -203,7 +202,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
             // specifically add those "importers" that aren't implementers of InternalStudyImporter
             dataTypes.put(StudyArchiveDataTypes.DATASET_DATA, sCtx != null && AbstractDatasetImportTask.isValidForImportArchive(sCtx, sCtx.getRoot()));
-            dataTypes.put(SpecimenArchiveDataTypes.SPECIMENS, sCtx != null && sCtx.getSpecimenArchive(sCtx.getRoot()) != null);
+            dataTypes.put(SpecimenMigrationService.SPECIMENS_ARCHIVE_TYPE, sCtx != null && sCtx.getSpecimenArchive(sCtx.getRoot()) != null);
 
             return dataTypes;
         }

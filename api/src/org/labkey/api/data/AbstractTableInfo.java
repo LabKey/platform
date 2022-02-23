@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +53,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.SecurityLogger;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -69,6 +67,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
@@ -93,14 +92,16 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
 
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
-    private static final Logger LOG = LogManager.getLogger(AbstractTableInfo.class);
+    private static final Logger LOG = LogHelper.getLogger(AbstractTableInfo.class, "TableInfo construction");
 
     /**
      * Default lookup select list max size.
@@ -113,7 +114,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     static
     {
         boolean assertsEnabled = false;
+        //noinspection AssertWithSideEffects
         assert assertsEnabled = true;
+        //noinspection ConstantConditions
         LINK_DISABLER_ACTION_URL = assertsEnabled ? new ActionURL("~~disabled~link~should~not~render~~", "~~error~~", null) : new ActionURL();
     }
 
@@ -129,6 +132,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     /** Columns that aren't part of this table any more, but can still be resolved for backwards compatibility */
     protected final Map<String, ColumnInfo> _resolvedColumns = new CaseInsensitiveHashMap<>();
     private Map<String, MethodInfo> _methodMap;
+    private Set<FieldKey> _methodFieldKeys;
     protected String _name;
     protected String _title = null;
     protected String _description;
@@ -379,7 +383,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         SimpleFilter filter = null;
         try
         {
-            filter = SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
+            filter = SimpleFilter.fromXml(filters.toArray(new FilterType[0]));
         }
         catch (Exception e)
         {
@@ -670,7 +674,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * This method can be used to to replace the implementation of a column during construction.
      * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
      * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
-     * should hold to columnInfo references by FieldKey, and not by reference.
+     * should hold onto columnInfo references by FieldKey, and not by reference.
 
      * during construction.
      * @param updated
@@ -744,14 +748,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return unmodifiableCollection(_counterDefinitionMap.values());
     }
 
-    public void addMethod(String name, MethodInfo method)
+    public void addMethod(String name, MethodInfo method, Set<FieldKey> fields)
     {
         checkLocked();
         if (_methodMap == null)
         {
-            _methodMap = new HashMap<>();
+            _methodMap = new CaseInsensitiveHashMap<>();
+            _methodFieldKeys = new TreeSet<>();
         }
         _methodMap.put(name, method);
+        if (null != fields)
+            _methodFieldKeys.addAll(fields);
     }
 
     @Override
@@ -760,6 +767,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (_methodMap == null)
             return null;
         return _methodMap.get(name);
+    }
+
+    @Override
+    public Set<FieldKey> getMethodRequiredFieldKeys()
+    {
+        return null == _methodFieldKeys ? Set.of() : _methodFieldKeys;
     }
 
     public void setName(String name)
@@ -1126,22 +1139,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 if (group.getOperation() != null)
                 {
                     String[] operations = group.getOperation().split(",");
-                    if (operations != null)
+                    for (String operation : operations)
                     {
-                        for (String operation : operations)
+                        try
                         {
-                            try
-                            {
-                                ForeignKey.FilterOperation filterOperation = ForeignKey.FilterOperation.valueOf(operation.trim());
-                                if (filterMap.containsKey(filterOperation))
-                                    throw new ValidationException("Duplicate operations specified for the same FK filter: " + filterOperation);
+                            ForeignKey.FilterOperation filterOperation = ForeignKey.FilterOperation.valueOf(operation.trim());
+                            if (filterMap.containsKey(filterOperation))
+                                throw new ValidationException("Duplicate operations specified for the same FK filter: " + filterOperation);
 
-                                filterMap.put(filterOperation, filters);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                throw new ValidationException(e.getMessage());
-                            }
+                            filterMap.put(filterOperation, filters);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            throw new ValidationException(e.getMessage());
                         }
                     }
                 }
@@ -1370,7 +1380,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         try
         {
-            Class c = Class.forName(className);
+            Class<?> c = Class.forName(className);
             if (!(TableCustomizer.class.isAssignableFrom(c)))
             {
                 addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + this, null);
@@ -1849,10 +1859,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (templates.size() == 0)
         {
-            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+            ActionURL url = Objects.requireNonNull(PageFlowUtil.urlProvider(QueryUrls.class)).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
-            if(url != null)
-                templates.add(Pair.of("Download Template", url.toString()));
+            templates.add(Pair.of("Download Template", url.toString()));
         }
 
         return templates;

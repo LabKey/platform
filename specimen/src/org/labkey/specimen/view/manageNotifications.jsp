@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings" %>
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
-<%@ page import="org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -31,6 +30,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageNotificationsAction" %>
+<%@ page import="org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>

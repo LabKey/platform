@@ -20,14 +20,10 @@
 <%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.api.specimen.Vial"%>
-<%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
@@ -39,7 +35,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.SpecimenManager" %>
-<%@ page import="org.labkey.specimen.SpecimenModule" %>
+<%@ page import="org.labkey.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
@@ -53,6 +49,9 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.RequestHistoryAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.SubmitRequestAction" %>
+<%@ page import="org.labkey.specimen.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirement" %>
+<%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirementProvider" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -63,7 +62,6 @@
     {
         dependencies.add("clientapi/ext3");
         dependencies.add("FileUploadField.js");
-        dependencies.add("study/StudyWizard.js");
     }
 %>
 <%
@@ -182,23 +180,6 @@
     function setCookieToRequestId(requestId)
     {
         LABKEY.Utils.setCookie("selectedRequest", requestId, true);
-    }
-
-    function showNewStudyWizard()
-    {
-        Ext.onReady(function(){
-            var wizard = new LABKEY.study.CreateStudyWizard({
-                mode : 'specimen',
-                allowRefresh : false,
-                requestId : <%=bean.getSpecimenRequest().getRowId()%>,
-                studyName : <%=q(availableStudyName)%>
-            });
-
-            wizard.on('success', function(info){}, this);
-
-            // run the wizard
-            wizard.show();
-        });
     }
 
 </script>
@@ -342,14 +323,6 @@
                 You must add specimens before submitting your request.<br><br>
                 <%=specimenSearchButton%>
                 <%=importVialIdsButton%>
-<%
-            }
-
-            // TODO: Remove this and all associated code
-            if (false)
-            {
-                String ignored = SpecimenModule.CREATE_SPECIMEN_STUDY;
-%>              <%= button("Create Study").href("javascript:void(0)").onClick("showNewStudyWizard();") %>
 <%
             }
 %>

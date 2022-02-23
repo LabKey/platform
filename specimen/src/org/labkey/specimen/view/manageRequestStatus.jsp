@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.api.study.SpecimenService"%>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.specimen.SpecimenRequestManager"%>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
 <%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>

@@ -27,7 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenColumns;
-import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.api.study.SpecimenImportStrategy;
@@ -264,7 +264,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
         if (guidRowCount > 0)
         {
-            SpecimenRequestManager.get().clearCaches(container);
+            SpecimenMigrationService.get().clearRequestCaches(container);
         }
         return noGuidRowCount;
     }

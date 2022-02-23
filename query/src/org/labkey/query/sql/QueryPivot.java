@@ -374,7 +374,7 @@ public class QueryPivot extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         _from.declareFields();
     }
