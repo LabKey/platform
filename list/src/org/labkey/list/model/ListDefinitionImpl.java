@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -70,7 +71,8 @@ public class ListDefinitionImpl implements ListDefinition
 {
     private static final Logger LOG = LogManager.getLogger(ListDefinitionImpl.class);
 
-    static public ListDefinitionImpl of(ListDef def)
+    @Nullable
+    static public ListDefinitionImpl of(@Nullable ListDef def)
     {
         if (def == null)
             return null;
@@ -679,6 +681,13 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public TableInfo getTable(User user, Container c)
     {
+        return getTable(user, c, null);
+    }
+
+    @Override
+    @Nullable
+    public TableInfo getTable(User user, Container c, @Nullable ContainerFilter cf)
+    {
         TableInfo table;
         try
         {
@@ -686,7 +695,7 @@ public class ListDefinitionImpl implements ListDefinition
             {
                 // Go through the schema so we always get all of the XML metadata applied
                 UserSchema schema = new ListQuerySchema(user, c);
-                table = schema.getTable(getName(), null, true, false);
+                table = schema.getTable(getName(), cf, true, false);
             }
             else
             {

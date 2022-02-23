@@ -3,6 +3,7 @@ package org.labkey.list;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -25,15 +26,18 @@ public class PicklistSampleCompareType extends CompareType
     @Override
     public SimpleFilter.FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
-        final Integer listId = Integer.parseInt(value.toString());
+        final String listName = value.toString();
         final User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
         final Container container = (Container) QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
+        if (user == null || container == null)
+            return new SimpleFilter.FalseClause();
 
-        ListDefinition listDef = ListService.get().getList(container, listId);
+        ListDefinition listDef = ListService.get().getList(container, listName);
         if (listDef == null || !listDef.isPicklist())
             return new SimpleFilter.FalseClause();
 
-        TableInfo listTable = listDef.getTable(user, container);
+        ContainerFilter cf = ListService.get().getPicklistContainerFilter(container, user, listDef);
+        TableInfo listTable = listDef.getTable(user, container, cf);
         Integer[] sampleIds = new TableSelector(listTable, Collections.singleton("SampleID")).getArray(Integer.class);
         return new SimpleFilter.InClause(fieldKey, Arrays.asList(sampleIds));
     }

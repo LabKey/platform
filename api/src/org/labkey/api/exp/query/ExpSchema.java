@@ -639,7 +639,7 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleType, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleType targetSampleType, @Nullable DomainProperty domainProperty, @Nullable ContainerFilter cfParent)
     {
         if (targetSampleType == null)
         {
@@ -656,7 +656,7 @@ public class ExpSchema extends AbstractExpSchema
                 }
             };
         }
-        return getSamplesSchema().materialIdForeignKey(targetSampleType, domainProperty);
+        return getSamplesSchema().materialIdForeignKey(targetSampleType, domainProperty, cfParent);
     }
 
     @NotNull
