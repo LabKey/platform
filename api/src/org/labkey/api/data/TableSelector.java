@@ -151,20 +151,18 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private static Map<FieldKey, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
-        ColumnInfo existing;
 
         for (ColumnInfo column : arrColumns)
         {
-            existing = columns.get(column.getFieldKey());
-            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getFieldKey(), column);
+            ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+        }
+
+        for (ColumnInfo column : arrColumns)
+        {
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
-            {
-                existing = columns.get(displayColumn.getFieldKey());
-                assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getFieldKey(), displayColumn);
-            }
+                columns.putIfAbsent(displayColumn.getFieldKey(), displayColumn);
         }
 
         return columns;
