@@ -1509,7 +1509,13 @@ public class QueryServiceImpl implements QueryService
 
     public ColumnInfo getColumn(AliasManager manager, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, FieldKey key)
     {
-        if (key != null && key.getTable() == null)
+        if (key == null)
+            return null;
+
+        if (columnMap.containsKey(key))
+            return columnMap.get(key);
+
+        if (key.getTable() == null)
         {
             String name = key.getName();
             ColumnInfo ret = table.getColumn(name);
@@ -1548,14 +1554,9 @@ public class QueryServiceImpl implements QueryService
                     ((QAliasedColumn) ret).setURL(titleURL);
             }
 
+            columnMap.put(key, ret);
             return ret;
         }
-
-        if (columnMap.containsKey(key))
-            return columnMap.get(key);
-
-        if (key == null)
-            return null;
 
         ColumnInfo parent = getColumn(manager, table, columnMap, key.getParent());
 
@@ -1809,7 +1810,8 @@ public class QueryServiceImpl implements QueryService
         {
             if (!addSortKeysOnly)
             {
-                ret.add(col);
+                if (!columnMap.containsKey(col.getFieldKey()))
+                    ret.add(col);
                 allInvolvedColumns.add(col);
             }
         }

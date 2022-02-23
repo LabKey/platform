@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -155,7 +156,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         for (ColumnInfo column : arrColumns)
         {
             ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
             assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+            if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
+                throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
         }
 
         for (ColumnInfo column : arrColumns)
