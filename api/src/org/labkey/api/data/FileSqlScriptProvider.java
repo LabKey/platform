@@ -360,6 +360,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             if (_fromVersion < _toVersion)
                 _validName = true;
+            else
+                assert false : fileName + " has bad version numbers!"; // Ignore on production, throw on development
         }
 
         // Used for DROP and CREATE scripts... so we don't bother verifying filename or parsing info from it
