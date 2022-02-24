@@ -9718,7 +9718,7 @@ public class AdminController extends SpringActionController
             if (!getContainer().isRoot())
                 throw new NotFoundException();
 
-            // requires site-admin, unless there are not users
+            // requires site-admin, unless there are no users
             if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 throw new UnauthorizedException();
 
@@ -9956,8 +9956,8 @@ public class AdminController extends SpringActionController
 
         final Map<String,Map<String,Object>> sets = new TreeMap<>();
         new SqlSelector(CoreSchema.getInstance().getScope(),
-            "SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-            "WHERE objectid = 'b4a1ed67-a8c5-1036-b972-11ad73d07947' AND category IN ('SiteConfig') AND encryption='None'").forEachMap(m ->
+            new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
+            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None'", ContainerManager.getRoot())).forEachMap(m ->
             {
                 String category = (String)m.get("category");
                 String name = (String)m.get("name");
