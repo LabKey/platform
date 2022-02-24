@@ -369,7 +369,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 throw new IllegalStateException("SQL scripts and null schema version do not compute");
 
             if (_toVersion > schemaVersion)
-                _log.warn(fileName + " will never execute because " + _provider._module.getName() + " schema version is less than its \"to\" version");
+                _log.warn(fileName + " will never execute because " + _provider._module.getName() + " schema version is less than this script's \"to\" version");
         }
 
         // Used for DROP and CREATE scripts... so we don't bother verifying filename or parsing info from it
