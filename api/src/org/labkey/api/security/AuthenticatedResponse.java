@@ -16,6 +16,9 @@
 
 package org.labkey.api.security;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +27,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Locale;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * User: matthewb
@@ -39,15 +45,150 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
         super(response);
     }
 
+
     @Override
     public PrintWriter getWriter() throws IOException
     {
-        if (_safeWriter == null)
-            _safeWriter = new SafePrintWriter(super.getWriter());
-        return _safeWriter;
+        return super.getWriter();
+//        // for debugging you can do this
+//        if (_safeWriter == null)
+//            _safeWriter = new SafePrintWriter(super.getWriter());
+//        return _safeWriter;
     }
 
-    public class SafePrintWriter extends PrintWriter
+    @Override
+    public void addHeader(String name, String value)
+    {
+        if (StringUtils.equalsAnyIgnoreCase("Content-Security-Policy"))
+            throw new IllegalStateException("Use addContextSecurityPolicyHeader()");
+        super.addHeader(name, value);
+    }
+
+    @Override
+    public void setHeader(String name, String value)
+    {
+        if (StringUtils.equalsAnyIgnoreCase("Content-Security-Policy"))
+            throw new IllegalStateException("Use setContextSecurityPolicyHeader()");
+        super.setHeader(name, value);
+    }
+
+
+    public enum ContentSecurityPolicyEnum
+    {
+        ConnectSrc("connect-src"),
+        DefaultSrc("default-src"),
+        FontSrc("font-src"),
+        FrameSrc("frame-src"),
+        ImgSrc("img-src"),
+        ManifestSrc("manifest-src"),
+        ObjectSrc("object-src"),
+        PrefetchSrc("prefetch-src"),
+        ScriptSrc("script-src"),
+        ScriptSrcAttr("script-src-attr"),
+        StyleSrc("style-src"),
+        StyleSrcElem("style-src-elem"),
+        StyleSrcAttr("style-src-attr"),
+        WorkerSrc("worker-src"),
+
+        BaseURI("base-uri"),
+        Sandbox("sandbox"),
+
+        FormAction("form-action"),
+        FrameAncestors("frame-ancestors"),
+        NavigateTo("navigate-to"),
+
+        ReportUri("report-uri"),
+        ReportTo("report-to"),
+
+        RequireSriFor("require-sri-for"),
+        RequireTrustedTypesFor("require-trusted-types-for"),
+        TrustedTypes("trusted-types"),
+
+        UpgradeInsecureRequests("upgrade-insecure-requests")
+        ;
+
+        final String value;
+
+        ContentSecurityPolicyEnum(String value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return value;
+        }
+    }
+
+
+    public enum CspSourceValues
+    {
+        Self("'self'"),
+        None("'none'"),
+        UnsafeEval("'unsafe-eval'"),
+        UnsafeInline("'unsafe-inline'")
+        ;
+
+        final String value;
+
+        CspSourceValues(String value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return value;
+        }
+    }
+
+
+    private final MultiValuedMap<String, String> _contentSecurityPolicy = new AbstractSetValuedMap<>(new TreeMap<>())
+    {
+        @Override
+        protected Set<String> createCollection()
+        {
+            return new TreeSet<>();
+        }
+    };
+
+    public void addContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, String value)
+    {
+        if (_contentSecurityPolicy.containsMapping(csp.toString(), value))
+            return;
+        _contentSecurityPolicy.put(csp.toString(), value);
+    }
+
+    public void setContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, CspSourceValues value)
+    {
+        setContentSecurityPolicyHeader(csp, value.toString());
+    }
+
+    public void setContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, String value)
+    {
+        _contentSecurityPolicy.remove(csp.toString());
+        addContentSecurityPolicyHeader(csp, value);
+        _updateContentSecurityPolicyHeader();
+    }
+
+    private void _updateContentSecurityPolicyHeader()
+    {
+        StringBuilder content = new StringBuilder();
+        var semi = "";
+        for (var e : _contentSecurityPolicy.asMap().entrySet())
+        {
+            content.append(semi).append(e.getKey());
+            semi = "; ";
+            for (String s : e.getValue())
+                content.append(" ").append(s);
+        }
+        super.setHeader("Content-Security-Policy", content.toString());
+    }
+
+
+    public static class SafePrintWriter extends PrintWriter
     {
         PrintWriter _writer;
         SafePrintWriter(PrintWriter writer)

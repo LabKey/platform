@@ -41,6 +41,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.BaseURI;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ConnectSrc;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ObjectSrc;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.UpgradeInsecureRequests;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.None;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.Self;
+
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class AuthFilter implements Filter
@@ -80,7 +87,6 @@ public class AuthFilter implements Filter
         {
             if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
                 resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
-            resp.setHeader("X-XSS-Protection", "1; mode=block");
             resp.setHeader("X-Content-Type-Options", "nosniff");
             resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
         }
@@ -115,7 +121,11 @@ public class AuthFilter implements Filter
         }
 
         // No startup failure, so check for SSL redirection
-        if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())
+        boolean isSecure = "https".equalsIgnoreCase(req.getScheme());
+        boolean isSSLRequired = AppProps.getInstance().isSSLRequired();
+        boolean isSSLRequested ="1".equals(req.getHeader("Upgrade-Insecure-Requests"));
+        /* CONSIDER : redirect if isSSLRequested after verifying ssl connection is available (see HttpsUtil.checkSslRedirectConfiguration()) */
+        if (!isSecure && isSSLRequired)
         {
             // We can't redirect posts (we'll lose the post body), so return an error code
             if ("post".equalsIgnoreCase(req.getMethod()))
@@ -200,6 +210,20 @@ public class AuthFilter implements Filter
             UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
 
         req = AuthenticatedRequest.create(req, user);
+        AuthenticatedResponse authResp = new AuthenticatedResponse(resp);
+        resp = authResp;
+
+        if (isSSLRequired)
+        {
+            authResp.setContentSecurityPolicyHeader(UpgradeInsecureRequests, "");
+            authResp.setContentSecurityPolicyHeader(ConnectSrc, "https: wss: blob:");
+        }
+        else
+        {
+            authResp.setContentSecurityPolicyHeader(ConnectSrc, "http: https: ws: wss: blob:");
+        }
+        authResp.setContentSecurityPolicyHeader(ObjectSrc, None);
+        authResp.setContentSecurityPolicyHeader(BaseURI, Self);
 
         if (null != e)
         {

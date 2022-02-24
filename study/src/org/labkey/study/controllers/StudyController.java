@@ -40,6 +40,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -119,6 +120,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.AuthenticatedResponse;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -242,6 +244,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ScriptSrc;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeInline;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
@@ -1136,7 +1140,7 @@ public class StudyController extends BaseStudyController
             if (customParticipantView != null && customParticipantView.isActive())
             {
                 // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
+                ((AuthenticatedResponse)getViewContext().getResponse()).setContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
 
                 vbox.addView(customParticipantView.getView());
             }
@@ -4688,6 +4692,7 @@ public class StudyController extends BaseStudyController
             {
                 // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
                 getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
+                ((AuthenticatedResponse)getViewContext().getResponse()).setContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
 
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
