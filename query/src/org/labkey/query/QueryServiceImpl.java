@@ -1713,10 +1713,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                {
                     ret.add(col);
-                    allInvolvedColumns.add(col);
-                }
             }
         }
 
@@ -1727,10 +1724,9 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                {
                     ret.add(col);
-                    allInvolvedColumns.add(col);
-                }
+                else if (columnMap.containsKey(fieldKey))
+                    ret.add(columnMap.get(fieldKey));
             }
         }
 
@@ -1768,6 +1764,8 @@ public class QueryServiceImpl implements QueryService
                     sort.deleteSortColumn(field);
             }
         }
+
+        allInvolvedColumns.addAll(ret);
         return ret;
     }
 
