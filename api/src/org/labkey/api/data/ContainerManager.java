@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -148,7 +149,7 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
+    private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
