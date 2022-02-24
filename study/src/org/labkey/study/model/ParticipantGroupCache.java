@@ -2,6 +2,7 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -24,7 +25,7 @@ import java.util.Set;
 public class ParticipantGroupCache
 {
     private static final Cache<Container, ParticipantGroupCollections> PARTICIPANT_GROUP_CACHE = CacheManager.getBlockingCache(
-            CacheManager.UNLIMITED,
+            Constants.getMaxContainers(),
             CacheManager.DAY,
             "Participant Group Cache",
             (c, argument) -> new ParticipantGroupCollections(c));

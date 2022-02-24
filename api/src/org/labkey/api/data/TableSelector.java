@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -151,20 +152,22 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private static Map<FieldKey, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
-        ColumnInfo existing;
 
         for (ColumnInfo column : arrColumns)
         {
-            existing = columns.get(column.getFieldKey());
-            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getFieldKey(), column);
+            ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            // NOTE : temporarily disable assert for merge to develop
+            // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
+            // assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+            if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
+                throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
+        }
+
+        for (ColumnInfo column : arrColumns)
+        {
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
-            {
-                existing = columns.get(displayColumn.getFieldKey());
-                assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getFieldKey(), displayColumn);
-            }
+                columns.putIfAbsent(displayColumn.getFieldKey(), displayColumn);
         }
 
         return columns;

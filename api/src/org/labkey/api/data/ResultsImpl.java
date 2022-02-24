@@ -125,13 +125,14 @@ public class ResultsImpl implements Results, DataIterator
         _columnInfoList = new ArrayList<>(fieldMap.size()+1);
         _columnInfoList.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
 
+        FieldKey fk = null;
         try
         {
             if (null != rs)
             {
                 for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
                 {
-                    FieldKey fk = e.getKey();
+                    fk = e.getKey();
                     ColumnInfo col = e.getValue();
                     int find = rs.findColumn(col.getAlias());
                     _fieldIndexMap.put(fk, find);
@@ -143,7 +144,7 @@ public class ResultsImpl implements Results, DataIterator
         }
         catch (SQLException x)
         {
-            throw new IllegalArgumentException("Column not found in resultset");
+            throw new IllegalArgumentException("Column not found in resultset: " + fk.toDisplayString());
         }
     }
 

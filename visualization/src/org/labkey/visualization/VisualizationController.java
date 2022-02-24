@@ -271,11 +271,11 @@ public class VisualizationController extends SpringActionController
 
     /**
      * This is exactly the same as getMeasures(), but will return the same result over-and-over for all users
-     * until clear caches is called (or this particular cache is cleared).  Only apps with fixes schemas should use this
+     * until clear caches is called (or this particular cache is cleared). Only apps with fixed schemas should use this
      * action.
      */
 
-    static private final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
+    static private final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.UNLIMITED,"getMeasuresStaticCache");
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)

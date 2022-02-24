@@ -43,7 +43,7 @@ pdfbox-2.0.25.jar|Apache PDFBox®|2.0.25|{link:PDFBox|https://pdfbox.apache.org/
 poi-5.2.0.jar|Apache POI|5.2.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-5.2.0.jar|Apache POI OOXML|5.2.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|klum|Provide polling file watcher for cifs file systems
-postgresql-42.3.2.jar|PostgreSQL JDBC Driver|42.3.2|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
+postgresql-42.3.3.jar|PostgreSQL JDBC Driver|42.3.3|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
