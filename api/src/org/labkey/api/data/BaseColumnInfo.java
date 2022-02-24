@@ -1664,32 +1664,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
                     inferMetadata(col);
 
-    /*
-                    // TODO: This is a temporary hack... move to SAS dialect(s)
-                    String databaseFormat = reader.getDatabaseFormat();
-
-                    if (null != databaseFormat)
-                    {
-                        // Do nothing for now -- not implementing SAS format support at this point
-                    if (databaseFormat.startsWith("$"))
-                    {
-                        _log.info("User-defined format: " + databaseFormat);
-                    }
-                    else
-                    {
-                        String tableAlias = col.getTableAlias();
-                        SQLFragment sql = new SQLFragment("PUT(" + ExprColumn.STR_TABLE_ALIAS + "." + col.getName() + ", " + databaseFormat + ")");
-    //                    col = new ExprColumn(col.getParentTable(), col.getName(), sql, Types.VARCHAR);
-
-                        if (!tables.contains(tableAlias))
-                        {
-                            _log.info("Table: " + tableAlias);
-                            tables.add(tableAlias);
-                        }
-                    }
-                    }
-    */
-
                     col._label = reader.getLabel();
                     col._description = reader.getDescription();
 
@@ -1761,27 +1735,33 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 joinWithContainer = true;
             }
 
-            if (i > -1)
-            {
-                String colName = key.fkColumnNames.get(i);
-                var col = colMap.get(colName);
-
-                if (col._fk != null)
-                {
-                    LOG.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
-                    continue;
-                }
-
-                col._fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
-            }
-            else
+            if (i == -1)
             {
                 LOG.warn("Skipping multiple column foreign key " + key.fkName + " ON " + parentTable.getName());
+                continue;
             }
+
+            String colName = key.fkColumnNames.get(i);
+            var col = colMap.get(colName);
+
+            if (col == null)
+            {
+                LOG.error("Column in FK definition was not found " + colName + ". Skipping constraint " + key.fkName);
+                continue;
+            }
+
+            if (col._fk != null)
+            {
+                LOG.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
+                continue;
+            }
+
+            col._fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
         }
 
         return colMap.values();
     }
+
 
     private static void inferMetadata(BaseColumnInfo col)
     {
