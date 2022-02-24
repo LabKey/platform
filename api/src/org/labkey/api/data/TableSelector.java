@@ -16,8 +16,8 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
