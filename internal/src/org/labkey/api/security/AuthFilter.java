@@ -41,17 +41,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.BaseURI;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ConnectSrc;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.DefaultSrc;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ObjectSrc;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ScriptSrc;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.StyleSrc;
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.UpgradeInsecureRequests;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.None;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.Self;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeEval;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeInline;
+import static org.labkey.api.util.HttpUtil.ContentSecurityPolicyEnum.*;
+import static org.labkey.api.util.HttpUtil.CspSourceValues.*;
 
 
 @SuppressWarnings({"UnusedDeclaration"})

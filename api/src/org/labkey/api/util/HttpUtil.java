@@ -84,6 +84,112 @@ public class HttpUtil
         }
     }
 
+    /* an incomplete list of http headers */
+    public static class Header
+    {
+        public static String Accept = "Accept";
+        public static String AcceptEncoding = "Accept-Encoding";
+        public static String Age = "Age";
+        public static String Authorization = "Authorization";
+        public static String CacheControl = "Cache-Control";
+        public static String ContentRange = "Content-Range";
+        public static String ContentSecurityPolicy = "Content-Security-Policy";
+        public static String Cookie = "Cookie";
+        public static String Date = "Date";
+        public static String Depth = "Depth";
+        public static String Destination = "Destination";
+        public static String Etag = "Etag";
+        public static String Expires = "Expires";
+        public static String If = "If";
+        public static String IfModifiedSince = "If-Modified-Since";
+        public static String IfNoneMatches = "If-None-Match";
+        public static String IfRange = "If-Range";
+        public static String Location = "Location";
+        public static String LockToken = "Lock-Token";
+        public static String Overwrite = "Overwrite";
+        public static String Range = "Range";
+        public static String Referer = "Referer";
+        public static String SetCookie = "Set-Cookie";
+        public static String UpgradeInsecureRequests = "Upgrade-Insecure-Requests";
+        public static String UserAgent = "User-Agent";
+        public static String XForwardedFor = "X-Forwarded-For";
+        public static String XForwardedHost = "X-Forwarded-Host";
+        public static String XForwardedWith = "X-Requested-With";
+    }
+
+
+    public enum ContentSecurityPolicyEnum
+    {
+        ConnectSrc("connect-src"),
+        DefaultSrc("default-src"),
+        FontSrc("font-src"),
+        FrameSrc("frame-src"),
+        ImgSrc("img-src"),
+        ManifestSrc("manifest-src"),
+        ObjectSrc("object-src"),
+        PrefetchSrc("prefetch-src"),
+        ScriptSrc("script-src"),
+        ScriptSrcAttr("script-src-attr"),
+        StyleSrc("style-src"),
+        StyleSrcElem("style-src-elem"),
+        StyleSrcAttr("style-src-attr"),
+        WorkerSrc("worker-src"),
+
+        BaseURI("base-uri"),
+        Sandbox("sandbox"),
+
+        FormAction("form-action"),
+        FrameAncestors("frame-ancestors"),
+        NavigateTo("navigate-to"),
+
+        ReportUri("report-uri"),
+        ReportTo("report-to"),
+
+        RequireSriFor("require-sri-for"),
+        RequireTrustedTypesFor("require-trusted-types-for"),
+        TrustedTypes("trusted-types"),
+
+        UpgradeInsecureRequests("upgrade-insecure-requests")
+        ;
+
+        final String value;
+
+        ContentSecurityPolicyEnum(String value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return value;
+        }
+    }
+
+
+    public enum CspSourceValues
+    {
+        Self("'self'"),
+        None("'none'"),
+        UnsafeEval("'unsafe-eval'"),
+        UnsafeInline("'unsafe-inline'")
+        ;
+
+        final String value;
+
+        CspSourceValues(String value)
+        {
+            this.value = value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return value;
+        }
+    }
+
+
     /**
      * Get an InputStream from the endpoint following any HTTP redirects.
      * @param uri resource
