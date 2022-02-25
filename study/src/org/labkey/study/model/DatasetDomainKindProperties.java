@@ -28,8 +28,9 @@ public class DatasetDomainKindProperties implements Cloneable
     private Integer _cohortId = null;
     private String _tag;
     private boolean _showByDefault = true;
-    private String _sourceAssayName;
-    private String _sourceAssayUrl;
+    private String _sourceName;
+    private String _sourceType;
+    private String _sourceUrl;
     private String _dataSharing;
     private boolean _useTimeKeyField = false;
     private boolean _strictFieldValidation = true; // Set as false to skip validation check in DatasetDomainKind.createDomain (used in Rlabkey labkey.domain.createAndLoad)
@@ -81,11 +82,15 @@ public class DatasetDomainKindProperties implements Cloneable
             _category = ds.getViewCategory().getLabel();
         }
 
-        ExpObject source = ds.resolvePublishSource();
-        if (source instanceof ExpProtocol)
+        Dataset.PublishSource publishSource = ds.getPublishSource();
+        if (publishSource != null)
         {
-            _sourceAssayName = source.getName();
-            _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(source.getContainer(), (ExpProtocol) source).getLocalURIString();
+            _sourceName = publishSource.getLabel(ds.getPublishSourceId());
+            _sourceType = publishSource.getSourceType();
+
+            ExpObject sourceObject = publishSource.resolvePublishSource(ds.getPublishSourceId());
+            if (sourceObject != null)
+                _sourceUrl = publishSource.getSourceActionURL(sourceObject, sourceObject.getContainer()).getLocalURIString();
         }
 
         if (null != ds.getDomain())
@@ -249,24 +254,19 @@ public class DatasetDomainKindProperties implements Cloneable
         _showByDefault = showByDefault;
     }
 
-    public String getSourceAssayName()
+    public String getSourceName()
     {
-        return _sourceAssayName;
+        return _sourceName;
     }
 
-    public void setSourceAssayName(String sourceAssayName)
+    public String getSourceType()
     {
-        _sourceAssayName = sourceAssayName;
+        return _sourceType;
     }
 
-    public String getSourceAssayUrl()
+    public String getSourceUrl()
     {
-        return _sourceAssayUrl;
-    }
-
-    public void setSourceAssayUrl(String sourceAssayUrl)
-    {
-        _sourceAssayUrl = sourceAssayUrl;
+        return _sourceUrl;
     }
 
     public String getDataSharing()
