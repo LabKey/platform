@@ -119,7 +119,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.AuthenticatedResponse;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -243,9 +242,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ScriptSrc;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeEval;
-import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeInline;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
@@ -1139,9 +1135,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
             if (customParticipantView != null && customParticipantView.isActive())
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                ((AuthenticatedResponse)getViewContext().getResponse()).setContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
-
                 vbox.addView(customParticipantView.getView());
             }
             else
@@ -4690,11 +4683,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-                ((AuthenticatedResponse)getViewContext().getResponse()).addContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
-                ((AuthenticatedResponse)getViewContext().getResponse()).addContentSecurityPolicyHeader(ScriptSrc, UnsafeEval);
-
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
                 form.setEditable(!view.isModuleParticipantView());
