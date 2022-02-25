@@ -1630,11 +1630,18 @@ public class QueryController extends SpringActionController
     public static class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         @Override
+        public void validate(ExportScriptForm form, BindException errors)
+        {
+            // calling form.getQueryView() as a validation check as it will throw if schema/query missing
+            form.getQueryView();
+
+            if (StringUtils.isEmpty(form.getScriptType()))
+                throw new NotFoundException("Missing required parameter: scriptType.");
+        }
+
+        @Override
         public ModelAndView getView(ExportScriptForm form, BindException errors)
         {
-            // comment? Is this call ehre for validation purposes?
-            QueryView view = form.getQueryView();
-
             return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
 
