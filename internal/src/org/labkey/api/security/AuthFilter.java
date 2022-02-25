@@ -80,7 +80,6 @@ public class AuthFilter implements Filter
         {
             if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
                 resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
-            resp.setHeader("X-XSS-Protection", "1; mode=block");
             resp.setHeader("X-Content-Type-Options", "nosniff");
             resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
         }
