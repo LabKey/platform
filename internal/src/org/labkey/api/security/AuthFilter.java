@@ -43,10 +43,15 @@ import java.net.URL;
 
 import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.BaseURI;
 import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ConnectSrc;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.DefaultSrc;
 import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ObjectSrc;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ScriptSrc;
+import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.StyleSrc;
 import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.UpgradeInsecureRequests;
 import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.None;
 import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.Self;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeEval;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeInline;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -214,13 +219,22 @@ public class AuthFilter implements Filter
         resp = authResp;
 
 
-        authResp.addContentSecurityPolicyHeader(ConnectSrc, "https:", "wss:", "blob:");
+        // set up DefaultSrc first
+        authResp.addContentSecurityPolicyHeader(DefaultSrc, "https:");
+        if (isSSLRequired)
+            authResp.addContentSecurityPolicyHeader(DefaultSrc, "http:");
+
+        // now other sources will 'inherit' those
+        authResp.addContentSecurityPolicyHeader(ConnectSrc,"wss:");
         if (isSSLRequired)
             authResp.addContentSecurityPolicyHeader(UpgradeInsecureRequests, "");
         else
-            authResp.addContentSecurityPolicyHeader(ConnectSrc, "http:", "ws:");
+            authResp.addContentSecurityPolicyHeader(ConnectSrc, "ws:");
         authResp.setContentSecurityPolicyHeader(ObjectSrc, None);
         authResp.setContentSecurityPolicyHeader(BaseURI, Self);
+        authResp.addContentSecurityPolicyHeader(StyleSrc, UnsafeInline);
+        authResp.addContentSecurityPolicyHeader(ScriptSrc, UnsafeEval);         // Ext needs UnsafeEval
+        authResp.addContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);       // for any <script> without a src
 
         if (null != e)
         {

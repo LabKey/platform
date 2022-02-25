@@ -60,7 +60,7 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
     @Override
     public void addHeader(String name, String value)
     {
-        if (StringUtils.equalsAnyIgnoreCase("Content-Security-Policy"))
+        if (StringUtils.equalsIgnoreCase(name, "Content-Security-Policy"))
             throw new IllegalStateException("Use addContextSecurityPolicyHeader()");
         super.addHeader(name, value);
     }
@@ -68,11 +68,10 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
     @Override
     public void setHeader(String name, String value)
     {
-        if (StringUtils.equalsAnyIgnoreCase("Content-Security-Policy"))
+        if (StringUtils.equalsIgnoreCase(name, "Content-Security-Policy"))
             throw new IllegalStateException("Use setContextSecurityPolicyHeader()");
         super.setHeader(name, value);
     }
-
 
     public enum ContentSecurityPolicyEnum
     {
@@ -164,14 +163,8 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
     {
         // if this is a src header, copy the "defaults" from connect-src
         String target = csp.toString();
-        if (target.endsWith("-src") && !target.equals("connect-src") && _contentSecurityPolicy.get(target).isEmpty())
-        {
-            var connect = _contentSecurityPolicy.get(ContentSecurityPolicyEnum.ConnectSrc.toString());
-            if (connect.contains("http:"))
-                _contentSecurityPolicy.put(target, "http:");
-            if (connect.contains("https:"))
-                _contentSecurityPolicy.put(target, "https:");
-        }
+        if (target.endsWith("-src") && !target.equals(ContentSecurityPolicyEnum.DefaultSrc.toString()) && _contentSecurityPolicy.get(target).isEmpty())
+            _contentSecurityPolicy.putAll(target, _contentSecurityPolicy.get(ContentSecurityPolicyEnum.DefaultSrc.toString()));
         _contentSecurityPolicy.putAll(target, Arrays.asList(values));
         _updateContentSecurityPolicyHeader();
     }
