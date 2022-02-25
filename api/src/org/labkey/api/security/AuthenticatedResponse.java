@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeMap;
@@ -154,11 +155,25 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
         }
     };
 
-    public void addContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, String value)
+    public void addContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, CspSourceValues value)
     {
-        if (_contentSecurityPolicy.containsMapping(csp.toString(), value))
-            return;
-        _contentSecurityPolicy.put(csp.toString(), value);
+        addContentSecurityPolicyHeader(csp, value.toString());
+    }
+
+    public void addContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, String... values)
+    {
+        // if this is a src header, copy the "defaults" from connect-src
+        String target = csp.toString();
+        if (target.endsWith("-src") && !target.equals("connect-src") && _contentSecurityPolicy.get(target).isEmpty())
+        {
+            var connect = _contentSecurityPolicy.get(ContentSecurityPolicyEnum.ConnectSrc.toString());
+            if (connect.contains("http:"))
+                _contentSecurityPolicy.put(target, "http:");
+            if (connect.contains("https:"))
+                _contentSecurityPolicy.put(target, "https:");
+        }
+        _contentSecurityPolicy.putAll(target, Arrays.asList(values));
+        _updateContentSecurityPolicyHeader();
     }
 
     public void setContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, CspSourceValues value)
@@ -169,7 +184,7 @@ public class AuthenticatedResponse extends HttpServletResponseWrapper
     public void setContentSecurityPolicyHeader(ContentSecurityPolicyEnum csp, String value)
     {
         _contentSecurityPolicy.remove(csp.toString());
-        addContentSecurityPolicyHeader(csp, value);
+        _contentSecurityPolicy.put(csp.toString(), value);
         _updateContentSecurityPolicyHeader();
     }
 

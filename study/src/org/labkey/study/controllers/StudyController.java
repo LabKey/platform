@@ -40,7 +40,6 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -245,6 +244,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.security.AuthenticatedResponse.ContentSecurityPolicyEnum.ScriptSrc;
+import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeEval;
 import static org.labkey.api.security.AuthenticatedResponse.CspSourceValues.UnsafeInline;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -4692,7 +4692,8 @@ public class StudyController extends BaseStudyController
             {
                 // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
                 getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-                ((AuthenticatedResponse)getViewContext().getResponse()).setContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
+                ((AuthenticatedResponse)getViewContext().getResponse()).addContentSecurityPolicyHeader(ScriptSrc, UnsafeInline);
+                ((AuthenticatedResponse)getViewContext().getResponse()).addContentSecurityPolicyHeader(ScriptSrc, UnsafeEval);
 
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());

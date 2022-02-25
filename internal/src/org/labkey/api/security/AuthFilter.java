@@ -213,15 +213,12 @@ public class AuthFilter implements Filter
         AuthenticatedResponse authResp = new AuthenticatedResponse(resp);
         resp = authResp;
 
+
+        authResp.addContentSecurityPolicyHeader(ConnectSrc, "https:", "wss:", "blob:");
         if (isSSLRequired)
-        {
-            authResp.setContentSecurityPolicyHeader(UpgradeInsecureRequests, "");
-            authResp.setContentSecurityPolicyHeader(ConnectSrc, "https: wss: blob:");
-        }
+            authResp.addContentSecurityPolicyHeader(UpgradeInsecureRequests, "");
         else
-        {
-            authResp.setContentSecurityPolicyHeader(ConnectSrc, "http: https: ws: wss: blob:");
-        }
+            authResp.addContentSecurityPolicyHeader(ConnectSrc, "http:", "ws:");
         authResp.setContentSecurityPolicyHeader(ObjectSrc, None);
         authResp.setContentSecurityPolicyHeader(BaseURI, Self);
 
