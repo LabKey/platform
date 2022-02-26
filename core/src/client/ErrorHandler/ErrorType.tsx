@@ -7,7 +7,7 @@ import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
 
-const ERROR_HEADING = () => <>'Oops! An error has occurred.'</>
+const ERROR_HEADING = () => <>Oops! An error has occurred.</>
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
