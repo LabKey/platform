@@ -212,6 +212,7 @@ public class ListManager implements SearchService.DocumentProvider
         else return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
+    @Nullable
     public ListDef getList(Container container, int listId)
     {
         SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});

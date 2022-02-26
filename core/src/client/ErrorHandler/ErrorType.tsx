@@ -7,7 +7,7 @@ import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
 
-const ERROR_HEADING = () => <>'Oops! An error has occurred.'</>
+const ERROR_HEADING = () => <>Oops! An error has occurred.</>
 
 const DETAILS_SUB_INSTRUCTION = (
     <>
@@ -43,7 +43,7 @@ const NOTFOUND_HEADING = (errorMessage?: string) => (<>
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>
         {errorMessage !== undefined
-            ? 'Oops! The requested page cannot be found.'
+            ? ''
             : 'It seems like something went wrong.'}
     </>
 );
@@ -116,18 +116,24 @@ const PERMISSION_SUBHEADING = (errorMessage: string) => (
 
 const PERMISSION_INSTRUCTION = (errorDetails: ErrorDetails) => <>{errorDetails.advice} </>;
 
-const PERMISSION_DETAILS = () => (
+const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
     <>
-        <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
+        {errorDetails.advice === undefined ?
+            <>
+                <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
 
-        <p className="labkey-error-details">
-            A permission error occurs when the account you've logged into does not have the set permissions to access
-            this page. <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read More &gt;</HelpLink>
-        </p>
-        <div className="labkey-error-details labkey-error-subdetails">
-            <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
-            server administrator to request access to this page.
-        </div>
+                <p className="labkey-error-details">
+                    A permission error occurs when the account you've logged into does not have the required permissions to
+                    access
+                    this page. <HelpLink topic="permissionLevels" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>Read
+                    More &gt;</HelpLink>
+                </p>
+                <div className="labkey-error-details labkey-error-subdetails">
+                <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
+                server administrator to request access to this page.
+                </div>
+            </> : <p className="labkey-error-details">{errorDetails.advice}</p>
+        }
         <div className="labkey-error-details">
             <ul>
                 <li>

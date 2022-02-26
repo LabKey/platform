@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -148,23 +149,25 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return selectColumns;
     }
 
-    private static Map<String, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    private static Map<FieldKey, ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
-        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
-        ColumnInfo existing;
+        Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
 
         for (ColumnInfo column : arrColumns)
         {
-            existing = columns.get(column.getAlias());
-            assert null == existing || existing.getName().equals(column.getName()) : existing.getName() + " != " + column.getName();
-            columns.put(column.getAlias(), column);
+            ColumnInfo prev = columns.put(column.getFieldKey(), column);
+            // NOTE : temporarily disable assert for merge to develop
+            // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
+            // assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
+            if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
+                throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
+        }
+
+        for (ColumnInfo column : arrColumns)
+        {
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
-            {
-                existing = columns.get(displayColumn.getAlias());
-                assert null == existing || existing.getName().equals(displayColumn.getName());
-                columns.put(displayColumn.getAlias(), displayColumn);
-            }
+                columns.putIfAbsent(displayColumn.getFieldKey(), displayColumn);
         }
 
         return columns;
@@ -510,7 +513,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         {
             if (_forDisplay)
             {
-                Map<String, ColumnInfo> map = getDisplayColumnsList(_columns);
+                Map<FieldKey, ColumnInfo> map = getDisplayColumnsList(_columns);
 
                 // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
                 // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()

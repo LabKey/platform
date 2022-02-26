@@ -37,24 +37,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ILineageDisplayColumn;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -130,11 +114,13 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1148,8 +1134,76 @@ public class StudyPublishManager implements StudyPublishService
         return null;
     }
 
+    /**
+     * In the sample derivation case, fields from the parent may contain subject or timepoint information that can be used to
+     * automatically link the rows to the configured study. We'll need to use the query view to pull any special column values
+     * out since these may be lineage display columns.
+     *
+     * @param sampleType - the sample type to link
+     * @param keys - the list of sample row IDs to link to the configured study
+     * @throws SQLException
+     * @throws IOException
+     */
     @Override
-    public void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user)
+    public void autoLinkDerivedSamples(ExpSampleType sampleType, List<Integer> keys, Container container, User user) throws ExperimentException
+    {
+        if (sampleType != null && sampleType.getAutoLinkTargetContainer() != null)
+        {
+            // attempt to auto link the results
+            QuerySettings qs = new QuerySettings(new MutablePropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+            qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
+            qs.setQueryName(sampleType.getName());
+            qs.setBaseFilter(new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), keys));
+
+            Map<StudyPublishService.LinkToStudyKeys, FieldKey> fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
+            QueryView view = new QueryView(userSchema, qs, null);
+
+            DataView dataView = view.createDataView();
+            RenderContext ctx = dataView.getRenderContext();
+            Map<FieldKey, ColumnInfo> selectColumns = dataView.getDataRegion().getSelectColumns();
+            List<Map<FieldKey, Object>> rows = new ArrayList<>();
+
+            try (Results rs = view.getResults())
+            {
+                ctx.setResults(rs);
+                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+                while (rs.next())
+                {
+                    Map<FieldKey, Object> row = new HashMap<>();
+                    ctx.setRow(factory.getRowMap(rs));
+
+                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.ParticipantId), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.VisitId), ctx, selectColumns, row);
+                    getColumnValue(fieldKeyMap.get(StudyPublishService.LinkToStudyKeys.Date), ctx, selectColumns, row);
+                    getColumnValue(FieldKey.fromParts(StudyPublishService.ROWID_PROPERTY_NAME), ctx, selectColumns, row);
+
+                    rows.add(row);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new ExperimentException(e);
+            }
+
+            if (!rows.isEmpty())
+                autoLinkSamples(sampleType, rows, container, user);
+        }
+    }
+
+    private void getColumnValue(@Nullable FieldKey fieldKey, RenderContext ctx, Map<FieldKey, ColumnInfo> selectColumns, Map<FieldKey, Object> row)
+    {
+        if (fieldKey != null && selectColumns.containsKey(fieldKey))
+        {
+            var col = selectColumns.get(fieldKey);
+            Object val = PublishResultsQueryView.getColumnValue(col, ctx);
+
+            row.put(fieldKey, val);
+        }
+    }
+
+    @Override
+    public void autoLinkSamples(ExpSampleType sampleType, List<Map<FieldKey, Object>> results, Container container, User user)
     {
         LOG.debug(String.format("Considering whether to attempt auto-link results for row insert to %s from container %s", sampleType.getName(), container.getPath()));
 
@@ -1176,21 +1230,39 @@ public class StudyPublishManager implements StudyPublishService
                     LOG.debug(String.format("Resolved target study in container %s for auto-linking with %s from container %s", targetContainerPath, sampleTypeName, containerPath));
                     List<Map<String, Object>> dataMaps = new ArrayList<>();
 
-                    final String pidName = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
-                    final String dateName = StudyPublishService.DATE_PROPERTY_NAME;
-                    final String visitName = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
-                    final String rowIdName = ExpMaterialTable.Column.RowId.toString();
+                    // attempt to match up the subject/timepoint information even if the sample has not been published to
+                    // a study yet, this includes traversing any parent lineage samples for corresponding information
+                    QuerySettings qs = new QuerySettings(new MutablePropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+                    qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
+                    qs.setQueryName(sampleType.getName());
 
-                    for (Map<String, Object> result : results)
+                    Map<LinkToStudyKeys, FieldKey> publishKeys = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
+                    final boolean visitBased = study.getTimepointType().isVisitBased();
+                    LinkToStudyKeys timePointKey = visitBased ? LinkToStudyKeys.VisitId : LinkToStudyKeys.Date;
+
+                    // the schema supports the subject/timepoint fields
+                    if (publishKeys.containsKey(LinkToStudyKeys.ParticipantId) && publishKeys.containsKey(timePointKey))
                     {
-                        Map<String, Object> dataMap = new HashMap<>();
-                        dataMap.put(pidName, result.get(pidName));
-                        dataMap.put(dateName, result.get(dateName));
-                        dataMap.put(visitName, result.get(visitName));
-                        dataMap.put(rowIdName, result.get(rowIdName));
-                        dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID());
+                        FieldKey timePointFieldKey = publishKeys.get(timePointKey);
+                        String timePointPropName = visitBased ? StudyPublishService.SEQUENCENUM_PROPERTY_NAME : StudyPublishService.DATE_PROPERTY_NAME;
 
-                        dataMaps.add(dataMap);
+                        for (Map<FieldKey, Object> row : results)
+                        {
+                            if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && row.containsKey(timePointFieldKey))
+                            {
+                                // Issue : 13647 - handle conversion for timepoint field
+                                Object timePointValue = visitBased
+                                        ? Float.parseFloat(String.valueOf(row.get(timePointFieldKey)))
+                                        : ConvertUtils.convert(String.valueOf(row.get(timePointFieldKey)), Date.class);
+
+                                dataMaps.add(Map.of(
+                                        LinkToStudyKeys.ParticipantId.name(), row.get(publishKeys.get(LinkToStudyKeys.ParticipantId)),
+                                        timePointPropName, timePointValue,
+                                        StudyPublishService.ROWID_PROPERTY_NAME, row.get(FieldKey.fromParts(StudyPublishService.ROWID_PROPERTY_NAME)),
+                                        StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID()
+                                ));
+                            }
+                        }
                     }
 
                     StudyPublishService.get().publishData(
@@ -1602,11 +1674,11 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container,
-                                                                                              ExpSampleType sampleType,
-                                                                                              @Nullable QuerySettings qs)
+    public Map<LinkToStudyKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container,
+                                                                    ExpSampleType sampleType,
+                                                                    @Nullable QuerySettings qs)
     {
-        Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> fieldKeyMap = new HashMap<>();
+        Map<LinkToStudyKeys, FieldKey> fieldKeyMap = new HashMap<>();
         if (sampleType != null)
         {
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
@@ -1643,15 +1715,15 @@ public class StudyPublishManager implements StudyPublishService
 
                 if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                 {
-                    if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.VisitId) && col.getJdbcType().isReal())
-                        fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, ci.getFieldKey());
-                    if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.Date) && col.getJdbcType().isDateOrTime())
-                        fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.Date, ci.getFieldKey());
+                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
+                        fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
+                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.Date) && col.getJdbcType().isDateOrTime())
+                        fieldKeyMap.put(LinkToStudyKeys.Date, ci.getFieldKey());
                 }
 
-                if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                 {
-                    fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, ci.getFieldKey());
+                    fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
                 }
             }
         }

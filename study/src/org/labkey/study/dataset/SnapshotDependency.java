@@ -76,11 +76,12 @@ public abstract class SnapshotDependency
      */
     public static class SourceDataType
     {
-        private Type _type;
-        private Object _value;
-        private Container _container;
+        private final Type _type;
+        private final Object _value;
+        private final Container _container;
 
-        enum Type {
+        enum Type
+        {
             dataset,
             participantCategory,
         }

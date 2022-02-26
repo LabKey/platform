@@ -200,6 +200,24 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         active.tabCls = 'active';
     },
 
+    // setActiveTab uses auto-generated id, this function uses the user defined tabId
+    setActiveTabByTabId: function(tabId) {
+        var tabItem = this.findItemByTabId(tabId);
+        if (tabItem) {
+            // clear old active
+            var active = this.findItemForActiveTabId();
+            active.tabCls = '';
+
+            // Add active to new tabId
+            this.activeTabId = tabItem.id;
+            active = this.findItemForActiveTabId();
+            active.tabCls = 'active';
+        }
+        else {
+            console.error("TabId not found: " + tabId);
+        }
+    },
+
     ensureContainerForActiveTab: function(evt) {
         var item = this.findItemForActiveTabId();
         var initializing = false;
@@ -255,6 +273,11 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
 
     findItemForActiveTabId: function() {
         var index = Ext4.Array.pluck(this.items, 'id').indexOf(this.activeTabId);
+        return index > -1 ? this.items[index] : null;
+    },
+
+    findItemByTabId: function(tabId) {
+        var index = Ext4.Array.pluck(this.items, 'tabId').indexOf(tabId);
         return index > -1 ? this.items[index] : null;
     }
 });

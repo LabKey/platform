@@ -82,6 +82,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -424,10 +425,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.Properties);
 
         ColumnInfo colInputs = addColumn(Column.Inputs);
-        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+        addMethod("Inputs", new LineageMethod(colInputs, true), Set.of(colInputs.getFieldKey()));
 
         ColumnInfo colOutputs = addColumn(Column.Outputs);
-        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+        addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
         gridUrl.addParameter("rowId", _dataClass.getRowId());
@@ -456,7 +457,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         setTitleColumn("Name");
         setDefaultVisibleColumns(defaultVisible);
 
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        var ret = wrapColumn("_ExpDataClassTableImpl_object_", _rootTable.getColumn("objectid"));
+        ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+        return ret;
+    }
+
+
 
     @NotNull
     @Override
@@ -627,7 +640,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // TODO: validate dataFileUrl column, it will be saved later
 
             // Generate LSID before inserting
-            step0.addColumn(lsidCol, (Supplier) () -> svc.generateGuidLSID(c, ExpData.class));
+            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
@@ -647,7 +660,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (!DataIteratorUtil.createColumnNameMap(step0).containsKey("name"))
             {
                 ColumnInfo nameCol = expData.getColumn("name");
-                step0.addColumn(nameCol, (Supplier)() -> null);
+                step0.addColumn(nameCol, (Supplier<String>)() -> null);
             }
 
             // Table Counters
@@ -658,7 +671,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // Generate names
             if (_dataClass.getNameExpression() != null)
             {
-                step0.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
+                step0.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier<String>) _dataClass::getNameExpression);
 
                 // Don't create CounterDataIterator until 'nameExpression' has been added
                 di = LoggingDataIterator.wrap(counterDIB.getDataIterator(context));
@@ -920,9 +933,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 ArrayList<AttachmentFile> attachmentFiles = new ArrayList<>();
                 for (Map.Entry<String, Object> entry : row.entrySet())
                 {
-                    if (isAttachmentProperty(entry.getKey()) && entry.getValue() instanceof AttachmentFile)
+                    if (isAttachmentProperty(entry.getKey()) && entry.getValue() instanceof AttachmentFile file)
                     {
-                        AttachmentFile file = (AttachmentFile) entry.getValue();
                         if (null != file.getFilename())
                             attachmentFiles.add(file);
                     }

@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -37,14 +38,7 @@ import java.util.Map;
  */
 public class QuerySnapshotCache
 {
-    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Query Snapshot Cache", new CacheLoader<Container, QuerySnapshotCollections>()
-    {
-        @Override
-        public QuerySnapshotCollections load(Container c, @Nullable Object argument)
-        {
-            return new QuerySnapshotCollections(c);
-        }
-    });
+    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Query Snapshot Cache", (c, argument) -> new QuerySnapshotCollections(c));
 
     static @NotNull Collection<QuerySnapshotDef> getQuerySnapshotDefs(@Nullable Container c, @Nullable String schemaName)
     {

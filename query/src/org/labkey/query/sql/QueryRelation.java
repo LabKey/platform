@@ -113,7 +113,7 @@ public abstract class QueryRelation
     }
 
 
-    abstract void declareFields();
+    public abstract void declareFields();
 
 
     /** actually bind all field references */

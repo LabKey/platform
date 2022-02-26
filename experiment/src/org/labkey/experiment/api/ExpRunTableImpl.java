@@ -52,6 +52,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -591,7 +592,19 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.WorkflowTask));
         setDefaultVisibleColumns(defaultVisibleColumns);
+
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        var ret = wrapColumn("_ExpRunTableImpl_object", _rootTable.getColumn("objectid"));
+        ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+        return ret;
+    }
+
 
     /**
      * This DisplayColumn renders a list of RunGroups.  The url expression

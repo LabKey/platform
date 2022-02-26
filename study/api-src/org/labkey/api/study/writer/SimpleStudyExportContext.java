@@ -5,7 +5,6 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
@@ -21,7 +20,6 @@ public class SimpleStudyExportContext extends AbstractContext
 {
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<>();
-    private List<Vial> _vials = null;
 
     private final PHI _phiLevel;
     private final ParticipantMapper _participantMapper;
@@ -53,16 +51,6 @@ public class SimpleStudyExportContext extends AbstractContext
     public void setParticipants(List<String> participants)
     {
         _participants = participants;
-    }
-
-    public List<Vial> getVials()
-    {
-        return _vials;
-    }
-
-    public void setVials(List<Vial> vials)
-    {
-        _vials = vials;
     }
 
     @Override

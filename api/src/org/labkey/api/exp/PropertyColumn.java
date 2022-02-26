@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -78,7 +79,7 @@ public class PropertyColumn extends LookupColumn
 
     // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
     // TODO handle pd.copyTo(MutableColumnInfo)
-    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, FieldKey lsidColumnFieldKey)
+    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, @Nullable FieldKey lsidColumnFieldKey)
     {
         copyAttributes(user, (BaseColumnInfo)to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey);
         Map<DomainProperty, Object> map = DefaultValueService.get().getDefaultValues(container, dp.getDomain(), user);
@@ -100,7 +101,16 @@ public class PropertyColumn extends LookupColumn
     }
 
     // TODO handle pd.copyTo(MutableColumnInfo)
-    private static void copyAttributes(User user, BaseColumnInfo to, final PropertyDescriptor pd, final Container container, final SchemaKey schemaKey, final String queryName, final FieldKey pkFieldKey, final FieldKey lsidColumnFieldKey)
+    private static void copyAttributes(
+        User user,
+        BaseColumnInfo to,
+        final PropertyDescriptor pd,
+        final Container container,
+        final SchemaKey schemaKey,
+        final String queryName,
+        final FieldKey pkFieldKey,
+        @Nullable final FieldKey lsidColumnFieldKey
+    )
     {
         // ColumnRenderProperties
         pd.copyTo(to);

@@ -33,6 +33,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -41,6 +42,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -108,7 +110,7 @@ public class QueryTable extends QueryRelation
 
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         _log.debug("declareFields " + toStringDebug());
     }
@@ -135,7 +137,32 @@ public class QueryTable extends QueryRelation
         {
             // TODO: _selectAllColumns is a fix for not knowing which columns the method might depend on
             // TODO: proper fix is to add MethodInfo.getDependantFieldKeys()
-            _selectAllColumns = true;
+            for (var field : _tableInfo.getMethodRequiredFieldKeys())
+            {
+                if (null != field.getParent())
+                    throw new IllegalStateException();
+                var tc = getColumn(field.getName());
+                if (null != tc)
+                    tc.addRef(this);
+            }
+
+            // This is a hack for experiment tables that have lineage methods.
+            // This allow the methods to work whether or not the table exposes a public "objectid" column.
+            if ("expObject".equalsIgnoreCase(name) && _tableInfo instanceof ExpTable)
+            {
+                ColumnInfo ci = ((ExpTable<?>)_tableInfo).getExpObjectColumn();
+                if (null != ci)
+                {
+                    TableColumn tc = _selectedColumns.get(ci.getFieldKey());
+                    if (null == tc)
+                    {
+                        tc = new TableColumn(ci.getFieldKey(), ci, null);
+                        addSelectedColumn(ci.getFieldKey(), tc);
+                    }
+                    tc.addRef(this);
+                }
+            }
+
             _generateSelectSQL = Boolean.TRUE; // don't optimize, see getAlias()
         }
         return m;
@@ -280,7 +307,7 @@ public class QueryTable extends QueryRelation
     public String getAlias()
     {
         // TODO : note this doesn't reflect the actual alias when _generateSelectSQL==FALSE
-        // this only seems to affect queries that table methods (see getMethod())
+        // this only seems to affect queries that have table methods (see getMethod()) which wrongly assume that they know the column aliases
         return super.getAlias();
     }
 
@@ -325,6 +352,19 @@ public class QueryTable extends QueryRelation
                 RelationColumn keyField = getColumn(c.getName());
                 if (null != keyField)
                     keyField.addRef(this);
+            }
+        }
+        for (var c : new ArrayList<>(_selectedColumns.values()))
+        {
+            if (c.ref.count() > 0)
+            {
+                var mvName = c._col.getMvColumnName();
+                if (null != mvName)
+                {
+                    var mvCol = getColumn(mvName.getName());
+                    if (null != mvCol)
+                        mvCol.addRef(c);
+                }
             }
         }
 

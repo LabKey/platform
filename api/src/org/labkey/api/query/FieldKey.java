@@ -156,10 +156,15 @@ public class FieldKey extends QueryKey<FieldKey>
 
     public String getRootName()
     {
+        return getRootFieldKey().getName();
+    }
+
+    public FieldKey getRootFieldKey()
+    {
         FieldKey fk = this;
         while (null != fk.getParent())
             fk = fk.getParent();
-        return fk.getName();
+        return fk;
     }
 
     @Override

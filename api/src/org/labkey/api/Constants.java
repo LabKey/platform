@@ -74,7 +74,7 @@ public class Constants
      */
     public static int getMaxContainers()
     {
-        return 100_000;
+        return 200_000;
     }
 
     /**

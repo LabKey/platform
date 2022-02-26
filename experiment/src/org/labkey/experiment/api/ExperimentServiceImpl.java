@@ -1489,7 +1489,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             // ignore
         }
-        if (!errors.isEmpty())
+        if (0 < errors.length())
             throw new ValidationException(errors.toString());
         return null;
     }
@@ -1534,7 +1534,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             // ignore
         }
-        if (!errors.isEmpty())
+        if (0 < errors.length())
             throw new ValidationException(errors.toString());
 
         return null;
@@ -2448,30 +2448,39 @@ public class ExperimentServiceImpl implements ExperimentService
 
         boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
 
-        String parentsInnerSelect = map.get("$PARENTS_INNER$");
-        SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
-        parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
-        String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
+        String parentsToken = null;
+        if (options.isParents())
+        {
+            String parentsInnerSelect = map.get("$PARENTS_INNER$");
+            SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
+            parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
+            String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
-        String parentsSelect = map.get("$PARENTS$");
-        parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
-        // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-        String parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+            String parentsSelect = map.get("$PARENTS$");
+            parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
+            // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+        }
 
-        String childrenInnerSelect = map.get("$CHILDREN_INNER$");
-        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-        SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
-        childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
-        String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
+        String childrenToken = null;
+        if (options.isChildren())
+        {
+            String childrenInnerSelect = map.get("$CHILDREN_INNER$");
+            childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
+            SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
+            childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
+            String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
-        String childrenSelect = map.get("$CHILDREN$");
-        childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
-        // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-        String childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+            String childrenSelect = map.get("$CHILDREN$");
+            childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
+            // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpType(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+        }
 
         return new Pair<>(parentsToken,childrenToken);
     }
 
+    @Override
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
@@ -2484,7 +2493,11 @@ public class ExperimentServiceImpl implements ExperimentService
             if (up)
             {
                 SQLFragment parents = new SQLFragment();
-                if (options.isForLookup())
+                if (options.isOnlySelectObjectId())
+                {
+                    parents.append("\nSELECT objectid FROM ").append(tokens.first);
+                }
+                else if (options.isForLookup())
                 {
                     parents.append("\nSELECT MIN(depth) AS depth, self, objectid, ");
                     parents.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
@@ -2539,7 +2552,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     parents.append(and).append("depth >= ").append(depth);
                 }
 
-                if (options.isForLookup())
+                if (options.isForLookup() && !options.isOnlySelectObjectId())
                 {
                     parents.append("\nGROUP BY self, objectid");
                 }
@@ -2555,7 +2568,11 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 SQLFragment children = new SQLFragment();
 
-                if (options.isForLookup())
+                if (options.isOnlySelectObjectId())
+                {
+                    children.append("\nSELECT objectid FROM ").append(tokens.second);
+                }
+                else if (options.isForLookup())
                 {
                     children.append("\nSELECT MIN(depth) AS depth, self, objectid, ");
                     children.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
@@ -2606,7 +2623,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     children.append(and).append("depth <= ").append(options.getDepth());
                 }
 
-                if (options.isForLookup())
+                if (options.isForLookup() && !options.isOnlySelectObjectId())
                 {
                     children.append("\nGROUP BY self, objectid");
                 }

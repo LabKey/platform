@@ -21,7 +21,6 @@ import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -40,14 +39,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
+import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 @RequiresPermission(InsertPermission.class)
 public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction<SampleTypePublishConfirmAction.SampleTypePublishConfirmForm>
 {
     private ExpSampleType _sampleType;
-    private Map<ExtraColFieldKeys, FieldKey> _fieldKeyMap;
+    private Map<LinkToStudyKeys, FieldKey> _fieldKeyMap;
     private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
@@ -83,35 +82,35 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         PublishSource
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
-                        return fieldKeyMap.get(ExtraColFieldKeys.ParticipantId);
+                        return fieldKeyMap.get(LinkToStudyKeys.ParticipantId);
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
-                        return fieldKeyMap.get(ExtraColFieldKeys.VisitId);
+                        return fieldKeyMap.get(LinkToStudyKeys.VisitId);
                     }
                     @Override
-                    public FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
-                        return fieldKeyMap.get(ExtraColFieldKeys.Date);
+                        return fieldKeyMap.get(LinkToStudyKeys.Date);
                     }
                 },
         UserSpecified
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
                         return null;
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
                         return null;
                     }
                     @Override
-                    public FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    public FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap)
                     {
                         return null;
                     }
@@ -119,9 +118,9 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
         // In order to match PublishConfirmForm.DefaultValueSource, we use trivial implementations
         // of functions here that simply return what they are given
-        public abstract FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
-        public abstract FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
-        public abstract FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
+        public abstract FieldKey getParticipantIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
+        public abstract FieldKey getVisitIDFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
+        public abstract FieldKey getDateFieldKey(Map<LinkToStudyKeys, FieldKey> fieldKeyMap);
     }
 
     private void initializeFieldKeys(SampleTypePublishConfirmForm form)
@@ -186,16 +185,16 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
-    protected Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(SampleTypePublishConfirmForm form)
+    protected Map<LinkToStudyKeys, FieldKey> getAdditionalColumns(SampleTypePublishConfirmForm form)
     {
         String valueSource = form.getDefaultValueSource();
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
 
-        Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_fieldKeyMap));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_fieldKeyMap));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getDateFieldKey(_fieldKeyMap));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, FieldKey.fromParts(
+        Map<LinkToStudyKeys, FieldKey> additionalCols = new HashMap<>();
+        additionalCols.put(LinkToStudyKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_fieldKeyMap));
+        additionalCols.put(LinkToStudyKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_fieldKeyMap));
+        additionalCols.put(LinkToStudyKeys.Date, defaultValueSource.getDateFieldKey(_fieldKeyMap));
+        additionalCols.put(LinkToStudyKeys.SourceId, FieldKey.fromParts(
                 ExpMaterialProtocolInputTable.Column.SampleSet.name(),
                 ExpMaterialProtocolInputTable.Column.RowId.name()));
 

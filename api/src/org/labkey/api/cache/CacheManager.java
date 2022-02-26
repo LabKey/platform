@@ -65,7 +65,7 @@ public class CacheManager
 
     private static final List<CacheListener> LISTENERS = new CopyOnWriteArrayList<>();
 
-    /** Indicates that we should not time out values in the cache */
+    /** Marker indicating unlimited entries or unlimited time-to-live (do not expire entries) */
     public static final int UNLIMITED = 0;
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)

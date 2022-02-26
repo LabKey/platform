@@ -514,7 +514,6 @@ public class AuthenticationManager
         AuthenticationConfigurationCache.clear();
     }
 
-
     public static void deleteConfiguration(User user, int rowId)
     {
         // Delete any logos attached to the configuration
@@ -1177,12 +1176,6 @@ public class AuthenticationManager
 
         if (null != session && !user.isGuest())
         {
-            // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
-
-            // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
-            NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
-
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
 
             Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);

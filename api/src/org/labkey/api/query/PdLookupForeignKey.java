@@ -71,6 +71,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
                 lookupQuery = lookup.getQueryName();
             }
         }
+
         ContainerFilter cf;
         if ("core".equalsIgnoreCase(lookupSchemaName) && "Containers".equalsIgnoreCase(lookupQuery))
             cf = new ContainerFilter.AllFolders(user);
@@ -80,8 +81,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return new PdLookupForeignKey(sourceSchema, currentContainer, user, cf, pd, lookupSchemaName, lookupQuery, targetContainer);
     }
 
-
-    public PdLookupForeignKey(QuerySchema sourceSchema, Container currentContainer, @NotNull User user, ContainerFilter cf, PropertyDescriptor pd, String lookupSchemaName, String lookupQuery, Container targetContainer)
+    protected PdLookupForeignKey(@NotNull QuerySchema sourceSchema, Container currentContainer, @NotNull User user, ContainerFilter cf, PropertyDescriptor pd, String lookupSchemaName, String lookupQuery, Container targetContainer)
     {
         super(sourceSchema, cf, lookupSchemaName, lookupQuery, null);
         _pd = pd;

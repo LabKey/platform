@@ -97,8 +97,15 @@
         I.self,
 
         -- parent columns
-        I.fromObjectId                         AS objectid,
-<% if ("ALL".equals(expType)) { %>
+        I.fromObjectId                         AS objectid
+<%
+if (bean.isOnlySelectObjectId()) {
+%>
+    FROM $PARENTS_INNER$ AS I
+<%
+} else {
+%> , <%
+   if ("ALL".equals(expType)) { %>
         CASE
         WHEN M.rowId IS NOT NULL
           THEN 'Material'
@@ -141,6 +148,7 @@
         JOIN exp.material M ON I.fromObjectId = M.ObjectId
 <%
     }
+}
 %>),
 
   /* CTE */
@@ -181,8 +189,15 @@
         I.self,
 
         -- child columns
-        I.toObjectId                           AS objectid,
-<% if ("ALL".equals(expType)) { %>
+        I.toObjectId                           AS objectid
+<%
+if (bean.isOnlySelectObjectId()) {
+%>
+    FROM $CHILDREN_INNER$ AS I
+<%
+} else {
+%> , <%
+   if ("ALL".equals(expType)) { %>
         CASE
         WHEN M.rowId IS NOT NULL
           THEN 'Material'
@@ -225,6 +240,7 @@
         JOIN exp.material M ON I.toObjectId = M.ObjectId
 <%
     }
+}
 %>)
 
 

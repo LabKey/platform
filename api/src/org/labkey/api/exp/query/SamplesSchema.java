@@ -189,6 +189,11 @@ public class SamplesSchema extends AbstractExpSchema
      */
     public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType st, @Nullable DomainProperty domainProperty)
     {
+        return materialIdForeignKey(st, domainProperty, null);
+    }
+
+    public ForeignKey materialIdForeignKey(@Nullable final ExpSampleType st, @Nullable DomainProperty domainProperty, @Nullable ContainerFilter cfParent)
+    {
         final String tableName =  null == st ? ExpSchema.TableType.Materials.toString() : st.getName();
         final String schemaName = null == st ? ExpSchema.SCHEMA_NAME : SamplesSchema.SCHEMA_NAME;
 
@@ -220,6 +225,11 @@ public class SamplesSchema extends AbstractExpSchema
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
+                // If the lookup is configured to target a specific container,
+                // then respect that setting and ignore the supplied container filter.
+                boolean isTargetLookup = domainProperty != null && domainProperty.getLookup() != null && domainProperty.getLookup().getContainer() != null;
+                if (!isTargetLookup && cfParent != null)
+                    return cfParent;
                 return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), st, domainProperty, getUser()));
             }
 

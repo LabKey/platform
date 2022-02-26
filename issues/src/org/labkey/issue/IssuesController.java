@@ -799,13 +799,7 @@ public class IssuesController extends SpringActionController
                 }
                 IssueObject issue = issuesForm.getBean();
 
-                // bind the user schema table to the form bean, so we can get typed properties
-                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(issueListDef.getName());
-                if (table != null)
-                    issuesForm.setTable(table);
-                issue.setProperties(issuesForm.getTypedColumns());
-
+                setTypedProperties(issue, issuesForm, issueListDef.getName());
                 IssueService.get().validateIssue(getContainer(), getUser(), issue, action, errors);
             }
         }
@@ -838,12 +832,7 @@ public class IssuesController extends SpringActionController
                         issue.setIssueDefId(issueListDef.getRowId());
                     }
 
-                    // bind the user schema table to the form bean, so we can get typed properties
-                    UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                    TableInfo table = userSchema.getTable(issueListDef.getName());
-                    if (table != null)
-                        issuesForm.setTable(table);
-                    issue.setProperties(issuesForm.getTypedColumns());
+                    setTypedProperties(issue, issuesForm, issueListDef.getName());
 
                     // handle attachments, the attachment value is a | delimited array of file names
                     String attachments = issuesForm.get("attachment");
@@ -882,6 +871,23 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    /**
+     * Helper to apply typed values from the form bean onto the IssueObject.
+     */
+    private void setTypedProperties(IssueObject issue, IssuesForm form, String queryName)
+    {
+        // bind the user schema table to the form bean, so we can get typed properties
+        UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
+        TableInfo table = userSchema.getTable(queryName);
+        if (table != null)
+        {
+            form.setTable(table);
+            // force the form to recalculate values after binding the schema
+            form.isValid();
+            issue.setProperties(form.getTypedColumns());
+        }
+    }
+
     abstract class AbstractIssueAction extends FormViewAction<IssuesForm>
     {
         protected IssueObject _issue = null;
@@ -898,15 +904,8 @@ public class IssuesController extends SpringActionController
             {
                 Issue.action action = form.getAction();
                 IssueObject issue = form.getBean();
-                _issue = issue;
 
-                // bind the user schema table to the form bean, so we can get typed properties
-                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(issue.getIssueDefName());
-                if (table != null)
-                    form.setTable(table);
-                issue.setProperties(form.getTypedColumns());
-
+                setTypedProperties(issue, form, issue.getIssueDefName());
                 _issue = (IssueObject)IssueService.get().saveIssue(getViewContext(), issue, action, getAttachmentFileList(), errors);
 
                 if (!errors.hasErrors())
@@ -927,13 +926,7 @@ public class IssuesController extends SpringActionController
                 Issue.action action = form.getAction();
                 IssueObject issue = form.getBean();
 
-                // bind the user schema table to the form bean, so we can get typed properties
-                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(issue.getIssueDefName());
-                if (table != null)
-                    form.setTable(table);
-                issue.setProperties(form.getTypedColumns());
-
+                setTypedProperties(issue, form, issue.getIssueDefName());
                 IssueService.get().validateIssue(getContainer(), getUser(), issue, action, errors);
             }
         }
@@ -1090,11 +1083,7 @@ public class IssuesController extends SpringActionController
         {
             if (reshow && issueListDef != null)
             {
-                // bind the user schema table to the form bean so we can get typed properties
-                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-                TableInfo table = userSchema.getTable(issueListDef.getName());
-                form.setTable(table);
-                issue.setProperties(form.getTypedColumns());
+                setTypedProperties(issue, form, issueListDef.getName());
             }
         }
     }

@@ -1083,7 +1083,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private boolean _declareCalled = false;
 
     @Override
-    void declareFields()
+    public void declareFields()
     {
         if (_declareCalled)
             return;
@@ -2087,7 +2087,11 @@ public class QuerySelect extends QueryRelation implements Cloneable
         public SelectColumn(QNode node)
         {
             if (node instanceof SupportsAnnotations)
-                _annotations = ((SupportsAnnotations)node).getAnnotations();
+            {
+                _annotations = new CaseInsensitiveHashMap<>(((SupportsAnnotations) node).getAnnotations());
+                // concepturi annotation is not supported, if that is considered, make it consistent with BaseColumnInfo.loadFromXML().
+                _annotations.remove("concepturi");
+            }
 
             _node = node;
             if (node instanceof QAs && node.childList().size() > 1)

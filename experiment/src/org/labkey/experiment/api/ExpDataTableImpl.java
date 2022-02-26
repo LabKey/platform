@@ -70,6 +70,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -95,6 +96,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
@@ -160,11 +162,23 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.Properties);
 
         var colInputs = addColumn(Column.Inputs);
-        addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
+        addMethod("Inputs", new LineageMethod(colInputs, true), Set.of(colInputs.getFieldKey()));
 
         var colOutputs = addColumn(Column.Outputs);
-        addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+        addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
+
+        addExpObjectMethod();
     }
+
+
+    @Override
+    public ColumnInfo getExpObjectColumn()
+    {
+        var ret = wrapColumn("_ExpDataTableImpl_object_", _rootTable.getColumn("objectid"));
+        ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
+        return ret;
+    }
+
 
     public List<String> addFileColumns(boolean isFilesTable)
     {

@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -197,8 +198,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
         QueryService.get().addCompareType(new LineageCompareType());
-        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), null, 2, 3);
-        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), null, 2, 3);
+        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -521,9 +522,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
+                    assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+
                     results.put("assay", assayMetrics);
                 }
 
+                results.put("autoLinkedSampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource WHERE autoLinkTargetContainer IS NOT NULL").getObject(Long.class));
                 results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
                 results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
