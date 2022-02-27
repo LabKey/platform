@@ -412,7 +412,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
                 }
 
-                if (wrapped.getFk() instanceof PdLookupForeignKey)
+                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
+                if (!isTargetLookup && wrapped.getFk() instanceof PdLookupForeignKey)
                     ((PdLookupForeignKey) wrapped.getFk()).setContainerFilter(getContainerFilter());
             }
 
