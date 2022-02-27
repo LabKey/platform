@@ -74,6 +74,7 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -410,6 +411,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     wrappedMvCol.getFieldKey();
                     wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
                 }
+
+                if (wrapped.getFk() instanceof PdLookupForeignKey)
+                    ((PdLookupForeignKey) wrapped.getFk()).setContainerFilter(getContainerFilter());
             }
 
             addColumn(wrapped);
