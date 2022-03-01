@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -125,7 +126,7 @@ public class NameGenerator
 
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
 
-    enum SubstitutionValue
+    public enum SubstitutionValue
     {
         AliquotedFrom("Sample112"),
         DataInputs("Data101"),
@@ -180,6 +181,8 @@ public class NameGenerator
         }
 
     }
+
+    public static final Set<String> SAMPLE_COUNTER_SUBSTITUTIONS = new HashSet<>(Arrays.asList(SubstitutionValue.dailySampleCount.name(), SubstitutionValue.weeklySampleCount.name(), SubstitutionValue.monthlySampleCount.name(), SubstitutionValue.yearlySampleCount.name()));
 
     private final TableInfo _parentTable;
 
@@ -296,7 +299,7 @@ public class NameGenerator
 
     static NameExpressionValidationResult getSubstitutionPartValidationResults(@NotNull String nameExpression, @Nullable List<? extends GWTPropertyDescriptor> properties, @Nullable Map<String, String> importAliases, @NotNull Container container, @Nullable String currentDataTypeName)
     {
-        NameGenerator generator = new NameGenerator(nameExpression, null,false, importAliases, container, null, null, true, properties, currentDataTypeName);
+        NameGenerator generator = new NameGenerator(nameExpression, null,true, importAliases, container, null, null, true, properties, currentDataTypeName);
         return new NameExpressionValidationResult(generator.getSyntaxErrors(), generator.getSyntaxWarnings(), generator.getPreviewName() != null ? Collections.singletonList(generator.getPreviewName()) : null);
     }
 
@@ -2390,6 +2393,11 @@ public class NameGenerator
 
             verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
+
+            verifyPreview("S-${FieldStr}-${FieldDate:dailySampleCount}", "S-FieldStrValue-14", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate:yearlySampleCount}", "S-FieldStrValue-412", null, fields);
+            verifyPreview("S-${FieldStr}-${dailySampleCount}", "S-FieldStrValue-14", null, fields);
+            verifyPreview("S-${FieldStr}-${yearlySampleCount}", "S-FieldStrValue-412", null, fields);
 
             // with input
             verifyPreview("S-${Inputs}", "S-Parent101");
