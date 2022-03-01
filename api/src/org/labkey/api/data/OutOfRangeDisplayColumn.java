@@ -104,6 +104,12 @@ public class OutOfRangeDisplayColumn extends DataColumn
     }
 
     @Override
+    public String getTsvFormattedValue(RenderContext ctx)
+    {
+        return getOORPrefix(ctx) + super.getTsvFormattedValue(ctx);
+    }
+
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
