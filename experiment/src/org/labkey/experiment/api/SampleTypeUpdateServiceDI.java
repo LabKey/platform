@@ -65,6 +65,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
@@ -191,7 +192,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (InventoryService.get() != null)
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
 
-            if (sampleType.getAutoLinkTargetContainer() != null)
+            if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
         }
         return dib;

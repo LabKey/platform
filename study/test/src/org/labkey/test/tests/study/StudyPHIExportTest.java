@@ -53,7 +53,7 @@ public class StudyPHIExportTest extends StudyExportTest
         _originalFirstMouseStats = getFirstMouseStats();
         setParticipantIdPreface(idPreface, idLength);
 
-        exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, false, null);
+        exportStudy(true, FieldDefinition.PhiSelectType.NotPHI, true, true, false, null);
     }
 
     protected void setParticipantIdPreface(String idPreface, int idLength)
@@ -171,7 +171,7 @@ public class StudyPHIExportTest extends StudyExportTest
         {
             startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
             waitForPipelineJobsToComplete(4, "Specimen import", false);
-            exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
+            exportStudy(true, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
 
             clickFolder(getFolderName());
             deleteStudy();

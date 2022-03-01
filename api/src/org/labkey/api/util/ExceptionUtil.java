@@ -649,7 +649,6 @@ public class ExceptionUtil
                 {
                     if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
                         response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
-                    response.setHeader("X-XSS-Protection", "1; mode=block");
                     response.setHeader("X-Content-Type-Options", "nosniff");
                 }
             }

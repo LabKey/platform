@@ -1135,9 +1135,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
             if (customParticipantView != null && customParticipantView.isActive())
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-
                 vbox.addView(customParticipantView.getView());
             }
             else
@@ -4686,9 +4683,6 @@ public class StudyController extends BaseStudyController
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
             if (view != null)
             {
-                // issue : 18595 chrome will complain that the script we are executing matches the script sent down in the request
-                getViewContext().getResponse().setHeader("X-XSS-Protection", "0");
-
                 form.setCustomScript(view.getBody());
                 form.setUseCustomView(view.isActive());
                 form.setEditable(!view.isModuleParticipantView());

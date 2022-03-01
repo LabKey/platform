@@ -159,6 +159,8 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (null == tinfo)
             throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
+        resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
+
         // check if this query is shadowing a local table
         if (isUserDefined)
         {
