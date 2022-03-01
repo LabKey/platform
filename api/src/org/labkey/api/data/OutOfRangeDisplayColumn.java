@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
@@ -40,7 +41,6 @@ import java.util.Set;
 public class OutOfRangeDisplayColumn extends DataColumn
 {
     private ColumnInfo _oorIndicatorColumn;
-    private boolean _doneWithSuperclassConstructor = true;
 
     /**
      * Look up the OORIndicator column through QueryService
@@ -54,19 +54,6 @@ public class OutOfRangeDisplayColumn extends DataColumn
     {
         super(numberColumn);
         _oorIndicatorColumn = oorIndicatorColumn;
-    }
-
-    @Override
-    public Class getDisplayValueClass()
-    {
-        if (_doneWithSuperclassConstructor)
-        {
-            return String.class;
-        }
-        else
-        {
-            return Double.class;
-        }
     }
 
     @Override @NotNull
@@ -111,9 +98,9 @@ public class OutOfRangeDisplayColumn extends DataColumn
     }
 
     @Override
-    public Object getDisplayValue(RenderContext ctx)
+    public @Nullable String getFormattedText(RenderContext ctx)
     {
-        return getOORPrefix(ctx) + super.getDisplayValue(ctx);
+        return getOORPrefix(ctx) + super.getFormattedText(ctx);
     }
 
     @Override
