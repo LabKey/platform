@@ -1,13 +1,10 @@
 package org.labkey.study.model;
 
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 
 public class DatasetDomainKindProperties implements Cloneable
 {
@@ -254,14 +251,29 @@ public class DatasetDomainKindProperties implements Cloneable
         _showByDefault = showByDefault;
     }
 
+    public void setSourceName(String sourceName)
+    {
+        _sourceName = sourceName;
+    }
+
     public String getSourceName()
     {
         return _sourceName;
     }
 
+    public void setSourceType(String sourceType)
+    {
+        _sourceType = sourceType;
+    }
+
     public String getSourceType()
     {
         return _sourceType;
+    }
+
+    public void setSourceUrl(String sourceUrl)
+    {
+        _sourceUrl = sourceUrl;
     }
 
     public String getSourceUrl()
