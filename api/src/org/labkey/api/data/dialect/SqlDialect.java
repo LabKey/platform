@@ -579,6 +579,11 @@ public abstract class SqlDialect
 
     public abstract boolean supportsSelectConcat();
 
+    public boolean supportsGroupConcatSubSelect()
+    {
+        return true;
+    }
+
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);

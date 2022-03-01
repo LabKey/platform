@@ -630,6 +630,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private static final Pattern SELECT = Pattern.compile("\\bSELECT\\b", Pattern.CASE_INSENSITIVE);
 
+    @Override
+    public boolean supportsGroupConcatSubSelect()
+    {
+        return false;
+    }
+
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
