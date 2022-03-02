@@ -16,10 +16,12 @@
 
 package org.labkey.wiki;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.util.IOUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -70,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: matthewb
@@ -274,6 +277,8 @@ public class WikiWebdavProvider implements WebdavService.Provider
                     wikiXml.setTitle(wikiVersion.getTitle());
                     wikiXml.setShowAttachments(wiki.isShowAttachments());
                     wikiXml.setShouldIndex(wiki.isShouldIndex());
+                    List<String> attachmentNames = wiki.getAttachments().stream().map(Attachment::getName).collect(Collectors.toList());
+                    wikiXml.setAttachmentsOrder(StringUtils.join(attachmentNames, ';'));
                 }
 
                 XmlOptions options = new XmlOptions();
