@@ -702,7 +702,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpProtocol> getAllExpProtocols();
 
-    List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c);
+    List<? extends ExpProtocol> getExpProtocolsWithParameterValue(
+        @NotNull String parameterURI,
+        @NotNull String parameterValue,
+        @Nullable Container c,
+        @Nullable User user,
+        boolean includeProjectAndShared
+    );
 
     void registerRunEditor(ExpRunEditor editor);
 
