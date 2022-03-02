@@ -313,10 +313,10 @@ public class MothershipReport implements Runnable
                 connection.disconnect();
             }
         }
-        catch (Exception ignored)
+        catch (Throwable t)
         {
             // Don't bother the client if this report fails
-            LOG.debug("Failed to submit report to " + this._target + " at " + _url, ignored);
+            LOG.debug("Failed to submit report to " + this._target + " at " + _url, t);
         }
     }
 
