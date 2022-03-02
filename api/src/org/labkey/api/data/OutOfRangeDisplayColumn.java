@@ -16,9 +16,12 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
@@ -64,7 +67,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
     }
 
     @NotNull
-    private String getOORPrefix(RenderContext ctx)
+    protected String getOORPrefix(RenderContext ctx)
     {
         if (_oorIndicatorColumn != null)
         {
@@ -96,7 +99,19 @@ public class OutOfRangeDisplayColumn extends DataColumn
     @Override
     public @Nullable String getFormattedText(RenderContext ctx)
     {
-        return getOORPrefix(ctx) + StringUtils.defaultString(super.getFormattedText(ctx));
+        // Unlike getTsvFormattedValue() and getFormattedHtml(), super.getFormattedText() will return null when no format is specified.
+        // To keep it simple we will always format (e.g. convert to String)
+        String oorPrefix = getOORPrefix(ctx);
+        String formattedValue = "";
+        Object value = getDisplayValue(ctx);
+        if (null != value)
+        {
+            formattedValue = super.getFormattedText(ctx);
+            if (null == formattedValue)
+                formattedValue = ConvertUtils.convert(value);
+        }
+        assert null != formattedValue;
+        return oorPrefix + formattedValue;
     }
 
     @Override
@@ -120,6 +135,90 @@ public class OutOfRangeDisplayColumn extends DataColumn
         if (_oorIndicatorColumn != null)
         {
             columns.add(_oorIndicatorColumn);
+        }
+    }
+
+
+    public static final ColumnInfo numberColumn = new BaseColumnInfo("number", JdbcType.DOUBLE);
+    public static final ColumnInfo oorColumn = new BaseColumnInfo( "oor", JdbcType.VARCHAR);
+
+    public static class TestCase extends Assert
+    {
+        OutOfRangeDisplayColumn dc = new OutOfRangeDisplayColumn(numberColumn, oorColumn);
+
+        private RenderContext renderContext(Object d, Object oor)
+        {
+            var ret = new RenderContext();
+            ret.put(numberColumn.getAlias(), d);
+            ret.put(oorColumn.getAlias(), oor);
+            return ret;
+        }
+
+        @Test
+        public void testNull()
+        {
+            dc.setFormatString(null);
+
+            var txt = dc.getFormattedText(renderContext(null,null));
+            assertEquals("", txt);
+            var tsv = dc.getTsvFormattedValue(renderContext(null,null));
+            assertEquals("", tsv);
+
+            txt = dc.getFormattedText(renderContext(null, "!"));
+            assertEquals("!", txt);
+            tsv = dc.getTsvFormattedValue(renderContext(null, "!"));
+            assertEquals("!", tsv);
+        }
+
+        @Test
+        public void testNullWithFormat()
+        {
+            dc.setFormatString("0.00");
+
+            var txt = dc.getFormattedText(renderContext(null, null));
+            assertEquals("", txt);
+            var tsv = dc.getTsvFormattedValue(renderContext(null, null));
+            assertEquals("", tsv);
+
+            dc.setFormatString("0.00");
+            txt = dc.getFormattedText(renderContext(null, "!"));
+            assertEquals("!", txt);
+            tsv = dc.getTsvFormattedValue(renderContext(null, "!"));
+            assertEquals("!", tsv);
+        }
+
+        @Test
+        public void testValue()
+        {
+            dc.setFormatString(null);
+
+            var txt = dc.getFormattedText(renderContext(0.5, null));
+            assertEquals("0.5", txt);
+            var tsv = dc.getTsvFormattedValue(renderContext(0.5, null));
+            assertEquals("0.5", tsv);
+
+            txt = dc.getFormattedText(renderContext(0.5, "<"));
+            assertEquals("<0.5", txt);
+            tsv = dc.getTsvFormattedValue(renderContext(0.5, "<"));
+            assertEquals("<0.5", tsv);
+        }
+
+        @Test
+        public void testValueWithFormat()
+        {
+            dc.setFormatString("0.00");
+
+            dc.setFormatString("0.00");
+            var txt = dc.getFormattedText(renderContext(0.5, null));
+            assertEquals("0.50", txt);
+            var tsv = dc.getTsvFormattedValue(renderContext(0.5, null));
+            assertEquals("0.50", tsv);
+
+            dc.setFormatString("0.00");
+            txt = dc.getFormattedText(renderContext(0.5, "<"));
+            assertEquals("<0.50", txt);
+            tsv = dc.getTsvFormattedValue(renderContext(0.5, "<"));
+            assertEquals("<0.50", tsv);
         }
     }
 }
