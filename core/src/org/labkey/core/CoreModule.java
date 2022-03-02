@@ -592,15 +592,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new AlwaysAvailableWebPartFactory("Subfolders", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
             {
                 @Override
+                public WebPart createWebPart()
+                {
+                    // Issue 44913: Set the default properties for all new instances of the Subfolders webpart
+                    WebPart webPart = super.createWebPart();
+                    return setDefaultProperties(webPart);
+                }
+
+                @Override
                 public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
-                        webPart = new WebPart(webPart);
-                        webPart.getPropertyMap().put("title", "Subfolders");
-                        webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
-                        webPart.getPropertyMap().put("containerTypes", "folder");
+                        webPart = setDefaultProperties(new WebPart(webPart));
                     }
 
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -612,7 +617,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
+
                     return view;
+                }
+
+                private WebPart setDefaultProperties(WebPart webPart)
+                {
+                    webPart.setProperty("title", "Subfolders");
+                    webPart.setProperty("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
+                    webPart.setProperty("containerTypes", "folder");
+                    return webPart;
                 }
             },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
