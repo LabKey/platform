@@ -60,11 +60,11 @@
                     // Hacky - assuming that the first one should be a different size
                     if (i == 0)
                     {
-                        %><img vspace="2" hspace="2" width="800" height="100" style="border: 1px solid" src="<%=h(urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName))%>"/> <%
+                        %><img alt="<%= h(graphName) %>" style="border: 1px solid black; margin: 2px;" width="804" height="100" src="<%=h(urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName))%>"/> <%
                     }
                     else
                     {
-                        %><img hspace="2" vspace="2" width="398" height="70" style="border: 1px solid" src="<%=h(urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName))%>"/> <%
+                        %><img alt="<%= h(graphName) %>" style="border: 1px solid black; margin: 2px;" width="398" height="70" src="<%=h(urlFor(AdminController.MemoryChartAction.class).addParameter("type", graphName))%>"/> <%
                     }
                     if (i % 2 == 0)
                     {
@@ -98,10 +98,10 @@
             %>
                 <tr class="<%=getShadeRowClass(counter)%>">
                     <td><%= h(property.getKey()) %></td>
-                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
-                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
-                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getCommitted()) %></td>
-                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getMax()) %></td>
+                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
+                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
+                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getCommitted()) %></td>
+                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getMax()) %></td>
                 </tr>
             <%
                     counter++;
@@ -145,10 +145,10 @@
             <table class="labkey-data-region-legacy labkey-show-borders" name="leaks" id="leaks">
                 <tr>
                     <th>&nbsp;</th>
-                    <th align="left">Object Class</th>
-                    <th align="left">Object toString()</th>
-                    <th align="left">Age</th>
-                    <th align="left">Allocation Stack</th>
+                    <th>Object Class</th>
+                    <th>Object toString()</th>
+                    <th>Age</th>
+                    <th>Allocation Stack</th>
                 </tr>
             <%
                     long currentMillis = System.currentTimeMillis();
