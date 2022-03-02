@@ -81,6 +81,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -161,7 +162,6 @@ import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
@@ -199,6 +199,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
@@ -209,12 +210,14 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
@@ -224,6 +227,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2780,6 +2784,9 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
+        private final DecimalFormat commaf0 = new DecimalFormat("#,##0");
+        private final DecimalFormat percent = new DecimalFormat("0%");
+
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
@@ -2934,14 +2941,14 @@ public class AdminController extends SpringActionController
                 if (null == stat)
                     html.append("<td>&nbsp;</td>");
                 else
-                    html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+                    html.append("<td align=\"right\">").append(commaf0.format(stat)).append("</td>");
             }
         }
 
         private void appendDoubles(StringBuilder html, double... stats)
         {
             for (double stat : stats)
-                html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
+                html.append("<td align=\"right\">").append(percent.format(stat)).append("</td>");
         }
 
         @Override
@@ -3406,13 +3413,22 @@ public class AdminController extends SpringActionController
                 graphNames.add(pool.getName());
             }
 
+            for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
+            {
+                memoryUsages.add(new Pair<>("Buffer pool " + pool.getName(), new MemoryUsageSummary(pool)));
+                graphNames.add(pool.getName());
+            }
+
+            DecimalFormat commaf0 = new DecimalFormat("#,##0");
+
+
             // class loader:
             ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
             if (classbean != null)
             {
-                systemProperties.add(new Pair<>("Loaded Class Count", classbean.getLoadedClassCount()));
-                systemProperties.add(new Pair<>("Unloaded Class Count", classbean.getUnloadedClassCount()));
-                systemProperties.add(new Pair<>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
+                systemProperties.add(new Pair<>("Loaded Class Count", commaf0.format(classbean.getLoadedClassCount())));
+                systemProperties.add(new Pair<>("Unloaded Class Count", commaf0.format(classbean.getUnloadedClassCount())));
+                systemProperties.add(new Pair<>("Total Loaded Class Count", commaf0.format(classbean.getTotalLoadedClassCount())));
             }
 
             // runtime:
@@ -3450,7 +3466,21 @@ public class AdminController extends SpringActionController
             if (null != cacheMem)
                 systemProperties.add(new Pair<>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
-            systemProperties.add(new Pair<>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            if (osBean != null)
+            {
+                systemProperties.add(new Pair<>("CPU count", osBean.getAvailableProcessors()));
+
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+                {
+                    systemProperties.add(new Pair<>("Total OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getTotalMemorySize())));
+                    systemProperties.add(new Pair<>("Free OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getFreeMemorySize())));
+                    systemProperties.add(new Pair<>("OS CPU load", f3.format(sunOsBean.getCpuLoad())));
+                    systemProperties.add(new Pair<>("JVM CPU load", f3.format(sunOsBean.getProcessCpuLoad())));
+                }
+            }
 
             //noinspection ConstantConditions
             assert assertsEnabled = true;
@@ -3483,6 +3513,14 @@ public class AdminController extends SpringActionController
             _used = FileUtils.byteCountToDisplaySize(usage.getUsed());
             _committed = FileUtils.byteCountToDisplaySize(usage.getCommitted());
             _max = FileUtils.byteCountToDisplaySize(usage.getMax());
+        }
+
+        public MemoryUsageSummary(BufferPoolMXBean pool)
+        {
+            _init = null;
+            _used = FileUtils.byteCountToDisplaySize(pool.getMemoryUsed());
+            _committed = null;
+            _max = FileUtils.byteCountToDisplaySize(pool.getTotalCapacity());
         }
 
         public String getInit()
@@ -3573,6 +3611,7 @@ public class AdminController extends SpringActionController
         {
             MemoryUsage usage = null;
             boolean showLegend = false;
+            String title = form.getType();
             if ("Heap".equals(form.getType()))
             {
                 usage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -3591,16 +3630,53 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (usage == null)
-                throw new NotFoundException();
-
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             List<MemoryCategory> types = new ArrayList<>(4);
 
-            types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
-            types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
-            types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
-            types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+            if (usage == null)
+            {
+                boolean found = false;
+                for (Iterator<BufferPoolMXBean> it = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class).iterator(); it.hasNext() && !found;)
+                {
+                    BufferPoolMXBean pool = it.next();
+                    if (form.getType().equals(pool.getName()))
+                    {
+                        title = "Buffer pool " + title;
+
+                        double total = pool.getTotalCapacity();
+                        double used = pool.getMemoryUsed();
+
+                        if (total > 0 || used > 0)
+                        {
+                            while (total > 4096)
+                            {
+                                total /= 1024;
+                                used /= 1024;
+                            }
+
+                            types.add(new MemoryCategory("Used", (long) used));
+                            types.add(new MemoryCategory("Max", (long) total));
+                        }
+                        found = true;
+                    }
+                }
+                if (!found)
+                {
+                    throw new NotFoundException();
+                }
+            }
+            else
+            {
+                if (usage.getInit() > 0 || usage.getUsed() > 0 || usage.getCommitted() > 0 || usage.getMax() > 0)
+                {
+                    types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+                }
+            }
+
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
             Collections.sort(types);
 
             for (int i = 0; i < types.size(); i++)
@@ -3609,7 +3685,8 @@ public class AdminController extends SpringActionController
                 dataset.addValue(mbPastPrevious, types.get(i).getType(), "");
             }
 
-            JFreeChart chart = ChartFactory.createStackedBarChart(form.getType(), null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            JFreeChart chart = ChartFactory.createStackedBarChart(title, null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            chart.getTitle().setFont(new Font("SansSerif", Font.BOLD, 14));
             response.setContentType("image/png");
 
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
