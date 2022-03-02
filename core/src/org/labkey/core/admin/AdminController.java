@@ -162,7 +162,6 @@ import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
@@ -228,6 +227,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2784,6 +2784,9 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
+        private final DecimalFormat commaf0 = new DecimalFormat("#,##0");
+        private final DecimalFormat percent = new DecimalFormat("0%");
+
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
@@ -2938,14 +2941,14 @@ public class AdminController extends SpringActionController
                 if (null == stat)
                     html.append("<td>&nbsp;</td>");
                 else
-                    html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+                    html.append("<td align=\"right\">").append(commaf0.format(stat)).append("</td>");
             }
         }
 
         private void appendDoubles(StringBuilder html, double... stats)
         {
             for (double stat : stats)
-                html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
+                html.append("<td align=\"right\">").append(percent.format(stat)).append("</td>");
         }
 
         @Override
@@ -3416,13 +3419,16 @@ public class AdminController extends SpringActionController
                 graphNames.add(pool.getName());
             }
 
+            DecimalFormat commaf0 = new DecimalFormat("#,##0");
+
+
             // class loader:
             ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
             if (classbean != null)
             {
-                systemProperties.add(new Pair<>("Loaded Class Count", Formats.commaf0.format(classbean.getLoadedClassCount())));
-                systemProperties.add(new Pair<>("Unloaded Class Count", Formats.commaf0.format(classbean.getUnloadedClassCount())));
-                systemProperties.add(new Pair<>("Total Loaded Class Count", Formats.commaf0.format(classbean.getTotalLoadedClassCount())));
+                systemProperties.add(new Pair<>("Loaded Class Count", commaf0.format(classbean.getLoadedClassCount())));
+                systemProperties.add(new Pair<>("Unloaded Class Count", commaf0.format(classbean.getUnloadedClassCount())));
+                systemProperties.add(new Pair<>("Total Loaded Class Count", commaf0.format(classbean.getTotalLoadedClassCount())));
             }
 
             // runtime:
@@ -3465,12 +3471,14 @@ public class AdminController extends SpringActionController
             {
                 systemProperties.add(new Pair<>("CPU count", osBean.getAvailableProcessors()));
 
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
                 if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
                 {
                     systemProperties.add(new Pair<>("Total OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getTotalMemorySize())));
                     systemProperties.add(new Pair<>("Free OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getFreeMemorySize())));
-                    systemProperties.add(new Pair<>("OS CPU load", Formats.f3.format(sunOsBean.getCpuLoad())));
-                    systemProperties.add(new Pair<>("JVM CPU load", Formats.f3.format(sunOsBean.getProcessCpuLoad())));
+                    systemProperties.add(new Pair<>("OS CPU load", f3.format(sunOsBean.getCpuLoad())));
+                    systemProperties.add(new Pair<>("JVM CPU load", f3.format(sunOsBean.getProcessCpuLoad())));
                 }
             }
 
@@ -3637,14 +3645,17 @@ public class AdminController extends SpringActionController
                         double total = pool.getTotalCapacity();
                         double used = pool.getMemoryUsed();
 
-                        while (total > 4096)
+                        if (total > 0 || used > 0)
                         {
-                            total /= 1024;
-                            used /= 1024;
-                        }
+                            while (total > 4096)
+                            {
+                                total /= 1024;
+                                used /= 1024;
+                            }
 
-                        types.add(new MemoryCategory("Used", (long)used));
-                        types.add(new MemoryCategory("Max", (long)total));
+                            types.add(new MemoryCategory("Used", (long) used));
+                            types.add(new MemoryCategory("Max", (long) total));
+                        }
                         found = true;
                     }
                 }
@@ -3655,10 +3666,13 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
-                types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
-                types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
-                types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+                if (usage.getInit() > 0 || usage.getUsed() > 0 || usage.getCommitted() > 0 || usage.getMax() > 0)
+                {
+                    types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
+                    types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+                }
             }
 
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
