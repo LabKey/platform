@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
@@ -65,14 +66,10 @@ public class OutOfRangeDisplayColumn extends DataColumn
     @NotNull
     private String getOORPrefix(RenderContext ctx)
     {
-        StringBuilder result = new StringBuilder();
         if (_oorIndicatorColumn != null)
         {
             Object oorValue = _oorIndicatorColumn.getValue(ctx);
-            if (oorValue != null)
-            {
-                result.append(oorValue);
-            }
+            return null == oorValue ? "" : oorValue.toString();
         }
         else
         {
@@ -90,23 +87,22 @@ public class OutOfRangeDisplayColumn extends DataColumn
             }
             if (row == 1)
             {
-                String msg = "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX + ">";
-                result.append(msg);
+                return "<missing column " + getColumnInfo().getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX + ">";
             }
         }
-        return result.toString();
+        return "";
     }
 
     @Override
     public @Nullable String getFormattedText(RenderContext ctx)
     {
-        return getOORPrefix(ctx) + super.getFormattedText(ctx);
+        return getOORPrefix(ctx) + StringUtils.defaultString(super.getFormattedText(ctx));
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return getOORPrefix(ctx) + super.getTsvFormattedValue(ctx);
+        return getOORPrefix(ctx) + StringUtils.defaultString(super.getTsvFormattedValue(ctx));
     }
 
     @Override
