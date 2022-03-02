@@ -144,7 +144,7 @@ public class RemapCache
     {
         return remapCache.computeIfAbsent(key, (k) -> {
             TableInfo table = key.getTable();
-            return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null, _allowBulkLoads);
+            return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null, _allowBulkLoads, true);
         });
     }
 
@@ -158,7 +158,7 @@ public class RemapCache
     }
 
     /**
-     * Convert the string value to the target table's PK value by using the table's unique indices.
+     * Convert the string value to the target table's PK value by using the table's unique indices and pk.
      */
     public <V> V remap(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, String value)
     {
@@ -166,7 +166,7 @@ public class RemapCache
     }
 
     /**
-     * Convert the string value to the target table's PK value by using the table's unique indices.
+     * Convert the string value to the target table's PK value by using the table's unique indices and pk.
      */
     public <V> V remap(TableInfo lookupTable, String value)
     {
