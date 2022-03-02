@@ -219,6 +219,10 @@ public class OutOfRangeDisplayColumn extends DataColumn
             assertEquals("<0.50", txt);
             tsv = dc.getTsvFormattedValue(renderContext(0.5, "<"));
             assertEquals("<0.50", tsv);
+
+            dc.setTsvFormatString("0.000");
+            tsv = dc.getTsvFormattedValue(renderContext(0.5, ">"));
+            assertEquals(">0.500", tsv);
         }
     }
 }
