@@ -208,9 +208,11 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                     attachments.add(new InputStreamAttachmentFile(aIS, fileName));
                 }
             }
-            AtomicInteger inc = new AtomicInteger();
-            Map<String, Integer> attachmentOrderMap = List.of(attachmentOrder.split(";")).stream().collect(Collectors.toMap(i -> i, i -> inc.getAndIncrement()));
-            attachments.sort(Comparator.comparing(e -> attachmentOrderMap.get(e.getFilename())));
+            if (attachmentOrder != null) {
+                AtomicInteger inc = new AtomicInteger();
+                Map<String, Integer> attachmentOrderMap = List.of(attachmentOrder.split(";")).stream().collect(Collectors.toMap(i -> i, i -> inc.getAndIncrement()));
+                attachments.sort(Comparator.comparing(e -> attachmentOrderMap.get(e.getFilename())));
+            }
 
             wikiversion.setTitle(title == null ? wiki.getName() : title);
             if (existingWiki == null)
