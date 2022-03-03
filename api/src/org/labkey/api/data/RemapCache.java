@@ -140,17 +140,17 @@ public class RemapCache
         return new Key(table);
     }
 
-    private SimpleTranslator.RemapPostConvert remapper(Key key, Map<Key, SimpleTranslator.RemapPostConvert> remapCache)
+    private SimpleTranslator.RemapPostConvert remapper(Key key, Map<Key, SimpleTranslator.RemapPostConvert> remapCache, boolean includePkLookup)
     {
         return remapCache.computeIfAbsent(key, (k) -> {
             TableInfo table = key.getTable();
-            return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null, _allowBulkLoads);
+            return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null, _allowBulkLoads, includePkLookup);
         });
     }
 
-    private <V> V remap(Key key, String value)
+    private <V> V remap(Key key, String value, boolean includePkLookup)
     {
-        SimpleTranslator.RemapPostConvert remap = remapper(key, remaps);
+        SimpleTranslator.RemapPostConvert remap = remapper(key, remaps, includePkLookup);
         if (remap == null)
             throw new NotFoundException("Failed to create remap: " + key._schemaKey.toString() + "." + key._queryName);
         //noinspection unchecked
@@ -162,15 +162,15 @@ public class RemapCache
      */
     public <V> V remap(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, String value)
     {
-        return remap(key(schemaName, queryName, user, c, filterType), value);
+        return remap(key(schemaName, queryName, user, c, filterType), value, false);
     }
 
     /**
-     * Convert the string value to the target table's PK value by using the table's unique indices.
+     * Convert the string value to the target table's PK value by using the table's unique indices and optionally pk.
      */
-    public <V> V remap(TableInfo lookupTable, String value)
+    public <V> V remap(TableInfo lookupTable, String value, boolean includePkLookup)
     {
-        return remap(key(lookupTable), value);
+        return remap(key(lookupTable), value, includePkLookup);
     }
 
 }
