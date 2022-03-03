@@ -952,7 +952,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
-            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
+            if (!StringUtils.isBlank(options.getAutoLinkTargetContainerId()))
+                st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
             st.setAutoLinkCategory(options.getAutoLinkCategory());
             if (options.getCategory() != null) // update sample type category is currently not supported
                 st.setCategory(options.getCategory());
