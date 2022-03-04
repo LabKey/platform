@@ -368,8 +368,11 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
      * @param u user performing the update
      * @param lsid the lsid of the dataset row
      * @param data the data to be updated
+     *
+     * Don't use this method unless you are DatasetUpdateService
      */
-    String updateDatasetRow(User u, String lsid, Map<String,Object> data) throws ValidationException;
+    @Deprecated
+    String updateDatasetRow_forDatasetUpdateService(User u, String lsid, Map<String,Object> data) throws ValidationException;
 
     /**
      * Fetches a single row from a dataset given an LSID
