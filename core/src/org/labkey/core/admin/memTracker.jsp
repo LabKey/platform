@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Tuple3" %>
+<%@ page import="java.text.DecimalFormat" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
@@ -86,27 +88,47 @@
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr>
                     <th>Pool Name</th>
-                    <th>Init</th>
-                    <th>Used</th>
-                    <th>Committed</th>
-                    <th>Max</th>
+                    <th style="text-align: right">Init</th>
+                    <th style="text-align: right">Used</th>
+                    <th style="text-align: right">Committed</th>
+                    <th style="text-align: right">Max</th>
                 </tr>
             <%
-                int counter = 0;
-                for (Pair<String, AdminController.MemoryUsageSummary> property : bean.memoryUsages)
+                long usedTally = 0;
+                long committedTally = 0;
+                DecimalFormat format = new DecimalFormat("#,###");
+                for (Tuple3<Boolean, String, AdminController.MemoryUsageSummary> t : bean.memoryUsages)
                 {
+                    if (t.first && t.third != null)
+                    {
+                        usedTally += Math.max(0, t.third._used);
+                        committedTally += Math.max(0, t.third._committed);
+                    }
             %>
-                <tr class="<%=getShadeRowClass(counter)%>">
-                    <td><%= h(property.getKey()) %></td>
-                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
-                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
-                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getCommitted()) %></td>
-                    <td style="text-align: right"><%= h(property.getValue() == null ? "" : property.getValue().getMax()) %></td>
+                <tr class="<%=getShadeRowClass(t.getKey())%>">
+                    <td><%= unsafe(t.getKey() ? "" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;") %><%= h(t.getValue()) %></td>
+                    <td style="text-align: right"><code><%= h(t.third == null || t.third._init < 0 ? "" : format.format(t.third._init)) %></code></td>
+                    <td style="text-align: right"><code><%= h(t.third == null || t.third._used < 0 ? "" : format.format(t.third._used)) %></code></td>
+                    <td style="text-align: right"><code><%= h(t.third == null || t.third._committed < 0 ? "" : format.format(t.third._committed)) %></code></td>
+                    <td style="text-align: right"><code><%= h(t.third == null || t.third._max < 0 ? "" : format.format(t.third._max)) %></code></td>
                 </tr>
             <%
-                    counter++;
                 }
             %>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr class="<%=getShadeRowClass(true)%>">
+                    <td><strong>Total</strong></td>
+                    <td></td>
+                    <td style="text-align: right"><code><%= h(format.format(usedTally)) %></code></td>
+                    <td style="text-align: right"><code><%= h(format.format(committedTally)) %></code></td>
+                    <td></td>
+                </tr>
             </table>
             <p/>
             <table name="systemProperties" class="labkey-data-region-legacy labkey-show-borders">
@@ -115,7 +137,7 @@
                     <th>System Property Value</th>
                 </tr>
             <%
-                counter = 0;
+                int counter = 0;
                 for (Pair<String, Object> property : bean.systemProperties)
                 {
             %>
