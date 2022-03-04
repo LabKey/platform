@@ -2670,8 +2670,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     }
 
 
+    // This is tragically convoluted this method is only called by DatasetUpdateService.updateRow(), but calls back to
+    // a new instance of DatasetUpdateService, often within a loop.
+    // CONSIDER moving this logic to DatasetUpdateService.updateRow() and simplifying the whole thing
     @Override
-    public String updateDatasetRow(User u, String lsid, Map<String, Object> data) throws ValidationException
+    public String updateDatasetRow_forDatasetUpdateService(User u, String lsid, Map<String, Object> data) throws ValidationException
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
 
