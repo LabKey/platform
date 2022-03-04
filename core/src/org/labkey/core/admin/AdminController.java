@@ -216,6 +216,7 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
@@ -3329,7 +3330,7 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
-        public final List<Pair<String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
+        public final List<Tuple3<Boolean, String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
         public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
         public final List<HeldReference> references;
         public final List<String> graphNames = new ArrayList<>();
@@ -3402,20 +3403,36 @@ public class AdminController extends SpringActionController
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
             if (membean != null)
             {
-                memoryUsages.add(new Pair<>(HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
-                memoryUsages.add(new Pair<>("Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+                memoryUsages.add(Tuple3.of(true, HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
             }
 
             List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             for (MemoryPoolMXBean pool : pools)
             {
-                memoryUsages.add(new Pair<>(pool.getName() + " " + pool.getType(), getUsage(pool)));
-                graphNames.add(pool.getName());
+                if (pool.getType() == MemoryType.HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
+            }
+
+            if (membean != null)
+            {
+                memoryUsages.add(Tuple3.of(true, "Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+            }
+
+            for (MemoryPoolMXBean pool : pools)
+            {
+                if (pool.getType() == MemoryType.NON_HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
             }
 
             for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
             {
-                memoryUsages.add(new Pair<>("Buffer pool " + pool.getName(), new MemoryUsageSummary(pool)));
+                memoryUsages.add(Tuple3.of(true, "Buffer pool " + pool.getName(), new MemoryUsageSummary(pool)));
                 graphNames.add(pool.getName());
             }
 
@@ -3502,45 +3519,26 @@ public class AdminController extends SpringActionController
 
     public static class MemoryUsageSummary
     {
-        private final String _init;
-        private final String _used;
-        private final String _committed;
-        private final String _max;
+
+        public final long _init;
+        public final long _used;
+        public final long _committed;
+        public final long _max;
 
         public MemoryUsageSummary(MemoryUsage usage)
         {
-            _init = FileUtils.byteCountToDisplaySize(usage.getInit());
-            _used = FileUtils.byteCountToDisplaySize(usage.getUsed());
-            _committed = FileUtils.byteCountToDisplaySize(usage.getCommitted());
-            _max = FileUtils.byteCountToDisplaySize(usage.getMax());
+            _init = usage.getInit();
+            _used = usage.getUsed();
+            _committed = usage.getCommitted();
+            _max = usage.getMax();
         }
 
         public MemoryUsageSummary(BufferPoolMXBean pool)
         {
-            _init = null;
-            _used = FileUtils.byteCountToDisplaySize(pool.getMemoryUsed());
-            _committed = null;
-            _max = FileUtils.byteCountToDisplaySize(pool.getTotalCapacity());
-        }
-
-        public String getInit()
-        {
-            return _init;
-        }
-
-        public String getUsed()
-        {
-            return _used;
-        }
-
-        public String getCommitted()
-        {
-            return _committed;
-        }
-
-        public String getMax()
-        {
-            return _max;
+            _init = -1;
+            _used = pool.getMemoryUsed();
+            _committed = _used;
+            _max = pool.getTotalCapacity();
         }
     }
 
@@ -3630,6 +3628,8 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            Pair<Long, String> divisor = null;
+
             List<MemoryCategory> types = new ArrayList<>(4);
 
             if (usage == null)
@@ -3640,21 +3640,17 @@ public class AdminController extends SpringActionController
                     BufferPoolMXBean pool = it.next();
                     if (form.getType().equals(pool.getName()))
                     {
-                        title = "Buffer pool " + title;
+                        long total = pool.getTotalCapacity();
+                        long used = pool.getMemoryUsed();
 
-                        double total = pool.getTotalCapacity();
-                        double used = pool.getMemoryUsed();
+                        divisor = getDivisor(total);
+
+                        title = "Buffer pool " + title;
 
                         if (total > 0 || used > 0)
                         {
-                            while (total > 4096)
-                            {
-                                total /= 1024;
-                                used /= 1024;
-                            }
-
-                            types.add(new MemoryCategory("Used", (long) used));
-                            types.add(new MemoryCategory("Max", (long) total));
+                            types.add(new MemoryCategory("Used", used / divisor.first));
+                            types.add(new MemoryCategory("Max", total / divisor.first));
                         }
                         found = true;
                     }
@@ -3668,11 +3664,18 @@ public class AdminController extends SpringActionController
             {
                 if (usage.getInit() > 0 || usage.getUsed() > 0 || usage.getCommitted() > 0 || usage.getMax() > 0)
                 {
-                    types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
-                    types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
-                    types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
-                    types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+                    divisor = getDivisor(Math.max(usage.getInit(), Math.max(usage.getUsed(), Math.max(usage.getCommitted(), usage.getMax()))));
+
+                    types.add(new MemoryCategory("Init", usage.getInit() / divisor.first));
+                    types.add(new MemoryCategory("Used", usage.getUsed() / divisor.first));
+                    types.add(new MemoryCategory("Committed", usage.getCommitted() / divisor.first));
+                    types.add(new MemoryCategory("Max", usage.getMax() / divisor.first));
                 }
+            }
+
+            if (divisor != null)
+            {
+                title += " (" + divisor.second + ")";
             }
 
             DefaultCategoryDataset dataset = new DefaultCategoryDataset();
@@ -3691,7 +3694,28 @@ public class AdminController extends SpringActionController
 
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         }
+
+        private Pair<Long, String> getDivisor(long l)
+        {
+            if (l > 4096L * 1024L * 1024L)
+            {
+                return Pair.of(1024L * 1024L * 1024L, "GB");
+            }
+            if (l > 4096L * 1024L)
+            {
+                return Pair.of(1024L * 1024L, "MB");
+            }
+            if (l > 4096L)
+            {
+                return Pair.of(1024L, "KB");
+            }
+
+            return Pair.of(1L, "bytes");
+
+        }
     }
+
+
 
     public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {
