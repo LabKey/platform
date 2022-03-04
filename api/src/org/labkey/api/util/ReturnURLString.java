@@ -17,11 +17,11 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
 
@@ -29,7 +29,6 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 
 /**
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
  */
 public class ReturnURLString
 {
-    private static final Logger LOG = LogManager.getLogger(ReturnURLString.class);
+    private static final Logger LOG = LogHelper.getLogger(ReturnURLString.class, "Validates that returnURL parameters are safe");
 
     private final @Nullable URLHelper _url;
 
@@ -55,7 +54,7 @@ public class ReturnURLString
         this(scrub(s));
     }
 
-    public ReturnURLString(URLHelper url)
+    public ReturnURLString(@Nullable URLHelper url)
     {
         _url = url;
     }
@@ -80,15 +79,14 @@ public class ReturnURLString
         {
             List<URLHelper> urls = Arrays.stream(split)
                     .map(ReturnURLString::createValidURL)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                    .filter(Objects::nonNull).toList();
 
             if (!urls.isEmpty())
             {
                 URLHelper first = urls.get(0);
                 String s0 = first.toString();
 
-                // See if all of the parts are identical
+                // See if all the parts are identical
                 if (urls.stream().allMatch(u -> s0.equals(u.toString())))
                 {
                     url = first;
@@ -126,12 +124,12 @@ public class ReturnURLString
         catch (URISyntaxException e)
         {
             StringBuilder sb = new StringBuilder("Bad returnUrl");
-            if (e.getIndex() >= 0)
+            if (e.getIndex() >= 0 && e.getIndex() < s.length())
             {
                 char c = s.charAt(e.getIndex());
-                sb.append(" at char '" + c + "'");
+                sb.append(" at char '").append(c).append("'");
             }
-            LOG.debug(sb.append(": ").append(e.getMessage().toString()));
+            LOG.debug(sb.append(": ").append(e.getMessage()));
             return null;
         }
     }
@@ -195,7 +193,7 @@ public class ReturnURLString
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
-        private static ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
+        private static final ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
 
         @Override
         public Object convert(Class type, Object value)

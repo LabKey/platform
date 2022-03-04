@@ -539,7 +539,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             aliquotNameExpression = StringUtils.trimToNull(StringUtilsLabKey.replaceBadCharacters(arguments.getAliquotNameExpression()));
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
-            autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
+            if (!StringUtils.isBlank(arguments.getAutoLinkTargetContainerId()))
+                autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
             autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
             category = StringUtils.trimToNull(arguments.getCategory());
             aliases = arguments.getImportAliases();
