@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
@@ -69,6 +70,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
         assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
+        assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad);
 
         _existingRows = _data.supportsGetExistingRecord() ? new ArrayList<>() : null;
     }
@@ -126,7 +128,9 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             AuditBehaviorType auditType = AuditBehaviorType.NONE;
             if (queryTable.supportsAuditTracking())
                 auditType = queryTable.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
-            if (auditType == DETAILED)
+
+            // Detailed auditing and not set to bulk load in ETL
+            if (auditType == DETAILED && !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad))
             {
                 DataIterator it = builder.getDataIterator(context);
                 DataIterator in = DataIteratorUtil.wrapMap(it, true);
