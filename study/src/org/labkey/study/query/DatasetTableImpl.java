@@ -494,9 +494,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
+        // Get indices from underlying storage table
         Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(wrapTableIndices(getDatasetDefinition().getStorageTableInfo()));
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
 
+        // Index enforced in code not on actual database for demographic datasets only
         if (getColumn(subjectColName) != null && getDatasetDefinition().isDemographicData())
         {
             ret.put("uq_dataset_subject", Pair.of(IndexType.Unique, Arrays.asList(getColumn(subjectColName))));
