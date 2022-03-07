@@ -8660,7 +8660,8 @@ public class AdminController extends SpringActionController
                 var defaultFolderType = manager.getDefaultFolderType();
                 // If a default folder type has not yet been configuration use "Collaboration" folder type as the default
                 defaultFolderType = defaultFolderType != null ? defaultFolderType : manager.getFolderType(CollaborationFolderType.TYPE_NAME);
-                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(), defaultFolderType);
+                boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
+                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(userHasEnableRestrictedModulesPermission), defaultFolderType);
             }
 
             return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", bean, errors);
