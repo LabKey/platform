@@ -6433,30 +6433,37 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            TableInfo table = schema.getTable(form.getQueryName(), null);
-
-            if (null == table)
-            {
-                errors.reject(ERROR_MSG, "could not resolve table: " + form.getQueryName());
-                return null;
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
             List<QueryParseException> parseErrors = new ArrayList<>();
             List<QueryParseException> parseWarnings = new ArrayList<>();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
-            if (!QueryManager.get().validateQuery(table, true, parseErrors, parseWarnings))
+            try
             {
-                for (QueryParseException e : parseErrors)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                return response;
-            }
+                TableInfo table = schema.getTable(form.getQueryName(), null);
 
-            SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
-            QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
-            QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
+                if (null == table)
+                {
+                    errors.reject(ERROR_MSG, "could not resolve table: " + form.getQueryName());
+                    return null;
+                }
+
+                if (!QueryManager.get().validateQuery(table, true, parseErrors, parseWarnings))
+                {
+                    for (QueryParseException e : parseErrors)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                    return response;
+                }
+
+                SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
+                QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
+                QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
+            }
+            catch (QueryParseException e)
+            {
+                parseErrors.add(e);
+            }
 
             for (QueryParseException e : parseErrors)
             {
@@ -6469,6 +6476,15 @@ public class QueryController extends SpringActionController
             }
 
             return response;
+        }
+
+        @Override
+        protected ApiResponseWriter createResponseWriter() throws IOException
+        {
+            ApiResponseWriter result = super.createResponseWriter();
+            // Issue 44875 - don't send a 400 or 500 response code when there's a bogus query or metadata
+            result.setErrorResponseStatus(HttpServletResponse.SC_OK);
+            return result;
         }
     }
 

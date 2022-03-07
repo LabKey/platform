@@ -463,7 +463,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = _dataset.updateDatasetRow(user, lsid, row);
+        String newLsid = _dataset.updateDatasetRow_forDatasetUpdateService(user, lsid, row);
         //update the lsid and return
         row.put("lsid", newLsid);
 

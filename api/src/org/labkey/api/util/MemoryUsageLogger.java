@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.settings.AppProps;
 
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 
@@ -91,6 +92,15 @@ public class MemoryUsageLogger implements Runnable
                 sb.append(bean.getUsage().getMax());
                 sb.append(")");
             }
+
+            for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
+            {
+                sb.append("\t");
+                sb.append(pool.getName());
+                sb.append(" used\t");
+                sb.append(pool.getName());
+                sb.append(" total");
+            }
             LOG.debug(sb.toString());
         }
 
@@ -107,6 +117,14 @@ public class MemoryUsageLogger implements Runnable
         {
             sb.append("\t");
             sb.append(bean.getUsage().getUsed());
+        }
+
+        for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
+        {
+            sb.append("\t");
+            sb.append(pool.getMemoryUsed());
+            sb.append("\t");
+            sb.append(pool.getTotalCapacity());
         }
         LOG.debug(sb.toString());
     }

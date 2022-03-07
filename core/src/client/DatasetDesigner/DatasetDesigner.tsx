@@ -117,9 +117,9 @@ export class App extends PureComponent<any, State> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {model && model.isFromAssay() &&
+                {model && model.isFromLinkedSource() &&
                     <p>
-                        This dataset was created by copying assay data from <a href={model.sourceAssayUrl}>{model.sourceAssayName}</a>.
+                        This dataset was created by linking {model.sourceType} data from <a href={model.sourceUrl}>{model.sourceName}</a>.
                     </p>
                 }
                 <DatasetDesignerPanels

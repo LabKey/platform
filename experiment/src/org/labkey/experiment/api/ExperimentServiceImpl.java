@@ -7303,7 +7303,13 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c)
+    public List<? extends ExpProtocol> getExpProtocolsWithParameterValue(
+        @NotNull String parameterURI,
+        @NotNull String parameterValue,
+        @Nullable Container c,
+        @Nullable User user,
+        boolean includeProjectAndShared
+    )
     {
         SimpleFilter parameterFilter = new SimpleFilter()
                 .addCondition(FieldKey.fromParts("ontologyEntryURI"), parameterURI)
@@ -7312,8 +7318,24 @@ public class ExperimentServiceImpl implements ExperimentService
 
         Set<Integer> protocolIds = new HashSet<>(new TableSelector(getTinfoProtocolParameter(), singleton("protocolId"), parameterFilter, null).getArrayList(Integer.class));
 
-        SimpleFilter protocolFilter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
-        protocolFilter.addCondition(FieldKey.fromParts("rowId"), protocolIds, IN);
+        SimpleFilter protocolFilter;
+
+        if (c == null)
+            protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
+        else
+        {
+            if (user != null && includeProjectAndShared)
+            {
+                protocolFilter = new SimpleFilter(FieldKey.fromParts("rowId"), protocolIds, IN);
+                ContainerFilter cf = ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user);
+                protocolFilter.addCondition(cf.createFilterClause(getTinfoProtocol().getSchema(), FieldKey.fromParts("Container")));
+            }
+            else
+            {
+                protocolFilter = SimpleFilter.createContainerFilter(c);
+                protocolFilter.addCondition(FieldKey.fromParts("rowId"), protocolIds, IN);
+            }
+        }
 
         return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), protocolFilter, null).getArrayList(Protocol.class));
     }
