@@ -579,24 +579,24 @@ public class LinkedSchema extends ExternalSchema
     {
         private static final int[] NO_GROUPS = new int[0];
 
-        private final Container _sourceContainer;
+        private final SecurityPolicy _containerPolicy;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
             super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-            _sourceContainer = sourceContainer;
+            _containerPolicy = sourceContainer.getPolicy();
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // For the linked schema's source container, grant ReaderRole via the LimitedUser implementation
-            if (policy.getResourceId().equals(_sourceContainer.getId()))
+            // If this is the linked schema's source container policy grant ReaderRole via the LimitedUser implementation
+            if (policy.equals(_containerPolicy))
             {
                 return super.getContextualRoles(policy);
             }
 
-            // For all other containers, no permissions
+            // For all other containers and policies, no permissions
             return Collections.emptySet();
         }
     }
