@@ -44,7 +44,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.FieldMetaRecord', {
             mapping: 'name',
             convert: function(v, rec) {
                 if (!Ext4.isEmpty(rec.raw.caption) && rec.raw.caption != '&nbsp;') {
-                    return rec.raw.caption; // + (rec.raw.hidden === true ? ' (hidden)' : '');
+                    // Ext.tree.Column uses tpl.apply to render nodes, which does html encoding.
+                    // caption is html encoded, need to decode here to avoid double encoding
+                    return Ext4.htmlDecode(rec.raw.caption);
                 }
                 return v;
             }
