@@ -61,41 +61,45 @@
 
     // default to the display options for a folder import and change the wording/actions based on if this is a
     // first time study import or a study reload
-    String noun = "Folder";
-    String action = "Import";
-    String mainDescription = "You can import a folder archive to populate a folder with data and configuration. A folder archive is " +
-            "a .folder.zip file or a collection of individual files that comforms to the LabKey folder export conventions " +
-            "and formats.  In most cases, a folder archive is created using the folder export feature.  Using export " +
-            "and import, a folder can be moved from one server to another or a new folder can be created using a " +
-            "standard template. You can also populate a new folder from a template folder on the current server using " +
-            "the \"Create Folder From Template\" option from the folder creation page.";
-    String helpLinkTxt = "For more information about exporting and importing folders, see " +
-            helpLink("importExportFolder", "the folder documentation") + ".";
+    final String noun;
+    final String action;
+    final String mainDescription;
+    final String helpLinkTxt;
+
+    final String whatIsAFolderArchive = "A folder archive is a .folder.zip file or a collection of individual files that " +
+        "conforms to the LabKey folder archive conventions and formats. A folder archive can be created using the folder " +
+        "export feature or via scripts that write data from a master repository into the correct formats. ";
 
     if (requestOrigin.equals("Study"))
     {
         noun = "Study";
         action = "Import";
-        mainDescription = "You can import a study archive, or a folder containing a study, to create and populate a new " +
-            "study.  A study archive is a .study.zip file or a collection of individual files that conforms to the LabKey " +
-            "study export conventions and formats.  In most cases, a study archive is created using the study export " +
-            "feature. Using export and import, a study can be moved from one server to another or a new study can be " +
+        mainDescription = "You can create and populate a new study by importing a folder archive. " + whatIsAFolderArchive +
+            "Using export and import, a study's contents can be moved from one server to another or a new study can be " +
             "created using a standard template.";
         helpLinkTxt = "For more information about exporting, importing, and reloading studies, see " +
-                helpLink("importExportStudy", "the study documentation") + ".";
+            helpLink("importExportStudy", "the study import/export/reload documentation") + ".";
     }
-    else if(requestOrigin.equals("Reload"))
+    else if (requestOrigin.equals("Reload"))
     {
         noun = "Study";
         action = "Reload";
-        mainDescription = "You can reload a folder archive to update an existing study with new settings and data. " +
-            "A folder archive is a .folder.zip file or a collection of individual files that conforms to the LabKey " +
-            "study export conventions and formats.  A folder archive can be created using the study export feature " +
-            "or via scripts that write data from a master repository into the correct formats.  You may also reload " +
-            "using a study archive, which has the format .study.zip. Note: Reloading a study will replace existing " +
-            "study data with the data in the archive.";
+        mainDescription = "You can update an existing study with new settings and data by reloading a folder archive. " +
+            whatIsAFolderArchive + "Note: Reloading a folder archive will replace existing study data with the data in " +
+            "the archive.";
         helpLinkTxt = "For more information about exporting, importing, and reloading studies, see " +
-                helpLink("importExportStudy", "the study documentation") + ".";
+            helpLink("importExportStudy", "the study import/export/reload documentation") + ".";
+    }
+    else
+    {
+        noun = "Folder";
+        action = "Import";
+        mainDescription = "You can populate a folder with data and configuration by importing a folder archive. " +
+            whatIsAFolderArchive + "Using export and import, a folder's contents can be moved from one server to another " +
+            "or a new folder can be created using a standard template. You can also populate a new folder from a template " +
+            "folder on the current server using the \"Create Folder From Template\" option on the folder creation page.";
+        helpLinkTxt = "For more information about exporting and importing folders, see " +
+            helpLink("importExportFolder", "the folder export/import documentation") + ".";
     }
 %>
 <style type="text/css">

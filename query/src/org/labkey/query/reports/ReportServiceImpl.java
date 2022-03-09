@@ -900,7 +900,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             List<Report> existingReports = new ArrayList<>(getReports(ctx.getUser(), ctx.getContainer(), key));
 
             // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
-            // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
+            // so if we are importing an older folder archive, we need to also check for existing reports using the query name (i.e. dataset name)
             // NOTE: this will then be fixed up in the ReportImporter.postProcess
             if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
             {

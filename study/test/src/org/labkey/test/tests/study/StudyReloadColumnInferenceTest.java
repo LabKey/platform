@@ -36,14 +36,15 @@ import java.util.List;
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class StudyReloadColumnInferenceTest extends StudyBaseTest
 {
-    /*List archive:
+    /* List archive:
         -Languages.tsv
         -Countries.tsv
         -lists.xml
         -settings.xml
     * */
     private static final File LIST_ARCHIVE = TestFileUtils.getSampleData("studyreload/listsSetup.zip");
-    /*Study archive: dataset file content match original STUDY_ARCHIVE
+
+    /* Study node:
         -datasets
             -dataset1000.tsv
             -dataset1001.tsv
@@ -53,9 +54,9 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
             -Study.dataset
         -study.xml
     * */
-    private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studyreload/datasetsSetup.zip");
+    private static final File FOLDER_ARCHIVE = TestFileUtils.getSampleData("studyreload/datasetsSetup.zip");
 
-    /*Study archive:
+    /* Study node:
         -datasets
             -Demographics.xlsx (content same as dataset1000.tsv)
             -Lab Results.tsv (content same as dataset1001.tsv)
@@ -67,7 +68,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File initialReloadTestFile = TestFileUtils.getSampleData("studyreload/originalMixedFileTypes.zip");
 
-    /*Study archive:
+    /* Study node:
         -datasets
             -Demographics.xlsx
             -Medical History.tsv
@@ -80,12 +81,14 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File secondReloadTestFile = TestFileUtils.getSampleData("studyreload/editedMixedFileTypes.zip");
 
-    /*Study archive:
-    -datasets
-        -Demographics.xlsx (with added int, number, string boolean columns)
-    -lists
-        -Languages.xlsx (with added int, number, string boolean columns)
-    -study.xml
+    /* Folder archive:
+        -lists
+            -Languages.xlsx (with added int, number, string boolean columns)
+        -study
+            -datasets
+                -Demographics.xlsx (with added int, number, string boolean columns)
+            -study.xml
+        -folder.xml
     * */
     private static final File thirdReloadTestFile = TestFileUtils.getSampleData("studyreload/editedMixedFieldTypes.zip");
 
@@ -182,7 +185,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     protected void doCreateSteps()
     {
         initializeFolder();
-        importStudyFromZip(STUDY_ARCHIVE);
+        importStudyFromZip(FOLDER_ARCHIVE);
         clickFolder(getFolderName());
         _listHelper.importListArchive(LIST_ARCHIVE);
     }

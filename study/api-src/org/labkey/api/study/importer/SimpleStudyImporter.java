@@ -2,7 +2,7 @@ package org.labkey.api.study.importer;
 
 import org.labkey.api.admin.ImportException;
 
-// Implemented by importers that import from a study archive but are registered by other modules,
+// Implemented by importers that import from the study node of a folder archive but are registered by other modules,
 // namely specimen importers
 public interface SimpleStudyImporter extends BaseStudyImporter<SimpleStudyImportContext>
 {
