@@ -153,24 +153,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final int compareTo(@NotNull Module m)
-    {
-        // Ensure that the "Core" module is listed first
-        if (this.getName().equalsIgnoreCase(CORE_MODULE_NAME) && !m.getName().equalsIgnoreCase(CORE_MODULE_NAME))
-        {
-            return -1;
-        }
-        else if (!this.getName().equalsIgnoreCase(CORE_MODULE_NAME) && m.getName().equalsIgnoreCase(CORE_MODULE_NAME))
-        {
-            return 1;
-        }
-        else
-        {
-            return getName().compareToIgnoreCase(m.getName());
-        }
-    }
-
-    @Override
     final public void initialize()
     {
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))

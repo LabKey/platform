@@ -80,8 +80,8 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -254,6 +254,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
+import static org.labkey.api.module.DefaultModule.CORE_MODULE_NAME;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
@@ -958,7 +959,10 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.naturalOrder());
+            modules.sort(Comparator.comparing(module ->
+                    // List 'Core' module credits first
+                    module.getName().equalsIgnoreCase(CORE_MODULE_NAME) ? "" : module.getName(),
+                    String.CASE_INSENSITIVE_ORDER));
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
