@@ -983,7 +983,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     TableInfo lookupTable = remappableLookup.get(pd);
                     try
                     {
-                        Object remapped = cache.remap(lookupTable, (String)o);
+                        Object remapped = cache.remap(lookupTable, (String)o, true);
                         if (remapped == null)
                         {
                             errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));

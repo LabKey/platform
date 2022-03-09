@@ -39,5 +39,10 @@
                 <xsd:documentation>Whether this page should be indexed by the search service for full text search</xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="attachmentsOrder" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The order in which this page's attachments should appear, as a semicolon-delimited list of file names</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 </xsd:schema>
