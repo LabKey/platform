@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ObjectFactory;
@@ -202,6 +203,10 @@ public class LogManager
 
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
+        return getAuditEvents(container, user, eventType, filter, sort, null);
+    }
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
+    {
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(eventType);
         if (provider != null)
         {
@@ -209,7 +214,7 @@ public class LogManager
 
             if (schema != null)
             {
-                TableInfo table = schema.getTable(provider.getEventName());
+                TableInfo table = schema.getTable(provider.getEventName(), cf);
                 TableSelector selector = new TableSelector(table, filter, sort);
 
                 return (List<K>)selector.getArrayList(provider.getEventClass());
