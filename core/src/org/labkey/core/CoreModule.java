@@ -279,14 +279,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     @Override
-    public int compareTo(@NotNull Module m)
-    {
-        //core module always sorts first
-        // TODO: Nice try, but this doesn't work consistently, since no one told DefaultModule.compareTo() that core is special -- fix this or remove the override
-        return (m instanceof CoreModule) ? 0 : -1;
-    }
-
-    @Override
     public boolean hasScripts()
     {
         return true;

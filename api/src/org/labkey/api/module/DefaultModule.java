@@ -153,13 +153,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public int compareTo(@NotNull Module m)
-    {
-        //sort by name--core module will override to ensure first in sort
-        return getName().compareToIgnoreCase(m.getName());
-    }
-
-    @Override
     final public void initialize()
     {
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
