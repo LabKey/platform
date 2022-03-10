@@ -68,7 +68,7 @@
 
     final String whatIsAFolderArchive = "A folder archive is a .folder.zip file or a collection of individual files that " +
         "conforms to the LabKey folder archive conventions and formats. A folder archive can be created using the folder " +
-        "export feature or via scripts that write data from a master repository into the correct formats. ";
+        "export feature or via scripts that write data from a source repository into the correct formats. ";
 
     if (requestOrigin.equals("Study"))
     {

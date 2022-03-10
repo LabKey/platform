@@ -75,7 +75,7 @@ public class StudySerializationRegistry
         );
     }
 
-    // These writers are related to study and serialize into the study node of a folder archive, but are registered by other modules
+    // These writers are related to study and serialize into the /study subfolder of a folder archive, but are registered by other modules
     public Collection<SimpleStudyWriter> getSimpleStudyWriters()
     {
         return SimpleStudyWriterRegistry.getSimpleStudyWriters();

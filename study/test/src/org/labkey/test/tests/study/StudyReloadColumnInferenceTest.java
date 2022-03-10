@@ -44,7 +44,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File LIST_ARCHIVE = TestFileUtils.getSampleData("studyreload/listsSetup.zip");
 
-    /* Study node:
+    /* /study subfolder:
         -datasets
             -dataset1000.tsv
             -dataset1001.tsv
@@ -56,7 +56,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File FOLDER_ARCHIVE = TestFileUtils.getSampleData("studyreload/datasetsSetup.zip");
 
-    /* Study node:
+    /* /study subfolder:
         -datasets
             -Demographics.xlsx (content same as dataset1000.tsv)
             -Lab Results.tsv (content same as dataset1001.tsv)
@@ -68,7 +68,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     * */
     private static final File initialReloadTestFile = TestFileUtils.getSampleData("studyreload/originalMixedFileTypes.zip");
 
-    /* Study node:
+    /* /study subfolder:
         -datasets
             -Demographics.xlsx
             -Medical History.tsv
