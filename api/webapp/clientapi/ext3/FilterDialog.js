@@ -481,7 +481,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
         var inputValue = filter.getURLParameterValue();
 
-        if (this.jsonType == "date" && !LABKEY.useMDYDateParsing && inputValue) {
+        if (this.jsonType === "date" && inputValue) {
             const dateVal = Date.parseDate(inputValue, LABKEY.extDateInputFormat); // date inputs are formatted to ISO date format on server
             inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
         }
@@ -711,14 +711,14 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     },
 
     getAltDateFormats: function() {
-        if (this.jsonType == "date")
+        if (this.jsonType === "date")
             return 'Y-m-d|' + LABKEY.Utils.getDateAltFormats(); // always support ISO
         return undefined;
     },
 
     getInputConfig : function(idx) {
         var me = this;
-        return {
+        var config = {
             xtype         : this.getXtype(),
             itemId        : 'inputField' + idx,
             filterIndex   : idx,
@@ -727,7 +727,6 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
             value         : null,
-            format        : this.jsonType == "date" && !LABKEY.useMDYDateParsing ? LABKEY.extDefaultDateFormat : undefined,
             altFormats    : this.getAltDateFormats(),
             validator : function(value) {
 
@@ -773,6 +772,15 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             },
             scope: this
         };
+        if (this.jsonType === "date") {
+            config.format = LABKEY.extDefaultDateFormat;
+
+            // default invalidText : "{0} is not a valid date - it must be in the format {1}",
+            // override the default warning msg as there is one preferred format, but there are also a set of acceptable altFormats
+            config.invalidText = "{0} might not be a valid date - the preferred format is {1}";
+        }
+
+        return config;
     },
 
     inputListener : function(input, newVal, oldVal) {
