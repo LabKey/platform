@@ -155,7 +155,7 @@ public class ExcelFactory
 
 
     // throw FileNotFoundException instead of InvalidOperationException or InvalidFormatException
-    static OPCPackage readOPCPackage(@NotNull File file) throws IOException, InvalidFormatException
+    static OPCPackage openOPCPackage(@NotNull File file) throws IOException, InvalidFormatException
     {
         if (!file.isFile())
             throw new FileNotFoundException("file not found");
@@ -165,9 +165,9 @@ public class ExcelFactory
 
     public static WorkbookMetadata getMetadata(@NotNull File file) throws IOException, InvalidFormatException
     {
-        try
+        try (OPCPackage opc = openOPCPackage(file))
         {
-            return getMetadata(readOPCPackage(file));
+            return getMetadata(opc);
         }
         // might be OLE2 formet
         catch (InvalidFormatException|UnsupportedFileFormatException e)
@@ -223,9 +223,8 @@ public class ExcelFactory
     @NotNull
     public static Workbook create(@NotNull File file) throws IOException, InvalidFormatException
     {
-        try
+        try (OPCPackage opc = openOPCPackage(file))
         {
-            OPCPackage opc = readOPCPackage(file);
             return new XSSFWorkbook(opc)
             {
                 // This overload is here to make it easy to see which code paths are inadvertently loading spreadsheet data the expensive way!
