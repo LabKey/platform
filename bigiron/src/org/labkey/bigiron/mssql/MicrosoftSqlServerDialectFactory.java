@@ -129,7 +129,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 return new MicrosoftSqlServer2014Dialect(_tableResolver);
 
             if (version >= 110)
+            {
+                if (logWarnings)
+                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new MicrosoftSqlServer2012Dialect(_tableResolver);
+            }
 
             // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
             if (!primaryDataSource)
