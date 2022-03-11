@@ -479,7 +479,13 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             }
         }
 
-        const inputValue = filter.getURLParameterValue();
+        var inputValue = filter.getURLParameterValue();
+
+        if (this.jsonType == "date" && !LABKEY.useMDYDateParsing && inputValue) {
+            const dateVal = Date.parseDate(inputValue, LABKEY.extDateInputFormat); // date inputs are formatted to ISO date format on server
+            inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
+        }
+
         if (this.inputs[f]) {
             this.inputs[f].setValue(inputValue);
         }
@@ -715,6 +721,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
             value         : null,
+            format        : this.jsonType == "date" && !LABKEY.useMDYDateParsing ? LABKEY.extDefaultDateFormat : undefined, // Unless in "Non-U.S. date parsing (DMY)" mode, always use ISO date format for input forms
             altFormats: (this.jsonType == "date" ? LABKEY.Utils.getDateAltFormats() : undefined),
             validator : function(value) {
 
