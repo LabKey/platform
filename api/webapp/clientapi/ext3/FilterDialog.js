@@ -727,7 +727,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
             value         : null,
-            format        : this.jsonType == "date" && !LABKEY.useMDYDateParsing ? LABKEY.extDefaultDateFormat : undefined, // Unless in "Non-U.S. date parsing (DMY)" mode, always use ISO date format for input forms
+            format        : this.jsonType == "date" && !LABKEY.useMDYDateParsing ? LABKEY.extDefaultDateFormat : undefined,
             altFormats    : this.getAltDateFormats(),
             validator : function(value) {
 
