@@ -710,6 +710,12 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         return filters;
     },
 
+    getAltDateFormats: function() {
+        if (this.jsonType == "date")
+            return 'Y-m-d|' + LABKEY.Utils.getDateAltFormats(); // always support ISO
+        return undefined;
+    },
+
     getInputConfig : function(idx) {
         var me = this;
         return {
@@ -722,7 +728,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             validateOnBlur: true,
             value         : null,
             format        : this.jsonType == "date" && !LABKEY.useMDYDateParsing ? LABKEY.extDefaultDateFormat : undefined, // Unless in "Non-U.S. date parsing (DMY)" mode, always use ISO date format for input forms
-            altFormats: (this.jsonType == "date" ? LABKEY.Utils.getDateAltFormats() : undefined),
+            altFormats    : this.getAltDateFormats(),
             validator : function(value) {
 
                 // support for filtering '∞'
