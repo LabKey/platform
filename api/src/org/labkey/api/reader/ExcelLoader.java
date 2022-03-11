@@ -445,6 +445,12 @@ public class ExcelLoader extends DataLoader
     {
         if (shouldDeleteFile && null != _file)
             FileUtil.deleteTempFile(_file);
+        try
+        {
+            _workbook.close();
+        }
+        catch (IOException ignore)
+        {}
     }
 
 
