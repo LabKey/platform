@@ -38,7 +38,7 @@ public class QueryLogging
     private final boolean _readOnly;
     private final boolean _metadataQuery;
     private final String _debugName;
-    private Boolean _shouldAudit = null;
+    private boolean _shouldAudit = false;
     private SelectQueryAuditProvider _selectQueryAuditProvider = null;
     private RuntimeException _exceptionToThrowIfLoggingIsEnabled = null;
 
@@ -165,8 +165,6 @@ public class QueryLogging
 
     public boolean isShouldAudit()
     {
-        if (null == _shouldAudit)
-            throw new IllegalStateException("ShouldAudit has not been set!");
         return _shouldAudit;
     }
 
@@ -175,9 +173,6 @@ public class QueryLogging
         // Commented out until Issue 42791 is resolved
 //        if (_readOnly)
 //            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
-        if (shouldAudit && null != _exceptionToThrowIfLoggingIsEnabled)
-            throw _exceptionToThrowIfLoggingIsEnabled;
-
         _shouldAudit = shouldAudit;
     }
 
@@ -189,5 +184,10 @@ public class QueryLogging
     public void setExceptionToThrowIfLoggingIsEnabled(RuntimeException exceptionToThrowIfLoggingIsEnabled)
     {
         _exceptionToThrowIfLoggingIsEnabled = exceptionToThrowIfLoggingIsEnabled;
+    }
+
+    public RuntimeException getExceptionToThrowIfLoggingIsEnabled()
+    {
+        return _exceptionToThrowIfLoggingIsEnabled;
     }
 }
