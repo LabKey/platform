@@ -1,8 +1,8 @@
-package org.labkey.core.security;
+package org.labkey.api.security.roles;
 
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.AbstractRootContainerRole;
+import org.labkey.api.security.permissions.CreateProjectPermission;
 
 public class ProjectCreatorRole extends AbstractRootContainerRole
 {
@@ -11,7 +11,7 @@ public class ProjectCreatorRole extends AbstractRootContainerRole
         super
         (
             "Project Creator",
-            "Can create new projects via the CreateProject action and grant themselves the Project Administrator role after creation",
+            "Allows users to create new projects via the CreateProject action and grant themselves the Project Administrator role after creation",
             CreateProjectPermission.class
         );
 

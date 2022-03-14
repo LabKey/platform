@@ -1,6 +1,4 @@
-package org.labkey.core.security;
-
-import org.labkey.api.security.permissions.AbstractPermission;
+package org.labkey.api.security.permissions;
 
 public class CreateProjectPermission extends AbstractPermission
 {
