@@ -293,9 +293,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loader.load();
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loader.load();
+                        }
                     }
                 }
             }
@@ -325,9 +326,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loadProperties(loader);
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loadProperties(loader);
+                        }
                     }
                 }
             }
@@ -357,9 +359,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loadProperties(loader);
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loadProperties(loader);
+                        }
                     }
                 }
             }

@@ -571,6 +571,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         finally
         {
+            if (loader != null)
+                loader.close();
             if (null != file)
                 file.closeInputStream();
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)

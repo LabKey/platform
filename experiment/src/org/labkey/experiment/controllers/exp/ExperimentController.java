@@ -2254,59 +2254,62 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
-            DataLoader tabLoader = dlf.createLoader(realContent, true);
-            tabLoader.setScanAheadLineCount(5000);
-            ColumnDescriptor[] cols = tabLoader.getColumns();
 
-            if (ignoreTypes)
-                for (ColumnDescriptor col : cols)
-                    col.clazz = String.class;
-
-            JSONArray rowsArray = new JSONArray();
-            JSONArray headerArray = new JSONArray();
-            for (ColumnDescriptor col : cols)
+            try (DataLoader tabLoader = dlf.createLoader(realContent, true))
             {
-                if (extended)
-                {
-                    JSONObject valueObject = new JSONObject();
-                    valueObject.put("value", col.name);
-                    headerArray.put(valueObject);
-                }
-                else
-                {
-                    headerArray.put(col.name);
-                }
-            }
-            rowsArray.put(headerArray);
-            for (Map<String, Object> rowMap : tabLoader)
-            {
-                // headers count as a row to be consistent
-                if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
-                    break;
+                tabLoader.setScanAheadLineCount(5000);
+                ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                JSONArray rowArray = new JSONArray();
+                if (ignoreTypes)
+                    for (ColumnDescriptor col : cols)
+                        col.clazz = String.class;
+
+                JSONArray rowsArray = new JSONArray();
+                JSONArray headerArray = new JSONArray();
                 for (ColumnDescriptor col : cols)
                 {
-                    Object value = rowMap.get(col.name);
                     if (extended)
                     {
                         JSONObject valueObject = new JSONObject();
-                        valueObject.put("value", value);
-                        rowArray.put(valueObject);
+                        valueObject.put("value", col.name);
+                        headerArray.put(valueObject);
                     }
                     else
                     {
-                        rowArray.put(value);
+                        headerArray.put(col.name);
                     }
                 }
-                rowsArray.put(rowArray);
-            }
+                rowsArray.put(headerArray);
+                for (Map<String, Object> rowMap : tabLoader)
+                {
+                    // headers count as a row to be consistent
+                    if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
+                        break;
 
-            JSONObject sheetJSON = new JSONObject();
-            sheetJSON.put("name", "flat");
-            sheetJSON.put("data", rowsArray);
-            sheetsArray = new JSONArray();
-            sheetsArray.put(sheetJSON);
+                    JSONArray rowArray = new JSONArray();
+                    for (ColumnDescriptor col : cols)
+                    {
+                        Object value = rowMap.get(col.name);
+                        if (extended)
+                        {
+                            JSONObject valueObject = new JSONObject();
+                            valueObject.put("value", value);
+                            rowArray.put(valueObject);
+                        }
+                        else
+                        {
+                            rowArray.put(value);
+                        }
+                    }
+                    rowsArray.put(rowArray);
+                }
+
+                JSONObject sheetJSON = new JSONObject();
+                sheetJSON.put("name", "flat");
+                sheetJSON.put("data", rowsArray);
+                sheetsArray = new JSONArray();
+                sheetsArray.put(sheetJSON);
+            }
         }
         ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
         JSONObject workbookJSON = new JSONObject();
