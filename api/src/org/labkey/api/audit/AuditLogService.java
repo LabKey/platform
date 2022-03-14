@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -105,6 +106,8 @@ public interface AuditLogService
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 
     <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);
+
+    <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf);
 
     String getTableName();
 
