@@ -688,6 +688,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 MutableColumnInfo wrappedRowId = wrapColumn("LineageLookupPlaceHolder", _rootTable.getColumn("rowid"));
                 wrappedRowId.setIsUnselectable(true);
+                wrappedRowId.setReadOnly(true);
+                wrappedRowId.setCalculated(true);
+                wrappedRowId.setRequired(false);
                 wrappedRowId.setFk(new AbstractForeignKey(getUserSchema(),null)
                 {
                     @Override

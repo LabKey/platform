@@ -3020,13 +3020,20 @@ public class ExperimentServiceImpl implements ExperimentService
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
                     .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
 
+            Set<String> fromCpasTypes = new HashSet<>();
             Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
             Collection<Map<String, Object>> toMaterialLsids = new ArrayList<>();
             new SqlSelector(getSchema(), materials).forEachMap(row -> {
-                if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
+                String cpasType = (String)row.get("pa_cpas_type");
+                if (ExperimentRun.name().equals(cpasType))
+                {
+                    fromCpasTypes.add(cpasType);
                     fromMaterialLsids.add(row);
+                }
                 else
+                {
                     toMaterialLsids.add(row);
+                }
             });
 
             Set<Pair<Integer, Integer>> provenanceStartingInputs = emptySet();
@@ -3151,7 +3158,10 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (verifyEdgesNoInsert)
                     verifyEdges(runId, runObjectId, params);
                 else
+                {
                     insertEdges(params);
+
+                }
             }
             else
             {
@@ -3163,6 +3173,11 @@ public class ExperimentServiceImpl implements ExperimentService
             tx.commit();
             timer.stop();
             LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
+
+            if (!verifyEdgesNoInsert && !fromCpasTypes.isEmpty())
+            {
+                fromCpasTypes.forEach((type) -> ClosureQueryHelper.invalidateCpasType(type));
+            }
         }
     }
 
@@ -3201,6 +3216,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 LOG.debug("Rebuilt all edges: " + timing.getDuration() + " ms");
             }
         }
+        ClosureQueryHelper.invalidateAll();
     }
 
     public void verifyRunEdges(ExpRun run)
