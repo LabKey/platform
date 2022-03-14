@@ -2368,12 +2368,13 @@ public class ExperimentController extends SpringActionController
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
                 ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
 
-                Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType);
-
-                response.setContentType(docType.getMimeType());
-                response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
-                ResponseHelper.setPrivate(response);
-                workbook.write(response.getOutputStream());
+                try (Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType))
+                {
+                    response.setContentType(docType.getMimeType());
+                    response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+                    ResponseHelper.setPrivate(response);
+                    workbook.write(response.getOutputStream());
+                }
             }
             catch (JSONException | ClassCastException e)
             {

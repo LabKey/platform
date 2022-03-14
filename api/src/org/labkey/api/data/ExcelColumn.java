@@ -38,6 +38,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.util.Units;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
@@ -58,7 +59,6 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
@@ -897,7 +897,7 @@ public class ExcelColumn extends RenderColumn
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
                 {
                     excel.write(baos);
-                    Sheet wb = ExcelFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
+                    Sheet wb = WorkbookFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
                     DataFormatter formatter = new DataFormatter();
                     for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)
                     {

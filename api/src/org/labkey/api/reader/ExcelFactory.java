@@ -55,12 +55,12 @@ import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -92,7 +92,7 @@ public class ExcelFactory
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
 
 
-    public static class WorkbookMetadata
+    public static class WorkbookMetadata implements Closeable
     {
         private final List<String> _names;
         private final boolean _isSpreadSheetML;
@@ -150,6 +150,15 @@ public class ExcelFactory
         public Workbook getWorkbook()
         {
             return _workbook;
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            if (getWorkbook() != null)
+            {
+                getWorkbook().close();
+            }
         }
     }
 
@@ -258,22 +267,6 @@ public class ExcelFactory
             throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
         }
     }
-
-    /** Creates a temp file from the InputStream, then attempts to parse using the new and old formats. */
-    public static Workbook create(InputStream is) throws IOException, InvalidFormatException
-    {
-        File temp = FileUtil.createTempFile("excel", "tmp", true);
-        try
-        {
-            FileUtil.copyData(is, temp);
-            return create(temp);
-        }
-        finally
-        {
-            FileUtil.deleteTempFile(temp);
-        }
-    }
-
 
     /**
      * Contructs an in-memory Excel file from a JSON representation, as described in the LABKEY.Utils.convertToExcel JavaScript API
@@ -804,68 +797,70 @@ public class ExcelFactory
             JSONObject root      = new JSONObject(source);
             JSONArray sheetArray = root.getJSONArray("sheets");
 
-            Workbook wb = ExcelFactory.createFromArray(sheetArray, ExcelWriter.ExcelDocumentType.xls);
-            wb.write(os);
+            try (Workbook wb = ExcelFactory.createFromArray(sheetArray, ExcelWriter.ExcelDocumentType.xls))
+            {
+                wb.write(os);
 
-            Sheet sheet = wb.getSheet("FirstSheet");
-            assertNotNull(sheet);
-            Cell cell = sheet.getRow(0).getCell(0);
-            assertEquals("Row1Col1", cell.getStringCellValue());
-            cell = sheet.getRow(1).getCell(1);
-            assertEquals("Row2Col2", cell.getStringCellValue());
+                Sheet sheet = wb.getSheet("FirstSheet");
+                assertNotNull(sheet);
+                Cell cell = sheet.getRow(0).getCell(0);
+                assertEquals("Row1Col1", cell.getStringCellValue());
+                cell = sheet.getRow(1).getCell(1);
+                assertEquals("Row2Col2", cell.getStringCellValue());
 
-            // Validate equaility with '5 Mar 2009 05:14:17'
-            sheet = wb.getSheet("SecondSheet");
-            cell = sheet.getRow(1).getCell(1);
-            Calendar cal = new GregorianCalendar();
-            cal.setTime(cell.getDateCellValue());
-            assertEquals(cal.get(Calendar.DATE), 5);
-            assertEquals(cal.get(Calendar.MONTH), Calendar.MARCH);
-            assertEquals(cal.get(Calendar.YEAR), 2009);
-            assertEquals(cal.get(Calendar.HOUR), 5);
-            assertEquals(cal.get(Calendar.MINUTE), 14);
-            assertEquals(cal.get(Calendar.SECOND), 17);
+                // Validate equaility with '5 Mar 2009 05:14:17'
+                sheet = wb.getSheet("SecondSheet");
+                cell = sheet.getRow(1).getCell(1);
+                Calendar cal = new GregorianCalendar();
+                cal.setTime(cell.getDateCellValue());
+                assertEquals(cal.get(Calendar.DATE), 5);
+                assertEquals(cal.get(Calendar.MONTH), Calendar.MARCH);
+                assertEquals(cal.get(Calendar.YEAR), 2009);
+                assertEquals(cal.get(Calendar.HOUR), 5);
+                assertEquals(cal.get(Calendar.MINUTE), 14);
+                assertEquals(cal.get(Calendar.SECOND), 17);
 
-            // Now make sure that it round-trips back to JSON correctly
-            JSONArray array = convertExcelToJSON(wb, true);
-            assertEquals(2, array.length());
+                // Now make sure that it round-trips back to JSON correctly
+                JSONArray array = convertExcelToJSON(wb, true);
+                assertEquals(2, array.length());
 
-            JSONObject sheet1JSON = array.getJSONObject(0);
-            assertEquals("FirstSheet", sheet1JSON.getString("name"));
-            JSONArray sheet1Values = sheet1JSON.getJSONArray("data");
-            assertEquals("Wrong number of rows", 2, sheet1Values.length());
-            assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(0).length());
-            assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(1).length());
-            assertEquals("Row1Col1", sheet1Values.getJSONArray(0).getJSONObject(0).getString("value"));
-            assertEquals("Row1Col2", sheet1Values.getJSONArray(0).getJSONObject(1).getString("value"));
-            assertEquals("Row2Col1", sheet1Values.getJSONArray(1).getJSONObject(0).getString("value"));
-            assertEquals("Row2Col2", sheet1Values.getJSONArray(1).getJSONObject(1).getString("value"));
+                JSONObject sheet1JSON = array.getJSONObject(0);
+                assertEquals("FirstSheet", sheet1JSON.getString("name"));
+                JSONArray sheet1Values = sheet1JSON.getJSONArray("data");
+                assertEquals("Wrong number of rows", 2, sheet1Values.length());
+                assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(0).length());
+                assertEquals("Wrong number of columns", 2, sheet1Values.getJSONArray(1).length());
+                assertEquals("Row1Col1", sheet1Values.getJSONArray(0).getJSONObject(0).getString("value"));
+                assertEquals("Row1Col2", sheet1Values.getJSONArray(0).getJSONObject(1).getString("value"));
+                assertEquals("Row2Col1", sheet1Values.getJSONArray(1).getJSONObject(0).getString("value"));
+                assertEquals("Row2Col2", sheet1Values.getJSONArray(1).getJSONObject(1).getString("value"));
 
-            JSONObject sheet2JSON = array.getJSONObject(1);
-            assertEquals("SecondSheet", sheet2JSON.getString("name"));
-            JSONArray sheet2Values = sheet2JSON.getJSONArray("data");
-            assertEquals("Wrong number of rows", 3, sheet2Values.length());
-            assertEquals("Wrong number of columns in row 0", 2, sheet2Values.getJSONArray(0).length());
-            assertEquals("Wrong number of columns in row 1", 2, sheet2Values.getJSONArray(1).length());
-            assertEquals("Wrong number of columns in row 2", 2, sheet2Values.getJSONArray(2).length());
-            assertEquals("Col1Header", sheet2Values.getJSONArray(0).getJSONObject(0).getString("value"));
-            assertEquals("Col2Header", sheet2Values.getJSONArray(0).getJSONObject(1).getString("value"));
+                JSONObject sheet2JSON = array.getJSONObject(1);
+                assertEquals("SecondSheet", sheet2JSON.getString("name"));
+                JSONArray sheet2Values = sheet2JSON.getJSONArray("data");
+                assertEquals("Wrong number of rows", 3, sheet2Values.length());
+                assertEquals("Wrong number of columns in row 0", 2, sheet2Values.getJSONArray(0).length());
+                assertEquals("Wrong number of columns in row 1", 2, sheet2Values.getJSONArray(1).length());
+                assertEquals("Wrong number of columns in row 2", 2, sheet2Values.getJSONArray(2).length());
+                assertEquals("Col1Header", sheet2Values.getJSONArray(0).getJSONObject(0).getString("value"));
+                assertEquals("Col2Header", sheet2Values.getJSONArray(0).getJSONObject(1).getString("value"));
 
-            assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
-            assertEquals("1,000.50", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
-            assertEquals("0,000.00", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formatString"));
+                assertEquals(1000.5, sheet2Values.getJSONArray(1).getJSONObject(0).getDouble("value"), DELTA);
+                assertEquals("1,000.50", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formattedValue"));
+                assertEquals("0,000.00", sheet2Values.getJSONArray(1).getJSONObject(0).getString("formatString"));
 
-            assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
-            assertEquals("2,000.60", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
-            assertEquals("0,000.00", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formatString"));
+                assertEquals(2000.6, sheet2Values.getJSONArray(2).getJSONObject(0).getDouble("value"), DELTA);
+                assertEquals("2,000.60", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formattedValue"));
+                assertEquals("0,000.00", sheet2Values.getJSONArray(2).getJSONObject(0).getString("formatString"));
 
 //            assertEquals("Thu Mar 05 05:14:17 PST 2009", sheet2Values.getJSONArray(1).getJSONObject(1).getString("value"));
-            assertEquals("2009 Mar 05", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formattedValue"));
-            assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formatString"));
+                assertEquals("2009 Mar 05", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formattedValue"));
+                assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(1).getJSONObject(1).getString("formatString"));
 
 //            assertEquals("Fri Mar 06 07:17:10 PST 2009", sheet2Values.getJSONArray(2).getJSONObject(1).getString("value"));
-            assertEquals("2009 Mar 06", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formattedValue"));
-            assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formatString"));
+                assertEquals("2009 Mar 06", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formattedValue"));
+                assertEquals("yyyy MMM dd", sheet2Values.getJSONArray(2).getJSONObject(1).getString("formatString"));
+            }
         }
 
         @Test
