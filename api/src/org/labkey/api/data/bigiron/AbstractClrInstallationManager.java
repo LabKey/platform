@@ -177,6 +177,7 @@ public abstract class AbstractClrInstallationManager
         }
         catch (Exception e)
         {
+            LOG.warn("Exception while checking installation status of \"" + getBaseScriptName() + "\": " + e.getMessage());
             result = false;
         }
         return result;
