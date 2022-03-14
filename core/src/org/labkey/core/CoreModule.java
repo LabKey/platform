@@ -215,6 +215,7 @@ import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.ApiKeyViewProvider;
+import org.labkey.core.security.ProjectCreatorRole;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.validators.PermissionsValidator;
@@ -392,6 +393,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
+
+        RoleManager.registerRole(new ProjectCreatorRole());
    }
 
     private void registerHealthChecks()

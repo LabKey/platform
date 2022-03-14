@@ -187,6 +187,7 @@ import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.security.CreateProjectPermission;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
@@ -6868,18 +6869,19 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public static class CreateFolderAction extends FormViewAction<ManageFoldersForm>
+    public static class AbstractCreateFolderAction<FORM extends ManageFoldersForm> extends FormViewAction<FORM>
     {
         private ActionURL _successURL;
 
+        protected Container _newContainer;
+
         @Override
-        public void validateCommand(ManageFoldersForm target, Errors errors)
+        public void validateCommand(FORM target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -6892,7 +6894,7 @@ public class AdminController extends SpringActionController
                     form.setFolderType(folderType.getName());
                 }
             }
-            JspView<ManageFoldersForm> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            JspView<FORM> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
@@ -6920,7 +6922,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        public boolean handlePost(FORM form, BindException errors) throws Exception
         {
             Container parent = getViewContext().getContainerNoTab();
             String folderName = StringUtils.trimToNull(form.getName());
@@ -6942,7 +6944,6 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    Container c;
                     String folderType = form.getFolderType();
 
                     if (null == folderType)
@@ -6974,7 +6975,7 @@ public class AdminController extends SpringActionController
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
+                        _newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
                     }
                     else
                     {
@@ -6997,8 +6998,8 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
-                        c.setFolderType(type, getUser());
+                        _newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
+                        _newContainer.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7010,13 +7011,13 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules, getUser());
+                            _newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                            c.setDefaultModule(defaultModule);
+                            _newContainer.setDefaultModule(defaultModule);
                         }
                     }
 
-                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(c);
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(_newContainer);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;
@@ -7028,7 +7029,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(ManageFoldersForm form)
+        public ActionURL getSuccessURL(FORM form)
         {
             return _successURL;
         }
@@ -7036,6 +7037,52 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class CreateFolderAction extends AbstractCreateFolderAction<ManageFoldersForm>
+    {
+    }
+
+    public static class CreateProjectForm extends ManageFoldersForm
+    {
+        private boolean _assignProjectAdmin = false;
+
+        public boolean isAssignProjectAdmin()
+        {
+            return _assignProjectAdmin;
+        }
+
+        @SuppressWarnings("unused")
+        public void setAssignProjectAdmin(boolean assignProjectAdmin)
+        {
+            _assignProjectAdmin = assignProjectAdmin;
+        }
+    }
+
+    @RequiresPermission(CreateProjectPermission.class)
+    public static class CreateProjectAction extends AbstractCreateFolderAction<CreateProjectForm>
+    {
+        @Override
+        public void validateCommand(CreateProjectForm target, Errors errors)
+        {
+            super.validateCommand(target, errors);
+            if (!getContainer().isRoot())
+                errors.reject(ERROR_MSG, "Must be invoked from the root");
+        }
+
+        @Override
+        public boolean handlePost(CreateProjectForm form, BindException errors) throws Exception
+        {
+            boolean success = super.handlePost(form, errors);
+            if (success && form.isAssignProjectAdmin())
+            {
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(_newContainer.getPolicy());
+                policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                SecurityPolicyManager.savePolicy(policy);
+            }
+            return success;
         }
     }
 
@@ -10567,7 +10614,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
         {
-            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 
