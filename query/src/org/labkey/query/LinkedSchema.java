@@ -45,6 +45,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
@@ -579,19 +581,30 @@ public class LinkedSchema extends ExternalSchema
     {
         private static final int[] NO_GROUPS = new int[0];
 
-        private final SecurityPolicy _containerPolicy;
+        private final Set<String> _allowedPolicyResourceIds;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
             super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-            _containerPolicy = sourceContainer.getPolicy();
+
+            // Current container policy and (if it exists) current study policy are the only policies that get
+            // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
+            // and per-dataset checks are skipped.
+            String containerResourceId = sourceContainer.getResourceId();
+
+            Study study = null;
+            StudyService ss = StudyService.get();
+            if (null != ss)
+                study = ss.getStudy(sourceContainer);
+
+            _allowedPolicyResourceIds = null != study ? Set.of(containerResourceId, study.getPolicy().getResourceId()) : Set.of(containerResourceId);
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // If this is the linked schema's source container policy grant ReaderRole via the LimitedUser implementation
-            if (policy.equals(_containerPolicy))
+            // If the policy is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
+            if (_allowedPolicyResourceIds.contains(policy.getResourceId()))
             {
                 return super.getContextualRoles(policy);
             }
