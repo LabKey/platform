@@ -33,7 +33,6 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
 import java.sql.DatabaseMetaData;
@@ -70,7 +69,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     {
         return switch (driverClassName)
         {
-            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2012Dialect(_tableResolver);
+            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect(_tableResolver);
             default -> null;
         };
     }
@@ -154,7 +153,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // The SQL Server dialects are identical, so just test one
-        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect(_tableResolver));
+        return Set.of(new MicrosoftSqlServer2014Dialect(_tableResolver));
     }
 
     @Override
