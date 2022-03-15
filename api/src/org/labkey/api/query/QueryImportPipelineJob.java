@@ -11,7 +11,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.util.StringUtils;
 
@@ -251,6 +250,7 @@ public class QueryImportPipelineJob extends PipelineJob
         BatchValidationException ve = new BatchValidationException();
 
         PipelineJobNotificationProvider notificationProvider = getNotificationProvider();
+        DataLoader loader = null;
 
         try
         {
@@ -268,7 +268,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             QueryUpdateService updateService = target.getUpdateService();
 
-            DataLoader loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
+            loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
 
             AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.isHasLineageColumns());
 
@@ -306,6 +306,13 @@ public class QueryImportPipelineJob extends PipelineJob
 
             if (notificationProvider != null)
                 notificationProvider.onJobError(this, e.getMessage());
+        }
+        finally
+        {
+            if (loader != null)
+            {
+                loader.close();
+            }
         }
 
     }

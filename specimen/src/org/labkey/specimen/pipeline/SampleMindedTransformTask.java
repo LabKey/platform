@@ -498,13 +498,15 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             DataLoaderFactory df = DataLoader.get().findFactory(source, null);
             if (null == df)
                 return;
-            DataLoader dl = df.createLoader(source, true, study.getContainer());
-            DataIteratorBuilder sampleminded = wrapSampleMindedTransform(job.getUser(), dl, context, study, target);
-            Map<String,Object> empty = new HashMap<>();
+            try (DataLoader dl = df.createLoader(source, true, study.getContainer()))
+            {
+                DataIteratorBuilder sampleminded = wrapSampleMindedTransform(job.getUser(), dl, context, study, target);
+                Map<String, Object> empty = new HashMap<>();
 
-            // would be nice to have deleteAll() in QueryUpdateService
-            new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());
-            int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), null, empty);
+                // would be nice to have deleteAll() in QueryUpdateService
+                new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());
+                int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), null, empty);
+            }
             if (!context.getErrors().hasErrors())
             {
                 transaction.commit();
