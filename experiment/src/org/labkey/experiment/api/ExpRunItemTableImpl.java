@@ -62,8 +62,14 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     {
         if (!isAllowedPermission(perm))
             return false;
-        if (!getContainer().hasPermission(user, perm))
+        if (_userSchema instanceof UserSchema.HasContextualRoles)
+        {
+            if (!getContainer().hasPermission(user, perm, ((UserSchema.HasContextualRoles)_userSchema).getContextualRoles()))
+                return false;
+        }
+        else if (!getContainer().hasPermission(user, perm))
             return false;
+
         return perm.equals(ReadPermission.class) || canUserAccessPhi();
     }
 
