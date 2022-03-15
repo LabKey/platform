@@ -45,6 +45,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
@@ -579,19 +581,26 @@ public class LinkedSchema extends ExternalSchema
     {
         private static final int[] NO_GROUPS = new int[0];
 
-        private final SecurityPolicy _containerPolicy;
+        private final Set<SecurityPolicy> _allowedPolicies;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
             super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-            _containerPolicy = sourceContainer.getPolicy();
+
+            // Current container policy and (if it exists) current study policy (which handles dataset security) are the
+            // only policies that get overridden
+            Study study = null;
+            StudyService ss = StudyService.get();
+            if (null != ss)
+                study = ss.getStudy(sourceContainer);
+            _allowedPolicies = null != study ? Set.of(sourceContainer.getPolicy(), study.getPolicy()) : Set.of(sourceContainer.getPolicy());
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // If this is the linked schema's source container policy grant ReaderRole via the LimitedUser implementation
-            if (policy.equals(_containerPolicy))
+            // Return the ReaderRole set on the LimitedUser for allowed policies (current container or current study)
+            if (_allowedPolicies.contains(policy))
             {
                 return super.getContextualRoles(policy);
             }
