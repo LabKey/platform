@@ -106,7 +106,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // - http://www.sqlteam.com/article/sql-server-versions
         // - http://sqlserverbuilds.blogspot.se/
 
-        // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
+        // We support only 2014 and higher as the primary data source, or 2012/2008/2008R2 as an external data source
         if (version >= 100)
         {
             if (version >= 160)
@@ -128,14 +128,14 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             if (version >= 120)
                 return new MicrosoftSqlServer2014Dialect(_tableResolver);
 
-            if (version >= 110)
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
-
-            // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
+            // Accept 2008, 2008R2, or 2012 as an external/supplemental database, but not as the primary database
             if (!primaryDataSource)
             {
                 if (logWarnings)
                     LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
+                if (version >= 110)
+                    return new MicrosoftSqlServer2012Dialect(_tableResolver);
 
                 return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
             }
