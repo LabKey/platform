@@ -78,8 +78,6 @@ import java.util.Set;
 public class SpecimenModule extends SpringModule
 {
     public static final String NAME = "Specimen";
-    // TODO: Delete this and all associated code
-    public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     @Override
     public String getName()
@@ -227,10 +225,6 @@ public class SpecimenModule extends SpringModule
             new SpecimenSchemaImporter(),
             new SpecimenSettingsImporter()
         ));
-
-        // TODO: Remove this... we're no longer respecting this flag
-        AdminConsole.addExperimentalFeatureFlag(CREATE_SPECIMEN_STUDY, "Create Specimen Study",
-    "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
     }
 
     @Override
