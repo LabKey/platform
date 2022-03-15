@@ -193,11 +193,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private final String _prefix;
     private final DbScope _scope;
     private final SQLFragment _selectQuery;
+    private final boolean _isSelectIntoSql;
     private final SQLFragment _uptodateQuery;
     private final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
     private final long _maxTimeToCache;
-    private final boolean _perContainer;
     private final LinkedHashMap<String, Materialized> _map = new LinkedHashMap<String,Materialized>()
     {
         @Override
@@ -216,7 +216,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private boolean _closed = false;
 
     private MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
-                                    boolean perContainer)
+                                    boolean isSelectIntoSql)
     {
         _prefix = StringUtils.defaultString(prefix,"mat");
         _scope = scope;
@@ -224,11 +224,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _uptodateQuery = uptodate;
         _supplier = supplier;
         _maxTimeToCache = maxTimeToCache;
-        _perContainer = perContainer;
         if (null != indexes)
             _indexes.addAll(indexes);
-        if (perContainer)
-            throw new UnsupportedOperationException("NYI");
+        _isSelectIntoSql = isSelectIntoSql;
         assert MemTracker.get().put(this);
     }
 
@@ -305,7 +303,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         if (null == _selectQuery)
             throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
-        return getFromSql(_selectQuery, tableAlias, c);
+        return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias, c);
     }
 
 
@@ -329,8 +327,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    /* NOTE: we do not want to hold synchronized(this) while doing any SQL operations */
+    /* used by FLow directly for some reason */
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias, Container c)
+    {
+        return getFromSql(selectQuery, false, tableAlias, c);
+    }
+
+    /* NOTE: we do not want to hold synchronized(this) while doing any SQL operations */
+    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias, Container c)
     {
         final String txCacheKey = makeKey(_scope.getCurrentTransaction(), c);
         final long now = HeartBeat.currentTimeMillis();
@@ -351,9 +355,19 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
             TempTableTracker.track(name, materialized);
 
-            SQLFragment selectInto = new SQLFragment("SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n");
-            selectInto.append(selectQuery);
-            selectInto.append("\n) _sql_");
+            SQLFragment selectInto;
+            if (isSelectInto)
+            {
+                String sql = selectQuery.getSQL().replace("${NAME}", name);
+                List<Object> params = selectQuery.getParams();
+                selectInto = new SQLFragment(sql,params);
+            }
+            else
+            {
+                selectInto = new SQLFragment("SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n");
+                selectInto.append(selectQuery);
+                selectInto.append("\n) _sql_");
+            }
             new SqlExecutor(_scope).execute(selectInto);
 
             try (var ignored = SpringActionController.ignoreSqlUpdates())
@@ -463,6 +477,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final DbScope _scope;
         private final SQLFragment _select;
 
+        private boolean _isSelectInto = false;
         private long _max = CacheManager.UNLIMITED;
         private SQLFragment _uptodate = null;
         private Supplier<String> _supplier = null;
@@ -473,6 +488,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             _prefix = prefix;
             _scope = scope;
             _select = select;
+        }
+
+        /** This property indicates that the SQLFragment is formatted as a SELECT INTO query (rather than a simple SELECT) */
+        public Builder setIsSelectInto(boolean b)
+        {
+            _isSelectInto = b;
+            return this;
         }
 
         public Builder upToDateSql(SQLFragment uptodate)
@@ -502,7 +524,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, false);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
         }
     }
 
