@@ -60,7 +60,7 @@ public class ClosureQueryHelper
 
     static String pgMaterialClosureSql = String.format("""
             SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
-            /* INTO */
+            /*INTO*/
             FROM (
                 SELECT Start_, End_,
                     COALESCE(material.rowid, dataclass.rowid) as rowId,
@@ -204,9 +204,22 @@ public class ClosureQueryHelper
             SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, tempTableName);
             new SqlExecutor(getScope()).execute(selectInto);
 
-            SQLFragment upsert = new SQLFragment()
-                    .append("INSERT INTO temp.${NAME} (Start_, rowId, targetid)\n").append("SELECT Start, RowId, targetId FROM temp.").append(tempTableName).append(" TMP\n")
-                    .append("ON CONFLICT(Start_,targetId) UPDATE SET rowId = EXCLUDED.rowId");
+            SQLFragment upsert;
+            if (getScope().getSqlDialect().isPostgreSQL())
+            {
+                upsert = new SQLFragment()
+                        .append("INSERT INTO temp.${NAME} (Start_, rowId, targetid)\n")
+                        .append("SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(" TMP\n")
+                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId;");
+            }
+            else
+            {
+                upsert = new SQLFragment()
+                        .append("MERGE temp.${NAME} AS Target\n")
+                        .append("USING (SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(") AS Source ON Target.Start_=Source.Start_ AND Target.targetid=Source.targetId\n")
+                        .append("WHEN MATCHED THEN UPDATE SET Target.targetId = Source.targetId\n")
+                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId);");
+            }
 
             helper.upsert(upsert);
         }

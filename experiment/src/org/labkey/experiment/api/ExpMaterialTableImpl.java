@@ -696,6 +696,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     @Override
                     public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                     {
+                        if (null == displayField)
+                            return null;
                         var target = SampleTypeServiceImpl.get().getSampleTypeByType(displayField, _userSchema.getContainer());
                         if (null == target)
                             target = SampleTypeServiceImpl.get().getSampleType(_userSchema.getContainer(), _userSchema.getUser(), displayField);
