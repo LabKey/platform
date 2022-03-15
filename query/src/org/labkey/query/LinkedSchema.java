@@ -581,26 +581,30 @@ public class LinkedSchema extends ExternalSchema
     {
         private static final int[] NO_GROUPS = new int[0];
 
-        private final Set<SecurityPolicy> _allowedPolicies;
+        private final Set<String> _allowedPolicyResourceIds;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
             super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
 
-            // Current container policy and (if it exists) current study policy (which handles dataset security) are the
-            // only policies that get overridden
+            // Current container policy and (if it exists) current study policy are the only policies that get
+            // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
+            // and per-dataset checks are skipped.
+            String containerResourceId = sourceContainer.getResourceId();
+
             Study study = null;
             StudyService ss = StudyService.get();
             if (null != ss)
                 study = ss.getStudy(sourceContainer);
-            _allowedPolicies = null != study ? Set.of(sourceContainer.getPolicy(), study.getPolicy()) : Set.of(sourceContainer.getPolicy());
+
+            _allowedPolicyResourceIds = null != study ? Set.of(containerResourceId, study.getPolicy().getResourceId()) : Set.of(containerResourceId);
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // Return the ReaderRole set on the LimitedUser for allowed policies (current container or current study)
-            if (_allowedPolicies.contains(policy))
+            // If the policy is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
+            if (_allowedPolicyResourceIds.contains(policy.getResourceId()))
             {
                 return super.getContextualRoles(policy);
             }
