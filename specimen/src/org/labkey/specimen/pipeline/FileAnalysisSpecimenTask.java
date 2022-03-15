@@ -97,7 +97,8 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
                         ctx.getLogger().info("Single specimen file detected, moving to a temp folder for processing.");
                         String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
                         _tempDir = inputFile.getParent().resolve(tempDirName);
-                        Files.copy(inputFile, _tempDir);
+                        Files.createDirectory(_tempDir);
+                        Files.copy(inputFile, _tempDir.resolve(inputFile.getFileName()));
 
                         return new FileSystemFile(_tempDir);
                     }
