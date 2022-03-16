@@ -15,6 +15,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryForeignKey;
@@ -58,7 +59,7 @@ public class ClosureQueryHelper
             )
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
-    static String pgMaterialClosureSql = String.format("""
+    static String pgMaterialClosureSql = """
             SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
             /*INTO*/
             FROM (
@@ -70,7 +71,7 @@ public class ClosureQueryHelper
                     LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
             GROUP BY targetId, Start_
-            """, MAX_LINEAGE_LOOKUP_DEPTH);
+            """;
 
 
     static String mssqlMaterialClosureCTE = String.format("""
@@ -142,16 +143,24 @@ public class ClosureQueryHelper
      * This can be used to add a column directly to a exp table, or to create a column
      * in an intermediate fake lookup table
      */
-    static MutableColumnInfo createLineageLookupColumn(final ColumnInfo fkRowId, ExpSampleType source, ExpSampleType target)
+    static MutableColumnInfo createLineageLookupColumn(final ColumnInfo fkRowId, ExpObject source, ExpObject target)
     {
+        if (!(source instanceof ExpSampleType) && !(source instanceof ExpDataClass))
+            throw new IllegalStateException();
+        if (!(target instanceof ExpSampleType) && !(target instanceof ExpDataClass))
+            throw new IllegalStateException();
+
         TableInfo parentTable = fkRowId.getParentTable();
-        var ret = new ExprColumn(parentTable, target.getLSID(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
+        var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
                 SQLFragment objectId = fkRowId.getValueSql(tableAlias);
-                return ClosureQueryHelper.getValueSql(source.getLSID(), objectId, target);
+                String sourceLsid = source instanceof ExpSampleType ss ? ss.getLSID() : source instanceof ExpDataClass dc ? dc.getLSID() : null;
+                if (sourceLsid == null)
+                    return new SQLFragment(" NULL ");
+                return ClosureQueryHelper.getValueSql(sourceLsid, objectId, target);
             }
         };
         ret.setLabel(target.getName());
@@ -161,15 +170,13 @@ public class ClosureQueryHelper
     }
 
 
-    public static SQLFragment getValueSql(String sourceLSID, SQLFragment objectId, ExpSampleType target)
+    public static SQLFragment getValueSql(String sourceLSID, SQLFragment objectId, ExpObject target)
     {
-        return getValueSql(sourceLSID, objectId, "m" + target.getRowId());
-    }
-
-
-    public static SQLFragment getValueSql(String sourceLSID, SQLFragment objectId, ExpDataClass target)
-    {
-        return getValueSql(sourceLSID, objectId, "d" + target.getRowId());
+        if (target instanceof ExpSampleType st)
+            return getValueSql(sourceLSID, objectId, "m" + st.getRowId());
+        if (target instanceof ExpDataClass dc)
+            return getValueSql(sourceLSID, objectId, "d" + dc.getRowId());
+        throw new IllegalStateException();
     }
 
 

@@ -32,6 +32,7 @@ import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -62,6 +63,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -82,6 +84,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -671,45 +674,117 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        /* ADD SAMPLETYPE LINEAGE LOOKUP COLUMNS
-        *
-        * TODO
-        *   which SAMPLETYPE tables do we add?
-        *   do we want an intermediate fake lookup column?
-        *   do we want to enforce uniqueness of lookup before creating lookup column? how?
-        *
-        * Probably best to add intermediate lookup column, to avoid TableSelector(ALL_COLUMNS) doing all this work.
-        * See SampleTypeUpdateServiceDI.getMaterialMap().
-        */
         if (null != _ss)
         {
-            var sts = SampleTypeServiceImpl.get().getSampleTypes(_userSchema.getContainer(), _userSchema.getUser(), false);
-            if (null != sts && !sts.isEmpty())
+            MutableColumnInfo wrappedRowId = wrapColumn("LineageLookupTypes", _rootTable.getColumn("rowid"));
+            wrappedRowId.setIsUnselectable(true);
+            wrappedRowId.setReadOnly(true);
+            wrappedRowId.setCalculated(true);
+            wrappedRowId.setRequired(false);
+            wrappedRowId.setFk(new AbstractForeignKey(getUserSchema(),null)
             {
-                MutableColumnInfo wrappedRowId = wrapColumn("LineageLookupPlaceHolder", _rootTable.getColumn("rowid"));
-                wrappedRowId.setIsUnselectable(true);
-                wrappedRowId.setReadOnly(true);
-                wrappedRowId.setCalculated(true);
-                wrappedRowId.setRequired(false);
-                wrappedRowId.setFk(new AbstractForeignKey(getUserSchema(),null)
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return new LineageLookupTypesTableInfo();
+                }
+
+                @Override
+                public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                {
+                    ColumnInfo lk = getLookupTableInfo().getColumn(displayField);
+                    if (null == lk)
+                        return null;
+                    var ret = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(),lk.getName()), null, JdbcType.INTEGER)
+                    {
+                        @Override
+                        public SQLFragment getValueSql(String tableAlias)
+                        {
+                            return parent.getValueSql(tableAlias);
+                        }
+                    };
+                    ret.setFk(lk.getFk());
+                    return ret;
+                }
+
+                @Override
+                public StringExpression getURL(ColumnInfo parent)
+                {
+                    return null;
+                }
+            });
+            addColumn(wrappedRowId);
+        }
+    }
+
+    enum LookupType
+    {
+        SampleType("Materials")
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return SampleTypeServiceImpl.get().getSampleTypes(c, u,false);
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                    }
+                },
+        DataClass("Data")
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return ExperimentServiceImpl.get().getDataClasses(c, u,false);
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                    }
+                };
+
+        final String lookupName;
+
+        LookupType(String lookupName)
+        {
+            this.lookupName = lookupName;
+        }
+
+        abstract Collection<? extends ExpObject> getInstances(Container c, User u);
+        abstract ExpObject getInstance(Container c, User u, String name);
+    };
+
+
+    private class LineageLookupTypesTableInfo extends VirtualTable<UserSchema>
+    {
+        LineageLookupTypesTableInfo()
+        {
+            super(ExpMaterialTableImpl.this.getSchema(), "LineageLookupTypes", ExpMaterialTableImpl.this.getUserSchema());
+
+            for (var lk : LookupType.values())
+            {
+                var col = new BaseColumnInfo(lk.lookupName, this, JdbcType.INTEGER);
+                col.setIsUnselectable(true);
+                col.setFk(new AbstractForeignKey(getUserSchema(),null)
                 {
                     @Override
                     public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                     {
                         if (null == displayField)
                             return null;
-                        var target = SampleTypeServiceImpl.get().getSampleTypeByType(displayField, _userSchema.getContainer());
-                        if (null == target)
-                            target = SampleTypeServiceImpl.get().getSampleType(_userSchema.getContainer(), _userSchema.getUser(), displayField);
+                        var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
                         if (null == target)
                             return null;
                         return ClosureQueryHelper.createLineageLookupColumn(parent, _ss, target);
                     }
 
                     @Override
-                    public @Nullable TableInfo getLookupTableInfo()
+                    public TableInfo getLookupTableInfo()
                     {
-                        return new PlaceHolderLineageLookupTableInfo();
+                        return new LineageLookupTableInfo(lk);
                     }
 
                     @Override
@@ -718,20 +793,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         return null;
                     }
                 });
-                addColumn(wrappedRowId);
+                addColumn(col);
             }
         }
     }
 
 
-    private class PlaceHolderLineageLookupTableInfo extends VirtualTable<UserSchema>
+    private class LineageLookupTableInfo extends VirtualTable<UserSchema>
     {
-        PlaceHolderLineageLookupTableInfo()
+        LineageLookupTableInfo(LookupType type)
         {
-            super(ExpMaterialTableImpl.this.getSchema(), "LineageLookupPlaceHolder", ExpMaterialTableImpl.this.getUserSchema());
-            List<ExpSampleTypeImpl> sts = SampleTypeServiceImpl.get().getSampleTypes(_userSchema.getContainer(), _userSchema.getUser(), false);
+            super(ExpMaterialTableImpl.this.getSchema(), "Lineage Lookup", ExpMaterialTableImpl.this.getUserSchema());
             ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
-            for (ExpSampleTypeImpl target : sts)
+            for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
                 addColumn(ClosureQueryHelper.createLineageLookupColumn(wrap, _ss, target));
         }
 
@@ -1021,6 +1095,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return super.hasPermission(user, perm);
         }
     }
+
 
     @NotNull
     @Override
