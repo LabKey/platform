@@ -396,7 +396,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo, category);
         list.setKeyName(keyName);
 
-        // Issue 45042: Allow for the list description to be set via the create/save domain API calls
+        // Issue 45042: Allow for the list description to be set via the create domain API calls
         if (listProperties.getDescription() == null && domain.getDescription() != null)
             listProperties.setDescription(domain.getDescription());
         list.setDescription(listProperties.getDescription());
@@ -518,7 +518,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
                 updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
-            // Issue 45042: Allow for the list description to be set via the create/save domain API calls
+            // Issue 45042: Allow for the list description to be set via the save domain API calls
             else if (update.getDescription() != null)
             {
                 listProperties = getListProperties(container, user, listDefinition.getListId());
