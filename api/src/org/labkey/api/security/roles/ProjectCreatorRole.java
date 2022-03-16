@@ -11,7 +11,7 @@ public class ProjectCreatorRole extends AbstractRootContainerRole
         super
         (
             "Project Creator",
-            "Allows users to create new projects via the CreateProject action and grant themselves the Project Administrator role after creation",
+            "Allows users to create new projects and grant themselves the Project Administrator role after creation via the CreateProject API",
             CreateProjectPermission.class
         );
 

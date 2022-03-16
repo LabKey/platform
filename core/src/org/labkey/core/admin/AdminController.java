@@ -6869,7 +6869,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class AbstractCreateFolderAction<FORM extends ManageFoldersForm> extends FormViewAction<FORM>
+    private static abstract class AbstractCreateFolderAction<FORM extends ManageFoldersForm> extends FormViewAction<FORM>
     {
         private ActionURL _successURL;
 
