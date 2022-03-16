@@ -75,8 +75,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
         addWrapColumn("Folder", _rootTable.getColumn("Container"));
 
-        var lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
-        lsidColumn.setHidden(true);
+
 
         // Generate a CASE statement that matches an LSID to an AssayProvider so we can create a lookup to the AssayProviderTable.
         // The column value is null if no AssayProvider is matched.
@@ -100,6 +99,9 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addColumn(typeColumn);
 
         addWrapColumn(_rootTable.getColumn("Status")).setHidden(true);
+
+        var lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
+        lsidColumn.setHidden(true);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Name"));
