@@ -396,8 +396,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo, category);
         list.setKeyName(keyName);
 
-        String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
-        list.setDescription(description);
+        // Issue 45042: Allow for the list description to be set via the create/save domain API calls
+        if (listProperties.getDescription() == null && domain.getDescription() != null)
+            listProperties.setDescription(domain.getDescription());
+        list.setDescription(listProperties.getDescription());
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -516,6 +518,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
                 updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
+            // Issue 45042: Allow for the list description to be set via the create/save domain API calls
+            else if (update.getDescription() != null)
+            {
+                listProperties = getListProperties(container, user, listDefinition.getListId());
+                listProperties.setDescription(update.getDescription());
+                updateListProperties(container, user, listDefinition.getListId(), listProperties);
+            }
 
             //update domain design properties
             try
@@ -585,11 +594,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
     }
 
-    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    private ListDomainKindProperties getListProperties(Container container, User user, int listId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("ListId"), listId);
-        ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+        return new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+    }
+
+    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    {
+        ListDomainKindProperties existingListProps = getListProperties(container, user, listId);
 
         //merge existing and new properties
         ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
