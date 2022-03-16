@@ -62,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -581,7 +582,7 @@ public class LinkedSchema extends ExternalSchema
     {
         private static final int[] NO_GROUPS = new int[0];
 
-        private final Set<String> _allowedPolicyResourceIds;
+        private final Set<String> _allowedPolicyResourceIds = new HashSet<>();
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
@@ -590,14 +591,15 @@ public class LinkedSchema extends ExternalSchema
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
             // and per-dataset checks are skipped.
-            String containerResourceId = sourceContainer.getResourceId();
+            _allowedPolicyResourceIds.add(sourceContainer.getResourceId());
 
-            Study study = null;
             StudyService ss = StudyService.get();
             if (null != ss)
-                study = ss.getStudy(sourceContainer);
-
-            _allowedPolicyResourceIds = null != study ? Set.of(containerResourceId, study.getPolicy().getResourceId()) : Set.of(containerResourceId);
+            {
+                Study study = ss.getStudy(sourceContainer);
+                if (null != study)
+                    _allowedPolicyResourceIds.add(study.getPolicy().getResourceId());
+            }
         }
 
         @Override
