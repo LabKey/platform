@@ -22,6 +22,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -197,7 +198,8 @@ public class StatusDetailsBean
         // Pipeline log files are written in platform default encoding.
         // See PipelineJob.createPrintWriter() and PipelineJob.OutputLogger.write()
         // Use platform default encoding when reading the log file.
-        try (LimitedSizeInputStream in = new LimitedSizeInputStream(Files.newInputStream(p), MAX_LOG_SIZE);
+        try (InputStream fs = Files.newInputStream(p);
+             LimitedSizeInputStream in = new LimitedSizeInputStream(fs, MAX_LOG_SIZE);
              BufferedReader br = new BufferedReader(new InputStreamReader(in, Charset.defaultCharset()));
              PrintWriter pw = new PrintWriter(new StringBuilderWriter(out)))
         {
