@@ -1,8 +1,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -13,16 +17,24 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.StringExpression;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -33,10 +45,19 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 
 public class ClosureQueryHelper
 {
+    final static long CACHE_INVALIDATION_INTERVAL = TimeUnit.MINUTES.toMillis(5);
+    final static long CACHE_LRU_AGE_OUT_INTERVAL = TimeUnit.MINUTES.toMillis(30);
+
+
+
     /* TODO/CONSIDER every SampleType and Dataclass should have a unique ObjectId so it can be stored as an in lineage tables (e.g. edge/closure tables) */
 
-    static final Map<String, MaterializedQueryHelper> queryHelpers = Collections.synchronizedMap(new HashMap<>());
-    static final Map<String, AtomicInteger> invalidators =  Collections.synchronizedMap(new HashMap<>());
+    record ClosureTable(MaterializedQueryHelper helper, AtomicInteger counter, TableType type, String lsid) {};
+
+    static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
+    // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
+    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<String, Long>(100,0.75f,true);
+
 
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
 
@@ -150,6 +171,8 @@ public class ClosureQueryHelper
         if (!(target instanceof ExpSampleType) && !(target instanceof ExpDataClass))
             throw new IllegalStateException();
 
+        final TableType sourceType =  source instanceof ExpSampleType ss ? TableType.SampleType : TableType.DataClass;
+
         TableInfo parentTable = fkRowId.getParentTable();
         var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
         {
@@ -157,10 +180,10 @@ public class ClosureQueryHelper
             public SQLFragment getValueSql(String tableAlias)
             {
                 SQLFragment objectId = fkRowId.getValueSql(tableAlias);
-                String sourceLsid = source instanceof ExpSampleType ss ? ss.getLSID() : source instanceof ExpDataClass dc ? dc.getLSID() : null;
+                String sourceLsid = source.getLSID();
                 if (sourceLsid == null)
                     return new SQLFragment(" NULL ");
-                return ClosureQueryHelper.getValueSql(sourceLsid, objectId, target);
+                return ClosureQueryHelper.getValueSql(sourceType, sourceLsid, objectId, target);
             }
         };
         ret.setLabel(target.getName());
@@ -170,19 +193,19 @@ public class ClosureQueryHelper
     }
 
 
-    public static SQLFragment getValueSql(String sourceLSID, SQLFragment objectId, ExpObject target)
+    public static SQLFragment getValueSql(TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
     {
         if (target instanceof ExpSampleType st)
-            return getValueSql(sourceLSID, objectId, "m" + st.getRowId());
+            return getValueSql(type, sourceLSID, objectId, "m" + st.getRowId());
         if (target instanceof ExpDataClass dc)
-            return getValueSql(sourceLSID, objectId, "d" + dc.getRowId());
+            return getValueSql(type, sourceLSID, objectId, "d" + dc.getRowId());
         throw new IllegalStateException();
     }
 
 
-    private static SQLFragment getValueSql(String sourceLSID, SQLFragment objectId, String targetId)
+    private static SQLFragment getValueSql(TableType type, String sourceLSID, SQLFragment objectId, String targetId)
     {
-        MaterializedQueryHelper helper = getClosureHelper(sourceLSID, true);
+        MaterializedQueryHelper helper = getClosureHelper(type, sourceLSID, true);
 
         return new SQLFragment()
                 .append("(SELECT rowId FROM ")
@@ -198,7 +221,7 @@ public class ClosureQueryHelper
     private static void incrementalRecompute(String sourceLSID, SQLFragment from)
     {
         // if there's nothing cached, we don't need to do incremental
-        MaterializedQueryHelper helper = getClosureHelper(sourceLSID, false);
+        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
         if (null == helper || !helper.isCached(null))
             return;
 
@@ -232,7 +255,7 @@ public class ClosureQueryHelper
         }
         catch (Exception x)
         {
-            getInvalidationCounter(sourceLSID).incrementAndGet();
+            invalidate(sourceLSID);
             throw x;
         }
         finally
@@ -247,8 +270,11 @@ public class ClosureQueryHelper
     {
         synchronized (queryHelpers)
         {
-            for (var h : queryHelpers.values())
-                h.uncache(null);
+            for (var c : queryHelpers.values())
+            {
+                c.counter.incrementAndGet();
+                c.helper.uncache(null);
+            }
         }
     }
 
@@ -281,28 +307,71 @@ public class ClosureQueryHelper
     }
 
 
-    private static MaterializedQueryHelper getClosureHelper(String sourceLSID, boolean computeIfAbsent)
+    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent)
     {
-        if (!computeIfAbsent)
-            return queryHelpers.get(sourceLSID);
+        ClosureTable closure;
 
-        return queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
+        if (!computeIfAbsent)
+        {
+            closure = queryHelpers.get(sourceLSID);
+            return null==closure ? null : closure.helper;
+        }
+
+        if (null == type)
+            throw new IllegalStateException();
+
+        closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
                 {
                     SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
                     SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
-                    return new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
+
+                    var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
                         .setIsSelectInto(true)
                         .addIndex("CREATE UNIQUE INDEX uq_${NAME} ON temp.${NAME} (targetId,Start_)")
-                        .maxTimeToCache(TimeUnit.MINUTES.toMillis(5))
-                        .addInvalidCheck(() -> String.valueOf(getInvalidationCounter(sourceLSID)))
+                        .maxTimeToCache(CACHE_INVALIDATION_INTERVAL)
+                        .addInvalidCheck(() -> getInvalidationCounterString(sourceLSID))
                         .build();
+                    return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
                 });
+
+        // update LRU
+        synchronized (lruQueryHelpers)
+        {
+            lruQueryHelpers.put(sourceLSID, HeartBeat.currentTimeMillis());
+            checkStaleEntries();
+        }
+
+        return closure.helper;
     }
 
 
-    private static AtomicInteger getInvalidationCounter(String sourceLSID)
+    private static void checkStaleEntries()
     {
-        return invalidators.computeIfAbsent(sourceLSID, (key) -> new AtomicInteger());
+        synchronized (lruQueryHelpers)
+        {
+            if (lruQueryHelpers.isEmpty())
+                return;
+            var oldestEntry = lruQueryHelpers.entrySet().iterator().next();
+            if (HeartBeat.currentTimeMillis() - oldestEntry.getValue() < CACHE_LRU_AGE_OUT_INTERVAL)
+                return;
+            queryHelpers.remove(oldestEntry.getKey());
+            lruQueryHelpers.remove(oldestEntry.getKey());
+        }
+    }
+
+
+    private static void invalidate(String sourceLSID)
+    {
+        var closure = queryHelpers.get(sourceLSID);
+        if (null != closure)
+            closure.counter.incrementAndGet();
+    }
+
+
+    private static String getInvalidationCounterString(String sourceLSID)
+    {
+        var closure = queryHelpers.get(sourceLSID);
+        return null==closure ? "-1" : String.valueOf(closure.counter.get());
     }
 
 
@@ -310,4 +379,158 @@ public class ClosureQueryHelper
     {
         return CoreSchema.getInstance().getScope();
     }
+
+
+
+
+
+
+
+    /*
+     * Code to create the lineage parent lookup column and intermediate lookups that use ClosureQueryHelper
+    */
+
+    public static MutableColumnInfo createLineageLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowid, ExpObject source)
+    {
+        //MutableColumnInfo wrappedRowId = wrapColumn("LineageLookupTypes", _rootTable.getColumn("rowid"));
+        MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowid);
+        wrappedRowId.setIsUnselectable(true);
+        wrappedRowId.setReadOnly(true);
+        wrappedRowId.setCalculated(true);
+        wrappedRowId.setRequired(false);
+        wrappedRowId.setFk(new AbstractForeignKey(parent.getUserSchema(),parent.getContainerFilter())
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return new LineageLookupTypesTableInfo(parent.getUserSchema(), source);
+            }
+
+            @Override
+            public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+            {
+                ColumnInfo lk = getLookupTableInfo().getColumn(displayField);
+                if (null == lk)
+                    return null;
+                var ret = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(),lk.getName()), null, JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getValueSql(String tableAlias)
+                    {
+                        return parent.getValueSql(tableAlias);
+                    }
+                };
+                ret.setFk(lk.getFk());
+                return ret;
+            }
+
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return null;
+            }
+        });
+        return wrappedRowId;
+    }
+
+
+    enum TableType
+    {
+        SampleType("Materials")
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return SampleTypeServiceImpl.get().getSampleTypes(c, u,false);
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                    }
+                },
+        DataClass("Data")
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return ExperimentServiceImpl.get().getDataClasses(c, u,false);
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                    }
+                };
+
+        final String lookupName;
+
+        TableType(String lookupName)
+        {
+            this.lookupName = lookupName;
+        }
+
+        abstract Collection<? extends ExpObject> getInstances(Container c, User u);
+        abstract ExpObject getInstance(Container c, User u, String name);
+    };
+
+
+    private static class LineageLookupTypesTableInfo extends VirtualTable<UserSchema>
+    {
+        LineageLookupTypesTableInfo(UserSchema userSchema, ExpObject source)
+        {
+            super(userSchema.getDbSchema(), "LineageLookupTypes",userSchema);
+
+            for (var lk : TableType.values())
+            {
+                var col = new BaseColumnInfo(lk.lookupName, this, JdbcType.INTEGER);
+                col.setIsUnselectable(true);
+                col.setFk(new AbstractForeignKey(getUserSchema(),null)
+                {
+                    @Override
+                    public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                    {
+                        if (null == displayField)
+                            return null;
+                        var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
+                        if (null == target)
+                            return null;
+                        return ClosureQueryHelper.createLineageLookupColumn(parent, source, target);
+                    }
+
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return new LineageLookupTableInfo(userSchema, source, lk);
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return null;
+                    }
+                });
+                addColumn(col);
+            }
+        }
+    }
+
+
+    private static class LineageLookupTableInfo extends VirtualTable<UserSchema>
+    {
+        LineageLookupTableInfo(UserSchema userSchema, ExpObject source, TableType type)
+        {
+            super(userSchema.getDbSchema(), "Lineage Lookup", userSchema);
+            ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
+            for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
+                addColumn(ClosureQueryHelper.createLineageLookupColumn(wrap, source, target));
+        }
+
+        @Override
+        public @NotNull SQLFragment getFromSQL()
+        {
+            throw new IllegalStateException();
+        }
+    }
+
 }
