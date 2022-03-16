@@ -30,7 +30,7 @@ import org.labkey.bigiron.BigIronController;
  * Date: 10/16/13
  * Time: 3:24 PM
  *
- *  This was originally a synchronous upgrade invoked by core-13.22-13.23.sql, see #18600. Then we marked it with
+ * This was originally a synchronous upgrade invoked by core-13.22-13.23.sql, see #18600. Then we marked it with
  * "@DeferredUpgrade" to ensure property manager was completely upgraded, #18979. But this would fail if (e.g.) the
  * core schema was bootstrapped, the server restarted, and module upgrade continued. So this is now called
  * (indirectly) from CoreModule.afterUpdate().

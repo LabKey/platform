@@ -23,7 +23,6 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.pipeline.StudyBatch;
 import org.labkey.api.util.FileUtil;
