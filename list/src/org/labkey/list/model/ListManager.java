@@ -209,7 +209,8 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (ti instanceof ListTable)
             return ((ListTable)ti).getRealTable().getSelectName();
-        else return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
+        else
+            return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
     @Nullable
