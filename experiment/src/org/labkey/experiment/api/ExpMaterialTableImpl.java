@@ -69,6 +69,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -76,6 +77,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -671,7 +673,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        if (null != _ss)
+        if (null != _ss && AppProps.getInstance().isExperimentalFeatureEnabled(ExperimentModule.EXPERIMENTAL_LINEAGE_PARENT_LOOKUP))
         {
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Parent Lookups", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);

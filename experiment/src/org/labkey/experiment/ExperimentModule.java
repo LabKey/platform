@@ -153,6 +153,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
+    public static final String EXPERIMENTAL_LINEAGE_PARENT_LOOKUP = "lineage-parent-lookup";
+
+
     @Override
     public String getName()
     {
@@ -212,6 +215,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_LINEAGE_PARENT_LOOKUP,
+                "Expose auto-generated lineage lookup columns in SampleType tables",
+                "Optimizes 'join' to parent samples/dataclass objects, when relationship is unique (one related row in parent table).",
+                false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
