@@ -279,14 +279,6 @@ public class ClosureQueryHelper
     }
 
 
-//    public static void invalidateCpasType(String sourceTypeLsid)
-//    {
-//        var counter = invalidators.get(sourceTypeLsid);
-//        if (null != counter)
-//            counter.incrementAndGet();
-//    }
-
-
     public static void invalidateMaterialsForRun(String sourceTypeLsid, int runId)
     {
         var tx = getScope().getCurrentTransaction();
@@ -392,7 +384,6 @@ public class ClosureQueryHelper
 
     public static MutableColumnInfo createLineageLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowid, ExpObject source)
     {
-        //MutableColumnInfo wrappedRowId = wrapColumn("LineageLookupTypes", _rootTable.getColumn("rowid"));
         MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowid);
         wrappedRowId.setIsUnselectable(true);
         wrappedRowId.setReadOnly(true);

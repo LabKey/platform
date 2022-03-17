@@ -2985,28 +2985,28 @@ public class ExperimentServiceImpl implements ExperimentService
 
     class SyncRunEdges
     {
-        final int _runId;
-        final Integer _runObjectId;
-        final String _runLsid;
-        final Container _runContainer;
+        final int runId;
+        Integer runObjectId;
+        final String runLsid;
+        final Container runContainer;
         boolean deleteFirst = true;
         boolean verifyEdgesNoInsert=false;
         boolean invalidateClosureCache=true;
 
         SyncRunEdges(ExpRun run)
         {
-            this._runId = run.getRowId();
-            this._runObjectId = run.getObjectId();
-            this._runLsid = run.getLSID();
-            this._runContainer = run.getContainer();
+            this.runId = run.getRowId();
+            this.runObjectId = run.getObjectId();
+            this.runLsid = run.getLSID();
+            this.runContainer = run.getContainer();
         }
 
         SyncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer)
         {
-            this._runId = runId;
-            this._runObjectId = runObjectId;
-            this._runLsid = runLsid;
-            this._runContainer = runContainer;
+            this.runId = runId;
+            this.runObjectId = runObjectId;
+            this.runLsid = runLsid;
+            this.runContainer = runContainer;
         }
 
         SyncRunEdges deleteFirst(boolean d)
@@ -3028,11 +3028,6 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         void sync(@Nullable Map<String, Integer> cpasTypeToObjectId)
-        {
-            syncRunEdges(_runId, _runObjectId, _runLsid, _runContainer, deleteFirst, verifyEdgesNoInsert, invalidateClosureCache, cpasTypeToObjectId);
-        }
-
-        private void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer, boolean deleteFirst, boolean verifyEdgesNoInsert, boolean invalidateClosureCache, @Nullable Map<String, Integer> cpasTypeToObjectId)
         {
             // don't do any updates if we are just verifying
             if (verifyEdgesNoInsert)
