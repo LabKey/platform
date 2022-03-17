@@ -138,9 +138,9 @@ public class QueryUnion extends QueryRelation
         
         if (null != _qorderBy)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            for (var entry : _qorderBy.getSort())
             {
-                resolveFields(entry.getKey());
+                resolveFields(entry.expr());
             }
         }
     }
@@ -271,7 +271,7 @@ public class QueryUnion extends QueryRelation
 			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
-        List<Map.Entry<QExpr,Boolean>> sort = null == _qorderBy ? null : _qorderBy.getSort();
+        List<QOrder.SortEntry> sort = null == _qorderBy ? null : _qorderBy.getSort();
         
         if (null != sort && sort.size() > 0 || null != _limit)
         {
@@ -286,12 +286,12 @@ public class QueryUnion extends QueryRelation
 		{
             unionSql.append("\nORDER BY ");
             String comma = "";
-            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            for (var entry : sort)
             {
-                QExpr expr = resolveFields(entry.getKey());
+                QExpr expr = resolveFields(entry.expr());
                 unionSql.append(comma);
                 unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
-                if (!entry.getValue())
+                if (!entry.direction())
                     unionSql.append(" DESC");
                 comma = ", ";
             }
@@ -336,12 +336,22 @@ public class QueryUnion extends QueryRelation
             return List.of();
 
         List<Sort.SortField> ret = new ArrayList<>();
-        for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+        for (var entry : _qorderBy.getSort())
         {
-            QExpr expr = resolveFields(entry.getKey());
+            QExpr expr = resolveFields(entry.expr());
             if (expr instanceof QIdentifier)
             {
-                ret.add(new Sort.SortField(new FieldKey(null,expr.getTokenText()), entry.getValue().booleanValue() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+                ret.add(new Sort.SortField(new FieldKey(null,expr.getTokenText()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else if (expr instanceof QNumber qNum)
+            {
+                double d = qNum.getValue().doubleValue();
+                int position = qNum.getValue().intValue();
+                if (d == (double)position && position >= 1 && position <= _allColumns.size())
+                {
+                    String alias = _allColumns.get(position-1).getAlias();
+                    ret.add(new Sort.SortField(new FieldKey(null,alias), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+                }
             }
             else
             {
