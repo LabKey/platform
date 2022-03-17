@@ -51,7 +51,7 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     final ViewContext context = getViewContext();
     Container c = getContainer();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
-    Collection<FolderType> allFolderTypes = FolderTypeManager.get().getFolderTypes(userHasEnableRestrictedModulesPermission);
+    Collection<FolderType> allFolderTypes = FolderTypeManager.get().getEnabledFolderTypes(userHasEnableRestrictedModulesPermission);
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     allModules.sort(Comparator.comparing(module -> module.getTabName(context), String.CASE_INSENSITIVE_ORDER));
     Set<Module> activeModules = c.getActiveModules();

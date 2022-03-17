@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  *
  * I did not call this class "QueryView" because we already have a "QueryView"!
  *
- * NOTE: one oddness is that a list of ColumnInfo objects is passed in.  This is because of of how DataRegion/QueryView
+ * NOTE: one oddness is that a list of ColumnInfo objects is passed in. This is because of how DataRegion/QueryView
  * have always worked. See QueryServiceImpl.getColumns() and RenderContext.getSelectColumns()
  *
  * We can still implement getTableInfo etc, but we probably want to preserve the aliases of the initial ColumnInfo objects.
@@ -276,7 +276,7 @@ public class QuerySelectView extends QueryRelation
                     // Looking for matching column in allColumns; must match by ColumnLogging object, which gets propagated up sql parse tree
                     for (ColumnInfo column : allColumns)
                         if (shouldLogNameToDataLoggingMapEntry.getKey().getColumnLogging().equals(column.getColumnLogging()))
-                            throw new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'.");
+                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'."));
                 }
             }
         }
@@ -285,7 +285,7 @@ public class QuerySelectView extends QueryRelation
             queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
                     shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         else if (!shouldLogNameLoggings.isEmpty())
-            throw new UnauthorizedException("Column logging is required but cannot set query logging object.");
+            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Column logging is required but cannot set query logging object."));
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
