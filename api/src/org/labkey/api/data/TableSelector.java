@@ -58,7 +58,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     private boolean _forDisplay = false;
 
-    // Master constructor
+    // Primary constructor
     private TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, boolean stableColumnOrdering)
     {
         super(table.getSchema().getScope());

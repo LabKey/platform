@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 public class CustomViewCache
 {
     private static final Cache<Container, CustomViewCollections> CUSTOM_VIEW_DB_CACHE = CacheManager.getBlockingCache(
-            CacheManager.UNLIMITED, CacheManager.DAY, "Database Custom View Cache",
+            CacheManager.UNLIMITED, CacheManager.DAY, "Database custom views",
             (c, argument) -> new CustomViewCollections(c)
     );
 

@@ -394,7 +394,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         }
     }
 
-    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "StaticResourceCache");
+    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "Static resources");
 
     private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
     {
