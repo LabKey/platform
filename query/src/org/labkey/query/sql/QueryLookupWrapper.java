@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -148,6 +150,13 @@ public class QueryLookupWrapper extends QueryRelation
         {
             throw new UnsupportedOperationException();
         }
+    }
+
+
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        return _source.getSortFields();
     }
 
 

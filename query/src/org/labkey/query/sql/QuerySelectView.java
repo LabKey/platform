@@ -87,7 +87,6 @@ public class QuerySelectView extends QueryRelation
     {
         super(query, schema, "QueryView");
         this.aliasManager = new AliasManager(table, selectColumns);
-        //TODO convert from TableInfo -> QueryTable
         this.table = table;
         this.from = new QueryTable(query, schema, table, "QueryView_from");
         if (null != selectColumns)
@@ -198,15 +197,23 @@ public class QuerySelectView extends QueryRelation
         // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
         boolean viewHasSort = sort != null && !sort.getSortList().isEmpty();
         boolean viewHasLimit = maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows;
-        boolean queryHasSort = table instanceof QueryTableInfo && ((QueryTableInfo) table).hasSort();
         SqlDialect dialect = table.getSqlDialect();
 
-        if (!viewHasSort)
+        if (viewHasLimit || forceSort)
         {
-            if ((viewHasLimit || forceSort) && (!queryHasSort || dialect.isSqlServer()))
+            if (!viewHasSort)
             {
-                sort = createDefaultSort(selectColumns);
+                List<Sort.SortField> querySortFields = table.getSortFields();
+                sort = new Sort();
+                for (var sf : querySortFields)
+                {
+                    ColumnInfo sc = table.getColumn(sf.getFieldKey());
+                    if (null != sc)
+                        sort.appendSortColumn(sc.getFieldKey(), sf.getSortDirection(), false);
+                }
             }
+
+            appendDefaultSort(sort, selectColumns);
         }
 
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
@@ -418,17 +425,16 @@ public class QuerySelectView extends QueryRelation
     }
 
 
-
-    private static Sort createDefaultSort(Collection<ColumnInfo> columns)
+    /* create (or append) fields to sort in attempt to create a stable sort for paging */
+    private static Sort appendDefaultSort(Sort sort, Collection<ColumnInfo> columns)
     {
-        Sort sort = new Sort();
-        addSortableColumns(sort, columns, true);
-
-        if (sort.getSortList().size() == 0)
+        // try to add key columns to sort
+        if (!addSortableColumns(sort, columns, true))
         {
-            addSortableColumns(sort, columns, false);
+            // if that fails and the sort is empty, add more fields
+            if (sort.getSortList().isEmpty())
+                addSortableColumns(sort, columns, false);
         }
-
         return sort;
     }
 
@@ -454,14 +460,18 @@ public class QuerySelectView extends QueryRelation
     }
 
 
-    private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
+    private static boolean addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
 	    /* There is a bit of a chicken-and-egg problem here
 	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
         Map<FieldKey, ColumnInfo> available = new HashMap<>();
-        columns.forEach(c -> {if (!available.containsKey(c.getFieldKey())) available.put(c.getFieldKey(),c);});
+        columns.forEach(c -> available.putIfAbsent(c.getFieldKey(), c));
+
+        Set<FieldKey> presentInSort = sort.getSortList().stream().map(sf -> sf.getFieldKey()).collect(Collectors.toSet());
+
+        boolean addedSortKeys = false;
 
         for (ColumnInfo column : columns)
         {
@@ -470,12 +480,15 @@ public class QuerySelectView extends QueryRelation
             List<ColumnInfo> sortFields = resolveSortFieldKeys(column, available);
             if (sortFields != null && !sortFields.isEmpty())
             {
-                // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
-                sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
-                return;
+                if (presentInSort.add(column.getFieldKey()))
+                    // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
+                    sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+                addedSortKeys = true;
             }
         }
+        return addedSortKeys;
     }
+
 
     @Nullable
     private static ColumnInfo getColumnForDataLogging(TableInfo table, FieldKey fieldKey)

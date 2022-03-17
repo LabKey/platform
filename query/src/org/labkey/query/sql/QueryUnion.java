@@ -20,6 +20,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -312,12 +313,6 @@ public class QueryUnion extends QueryRelation
                 f.append("(").append(getSql()).append(") ").append(alias);
                 return f;
             }
-
-            @Override
-            public boolean hasSort()
-            {
-                return _qorderBy != null && !_qorderBy.childList().isEmpty(); 
-            }
         };
 
         for (UnionColumn unioncol : _unionColumns.values())
@@ -334,7 +329,31 @@ public class QueryUnion extends QueryRelation
     }
 
 
-	// simplified version of resolve Field
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        if (_qorderBy == null || _qorderBy.childList().isEmpty())
+            return List.of();
+
+        List<Sort.SortField> ret = new ArrayList<>();
+        for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+        {
+            QExpr expr = resolveFields(entry.getKey());
+            if (expr instanceof QIdentifier)
+            {
+                ret.add(new Sort.SortField(new FieldKey(null,expr.getTokenText()), entry.getValue().booleanValue() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else
+            {
+                return List.of();
+            }
+        }
+
+        return ret;
+    }
+
+
+    // simplified version of resolve Field
 	private QExpr resolveFields(QExpr expr)
 	{
 		if (expr instanceof QQuery)

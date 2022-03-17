@@ -31,6 +31,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -1346,11 +1347,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 return f;
             }
 
-            @Override
-            public boolean hasSort()
-            {
-                return _orderBy != null && !_orderBy.childList().isEmpty();
-            }
 
             @Override
             public void setContainerFilter(@NotNull ContainerFilter containerFilter)
@@ -1359,6 +1355,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 // This changes the SQL we'll need to generate, so clear out the cached version
                 _sqlAllColumns = null;
             }
+
 
             @Override
             public String getPublicSchemaName()
@@ -1391,6 +1388,38 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 aliasedColumn.setKeyField(true);
         }
         MemTracker.getInstance().put(ret);
+        return ret;
+    }
+
+
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        if (_orderBy == null || _orderBy.childList().isEmpty())
+            return List.of();
+
+        Set<String> selectAliases = new CaseInsensitiveHashSet();
+        for (SelectColumn col : _columns.values())
+            if (null != col.getAlias())
+                selectAliases.add(col.getAlias());
+
+        List<Sort.SortField> ret = new ArrayList<>();
+        for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+        {
+            QExpr expr = entry.getKey();
+            if (expr instanceof QIdentifier && selectAliases.contains(expr.getTokenText()))
+            {
+                ret.add(new Sort.SortField(new FieldKey(null,expr.getTokenText()), entry.getValue().booleanValue() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else
+            {
+                // fail for non-trivial expression
+                QExpr r = resolveFields(expr, _orderBy, _orderBy);
+                if (r instanceof QNull)
+                    continue;
+                return List.of();
+            }
+        }
         return ret;
     }
 
