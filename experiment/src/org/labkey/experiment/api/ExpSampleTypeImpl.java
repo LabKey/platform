@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -529,13 +530,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public String createSampleName(@NotNull Map<String, Object> rowMap) throws ExperimentException
     {
-        return createSampleName(rowMap, null, null);
+        return createSampleName(rowMap, null, null, null);
     }
 
     @Override
     public String createSampleName(@NotNull Map<String, Object> rowMap,
                                    @Nullable Set<ExpData> parentDatas,
-                                   @Nullable Set<ExpMaterial> parentSamples)
+                                   @Nullable Set<ExpMaterial> parentSamples,
+                                   @Nullable Container container)
             throws ExperimentException
     {
         NameGenerator nameGen = getNameGenerator();
@@ -545,7 +547,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         try (NameGenerator.State state = nameGen.createState(true))
         {
             DbSequence sequence = genIdSequence();
-            Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
+            Supplier<Map<String, Object>> extraPropsFn = () -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("genId", sequence.next());
+                if (container != null)
+                    map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                return map;
+            };
             return nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
         }
         catch (NameGenerator.NameGenerationException e)

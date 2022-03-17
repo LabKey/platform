@@ -26,6 +26,7 @@ import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -228,6 +229,12 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         return LogManager.get().getAuditEvents(container, user, eventType, filter, sort);
+    }
+
+    @Override
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
+    {
+        return LogManager.get().getAuditEvents(container, user, eventType, filter, sort, cf);
     }
 
     @Override

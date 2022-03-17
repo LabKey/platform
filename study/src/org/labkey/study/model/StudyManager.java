@@ -3539,7 +3539,9 @@ public class StudyManager
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
+        // if we are being called by QUS we don't want to call triggers twice or resync twice
         options.put(QueryUpdateService.ConfigParameters.SkipTriggers, skipTriggers);
+        options.put(DatasetUpdateService.Config.SkipResyncStudy, skipTriggers);
         context.setConfigParameters(options);
 
         DataLoader loader = new MapLoader(data);

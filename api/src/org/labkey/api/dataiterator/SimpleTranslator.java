@@ -364,6 +364,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             final ColumnInfo pkCol = pair.getKey();
             Map map = pair.getValue();
 
+            try
+            {
+                // Ensure value is same type as pk
+                k = pkCol.getJdbcType().convert(k);
+            }
+            catch(ConversionException e)
+            {
+                return null;
+            }
+
             if (map.containsKey(k))
             {
                 Object v = map.get(k);

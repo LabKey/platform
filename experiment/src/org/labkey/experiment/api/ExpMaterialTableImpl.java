@@ -54,6 +54,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -784,6 +785,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     addColumn(mvColumn);
                     propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                 }
+
+                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
+                if (!isTargetLookup && propColumn.getFk() instanceof PdLookupForeignKey)
+                    ((PdLookupForeignKey) propColumn.getFk()).setContainerFilter(getContainerFilter());
             }
 
             if (!mvColumns.contains(propColumn.getFieldKey()))

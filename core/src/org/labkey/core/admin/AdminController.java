@@ -81,6 +81,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -161,7 +162,6 @@ import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
@@ -199,6 +199,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
@@ -209,12 +210,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
@@ -224,6 +228,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2780,6 +2785,9 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
+        private final DecimalFormat commaf0 = new DecimalFormat("#,##0");
+        private final DecimalFormat percent = new DecimalFormat("0%");
+
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
@@ -2934,14 +2942,14 @@ public class AdminController extends SpringActionController
                 if (null == stat)
                     html.append("<td>&nbsp;</td>");
                 else
-                    html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+                    html.append("<td align=\"right\">").append(commaf0.format(stat)).append("</td>");
             }
         }
 
         private void appendDoubles(StringBuilder html, double... stats)
         {
             for (double stat : stats)
-                html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
+                html.append("<td align=\"right\">").append(percent.format(stat)).append("</td>");
         }
 
         @Override
@@ -3322,7 +3330,7 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
-        public final List<Pair<String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
+        public final List<Tuple3<Boolean, String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
         public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
         public final List<HeldReference> references;
         public final List<String> graphNames = new ArrayList<>();
@@ -3395,24 +3403,49 @@ public class AdminController extends SpringActionController
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
             if (membean != null)
             {
-                memoryUsages.add(new Pair<>(HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
-                memoryUsages.add(new Pair<>("Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+                memoryUsages.add(Tuple3.of(true, HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
             }
 
             List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             for (MemoryPoolMXBean pool : pools)
             {
-                memoryUsages.add(new Pair<>(pool.getName() + " " + pool.getType(), getUsage(pool)));
+                if (pool.getType() == MemoryType.HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
+            }
+
+            if (membean != null)
+            {
+                memoryUsages.add(Tuple3.of(true, "Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+            }
+
+            for (MemoryPoolMXBean pool : pools)
+            {
+                if (pool.getType() == MemoryType.NON_HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
+            }
+
+            for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
+            {
+                memoryUsages.add(Tuple3.of(true, "Buffer pool " + pool.getName(), new MemoryUsageSummary(pool)));
                 graphNames.add(pool.getName());
             }
+
+            DecimalFormat commaf0 = new DecimalFormat("#,##0");
+
 
             // class loader:
             ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
             if (classbean != null)
             {
-                systemProperties.add(new Pair<>("Loaded Class Count", classbean.getLoadedClassCount()));
-                systemProperties.add(new Pair<>("Unloaded Class Count", classbean.getUnloadedClassCount()));
-                systemProperties.add(new Pair<>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
+                systemProperties.add(new Pair<>("Loaded Class Count", commaf0.format(classbean.getLoadedClassCount())));
+                systemProperties.add(new Pair<>("Unloaded Class Count", commaf0.format(classbean.getUnloadedClassCount())));
+                systemProperties.add(new Pair<>("Total Loaded Class Count", commaf0.format(classbean.getTotalLoadedClassCount())));
             }
 
             // runtime:
@@ -3450,7 +3483,21 @@ public class AdminController extends SpringActionController
             if (null != cacheMem)
                 systemProperties.add(new Pair<>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
-            systemProperties.add(new Pair<>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            if (osBean != null)
+            {
+                systemProperties.add(new Pair<>("CPU count", osBean.getAvailableProcessors()));
+
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+                {
+                    systemProperties.add(new Pair<>("Total OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getTotalMemorySize())));
+                    systemProperties.add(new Pair<>("Free OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getFreeMemorySize())));
+                    systemProperties.add(new Pair<>("OS CPU load", f3.format(sunOsBean.getCpuLoad())));
+                    systemProperties.add(new Pair<>("JVM CPU load", f3.format(sunOsBean.getProcessCpuLoad())));
+                }
+            }
 
             //noinspection ConstantConditions
             assert assertsEnabled = true;
@@ -3472,37 +3519,26 @@ public class AdminController extends SpringActionController
 
     public static class MemoryUsageSummary
     {
-        private final String _init;
-        private final String _used;
-        private final String _committed;
-        private final String _max;
+
+        public final long _init;
+        public final long _used;
+        public final long _committed;
+        public final long _max;
 
         public MemoryUsageSummary(MemoryUsage usage)
         {
-            _init = FileUtils.byteCountToDisplaySize(usage.getInit());
-            _used = FileUtils.byteCountToDisplaySize(usage.getUsed());
-            _committed = FileUtils.byteCountToDisplaySize(usage.getCommitted());
-            _max = FileUtils.byteCountToDisplaySize(usage.getMax());
+            _init = usage.getInit();
+            _used = usage.getUsed();
+            _committed = usage.getCommitted();
+            _max = usage.getMax();
         }
 
-        public String getInit()
+        public MemoryUsageSummary(BufferPoolMXBean pool)
         {
-            return _init;
-        }
-
-        public String getUsed()
-        {
-            return _used;
-        }
-
-        public String getCommitted()
-        {
-            return _committed;
-        }
-
-        public String getMax()
-        {
-            return _max;
+            _init = -1;
+            _used = pool.getMemoryUsed();
+            _committed = _used;
+            _max = pool.getTotalCapacity();
         }
     }
 
@@ -3573,6 +3609,7 @@ public class AdminController extends SpringActionController
         {
             MemoryUsage usage = null;
             boolean showLegend = false;
+            String title = form.getType();
             if ("Heap".equals(form.getType()))
             {
                 usage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -3591,16 +3628,58 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (usage == null)
-                throw new NotFoundException();
+            Pair<Long, String> divisor = null;
 
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             List<MemoryCategory> types = new ArrayList<>(4);
 
-            types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
-            types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
-            types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
-            types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+            if (usage == null)
+            {
+                boolean found = false;
+                for (Iterator<BufferPoolMXBean> it = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class).iterator(); it.hasNext() && !found;)
+                {
+                    BufferPoolMXBean pool = it.next();
+                    if (form.getType().equals(pool.getName()))
+                    {
+                        long total = pool.getTotalCapacity();
+                        long used = pool.getMemoryUsed();
+
+                        divisor = getDivisor(total);
+
+                        title = "Buffer pool " + title;
+
+                        if (total > 0 || used > 0)
+                        {
+                            types.add(new MemoryCategory("Used", used / divisor.first));
+                            types.add(new MemoryCategory("Max", total / divisor.first));
+                        }
+                        found = true;
+                    }
+                }
+                if (!found)
+                {
+                    throw new NotFoundException();
+                }
+            }
+            else
+            {
+                if (usage.getInit() > 0 || usage.getUsed() > 0 || usage.getCommitted() > 0 || usage.getMax() > 0)
+                {
+                    divisor = getDivisor(Math.max(usage.getInit(), Math.max(usage.getUsed(), Math.max(usage.getCommitted(), usage.getMax()))));
+
+                    types.add(new MemoryCategory("Init", usage.getInit() / divisor.first));
+                    types.add(new MemoryCategory("Used", usage.getUsed() / divisor.first));
+                    types.add(new MemoryCategory("Committed", usage.getCommitted() / divisor.first));
+                    types.add(new MemoryCategory("Max", usage.getMax() / divisor.first));
+                }
+            }
+
+            if (divisor != null)
+            {
+                title += " (" + divisor.second + ")";
+            }
+
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
             Collections.sort(types);
 
             for (int i = 0; i < types.size(); i++)
@@ -3609,12 +3688,34 @@ public class AdminController extends SpringActionController
                 dataset.addValue(mbPastPrevious, types.get(i).getType(), "");
             }
 
-            JFreeChart chart = ChartFactory.createStackedBarChart(form.getType(), null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            JFreeChart chart = ChartFactory.createStackedBarChart(title, null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            chart.getTitle().setFont(new Font("SansSerif", Font.BOLD, 14));
             response.setContentType("image/png");
 
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         }
+
+        private Pair<Long, String> getDivisor(long l)
+        {
+            if (l > 4096L * 1024L * 1024L)
+            {
+                return Pair.of(1024L * 1024L * 1024L, "GB");
+            }
+            if (l > 4096L * 1024L)
+            {
+                return Pair.of(1024L * 1024L, "MB");
+            }
+            if (l > 4096L)
+            {
+                return Pair.of(1024L, "KB");
+            }
+
+            return Pair.of(1L, "bytes");
+
+        }
     }
+
+
 
     public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {

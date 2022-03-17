@@ -65,6 +65,7 @@ import org.labkey.list.view.ListItemAttachmentParent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -487,7 +488,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         ListManager.get().deleteIndexedList(_list);
 
         // Delete attachments and discussions associated with a list in batches of 1,000
-        new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).forEachBatch(String.class, 1000, new ForEachBatchBlock<String>()
+        new TableSelector(getDbTable(), Collections.singleton("entityId")).forEachBatch(String.class, 1000, new ForEachBatchBlock<String>()
         {
             @Override
             public boolean accept(String entityId)

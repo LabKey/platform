@@ -389,10 +389,16 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
         this.advance();
     },
 
-    onValidQuery : function() {
-        this.numValid++;
-        this.setStatus(this.getStatusPrefix()  + ": Validating '" + this.getCurrentQueryLabel() + "'...OK");
-        this.advance();
+    onValidQuery : function(response) {
+        // Issue 44875 - handle responses with success=false as failures (revisit
+        if (response && response.success === false) {
+            this.onValidationFailure(response);
+        }
+        else {
+            this.numValid++;
+            this.setStatus(this.getStatusPrefix() + ": Validating '" + this.getCurrentQueryLabel() + "'...OK");
+            this.advance();
+        }
     },
 
     recurseContainers : function(containersInfo, containerArray) {

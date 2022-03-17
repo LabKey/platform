@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /*
