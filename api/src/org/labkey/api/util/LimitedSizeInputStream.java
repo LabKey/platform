@@ -65,4 +65,13 @@ public class LimitedSizeInputStream extends InputStream
             return _bytesRead;
         }
     }
+
+    @Override
+    public void close() throws IOException
+    {
+        if (original != null)
+            original.close();
+
+        super.close();
+    }
 }
