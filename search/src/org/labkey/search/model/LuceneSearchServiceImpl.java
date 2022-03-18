@@ -1215,6 +1215,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private long getDocCount(Query query) throws IOException
     {
+        if (!_indexManager.isReal())
+        {
+            return 0;
+        }
+
         IndexSearcher searcher = _indexManager.getSearcher();
 
         try
