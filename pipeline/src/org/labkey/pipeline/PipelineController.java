@@ -180,7 +180,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SetupAction extends AbstractSetupAction<SetupForm>
+    public final class SetupAction extends AbstractSetupAction<SetupForm>
     {
         @Override
         protected SetupField getFormField()
@@ -282,7 +282,8 @@ public class PipelineController extends SpringActionController
         return true;
     }
 
-    abstract public class AbstractSetupAction<FORM extends ReturnUrlForm> extends FormViewAction<FORM>
+    // Example of a Java 17 sealed class
+    abstract public sealed class AbstractSetupAction<FORM extends ReturnUrlForm> extends FormViewAction<FORM> permits SetupAction, UpdateEmailNotificationAction
     {
         abstract protected SetupField getFormField();
 
@@ -808,7 +809,7 @@ public class PipelineController extends SpringActionController
     //  Email notifications
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateEmailNotificationAction extends AbstractSetupAction<EmailNotificationForm>
+    public final class UpdateEmailNotificationAction extends AbstractSetupAction<EmailNotificationForm>
     {
         @Override
         protected SetupField getFormField()

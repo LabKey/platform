@@ -65,7 +65,7 @@ public class SecurityPolicyManager
 {
     private static final Logger logger = LogManager.getLogger(SecurityPolicyManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "SecurityPolicies");
+    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "Security policies");
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)

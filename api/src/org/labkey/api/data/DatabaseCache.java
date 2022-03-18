@@ -185,8 +185,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         }
     }
 
-
-
     @Override
     public void clear()
     {
@@ -261,6 +259,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     public TrackingCache<K, V> getTrackingCache()
     {
         return _sharedCache.getTrackingCache();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
     }
 
     public static class TestCase extends Assert

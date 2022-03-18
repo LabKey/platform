@@ -528,7 +528,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      * We do not want to invalidate caches every time someone updates a dataset row
      * So don't store modified in this bean.
      *
-     * Instead cache modified dates separately
+     * Instead, cache modified dates separately
      */
     static CacheLoader<String,Date> modifiedDatesLoader = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
@@ -538,7 +538,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     };
 
     static Cache<String, Date> modifiedDates = new BlockingCache<>(
-            new DatabaseCache<>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
+            new DatabaseCache<>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified"),
             modifiedDatesLoader);
 
 

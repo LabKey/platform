@@ -41,7 +41,7 @@ import java.util.TreeSet;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final Cache<String, TempTableInfo> _tempTableCache =
-            CacheManager.getStringKeyCache(200, CacheManager.MINUTE * 5, "InClauseTempTableCache");
+            CacheManager.getStringKeyCache(200, CacheManager.MINUTE * 5, "IN clause temp tables");
 
     /**
      * @param sql    fragment to append to

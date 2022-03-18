@@ -63,7 +63,7 @@ public class ModuleReportCache
     private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(Collections.emptyMap());
     private static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
     private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
-    private static final ModuleResourceCache<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Module report cache", new ModuleReportHandler(), ResourceRootProvider.getHierarchy(REPORT_PATH));
+    private static final ModuleResourceCache<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Module reports", new ModuleReportHandler(), ResourceRootProvider.getHierarchy(REPORT_PATH));
 
     @Nullable
     static ReportDescriptor getModuleReportDescriptor(Module module, String path)

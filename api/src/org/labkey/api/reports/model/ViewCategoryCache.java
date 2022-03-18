@@ -44,7 +44,7 @@ public class ViewCategoryCache
 {
     private static final ViewCategoryCache INSTANCE = new ViewCategoryCache();
 
-    private final Cache<String, ViewCategoryCollections> VIEW_CATEGORY_CACHE = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category"), (key, argument) -> new ViewCategoryCollections(key));
+    private final Cache<String, ViewCategoryCollections> VIEW_CATEGORY_CACHE = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View categories"), (key, argument) -> new ViewCategoryCollections(key));
 
     private ViewCategoryCache()
     {

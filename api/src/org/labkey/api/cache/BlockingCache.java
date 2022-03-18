@@ -160,7 +160,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 throw new IllegalStateException("cache loader was not provided");
 
             V value = loader.load(key, argument);
-            CacheManager.validate(loader, value);
+            CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
 
             synchronized (w.getLockObject())
             {
@@ -269,7 +269,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     public static class BlockingCacheTest extends Assert
     {
         private Cache<Integer, Wrapper<Integer>> _cache;
-        private Map<Integer, Wrapper<Integer>> _map = new HashMap<>();
+        private final Map<Integer, Wrapper<Integer>> _map = new HashMap<>();
 
         @Before
         public void setUp()
@@ -297,7 +297,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }
                 @Override public Cache<Integer, Wrapper<Integer>> createTemporaryCache() { throw new UnsupportedOperationException(); }
             };
-
         }
 
         private CacheLoader<Integer, Integer> createLoader(final AtomicInteger calls, final int sleepTime)

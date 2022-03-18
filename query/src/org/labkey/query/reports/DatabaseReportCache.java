@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class DatabaseReportCache
 {
-    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache", (c, argument) -> new ReportCollections(c));
+    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database reports", (c, argument) -> new ReportCollections(c));
 
     private static class ReportCollections
     {

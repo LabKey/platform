@@ -193,7 +193,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Cache<String, ExpProtocolImpl> protocolCache;
 
-    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
+    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
         Container c = ContainerManager.getForId(containerId);
         if (c == null)
