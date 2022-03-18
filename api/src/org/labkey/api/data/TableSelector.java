@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -35,7 +36,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -186,22 +186,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     /*
-        Try to determine if the collection will iterate in a predictable order. Currently, these are assumed to be
-        stable-ordered collections:
-
-        - Non HashSets
-        - LinkedHashSet (which extends HashSet, so we need a separate check)
+        Try to determine if the collection will iterate in a predictable order. Recommendation is to pass in column
+        lists via a List (e.g., List.of() for a static column list) or LinkedHashSet (e.g., use PageFlowUtil.set() or
+        CsvSet).
     */
     private static boolean isStableOrdered(Collection<?> collection)
     {
-        return (!(collection instanceof HashSet) || collection instanceof LinkedHashSet);
+        return (!(collection instanceof Set set) || CollectionUtils.isStableOrderedSet(set));
     }
 
     @NotNull
     @Override
     protected <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
     {
-        // Could be get getArray(), getArrayList(), or getCollection()
+        // Could be getArray(), getArrayList(), or getCollection()
         ensureStableColumnOrder("This TableSelector method");
         return super.createPrimitiveArrayList(rs, getter);
     }

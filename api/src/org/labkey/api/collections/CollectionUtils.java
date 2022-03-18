@@ -21,10 +21,12 @@ import org.apache.commons.collections4.Unmodifiable;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.collections4.multimap.UnmodifiableMultiValuedMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,28 +51,28 @@ import java.util.TreeSet;
 public class CollectionUtils
 {
     // Collections.Unmodifiable* classes are not public, so grab them statically to use in the methods below
-    private static final Class<?> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
+    private static final Class<?> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(new LinkedList<String>()).getClass();
 
     private static final Set<Class<?>> UNMODIFIABLE_LIST_CLASSES = Set.of(
-            Collections.emptyList().getClass(),
-            Collections.singletonList(null).getClass(),
-            List.of().getClass(),  // ImmutableCollections.ListN
-            List.of(1).getClass()  // ImmutableCollections.List12
+        Collections.emptyList().getClass(),
+        Collections.singletonList(null).getClass(),
+        List.of().getClass(),  // ImmutableCollections.ListN
+        List.of(1).getClass()  // ImmutableCollections.List12
     );
 
     private static final Set<Class<?>> UNMODIFIABLE_SET_CLASSES = Set.of(
-            Collections.emptySet().getClass(),
-            Collections.singleton(null).getClass(),
-            Set.of().getClass(),  // ImmutableCollections.SetN
-            Set.of(1).getClass()  // ImmutableCollections.Set12
+        Collections.emptySet().getClass(),
+        Collections.singleton(null).getClass(),
+        Set.of().getClass(),  // ImmutableCollections.SetN
+        Set.of(1).getClass()  // ImmutableCollections.Set12
     );
 
     private static final Set<Class<?>> UNMODIFIABLE_MAP_CLASSES = Set.of(
-            Collections.unmodifiableMap(Collections.emptyMap()).getClass(),
-            Collections.singletonMap(null, null).getClass(),
-            Collections.emptyMap().getClass(),
-            Map.of().getClass(),   // ImmutableCollections.MapN
-            Map.of(1, 1).getClass()  // ImmutableCollections.Map1
+        Collections.unmodifiableMap(new HashMap<String, String>()).getClass(),
+        Collections.singletonMap(null, null).getClass(),
+        Collections.emptyMap().getClass(),
+        Map.of().getClass(),   // ImmutableCollections.MapN
+        Map.of(1, 1).getClass()  // ImmutableCollections.Map1
     );
 
     // Returns true if value is an Array or value is a Collection or Map that is not a known immutable type; otherwise,
@@ -129,6 +131,25 @@ public class CollectionUtils
         }
 
         return null;
+    }
+
+    private static final Set<Class<?>> STABLE_ORDERED_SET_CLASSES = Set.of(
+        Collections.emptySet().getClass(),
+        Collections.singleton(null).getClass()
+    );
+
+    /**
+     * Attempts to determine if the provided Set implementation is stable-ordered, i.e., having a predictable iteration
+     * order. Currently, that means a LinkedHashSet, Collections.emptySet(), or Collections.singleton(). Note that sets
+     * returned by Set.of() are NOT considered stable-ordered; although they seem to be predictable in current JVMs,
+     * their JavaDoc clearly states that "the iteration order of set elements is unspecified and is subject to change."
+     */
+    public static boolean isStableOrderedSet(@NotNull Set<?> set)
+    {
+        if (set instanceof LinkedHashSet<?>)
+            return true;
+
+        return (STABLE_ORDERED_SET_CLASSES.contains(set.getClass()));
     }
 
     public static class TestCase extends Assert
@@ -221,6 +242,21 @@ public class CollectionUtils
         {
             assertFalse((null != value ? value.getClass() : "null") + " should NOT have been flagged as modifiable", isModifiableCollectionMapOrArray(value));
             assertNull(getModifiableCollectionMapOrArrayType(value));
+        }
+
+        @Test
+        public void testStableOrderedSetDetection()
+        {
+            assertTrue(isStableOrderedSet(Collections.emptySet()));
+            assertTrue(isStableOrderedSet(Collections.singleton("this")));
+            assertTrue(isStableOrderedSet(new LinkedHashSet<>()));
+            assertTrue(isStableOrderedSet(PageFlowUtil.set("this", "that")));
+            assertTrue(isStableOrderedSet(new CsvSet("this,that")));
+
+            assertFalse(isStableOrderedSet(Set.of()));
+            assertFalse(isStableOrderedSet(Set.of("this")));
+            assertFalse(isStableOrderedSet(Set.of("this", "that")));
+            assertFalse(isStableOrderedSet(new HashSet<>()));
         }
     }
 }

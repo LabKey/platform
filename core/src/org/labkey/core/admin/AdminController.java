@@ -960,10 +960,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.comparing(module ->
-                    // List 'Core' module credits first
-                    module.getName().equalsIgnoreCase(CORE_MODULE_NAME) ? "" : module.getName(),
-                    String.CASE_INSENSITIVE_ORDER));
+            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
@@ -2916,14 +2913,33 @@ public class AdminController extends SpringActionController
             html.append("</table>\n");
         }
 
+        private static final List<String> PREFIXES_TO_SKIP = List.of(
+            "java.base/java.lang.Thread.getStackTrace",
+            "org.labkey.api.cache.CacheManager",
+            "org.labkey.api.cache.DbCache",
+            "org.labkey.api.cache.Throttle",
+            "org.labkey.api.data.DatabaseCache",
+            "org.labkey.api.module.ModuleResourceCache"
+        );
+
         private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
 
             if (creationStackTrace != null)
             {
+                boolean trimming = true;
                 for (StackTraceElement element : creationStackTrace)
                 {
+                    // Skip the first few uninteresting stack trace elements to highlight the caller we care about
+                    if (trimming)
+                    {
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                            continue;
+
+                        trimming = false;
+                        LOG.info(element);
+                    }
                     sb.append(element);
                     sb.append("\n");
                 }
