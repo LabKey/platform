@@ -636,7 +636,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (lookup == null)
             return false;
 
-        if (!SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName()))
+        if (!(SCHEMA_EXP.equals(lookup.getSchemaKey()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
             return false;
 
         JdbcType type = dp.getPropertyType().getJdbcType();

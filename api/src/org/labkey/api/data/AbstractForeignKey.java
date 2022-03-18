@@ -198,7 +198,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             {
                 if (_lookupSchemaKey == null)
                 {
-                    _lookupSchemaKey = new SchemaKey(null, table.getPublicSchemaName());
+                    String publicSchemaName = table.getPublicSchemaName();
+                    if (null != publicSchemaName)
+                        _lookupSchemaKey = SchemaKey.fromString(publicSchemaName);
                 }
 
                 if (_tableName == null)
