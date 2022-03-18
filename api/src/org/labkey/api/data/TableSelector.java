@@ -186,17 +186,15 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     /*
-        Try to determine if the collection will iterate in a predictable order. Currently, all of these are assumed
-        to be stable-ordered collections:
+        Try to determine if the collection will iterate in a predictable order. Currently, these are assumed to be
+        stable-ordered collections:
 
-        - Collections of size 0 or 1
         - Non HashSets
         - LinkedHashSet (which extends HashSet, so we need a separate check)
-
     */
     private static boolean isStableOrdered(Collection<?> collection)
     {
-        return (collection.size() < 2 || !(collection instanceof HashSet) || collection instanceof LinkedHashSet);
+        return (!(collection instanceof HashSet) || collection instanceof LinkedHashSet);
     }
 
     @NotNull
