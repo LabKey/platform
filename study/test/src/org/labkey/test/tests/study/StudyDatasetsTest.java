@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
-import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.ext4.Window;

@@ -443,6 +443,17 @@ public class ExcelLoader extends DataLoader
     @Override
     public void close()
     {
+        if (_workbook != null)
+        {
+            try
+            {
+                _workbook.close();
+            }
+            catch (IOException ignore)
+            {
+            }
+        }
+
         if (shouldDeleteFile && null != _file)
             FileUtil.deleteTempFile(_file);
     }

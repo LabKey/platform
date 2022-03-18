@@ -381,7 +381,7 @@ public class JxlWorkbook implements Workbook
     @Override
     public void close()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        _workbook.close();
     }
 
     @Override

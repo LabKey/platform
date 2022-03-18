@@ -81,11 +81,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
@@ -790,11 +790,11 @@ public class DomainImpl implements Domain
         SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
         DbScope scope = table.getSchema().getScope();
 
-        List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).collect(Collectors.toList());
+        List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).toList();
         if (uniqueIdProps.isEmpty())
             return;
 
-        Set<ColumnInfo> uniqueIndexCols = new HashSet<>();
+        Set<ColumnInfo> uniqueIndexCols = new LinkedHashSet<>();
         // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
         // but exclude the uniqueId fields themselves.
         table.getUniqueIndices().values().forEach(idx -> idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add));
