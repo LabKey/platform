@@ -45,7 +45,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final @Nullable StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
-
     CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
@@ -55,7 +54,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _transactionStats = new Stats();
         _stackTrace = stackTrace;
     }
-
 
     @Override
     public void put(@NotNull K key, V value)

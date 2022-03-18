@@ -275,7 +275,7 @@ public class VisualizationController extends SpringActionController
      * action.
      */
 
-    static private final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.UNLIMITED,"getMeasuresStaticCache");
+    private static final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.UNLIMITED, "Static measures");
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)

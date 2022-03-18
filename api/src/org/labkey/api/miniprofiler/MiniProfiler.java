@@ -53,7 +53,7 @@ public class MiniProfiler
 
     static boolean _collectTroubleshootingStackTraces = false;
 
-    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "miniprofiler settings", (user, argument) -> {
+    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "Mini profiler settings", (user, argument) -> {
         // site-wide settings keyed by guest user, otherwise per-user settings
         RequestInfo current = MemTracker.get().current();
         boolean ignored = current != null && current.isIgnored();
