@@ -66,7 +66,7 @@ public class QueryForeignKey extends AbstractForeignKey
 
         // target schema definition
         Container effectiveContainer;
-        String lookupSchemaName;
+        SchemaKey lookupSchemaName;
         UserSchema targetSchema;
 
         // FK definition
@@ -96,45 +96,41 @@ public class QueryForeignKey extends AbstractForeignKey
             user = sourceSchema.getUser();
         }
 
+        public Builder schema(SchemaKey lookupSchemaKey)
+        {
+            this.lookupSchemaName = lookupSchemaKey;
+            this.targetSchema = null;
+            return this;
+        }
+
         public Builder schema(UserSchema lookupSchema)
         {
-            lookupSchemaName = lookupSchema.getSchemaName();
+            lookupSchemaName = lookupSchema.getSchemaPath();
             this.targetSchema = lookupSchema;
             effectiveContainer = lookupSchema.getContainer();
             return this;
         }
 
+
         public Builder schema(String schemaName)
         {
-            lookupSchemaName = schemaName;
+            lookupSchemaName = SchemaKey.fromString(schemaName);
             // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
             targetSchema = null;
             return this;
         }
 
-//        public Builder schema(String schemaName)
-//        {
-//            return setSchema(schemaName);
-//        }
 
         // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
         public Builder schema(String schemaName, Container effectiveContainer)
         {
-            lookupSchemaName = schemaName;
+            lookupSchemaName = SchemaKey.fromString(schemaName);
             // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
             targetSchema = null;
             if (null != effectiveContainer)
                 this.effectiveContainer = effectiveContainer;
             return this;
         }
-
-        // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
-//        public Builder setSchema(String schemaName, Container effectiveContainer)
-//        {
-//            lookupSchemaName = schemaName;
-//            this.effectiveContainer = effectiveContainer;
-//            return this;
-//        }
 
         // This is the container for the lookup table
         public Builder container(Container container)
@@ -228,7 +224,7 @@ public class QueryForeignKey extends AbstractForeignKey
             boolean isLabKeyScope = null != sourceSchema && (null == sourceSchema.getDbSchema() || sourceSchema.getDbSchema().getScope().isLabKeyScope());
             if (isLabKeyScope)
             {
-                if ("core".equalsIgnoreCase(lookupSchemaName) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
+                if ("core".equalsIgnoreCase(lookupSchemaName.getName()) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
                 {
                     if (null == containerFilter)
                         containerFilter = new ContainerFilter.AllFolders(user);
@@ -395,14 +391,14 @@ public class QueryForeignKey extends AbstractForeignKey
 
     protected QuerySchema getSchema()
     {
-        if (_schema == null && _user != null && _lookupSchemaName != null)
+        if (_schema == null && _user != null && _lookupSchemaKey != null)
         {
             DefaultSchema resolver = null;
             if (null==_sourceSchema || !_effectiveContainer.equals(_sourceSchema.getContainer()))
                 resolver = DefaultSchema.get(_user,_effectiveContainer);
             else
                 resolver = _sourceSchema.getDefaultSchema();
-            _schema = resolver.getSchema(_lookupSchemaName);
+            _schema = DefaultSchema.resolve(resolver, _lookupSchemaKey);
         }
         return _schema;
     }
