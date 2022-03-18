@@ -188,7 +188,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     /*
         Try to determine if the collection will iterate in a predictable order. Recommendation is to pass in column
         lists via a List (e.g., List.of() for a static column list) or LinkedHashSet (e.g., use PageFlowUtil.set() or
-        CsvSet).
+        CsvSet). Collections.singleton() can also be used when selecting a single column.
     */
     private static boolean isStableOrdered(Collection<?> collection)
     {
