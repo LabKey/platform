@@ -99,7 +99,7 @@ public class FileUtil
             }
             catch (IOException x)
             {
-                /* pass */
+                p.toFile().deleteOnExit();
             }
         }
         paths.clear();
@@ -1198,8 +1198,8 @@ quickScan:
     {
         if (null != f && f.isFile())
         {
-            f.delete();
-            tempPaths.get().remove(f.toPath());
+            if(f.delete())
+                tempPaths.get().remove(f.toPath());
         }
     }
 

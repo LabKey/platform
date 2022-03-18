@@ -5,8 +5,8 @@
            elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:annotation>
 		<xs:documentation xml:lang="en">
-            Describes a file-based study. This is the top-level file in a study archive. It defines the top-level study
-            settings and points to the other files in the archive.
+            Describes a file-based study. This is the top-level file in the /study subfolder of a folder archive. It
+            defines the top-level study settings and points to the other files in the archive.
         </xs:documentation>
 	</xs:annotation>
 

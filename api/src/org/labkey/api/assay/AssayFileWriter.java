@@ -57,7 +57,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public static final String DIR_NAME = "assaydata";
     public static final String ARCHIVED_DIR_NAME = "archived";
-    public static final String TEMP_DIR_NAME = "uploadTemp";
+    public static final String TEMP_DIR_NAME = ".uploadTemp";
 
     /** Make sure there's an assaydata subdirectory available for this container */
     public static File ensureUploadDirectory(Container container) throws ExperimentException

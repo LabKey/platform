@@ -277,7 +277,8 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     /**
      * @return true if this dataset is backed by published data (assay, sample type etc). Note that if a dataset happens
-     * to contain published data but isn't linked to the publish source in the server (ie., when importing a study archive), this method will return false.
+     * to contain published data but isn't linked to the publish source in the server (ie., when importing a folder archive),
+     * this method will return false.
      */
     boolean isPublishedData();
 

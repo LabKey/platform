@@ -56,7 +56,7 @@ public class URLExportScriptModel extends ExportScriptModel
     {
         return "query." + URLEncoder.encode(FieldKey.fromString(name).toString(), StringUtilsLabKey.DEFAULT_CHARSET) +
                 "~" + URLEncoder.encode(operator.getPreferredUrlKey(), StringUtilsLabKey.DEFAULT_CHARSET) + "=" +
-                URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET);
+                (value == null ? "" : URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET));
     }
 
     @Override
