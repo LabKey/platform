@@ -396,7 +396,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         arguments.setName(domain.getName());
         String name = arguments.getName();
-        String description = arguments.getDescription();
+        String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
