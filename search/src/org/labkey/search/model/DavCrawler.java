@@ -110,7 +110,7 @@ public class DavCrawler implements ShutdownListener
         //long length;
     }
 
-    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(1000, CacheManager.WEEK,"crawler indexing errors");
+    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(1000, CacheManager.WEEK, "Crawler indexing errors");
 
 
     // to make testing easier, break out the interface for persisting crawl state

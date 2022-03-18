@@ -45,7 +45,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final @Nullable StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
-
     CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
@@ -55,7 +54,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _transactionStats = new Stats();
         _stackTrace = stackTrace;
     }
-
 
     @Override
     public void put(@NotNull K key, V value)
@@ -116,7 +114,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
             else if (null != loader)
             {
                 v = loader.load(key, arg);
-                CacheManager.validate(loader, v);
                 put(key, v);
             }
 
@@ -252,6 +249,8 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private void trackPut(V value)
     {
         assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
+        CacheManager.validate("\"" + getDebugName() + "\" cache", value);
+
         _stats.puts.incrementAndGet();
 
         long maxSize = _stats.max_size.get();
@@ -282,7 +281,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
 
-    public SimpleCache getWrappedCache()
+    public SimpleCache<K, V> getWrappedCache()
     {
         return _cache;
     }

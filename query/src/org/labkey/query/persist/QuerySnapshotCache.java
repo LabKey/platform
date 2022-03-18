@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class QuerySnapshotCache
 {
-    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Query Snapshot Cache", (c, argument) -> new QuerySnapshotCollections(c));
+    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Query snapshots", (c, argument) -> new QuerySnapshotCollections(c));
 
     static @NotNull Collection<QuerySnapshotDef> getQuerySnapshotDefs(@Nullable Container c, @Nullable String schemaName)
     {

@@ -941,7 +941,7 @@ public class SpecimenRequestManager
         else
         {
             _groupedValuesCache = new DatabaseCache<>(
-                SpecimenSchema.get().getScope(), 10, 8 * CacheManager.HOUR, "Grouped Values Cache");
+                SpecimenSchema.get().getScope(), 10, 8 * CacheManager.HOUR, "Specimen grouped values");
         }
 
         try

@@ -35,8 +35,8 @@ import java.util.Map;
 public class DataStateManager
 {
     private static final DataStateManager _instance = new DataStateManager();
-    private static Map<String, DataStateHandler> _DataStateHandlers = new HashMap<>();
-    protected static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataStates",
+    private static final Map<String, DataStateHandler> _DataStateHandlers = new HashMap<>();
+    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
             (c, argument) -> new DataStateCollections(c)
     );
 

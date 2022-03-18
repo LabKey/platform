@@ -149,8 +149,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
     private final Map<TaskId, TaskFactory<?>> _taskFactoryStore;
     private final Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories;
 
-    private static final ModuleResourceCache<Map<TaskId, TaskFactory<?>>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
-    private static final ModuleResourceCache<Map<TaskId, TaskPipeline<?>>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskFactory<?>>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("Pipeline task factories", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskPipeline<?>>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("Task pipelines", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
