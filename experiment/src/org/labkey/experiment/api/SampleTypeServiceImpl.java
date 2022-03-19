@@ -147,9 +147,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
 
     // SampleType -> Container cache
-    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleTypeToContainer");
+    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)

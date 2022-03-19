@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -116,7 +117,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
 
     // NOTE: not using a blocking cache since one request can cause multiple entries to be loaded
-    static Cache<Path,Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache");
+    static Cache<Path, Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id");
 
 
     // -1 if not exists
@@ -193,7 +194,8 @@ public class SavePaths implements DavCrawler.SavePaths
             insert.add(valueName);
             db.getSqlDialect().addReselect(insert, id, null);
 
-            Integer ident = new SqlSelector(getSearchSchema(),insert).getObject(Integer.class);
+            // Issue 45008 - avoid logging warning when there's a duplicate row
+            Integer ident = new SqlSelector(getSearchSchema(),insert).setLogLevel(Level.ERROR).getObject(Integer.class);
             if (null == ident)
                 return getId(path);
             return ident;

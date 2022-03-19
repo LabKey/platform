@@ -90,7 +90,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     }
 
     @Override
-    public final Set<String> keySet()
+    public final @NotNull Set<String> keySet()
     {
         return new KeySet(super.keySet());
     }
@@ -101,7 +101,8 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
      */
     private final class KeySet extends AbstractSet<String>
     {
-        private Set<String> _nativeKeySet;
+        private final Set<String> _nativeKeySet;
+
         private KeySet(Set<String> nativeKeySet)
         {
             _nativeKeySet = nativeKeySet;

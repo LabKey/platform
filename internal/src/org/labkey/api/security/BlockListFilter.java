@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
 public class BlockListFilter
 {
     static Logger _log = LogManager.getLogger(BlockListFilter.class);
-    static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "suspicious cache");
+    static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "Suspicious requests");
 
 
     private static String getBrowserKey(HttpServletRequest req)

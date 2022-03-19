@@ -17,6 +17,7 @@ package org.labkey.api.collections;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 
 public class CsvSet extends LinkedHashSet<String>
@@ -25,7 +26,6 @@ public class CsvSet extends LinkedHashSet<String>
     {
         // Empty string results in empty set
         if (!StringUtils.isBlank(str))
-            for (String token : str.split(",\\s*"))
-                add(token);
+            addAll(Arrays.asList(str.split(",\\s*")));
     }
 } 

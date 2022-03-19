@@ -95,7 +95,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private ListDefinitionImpl _list;
-    private final static int MAX_NAME_LENGTH = 64;
+    private final static int MAX_NAME_LENGTH = 200;
 
     static
     {

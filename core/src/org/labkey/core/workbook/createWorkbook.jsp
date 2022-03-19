@@ -32,7 +32,8 @@
     Container container = getContainer();
 
     Set<FolderType> folderTypes = new LinkedHashSet<>();
-    for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes())
+    boolean userHasEnableRestrictedModulesPermission = container.hasEnableRestrictedModules(getUser());
+    for (FolderType folderType : FolderTypeManager.get().getEnabledFolderTypes(userHasEnableRestrictedModulesPermission))
     {
         if (folderType.isWorkbookType())
         {
