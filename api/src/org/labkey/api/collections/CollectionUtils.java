@@ -139,10 +139,11 @@ public class CollectionUtils
     );
 
     /**
-     * Attempts to determine if the provided Set implementation is stable-ordered, i.e., having a predictable iteration
-     * order. Currently, that means a LinkedHashSet, Collections.emptySet(), or Collections.singleton(). Note that sets
-     * returned by Set.of() are NOT considered stable-ordered; although they seem to be predictable in current JVMs,
-     * their JavaDoc clearly states that "the iteration order of set elements is unspecified and is subject to change."
+     * Attempts to determine if the provided Set implementation is stable-ordered, i.e., its iteration order matches its
+     * insertion order. Currently, that means a LinkedHashSet, Collections.emptySet(), or Collections.singleton().
+     * HashSet and TreeSet are not considered stable-order. Also note that sets returned by Set.of() are not considered
+     * stable-ordered; although they seem to iterate in insertion order in current JVMs, their JavaDoc clearly states
+     * that "the iteration order of set elements is unspecified and is subject to change."
      */
     public static boolean isStableOrderedSet(@NotNull Set<?> set)
     {
