@@ -2938,7 +2938,6 @@ public class AdminController extends SpringActionController
                             continue;
 
                         trimming = false;
-                        LOG.info(element);
                     }
                     sb.append(element);
                     sb.append("\n");
