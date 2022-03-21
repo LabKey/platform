@@ -26,6 +26,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
@@ -85,7 +86,7 @@ public class ClosureQueryHelper
             /*INTO*/
             FROM (
                 SELECT Start_, End_,
-                    COALESCE(material.rowid, dataclass.rowid) as rowId,
+                    COALESCE(material.rowid, data.rowid) as rowId,
                     COALESCE('m' || CAST(materialsource.rowid AS VARCHAR), 'd' || CAST(dataclass.rowid AS VARCHAR)) as targetId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
@@ -118,7 +119,7 @@ public class ClosureQueryHelper
             /*INTO*/
             FROM (
                 SELECT Start_, End_,
-                    COALESCE(material.rowid, dataclass.rowid) as rowId,
+                    COALESCE(material.rowid, data.rowid) as rowId,
                     COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as targetId
                 FROM CTE_
                     LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
@@ -171,7 +172,8 @@ public class ClosureQueryHelper
         if (!(target instanceof ExpSampleType) && !(target instanceof ExpDataClass))
             throw new IllegalStateException();
 
-        final TableType sourceType =  source instanceof ExpSampleType ss ? TableType.SampleType : TableType.DataClass;
+        final TableType sourceType = source instanceof ExpSampleType ? TableType.SampleType : TableType.DataClass;
+        final TableType targetType = target instanceof ExpSampleType ? TableType.SampleType : TableType.DataClass;
 
         TableInfo parentTable = fkRowId.getParentTable();
         var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
@@ -188,7 +190,10 @@ public class ClosureQueryHelper
         };
         ret.setLabel(target.getName());
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
-        ret.setFk(new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()));
+        var qfk = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
+        if (sourceType != targetType)
+            qfk.schema(targetType.schemaKey);
+        ret.setFk(qfk);
         return ret;
     }
 
@@ -380,7 +385,7 @@ public class ClosureQueryHelper
 
     /*
      * Code to create the lineage parent lookup column and intermediate lookups that use ClosureQueryHelper
-    */
+     */
 
     public static MutableColumnInfo createLineageLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowid, ExpObject source)
     {
@@ -427,7 +432,7 @@ public class ClosureQueryHelper
 
     enum TableType
     {
-        SampleType("Materials")
+        SampleType("Materials", SchemaKey.fromParts("exp","materials") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -440,7 +445,7 @@ public class ClosureQueryHelper
                         return SampleTypeServiceImpl.get().getSampleType(c, u, name);
                     }
                 },
-        DataClass("Data")
+        DataClass("Data", SchemaKey.fromParts("exp","data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -455,10 +460,12 @@ public class ClosureQueryHelper
                 };
 
         final String lookupName;
+        final SchemaKey schemaKey;
 
-        TableType(String lookupName)
+        TableType(String lookupName, SchemaKey schemaKey)
         {
             this.lookupName = lookupName;
+            this.schemaKey = schemaKey;
         }
 
         abstract Collection<? extends ExpObject> getInstances(Container c, User u);

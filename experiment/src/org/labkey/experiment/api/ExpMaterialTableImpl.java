@@ -675,7 +675,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         if (null != _ss && AppProps.getInstance().isExperimentalFeatureEnabled(ExperimentModule.EXPERIMENTAL_LINEAGE_PARENT_LOOKUP))
         {
-            MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Parent Lookups", this, _rootTable.getColumn("rowid"), _ss);
+            MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestor Lookups Placeholder", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
         }
     }
