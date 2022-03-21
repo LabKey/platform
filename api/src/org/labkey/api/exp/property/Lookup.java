@@ -33,8 +33,8 @@ public class Lookup
     {
     }
 
-    // Callers need to be explicit about whether this name is encoded or not
-    // I'm going to assume SchemaName is "/" encoded
+    // Callers need to be explicit about how this is encode.  This constructer assumes "SchmeaKey.toString()" encoding.
+    // Consider using ScehmaKey constructor instead.
     @Deprecated
     public Lookup(Container c, String schema, String query)
     {

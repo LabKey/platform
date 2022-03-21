@@ -73,7 +73,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
 
         ContainerFilter cf;
-        if ("core".equalsIgnoreCase(null==lookupSchemaKey?null:lookupSchemaKey.getName()) && "CoClassImposteriserntainers".equalsIgnoreCase(lookupQuery))
+        if ("core".equalsIgnoreCase(null==lookupSchemaKey?null:lookupSchemaKey.getName()) && "Containers".equalsIgnoreCase(lookupQuery))
             cf = new ContainerFilter.AllFolders(user);
         else
             cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer!=null ? targetContainer : container);

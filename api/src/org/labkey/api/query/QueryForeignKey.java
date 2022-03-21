@@ -66,7 +66,7 @@ public class QueryForeignKey extends AbstractForeignKey
 
         // target schema definition
         Container effectiveContainer;
-        SchemaKey lookupSchemaName;
+        SchemaKey lookupSchemaKey;
         UserSchema targetSchema;
 
         // FK definition
@@ -98,14 +98,14 @@ public class QueryForeignKey extends AbstractForeignKey
 
         public Builder schema(SchemaKey lookupSchemaKey)
         {
-            this.lookupSchemaName = lookupSchemaKey;
+            this.lookupSchemaKey = lookupSchemaKey;
             this.targetSchema = null;
             return this;
         }
 
         public Builder schema(UserSchema lookupSchema)
         {
-            lookupSchemaName = lookupSchema.getSchemaPath();
+            lookupSchemaKey = lookupSchema.getSchemaPath();
             this.targetSchema = lookupSchema;
             effectiveContainer = lookupSchema.getContainer();
             return this;
@@ -114,7 +114,7 @@ public class QueryForeignKey extends AbstractForeignKey
 
         public Builder schema(String schemaName)
         {
-            lookupSchemaName = SchemaKey.fromString(schemaName);
+            lookupSchemaKey = SchemaKey.fromString(schemaName);
             // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
             targetSchema = null;
             return this;
@@ -124,7 +124,7 @@ public class QueryForeignKey extends AbstractForeignKey
         // effectiveContainer is the container used when resolving schemaName if there is not an explicit fkFolderPath defined
         public Builder schema(String schemaName, Container effectiveContainer)
         {
-            lookupSchemaName = SchemaKey.fromString(schemaName);
+            lookupSchemaKey = SchemaKey.fromString(schemaName);
             // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
             targetSchema = null;
             if (null != effectiveContainer)
@@ -217,14 +217,14 @@ public class QueryForeignKey extends AbstractForeignKey
         @Override
         public ForeignKey build()
         {
-            if (null == lookupSchemaName && null == targetSchema)
+            if (null == lookupSchemaKey && null == targetSchema)
                 targetSchema = (UserSchema)sourceSchema;
 
             /* see 41054 move the core.containers special case handling here from PdLookupForeignKey */
             boolean isLabKeyScope = null != sourceSchema && (null == sourceSchema.getDbSchema() || sourceSchema.getDbSchema().getScope().isLabKeyScope());
             if (isLabKeyScope)
             {
-                if ("core".equalsIgnoreCase(lookupSchemaName.getName()) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
+                if (null != lookupSchemaKey && "core".equalsIgnoreCase(lookupSchemaKey.getName()) && "containers".equalsIgnoreCase(lookupTableName) && effectiveContainer.equals(sourceSchema.getContainer()))
                 {
                     if (null == containerFilter)
                         containerFilter = new ContainerFilter.AllFolders(user);
@@ -242,7 +242,7 @@ public class QueryForeignKey extends AbstractForeignKey
 
     public QueryForeignKey(Builder builder)
     {
-        super(builder.sourceSchema, builder.containerFilter, builder.lookupSchemaName, builder.lookupTableName, builder.lookupKey, builder.displayField);
+        super(builder.sourceSchema, builder.containerFilter, builder.lookupSchemaKey, builder.lookupTableName, builder.lookupKey, builder.displayField);
         _effectiveContainer = builder.effectiveContainer;
         _lookupContainer = builder.lookupContainer;
         _user = builder.user;

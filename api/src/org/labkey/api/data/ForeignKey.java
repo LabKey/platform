@@ -85,6 +85,8 @@ public interface ForeignKey
     /**
      * Just for introspection.
      * @return The name of the foreign user schema table.
+     *
+     * Consider using getLookupSchemaKey() instead.
      */
     @Deprecated
     default String getLookupSchemaName()
