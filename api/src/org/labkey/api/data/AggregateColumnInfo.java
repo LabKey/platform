@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -128,6 +129,12 @@ public class AggregateColumnInfo extends BaseColumnInfo
                 public String getLookupSchemaName()
                 {
                     return fk.getLookupSchemaName();
+                }
+
+                @Override
+                public SchemaKey getLookupSchemaKey()
+                {
+                    return fk.getLookupSchemaKey();
                 }
 
                 @Override
