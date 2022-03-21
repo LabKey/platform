@@ -104,7 +104,7 @@ public class CacheManager
         return new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats, null);
     }
 
-    private static final Cache<String, Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
+    private static final Cache<String, Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "Shared");
 
     public static <V> Cache<String, V> getSharedCache()
     {
@@ -172,8 +172,11 @@ public class CacheManager
     }
 
     // Validate a cached value. For now, just log warnings for mutable collections.
-    public static <V> void validate(CacheLoader loader, @Nullable V value)
+    public static <V> void validate(String debugName, @Nullable V value)
     {
+        if (value instanceof Wrapper<?>)
+            return;
+
         String description = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
 
         // TODO: Stop caching arrays and remove this array check
@@ -182,7 +185,7 @@ public class CacheManager
 
         if (null != description)
         {
-            LOG.warn(loader.toString() + " returned " + description + ", which could be mutated by callers!");
+            LOG.warn(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
         }
     }
 }

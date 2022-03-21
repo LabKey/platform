@@ -16,16 +16,17 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,11 +38,7 @@ import java.util.Set;
  */
 public class MvUtil
 {
-    private static final String CACHE_PREFIX = MvUtil.class.getName() + "/";
-
-    // Sentinel for the cache: if a container has no mv indicators set, we use this to indicate,
-    // as null means a cache miss.
-    private static final Map<String, String> NO_VALUES = Collections.unmodifiableMap(new HashMap<String, String>());
+    private static final Cache<Container, Map<String, String>> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.YEAR, "Missing Value Indicators", (c, argument) -> getFromDb(c));
 
     private MvUtil() {}
 
@@ -63,7 +60,7 @@ public class MvUtil
 
     public static boolean isMvIndicator(String indicator, @NotNull Container c)
     {
-        return new CaseInsensitiveHashSet(getMvIndicators(c)).contains(indicator);
+        return getIndicatorsAndLabels(c).containsKey(indicator);
     }
 
     public static String getMvLabel(String mvIndicator, @NotNull Container c)
@@ -84,38 +81,26 @@ public class MvUtil
         return getIndicatorsAndLabelsWithContainer(c).getKey();
     }
 
-    public static Map<String, String> getIndicatorsAndLabels(@NotNull Container c)
+    /**
+     * Returns an unmodifiable, case-insensitive map of MV indicator -> label for this container (may be defined in
+     * this container or inherited)
+     */
+    public static @NotNull Map<String, String> getIndicatorsAndLabels(@NotNull Container c)
     {
         return getIndicatorsAndLabelsWithContainer(c).getValue();
     }
 
     /**
-     * Return the Container in which these indicators are defined, along with the indicators.
+     * Returns the Container in which these indicators are defined, along with the indicators
      */
-    public static Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(@NotNull Container c)
+    public static @NotNull Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(@NotNull Container c)
     {
-        String cacheKey = getCacheKey(c);
+        Map<String, String> result = CACHE.get(c);
 
-        //noinspection unchecked
-        Map<String, String> result = getCache().get(cacheKey);
-        if (result == null)
-        {
-            result = getFromDb(c);
-            if (result.isEmpty())
-            {
-                result = NO_VALUES;
-                getCache().put(cacheKey, NO_VALUES);
-            }
-            else
-            {
-                getCache().put(cacheKey, result);
-                return new Pair<>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
-            }
-        }
-        if (result == NO_VALUES)
+        if (null == result)
         {
             // recurse
-            assert !c.isRoot() : "We have no MV indicators for the root container. This should never happen";
+            assert !c.isRoot() : "We have no MV indicators for the root container. This should never happen!";
             return getIndicatorsAndLabelsWithContainer(c.getParent());
         }
 
@@ -162,34 +147,15 @@ public class MvUtil
         clearCache(c);
     }
 
-    private static Map<String, String> getFromDb(@NotNull Container c)
+    // Returns an unmodifiable, case-insensitive map of MV indicators -> labels in this folder OR null if they're inherited
+    private static @Nullable Map<String, String> getFromDb(@NotNull Container c)
     {
-        Map<String, String> indicatorsAndLabels = new CaseInsensitiveHashMap<>();
-
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-        Set<String> selectColumns = new HashSet<>();
-        selectColumns.add("mvindicator");
-        selectColumns.add("label");
+        Set<String> selectColumns = new CsvSet("mvindicator, label");
         Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
-        Map[] selectResults = new TableSelector(mvTable, selectColumns, filter, null).getMapArray();
+        Map<String, String> indicatorsAndLabels = new TableSelector(mvTable, selectColumns, filter, null).getValueMap();
 
-        //noinspection unchecked
-        for (Map<String, String> m : selectResults)
-        {
-            indicatorsAndLabels.put(m.get("mvindicator"), m.get("label"));
-        }
-
-        return indicatorsAndLabels;
-    }
-
-    private static String getCacheKey(@NotNull Container c)
-    {
-        return CACHE_PREFIX + c.getId();
-    }
-
-    private static Cache<String, Map<String, String>> getCache()
-    {
-        return CacheManager.getSharedCache();
+        return indicatorsAndLabels.isEmpty() ? null : Collections.unmodifiableMap(new CaseInsensitiveHashMap<>(indicatorsAndLabels));
     }
 
     public static void containerDeleted(@NotNull Container c)
@@ -199,14 +165,14 @@ public class MvUtil
 
     public static void clearCache(@NotNull Container c)
     {
-        getCache().removeUsingFilter(new Cache.StringPrefixFilter(getCacheKey(c)));
+        CACHE.remove(c);
     }
 
     /**
      * Returns the default indicators as originally implemented: "Q" and "N",
      * mapped to their labels.
      *
-     * This should only be necessary at upgrade time.
+     * This should only be necessary at bootstrap time.
      */
     public static Map<String, String> getDefaultMvIndicators()
     {

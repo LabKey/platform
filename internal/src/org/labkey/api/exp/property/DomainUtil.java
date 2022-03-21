@@ -136,7 +136,7 @@ public class DomainUtil
             Container lookupContainer = property.getLookup().getContainer();
             if (lookupContainer == null)
                 lookupContainer = property.getContainer();
-            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaKey());
             if (schema != null)
             {
                 TableInfo table = schema.getTable(property.getLookup().getQueryName());
@@ -407,7 +407,9 @@ public class DomainUtil
         {
             gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
             gwtProp.setLookupQuery(prop.getLookup().getQueryName());
-            gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
+            var key = prop.getLookup().getSchemaKey();
+            if (null != key)
+               gwtProp.setLookupSchema(key.toString());
         }
         return gwtProp;
     }

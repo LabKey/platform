@@ -117,7 +117,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
 
     // NOTE: not using a blocking cache since one request can cause multiple entries to be loaded
-    static Cache<Path,Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache");
+    static Cache<Path, Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id");
 
 
     // -1 if not exists

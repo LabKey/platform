@@ -382,7 +382,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
                 // Check if it's the same FK, based on schema, query, and container
                 if (lookup == null ||
-                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaName()) ||
+                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaKey()) ||
                         !metadataColumnJSON.getLookupQuery().equals(lookup.first.getQueryName()) ||
                         !Objects.equals(metadataColumnJSON.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
                 {
@@ -617,7 +617,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         metadataColumnJSON.setLookupCustom(true);
                     else
                     {
-                        metadataColumnJSON.setLookupSchema(lookup.first.getSchemaName());
+                        metadataColumnJSON.setLookupSchema(Objects.toString(lookup.first.getSchemaKey(),null));
                         metadataColumnJSON.setLookupQuery(lookup.first.getQueryName());
                         if (lookup.first.getContainer() != null)
                             metadataColumnJSON.setLookupContainer(lookup.first.getContainer().getPath());

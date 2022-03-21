@@ -212,7 +212,7 @@ public class OntologyManager
             return Collections.unmodifiableList(propertyURIs);
         }
     });
-    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
+    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -2694,7 +2694,7 @@ public class OntologyManager
     public static Object getRemappedValueForLookup(User user, Container container, RemapCache cache, Lookup lookup, Object value)
     {
         Container lkContainer = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+        return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
     public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)

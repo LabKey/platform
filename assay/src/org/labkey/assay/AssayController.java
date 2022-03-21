@@ -154,6 +154,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -443,12 +444,12 @@ public class AssayController extends SpringActionController
                 // @deprecated (remove in future API version), use lookup.{} instead
                 String containerPath = l.getContainer() != null ? l.getContainer().getPath() : null;
                 properties.put("lookupContainer", containerPath);
-                properties.put("lookupSchema", l.getSchemaName());
+                properties.put("lookupSchema", Objects.toString(l.getSchemaKey(),null));
                 properties.put("lookupQuery", l.getQueryName());
 
                 // let's be consistent with Query metadata
                 HashMap<String,String> lookup = new HashMap<>();
-                lookup.put("schema", l.getSchemaName());
+                lookup.put("schema", Objects.toString(l.getSchemaKey(),null));
                 lookup.put("table", l.getQueryName());
                 lookup.put("container", null!=l.getContainer() ? l.getContainer().getPath() : null);
 
@@ -457,7 +458,7 @@ public class AssayController extends SpringActionController
                 Container lookupContainer = l.getContainer();
                 if (lookupContainer == null)
                     lookupContainer = property.getContainer();
-                UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, l.getSchemaName());
+                UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, l.getSchemaKey());
                 if (schema != null)
                 {
                     try

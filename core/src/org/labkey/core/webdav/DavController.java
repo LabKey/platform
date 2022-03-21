@@ -4766,7 +4766,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {

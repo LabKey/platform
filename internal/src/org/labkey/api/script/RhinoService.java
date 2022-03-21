@@ -517,7 +517,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
      * the resources themselves, however, it can't currently be used for this staleness check because it doesn't invalidate
      * on modify plus the exists() and lastModified() methods of FileResource access the file system directly.
      */
-    static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino script cache", new ModuleResourceCacheHandler<Map<Path, Long>>()
+    static final ModuleResourceCache<Map<Path, Long>> TOP_LEVEL_SCRIPT_CACHE = ModuleResourceCaches.create("Top-level Rhino scripts", new ModuleResourceCacheHandler<>()
     {
         @Override
         public Map<Path, Long> load(Stream<? extends Resource> resources, Module module)
@@ -533,9 +533,8 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     {
         boolean isStale = true;
 
-        if (validator instanceof RhinoScriptRef)
+        if (validator instanceof RhinoScriptRef ref)
         {
-            RhinoScriptRef ref = (RhinoScriptRef)validator;
             Long currentLastModified = TOP_LEVEL_SCRIPT_CACHE.getResourceMap(ref.getModule()).get(ref.getPath());
 
             isStale = (null == currentLastModified || currentLastModified.longValue() != ref.getLastModified());

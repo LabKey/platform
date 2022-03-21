@@ -126,7 +126,7 @@ public class AssayManager implements AssayService
 
     public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
 
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
