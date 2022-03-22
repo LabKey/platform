@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector> implements ResultsFactory
@@ -129,7 +130,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         if (select == ALL_COLUMNS)
         {
-            selectColumns = table.getColumns();
+            selectColumns = table.getColumns().stream()
+                .filter(columnInfo -> !columnInfo.isUnselectable())
+                .collect(Collectors.toList());
         }
         else
         {
