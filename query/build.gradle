@@ -63,7 +63,14 @@ dependencies {
             "Eclipse Public License - v 1.0",
             "http://www.eclipse.org/legal/epl-v10.html",
             "Part of Mondrian distribution"
-        )
+        ),
+            {
+                // exclude these because they cause interference with the tomcat versions
+                exclude group: "javax.servlet", module:"jsp-api"
+                exclude group: "javax.servlet", module:"servlet-api"
+                // exclude this because it brings older version of log4j
+                exclude group: "log4j", module:"log4j"
+            }
     )
 
     BuildUtils.addExternalDependency(
@@ -77,14 +84,7 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Part of Mondrian distribution",
 
-        ),
-        {
-            // exclude these because they cause interference with the tomcat versions
-            exclude group: "javax.servlet", module:"jsp-api"
-            exclude group: "javax.servlet", module:"servlet-api"
-            // exclude this because it brings older version of log4j
-            exclude group: "log4j", module:"log4j"
-        }
+        )
     )
 }
 
