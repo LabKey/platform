@@ -47,8 +47,8 @@ dependencies {
             "Mondrian",
             "Pentaho",
             "http://mondrian.pentaho.com/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,  //From Maven
-            ExternalDependency.APACHE_2_LICENSE_URL,   //From Maven
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
             "Part of Mondrian distribution"
         )
     )
