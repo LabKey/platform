@@ -249,13 +249,13 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
-import static org.labkey.api.module.DefaultModule.CORE_MODULE_NAME;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
@@ -2834,16 +2834,22 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Caches", cacheStats);
+            appendStats(html, "Caches", cacheStats, false);
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Transaction Caches", transactionStats);
+            appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html.toString());
         }
 
-        private void appendStats(StringBuilder html, String title, List<CacheStats> stats)
+        private void appendStats(StringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
         {
+            List<CacheStats> stats = skipUnusedCaches ?
+                allStats.stream()
+                    .filter(stat->stat.getMaxSize() > 0)
+                    .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
+                allStats;
+
             Collections.sort(stats);
 
             html.append("<p><b>");
@@ -2888,11 +2894,10 @@ public class AdminController extends SpringActionController
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
                 Long limit = stat.getLimit();
-                Long maxSize = stat.getMaxSize();
+                long maxSize = stat.getMaxSize();
 
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
-
 
                 html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 

@@ -163,7 +163,7 @@ public class CacheManager
 
     public static CacheStats getTransactionCacheStats(TrackingCache cache)
     {
-        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), cache.size(), cache.getLimit());
+        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), 0, cache.getLimit());
     }
 
     public static void shutdown()

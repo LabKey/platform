@@ -58,7 +58,7 @@ public interface SimpleCache<K, V>
     int size();
 
     // Is this cache empty?
-    public boolean isEmpty();
+    boolean isEmpty();
 
     long getDefaultExpires();
 
