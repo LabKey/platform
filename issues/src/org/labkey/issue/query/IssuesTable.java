@@ -54,6 +54,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
@@ -720,7 +721,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
         public IssuesPdLookupForeignKey(IssuesQuerySchema schema, PropertyDescriptor pd)
         {
-            super(schema, schema.getContainer(), schema.getUser(), null, pd, pd.getLookupSchema(), pd.getLookupQuery(), pd.getContainer());
+            super(schema, schema.getContainer(), schema.getUser(), null, pd, null==pd.getLookupSchema()?null:SchemaKey.fromString(pd.getLookupSchema()), pd.getLookupQuery(), pd.getContainer());
             _user = schema.getUser();
             _container = schema.getContainer();
             _propName = pd.getName();

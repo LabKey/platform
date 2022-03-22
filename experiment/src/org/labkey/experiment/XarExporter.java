@@ -99,6 +99,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -801,7 +802,7 @@ public class XarExporter
         {
             PropertyDescriptorType.FK xFK = xProp.addNewFK();
             xFK.setQuery(lookup.getQueryName());
-            xFK.setSchema(lookup.getSchemaName());
+            xFK.setSchema(Objects.toString(lookup.getSchemaKey(),null));
             if (lookup.getContainer() != null && !lookup.getContainer().equals(prop.getContainer()))
             {
                 // Export the lookup's target path if it's set and it's not the same as the property descriptor's container

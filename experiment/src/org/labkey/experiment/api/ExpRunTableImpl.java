@@ -820,9 +820,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public String getLookupSchemaName()
+        public SchemaKey getLookupSchemaKey()
         {
-            return ExpSchema.SCHEMA_NAME;
+            return new SchemaKey(null, ExpSchema.SCHEMA_NAME);
         }
 
         @Override

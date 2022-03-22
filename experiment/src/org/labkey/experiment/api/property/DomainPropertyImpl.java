@@ -31,7 +31,6 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -49,13 +48,13 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class DomainPropertyImpl implements DomainProperty
@@ -592,7 +591,7 @@ public class DomainPropertyImpl implements DomainProperty
         // current will return null if the schema or query is null so check
         // for this case in the passed in lookup
         if (current == null)
-            if (lookup.getQueryName() == null || lookup.getSchemaName() == null)
+            if (lookup.getQueryName() == null || lookup.getSchemaKey() == null)
                 return;
 
         if (current != null && current.equals(lookup))
@@ -614,7 +613,7 @@ public class DomainPropertyImpl implements DomainProperty
             edit().setLookupContainer(lookup.getContainer().getId());
         }
         edit().setLookupQuery(lookup.getQueryName());
-        edit().setLookupSchema(lookup.getSchemaName());
+        edit().setLookupSchema(Objects.toString(lookup.getSchemaKey(),null));
     }
 
     @Override
@@ -1180,7 +1179,7 @@ public class DomainPropertyImpl implements DomainProperty
                     assertTrue(StringUtils.equals(l.getContainer().getId(), _pd.getLookupContainer()));
 
                 assertTrue(StringUtils.equals(l.getQueryName(), _pd.getLookupQuery()));
-                assertTrue(StringUtils.equals(l.getSchemaName(),_pd.getLookupSchema()));
+                assertTrue(StringUtils.equals(l.getSchemaKey().toString(), _pd.getLookupSchema()));
             }
         }
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.core.query;
 
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -27,7 +28,6 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -179,8 +179,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     /**
-     * Returns the set of built in columns that are managed by property descriptors
-     * @return
+     * Returns the set of built-in columns that are managed by property descriptors
      */
     public Set<String> getWrappedColumns()
     {

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
 
 import java.util.Map;
@@ -79,6 +80,12 @@ public class LazyForeignKey implements ForeignKey
     public String getLookupSchemaName()
     {
         return getDelegate() == null ? null : getDelegate().getLookupSchemaName();
+    }
+
+    @Override
+    public SchemaKey getLookupSchemaKey()
+    {
+        return getDelegate() == null ? null : getDelegate().getLookupSchemaKey();
     }
 
     @Override

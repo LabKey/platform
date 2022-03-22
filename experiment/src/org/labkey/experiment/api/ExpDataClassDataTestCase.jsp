@@ -97,6 +97,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.Collections" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -343,7 +344,7 @@ private void testBulkImport(ExpDataClassImpl dataClass, TableInfo table, User us
     assertEquals(2, count);
     assertEquals(2, dataClass.getDatas().size());
 
-    int rowId = new TableSelector(table, Set.of("rowId"), new SimpleFilter("aa", 50).addCondition("bb", "zz"), null).getObject(Integer.class);
+    int rowId = new TableSelector(table, Collections.singleton("rowId"), new SimpleFilter("aa", 50).addCondition("bb", "zz"), null).getObject(Integer.class);
 
     verifyAliases(table, rowId, Set.of("a", "b", "c"));
 }

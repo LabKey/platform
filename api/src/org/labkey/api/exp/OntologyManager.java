@@ -2694,7 +2694,7 @@ public class OntologyManager
     public static Object getRemappedValueForLookup(User user, Container container, RemapCache cache, Lookup lookup, Object value)
     {
         Container lkContainer = lookup.getContainer() != null ? lookup.getContainer() : container;
-        return cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+        return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
     public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
