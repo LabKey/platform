@@ -43,7 +43,8 @@ import java.util.Set;
 public class FolderImportContext extends AbstractFolderContext
 {
     private Path _folderXml;
-    HashSet<String> _importedReports = new HashSet<>();
+
+    private final HashSet<String> _importedReports = new HashSet<>();
 
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -53,6 +54,7 @@ public class FolderImportContext extends AbstractFolderContext
     }
 
     @Deprecated //Prefer the Path version -- This will not work for Cloud based archive files
+    // TODO: Delete this... no more usages
     public FolderImportContext(User user, Container c, File folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
         this(user, c, folderXml.toPath(), dataTypes, logger, root);
@@ -127,7 +129,8 @@ public class FolderImportContext extends AbstractFolderContext
     @Override
     public Double getArchiveVersion()
     {
-        try {
+        try
+        {
             FolderDocument folderDoc = getDocument();
             return folderDoc.getFolder() != null ? folderDoc.getFolder().getArchiveVersion() : null;
         }
