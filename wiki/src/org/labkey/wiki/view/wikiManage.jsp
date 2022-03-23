@@ -97,6 +97,12 @@
 
         return false;
     }
+
+    function rename()
+    {
+        document.getElementById('rename').style.display = '';
+        return false;
+    }
 </script>
 
 <labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
@@ -114,10 +120,19 @@
 %>
         <tr>
             <td class='labkey-form-label'><label for="name">Name</label></td>
-            <td><input type="text" style="width:420px" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
+            <td>
+                <input type="text" class='labkey-form-label' style="width:420px; text-align:left;" id="name" name="name" value="<%=h(wiki.getName())%>" readonly="readonly">
+                <%=button("Rename").style("width:100px").submit(true).onClick("return rename()") %>
+            </td>
         </tr>
-        <tr>
-            <td></td><td style="width:420px">WARNING: Changing a page's name will break any links to the page.</td>
+        <tr id="rename" style="display: none;">
+            <td class='labkey-form-label'><label for="newName">Rename</label></td>
+            <td>
+                <table>
+                    <tr><td><label for="newName">New Name&nbsp;</label><td><input type="text" style="width:420px" id="newName" name="newName"></td></tr>
+                    <tr><td><label for="addAlias">Add Alias&nbsp;</label><td><input type="checkbox" name="addAlias" id="addAlias"<%=checked(true)%>>Check this to add '<%=h(wiki.getName())%>' as an alias for this page, to keep existing links and shortcuts working</td></tr>
+                </table>
+            </td>
         </tr>
         <tr>
             <td class='labkey-form-label'><label for="title">Title</label></td>
@@ -212,11 +227,32 @@
         <%
             }
         %>
+        <tr>
+            <td class='labkey-form-label'><label for="aliases">Aliases</label></td>
+            <td><table>
+                <tr>
+                    <td>
+                        <%
+                            SelectBuilder aliasesBuilder = new SelectBuilder().name("aliases").id("aliases").size(5).addStyle("width:500px");
+                            bean.aliases.forEach(alias->aliasesBuilder.addOption(new OptionBuilder()
+                                .value(String.valueOf(alias))
+                                .label(alias)
+                                .build()));
+                        %>
+                        <%=aliasesBuilder%>
+                    </td>
+                    <td valign="top">
+                        <%= button("Delete Alias").style("width:100px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
+                    </td>
+                </tr>
+            </table>
+                <input type="hidden" name="childOrder" value="">
+            </td>
+        </tr>
     </table>
 </td></tr>
 </table>
 
-<input type="hidden" name="originalName" value="<%= h(wiki.getName()) %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
 <%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + q(NextAction.page.name()) + "; return true;").title("Save Changes") %>

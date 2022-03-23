@@ -52,6 +52,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -228,7 +229,7 @@ public class WikiManager implements WikiService
      *
      * @param copyHistory true to propagate the user and date created from the previous wiki version, else just use the current user
      *                    and current date.
-     * @param createNewVersion by default we create a new wiki version for each update, if this is set to false we will update
+     * @param createNewVersion by default, we create a new wiki version for each update, if this is set to false we will update
      *                         the latest wiki version.
      */
     private boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory, boolean createNewVersion)
@@ -311,7 +312,12 @@ public class WikiManager implements WikiService
         return true;
     }
 
-
+    public void addAlias(User user, Wiki wiki, String alias)
+    {
+        Container c = wiki.lookupContainer();
+        Map<String, Object> map = new HashMap<>(Map.of("Container", c, "Alias", alias, "RowId", wiki.getRowId()));
+        Table.insert(user, CommSchema.getInstance().getTableInfoPageAliases(), map);
+    }
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {

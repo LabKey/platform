@@ -21,9 +21,13 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.model.WikiTree;
 
@@ -36,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -51,6 +56,8 @@ public class WikiCollections
     private final Map<String, WikiTree> _treesByName;
     private final Map<String, String> _nameTitleMap;
     private final List<String> _names;
+    private final Map<String, String> _namesByAlias;
+    private final MultiValuedMap<Integer, String> _aliasesByRowsId;
 
     private final List<NavTree> _adminNavTree;
     private final List<NavTree> _nonAdminNavTree;
@@ -115,8 +122,13 @@ public class WikiCollections
 
         _adminNavTree = createNavTree(c, true);
         _nonAdminNavTree = createNavTree(c, false);
-    }
 
+        _aliasesByRowsId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "RowId"), SimpleFilter.createContainerFilter(c), null)
+            .mapStream()
+            .collect(LabKeyCollectors.toMultiValuedMap(map->(Integer)map.get("RowId"), map->(String)map.get("Alias")));
+        _namesByAlias = _aliasesByRowsId.entries().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
+    }
 
     private void populateWikiTree(WikiTree parent, MultiValuedMap<Integer, Integer> childMap, Map<Integer, WikiTree> treesByRowId)
     {
@@ -134,7 +146,6 @@ public class WikiCollections
             }
         }
     }
-
 
     // Create name list in depth-first order
     private void populateNames(WikiTree root, List<String> names)
@@ -177,18 +188,10 @@ public class WikiCollections
         return elements;
     }
 
-
     int getPageCount()
     {
         return getNames().size();
     }
-
-
-    WikiTree getWikiTree()
-    {
-        return _root;
-    }
-
 
     @NotNull List<String> getNames()
     {
@@ -216,23 +219,6 @@ public class WikiCollections
     @Nullable WikiTree getWikiTree(int rowId)
     {
         return _treesByRowId.get(rowId);
-    }
-
-    // Returns null for non-existent wiki, empty collection for existing but no children
-    @Nullable Collection<WikiTree> getChildren(@Nullable String parentName)
-    {
-        WikiTree parent = getWikiTree(parentName);
-
-        if (null == parent)
-            return null;
-
-        return parent.getChildren();
-    }
-
-    // Returns null for non-existent wiki, empty collection for existing but no children
-    @Nullable Collection<WikiTree> getChildren(int rowId)
-    {
-        return _treesByRowId.get(rowId).getChildren();
     }
 
     // TODO: Change to return the root WikiTree?
@@ -274,5 +260,16 @@ public class WikiCollections
         }
 
         return trees;
+    }
+
+    Collection<String> getAliases(int rowId)
+    {
+        return _aliasesByRowsId.get(rowId);
+    }
+
+    // Returns null for no match
+    @Nullable String getNameForAlias(@Nullable String alias)
+    {
+        return _namesByAlias.get(alias);
     }
 }

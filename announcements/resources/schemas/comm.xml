@@ -649,4 +649,11 @@
         </column>
       </columns>
     </table>
+  <table tableName="PageAliases" tableDbType="TABLE">
+    <columns>
+      <column columnName="Container"/>
+      <column columnName="Alias"/>
+      <column columnName="RowId"/>
+    </columns>
+  </table>
 </tables>
