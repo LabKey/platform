@@ -52,7 +52,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -76,6 +75,7 @@ import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.query.WikiSchema;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -90,6 +90,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 /**
@@ -312,11 +314,19 @@ public class WikiManager implements WikiService
         return true;
     }
 
-    public void addAlias(User user, Wiki wiki, String alias)
+    public void addAlias(User user, Wiki wiki, String alias, BindException errors)
     {
         Container c = wiki.lookupContainer();
         Map<String, Object> map = new HashMap<>(Map.of("Container", c, "Alias", alias, "RowId", wiki.getRowId()));
-        Table.insert(user, CommSchema.getInstance().getTableInfoPageAliases(), map);
+        try
+        {
+            Table.insert(user, CommSchema.getInstance().getTableInfoPageAliases(), map);
+        }
+        catch (RuntimeSQLException e)
+        {
+            if (e.isConstraintException())
+                errors.rejectValue("name", ERROR_MSG,"Alias \"" + alias + "\" already exists!");
+        }
     }
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
