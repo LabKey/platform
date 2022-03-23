@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.10.0",
-    "@labkey/components": "2.138.1",
+    "@labkey/components": "2.138.6-fb-productMenu45093.0",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
