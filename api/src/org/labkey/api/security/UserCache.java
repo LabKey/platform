@@ -62,13 +62,11 @@ class UserCache
             return new BlockingCache<>(shared, new UserCollectionsLoader());
         }
 
-
-
         @Override
         protected Cache<String, UserCollections> createTemporaryCache(TrackingCache<String, UserCollections> sharedCache)
         {
             Tracking tracking = sharedCache.getTrackingCache();
-            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getStats());
+            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getTransactionStats());
             return new BlockingCache<>(temp, new UserCollectionsLoader());
         }
     };

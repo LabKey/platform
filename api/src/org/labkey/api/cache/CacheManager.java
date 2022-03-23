@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,15 +35,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Time: 10:05:07 AM
  */
 
-/*
-    TODO:
-
-    - Track expirations
-
- */
 public class CacheManager
 {
-    private static final Logger LOG = LogManager.getLogger(CacheManager.class);
+    private static final Logger LOG = LogHelper.getLogger(CacheManager.class, "General cache information");
 
     // TODO: Millisecond granularity seems misleading (EhCache uses seconds) and silly
     public static final long SECOND = DateUtils.MILLIS_PER_SECOND;
@@ -61,7 +56,7 @@ public class CacheManager
     private static final boolean useCache = true;
     private static final CacheProvider PROVIDER = useCache ? EhCacheProvider.getInstance() : new NoopCacheProvider();
 
-    private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
+    private static final List<TrackingCache<?, ?>> KNOWN_CACHES = new LinkedList<>();
 
     private static final List<CacheListener> LISTENERS = new CopyOnWriteArrayList<>();
 
@@ -112,7 +107,7 @@ public class CacheManager
     }
 
     // We hold onto "permanent" caches so memtracker can clear them and admin console can report statistics on them
-    private static void addToKnownCaches(TrackingCache cache)
+    private static void addToKnownCaches(TrackingCache<?, ?> cache)
     {
         synchronized (KNOWN_CACHES)
         {
@@ -133,7 +128,7 @@ public class CacheManager
     }
 
     // Return a copy of KNOWN_CACHES for reporting statistics
-    public static List<TrackingCache> getKnownCaches()
+    public static List<TrackingCache<?, ?>> getKnownCaches()
     {
         synchronized (KNOWN_CACHES)
         {
@@ -156,14 +151,14 @@ public class CacheManager
         LISTENERS.remove(listener);
     }
 
-    public static CacheStats getCacheStats(TrackingCache cache)
+    public static CacheStats getCacheStats(TrackingCache<?, ?> cache)
     {
-        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getStats(), cache.size(), cache.getLimit());
+        return new CacheStats(cache, cache.getStats(), cache.size());
     }
 
-    public static CacheStats getTransactionCacheStats(TrackingCache cache)
+    public static CacheStats getTransactionCacheStats(TrackingCache<?, ?> cache)
     {
-        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), 0, cache.getLimit());
+        return new CacheStats(cache, cache.getTransactionStats(), 0);
     }
 
     public static void shutdown()

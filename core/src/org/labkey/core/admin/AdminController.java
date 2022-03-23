@@ -2803,7 +2803,7 @@ public class AdminController extends SpringActionController
                 throw new RedirectException(redirect);
             }
 
-            List<TrackingCache> caches = CacheManager.getKnownCaches();
+            List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
 
             if (form.getDebugName() != null)
             {
@@ -2865,6 +2865,7 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Misses</td>");
             html.append("<td class=\"labkey-column-header\">Puts</td>");
             html.append("<td class=\"labkey-column-header\">Expirations</td>");
+            html.append("<td class=\"labkey-column-header\">Evictions</td>");
             html.append("<td class=\"labkey-column-header\">Removes</td>");
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
@@ -2875,6 +2876,7 @@ public class AdminController extends SpringActionController
             long misses = 0;
             long puts = 0;
             long expirations = 0;
+            long evictions = 0;
             long removes = 0;
             long clears = 0;
             int rowCount = 0;
@@ -2886,6 +2888,7 @@ public class AdminController extends SpringActionController
                 misses += stat.getMisses();
                 puts += stat.getPuts();
                 expirations += stat.getExpirations();
+                evictions += stat.getEvictions();
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
@@ -2896,7 +2899,7 @@ public class AdminController extends SpringActionController
                 Long limit = stat.getLimit();
                 long maxSize = stat.getMaxSize();
 
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
                 html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
@@ -2911,7 +2914,7 @@ public class AdminController extends SpringActionController
             double ratio = 0 != gets ? misses / (double)gets : 0;
             html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
