@@ -36,6 +36,7 @@ import {
     UserDetailHeader,
     SelectInput,
     ServerContextProvider,
+    Container,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -170,7 +171,10 @@ export class App extends React.Component<any, State> {
     render() {
         const { selected, showProgress, showConfirm, showLoadingModal, showChangePassword } = this.state;
         const serverContext = getServerContext();
-        const ctx = Object.assign({}, serverContext, { user: new User(serverContext.user) });
+        const ctx = Object.assign({}, serverContext, {
+            container: new Container(serverContext.container),
+            user: new User(serverContext.user),
+        });
 
         return (
             <ServerContextProvider initialContext={ctx}>
