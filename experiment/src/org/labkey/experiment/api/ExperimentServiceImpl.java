@@ -161,6 +161,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -4291,7 +4292,7 @@ public class ExperimentServiceImpl implements ExperimentService
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
 
             // collect up columns of name 'dataset<N>'
-            Set<String> linkedColumnNames = new HashSet<>();
+            Set<String> linkedColumnNames = new LinkedHashSet<>();
             List<ColumnInfo> columns = tableInfo.getColumns();
             for (ColumnInfo column : columns)
             {
@@ -4306,7 +4307,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 // Over each selected row
                 SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
-                TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
+                TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, linkedColumnNames, filter, null);
                 Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
 
                 // Over each column of name 'dataset<N>'
