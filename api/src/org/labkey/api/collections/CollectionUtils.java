@@ -141,8 +141,8 @@ public class CollectionUtils
     /**
      * Attempts to determine if the provided Set implementation is stable-ordered, i.e., its iteration order matches its
      * insertion order. Currently, LinkedHashSet, Collections.emptySet(), and Collections.singleton() are considered
-     * stable-ordered, meaning HashSet and TreeSet are not. Sets returned by Set.of() are also not considered stable-
-     * ordered; although they seem to iterate in insertion order in current JVMs, their JavaDoc clearly states that "the
+     * stable-ordered; HashSet and TreeSet are not. Sets returned by Set.of() are also not considered stable-ordered;
+     * although they seem to iterate in insertion order in current JVMs, their JavaDoc clearly states that "the
      * iteration order of set elements is unspecified and is subject to change."
      */
     public static boolean isStableOrderedSet(@NotNull Set<?> set)
@@ -224,7 +224,7 @@ public class CollectionUtils
             assertUnmodifiable(MultiMapUtils.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>()));
             assertUnmodifiable(MultiMapUtils.emptyMultiValuedMap());
 
-            //  These Collections methods are new to Java 8
+            // These Collections methods are new to Java 8
             assertUnmodifiable(Collections.emptyNavigableSet());
             assertUnmodifiable(Collections.emptySortedSet());
             assertUnmodifiable(Collections.unmodifiableNavigableSet(new TreeSet<>()));
@@ -258,6 +258,7 @@ public class CollectionUtils
             assertFalse(isStableOrderedSet(Set.of("this")));
             assertFalse(isStableOrderedSet(Set.of("this", "that")));
             assertFalse(isStableOrderedSet(new HashSet<>()));
+            assertFalse(isStableOrderedSet(new TreeSet<>()));
         }
     }
 }
