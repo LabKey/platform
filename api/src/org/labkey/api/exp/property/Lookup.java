@@ -78,7 +78,7 @@ public class Lookup
 
     public void setSchemaName(String name)
     {
-        _schemaKey = null == name ? null : new SchemaKey(null, name);;
+        _schemaKey = null == name ? null : SchemaKey.fromString(name);
     }
 
     public void setQueryName(String name)
