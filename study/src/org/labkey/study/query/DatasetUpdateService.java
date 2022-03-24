@@ -153,20 +153,22 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // The caller needs to make sure names are unique.  Not suitable for use w/ lookups etc where there can be name collisions.
         // CONSIDER: might be nice to make this a TableSelector method.
         var map = new CaseInsensitiveHashMap<>();
-        new TableSelector(getQueryTable(), columns, filter, null)
-                .uncachedResultSetStream().forEach(rs -> {
-                    try
+        try (var str = new TableSelector(getQueryTable(), columns, filter, null).uncachedResultSetStream())
+        {
+            str.forEach(rs -> {
+                try
+                {
+                    for (int i = 0; i < columns.size(); i++)
                     {
-                        for (int i = 0; i < columns.size(); i++)
-                        {
-                            map.put(columns.get(i).getName(), rs.getObject(i + 1));
-                        }
+                        map.put(columns.get(i).getName(), rs.getObject(i + 1));
                     }
-                    catch (SQLException x)
-                    {
-                        throw new RuntimeSQLException(x);
-                    }
-                });
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            });
+        }
         return map.isEmpty() ? null : map;
     }
 
