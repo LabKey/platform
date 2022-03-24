@@ -1176,7 +1176,10 @@ public class WikiController extends SpringActionController
                 // Redirect if name is an alias
                 String realName = WikiSelectManager.getNameForAlias(getContainer(), name);
                 if (null != realName)
+                {
+                    LOG.debug("PageAction: requested wiki name, \"" + name + "\", is an alias; redirecting to \"" + realName + "\". Referrer: " + getViewContext().getRequest().getHeader("Referer"));
                     throw new RedirectException(getViewContext().getActionURL().clone().replaceParameter("name", realName));
+                }
 
                 _wiki = new Wiki(getContainer(), name);
                 _wikiversion = new WikiVersion(name);

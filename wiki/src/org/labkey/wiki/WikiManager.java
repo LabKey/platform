@@ -316,8 +316,8 @@ public class WikiManager implements WikiService
 
     public void addAlias(User user, Wiki wiki, String alias, BindException errors)
     {
-        Container c = wiki.lookupContainer();
-        Map<String, Object> map = new HashMap<>(Map.of("Container", c, "Alias", alias, "RowId", wiki.getRowId()));
+        assert null != wiki.getContainerId();
+        Map<String, Object> map = new HashMap<>(Map.of("Container", wiki.getContainerId(), "Alias", alias, "RowId", wiki.getRowId()));
         try
         {
             Table.insert(user, CommSchema.getInstance().getTableInfoPageAliases(), map);
@@ -325,8 +325,22 @@ public class WikiManager implements WikiService
         catch (RuntimeSQLException e)
         {
             if (e.isConstraintException())
-                errors.rejectValue("name", ERROR_MSG,"Alias \"" + alias + "\" already exists!");
+                errors.rejectValue("name", ERROR_MSG,"Alias '" + alias + "' already exists in this folder.");
         }
+    }
+
+    // null == wiki ==> delete all aliases in a container
+    // null != wiki && null == alias => delete all aliases associated with a wiki
+    // null != wiki && null != alias ==> delete a single alias associated with a wiki
+    private void deleteAliases(Container c, @Nullable Wiki wiki, @Nullable String alias)
+    {
+        assert null != c;
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        if (null != wiki)
+            filter.addCondition(FieldKey.fromParts("RowId"), wiki.getRowId());
+        if (null != alias)
+            filter.addCondition(FieldKey.fromParts("Alias"), alias);
+        Table.delete(CommSchema.getInstance().getTableInfoPageAliases(), filter);
     }
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
@@ -345,6 +359,7 @@ public class WikiManager implements WikiService
                     new SimpleFilter(FieldKey.fromParts("pageentityId"), wiki.getEntityId()));
             Table.delete(comm.getTableInfoPages(),
                     new SimpleFilter(FieldKey.fromParts("entityId"), wiki.getEntityId()));
+            deleteAliases(c, wiki, null);
 
             getAttachmentService().deleteAttachments(wiki.getAttachmentParent());
 
@@ -435,17 +450,15 @@ public class WikiManager implements WikiService
         }
     }
 
-
     public void purgeContainer(Container c)
     {
-        WikiCache.uncache(c);
-
         DbScope scope = comm.getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", c.getId());
             new SqlExecutor(comm.getSchema()).execute("DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", c.getId());
+            deleteAliases(c, null, null);
 
             // Clear all wiki webpart properties that refer to this container. This includes wiki and wiki TOC
             // webparts in this and potentially other containers. #13937
@@ -455,8 +468,9 @@ public class WikiManager implements WikiService
 
             transaction.commit();
         }
-    }
 
+        WikiCache.uncache(c);
+    }
 
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {

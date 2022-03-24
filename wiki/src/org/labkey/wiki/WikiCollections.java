@@ -127,6 +127,7 @@ public class WikiCollections
             .mapStream()
             .collect(LabKeyCollectors.toMultiValuedMap(map->(Integer)map.get("RowId"), map->(String)map.get("Alias")));
         _namesByAlias = _aliasesByRowsId.entries().stream()
+            .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
             .collect(Collectors.toMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
     }
 

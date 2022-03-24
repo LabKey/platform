@@ -101,6 +101,7 @@
     function rename()
     {
         document.getElementById('rename').style.display = '';
+        document.getElementById('newName').focus();
         return false;
     }
 </script>
