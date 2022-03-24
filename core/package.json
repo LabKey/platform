@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.10.0",
-    "@labkey/components": "2.138.1",
+    "@labkey/components": "2.145.0-fb-gridColHeaderSortFilter.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
