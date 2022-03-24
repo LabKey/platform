@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -113,8 +114,7 @@
 <tr><td>
     <table class="lk-fields-table">
 <%
-    FieldError nameError = errors.getFieldError("name");
-	if (null != nameError)
+    for (FieldError nameError : errors.getFieldErrors("name"))
     {
 		%><tr><td colspan=2><span class="labkey-error"><%=h(context.getMessage(nameError))%></span></td></tr><%
     }
@@ -230,24 +230,14 @@
         %>
         <tr>
             <td class='labkey-form-label'><label for="aliases">Aliases</label></td>
-            <td><table>
-                <tr>
-                    <td>
-                        <%
-                            SelectBuilder aliasesBuilder = new SelectBuilder().name("aliases").id("aliases").size(5).addStyle("width:500px");
-                            bean.aliases.forEach(alias->aliasesBuilder.addOption(new OptionBuilder()
-                                .value(String.valueOf(alias))
-                                .label(alias)
-                                .build()));
-                        %>
-                        <%=aliasesBuilder%>
-                    </td>
-                    <td valign="top">
-                        <%= button("Delete Alias").style("width:100px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
-                    </td>
-                </tr>
-            </table>
-                <input type="hidden" name="childOrder" value="">
+            <td>
+                <table>
+                    <tr>
+                        <td>
+                            <textarea name="aliases" id="aliases" style="width:500px" rows="5"><%=h(String.join("\n", bean.aliases))%></textarea>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>

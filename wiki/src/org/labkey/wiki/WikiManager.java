@@ -332,7 +332,7 @@ public class WikiManager implements WikiService
     // null == wiki ==> delete all aliases in a container
     // null != wiki && null == alias => delete all aliases associated with a wiki
     // null != wiki && null != alias ==> delete a single alias associated with a wiki
-    private void deleteAliases(Container c, @Nullable Wiki wiki, @Nullable String alias)
+    public void deleteAliases(Container c, @Nullable Wiki wiki, @Nullable String alias)
     {
         assert null != c;
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);

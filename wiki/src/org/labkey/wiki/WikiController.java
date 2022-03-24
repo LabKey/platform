@@ -113,6 +113,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -580,6 +581,25 @@ public class WikiController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
             }
+            if (null != form.getAliases())
+            {
+                Collection<String> existingAliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
+                Collection<String> newAliases = Arrays.stream(form.getAliases().split("\n"))
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(ArrayList::new));
+
+                if (!newAliases.equals(existingAliases))
+                {
+                    WikiManager mgr = WikiManager.get();
+                    mgr.deleteAliases(c, wiki, null);
+
+                    // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
+                    // complete all other edits.
+                    newAliases.forEach(alias->mgr.addAlias(getUser(), _wiki, alias, errors));
+                    WikiCache.uncache(c, wiki, true);
+                }
+            }
             getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
 
             if (SHOW_CHILD_REORDERING)
@@ -597,7 +617,7 @@ public class WikiController extends SpringActionController
                 updateDisplayOrder(siblings, siblingOrder);
             }
 
-            return true;
+            return !errors.hasErrors();
         }
 
         @Override
@@ -1666,6 +1686,7 @@ public class WikiController extends SpringActionController
         private boolean _shouldIndex;
         private boolean _addAlias;
         private String _newName;
+        private String _aliases;
 
         public String getContainerPath()
         {
@@ -1797,6 +1818,17 @@ public class WikiController extends SpringActionController
         public void setAddAlias(boolean addAlias)
         {
             _addAlias = addAlias;
+        }
+
+        public String getAliases()
+        {
+            return _aliases;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setAliases(String aliases)
+        {
+            _aliases = aliases;
         }
     }
 
