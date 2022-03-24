@@ -122,7 +122,7 @@
         <tr>
             <td class='labkey-form-label'><label for="name">Name</label></td>
             <td>
-                <input type="text" class='labkey-form-label' style="width:420px; text-align:left;" id="name" name="name" value="<%=h(wiki.getName())%>" readonly="readonly">
+                <input type="text" class="labkey-form-label" style="width:420px; text-align:left;" id="name" name="name" value="<%=h(wiki.getName())%>" readonly="readonly">
                 <%=button("Rename").style("width:100px").submit(true).onClick("return rename()") %>
             </td>
         </tr>
