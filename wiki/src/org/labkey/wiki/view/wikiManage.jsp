@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
-<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -108,7 +107,6 @@
 </script>
 
 <labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
-<input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>
 <tr><td>
@@ -145,7 +143,7 @@
             <%
                 SelectBuilder parentBuilder = new SelectBuilder()
                     .name("parent")
-                    .id("id")
+                    .id("parent")
                     .addStyle("width:420px")
                     .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
@@ -197,37 +195,6 @@
                 <input type="hidden" name="siblingOrder" value="">
             </td>
         </tr>
-        <%
-            if (bean.showChildren && wiki.hasChildren())
-            {
-        %>
-        <tr>
-            <td class='labkey-form-label'><label for="children">Child Order</label></td>
-            <td><table>
-                <tr>
-                    <td>
-                        <%
-                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).addStyle("width:500px");
-                            wiki.children().forEach(child->childrenBuilder.addOption(new OptionBuilder()
-                                .value(String.valueOf(child.getRowId()))
-                                .label(child.getLatestVersion().getTitle() + " (" + child.getName() + ")")
-                                .build()));
-                        %>
-                        <%=childrenBuilder%>
-                    </td>
-                    <td valign="top">
-                        <%= button("Move Up").style("width:100px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
-                        <br/>
-                        <%= button("Move Down").style("width:100px;").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
-                    </td>
-                </tr>
-            </table>
-                <input type="hidden" name="childOrder" value="">
-            </td>
-        </tr>
-        <%
-            }
-        %>
         <tr>
             <td class='labkey-form-label'><label for="aliases">Aliases</label></td>
             <td>

@@ -653,7 +653,7 @@
     <columns>
       <column columnName="Container"/>
       <column columnName="Alias"/>
-      <column columnName="RowId"/>
+      <column columnName="PageRowId"/>
     </columns>
   </table>
 </tables>

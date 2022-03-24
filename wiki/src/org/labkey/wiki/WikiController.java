@@ -123,7 +123,6 @@ public class WikiController extends SpringActionController
 {
     private static final Logger LOG = LogManager.getLogger(WikiController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
-    private static final boolean SHOW_CHILD_REORDERING = false;
 
     public WikiController()
     {
@@ -493,8 +492,7 @@ public class WikiController extends SpringActionController
             bean.pageNames = WikiSelectManager.getPageNames(getContainer());
             bean.siblings = WikiSelectManager.getChildren(getContainer(), _wiki.getParent());
             bean.possibleParents = WikiSelectManager.getPossibleParents(getContainer(), _wiki);
-            bean.showChildren = SHOW_CHILD_REORDERING;
-            bean.aliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
+            bean.aliases = new ArrayList<>(WikiSelectManager.getAliases(getContainer(), _wiki.getRowId()));
 
             JspView<ManageBean> manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
             manageView.setTitle("Wiki Configuration");
@@ -509,7 +507,6 @@ public class WikiController extends SpringActionController
             public List<String> pageNames;
             public Collection<WikiTree> siblings;
             public Set<WikiTree> possibleParents;
-            public boolean showChildren;
             public Collection<String> aliases;
         }
 
@@ -526,8 +523,7 @@ public class WikiController extends SpringActionController
             else if (newName != null && !newName.equalsIgnoreCase(originalName))
             {
                 // rename - check for existing wiki with this name
-                Container c = ContainerManager.getForPath(form.getContainerPath());
-                if (WikiManager.wikiNameExists(c, newName))
+                if (WikiManager.wikiNameExists(getContainer(), newName))
                     errors.rejectValue("name", ERROR_MSG, "A page with the name '" + newName + "' already exists in this folder. Please choose a different name.");
                 _isRename = true;
             }
@@ -592,7 +588,7 @@ public class WikiController extends SpringActionController
                 if (!newAliases.equals(existingAliases))
                 {
                     WikiManager mgr = WikiManager.get();
-                    mgr.deleteAliases(c, wiki, null);
+                    mgr.deleteAliases(c, wiki);
 
                     // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
                     // complete all other edits.
@@ -601,13 +597,6 @@ public class WikiController extends SpringActionController
                 }
             }
             getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
-
-            if (SHOW_CHILD_REORDERING)
-            {
-                int[] childOrder = form.getChildOrderArray();
-                if (childOrder.length > 0)
-                    updateDisplayOrder(_wiki.children(), childOrder);
-            }
 
             int[] siblingOrder = form.getSiblingOrderArray();
 
@@ -1679,42 +1668,20 @@ public class WikiController extends SpringActionController
         private String _name;
         private String _title;
         private int _parent;
-        private String _childOrder;
         private String _siblingOrder;
         private String _nextAction;
-        private String _containerPath;
         private boolean _shouldIndex;
         private boolean _addAlias;
         private String _newName;
         private String _aliases;
 
-        public String getContainerPath()
-        {
-            return _containerPath;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setContainerPath(String containerPath)
-        {
-            _containerPath = containerPath;
-        }
-
-        public String getChildOrder()
-        {
-            return _childOrder;
-        }
-
-        public void setChildOrder(String childIdList)
-        {
-            _childOrder = childIdList;
-        }
-
-       public boolean isShouldIndex()
+        public boolean isShouldIndex()
        {
             return _shouldIndex;
        }
 
-       public void setShouldIndex(boolean shouldIndex)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setShouldIndex(boolean shouldIndex)
        {
             _shouldIndex = shouldIndex;
        }
@@ -1748,11 +1715,6 @@ public class WikiController extends SpringActionController
         public int[] getSiblingOrderArray()
         {
             return breakIdList(_siblingOrder);
-        }
-
-        public int[] getChildOrderArray()
-        {
-            return breakIdList(_childOrder);
         }
 
         public String getName()

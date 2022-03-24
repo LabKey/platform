@@ -34,13 +34,13 @@ import org.labkey.wiki.model.WikiTree;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -123,13 +123,17 @@ public class WikiCollections
         _adminNavTree = createNavTree(c, true);
         _nonAdminNavTree = createNavTree(c, false);
 
-        _aliasesByRowsId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "RowId"), SimpleFilter.createContainerFilter(c), null)
+        _aliasesByRowsId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
             .mapStream()
-            .collect(LabKeyCollectors.toMultiValuedMap(map->(Integer)map.get("RowId"), map->(String)map.get("Alias")));
+            .map(map->new Alias((Integer)map.get("PageRowId"), (String)map.get("Alias")))
+            .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
+            .collect(LabKeyCollectors.toMultiValuedMap(record->record.pageRowId, record->record.alias));
         _namesByAlias = _aliasesByRowsId.entries().stream()
             .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
-            .collect(Collectors.toMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
+            .collect(LabKeyCollectors.toCaseInsensitiveMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
     }
+
+    public record Alias(int pageRowId, String alias) {}
 
     private void populateWikiTree(WikiTree parent, MultiValuedMap<Integer, Integer> childMap, Map<Integer, WikiTree> treesByRowId)
     {
@@ -263,6 +267,7 @@ public class WikiCollections
         return trees;
     }
 
+    // Ordered by alias (case-insensitive)
     Collection<String> getAliases(int rowId)
     {
         return _aliasesByRowsId.get(rowId);
