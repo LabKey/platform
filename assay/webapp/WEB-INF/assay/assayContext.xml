@@ -8,11 +8,24 @@
             <list>
                 <bean class="org.labkey.assay.pipeline.AssayImportRunTask$Factory"/>
                 <bean class="org.labkey.assay.pipeline.AssayImportRunTask$FileAnalysisFactory"/>
+                <bean class="org.labkey.api.assay.pipeline.AssayUploadPipelineTask$Factory"/>
             </list>
         </property>
 
         <property name="pipelines">
             <list>
+                <!-- Assay upload job pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.api.assay.pipeline.AssayUploadPipelineJob"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="assayUploadTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.assay.pipeline.AssayUploadPipelineTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
                 <!-- assay import file watcher -->
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg value="AssayImportTask"/>
