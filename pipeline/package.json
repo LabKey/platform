@@ -17,7 +17,7 @@
     "@labkey/components": "2.115.1"
   },
   "devDependencies": {
-    "@labkey/build": "5.0.0",
+    "@labkey/build": "5.0.1",
     "@labkey/eslint-config-base": "0.0.8",
     "@labkey/eslint-config-react": "0.0.8"
   }
