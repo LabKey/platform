@@ -123,6 +123,10 @@ public class StudyExportTest extends StudyManualTest
     }
 
     @Override
+    public void runApiTests() throws Exception
+    {}
+
+    @Override
     protected int getVisitCount()
     {
         return super.getVisitCount() + 1;
