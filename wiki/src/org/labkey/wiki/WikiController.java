@@ -75,6 +75,7 @@ import org.labkey.api.view.LinkBarView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.PermanentRedirectException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
@@ -570,32 +571,33 @@ public class WikiController extends SpringActionController
                 _wikiVersion = null;
             }
 
-            // If renaming and alias is requested, add it now since updateWiki() will uncache and reindex
+            List<String> newAliases = new ArrayList<>();
+
+            // Update aliases
             if (_isRename && form.isAddAlias())
             {
-                getWikiManager().addAlias(getUser(), _wiki, originalName, errors);
-                if (errors.hasErrors())
-                    return false;
+                newAliases.add(originalName);
             }
             if (null != form.getAliases())
             {
-                Collection<String> existingAliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
-                Collection<String> newAliases = Arrays.stream(form.getAliases().split("\n"))
+                Arrays.stream(form.getAliases().split("\n"))
                     .map(StringUtils::trimToNull)
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toCollection(ArrayList::new));
-
-                if (!newAliases.equals(existingAliases))
-                {
-                    WikiManager mgr = WikiManager.get();
-                    mgr.deleteAliases(c, wiki);
-
-                    // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
-                    // complete all other edits.
-                    newAliases.forEach(alias->mgr.addAlias(getUser(), _wiki, alias, errors));
-                    WikiCache.uncache(c, wiki, true);
-                }
+                    .forEach(newAliases::add);
+                newAliases.sort(String.CASE_INSENSITIVE_ORDER);
             }
+            Collection<String> existingAliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
+            if (!newAliases.equals(existingAliases))
+            {
+                WikiManager mgr = WikiManager.get();
+                mgr.deleteAliases(c, wiki);
+
+                // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
+                // regardless of errors, complete all other edits.
+                newAliases.forEach(alias->mgr.addAlias(getUser(), _wiki, alias, errors));
+                WikiCache.uncache(c, wiki, true);
+            }
+
             getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
 
             int[] siblingOrder = form.getSiblingOrderArray();
@@ -1187,7 +1189,7 @@ public class WikiController extends SpringActionController
                 if (null != realName)
                 {
                     LOG.debug("PageAction: requested wiki name, \"" + name + "\", is an alias; redirecting to \"" + realName + "\". Referrer: " + getViewContext().getRequest().getHeader("Referer"));
-                    throw new RedirectException(getViewContext().getActionURL().clone().replaceParameter("name", realName));
+                    throw new PermanentRedirectException(getViewContext().getActionURL().clone().replaceParameter("name", realName));
                 }
 
                 _wiki = new Wiki(getContainer(), name);

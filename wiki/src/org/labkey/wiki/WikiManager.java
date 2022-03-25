@@ -324,7 +324,7 @@ public class WikiManager implements WikiService
         catch (RuntimeSQLException e)
         {
             if (e.isConstraintException())
-                errors.rejectValue("name", ERROR_MSG, "Alias '" + alias + "' already exists in this folder.");
+                errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
         }
     }
 

@@ -363,31 +363,9 @@ function tinyMceHandleEvent(evt) {
         window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
     };
 
+    // Note: can't change an existing wiki's name
     var onChangeName = function() {
-        //if this is an existing page, warn the user about changing the name
-        if (_wikiProps.entityId) {
-            getExt4(function() {
-                Ext4.Msg.show({
-                    title: 'Warning',
-                    msg: "Changing the name of this page will break any links to this page embedded in other pages. Are you sure you want to change the name?",
-                    buttons: Ext4.MessageBox.YESNO,
-                    icon: Ext4.MessageBox.WARNING,
-                    fn: function(btnId) {
-                        if (btnId == "yes") {
-                            LABKEY.setDirty(true);
-                            _redirUrl = ''; // clear the redir URL since it will be referring to the old name
-                            onSave();
-                        }
-                        else {
-                            updateControl("name", _wikiProps.name);
-                        }
-                    }
-                });
-            });
-        }
-        else {
-            LABKEY.setDirty(true);
-        }
+        LABKEY.setDirty(true);
     };
 
     var onConvertSuccess = function(response) {
