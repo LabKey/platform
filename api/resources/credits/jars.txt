@@ -34,7 +34,7 @@ jmock-legacy-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMoc
 json-simple-1.1.1.jar|JSON.simple - A Simple Java toolkit for JSON|1.1.1|{link:JSON.simple|https://code.google.com/p/json-simple/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|JSON parser for remoteapi
 jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 junit-4.13.2.jar|JUnit|4.13.2|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
-jxl-2.6.3.jar|API|2.6.3|{link:jexcelapi|http://www.jexcelapi.org/}|{link:LGPL|http://www.opensource.org/licenses/lgpl-license.php}|jeckels|Java Excel library
+jxl-2.6.12.jar|API|2.6.12|{link:jexcelapi|http://jexcelapi.sourceforge.net/}|{link:LGPL|http://www.opensource.org/licenses/lgpl-license.php}|jeckels|Java Excel library
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-api-2.17.1.jar|Log4j|2.17.1|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 log4j-core-2.17.1.jar|Log4j|2.17.1|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
