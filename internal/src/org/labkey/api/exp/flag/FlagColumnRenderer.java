@@ -22,10 +22,10 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -72,7 +72,7 @@ public class FlagColumnRenderer extends DataColumn
 
         try
         {
-            out.write("<script type=\"text/javascript\">\n");
+            out.write(HttpView.currentPageConfig().getScriptTagStart().toString());
             out.write("var " + setFlagFn + ";");
             out.write("LABKEY.requiresScript('internal/flagColumn', function() {");
             out.write(setFlagFn + " = LABKEY.internal.FlagColumn._showDialog({");
@@ -103,9 +103,8 @@ public class FlagColumnRenderer extends DataColumn
         if (boundValue == null)
             return;
 
-        if (getDisplayColumn() instanceof FlagColumn)
+        if (getDisplayColumn() instanceof FlagColumn flagCol)
         {
-            FlagColumn flagCol = (FlagColumn) getDisplayColumn();
             String comment = (String) flagCol.getValue(ctx);
             String objectId = (String) getValue(ctx);
             if (objectId == null)

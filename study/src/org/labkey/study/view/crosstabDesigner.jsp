@@ -144,7 +144,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     // create a map of column to type
     var columnTypeMap = {};

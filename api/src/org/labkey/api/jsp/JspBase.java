@@ -33,6 +33,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,6 +47,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -83,6 +85,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     private ViewContext _viewContext;
+    private PageConfig _pageConfig;
 
     @Override
     public ViewContext getViewContext()
@@ -94,6 +97,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
+        _pageConfig = HttpView.currentPageConfig();
     }
 
     public ActionURL getActionURL()
@@ -797,5 +801,15 @@ public abstract class JspBase extends JspContext implements HasViewContext
             return EMPTY_STRING;
         else
             return HtmlStringBuilder.of(prefix).append(HtmlString.unsafe("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")).append(suffix).getHtmlString();
+    }
+
+    protected HtmlString getScriptNonce()
+    {
+        return _pageConfig.getScriptNonce();
+    }
+
+    protected void addListener(String id, String event, String handler)
+    {
+        _pageConfig.addListener(id,event,handler);
     }
 }

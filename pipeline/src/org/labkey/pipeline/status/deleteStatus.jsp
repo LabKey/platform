@@ -151,7 +151,7 @@
 
 <% if (!allRuns.isEmpty()) { %>
 
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function onDeleteRunsChange(checkbox) {
         var enable = checkbox.checked;
         var runs = document.querySelectorAll(".exp-run");

@@ -16,11 +16,13 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: Mark Igra
@@ -171,6 +173,8 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("<li class=\"divider\"></li>");
     }
 
+    static final AtomicInteger unique = new AtomicInteger();
+
     // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
     protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
     {
@@ -187,11 +191,10 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
-        out.write("<a");
+        String id = "popupMenuView" + unique.incrementAndGet();
+        out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");
-        if (null != item.getScript())
-            out.write(" onclick=\"" + PageFlowUtil.filter(item.getScript()) + "\"");
         if (null != item.getHref() && !item.isPost())
             out.write(" href=\"" + PageFlowUtil.filter(item.getHref()) + "\"");
         else
@@ -209,6 +212,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write("<i class=\"" + itemImageCls + "\"></i>");
         out.write(PageFlowUtil.filter(item.getText()));
         out.write("</a>");
+        HttpView.currentPageConfig().addListener(id, "click", item.getScript());
     }
 
     public static String getMenuFilterItemCls(NavTree tree)

@@ -19,23 +19,26 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
-import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.LK.FA;
+import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.createHtmlFragment;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 
 /**
@@ -229,15 +232,19 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     @Override
     public HtmlString getHtmlString()
     {
+        var page = HttpView.currentPageConfig();
+        var id = getId();
+        if (isBlank(getId()))
+            id = page.id("button_");
         boolean iconOnly = getIconCls() != null;
-        String submitId = GUID.makeGUID();
+        String submitId = page.id("form_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String hrefValue = (null == getHref()) ? "#" : getHref();
 
         var attrs = at(attributes)
-            .id(getId())
-            .at(Attribute.href, hrefValue, title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .id(id)
+            .at(Attribute.href, hrefValue, title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
@@ -247,6 +254,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
 
+        page.addListener(id, "click", generateOnClick(submitId));
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,

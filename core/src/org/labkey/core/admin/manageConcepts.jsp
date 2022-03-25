@@ -81,7 +81,7 @@
     <ul>
         <li>
             Container: <%=h(lookup.getContainer() != null ? lookup.getContainer().getPath() : "[current folder]")%></li>
-        <li>Schema Name: <%=h(lookup.getSchemaName())%></li>
+        <li>Schema Name: <%=h(lookup.getSchemaKey())%></li>
         <li>Query Name: <%=h(lookup.getQueryName())%></li>
     </ul>
     <%=link("remove").onClick("removeConceptMapping(" + q(uri) + "); return false;").id("removeConceptId")%>
@@ -93,7 +93,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var removeConceptMapping = function(uri)
     {
         Ext4.Msg.confirm('Confirm deletion', 'Are you sure you want to remove the Concept URI mapping for "' + uri + '"?',

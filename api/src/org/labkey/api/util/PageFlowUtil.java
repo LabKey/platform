@@ -154,11 +154,20 @@ import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
+import static org.labkey.api.util.HtmlString.NBSP;
 
 
 public class PageFlowUtil
@@ -1394,57 +1403,47 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
                                                   String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"labkey-menu-text-link dropdown-toggle\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";
+        if (null == id)
+            id = HttpView.currentPageConfig().id("dropdown_");
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        HttpView.currentPageConfig().addListener(id+"PopupLink", "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
+                SPAN(id(id+"PopupText"), text),
+                NBSP,
+                SPAN(cl("fa","fa-caret-down").at(style,"position:relative;color:lightgray;")))
+        );
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
+        var page = HttpView.currentPageConfig();
 
-        return "<a href=\"" + filter(href) +"\" " + additions +
-            " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\" src=\"" + imageSrc + "\" " +
-            (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
+        String anchorId = page.id("A_");
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        page.addListener(anchorId, "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
+                IMG(id(imageId).at(title,text, DOM.Attribute.src,imageSrc,height,imageHeight,width,imageWidth)))
+        );
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
                                                        String imageId, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a href=\"" + filter(href) +"\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
-    }
-
-    // TODO: Why no HTML filtering?
-    private static String getAttributes(Map<String, String> properties)
-    {
-        if (properties == null || properties.isEmpty())
-            return "";
-
-        StringBuilder attributes = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            attributes.append(entry.getKey());
-            attributes.append("=\"");
-            attributes.append(entry.getValue());
-            attributes.append("\" ");
-        }
-
-        return attributes.toString();
+        PageConfig page = HttpView.currentPageConfig();
+        String id = page.id("a_");
+        page.addListener(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id).at(DOM.Attribute.href,href),
+                SPAN(id(imageId).at(title,text).cl(imageCls)))
+        );
     }
 
     /**
@@ -1814,7 +1813,7 @@ public class PageFlowUtil
         if (cssFiles.size() > 0)
         {
             SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
-            scriptBuilder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+            scriptBuilder.append(HttpView.currentPageConfig().getScriptTagStart());
             scriptBuilder.append(JavaScriptFragment.unsafe("LABKEY.requestedCssFiles("));
             String comma = "";
 
@@ -1945,7 +1944,7 @@ public class PageFlowUtil
         }
 
         return builder
-            .append(HtmlString.unsafe("<script type=\"text/javascript\">\n"))
+            .append(HttpView.currentPageConfig().getScriptTagStart())
             .append(JavaScriptFragment.unsafe("LABKEY.init("))
             .append(jsInitObject(context, config, resources, includePostParameters))
             .append(JavaScriptFragment.unsafe(");\n"))
@@ -1974,7 +1973,7 @@ public class PageFlowUtil
 
         SafeToRenderBuilder builder = SafeToRenderBuilder.of();
 
-        builder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+        builder.append(HttpView.currentPageConfig().getScriptTagStart());
         builder.append(JavaScriptFragment.unsafe("LABKEY.loadedScripts("));
         String comma = "";
         for (String s : implicitIncludes)

@@ -29,7 +29,7 @@
     String guid = GUID.makeGUID();
     boolean first = true;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     /**
      * Given a radio button, determine which one in the group is selected and return its value
      * @param radioButton one of the radio buttons in the group

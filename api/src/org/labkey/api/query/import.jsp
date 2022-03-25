@@ -109,7 +109,7 @@
         <div id="<%=unsafe(copyPasteDivId)%>"></div>
     </div>
 </div>
-<script type="text/javascript"> (function(){
+<script type="text/javascript" nonce="<%=getScriptNonce()%>"> (function(){
     var importTsvDiv = Ext4.get(<%=q(copyPasteDivId)%>);
     var uploadFileDiv = Ext4.get(<%=q(uploadFileDivId)%>);
     var errorDiv = Ext4.get(<%=q(errorDivId)%>);

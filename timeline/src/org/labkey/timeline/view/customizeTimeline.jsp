@@ -82,7 +82,7 @@ a display value, select the display value from the linked table.
     }
 
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var settings = {
     schemaName:<%=q(settings.getSchemaName())%>,
     queryName:  <%=q(settings.getQueryName())%>,

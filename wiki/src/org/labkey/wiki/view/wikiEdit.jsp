@@ -46,7 +46,7 @@
     final HtmlString H_ID_PREFIX = h("wiki-input-");
     String sep;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY._wiki.setProps({
         entityId: <%=q(model.getEntityId())%>,
         rowId: <%= model.getRowId() %>,
@@ -184,7 +184,7 @@
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <labkey:form action="">
                                     <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=H_ID_PREFIX%>body" name="body"></textarea>
-                                    <script type="text/javascript">LABKEY.Utils.tabInputHandler('#<%=H_ID_PREFIX%>body');</script>
+                                    <script type="text/javascript" nonce="<%=getScriptNonce()%>">LABKEY.Utils.tabInputHandler('#<%=H_ID_PREFIX%>body');</script>
                                 </labkey:form>
                             </div>
                         </div>

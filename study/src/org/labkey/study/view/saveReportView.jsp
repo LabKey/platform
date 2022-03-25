@@ -38,7 +38,7 @@
     boolean confirm = bean.getConfirmed() != null && Boolean.parseBoolean(bean.getConfirmed());
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function validateForm()
     {

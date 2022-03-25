@@ -27,7 +27,7 @@
     Container c = getContainer();
     boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function deleteExisting(hostToDelete) {
 

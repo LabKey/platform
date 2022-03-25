@@ -29,7 +29,7 @@
     Portal.WebPart webPart = me.getModelBean();
     Container currentContainer = getContainer();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 //store current container id on client
 var currentContainerId = <%=q(currentContainer == null ? null : currentContainer.getId())%>;

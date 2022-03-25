@@ -81,7 +81,7 @@
         </div>
     </div>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var toggleRelatedFns = {};
     var toggleTimestampFns = {};
 </script>
@@ -143,7 +143,7 @@
         String relatedCommentsToggleId = "relatedCommentsToggle" + issueId;
         String relatedCommentsDivClassName = "relatedIssue" + issueId;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var hidden = true;
     var showLess = true;
 

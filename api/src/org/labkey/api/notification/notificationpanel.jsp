@@ -32,7 +32,7 @@
     String notificationCountId = "labkey-notifications-count" + UniqueID.getServerSessionScopedUID();
     String notificationPanelId = "labkey-notifications-panel" + UniqueID.getServerSessionScopedUID();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function($) {
     $(function() {
         // need to create the div as a direct child of body so that the z-index will keep it in front

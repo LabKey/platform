@@ -32,7 +32,7 @@
     TimelineSettings bean = me.getModelBean();
 %>
 <div class="ms-form" style="border:1px solid black;width:100%;height:<%=bean.getPixelHeight()%>px" id="<%=h(bean.getDivId())%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.Utils.onReady(function() {
         LABKEY.Timeline.create({
             renderTo:<%=q(bean.getDivId())%>,

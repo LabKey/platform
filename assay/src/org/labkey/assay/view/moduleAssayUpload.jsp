@@ -63,7 +63,7 @@
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getContainer(), getUser());
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2)%>;
 <%

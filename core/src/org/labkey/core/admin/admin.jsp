@@ -240,7 +240,7 @@
         </labkey:panel>
     </div>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function($) {
 
         var defaultRoute = "links";

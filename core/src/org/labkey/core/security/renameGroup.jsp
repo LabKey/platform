@@ -35,7 +35,7 @@
     manageURL.addParameter("id", group.getUserId());
 %>
 <div id="renameDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
 
         var validGroupName = function(s) {

@@ -132,7 +132,8 @@
                     <labkey:form id="global-search-form" action="<%=urlProvider(SearchUrls.class).getSearchURL(c, null)%>" method="GET">
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
-                        <a href="#" onclick="document.getElementById('global-search-form').submit(); return false;" class="btn-search fa fa-search"></a>
+                        <a id="a_header_search" href="#" class="btn-search fa fa-search"></a>
+                        <% pageConfig.addListener("a_header_search","click","document.getElementById('global-search-form').submit(); return false;"); %>
                     </labkey:form>
                 </div>
             </li>
@@ -169,7 +170,7 @@
     {
         String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
 %>
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                 +function($){
                     $('#headerWarningLink').on('click', function () {
                         LABKEY.Ajax.request({

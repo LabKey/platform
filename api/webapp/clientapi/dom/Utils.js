@@ -837,6 +837,18 @@ LABKEY.Utils = new function(impl, $) {
         return false;
     };
 
+    impl.attachListener = function(id, eventName, handler, immediate)
+    {
+        if (!id || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            const el = document.getElementById(id);
+            if (el)
+                el.addEventListener(eventName, handler);
+        };
+        (immediate || document.readyState==="complete") ? fn() : document.addEventListener('load', fn);
+    }
     return impl;
 
 }(LABKEY.Utils || new function() { return {}; }, jQuery);

@@ -21,7 +21,7 @@
     String url = (String)HttpView.currentModel();
 %>
 <iframe id="fileFrame" frameborder=0 src="<%=h(url)%>" width="100%">Your browser does not support inline frames, try Mozilla or Internet Explorer</iframe>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var top = 100;
 function resizeFrame()
 {

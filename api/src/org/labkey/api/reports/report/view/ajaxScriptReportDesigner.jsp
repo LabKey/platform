@@ -160,7 +160,7 @@
     reportConfig.put("helpHtml", helpHtml);
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     <labkey:loadClientDependencies>
 

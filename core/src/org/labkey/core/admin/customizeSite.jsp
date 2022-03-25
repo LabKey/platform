@@ -38,7 +38,7 @@
     AppProps appProps = AppProps.getInstance();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 var submitSystemMaintenance;
 

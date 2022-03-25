@@ -43,7 +43,7 @@
     }
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var requiredModules = {};
 var defaultModules = {};  <% // This is used... Java code below generates JavaScript that references defaultModules[] %>
 <% //Generate javascript objects...
@@ -334,7 +334,7 @@ for (Module module : allModules)
 </table>
 </labkey:form>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function() {
         LABKEY.requiresExt4Sandbox(function() {
             Ext4.onReady(function() {

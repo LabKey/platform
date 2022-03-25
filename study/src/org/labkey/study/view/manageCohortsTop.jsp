@@ -49,7 +49,7 @@
     <div class="labkey-announcement-title" style="padding-top: 0;">
         <span>Assignment Mode</span>
     </div>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="<%=getScriptNonce()%>">
         function setAdvanced(advanced)
         {
             var manualEl = document.getElementById('manualCohortAssignmentEnabled');

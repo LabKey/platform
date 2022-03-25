@@ -31,7 +31,7 @@
     List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList(listName)
 {
     var itemList = "";

@@ -37,7 +37,7 @@
     JSONObject defaults = (JSONObject)context.get("defaults");
     JSONObject values = (JSONObject)context.get("values");
 %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function updateApp()
     {
         var contextName = document.getElementById("contextName").value;

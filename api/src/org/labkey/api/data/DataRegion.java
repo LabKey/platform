@@ -46,6 +46,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -55,6 +56,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -953,11 +955,10 @@ public class DataRegion extends DisplayElement
         }
 
         StringWriter out = new StringWriter();
-        out.write("<script type=\"text/javascript\">\n");
+        out.write(HttpView.currentPageConfig().getScriptTagStart().toString());
         out.write("LABKEY.DataRegion.create(");
         out.write(dataRegionJSON.toString(2));
-        out.write(");\n");
-        out.write("</script>\n");
+        out.write(");\n</script>\n");
         writer.write(out.toString());
     }
 

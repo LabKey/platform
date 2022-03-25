@@ -56,7 +56,7 @@
 <labkey:errors/>
 <div id="form"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function () {
 
         var schemaType = <%=q(isExternal ? SchemaType.external.name() : SchemaType.linked.name())%>;

@@ -47,7 +47,7 @@
     String groupControl1 = "groupControl1-" + time;
     String groupControl2 = "groupControl2-" + time;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function populateGroupingContent(grouping)
     {

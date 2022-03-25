@@ -92,7 +92,7 @@
 
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var NONSITE_ACTORS = <%=Arrays.stream(actors)
         .filter(actor->!actor.isPerSite())
         .map(SpecimenRequestActor::getRowId)

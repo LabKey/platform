@@ -61,7 +61,7 @@
         color: #999999
     }
 </style>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var form;
     
     function selectAllCheckboxes(form, value)

@@ -24,11 +24,13 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -36,13 +38,21 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNullElse;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 /**
@@ -79,6 +89,15 @@ public class PageConfig
 		Default, True, False
 	}
 
+    private record EventListener(@NotNull String id, @NotNull String event, @NotNull String handler) {}
+
+    // collected javascript handlers
+    private final ArrayList<EventListener> _listeners = new ArrayList<>();
+    private final ArrayList<String> _onDomLoaded = new ArrayList<>();
+    private final ArrayList<String> _onDocumentLoaded = new ArrayList<>();
+
+
+    private final HttpServletRequest _request;
     private final LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private final MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
     private final JSONObject _portalContext = new JSONObject();
@@ -104,12 +123,16 @@ public class PageConfig
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
 
-    public PageConfig()
+    /* TODO make private */
+    public PageConfig(HttpServletRequest request)
     {
+        _request = request;
     }
 
-    public PageConfig(String title)
+    /* TODO make private */
+    public PageConfig(HttpServletRequest request, String title)
     {
+        _request = request;
         setTitle(title);
     }
 
@@ -175,7 +198,7 @@ public class PageConfig
 
     public void setFocusId(String focusId)
     {
-        _focus = "getElementById('" + focusId + "')";
+        _focus = focusId;
     }
 
     public String getFocus()
@@ -194,11 +217,15 @@ public class PageConfig
     }
 
     @Nullable
-    public String getAnchor(URLHelper url)
+    public String getAnchor()
     {
         String anchor = _anchor;
         if (null == StringUtils.trimToNull(anchor))
-            anchor = StringUtils.trimToNull(url.getParameter("_anchor"));
+        {
+            var context = HttpView.currentContext();
+            if (null != context && null != context.getActionURL())
+                anchor = StringUtils.trimToNull(context.getActionURL().getParameter("_anchor"));
+        }
         return anchor;
     }
 
@@ -467,5 +494,116 @@ public class PageConfig
     public JSONObject getPortalContext()
     {
         return _portalContext;
+    }
+
+
+    public String id(String prefix)
+    {
+        return prefix + UniqueID.getRequestScopedUID(_request);
+    }
+
+    @NotNull
+    public static String getScriptNonce(HttpServletRequest request)
+    {
+        String nonce = (String)request.getAttribute("HttpUtil.class#ScriptNonce");
+        if (nonce != null)
+            return nonce;
+        nonce = GUID.makeHash();
+        request.setAttribute("HttpUtil.class#ScriptNonce", nonce);
+        return nonce;
+    }
+
+    /* helpers for complying with strict Content-Security-Policy */
+    @NotNull
+    public HtmlString getScriptNonce()
+    {
+        return HtmlString.of(getScriptNonce(_request));
+    }
+
+    public HtmlString getScriptTagStart()
+    {
+        HtmlString nonce = getScriptNonce();
+        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\">")).getHtmlString();
+    }
+
+    /* TODO: CONSIDER using HtmlString handler */
+    public void addListener(String id, String event, String handler)
+    {
+        if (null == id || null == event || null==handler)
+            return;
+        _listeners.add(new EventListener(id,event,handler));
+    }
+
+    /* TODO: CONSIDER using HtmlString handler */
+    public void addDocumentLoadHandler(String handler)
+    {
+        if (isNotEmpty(handler))
+            _onDocumentLoaded.add(handler);
+    }
+
+    /* TODO: CONSIDER using HtmlString handler */
+    public void addDOMContentLoadedHandler(String handler)
+    {
+        if (isNotEmpty(handler))
+            _onDomLoaded.add(handler);
+    }
+
+    public void endOfBodyScript(Writer out) throws IOException
+    {
+        // IMMEDIATE
+
+        // DOM CONTENT LOADED
+
+        out.write("document.addEventListener('DOMContentLoaded',function(){const add = function(a,b,c){LABKEY.Utils.attachListener(a,b,c,1);};\n");
+
+        // NOTE: there can be lots of handlers, this is simple de-duping
+        HashMap<String, Integer> map = new HashMap<>();
+        for (var l : _listeners)
+        {
+            var index = map.size();
+            var handler = StringUtils.appendIfMissing(l.handler,";");
+            var prev = map.putIfAbsent(handler, index);
+            if (null == prev)
+                out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints
+            index = requireNonNullElse(prev, index);
+            out.write("\tadd(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
+        }
+        _listeners.clear();
+
+        for (var handler : _onDomLoaded)
+        {
+            out.write(handler);
+            out.write("\n");
+        }
+        _onDomLoaded.clear();
+
+        out.write("});\n");
+
+
+        // LOAD
+
+        out.write("document.addEventListener('load',function(){\n");
+
+        for (var handler : _onDocumentLoaded)
+        {
+            out.write(handler);
+            out.write("\n");
+        }
+        _onDocumentLoaded.clear();
+
+        if (isNotEmpty(getFocus()))
+            out.write("const elFocus=document.getElementById(" + jsString(getFocus().trim()) + "); elFocus?elFocus.focus():null;\n");
+        if (getShowPrintDialog())
+            out.write("window.print();\n");
+        String anchor = getAnchor();
+        if (isNotEmpty(anchor))
+            out.write("window.location.href = '#' + " + jsString(anchor.trim()) + ";\n");
+
+        // LOOK FOR ELEMENTS WTIH onclick onchange onsubmit events
+        out.write("""
+                let elEvent = document.querySelector('[onclick]') || document.querySelector('[onchange]') || document.querySelector('[onsubmit]');
+                if (elEvent) alert(elEvent);
+                """);
+        out.write("});\n");
     }
 }

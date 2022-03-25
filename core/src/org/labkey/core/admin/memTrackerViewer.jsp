@@ -24,7 +24,7 @@
         dependencies.add("Ext3");
     }
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 Ext.onReady(function(){
 
