@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
@@ -94,7 +95,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion());
+                String sharedFolderSuffix = "Folder-" + ContainerManager.getSharedContainer().getRowId();
+                String containerSubstitution = sharedFolderSuffix.equals(suffix) ? XarContext.SHARED_CONTAINER_ID_SUBSTITUTION : XarContext.CONTAINER_ID_SUBSTITUTION;
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + "", lsid.getObjectId(), lsid.getVersion());
             }
 
             return lsid.toString();
@@ -190,15 +193,15 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     {
         private final LSIDRelativizer _relativizer;
 
-        private Map<String, String> _originalToRelative = new HashMap<>();
+        private final Map<String, String> _originalToRelative = new HashMap<>();
 
         // Maintain a separate set of values so we can quickly determine if one is already in use instead of having
         // to traverse the whole map. See issue 39260
-        private Set<String> _relativized = new HashSet<>();
+        private final Set<String> _relativized = new HashSet<>();
 
         // Also keep track of the next suffix to append for a given LSID prefix so we don't have to run through the full
         // sequence of values we already scanned the last time. See issue 39260
-        private Map<String, Integer> _nextExportVersion = new HashMap<>();
+        private final Map<String, Integer> _nextExportVersion = new HashMap<>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;
