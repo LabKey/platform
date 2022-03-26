@@ -17,8 +17,7 @@
     "@labkey/components": "2.145.2-fb-package-updates-0222.0"
   },
   "devDependencies": {
-    "@labkey/build": "5.0.1-fb-package-updates-0222.3",
-    "@labkey/eslint-config-base": "0.0.8",
-    "@labkey/eslint-config-react": "0.0.8"
+    "@labkey/build": "5.0.1-fb-package-updates-0222.4",
+    "@labkey/eslint-config-react": "0.0.11"
   }
 }
