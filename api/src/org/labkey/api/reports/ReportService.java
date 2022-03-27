@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
@@ -181,7 +181,7 @@ public interface ReportService
      * parameters. Imported reports are always treated as new reports even if they were exported from
      * the same container.
      */
-    Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
+    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
 
     /**
      * Runs maintenance on the report service.

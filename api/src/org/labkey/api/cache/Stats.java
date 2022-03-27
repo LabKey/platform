@@ -27,7 +27,8 @@ public class Stats
     public final AtomicLong gets = new AtomicLong(0);
     public final AtomicLong misses = new AtomicLong(0);
     public final AtomicLong puts = new AtomicLong(0);
-    public final AtomicLong expirations = new AtomicLong(0);
+    public final AtomicLong expirations = new AtomicLong(0); // TODO: accrue expiration counts when temp caches are closed
+    public final AtomicLong evictions = new AtomicLong(0);   // TODO: accrue eviction counts when temp caches are closed
     public final AtomicLong removes = new AtomicLong(0);
     public final AtomicLong clears = new AtomicLong(0);
     public final AtomicLong max_size = new AtomicLong(0);
