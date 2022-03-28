@@ -21,8 +21,6 @@ import {
     SCHEMAS,
     Tip,
     ToggleButtons,
-    User,
-    Container,
     WizardNavButtons,
     Breadcrumb,
     BreadcrumbCreate,
@@ -36,7 +34,10 @@ import {
     ChangePasswordModal,
     UserDetailHeader,
     SelectInput,
+    SelectInputOption,
+    ServerContext,
     ServerContextProvider,
+    withAppUser,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -52,7 +53,7 @@ import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { UsersGridPanelPage } from "./UsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
 
-const COMPONENT_NAMES = List<string>([
+const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'Alert'},
     {value: 'AssayImportPanels'},
     {value: 'Breadcrumb'},
@@ -87,15 +88,6 @@ const COMPONENT_NAMES = List<string>([
     {value: 'WizardNavButtons'},
 ]);
 
-const INITIAL_STATE = {
-    selected: undefined,
-    showProgress: false,
-    showConfirm: false,
-    showLoadingModal: false,
-    showChangePassword: false,
-    selectedToggleButton: 'First Option'
-};
-
 type State = {
     selected: string
     showProgress: boolean
@@ -103,15 +95,15 @@ type State = {
     showLoadingModal: boolean
     showChangePassword: boolean
     selectedToggleButton: string
+    serverContext: ServerContext;
 }
 
 export class App extends React.Component<any, State> {
 
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
-        this.state = INITIAL_STATE;
+        this.state = this.getInitialState();
 
         initQueryGridState(fromJS({
             schema: {
@@ -124,10 +116,20 @@ export class App extends React.Component<any, State> {
         }));
     }
 
+    getInitialState = (): State => {
+        return {
+            selected: undefined,
+            selectedToggleButton: 'First Option',
+            serverContext: withAppUser(getServerContext()),
+            showChangePassword: false,
+            showConfirm: false,
+            showLoadingModal: false,
+            showProgress: false,
+        };
+    };
+
     onSelectionChange = (id, selected) => {
-        let state = INITIAL_STATE;
-        state.selected = selected;
-        this.setState(() => (state));
+        this.setState({ ...this.getInitialState(), selected });
     };
 
     renderPanel(title, body) {
@@ -169,15 +171,10 @@ export class App extends React.Component<any, State> {
     };
 
     render() {
-        const { selected, showProgress, showConfirm, showLoadingModal, showChangePassword } = this.state;
-        const serverContext = getServerContext();
-        const ctx = Object.assign({}, serverContext, {
-            container: new Container(serverContext.container),
-            user: new User(serverContext.user),
-        });
+        const { selected, serverContext, showProgress, showConfirm, showLoadingModal, showChangePassword } = this.state;
 
         return (
-            <ServerContextProvider initialContext={ctx}>
+            <ServerContextProvider initialContext={serverContext}>
                 <p>
                     This page is setup to show examples of shared React components from
                     the <a href={'https://github.com/LabKey/labkey-ui-components'} target={'_blank'}>labkey-ui-components</a> repository.
@@ -189,7 +186,7 @@ export class App extends React.Component<any, State> {
                     name={"labkey-ui-components-select"}
                     placeholder={"Select a component..."}
                     inputClass={'col-xs-4'}
-                    value={this.state.selected}
+                    value={selected}
                     valueKey={'value'}
                     labelKey={'value'}
                     onChange={this.onSelectionChange}
@@ -448,15 +445,15 @@ export class App extends React.Component<any, State> {
                     this.renderPanel('UserDetailHeader',
                         <>
                             <UserDetailHeader
-                                title={'Welcome, ' + ctx.user.displayName}
-                                user={ctx.user}
+                                title={'Welcome, ' + serverContext.user.displayName}
+                                user={serverContext.user}
                                 userProperties={fromJS({})}
-                                dateFormat={ctx.container.formats.dateFormat.toUpperCase()}
+                                dateFormat={serverContext.container.formats.dateFormat.toUpperCase()}
                                 renderButtons={() => <Button onClick={this.toggleChangePassword} disabled={showChangePassword}>Change Password</Button>}
                             />
                             {showChangePassword &&
                             <ChangePasswordModal
-                                    user={ctx.user}
+                                    user={serverContext.user}
                                     onSuccess={() => {
                                         alert('Your password has been changed.');
                                     }}
@@ -467,7 +464,7 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'UserProfile' &&
-                    <UserProfilePage user={ctx.user}/>
+                    <UserProfilePage user={serverContext.user} />
                 }
                 {selected === 'WizardNavButtons' &&
                     this.renderPanel('WizardNavButtons',

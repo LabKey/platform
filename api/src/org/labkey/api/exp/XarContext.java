@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
@@ -57,6 +58,7 @@ public class XarContext
     private static final String XAR_FILE_ID_NAME = "XarFileId";
     private static final String EXPERIMENT_RUN_ID_NAME = "ExperimentRun.RowId";
     private static final String CONTAINER_ID_NAME = "Container.RowId";
+    private static final String SHARED_CONTAINER_ID_NAME = "SharedContainer.RowId";
     private static final String FOLDER_LSID_BASE_NAME = "FolderLSIDBase";
     private static final String RUN_LSID_BASE_NAME = "RunLSIDBase";
     private static final String LSID_AUTHORITY_NAME = "LSIDAuthority";
@@ -64,6 +66,7 @@ public class XarContext
     public static final String XAR_FILE_ID_SUBSTITUTION = createSubstitution(XAR_FILE_ID_NAME);
     public static final String EXPERIMENT_RUN_ID_SUBSTITUTION = createSubstitution(EXPERIMENT_RUN_ID_NAME);
     public static final String CONTAINER_ID_SUBSTITUTION = createSubstitution(CONTAINER_ID_NAME);
+    public static final String SHARED_CONTAINER_ID_SUBSTITUTION = createSubstitution(SHARED_CONTAINER_ID_NAME);
     public static final String FOLDER_LSID_BASE_SUBSTITUTION = createSubstitution(FOLDER_LSID_BASE_NAME);
     public static final String RUN_LSID_BASE_SUBSTITUTION = createSubstitution(RUN_LSID_BASE_NAME);
     public static final String LSID_AUTHORITY_SUBSTITUTION = createSubstitution(LSID_AUTHORITY_NAME);
@@ -113,6 +116,7 @@ public class XarContext
 
         _substitutions.put("Container.path", path);
         _substitutions.put(CONTAINER_ID_NAME, Integer.toString(c.getRowId()));
+        _substitutions.put(SHARED_CONTAINER_ID_NAME, Integer.toString(ContainerManager.getSharedContainer().getRowId()));
 
         _substitutions.put(XAR_FILE_ID_NAME, "Xar-" + GUID.makeGUID());
         if (user != null)

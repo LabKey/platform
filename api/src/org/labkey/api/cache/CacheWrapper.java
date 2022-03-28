@@ -32,7 +32,6 @@ import java.util.Set;
  * Time: 9:47:03 AM
  */
 
-// TODO: Track expirations?
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 {
@@ -178,6 +177,17 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return _cache.size();
     }
 
+    @Override
+    public int getExpirations()
+    {
+        return _cache.getExpirations();
+    }
+
+    @Override
+    public int getEvictions()
+    {
+        return _cache.getEvictions();
+    }
 
     @Override
     public long getDefaultExpires()
@@ -257,11 +267,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         long currentSize = size();
         if (currentSize > maxSize)
             _stats.max_size.compareAndSet(maxSize, currentSize);
-    }
-
-    private void trackExpiration()
-    {
-        _stats.expirations.incrementAndGet();
     }
 
     private void trackRemove()

@@ -27,7 +27,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -884,7 +883,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override @Nullable
-    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
+    public Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
     {
         Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml, root, xmlFileName);
         if (report != null)

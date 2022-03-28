@@ -42,7 +42,6 @@ public class CaseInsensitiveLinkedHashMap<V> extends CaseInsensitiveMapWrapper<V
     {
         this(map.size());
 
-        for (Map.Entry<String, V> entry : map.entrySet())
-            put(entry.getKey(), entry.getValue());
+        putAll(map);
     }
 }
