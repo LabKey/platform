@@ -23,30 +23,35 @@ public class CacheStats implements Comparable<CacheStats>
     private final String _description;
     @Nullable
     private final StackTraceElement[] _stackTrace;
+    private final int _limit;
+    private final long _expirations;
+    private final long _evictions;
+
     private final long _gets;
     private final long _misses;
     private final long _puts;
-    private final long _expirations;
     private final long _removes;
     private final long _clears;
-    private final long _size;
     private final long _maxSize;
-    private final int _limit;
 
+    private final long _size;
 
-    public CacheStats(String description, @Nullable StackTraceElement[] stackTrace, Stats stats, int size, int limit)
+    public CacheStats(TrackingCache<?, ?> cache, Stats stats, int size)
     {
-        _description = description;
-        _stackTrace = stackTrace;
+        _description = cache.getDebugName();
+        _stackTrace = cache.getCreationStackTrace();
+        _limit = cache.getLimit();
+        _expirations = cache.getExpirations();
+        _evictions = cache.getEvictions();
+
         _gets = stats.gets.get();
         _misses = stats.misses.get();
         _puts = stats.puts.get();
-        _expirations = stats.expirations.get();
         _removes = stats.removes.get();
         _clears = stats.clears.get();
-        _size = size;
         _maxSize = stats.max_size.get();
-        _limit = limit;
+
+        _size = size;
     }
 
     public String getDescription()
@@ -106,6 +111,11 @@ public class CacheStats implements Comparable<CacheStats>
     public long getExpirations()
     {
         return _expirations;
+    }
+
+    public long getEvictions()
+    {
+        return _evictions;
     }
 
     public double getMissRatio()
