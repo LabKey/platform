@@ -60,6 +60,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.DiffMatchPatch;
+import org.labkey.api.util.DiffMatchPatch.Diff;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -1433,15 +1434,15 @@ public class WikiController extends SpringActionController
                 throw new NotFoundException();
 
             DiffMatchPatch diffTool = new DiffMatchPatch();
-            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(StringUtils.trimToEmpty(_wikiVersion1.getBody()), StringUtils.trimToEmpty(_wikiVersion2.getBody()));
-            String htmlDiffs = diffTool.diff_prettyHtml(diffs);
+            List<Diff> diffs = diffTool.diff_main(StringUtils.trimToEmpty(_wikiVersion1.getBody()), StringUtils.trimToEmpty(_wikiVersion2.getBody()));
+            String htmlDiffs = diffTool.diff_prettyHtmlCompact(diffs);
             HtmlView htmlView = new HtmlView(htmlDiffs);
             htmlView.setTitle("Source Differences");
 
             TextExtractor te1 = new TextExtractor(_wikiVersion1.getHtml(getContainer(), _wiki));
             TextExtractor te2 = new TextExtractor(_wikiVersion2.getHtml(getContainer(), _wiki));
             diffs = diffTool.diff_main(te1.extract(), te2.extract());
-            String textDiffs = diffTool.diff_prettyHtml(diffs);
+            String textDiffs = diffTool.diff_prettyHtmlCompact(diffs);
             HtmlView textView = new HtmlView(textDiffs);
             textView.setTitle("Text Differences");
 
