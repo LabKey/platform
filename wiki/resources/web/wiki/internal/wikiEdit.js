@@ -172,7 +172,7 @@ function tinyMceHandleEvent(evt) {
     var bindControls = function(props) {
         // form controls
         var setDirty = function(){LABKEY.setDirty(true)};
-        $(_idSel + 'name').keypress(setDirty).change(onChangeName);
+        $(_idSel + 'name').keypress(setDirty).change(setDirty);
         $(_idSel + 'title').keypress(setDirty).change(setDirty);
         $(_idSel + 'parent').keypress(setDirty).change(setDirty);
         $(_idSel + 'body').keypress(setDirty).change(setDirty);
@@ -361,11 +361,6 @@ function tinyMceHandleEvent(evt) {
 
         _finished = true;
         window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
-    };
-
-    // Note: can't change an existing wiki's name
-    var onChangeName = function() {
-        LABKEY.setDirty(true);
     };
 
     var onConvertSuccess = function(response) {
