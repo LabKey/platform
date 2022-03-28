@@ -57,10 +57,11 @@ public class Link extends DisplayElement implements HasHtmlString
         // would be nice to be able to be able to call getRequestScopedUID() here
         String clickEvent = null;
         var page = HttpView.currentPageConfig();
+        if (isBlank(lb.id))
+            lb.id = page.id("a_");
+
         if (lb.usePost || isNotEmpty(lb.onClick))
         {
-             if (isBlank(lb.id))
-                 lb.id = page.id("a_");
              if (lb.usePost)
                  clickEvent = PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage);
              else
@@ -77,7 +78,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),
-            lb.iconCls!=null ? null : lb.html
+                (lb.iconCls!=null ? null : lb.html)
         ).appendTo(out);
     }
 

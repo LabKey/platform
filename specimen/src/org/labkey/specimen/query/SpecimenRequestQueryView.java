@@ -142,6 +142,12 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);
         }
+
+        @Override
+        public String getName()
+        {
+            return "RequestOptions";
+        }
     }
 
     protected SpecimenRequestQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort, NavTree... extraLinks)
@@ -222,4 +228,6 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
     {
         getSettings().setAllowCustomizeView(showCustomizeLink);
     }
+
+
 }

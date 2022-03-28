@@ -36,6 +36,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -98,6 +100,8 @@ public class PageConfig
 
 
     private final HttpServletRequest _request;
+    private final AtomicInteger _uid;
+
     private final LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private final MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
     private final JSONObject _portalContext = new JSONObject();
@@ -127,12 +131,14 @@ public class PageConfig
     public PageConfig(HttpServletRequest request)
     {
         _request = request;
+        UniqueID.initializeRequestScopedUID(_request);
+        _uid = (AtomicInteger)request.getAttribute(ViewServlet.REQUEST_UID_COUNTER);
     }
 
     /* TODO make private */
     public PageConfig(HttpServletRequest request, String title)
     {
-        _request = request;
+        this(request);
         setTitle(title);
     }
 
@@ -499,7 +505,7 @@ public class PageConfig
 
     public String id(String prefix)
     {
-        return prefix + UniqueID.getRequestScopedUID(_request);
+        return prefix + _uid.incrementAndGet();
     }
 
     @NotNull
@@ -529,7 +535,9 @@ public class PageConfig
     /* TODO: CONSIDER using HtmlString handler */
     public void addListener(String id, String event, String handler)
     {
-        if (null == id || null == event || null==handler)
+        if (StringUtils.isBlank(id) || StringUtils.isBlank(event))
+            throw new IllegalArgumentException();
+        if (StringUtils.isBlank(handler))
             return;
         _listeners.add(new EventListener(id,event,handler));
     }
@@ -554,56 +562,73 @@ public class PageConfig
 
         // DOM CONTENT LOADED
 
-        out.write("document.addEventListener('DOMContentLoaded',function(){const add = function(a,b,c){LABKEY.Utils.attachListener(a,b,c,1);};\n");
+        out.write("(function() {\n"); // anonymous scope
 
-        // NOTE: there can be lots of handlers, this is simple de-duping
-        HashMap<String, Integer> map = new HashMap<>();
-        for (var l : _listeners)
+        out.write("function _on_dom_content_loaded_(){");
         {
-            var index = map.size();
-            var handler = StringUtils.appendIfMissing(l.handler,";");
-            var prev = map.putIfAbsent(handler, index);
-            if (null == prev)
-                out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints
-            index = requireNonNullElse(prev, index);
-            out.write("\tadd(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
+            out.write("const A = function(a,b,c){LABKEY.Utils.attachListener(a,b,c,1);}\n");
+            // NOTE: there can be lots of handlers, this is simple de-duping
+            HashMap<String, Integer> map = new HashMap<>();
+            for (var l : _listeners)
+            {
+                var index = map.size();
+                var handler = StringUtils.appendIfMissing(l.handler, ";");
+                var prev = map.putIfAbsent(handler, index);
+                if (null == prev)
+                    out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints
+                index = requireNonNullElse(prev, index);
+                out.write("A(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
+            }
+            _listeners.clear();
+
+            for (var handler : _onDomLoaded)
+            {
+                out.write(handler);
+                out.write("\n");
+            }
+            _onDomLoaded.clear();
         }
-        _listeners.clear();
-
-        for (var handler : _onDomLoaded)
-        {
-            out.write(handler);
-            out.write("\n");
-        }
-        _onDomLoaded.clear();
-
-        out.write("});\n");
-
+        out.write("}\n");   // _on_dom_content_loaded_
 
         // LOAD
 
-        out.write("document.addEventListener('load',function(){\n");
-
-        for (var handler : _onDocumentLoaded)
+        out.write("function _on_document_loaded_(){\n");
         {
-            out.write(handler);
-            out.write("\n");
+            for (var handler : _onDocumentLoaded)
+            {
+                out.write(handler);
+                out.write("\n");
+            }
+            _onDocumentLoaded.clear();
+
+            if (isNotEmpty(getFocus()))
+                out.write("const elFocus=document.getElementById(" + jsString(getFocus().trim()) + "); elFocus?elFocus.focus():null;\n");
+            if (getShowPrintDialog())
+                out.write("window.print();\n");
+            String anchor = getAnchor();
+            if (isNotEmpty(anchor))
+                out.write("window.location.href = '#' + " + jsString(anchor.trim()) + ";\n");
         }
-        _onDocumentLoaded.clear();
+        out.write("}\n");   // _on_document_loaded_
 
-        if (isNotEmpty(getFocus()))
-            out.write("const elFocus=document.getElementById(" + jsString(getFocus().trim()) + "); elFocus?elFocus.focus():null;\n");
-        if (getShowPrintDialog())
-            out.write("window.print();\n");
-        String anchor = getAnchor();
-        if (isNotEmpty(anchor))
-            out.write("window.location.href = '#' + " + jsString(anchor.trim()) + ";\n");
 
-        // LOOK FOR ELEMENTS WTIH onclick onchange onsubmit events
         out.write("""
-                let elEvent = document.querySelector('[onclick]') || document.querySelector('[onchange]') || document.querySelector('[onsubmit]');
-                if (elEvent) alert(elEvent);
-                """);
-        out.write("});\n");
+            if (document.readyState !== "loading")
+            {
+                _on_dom_content_loaded_();
+                if (document.readyState === "complete")
+                    _on_document_loaded_();
+            }
+            document.addEventListener('readystatechange', function()
+            {
+                if (document.readyState === 'interactive') 
+                    _on_dom_content_loaded_();
+                else if (document.readyState === 'complete')
+                    _on_document_loaded_();
+            }); 
+            """
+        );
+
+        out.write("})();\n"); // end of anonymous scope
     }
 }

@@ -173,11 +173,11 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("<li class=\"divider\"></li>");
     }
 
-    static final AtomicInteger unique = new AtomicInteger();
 
     // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
     protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
     {
+        var config = HttpView.currentPageConfig();
         // if the item is "selected" and doesn't have have an image cls to use, provide our default
         String itemImageCls = item.getImageCls();
         if (item.isSelected() && null == itemImageCls)
@@ -191,7 +191,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
-        String id = "popupMenuView" + unique.incrementAndGet();
+        String id = config.id("popupMenuView");
         out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");

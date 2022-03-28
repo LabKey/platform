@@ -252,13 +252,17 @@ function validate()
         {
             if (!ft.isWorkbookType() && (includeProjectLevelTypes || !ft.isProjectOnlyType()))
             {
+                var inputId = "folderTypeRadio" + getRequestScopedUID();
+                addListener(inputId, "click", "changeFolderType()");
+                var spanId = "folderTypeSpan" + getRequestScopedUID();
+                addListener(spanId, "click", "document.folderModules.folderType[" + radioIndex + "].checked = true");
     %>
                 <tr>
                     <td valign="top">
-                        <input type="radio" name="folderType" value="<%=h(ft.getName())%>"<%=checked(folderType.equals(ft))%> onclick="changeFolderType();">
+                        <input id="<%=h(inputId)%>" type="radio" name="folderType" value="<%=h(ft.getName())%>"<%=checked(folderType.equals(ft))%>>
                      </td>
                     <td valign="top">
-                       <span style="cursor:pointer;font-weight:bold" onclick="document.folderModules.folderType[<%=radioIndex%>].checked = true;"><%=h(ft.getLabel())%></span><br>
+                       <span style="cursor:pointer;font-weight:bold"><%=h(ft.getLabel())%></span><br>
                         <%=h(ft.getDescription())%>
                     </td>
                 </tr>
@@ -314,12 +318,13 @@ for (Module module : allModules)
     {
         if (!module.canBeEnabled(c))
             continue;
+        var id = "activeModules[" + i + "]";
+        addListener(id, "click", "return updateDefaultOptions(this)");
         %>
-        <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules"
+        <input type="checkbox" id="<%=h(id)%>" name="activeModules"
                title="<%= h(module.getTabName(context))%>"
                value="<%= h(module.getName())%>"
-               <%=disabled(!enabled)%><%=checked(active)%>
-               onClick="return updateDefaultOptions(this);">
+               <%=disabled(!enabled)%><%=checked(active)%>>
         <label for="activeModules[<%= i %>]" style="font-weight: normal;"><%= h(module.getTabName(context)) %></label>
         <br>
         <%

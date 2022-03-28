@@ -21,6 +21,7 @@ import org.labkey.api.view.ViewServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /*
 * User: adam
@@ -34,7 +35,8 @@ public class UniqueID
     // Initialize a unique counter to use within this request
     public static void initializeRequestScopedUID(HttpServletRequest request)
     {
-        request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
+        if (null == request.getAttribute(ViewServlet.REQUEST_UID_COUNTER))
+            request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
     }
 
     /*

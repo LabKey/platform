@@ -24,6 +24,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Collapsible;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
@@ -33,6 +34,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -41,7 +43,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  * Date: Apr 9, 2007
  * Time: 10:06:16 AM
  */
-public class NavTreeMenu extends WebPartView implements Collapsible
+public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 {
     private List<NavTree> _elements;
     private String _collapseId;
@@ -150,6 +152,8 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     private void renderLinks(NavTree nav, int level, String pathToHere, String rootId,
                              ViewContext context, PrintWriter out, boolean indentForExpansionGifs)
     {
+        var config = HttpView.currentPageConfig();
+
         Container c = context.getContainer();
         ActionURL currentUrl = context.getActionURL();
         if (!c.isInFolderNav())
@@ -159,7 +163,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         }
         if (!c.isInFolderNav())
             c = c.getParent();
-        ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
+        ActionURL startURL = Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class)).getStartURL(c);
         String pattern = startURL.getLocalURIString();
 
         String link = nav.getHref();
@@ -175,6 +179,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
             pathToHere = pathToHere + "/" + nav.getEscapedKey();
 
         boolean collapsed = nav.isCollapsed();
+        String id;
 
         if (level > 0)
         {
@@ -184,21 +189,20 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
             if (hasChildren)
             {
-                ActionURL expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(getViewContext().getContainer(), pathToHere, rootId);
+                ActionURL expandCollapseUrl = Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class)).getExpandCollapseURL(getViewContext().getContainer(), pathToHere, rootId);
 
                 String image = collapsed ? "plus.gif" : "minus.gif";
-                out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\">",
-                        filter(expandCollapseUrl),
-                        "true");
-
+                id = config.id("navtree");
+                out.printf("<a id=\"%s\" href=\"%s\">", id, filter(expandCollapseUrl));
+                config.addListener(id, "click", "return LABKEY.Utils.toggleLink(this,true);");
                 out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
                 out.printf("<div class=\"labkey-nav-tree-indenter\"></div>");
 
-            out.print("</td><td class=\"labkey-nav-tree-text\"");
-            if(null != onClickScript)
-                out.print(" onclick=\"" + onClickScript + "\"");
+            id = config.id("navtree");
+            out.printf("</td><td id=\"%s\" class=\"labkey-nav-tree-text\"", id);
+            config.addListener(id, "click", onClickScript);
             out.println(">");
 
             if (null == link)
@@ -225,9 +229,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 }
                 if (null != nav.getScript())
                 {
-                    out.print(" onclick=\"");
-                    out.print(filter(nav.getScript()));
-                    out.print("\"");
+                    config.addListener(nav.getId(), "click", nav.getScript());
                 }
                 out.print(">");
                 out.print(filter(nav.getText()));

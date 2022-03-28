@@ -111,7 +111,11 @@
 })(jQuery);
 </script>
 <li>
-    <a href="#" onclick="LABKEY.Notification.showPanel(); return false;">
+    <%
+        var linkId = "notification" + this.getRequestScopedUID();
+        addListener(linkId, "click", "LABKEY.Notification.showPanel(); return false;");
+    %>
+    <a id="<%=h(linkId)%>" href="#">
         <i class="fa fa-inbox labkey-notification-inbox"></i>
         <span id=<%=q(notificationCountId)%>>&nbsp;</span>
     </a>

@@ -26,7 +26,7 @@
 <%
     JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
     Map<String, ActionURL> map = me.getModelBean();
-    String guid = GUID.makeGUID();
+    String radioId = "radio_" + getRequestScopedUID();
     boolean first = true;
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -64,7 +64,7 @@
                 Map.Entry<String, ActionURL> entry = iter.next();
             %>
                 <td valign="center">
-                    <label><input type="radio" <%=text(first ? "id=\"" + guid + "\"" : "")%> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
+                    <label><input type="radio" <%=text(first ? "id=\"" + radioId + "\"" : "")%> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
                         <%= h(entry.getKey())%>
                     </label>
                 </td><%
@@ -77,7 +77,7 @@
     <tr>
         <td colspan="6">
             <br>
-            <%= button("Create Script").primary(true).onClick("window.open(getRadioButtonValue(document.getElementById(\"" + guid + "\")), \"_blank\"); return false;") %>
+            <%= button("Create Script").primary(true).onClick("window.open(getRadioButtonValue(document.getElementById(\"" + radioId + "\")), \"_blank\"); return false;") %>
         </td>
     </tr>
 </table>
