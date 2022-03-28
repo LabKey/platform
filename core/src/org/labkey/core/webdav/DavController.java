@@ -5052,7 +5052,8 @@ public class DavController extends SpringActionController
                 if (HttpUtil.isChrome(getRequest()))
                 {
                     Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
-                    getResponse().setContentDisposition(contentDisposition + "; filename*=" + PageFlowUtil.encode(requestPath.getName()));
+                    getResponse().setContentDisposition(String.format("%1$s;\n filename=\"%2$s;\"\n filename*=%3$s",
+                            contentDisposition, requestPath.getName(), PageFlowUtil.encode(requestPath.getName())));
                 }
             }
             catch (URISyntaxException x)
