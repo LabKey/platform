@@ -1288,7 +1288,7 @@ public class DiffMatchPatch
   /**
    * Convert a Diff list into a "compact" pretty HTML report. The output is identical to that of diff_prettyHtml()
    * except that, to highlight the actual changes, this method outputs EQUAL diffs that are more than four lines long
-   * with a shortened summary (first two lines + count of omitted lines + last two lines).
+   * with a shortened summary (first two lines + summary including count of omitted lines + last two lines).
    * @param diffs List of Diff objects.
    * @return Compact HTML representation.
    */
