@@ -393,26 +393,6 @@ public class ExperimentJSONConverter
 
             // provenance
             provenanceMap(json, protApp);
-
-            // custom properties
-            //JSONObject customProperties = serializeOntologyProperties(protApp, null, settings);
-            Map<String, ObjectProperty> props = protApp.getObjectProperties();
-            JSONArray properties = new JSONArray();
-            for (Map.Entry<String, ObjectProperty> entry : props.entrySet())
-            {
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), protApp.getContainer());
-                if (pd != null && pd.isShownInDetailsView())
-                {
-                    JSONObject prop = new JSONObject();
-                    Object value = protApp.getProperty(pd);
-                    prop.put(NAME, pd.getName());
-                    prop.put("uri", pd.getURI());
-                    prop.put("value", serializePropertyValue(protApp.getContainer(), entry.getValue().getPropertyType(), settings, value));
-
-                    properties.put(prop);
-                }
-            }
-            json.put(PROPERTIES, properties);
         }
 
         // CONSIDER: parameters
