@@ -93,6 +93,18 @@ public class NoopCacheProvider implements CacheProvider
         }
 
         @Override
+        public int getExpirations()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getEvictions()
+        {
+            return 0;
+        }
+
+        @Override
         public boolean isEmpty()
         {
             return false;

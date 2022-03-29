@@ -63,6 +63,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -458,7 +459,7 @@ public class DomainImpl implements Domain
         if (dp.getLookup() != null)
         {
             Container lookupContainer = dp.getLookup().getContainer();
-            String schemaName = dp.getLookup().getSchemaName();
+            SchemaKey schemaKey = dp.getLookup().getSchemaKey();
             String queryName = dp.getLookup().getQueryName();
 
             if (lookupContainer == null)
@@ -466,7 +467,7 @@ public class DomainImpl implements Domain
                 lookupContainer = dp.getContainer();
             }
 
-            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, schemaKey);
             if (schema != null)
             {
                 TableInfo table = schema.getTable(queryName);
@@ -483,7 +484,7 @@ public class DomainImpl implements Domain
                         ColumnInfo pkColumnInfo = table.getColumn(pkCol);
                         if (!dp.getPropertyType().getJdbcType().equals(pkColumnInfo.getJdbcType()))
                         {
-                            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": Lookup table " + schemaName + "." + queryName
+                            throw new ChangePropertyDescriptorException("Property " + dp.getName() + ": Lookup table " + schemaKey + "." + queryName
                                     + " pk does not match property data type. Expected: " + pkColumnInfo.getJdbcType() + ", Actual: " + dp.getPropertyType().getJdbcType());
                         }
                     }
@@ -951,7 +952,7 @@ public class DomainImpl implements Domain
                 str.append("Lookup: [");
                 if (null != lookup.getContainer())
                     str.append("Container: ").append(lookup.getContainer().getName()).append(", ");
-                str.append("Schema: ").append(lookup.getSchemaName()).append(", ")
+                str.append("Schema: ").append(lookup.getSchemaKey()).append(", ")
                    .append("Query: ").append(lookup.getQueryName()).append("]; ");
             }
 

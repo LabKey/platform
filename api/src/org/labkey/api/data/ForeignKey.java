@@ -20,12 +20,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -83,8 +85,17 @@ public interface ForeignKey
     /**
      * Just for introspection.
      * @return The name of the foreign user schema table.
+     *
+     * Consider using getLookupSchemaKey() instead.
      */
-    String getLookupSchemaName();
+    @Deprecated
+    default String getLookupSchemaName()
+    {
+        return Objects.toString(getLookupSchemaKey(),null);
+    }
+
+    /* Schema path relative to the DefaultSchema (e.g. container) */
+    SchemaKey getLookupSchemaKey();
 
     /**
      * Just for introspection.

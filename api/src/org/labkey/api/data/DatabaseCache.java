@@ -74,7 +74,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     protected Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
-        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getStats());
+        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
     private Cache<K, V> getCache()

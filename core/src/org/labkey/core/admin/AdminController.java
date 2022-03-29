@@ -249,13 +249,13 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
-import static org.labkey.api.module.DefaultModule.CORE_MODULE_NAME;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
@@ -960,10 +960,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.comparing(module ->
-                    // List 'Core' module credits first
-                    module.getName().equalsIgnoreCase(CORE_MODULE_NAME) ? "" : module.getName(),
-                    String.CASE_INSENSITIVE_ORDER));
+            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
@@ -2806,7 +2803,7 @@ public class AdminController extends SpringActionController
                 throw new RedirectException(redirect);
             }
 
-            List<TrackingCache> caches = CacheManager.getKnownCaches();
+            List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
 
             if (form.getDebugName() != null)
             {
@@ -2837,16 +2834,22 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Caches", cacheStats);
+            appendStats(html, "Caches", cacheStats, false);
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Transaction Caches", transactionStats);
+            appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html.toString());
         }
 
-        private void appendStats(StringBuilder html, String title, List<CacheStats> stats)
+        private void appendStats(StringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
         {
+            List<CacheStats> stats = skipUnusedCaches ?
+                allStats.stream()
+                    .filter(stat->stat.getMaxSize() > 0)
+                    .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
+                allStats;
+
             Collections.sort(stats);
 
             html.append("<p><b>");
@@ -2862,6 +2865,7 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Misses</td>");
             html.append("<td class=\"labkey-column-header\">Puts</td>");
             html.append("<td class=\"labkey-column-header\">Expirations</td>");
+            html.append("<td class=\"labkey-column-header\">Evictions</td>");
             html.append("<td class=\"labkey-column-header\">Removes</td>");
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
@@ -2872,6 +2876,7 @@ public class AdminController extends SpringActionController
             long misses = 0;
             long puts = 0;
             long expirations = 0;
+            long evictions = 0;
             long removes = 0;
             long clears = 0;
             int rowCount = 0;
@@ -2883,6 +2888,7 @@ public class AdminController extends SpringActionController
                 misses += stat.getMisses();
                 puts += stat.getPuts();
                 expirations += stat.getExpirations();
+                evictions += stat.getEvictions();
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
@@ -2891,11 +2897,10 @@ public class AdminController extends SpringActionController
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
                 Long limit = stat.getLimit();
-                Long maxSize = stat.getMaxSize();
+                long maxSize = stat.getMaxSize();
 
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
-
 
                 html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
@@ -2909,12 +2914,21 @@ public class AdminController extends SpringActionController
             double ratio = 0 != gets ? misses / (double)gets : 0;
             html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
             html.append("</table>\n");
         }
+
+        private static final List<String> PREFIXES_TO_SKIP = List.of(
+            "java.base/java.lang.Thread.getStackTrace",
+            "org.labkey.api.cache.CacheManager",
+            "org.labkey.api.cache.DbCache",
+            "org.labkey.api.cache.Throttle",
+            "org.labkey.api.data.DatabaseCache",
+            "org.labkey.api.module.ModuleResourceCache"
+        );
 
         private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
@@ -2922,8 +2936,17 @@ public class AdminController extends SpringActionController
 
             if (creationStackTrace != null)
             {
+                boolean trimming = true;
                 for (StackTraceElement element : creationStackTrace)
                 {
+                    // Skip the first few uninteresting stack trace elements to highlight the caller we care about
+                    if (trimming)
+                    {
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                            continue;
+
+                        trimming = false;
+                    }
                     sb.append(element);
                     sb.append("\n");
                 }

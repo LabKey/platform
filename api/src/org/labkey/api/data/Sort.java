@@ -109,7 +109,7 @@ public class Sort
     public static class SortField
     {
         SortDirection _dir = SortDirection.ASC;
-        FieldKey _fieldKey = null;
+        FieldKey _fieldKey;
         boolean _urlClause = false;
 
         public SortField(FieldKey fieldKey, SortDirection dir)
@@ -123,13 +123,6 @@ public class Sort
             {
                 _dir = dir;
             }
-        }
-
-        @Deprecated // Use FieldKey version instead.
-        public SortField(String str, SortDirection dir)
-        {
-            _fieldKey = FieldKey.fromString(str.trim());
-            _dir = dir;
         }
 
         @Deprecated // Use FieldKey version instead.
@@ -527,7 +520,7 @@ public class Sort
 
                             if (mvIndicatorColumn != null)
                             {
-                                SortField mvSortField = new SortField(mvIndicatorColumn.getName(), sf.getSortDirection());
+                                SortField mvSortField = new SortField(mvIndicatorColumn.getFieldKey(), sf.getSortDirection());
                                 appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sb);
                             }
                         }
