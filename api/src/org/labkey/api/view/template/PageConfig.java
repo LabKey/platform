@@ -28,6 +28,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -53,6 +54,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.requireNonNullElse;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -532,7 +534,8 @@ public class PageConfig
         return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\">")).getHtmlString();
     }
 
-    /* TODO: CONSIDER using HtmlString handler */
+
+    /* TODO: CONSIDER using JavaScriptFragment handler */
     public void addListener(String id, String event, String handler)
     {
         if (StringUtils.isBlank(id) || StringUtils.isBlank(event))
@@ -542,19 +545,28 @@ public class PageConfig
         _listeners.add(new EventListener(id,event,handler));
     }
 
-    /* TODO: CONSIDER using HtmlString handler */
-    public void addDocumentLoadHandler(String handler)
+
+    public void addDocumentLoadHandler(JavaScriptFragment jsf)
     {
-        if (isNotEmpty(handler))
-            _onDocumentLoaded.add(handler);
+        if (null != jsf)
+        {
+            String s = jsf.toString();
+            if (isNotBlank(s))
+                _onDocumentLoaded.add(s);
+        }
     }
 
-    /* TODO: CONSIDER using HtmlString handler */
-    public void addDOMContentLoadedHandler(String handler)
+
+    public void addDOMContentLoadedHandler(JavaScriptFragment jsf)
     {
-        if (isNotEmpty(handler))
-            _onDomLoaded.add(handler);
+        if (null != jsf)
+        {
+            String s = jsf.toString();
+            if (isNotBlank(s))
+                _onDomLoaded.add(s);
+        }
     }
+
 
     public void endOfBodyScript(Writer out) throws IOException
     {

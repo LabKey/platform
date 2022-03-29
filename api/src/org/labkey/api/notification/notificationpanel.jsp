@@ -17,6 +17,9 @@
 %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -31,85 +34,8 @@
 <%
     String notificationCountId = "labkey-notifications-count" + UniqueID.getServerSessionScopedUID();
     String notificationPanelId = "labkey-notifications-panel" + UniqueID.getServerSessionScopedUID();
+    HttpView.currentPageConfig().addDocumentLoadHandler(JavaScriptFragment.unsafe("LABKEY.internal.UserNotificationPanel.init(jQuery, " + q(notificationCountId) + ", " + q(notificationPanelId) + ");"));
 %>
-<script type="text/javascript" nonce="<%=getScriptNonce()%>">
-(function($) {
-    $(function() {
-        // need to create the div as a direct child of body so that the z-index will keep it in front
-        var notificationPanelDiv = document.createElement("div");
-        notificationPanelDiv.id = <%=q(notificationPanelId)%>;
-        notificationPanelDiv.className = 'labkey-notification-panel labkey-hidden';
-        document.body.appendChild(notificationPanelDiv);
-
-        LABKEY.Notification.setElementIds(<%=q(notificationCountId)%>, <%=q(notificationPanelId)%>);
-
-        function renderNotifications() {
-            // if we have the notification unreadCount, update that in the header
-            if (LABKEY.notifications && LABKEY.notifications.unreadCount !== undefined) {
-                LABKEY.Notification.updateUnreadCount();
-            }
-
-            var html = "<div class='labkey-notification-header'><div class='labkey-notification-title'>Notifications</div></div>";
-            if (!LABKEY.notifications || !LABKEY.notifications.grouping) {
-                html += '<div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>';
-            }
-            else {
-                html += "<div class='labkey-notification-clear-all " + (LABKEY.notifications.unreadCount > 0 ? "" : "labkey-hidden")
-                        + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>Clear all</div>";
-
-                html += "<div class='labkey-notification-none " + (LABKEY.notifications.unreadCount == 0 ? "" : "labkey-hidden")
-                        + "'>No new notifications</div>";
-
-                html += "<div class='labkey-notification-area'>";
-                if (LABKEY.notifications.unreadCount > 0) {
-                    var groupings = LABKEY.notifications.grouping ? Object.keys(LABKEY.notifications.grouping) : [];
-
-                    // sort groups alphabetically, with "Other" at the bottom
-                    groupings.sort(function(a, b) {
-                        return a === "Other" ? 1 : (b === "Other" ? -1 : a.localeCompare(b));
-                    });
-
-                    for (var i = 0; i < groupings.length; i++) {
-                        html += "<div id='notificationtype-" + groupings[i] + "' class='labkey-notification-type'>";
-                        html += "<div class='labkey-notification-type-label'>" + LABKEY.Utils.encodeHtml(groupings[i]) + "</div>";
-
-                        var groupRowIds = LABKEY.notifications.grouping[groupings[i]];
-                        for (var j = 0; j < groupRowIds.length; j++) {
-                            var rowId = groupRowIds[j], info = LABKEY.notifications[rowId];
-
-                            // get the date/time display string based on the current date
-                            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-                                    d = new Date(info.Created), today = new Date(),
-                                    dStr = d.toDateString() == today.toDateString() ? 'Today' : monthNames[d.getMonth()] + ' ' + d.getDate();
-
-                            html += "<div class='labkey-notification' id='notification-" + rowId + "' onclick='LABKEY.Notification.goToActionLink(event, " + rowId + "); return true;'>"
-                                    + "   <div class='fa " + info.IconCls + " labkey-notification-icon'></div>"
-                                    + "   <div class='labkey-notification-close'>"
-                                    + "      <div class='fa fa-times labkey-notification-times' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
-                                    + "      <div class='fa fa-angle-down labkey-notification-toggle' onclick='LABKEY.Notification.toggleBody(this); return true;'></div>"
-                                    + "   </div>"
-                                    + "   <div class='labkey-notification-createdby'>" + dStr + " - " + LABKEY.Utils.encodeHtml(info.CreatedBy) + "</div>"
-                                    + "   <div class='labkey-notification-body'>" + info.HtmlContent + "</div>"
-                                    + "</div>";
-                        }
-                        html += "</div>";
-                    }
-                }
-                html += "</div>";
-
-                if (LABKEY.notifications.unreadCount > 0 || LABKEY.notifications.hasRead) {
-                    html += "<div class='labkey-notification-footer' onclick='LABKEY.Notification.goToViewAll(); return true;'><span>View all notifications</span></div>";
-                }
-            }
-
-            $('#' + <%=q(notificationPanelId)%>).html(html);
-        }
-
-        LABKEY.Notification.onChange(renderNotifications);
-        renderNotifications();
-    });
-})(jQuery);
-</script>
 <li>
     <%
         var linkId = "notification" + this.getRequestScopedUID();
@@ -120,6 +46,12 @@
         <span id=<%=q(notificationCountId)%>>&nbsp;</span>
     </a>
 </li>
+
+
+
+
+
+
 
 
 
