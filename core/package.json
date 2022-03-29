@@ -12,11 +12,7 @@
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint",
-    "lint-fix": "eslint --fix",
-    "lint-precommit": "node lint.diff.js",
-    "lint-precommit-fix": "node lint.diff.js --fix",
-    "lint-branch": "node lint.diff.js --currentBranch",
-    "lint-branch-fix": "node lint.diff.js --currentBranch --fix"
+    "lint-fix": "eslint --fix"
   },
   "jest": {
     "globals": {
