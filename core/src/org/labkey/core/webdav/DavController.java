@@ -5046,20 +5046,6 @@ public class DavController extends SpringActionController
         if (!StringUtils.isEmpty(contentDisposition))
         {
             getResponse().setContentDisposition(contentDisposition);
-            try
-            {
-                // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
-                if (HttpUtil.isChrome(getRequest()))
-                {
-                    Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
-                    getResponse().setContentDisposition(String.format("%1$s;\n filename=\"%2$s;\"\n filename*=%3$s",
-                            contentDisposition, requestPath.getName(), PageFlowUtil.encode(requestPath.getName())));
-                }
-            }
-            catch (URISyntaxException x)
-            {
-               // pass
-            }
         }
 
         // Find content type
