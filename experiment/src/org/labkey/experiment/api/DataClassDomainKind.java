@@ -333,6 +333,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
+        // Issue 45042: Allow for the dataClass description to be set via the create domain API calls
+        if (options.getDescription() == null && domain.getDescription() != null)
+            options.setDescription(domain.getDescription());
+
         try
         {
             ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);

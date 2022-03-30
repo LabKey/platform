@@ -107,7 +107,8 @@ public class StatusDetailsBean
     {
         if (filePath != null && container != null)
         {
-            Path logPath = Path.of(filePath);
+            // Path.of is FileSystem dependant and may not properly handle unencoded URI strings. ISSUE #45122
+            Path logPath = FileUtil.stringToPath(container, filePath, true);
             if (Files.exists(logPath))
             {
                 return FileContentService.get().getWebDavUrl(logPath, container, FileContentService.PathType.serverRelative);

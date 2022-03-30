@@ -17,12 +17,12 @@ package org.labkey.pipeline.mule;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.mule.config.ThreadingProfile;
 import org.mule.config.builders.MuleXmlBuilderContextListener;
@@ -30,7 +30,6 @@ import org.mule.providers.service.TransportFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
-import javax.servlet.Registration;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
@@ -60,18 +59,33 @@ import java.util.Set;
  */
 public class MuleListenerHelper implements ServletContext
 {
-    private static final Logger _log = LogManager.getLogger(MuleListenerHelper.class);
+    private static final Logger _log = LogHelper.getLogger(MuleListenerHelper.class, "Initializes and configures Mule for pipelines");
 
     private final MuleXmlBuilderContextListener _muleContextListener;
     private final ServletContext _parentContext;
     private final HashMap<String, Object> _attributes = new HashMap<>();
     private final HashMap<String, String> _initParameters = new HashMap<>();
 
-    public MuleListenerHelper(ServletContext parentContext, String muleConfigPaths)
+    public MuleListenerHelper(ServletContext parentContext)
     {
         _parentContext = parentContext;
-        _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_MULE_CONFIG, muleConfigPaths);
+
+        // Default to the version packaged in the pipeline module
+        String muleConfigPath = "org/labkey/pipeline/mule/config/webserverMuleConfig.xml";
+
+        // But check if there's a customized version in the pipeline config directory on the server
         File configDir = SpringModule.getSpringConfigDir(_parentContext.getInitParameter(SpringModule.INIT_PARAMETER_CONFIG_PATH));
+        if (configDir.isDirectory())
+        {
+            File muleFile = new File(configDir, "webserverMuleConfig.xml");
+            if (muleFile.isFile())
+            {
+                _log.info("Found Mule configuration file override at " + muleFile.getPath());
+                muleConfigPath = muleFile.getName();
+            }
+        }
+
+        _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_MULE_CONFIG, muleConfigPath);
         _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH,
                 configDir.isDirectory() ? configDir.toString() : null);
         _muleContextListener = new MuleXmlBuilderContextListener();
@@ -482,6 +496,7 @@ public class MuleListenerHelper implements ServletContext
         return null;
     }
 
+    @Override
     public String getVirtualServerName()
     {
         return null;
@@ -490,24 +505,31 @@ public class MuleListenerHelper implements ServletContext
     String responseCharacterEncoding = "UTF-8";
     String requestCharacterEncoding = "UTF-8";
 
+    @Override
     public void setResponseCharacterEncoding(String s)
     {
         responseCharacterEncoding = s;
     }
+    @Override
     public String getResponseCharacterEncoding() {return responseCharacterEncoding; }
 
+    @Override
     public void setRequestCharacterEncoding(String s)
     {
         requestCharacterEncoding = s;
     }
+    @Override
     public String getRequestCharacterEncoding() {return requestCharacterEncoding; }
 
+    @Override
     public void setSessionTimeout(int i)
     {
     }
+    @Override
     public int getSessionTimeout()
     {
         return 60*60*1000;
     }
+    @Override
     public ServletRegistration.Dynamic addJspFile(String a, String b) {return null;}
 }

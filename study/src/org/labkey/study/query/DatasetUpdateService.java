@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -37,6 +38,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -135,7 +137,39 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException
     {
-        return (Map<String, Object>)(new TableSelector(getQueryTable()).getObject(keyFromMap(keys), Map.class));
+        String lsid = keyFromMap(keys);
+        SimpleFilter filter = new SimpleFilter()
+                .addCondition(new FieldKey(null,"container"), container.getId())
+                .addCondition(new FieldKey(null,"lsid"),lsid);
+
+        // NOTE getQueryTable().getColumns() returns a bunch of columns that getDatasetRow() did not such as:
+        //      Container, Dataset, DatasetId, Datasets, Folder, Modified, ModifiedBy, MouseVisit, ParticipantSequenceNum, VisitDay, VisitRowId
+        // Mostly this is harmless, but there is some noise.
+        HashSet<String> nameset = new HashSet<>(getQueryTable().getColumnNameSet());
+        List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
+        List<ColumnInfo> columns = getQueryTable().getColumns(nameset.toArray(new String[0]));
+
+        // This is a general version of DatasetDefinition.canonicalizeDatasetRow()
+        // The caller needs to make sure names are unique.  Not suitable for use w/ lookups etc where there can be name collisions.
+        // CONSIDER: might be nice to make this a TableSelector method.
+        var map = new CaseInsensitiveHashMap<>();
+        try (var str = new TableSelector(getQueryTable(), columns, filter, null).uncachedResultSetStream())
+        {
+            str.forEach(rs -> {
+                try
+                {
+                    for (int i = 0; i < columns.size(); i++)
+                    {
+                        map.put(columns.get(i).getName(), rs.getObject(i + 1));
+                    }
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            });
+        }
+        return map.isEmpty() ? null : map;
     }
 
 
