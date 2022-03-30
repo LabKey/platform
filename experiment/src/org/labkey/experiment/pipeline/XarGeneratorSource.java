@@ -19,7 +19,6 @@ import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /*
@@ -35,13 +34,13 @@ public class XarGeneratorSource extends AbstractFileXarSource
     }
 
     @Override
-    public ExperimentArchiveDocument getDocument()
+    public Path getLogFilePath()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public File getLogFile()
+    public ExperimentArchiveDocument getDocument()
     {
         throw new UnsupportedOperationException();
     }

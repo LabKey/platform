@@ -96,12 +96,6 @@ public class CompressedXarSource extends AbstractFileXarSource
     }
 
     @Override
-    public File getLogFile()
-    {
-        return getLogFilePath().toFile();
-    }
-
-    @Override
     public Path getLogFilePath()
     {
         try

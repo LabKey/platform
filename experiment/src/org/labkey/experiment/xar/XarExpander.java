@@ -55,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -598,19 +599,14 @@ public class XarExpander extends AbstractXarImporter
         {
             try
             {
-                File f = new File(new URI(inputDir)).getParentFile();
-
-                File xarDir = _xarSource.getRoot();
+                Path f = new File(new URI(inputDir)).getParentFile().toPath();
+                Path xarDir = _xarSource.getRootPath();
 
                 inputDir = FileUtil.relativizeUnix(xarDir, f, true);
 
                 context.addSubstitution("InputDir", inputDir);
             }
-            catch (IOException e)
-            {
-                throw new XarFormatException(e);
-            }
-            catch (URISyntaxException e)
+            catch (IOException | URISyntaxException e)
             {
                 throw new XarFormatException(e);
             }
@@ -638,7 +634,7 @@ public class XarExpander extends AbstractXarImporter
                             XarContext context,
                             ExperimentRunType xbRun) throws ExperimentException
     {
-        FileResolver resolver = new FileResolver(_xarSource.getRoot());
+        FileResolver resolver = new FileResolver(_xarSource.getRootPath().toFile());
         for (ExperimentLogEntryType step : steps)
         {
             if (null == step.getStepCompleted())

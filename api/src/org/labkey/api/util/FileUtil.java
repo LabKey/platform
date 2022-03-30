@@ -1089,7 +1089,8 @@ quickScan:
      * Returns the absolute path to a file. On Windows and Mac, corrects casing in file paths to match the
      * canonical path.
      */
-    public static File getAbsoluteCaseSensitiveFile(File file)
+    @NotNull
+    public static File getAbsoluteCaseSensitiveFile(@NotNull File file)
     {
         file = resolveFile(file.getAbsoluteFile());
         if (isCaseInsensitiveFileSystem())
