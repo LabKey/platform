@@ -40,7 +40,7 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
 
             let error, queryConfig;
             if (!schemaName || !queryName) {
-                error = 'You must enter a schema/query to view the QueryGridPanel.'
+                error = 'You must enter a schema/query to view the grid panel.'
             }
             else {
                 const schemaQuery = SchemaQuery.create(schemaName, queryName);
