@@ -36,7 +36,17 @@ public class UniqueID
     public static void initializeRequestScopedUID(HttpServletRequest request)
     {
         if (null == request.getAttribute(ViewServlet.REQUEST_UID_COUNTER))
+        {
             request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
+            initializeSessionScopedUID(request);
+        }
+    }
+
+    // Initialize a unique counter to use within a session
+    private static void initializeSessionScopedUID(HttpServletRequest request)
+    {
+        if (null == request.getSession(true).getAttribute(ViewServlet.REQUEST_UID_COUNTER))
+            request.getSession(true).setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
     }
 
     /*
@@ -60,6 +70,17 @@ public class UniqueID
 
         return counter.incrementAndGet();
     }
+
+    public static int getSessionScopedUID(HttpServletRequest request)
+    {
+        AtomicInteger counter = (AtomicInteger)request.getSession(true).getAttribute(ViewServlet.REQUEST_UID_COUNTER);
+
+        if (null == counter)
+            throw new IllegalStateException("Unique session counter was not initialized");
+
+        return counter.incrementAndGet();
+    }
+
 
     /*
         Provides a unique long within the context of an entire server session. This is handy for generating identifiers

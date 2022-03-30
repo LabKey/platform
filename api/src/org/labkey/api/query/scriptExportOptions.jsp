@@ -26,7 +26,7 @@
 <%
     JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
     Map<String, ActionURL> map = me.getModelBean();
-    String radioId = "radio_" + getRequestScopedUID();
+    String radioId = makeId("radio_");
     boolean first = true;
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

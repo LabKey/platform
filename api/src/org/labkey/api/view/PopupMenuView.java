@@ -16,13 +16,11 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: Mark Igra
@@ -191,7 +189,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
-        String id = config.id("popupMenuView");
+        String id = config.makeId("popupMenuView");
         out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");

@@ -100,7 +100,7 @@
     initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
-    String renderId = "report-design-panel-" + getRequestScopedUID();
+    String renderId = makeId("report-design-panel-");
     ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> sharedScripts = new ArrayList<>();

@@ -235,9 +235,9 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         var page = HttpView.currentPageConfig();
         var id = getId();
         if (isBlank(getId()))
-            id = page.id("button_");
+            id = page.makeId("button_");
         boolean iconOnly = getIconCls() != null;
-        String submitId = page.id("form_");
+        String submitId = page.makeId("form_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String hrefValue = (null == getHref()) ? "#" : getHref();

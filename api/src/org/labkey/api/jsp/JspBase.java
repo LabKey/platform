@@ -771,9 +771,15 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     // Provides a unique integer within the context of this request. Handy for generating element ids, etc. See UniqueID for caveats and warnings.
+    @Deprecated // makeId() is preferred
     protected int getRequestScopedUID()
     {
         return UniqueID.getRequestScopedUID(getViewContext().getRequest());
+    }
+
+    protected String makeId(String prefix)
+    {
+        return _pageConfig.makeId(prefix);
     }
 
     // JSPs must override addClientDependencies(ClientDependencies) to add their own dependencies.

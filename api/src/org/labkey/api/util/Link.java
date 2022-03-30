@@ -58,7 +58,7 @@ public class Link extends DisplayElement implements HasHtmlString
         String clickEvent = null;
         var page = HttpView.currentPageConfig();
         if (isBlank(lb.id))
-            lb.id = page.id("a_");
+            lb.id = page.makeId("a_");
 
         if (lb.usePost || isNotEmpty(lb.onClick))
         {

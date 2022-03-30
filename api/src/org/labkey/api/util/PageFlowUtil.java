@@ -1403,7 +1403,7 @@ public class PageFlowUtil
                                                   String id, Map<String, String> properties)
     {
         if (null == id)
-            id = HttpView.currentPageConfig().id("dropdown_");
+            id = HttpView.currentPageConfig().makeId("dropdown_");
         String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
         HttpView.currentPageConfig().addListener(id+"PopupLink", "click", onclick);
         return DOM.createHtmlFragment(
@@ -1420,7 +1420,7 @@ public class PageFlowUtil
     {
         var page = HttpView.currentPageConfig();
 
-        String anchorId = page.id("A_");
+        String anchorId = page.makeId("A_");
         String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
         page.addListener(anchorId, "click", onclick);
         return DOM.createHtmlFragment(
@@ -1434,7 +1434,7 @@ public class PageFlowUtil
                                                        String imageId, Map<String, String> properties)
     {
         PageConfig page = HttpView.currentPageConfig();
-        String id = page.id("a_");
+        String id = page.makeId("a_");
         page.addListener(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
         return DOM.createHtmlFragment(
             A(at(properties).id(id).at(DOM.Attribute.href,href),
@@ -1619,7 +1619,7 @@ public class PageFlowUtil
             if (!inlineScript)
             {
                 var config = HttpView.currentPageConfig();
-                id = config.id("helpPopup");
+                id = config.makeId("helpPopup");
                 config.addListener(id, "click", onClickScript);
             }
             return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
@@ -1643,7 +1643,7 @@ public class PageFlowUtil
             if (!inlineScript)
             {
                 var config = HttpView.currentPageConfig();
-                id = config.id("helpPopup");
+                id = config.makeId("helpPopup");
                 config.addListener(id, "click", onClickScript);
                 config.addListener(id, "mouseout", "return hideHelpDivDelay();");
                 config.addListener(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");

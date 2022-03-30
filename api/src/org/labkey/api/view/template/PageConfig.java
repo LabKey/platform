@@ -102,7 +102,8 @@ public class PageConfig
 
 
     private final HttpServletRequest _request;
-    private final AtomicInteger _uid;
+    private final AtomicInteger _uid;       // request counter
+    private final String _sid;              // session counter value
 
     private final LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private final MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
@@ -134,7 +135,10 @@ public class PageConfig
     {
         _request = request;
         UniqueID.initializeRequestScopedUID(_request);
+
         _uid = (AtomicInteger)request.getAttribute(ViewServlet.REQUEST_UID_COUNTER);
+        // kinda random looking hex value, but takes a while to repeat
+        _sid = String.format("%04x", UniqueID.getSessionScopedUID(_request));
     }
 
     /* TODO make private */
@@ -505,10 +509,11 @@ public class PageConfig
     }
 
 
-    public String id(String prefix)
+    public String makeId(String prefix)
     {
-        return prefix + _uid.incrementAndGet();
+        return prefix + _sid + _uid.incrementAndGet(); // we can concatenate without a separator because _sid is fixed width
     }
+
 
     @NotNull
     public static String getScriptNonce(HttpServletRequest request)
