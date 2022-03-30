@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
 
@@ -29,23 +30,16 @@ import java.nio.file.Path;
  */
 public class FileXarSource extends AbstractFileXarSource
 {
-    @Deprecated
-    public FileXarSource(File file, PipelineJob job)
-    {
-        super(job);
-        _xmlFile = file.toPath().normalize();
-    }
-
     public FileXarSource(Path file, PipelineJob job)
     {
         super(job);
         _xmlFile = file.normalize();
     }
 
-    @Deprecated
-    public File getLogFile() throws IOException
+    public FileXarSource(Path file, PipelineJob job, Container targetContainer)
     {
-        return getLogFilePath().toFile();
+        super(job.getDescription(), targetContainer, job.getUser(), job);
+        _xmlFile = file;
     }
 
     @Override
