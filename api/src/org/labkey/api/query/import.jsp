@@ -35,10 +35,10 @@
 %>
 <%
     AbstractQueryImportAction.ImportViewBean bean = (AbstractQueryImportAction.ImportViewBean)HttpView.currentModel();
-    final String copyPasteDivId = "copypasteDiv" + getRequestScopedUID();
-    final String uploadFileDivId = "uploadFileDiv" + getRequestScopedUID();
-    String tsvId = "tsv" + getRequestScopedUID();
-    String errorDivId = "errorDiv" + getRequestScopedUID();
+    final String copyPasteDivId = "copypasteDiv1"; // TESTBUG 45133 + getRequestScopedUID();
+    final String uploadFileDivId = "uploadFileDiv2"; // TESTBUG 45133 + getRequestScopedUID();
+    String tsvId = "tsv3"; // TESTBUG  + getRequestScopedUID();
+    String errorDivId = "errorDiv4"; // TESTBUG + getRequestScopedUID();
     String extraFormFields = "";
 
     if (bean.importMessage != null)
