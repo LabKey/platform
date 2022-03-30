@@ -457,9 +457,9 @@ public class DOM
         onloadedmetadata,
         onloadstart,
         onmousedown,
-        onmousemove,
+        onmousemove, */
         onmouseout,
-        onmouseover,
+        onmouseover, /*
         onmouseup,
         onmousewheel,
         onoffline,

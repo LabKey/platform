@@ -155,11 +155,7 @@ import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute.height;
-import static org.labkey.api.util.DOM.Attribute.style;
-import static org.labkey.api.util.DOM.Attribute.title;
-import static org.labkey.api.util.DOM.Attribute.valign;
-import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.Attribute.*;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
@@ -1476,72 +1472,187 @@ public class PageFlowUtil
         return link(text).href(url).toString();
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return helpPopup(title, helpText, htmlHelpText, 0);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
         return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String onClickScript)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, onClickScript);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
-    {
-        if (title == null && !htmlHelpText)
-        {
-            // use simple tooltip
-            if (onClickScript == null)
-                onClickScript = "return false";
 
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(onClickScript).append("\" title=\"");
-            link.append(filter(helpText));
-            link.append("\">").append(linkHtml).append("</a>");
-            return link.toString();
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
+    public static String helpPopup(String titleText, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
+    {
+        if (null == titleText && !isHtmlHelpText)
+        {
+            return popupHelp(helpText).link(HtmlString.unsafe(linkHtml)).script(onClickScript).toString();
         }
         else
         {
-            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
-            showHelpDivArgs.append(filter(jsString(filter(title)), true)).append(", ");
-            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
-            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
-            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
-            showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
-            if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
+            HtmlString helpHtml = isHtmlHelpText ? HtmlString.unsafe(helpText) : HtmlString.unsafe(filter(helpText,true));
+            return popupHelp(helpHtml, titleText).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
+        }
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull String helpText)
+    {
+        return new HelpPopupBuilder(helpText);
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
+    {
+        return new HelpPopupBuilder(helpHtml, titleText);
+    }
+
+
+    public static class HelpPopupBuilder implements SafeToRender, HasHtmlString
+    {
+        final String helpText;
+        final String titleText;
+        final HtmlString helpHtml;
+        HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
+        int width = 0;
+        String onClickScript = null;
+        boolean inlineScript = false;
+
+        HelpPopupBuilder(@NotNull String helpText)
+        {
+            this.helpText = helpText;
+            this.helpHtml = null;
+            this.titleText = null;
+        }
+
+        HelpPopupBuilder(@NotNull HtmlString helpHtml, String titleText)
+        {
+            this.helpHtml = helpHtml;
+            this.helpText = null;
+            this.titleText = titleText;
+        }
+
+        public HelpPopupBuilder link(HtmlString linkHtml)
+        {
+            this.linkHtml = linkHtml;
+            return this;
+        }
+
+        public HelpPopupBuilder width(int width)
+        {
+            this.width = width;
+            return this;
+        }
+
+        public HelpPopupBuilder script(String onClickScript)
+        {
+            this.onClickScript = onClickScript;
+            return this;
+        }
+
+        /* ONLY USE TO RENDER INTO JAVASSCRIPT CODE */
+        public HelpPopupBuilder inlineScript()
+        {
+            this.inlineScript = true;
+            return this;
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            assert(helpText != null || helpHtml != null);
+            if (null != helpText)
+                return textPopup();
+            else
+                return htmlPopup();
+        }
+
+        private HtmlString textPopup()
+        {
+            Objects.requireNonNull(helpText);
+
+            String id = null;
             if (onClickScript == null)
+                onClickScript = "return false";
+
+            if (!inlineScript)
             {
-                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+                var config = HttpView.currentPageConfig();
+                id = config.id("helpPopup");
+                config.addListener(id, "click", onClickScript);
             }
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"");
-            link.append(onClickScript);
-            link.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
-            link.append(showHelpDivArgs).append(");\"");
-            link.append(">").append(linkHtml).append("</a>");
-            return link.toString();
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
+        }
+
+        private HtmlString htmlPopup()
+        {
+            Objects.requireNonNull(helpHtml);
+
+            String id = null;
+            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
+            showHelpDivArgs.append(jsString(filter(titleText,true))).append(", ");
+            showHelpDivArgs.append(jsString(helpHtml.toString()));
+            if (width == 0)
+                showHelpDivArgs.append(", ").append("'auto'");
+            else
+                showHelpDivArgs.append(", ").append(jsString(width + "px"));
+            if (onClickScript == null)
+                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+
+            if (!inlineScript)
+            {
+                var config = HttpView.currentPageConfig();
+                id = config.id("helpPopup");
+                config.addListener(id, "click", onClickScript);
+                config.addListener(id, "mouseout", "return hideHelpDivDelay();");
+                config.addListener(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+            }
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
+                    .at(inlineScript, onclick, onClickScript)
+                    .at(inlineScript, onmouseout, "return hideHelpDivDelay();")
+                    .at(inlineScript, onmouseover, "return showHelpDivDelay(" + showHelpDivArgs + ");"),
+                    linkHtml));
         }
     }
 

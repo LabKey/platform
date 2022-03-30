@@ -30,6 +30,8 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.AutoReportListAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ViewRequestsAction" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
@@ -140,13 +142,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;width:auto" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
-                            <span>View All Specimens</span></a><a style="width:auto"
-                               onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
-                               onmouseout="return hideHelpDivDelay();"
-                               onclick="return showHelpDiv(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
-                               tabindex="-1"
-                               href="#"><span class="labkey-help-pop-up">?</span>
-                        </a>
+                            <span>View All Specimens</span></a><%= helpPopup("Vial Viewing Options", HtmlString.of("Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.")) %>
                     </td>
                 </tr>
                 <tr>

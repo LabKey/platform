@@ -33,10 +33,10 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.Input.InputBuilder;
@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -259,6 +260,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     final protected JavaScriptFragment q(@Nullable URLHelper url)
     {
         return q(null != url ? url.toString() : null);
+    }
+
+    final protected JavaScriptFragment q(SafeToRender str)
+    {
+        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str.toString()));
     }
 
     protected HtmlString hq(String str)
@@ -485,39 +491,43 @@ public abstract class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
 
-    public HtmlString helpPopup(String helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String helpText)
     {
-        return helpPopup(null, helpText, false);
+        return PageFlowUtil.popupHelp(helpText);
     }
 
-    public HtmlString helpPopup(String title, String helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+        if (null == title && !htmlHelpText)
+            return PageFlowUtil.popupHelp(helpText);
+        if (!htmlHelpText)
+            return PageFlowUtil.popupHelp(HtmlString.unsafe(filter(helpText,true)), title);
+        return PageFlowUtil.popupHelp(HtmlString.unsafe(helpText), title);
     }
 
-    public HtmlString helpPopup(String title, HtmlString helpText)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true));
+        return PageFlowUtil.popupHelp(helpHtml, title);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+        return helpPopup(title, helpText, htmlHelpText).width(width);
     }
 
-    public HtmlString helpPopup(String title, HtmlString helpText, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true, width));
+        return PageFlowUtil.popupHelp(helpHtml, title).width(width);
     }
 
-    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
+    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, String linkText, int width)
     {
-        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, linkHtml, width));
+        return helpPopup(title, helpText, htmlHelpText).link(HtmlString.of(linkText)).width(width);
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)

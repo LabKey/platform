@@ -633,7 +633,7 @@ public class PageConfig
             }
             document.addEventListener('readystatechange', function()
             {
-                if (document.readyState === 'interactive') 
+                if (document.readyState === 'interactive')
                     _on_dom_content_loaded_();
                 else if (document.readyState === 'complete')
                     _on_document_loaded_();
