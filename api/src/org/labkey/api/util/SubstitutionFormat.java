@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.api.SampleTypeService;
 
 import java.text.DecimalFormat;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.labkey.api.data.NameGenerator.SAMPLE_COUNTER_SUBSTITUTIONS;
 
 /**
  *  These are the supported formatting functions that can be used with string substitution, for example, when substituting
@@ -428,9 +431,11 @@ public class SubstitutionFormat
 
     public static class SampleCountSubstitutionFormat extends SubstitutionFormat
     {
-        SampleCountSubstitutionFormat(String name)
+        private final Object _previewCount;
+        SampleCountSubstitutionFormat(String name, Object previewCount)
         {
             super(name);
+            _previewCount = previewCount;
         }
 
         @Override
@@ -453,13 +458,22 @@ public class SubstitutionFormat
         }
 
         @Override
+        public Object format(Object value, boolean _isPreview)
+        {
+            if (_isPreview)
+                return _previewCount;
+
+            return format(value);
+        }
+
+        @Override
         public int argumentCount() { return 0; }
     }
 
-    public static SampleCountSubstitutionFormat dailySampleCount = new SampleCountSubstitutionFormat("dailySampleCount");
-    public static SampleCountSubstitutionFormat weeklySampleCount = new SampleCountSubstitutionFormat("weeklySampleCount");
-    public static SampleCountSubstitutionFormat monthlySampleCount = new SampleCountSubstitutionFormat("monthlySampleCount");
-    public static SampleCountSubstitutionFormat yearlySampleCount = new SampleCountSubstitutionFormat("yearlySampleCount");
+    public static SampleCountSubstitutionFormat dailySampleCount = new SampleCountSubstitutionFormat("dailySampleCount", NameGenerator.SubstitutionValue.dailySampleCount.getPreviewValue());
+    public static SampleCountSubstitutionFormat weeklySampleCount = new SampleCountSubstitutionFormat("weeklySampleCount", NameGenerator.SubstitutionValue.weeklySampleCount.getPreviewValue());
+    public static SampleCountSubstitutionFormat monthlySampleCount = new SampleCountSubstitutionFormat("monthlySampleCount", NameGenerator.SubstitutionValue.monthlySampleCount.getPreviewValue());
+    public static SampleCountSubstitutionFormat yearlySampleCount = new SampleCountSubstitutionFormat("yearlySampleCount", NameGenerator.SubstitutionValue.yearlySampleCount.getPreviewValue());
 
 
     final String _name;
@@ -485,6 +499,11 @@ public class SubstitutionFormat
     public Object format(Object value)
     {
         return value;
+    }
+
+    public Object format(Object value, boolean isPreview)
+    {
+        return format(value);
     }
 
     public boolean hasSideEffects()
@@ -558,6 +577,9 @@ public class SubstitutionFormat
         if (start < 2 || !nameExpression.startsWith("${", start-2))
         {
             if (allowLookup && nameExpression.startsWith("/", start-1))
+                return messages;
+
+            if (SAMPLE_COUNTER_SUBSTITUTIONS.contains(formatName) && nameExpression.startsWith(":", start-1))
                 return messages;
 
             messages.add(String.format("The '%s' %s starting at position %d should be preceded by the string '${'.", formatName, noun, start));
