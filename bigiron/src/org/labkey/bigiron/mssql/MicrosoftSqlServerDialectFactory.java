@@ -33,7 +33,6 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
 import java.sql.DatabaseMetaData;
@@ -70,7 +69,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     {
         return switch (driverClassName)
         {
-            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2012Dialect(_tableResolver);
+            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect(_tableResolver);
             default -> null;
         };
     }
@@ -106,7 +105,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // - http://www.sqlteam.com/article/sql-server-versions
         // - http://sqlserverbuilds.blogspot.se/
 
-        // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
+        // We support only 2014 and higher as the primary data source, or 2012/2008/2008R2 as an external data source
         if (version >= 100)
         {
             if (version >= 160)
@@ -129,13 +128,21 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                 return new MicrosoftSqlServer2014Dialect(_tableResolver);
 
             if (version >= 110)
+            {
+                if (logWarnings)
+                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new MicrosoftSqlServer2012Dialect(_tableResolver);
+            }
 
             // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
             if (!primaryDataSource)
             {
                 if (logWarnings)
                     LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
+                if (version >= 110)
+                    return new MicrosoftSqlServer2012Dialect(_tableResolver);
 
                 return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
             }
@@ -154,7 +161,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // The SQL Server dialects are identical, so just test one
-        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect(_tableResolver));
+        return Set.of(new MicrosoftSqlServer2014Dialect(_tableResolver));
     }
 
     @Override

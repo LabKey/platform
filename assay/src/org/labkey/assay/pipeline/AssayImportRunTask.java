@@ -263,22 +263,24 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 {
                     job.getLogger().info("Processing excel file: " + dataFile.getName());
                     // check to see if this is a multi-sheet format
-                    ExcelLoader loader = new ExcelLoader(dataFile, true);
-                    List<String> sheets = loader.getSheetNames();
-                    if (sheets.size() > 1)
+                    try (ExcelLoader loader = new ExcelLoader(dataFile, true))
                     {
-                        job.getLogger().info("Processing excel multi-sheet format");
-
-                        // if a sheet name with results exist, use that as the results data, otherwise
-                        // default to the first sheet in the workbook
-                        if (sheets.contains(RESULTS_NAME))
+                        List<String> sheets = loader.getSheetNames();
+                        if (sheets.size() > 1)
                         {
-                            job.getLogger().info("Found sheet named : " + RESULTS_NAME + ", loading into results data.");
-                            loader.setSheetName(RESULTS_NAME);
+                            job.getLogger().info("Processing excel multi-sheet format");
+
+                            // if a sheet name with results exist, use that as the results data, otherwise
+                            // default to the first sheet in the workbook
+                            if (sheets.contains(RESULTS_NAME))
+                            {
+                                job.getLogger().info("Found sheet named : " + RESULTS_NAME + ", loading into results data.");
+                                loader.setSheetName(RESULTS_NAME);
+                            }
+                            else
+                                job.getLogger().info("Couldn't find sheet named : " + RESULTS_NAME + ", loading data from the first sheet.");
+                            return loader.load();
                         }
-                        else
-                            job.getLogger().info("Couldn't find sheet named : " + RESULTS_NAME + ", loading data from the first sheet.");
-                        return loader.load();
                     }
                 }
                 else if (FileUtil.getExtension(dataFile).equals("zip"))
@@ -291,9 +293,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loader.load();
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loader.load();
+                        }
                     }
                 }
             }
@@ -323,9 +326,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loadProperties(loader);
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loadProperties(loader);
+                        }
                     }
                 }
             }
@@ -355,9 +359,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     {
                         File resultFile = results[0];
                         job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
-                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
-
-                        return loadProperties(loader);
+                        try (DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null))
+                        {
+                            return loadProperties(loader);
+                        }
                     }
                 }
             }
@@ -413,9 +418,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
         private Map<String, Object> loadProperties(File dataFile, String sheetName, Logger log) throws PipelineJobException
         {
-            try
+            try (ExcelLoader loader = new ExcelLoader(dataFile, true))
             {
-                ExcelLoader loader = new ExcelLoader(dataFile, true);
                 if (loader.getSheetNames().contains(sheetName))
                 {
                     log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");

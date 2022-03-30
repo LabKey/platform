@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
@@ -27,6 +28,7 @@ import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.WebPartView;
@@ -48,6 +50,8 @@ import static org.apache.commons.lang3.StringUtils.replace;
  */
 public abstract class ExportScriptModel
 {
+    private static final Logger LOG = LogHelper.getLogger(ExportScriptModel.class, "Exports script snippets for developers using client APIs");
+
     private final QueryView _view;
 
     public ExportScriptModel(QueryView view)
@@ -103,6 +107,7 @@ public abstract class ExportScriptModel
         }
         catch (Exception e)
         {
+            LOG.error("Failed to export script in " + this.getClass().getName(), e);
             return "Error generating script export: " + e.getMessage();
         }
     }

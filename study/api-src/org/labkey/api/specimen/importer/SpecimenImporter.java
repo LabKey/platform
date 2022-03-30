@@ -2823,8 +2823,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         Sort sort = new Sort();
         sort.appendSortColumn(FieldKey.fromString("GlobalUniqueId"), Sort.SortDirection.DESC, false);
-        Set<String> columns = new HashSet<>();
-        columns.add("GlobalUniqueId");
+        Set<String> columns = Collections.singleton("GlobalUniqueId");
         Set<String> currentIds = new HashSet<>(new TableSelector(getTableInfoVial(), columns, null, sort).getArrayList(String.class));
 
         for (int i = 0; i < count; i += 1)

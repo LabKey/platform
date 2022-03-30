@@ -208,9 +208,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
 
-        try
+        try (DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE))
         {
-            DataLoader loader = DataLoader.get().createLoader(dataFile, null, true, null, TabLoader.TSV_FILE_TYPE);
             loader.setThrowOnErrors(settings.isThrowOnErrors());
             loader.setInferTypes(shouldInferTypes);
 
@@ -983,7 +982,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     TableInfo lookupTable = remappableLookup.get(pd);
                     try
                     {
-                        Object remapped = cache.remap(lookupTable, (String)o);
+                        Object remapped = cache.remap(lookupTable, (String)o, true);
                         if (remapped == null)
                         {
                             errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));

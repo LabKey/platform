@@ -27,7 +27,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -884,7 +883,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override @Nullable
-    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
+    public Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
     {
         Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml, root, xmlFileName);
         if (report != null)
@@ -900,7 +899,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             List<Report> existingReports = new ArrayList<>(getReports(ctx.getUser(), ctx.getContainer(), key));
 
             // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
-            // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
+            // so if we are importing an older folder archive, we need to also check for existing reports using the query name (i.e. dataset name)
             // NOTE: this will then be fixed up in the ReportImporter.postProcess
             if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
             {

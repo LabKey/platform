@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
@@ -1163,7 +1164,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        public String getLookupSchemaName()
+        public SchemaKey getLookupSchemaKey()
         {
             return null;
         }

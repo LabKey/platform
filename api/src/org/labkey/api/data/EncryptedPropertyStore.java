@@ -46,7 +46,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
 
     public EncryptedPropertyStore()
     {
-        super("Encrypted Properties");
+        super("Encrypted properties");
 
         if (Encryption.isEncryptionPassPhraseSpecified())
             _preferredPropertyEncryption = PropertyEncryption.AES128;

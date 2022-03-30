@@ -501,10 +501,8 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         return containerSession;
     }
 
-
-
     // helper to avoid filling the _log
-    private static Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(1), "GuestSession Messages");
+    private static final Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(1), "Guest session messages");
 
     private static void _logGuestSession(String ip, String msg)
     {
@@ -515,8 +513,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         logMessages.put(ip, msg);
         _log.warn(msg);
     }
-
-
 
     /*
      * This class is used to track guest sessions

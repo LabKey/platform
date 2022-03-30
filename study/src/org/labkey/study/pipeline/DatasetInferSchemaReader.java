@@ -41,14 +41,14 @@ import java.util.stream.Collectors;
 
 /**
  * Implementation of a SchemaReader that can infer dataset metadata from only the datafiles in the
- * datasets location of the study archive
+ * datasets location of the folder archive
  */
 public class DatasetInferSchemaReader extends DatasetFileReader implements SchemaReader
 {
     protected Pattern _filePattern = Pattern.compile("^(.*)\\.(?:tsv|txt|xls|xlsx)$");
 
-    private Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
-    private List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
+    private final Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
+    private final List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
     private Map<File, Pair<String, String>> _inputDataMap;
 
     public DatasetInferSchemaReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, StudyImportContext studyImportContext)

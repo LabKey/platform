@@ -27,7 +27,7 @@ public class ParticipantGroupCache
     private static final Cache<Container, ParticipantGroupCollections> PARTICIPANT_GROUP_CACHE = CacheManager.getBlockingCache(
             Constants.getMaxContainers(),
             CacheManager.DAY,
-            "Participant Group Cache",
+            "Participant groups",
             (c, argument) -> new ParticipantGroupCollections(c));
 
     private static class ParticipantGroupCollections

@@ -93,7 +93,8 @@ public interface QueryUpdateService extends HasPermission
         // used by Dataspace currently
         TargetMultipleContainers,    // (Bool) allow multi container import
         SkipTriggers,         // (Bool) skip setup and firing of trigger scripts
-        SkipRequiredFieldValidation        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
+        SkipRequiredFieldValidation,        // (Bool) skip validation of required fields, used during import when the import of data happens in two hitches (e.g., samples in one file and sample statuses in a second)
+        BulkLoad                // (Bool) skips detailed auditing
     }
 
 

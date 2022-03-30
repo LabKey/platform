@@ -74,7 +74,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     protected Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
-        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getStats());
+        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
     private Cache<K, V> getCache()
@@ -185,8 +185,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         }
     }
 
-
-
     @Override
     public void clear()
     {
@@ -261,6 +259,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     public TrackingCache<K, V> getTrackingCache()
     {
         return _sharedCache.getTrackingCache();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
     }
 
     public static class TestCase extends Assert

@@ -20,7 +20,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -35,7 +34,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.wiki.WikiType;
 import org.labkey.data.xml.wiki.WikisDocument;
 import org.labkey.data.xml.wiki.WikisType;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.model.Wiki;
@@ -47,10 +45,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: jeckels
@@ -117,7 +119,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
 
                         // TODO: We should add VirtualFile.getName()
                         String folderName = new File(wikiSubDir.getLocation()).getName();
-                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, folderName, ctx, displayOrder++);
+                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, folderName, ctx, displayOrder++, wikiXml.getAttachmentsOrder());
                         if (wikiXml.getParent() != null)
                         {
                             parentsToBeSet.put(wiki, wikiXml.getParent());
@@ -131,7 +133,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
                         if (null != wikiSubDir && !importedFolderNames.contains(wikiSubDirName))
                         {
-                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, wikiSubDirName, ctx, displayOrder++);
+                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, wikiSubDirName, ctx, displayOrder++, null);
                             importedFolderNames.add(wikiSubDirName);
                         }
                     }
@@ -164,7 +166,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, ImportContext<Folder> ctx, int displayOrder) throws IOException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, FolderImportContext ctx, int displayOrder, String attachmentOrder) throws IOException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();
@@ -204,6 +206,11 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                     InputStream aIS = wikiSubDir.getInputStream(fileName);
                     attachments.add(new InputStreamAttachmentFile(aIS, fileName));
                 }
+            }
+            if (attachmentOrder != null) {
+                AtomicInteger inc = new AtomicInteger();
+                Map<String, Integer> attachmentOrderMap = Stream.of(attachmentOrder.split(";")).collect(Collectors.toMap(i -> i, i -> inc.getAndIncrement()));
+                attachments.sort(Comparator.comparing(e -> attachmentOrderMap.get(e.getFilename())));
             }
 
             wikiversion.setTitle(title == null ? wiki.getName() : title);

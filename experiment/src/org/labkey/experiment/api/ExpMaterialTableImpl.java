@@ -53,6 +53,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -68,6 +69,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -75,6 +77,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -669,6 +672,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
+
+        if (null != _ss && AppProps.getInstance().isExperimentalFeatureEnabled(ExperimentModule.EXPERIMENTAL_LINEAGE_PARENT_LOOKUP))
+        {
+            MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestor Lookups Placeholder", this, _rootTable.getColumn("rowid"), _ss);
+            addColumn(lineageLookup);
+        }
     }
 
     @Override
@@ -780,6 +789,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     addColumn(mvColumn);
                     propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                 }
+
+                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
+                if (!isTargetLookup && propColumn.getFk() instanceof PdLookupForeignKey)
+                    ((PdLookupForeignKey) propColumn.getFk()).setContainerFilter(getContainerFilter());
             }
 
             if (!mvColumns.contains(propColumn.getFieldKey()))

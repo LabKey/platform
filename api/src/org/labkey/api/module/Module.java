@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * User: migra
  * Date: Jul 14, 2005
  */
-public interface Module extends Comparable<Module>
+public interface Module
 {
     enum TabDisplayMode
     {

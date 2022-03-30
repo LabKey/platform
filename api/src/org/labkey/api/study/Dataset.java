@@ -95,6 +95,12 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
+                    public ActionURL getSourceActionURL(ExpObject source, Container container)
+                    {
+                        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, (ExpProtocol) source);
+                    }
+
+                    @Override
                     public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
                     {
                         if (publishSourceId != null)
@@ -140,7 +146,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    protected String getAuditMessageSourceType()
+                    public String getSourceType()
                     {
                         return "assay";
                     }
@@ -201,7 +207,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    protected String getAuditMessageSourceType()
+                    public String getSourceType()
                     {
                         return "sample type";
                     }
@@ -218,21 +224,17 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
         public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Integer sourceRowId);
-
-        protected abstract String getAuditMessageSourceType();
-        public ActionURL getSourceActionURL(ExpObject source, Container container)
-        {
-            return null;
-        }
+        public abstract String getSourceType();
+        public abstract ActionURL getSourceActionURL(ExpObject source, Container container);
 
         public String getLinkToStudyAuditMessage(ExpObject source, int recordCount)
         {
-            return recordCount + " row(s) were linked to a study from the " + getAuditMessageSourceType() + ": " + source.getName();
+            return recordCount + " row(s) were linked to a study from the " + getSourceType() + ": " + source.getName();
         }
 
         public String getRecallFromStudyAuditMessage(String label, int recordCount)
         {
-            return recordCount + " row(s) were recalled from a study to the " + getAuditMessageSourceType() + ": " + label;
+            return recordCount + " row(s) were recalled from a study to the " + getSourceType() + ": " + label;
         }
     }
 
@@ -275,7 +277,8 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     /**
      * @return true if this dataset is backed by published data (assay, sample type etc). Note that if a dataset happens
-     * to contain published data but isn't linked to the publish source in the server (ie., when importing a study archive), this method will return false.
+     * to contain published data but isn't linked to the publish source in the server (ie., when importing a folder archive),
+     * this method will return false.
      */
     boolean isPublishedData();
 
@@ -366,8 +369,11 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
      * @param u user performing the update
      * @param lsid the lsid of the dataset row
      * @param data the data to be updated
+     *
+     * Don't use this method unless you are DatasetUpdateService
      */
-    String updateDatasetRow(User u, String lsid, Map<String,Object> data) throws ValidationException;
+    @Deprecated
+    String updateDatasetRow_forDatasetUpdateService(User u, String lsid, Map<String,Object> data) throws ValidationException;
 
     /**
      * Fetches a single row from a dataset given an LSID

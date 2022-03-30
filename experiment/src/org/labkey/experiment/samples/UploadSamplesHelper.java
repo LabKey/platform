@@ -961,7 +961,7 @@ public abstract class UploadSamplesHelper
             {
                 _existingNames = new HashSet<>();
                 SamplesSchema schema = new SamplesSchema(User.getSearchUser(), _container);
-                TableSelector ts = new TableSelector(schema.getTable(sampletype, null), Set.of("Name")).setMaxRows(1_000_000);
+                TableSelector ts = new TableSelector(schema.getTable(sampletype, null), Collections.singleton("Name")).setMaxRows(1_000_000);
                 ts.fillSet(_existingNames);
             }
             return _existingNames.contains(name);

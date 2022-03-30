@@ -18,7 +18,6 @@ package org.labkey.query.persist;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -39,14 +38,7 @@ import java.util.Map;
  */
 public class QueryDefCache
 {
-    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "QueryDef Database Cache", new CacheLoader<Container, QueryDefCollections>()
-    {
-        @Override
-        public QueryDefCollections load(Container c, @Nullable Object argument)
-        {
-            return new QueryDefCollections(c);
-        }
-    });
+    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
 
     private static class QueryDefCollections
     {

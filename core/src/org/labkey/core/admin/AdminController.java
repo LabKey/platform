@@ -80,6 +80,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -137,6 +138,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.CreateProjectPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -161,7 +163,6 @@ import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
@@ -199,6 +200,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
@@ -209,12 +211,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.URI;
@@ -224,6 +229,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -243,6 +249,7 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -953,7 +960,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.naturalOrder());
+            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
@@ -2780,6 +2787,9 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
+        private final DecimalFormat commaf0 = new DecimalFormat("#,##0");
+        private final DecimalFormat percent = new DecimalFormat("0%");
+
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
@@ -2793,7 +2803,7 @@ public class AdminController extends SpringActionController
                 throw new RedirectException(redirect);
             }
 
-            List<TrackingCache> caches = CacheManager.getKnownCaches();
+            List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
 
             if (form.getDebugName() != null)
             {
@@ -2824,16 +2834,22 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Caches", cacheStats);
+            appendStats(html, "Caches", cacheStats, false);
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Transaction Caches", transactionStats);
+            appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html.toString());
         }
 
-        private void appendStats(StringBuilder html, String title, List<CacheStats> stats)
+        private void appendStats(StringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
         {
+            List<CacheStats> stats = skipUnusedCaches ?
+                allStats.stream()
+                    .filter(stat->stat.getMaxSize() > 0)
+                    .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
+                allStats;
+
             Collections.sort(stats);
 
             html.append("<p><b>");
@@ -2849,6 +2865,7 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Misses</td>");
             html.append("<td class=\"labkey-column-header\">Puts</td>");
             html.append("<td class=\"labkey-column-header\">Expirations</td>");
+            html.append("<td class=\"labkey-column-header\">Evictions</td>");
             html.append("<td class=\"labkey-column-header\">Removes</td>");
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
@@ -2859,6 +2876,7 @@ public class AdminController extends SpringActionController
             long misses = 0;
             long puts = 0;
             long expirations = 0;
+            long evictions = 0;
             long removes = 0;
             long clears = 0;
             int rowCount = 0;
@@ -2870,6 +2888,7 @@ public class AdminController extends SpringActionController
                 misses += stat.getMisses();
                 puts += stat.getPuts();
                 expirations += stat.getExpirations();
+                evictions += stat.getEvictions();
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
@@ -2878,11 +2897,10 @@ public class AdminController extends SpringActionController
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
                 Long limit = stat.getLimit();
-                Long maxSize = stat.getMaxSize();
+                long maxSize = stat.getMaxSize();
 
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
-
 
                 html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
@@ -2896,12 +2914,21 @@ public class AdminController extends SpringActionController
             double ratio = 0 != gets ? misses / (double)gets : 0;
             html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
             html.append("</table>\n");
         }
+
+        private static final List<String> PREFIXES_TO_SKIP = List.of(
+            "java.base/java.lang.Thread.getStackTrace",
+            "org.labkey.api.cache.CacheManager",
+            "org.labkey.api.cache.DbCache",
+            "org.labkey.api.cache.Throttle",
+            "org.labkey.api.data.DatabaseCache",
+            "org.labkey.api.module.ModuleResourceCache"
+        );
 
         private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
@@ -2909,8 +2936,17 @@ public class AdminController extends SpringActionController
 
             if (creationStackTrace != null)
             {
+                boolean trimming = true;
                 for (StackTraceElement element : creationStackTrace)
                 {
+                    // Skip the first few uninteresting stack trace elements to highlight the caller we care about
+                    if (trimming)
+                    {
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                            continue;
+
+                        trimming = false;
+                    }
                     sb.append(element);
                     sb.append("\n");
                 }
@@ -2934,14 +2970,14 @@ public class AdminController extends SpringActionController
                 if (null == stat)
                     html.append("<td>&nbsp;</td>");
                 else
-                    html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+                    html.append("<td align=\"right\">").append(commaf0.format(stat)).append("</td>");
             }
         }
 
         private void appendDoubles(StringBuilder html, double... stats)
         {
             for (double stat : stats)
-                html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
+                html.append("<td align=\"right\">").append(percent.format(stat)).append("</td>");
         }
 
         @Override
@@ -3322,7 +3358,7 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
-        public final List<Pair<String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
+        public final List<Tuple3<Boolean, String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
         public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
         public final List<HeldReference> references;
         public final List<String> graphNames = new ArrayList<>();
@@ -3395,24 +3431,49 @@ public class AdminController extends SpringActionController
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
             if (membean != null)
             {
-                memoryUsages.add(new Pair<>(HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
-                memoryUsages.add(new Pair<>("Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+                memoryUsages.add(Tuple3.of(true, HEAP_MEMORY_KEY, getUsage(membean.getHeapMemoryUsage())));
             }
 
             List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             for (MemoryPoolMXBean pool : pools)
             {
-                memoryUsages.add(new Pair<>(pool.getName() + " " + pool.getType(), getUsage(pool)));
+                if (pool.getType() == MemoryType.HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
+            }
+
+            if (membean != null)
+            {
+                memoryUsages.add(Tuple3.of(true, "Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
+            }
+
+            for (MemoryPoolMXBean pool : pools)
+            {
+                if (pool.getType() == MemoryType.NON_HEAP)
+                {
+                    memoryUsages.add(Tuple3.of(false, pool.getName() + " " + pool.getType(), getUsage(pool)));
+                    graphNames.add(pool.getName());
+                }
+            }
+
+            for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class))
+            {
+                memoryUsages.add(Tuple3.of(true, "Buffer pool " + pool.getName(), new MemoryUsageSummary(pool)));
                 graphNames.add(pool.getName());
             }
+
+            DecimalFormat commaf0 = new DecimalFormat("#,##0");
+
 
             // class loader:
             ClassLoadingMXBean classbean = ManagementFactory.getClassLoadingMXBean();
             if (classbean != null)
             {
-                systemProperties.add(new Pair<>("Loaded Class Count", classbean.getLoadedClassCount()));
-                systemProperties.add(new Pair<>("Unloaded Class Count", classbean.getUnloadedClassCount()));
-                systemProperties.add(new Pair<>("Total Loaded Class Count", classbean.getTotalLoadedClassCount()));
+                systemProperties.add(new Pair<>("Loaded Class Count", commaf0.format(classbean.getLoadedClassCount())));
+                systemProperties.add(new Pair<>("Unloaded Class Count", commaf0.format(classbean.getUnloadedClassCount())));
+                systemProperties.add(new Pair<>("Total Loaded Class Count", commaf0.format(classbean.getTotalLoadedClassCount())));
             }
 
             // runtime:
@@ -3450,7 +3511,21 @@ public class AdminController extends SpringActionController
             if (null != cacheMem)
                 systemProperties.add(new Pair<>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
-            systemProperties.add(new Pair<>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            if (osBean != null)
+            {
+                systemProperties.add(new Pair<>("CPU count", osBean.getAvailableProcessors()));
+
+                DecimalFormat f3 = new DecimalFormat("0.000");
+
+                if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+                {
+                    systemProperties.add(new Pair<>("Total OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getTotalMemorySize())));
+                    systemProperties.add(new Pair<>("Free OS memory", FileUtils.byteCountToDisplaySize(sunOsBean.getFreeMemorySize())));
+                    systemProperties.add(new Pair<>("OS CPU load", f3.format(sunOsBean.getCpuLoad())));
+                    systemProperties.add(new Pair<>("JVM CPU load", f3.format(sunOsBean.getProcessCpuLoad())));
+                }
+            }
 
             //noinspection ConstantConditions
             assert assertsEnabled = true;
@@ -3472,37 +3547,26 @@ public class AdminController extends SpringActionController
 
     public static class MemoryUsageSummary
     {
-        private final String _init;
-        private final String _used;
-        private final String _committed;
-        private final String _max;
+
+        public final long _init;
+        public final long _used;
+        public final long _committed;
+        public final long _max;
 
         public MemoryUsageSummary(MemoryUsage usage)
         {
-            _init = FileUtils.byteCountToDisplaySize(usage.getInit());
-            _used = FileUtils.byteCountToDisplaySize(usage.getUsed());
-            _committed = FileUtils.byteCountToDisplaySize(usage.getCommitted());
-            _max = FileUtils.byteCountToDisplaySize(usage.getMax());
+            _init = usage.getInit();
+            _used = usage.getUsed();
+            _committed = usage.getCommitted();
+            _max = usage.getMax();
         }
 
-        public String getInit()
+        public MemoryUsageSummary(BufferPoolMXBean pool)
         {
-            return _init;
-        }
-
-        public String getUsed()
-        {
-            return _used;
-        }
-
-        public String getCommitted()
-        {
-            return _committed;
-        }
-
-        public String getMax()
-        {
-            return _max;
+            _init = -1;
+            _used = pool.getMemoryUsed();
+            _committed = _used;
+            _max = pool.getTotalCapacity();
         }
     }
 
@@ -3573,6 +3637,7 @@ public class AdminController extends SpringActionController
         {
             MemoryUsage usage = null;
             boolean showLegend = false;
+            String title = form.getType();
             if ("Heap".equals(form.getType()))
             {
                 usage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -3591,16 +3656,58 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (usage == null)
-                throw new NotFoundException();
+            Pair<Long, String> divisor = null;
 
-            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
             List<MemoryCategory> types = new ArrayList<>(4);
 
-            types.add(new MemoryCategory("Init", usage.getInit() / (1024 * 1024)));
-            types.add(new MemoryCategory("Used", usage.getUsed() / (1024 * 1024)));
-            types.add(new MemoryCategory("Committed", usage.getCommitted() / (1024 * 1024)));
-            types.add(new MemoryCategory("Max", usage.getMax() / (1024 * 1024)));
+            if (usage == null)
+            {
+                boolean found = false;
+                for (Iterator<BufferPoolMXBean> it = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class).iterator(); it.hasNext() && !found;)
+                {
+                    BufferPoolMXBean pool = it.next();
+                    if (form.getType().equals(pool.getName()))
+                    {
+                        long total = pool.getTotalCapacity();
+                        long used = pool.getMemoryUsed();
+
+                        divisor = getDivisor(total);
+
+                        title = "Buffer pool " + title;
+
+                        if (total > 0 || used > 0)
+                        {
+                            types.add(new MemoryCategory("Used", used / divisor.first));
+                            types.add(new MemoryCategory("Max", total / divisor.first));
+                        }
+                        found = true;
+                    }
+                }
+                if (!found)
+                {
+                    throw new NotFoundException();
+                }
+            }
+            else
+            {
+                if (usage.getInit() > 0 || usage.getUsed() > 0 || usage.getCommitted() > 0 || usage.getMax() > 0)
+                {
+                    divisor = getDivisor(Math.max(usage.getInit(), Math.max(usage.getUsed(), Math.max(usage.getCommitted(), usage.getMax()))));
+
+                    types.add(new MemoryCategory("Init", usage.getInit() / divisor.first));
+                    types.add(new MemoryCategory("Used", usage.getUsed() / divisor.first));
+                    types.add(new MemoryCategory("Committed", usage.getCommitted() / divisor.first));
+                    types.add(new MemoryCategory("Max", usage.getMax() / divisor.first));
+                }
+            }
+
+            if (divisor != null)
+            {
+                title += " (" + divisor.second + ")";
+            }
+
+            DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
             Collections.sort(types);
 
             for (int i = 0; i < types.size(); i++)
@@ -3609,12 +3716,34 @@ public class AdminController extends SpringActionController
                 dataset.addValue(mbPastPrevious, types.get(i).getType(), "");
             }
 
-            JFreeChart chart = ChartFactory.createStackedBarChart(form.getType(), null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            JFreeChart chart = ChartFactory.createStackedBarChart(title, null, null, dataset, PlotOrientation.HORIZONTAL, showLegend, false, false);
+            chart.getTitle().setFont(new Font("SansSerif", Font.BOLD, 14));
             response.setContentType("image/png");
 
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
         }
+
+        private Pair<Long, String> getDivisor(long l)
+        {
+            if (l > 4096L * 1024L * 1024L)
+            {
+                return Pair.of(1024L * 1024L * 1024L, "GB");
+            }
+            if (l > 4096L * 1024L)
+            {
+                return Pair.of(1024L * 1024L, "MB");
+            }
+            if (l > 4096L)
+            {
+                return Pair.of(1024L, "KB");
+            }
+
+            return Pair.of(1L, "bytes");
+
+        }
     }
+
+
 
     public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {
@@ -6763,18 +6892,19 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public static class CreateFolderAction extends FormViewAction<ManageFoldersForm>
+    private static abstract class AbstractCreateFolderAction<FORM extends ManageFoldersForm> extends FormViewAction<FORM>
     {
         private ActionURL _successURL;
 
+        protected Container _newContainer;
+
         @Override
-        public void validateCommand(ManageFoldersForm target, Errors errors)
+        public void validateCommand(FORM target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -6787,7 +6917,7 @@ public class AdminController extends SpringActionController
                     form.setFolderType(folderType.getName());
                 }
             }
-            JspView<ManageFoldersForm> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            JspView<FORM> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
@@ -6815,7 +6945,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        public boolean handlePost(FORM form, BindException errors) throws Exception
         {
             Container parent = getViewContext().getContainerNoTab();
             String folderName = StringUtils.trimToNull(form.getName());
@@ -6837,7 +6967,6 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    Container c;
                     String folderType = form.getFolderType();
 
                     if (null == folderType)
@@ -6869,7 +6998,7 @@ public class AdminController extends SpringActionController
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
+                        _newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
                     }
                     else
                     {
@@ -6892,8 +7021,8 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
-                        c.setFolderType(type, getUser());
+                        _newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
+                        _newContainer.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -6905,13 +7034,13 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules, getUser());
+                            _newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                            c.setDefaultModule(defaultModule);
+                            _newContainer.setDefaultModule(defaultModule);
                         }
                     }
 
-                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(c);
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(_newContainer);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;
@@ -6923,7 +7052,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(ManageFoldersForm form)
+        public ActionURL getSuccessURL(FORM form)
         {
             return _successURL;
         }
@@ -6931,6 +7060,52 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class CreateFolderAction extends AbstractCreateFolderAction<ManageFoldersForm>
+    {
+    }
+
+    public static class CreateProjectForm extends ManageFoldersForm
+    {
+        private boolean _assignProjectAdmin = false;
+
+        public boolean isAssignProjectAdmin()
+        {
+            return _assignProjectAdmin;
+        }
+
+        @SuppressWarnings("unused")
+        public void setAssignProjectAdmin(boolean assignProjectAdmin)
+        {
+            _assignProjectAdmin = assignProjectAdmin;
+        }
+    }
+
+    @RequiresPermission(CreateProjectPermission.class)
+    public static class CreateProjectAction extends AbstractCreateFolderAction<CreateProjectForm>
+    {
+        @Override
+        public void validateCommand(CreateProjectForm target, Errors errors)
+        {
+            super.validateCommand(target, errors);
+            if (!getContainer().isRoot())
+                errors.reject(ERROR_MSG, "Must be invoked from the root");
+        }
+
+        @Override
+        public boolean handlePost(CreateProjectForm form, BindException errors) throws Exception
+        {
+            boolean success = super.handlePost(form, errors);
+            if (success && form.isAssignProjectAdmin())
+            {
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(_newContainer.getPolicy());
+                policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                SecurityPolicyManager.savePolicy(policy);
+            }
+            return success;
         }
     }
 
@@ -8559,7 +8734,8 @@ public class AdminController extends SpringActionController
                 var defaultFolderType = manager.getDefaultFolderType();
                 // If a default folder type has not yet been configuration use "Collaboration" folder type as the default
                 defaultFolderType = defaultFolderType != null ? defaultFolderType : manager.getFolderType(CollaborationFolderType.TYPE_NAME);
-                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(), defaultFolderType);
+                boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
+                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(userHasEnableRestrictedModulesPermission), defaultFolderType);
             }
 
             return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", bean, errors);
@@ -10461,7 +10637,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
         {
-            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 

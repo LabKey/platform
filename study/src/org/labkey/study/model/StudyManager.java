@@ -327,7 +327,7 @@ public class StudyManager
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
-        _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "StudySharedProperties",
+        _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
                 (key, argument) ->
                 {
                     Container sharedContainer = ContainerManager.getSharedContainer();
@@ -3539,7 +3539,9 @@ public class StudyManager
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
+        // if we are being called by QUS we don't want to call triggers twice or resync twice
         options.put(QueryUpdateService.ConfigParameters.SkipTriggers, skipTriggers);
+        options.put(DatasetUpdateService.Config.SkipResyncStudy, skipTriggers);
         context.setConfigParameters(options);
 
         DataLoader loader = new MapLoader(data);

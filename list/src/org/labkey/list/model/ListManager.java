@@ -100,7 +100,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LISTID_FIELD_NAME = "listId";
 
 
-    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions"), new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {
@@ -209,7 +209,8 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (ti instanceof ListTable)
             return ((ListTable)ti).getRealTable().getSelectName();
-        else return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
+        else
+            return ti.getSelectName();  // if db is being upgraded from <= 13.1, lists are still SchemaTableInfo instances
     }
 
     @Nullable

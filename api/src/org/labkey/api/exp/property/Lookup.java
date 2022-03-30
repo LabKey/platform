@@ -19,21 +19,34 @@ package org.labkey.api.exp.property;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.SchemaKey;
+
+import java.util.Objects;
 
 public class Lookup
 {
     Container _container;
-    String _schemaName;
+    SchemaKey _schemaKey;
     String _queryName;
 
     public Lookup()
     {
     }
 
+    // Callers need to be explicit about how this is encoded.  This constructor assumes "SchemaKey.toString()" encoding.
+    // Consider using SchemaKey constructor instead.
+    @Deprecated
     public Lookup(Container c, String schema, String query)
     {
         _container = c;
-        _schemaName = schema;
+        _schemaKey = null == schema ? null : SchemaKey.fromString(schema);
+        _queryName = query;
+    }
+
+    public Lookup(Container c, SchemaKey schema, String query)
+    {
+        _container = c;
+        _schemaKey = schema;
         _queryName = query;
     }
 
@@ -42,9 +55,15 @@ public class Lookup
         return _container;
     }
 
+    @Deprecated
     public String getSchemaName()
     {
-        return _schemaName;
+        return Objects.toString(_schemaKey,null);
+    }
+
+    public SchemaKey getSchemaKey()
+    {
+        return _schemaKey;
     }
 
     public String getQueryName()
@@ -59,7 +78,7 @@ public class Lookup
 
     public void setSchemaName(String name)
     {
-        _schemaName = name;
+        _schemaKey = null == name ? null : SchemaKey.fromString(name);
     }
 
     public void setQueryName(String name)
@@ -77,7 +96,7 @@ public class Lookup
 
         if (_container != null ? !_container.equals(lookup._container) : lookup._container != null) return false;
         if (_queryName != null ? !_queryName.equalsIgnoreCase(lookup._queryName) : lookup._queryName != null) return false;
-        if (_schemaName != null ? !_schemaName.equalsIgnoreCase(lookup._schemaName) : lookup._schemaName != null) return false;
+        if (_schemaKey != null ? !_schemaKey.equals(lookup._schemaKey) : lookup._schemaKey != null) return false;
 
         return true;
     }
@@ -86,7 +105,7 @@ public class Lookup
     public int hashCode()
     {
         int result = _container != null ? _container.hashCode() : 0;
-        result = 31 * result + (_schemaName != null ? _schemaName.hashCode() : 0);
+        result = 31 * result + (_schemaKey != null ? _schemaKey.hashCode() : 0);
         result = 31 * result + (_queryName != null ? _queryName.hashCode() : 0);
         return result;
     }

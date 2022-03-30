@@ -1256,15 +1256,10 @@ public abstract class Method
     
     public static Method resolve(SqlDialect d, String name)
     {
+        Method m = null;
         name = name.toLowerCase();
-        // UNDONE
-        Method m = labkeyMethod.get(name);
-        if (null != m)
-            return m;
         if (null != d )
         {
-            if (name.startsWith("::"))
-                name = name.substring(2);
             if (d.isPostgreSQL())
                 m = postgresMethods.get(name);
             else if (d.isSqlServer())
@@ -1275,6 +1270,9 @@ public abstract class Method
             if (null != m)
                 return m;
         }
+        m = labkeyMethod.get(name);
+        if (null != m)
+            return m;
         throw new IllegalArgumentException(name);
     }
 
@@ -1551,6 +1549,8 @@ public abstract class Method
         mssqlMethods.put("space",new PassthroughMethod("space",JdbcType.VARCHAR,1,1));
         mssqlMethods.put("str",new PassthroughMethod("str",JdbcType.VARCHAR,1,3));
         mssqlMethods.put("stuff",new PassthroughMethod("stuff",JdbcType.VARCHAR,4,4));
+        mssqlMethods.put("ucase", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
+        mssqlMethods.put("upper", new PassthroughMethod("upper", JdbcType.VARCHAR, 1, 1));
     }
 
     final static Map<String, Method> oracleMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
