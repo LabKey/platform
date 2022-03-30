@@ -298,7 +298,7 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
-        DomainKind kind = dd.getDomainKind();
+        DomainKind<?> kind = dd.getDomainKind();
         if (kind != null)
         {
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
