@@ -74,6 +74,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
         if (_inputStream == null)
             throw new IllegalStateException("No input stream is active for this ByteArrayAttachmentFile");
         _inputStream.close();
+        _inputStream = null;
     }
 
     @Override
