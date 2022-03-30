@@ -91,9 +91,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            new WikiWebPartFactory(),
+            new MenuWikiWebPartFactory(),
             new WikiTOCFactory(),
-            new MenuWikiWebPartFactory()
+            new WikiWebPartFactory()
         );
     }
 

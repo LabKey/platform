@@ -48,6 +48,23 @@ public class LabKeyCollectors
     }
 
     /**
+     * Returns a {@link Collector} that builds a {@link CaseInsensitiveHashMap}
+     */
+    public static <T, U> Collector<T, ?, Map<String, U>> toCaseInsensitiveMap(
+        Function<? super T, String> keyMapper,
+        Function<? super T, ? extends U> valueMapper)
+    {
+        return toMap(
+            keyMapper,
+            valueMapper,
+            (u, v) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", u));
+            },
+            CaseInsensitiveHashMap::new
+        );
+    }
+
+    /**
      * Returns a {@link Collector} that accumulates elements into a {@link MultiValuedMap} whose keys and values are the
      * result of applying the provided mapping functions to the input elements, an approach that mimics {@link Collectors#toMap(Function, Function)}.
      *

@@ -318,7 +318,7 @@ public class SearchController extends SpringActionController
             SearchService ss = SearchService.get();
             if (null == ss)
             {
-                errors.reject("Indexing service is not running");
+                errors.reject(ERROR_MSG, "Indexing service is not running");
                 return false;
             }
 

@@ -42,6 +42,7 @@
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
+    final boolean existingWiki = null != model.getEntityId();
     final String ID_PREFIX = "wiki-input-";
     final HtmlString H_ID_PREFIX = h("wiki-input-");
     String sep;
@@ -120,9 +121,9 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name * <%= helpPopup("Name", "This field is required") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name<%=text(existingWiki ? helpPopup("Name", "Wiki pages can be renamed on the Manage page").toString() : " * " + helpPopup("Name", "This field is required"))%></label></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"/>
+                        <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"<%=text(existingWiki ? " class=\"labkey-form-label\" style=\"text-align:left;padding:1px 2px;\" readonly=\"readonly\"" : "")%>/>
                     </td>
                 </tr>
                 <tr>

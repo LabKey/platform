@@ -75,6 +75,7 @@ import org.labkey.api.view.LinkBarView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.PermanentRedirectException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
@@ -113,6 +114,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -122,7 +124,6 @@ public class WikiController extends SpringActionController
 {
     private static final Logger LOG = LogManager.getLogger(WikiController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
-    private static final boolean SHOW_CHILD_REORDERING = false;
 
     public WikiController()
     {
@@ -139,7 +140,6 @@ public class WikiController extends SpringActionController
         //if we need to do anything more complicated, return various derived classes based on context
         return new BaseWikiPermissions(getUser(), getContainer());
     }
-
 
     @Override
     protected @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
@@ -179,7 +179,6 @@ public class WikiController extends SpringActionController
 
         return template;
     }
-
 
     public static class CustomizeWikiPartView extends JspView<Portal.WebPart>
     {
@@ -275,18 +274,15 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     private ActionURL getBeginURL(Container c)
     {
         return getPageURL(getDefaultPage(c), c);
     }
 
-
     public static ActionURL getPageURL(Container c, @Nullable String name)
     {
         return getWikiURL(c, PageAction.class, name);
     }
-
 
     public static ActionURL getEditWikiURL(Container c, Class<? extends Controller> actionClass, @Nullable String name, Boolean create)
     {
@@ -296,7 +292,6 @@ public class WikiController extends SpringActionController
 
         return url;
     }
-
 
     public static ActionURL getWikiURL(Container c, Class<? extends Controller> actionClass, @Nullable String name)
     {
@@ -308,12 +303,11 @@ public class WikiController extends SpringActionController
         return url;
     }
 
-
     /**
      * This method represents the point of entry into the pageflow
      */
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<Object>
     {
         @SuppressWarnings("UnusedDeclaration")
         public BeginAction()
@@ -343,7 +337,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     public static Wiki getDefaultPage(Container c)
     {
         //look for page named "default"
@@ -366,7 +359,6 @@ public class WikiController extends SpringActionController
 
         return wiki;
     }
-
 
     @RequiresPermission(ReadPermission.class) //will test explicitly below
     public class DeleteAction extends ConfirmAction<WikiNameForm>
@@ -465,6 +457,7 @@ public class WikiController extends SpringActionController
     {
         private Wiki _wiki = null;
         private WikiVersion _wikiVersion = null;
+        private boolean _isRename = false;
 
         @SuppressWarnings({"UnusedDeclaration"})
         public ManageAction()
@@ -480,10 +473,10 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(WikiManageForm form, boolean reshow, BindException errors)
         {
-            String name = form.getName();
+            String name = form.getNewName();
 
             if (name == null || (errors != null && errors.getErrorCount()>0))
-                name = form.getOriginalName();
+                name = form.getName();
 
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
 
@@ -500,15 +493,14 @@ public class WikiController extends SpringActionController
             bean.pageNames = WikiSelectManager.getPageNames(getContainer());
             bean.siblings = WikiSelectManager.getChildren(getContainer(), _wiki.getParent());
             bean.possibleParents = WikiSelectManager.getPossibleParents(getContainer(), _wiki);
-            bean.showChildren = SHOW_CHILD_REORDERING;
+            bean.aliases = new ArrayList<>(WikiSelectManager.getAliases(getContainer(), _wiki.getRowId()));
 
-            JspView manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
+            JspView<ManageBean> manageView = new JspView<>("/org/labkey/wiki/view/wikiManage.jsp", bean, errors);
             manageView.setTitle("Wiki Configuration");
             getPageConfig().setFocusId("name");
 
             return manageView;
         }
-
 
         public class ManageBean
         {
@@ -516,22 +508,42 @@ public class WikiController extends SpringActionController
             public List<String> pageNames;
             public Collection<WikiTree> siblings;
             public Set<WikiTree> possibleParents;
-            public boolean showChildren;
+            public Collection<String> aliases;
         }
 
+        @Override
+        public void validateCommand(WikiManageForm form, Errors errors)
+        {
+            //check name
+            String originalName = form.getName();
+            String newName = form.getNewName();
+            if (originalName == null)
+            {
+                errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
+            }
+            else if (newName != null && !newName.equalsIgnoreCase(originalName))
+            {
+                // rename - check for existing wiki with this name
+                if (WikiManager.wikiNameExists(getContainer(), newName))
+                    errors.rejectValue("name", ERROR_MSG, "A page with the name '" + newName + "' already exists in this folder. Please choose a different name.");
+                _isRename = true;
+            }
+        }
 
         @Override
         public boolean handlePost(WikiManageForm form, BindException errors)
         {
-            String originalName = form.getOriginalName();
-            String newName = form.getName();
+            String originalName = form.getName();
+            String newName = _isRename ? form.getNewName() : originalName;
             Container c = getContainer();
-            _wiki = WikiSelectManager.getWiki(c, originalName);
+            Wiki wiki = WikiSelectManager.getWiki(c, originalName);
 
-            if (null == _wiki)
+            if (null == wiki)
             {
                 throw new NotFoundException();
             }
+
+            _wiki = new Wiki(wiki); // Clone so we don't mutate the cached copy
 
             BaseWikiPermissions perms = getPermissions();
             if (!perms.allowUpdate(_wiki))
@@ -540,7 +552,8 @@ public class WikiController extends SpringActionController
             // Get the latest version based on previous properties
             WikiVersion versionOld = _wiki.getLatestVersion();
 
-            // Now update wiki with newly submitted properties  TODO: Should clone wiki instead of changing cached copy (e.g., for concurrency and in case something goes wrong with update)
+            // Now update wiki with newly submitted properties
+
             _wiki.setName(newName);
             _wiki.setParent(form.getParent());
             _wiki.setShouldIndex(form.isShouldIndex());
@@ -558,14 +571,34 @@ public class WikiController extends SpringActionController
                 _wikiVersion = null;
             }
 
-            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
+            List<String> newAliases = new ArrayList<>();
 
-            if (SHOW_CHILD_REORDERING)
+            // Update aliases
+            if (_isRename && form.isAddAlias())
             {
-                int[] childOrder = form.getChildOrderArray();
-                if (childOrder.length > 0)
-                    updateDisplayOrder(_wiki.children(), childOrder);
+                newAliases.add(originalName);
             }
+            if (null != form.getAliases())
+            {
+                Arrays.stream(form.getAliases().split("\n"))
+                    .map(StringUtils::trimToNull)
+                    .filter(Objects::nonNull)
+                    .forEach(newAliases::add);
+                newAliases.sort(String.CASE_INSENSITIVE_ORDER);
+            }
+            Collection<String> existingAliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
+            if (!newAliases.equals(existingAliases))
+            {
+                WikiManager mgr = WikiManager.get();
+                mgr.deleteAliases(c, wiki);
+
+                // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
+                // regardless of errors, complete all other edits.
+                newAliases.forEach(alias->mgr.addAlias(getUser(), _wiki, alias, errors));
+                WikiCache.uncache(c, wiki, true);
+            }
+
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
 
             int[] siblingOrder = form.getSiblingOrderArray();
 
@@ -575,13 +608,7 @@ public class WikiController extends SpringActionController
                 updateDisplayOrder(siblings, siblingOrder);
             }
 
-            return true;
-        }
-
-        @Override
-        public void validateCommand(WikiManageForm wikiManageForm, Errors errors)
-        {
-            wikiManageForm.validate(errors);
+            return !errors.hasErrors();
         }
 
         @Override
@@ -600,7 +627,7 @@ public class WikiController extends SpringActionController
             }
             catch (IllegalArgumentException ignored) {}
             nextPage.deleteParameters();
-            nextPage.addParameter("name", form.getName());
+            nextPage.addParameter("name", _wiki.getName());
             return nextPage;
         }
 
@@ -620,7 +647,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     private void updateDisplayOrder(List<Wiki> pages, int[] order)
     {
         if (!verifyOrder(pages, order))
@@ -639,7 +665,6 @@ public class WikiController extends SpringActionController
             }
         }
     }
-
 
     private boolean verifyOrder(List<Wiki> wikis, int[] ids)
     {
@@ -676,7 +701,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PrintAllAction extends SimpleViewAction
+    public class PrintAllAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -684,7 +709,7 @@ public class WikiController extends SpringActionController
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
 
-            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
+            JspView<PrintAllBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setTemplate(Template.Print);
@@ -719,7 +744,7 @@ public class WikiController extends SpringActionController
             // build a set of all descendants of the root page
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, _rootWiki);
 
-            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
+            JspView<PrintAllBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(Template.Print);
 
@@ -733,7 +758,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     public class PrintAllBean
     {
         public Set<WikiTree> wikiTrees;
@@ -744,7 +768,6 @@ public class WikiController extends SpringActionController
             this.wikiTrees = wikis;
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
@@ -763,7 +786,7 @@ public class WikiController extends SpringActionController
 
             //just want to re-use same jsp
             Set<WikiTree> wikis = Collections.singleton(tree);
-            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
+            JspView<PrintRawBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikis));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(Template.Print);
 
@@ -777,16 +800,15 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ReadPermission.class)
-    public class PrintAllRawAction extends SimpleViewAction
+    public class PrintAllRawAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
             Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
-            JspView v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
+            JspView<PrintRawBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiTrees));
             v.setFrame(WebPartView.FrameType.NONE);
             getPageConfig().setTemplate(Template.Print);
 
@@ -800,7 +822,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     private static List<Wiki> namesToWikis(Container c, List<String> names)
     {
         LinkedList<Wiki> wikis = new LinkedList<>();
@@ -810,7 +831,6 @@ public class WikiController extends SpringActionController
 
         return wikis;
     }
-
 
     public class PrintRawBean
     {
@@ -823,7 +843,6 @@ public class WikiController extends SpringActionController
             displayName = getUser().getDisplayName(getUser());
         }
     }
-
 
     public static class CopyWikiForm
     {
@@ -886,7 +905,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     private Container getSourceContainer(String source)
     {
         Container cSource;
@@ -896,7 +914,6 @@ public class WikiController extends SpringActionController
             cSource = ContainerManager.getForPath(source);
         return cSource;
     }
-
 
     private Container getDestContainer(String destContainer, String path, BindException errors)
     {
@@ -923,7 +940,6 @@ public class WikiController extends SpringActionController
         return c;
     }
 
-
     private void displayWikiModuleInDestContainer(Container cDest)
     {
         Set<Module> activeModules = new HashSet<>(cDest.getActiveModules());
@@ -936,7 +952,6 @@ public class WikiController extends SpringActionController
             cDest.setActiveModules(activeModules, getUser());
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class CopyWikiAction extends FormHandlerAction<CopyWikiForm>
@@ -1018,9 +1033,7 @@ public class WikiController extends SpringActionController
 
             return true;
         }
-
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class CopySinglePageAction extends FormHandlerAction<CopyWikiForm>
@@ -1073,7 +1086,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
@@ -1109,15 +1121,13 @@ public class WikiController extends SpringActionController
         }
     }
 
-
-    public class CopyBean
+    public static class CopyBean
     {
         public HtmlString folderList;
         public String destContainer;
         public String sourceContainer;
         public ActionURL cancelURL;
     }
-
 
     private ActionURL getSourceURL(String pageName, int version)
     {
@@ -1127,7 +1137,6 @@ public class WikiController extends SpringActionController
         return url;
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public class SourceAction extends PageAction
     {
@@ -1136,7 +1145,6 @@ public class WikiController extends SpringActionController
             _source = true;
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class PageAction extends SimpleViewAction<WikiNameForm>
@@ -1174,8 +1182,16 @@ public class WikiController extends SpringActionController
             _wiki = WikiSelectManager.getWiki(getContainer(), name);
             boolean existing = _wiki != null;
 
-            if (null == _wiki)
+            if (!existing)
             {
+                // Redirect if name is an alias
+                String realName = WikiSelectManager.getNameForAlias(getContainer(), name);
+                if (null != realName)
+                {
+                    LOG.debug("PageAction: requested wiki name, \"" + name + "\", is an alias; redirecting to \"" + realName + "\". Referrer: " + getViewContext().getRequest().getHeader("Referer"));
+                    throw new PermanentRedirectException(getViewContext().getActionURL().clone().replaceParameter("name", realName));
+                }
+
                 _wiki = new Wiki(getContainer(), name);
                 _wikiversion = new WikiVersion(name);
                 //set new page title to be name.
@@ -1264,13 +1280,11 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     public static ActionURL getPageURL(Wiki wiki, Container c)
     {
         ActionURL url = new ActionURL(PageAction.class, c);
         return url.addParameter("name", wiki.getName());
     }
-
 
     @Nullable
     private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title)
@@ -1279,14 +1293,12 @@ public class WikiController extends SpringActionController
         return service.getDiscussionArea(getViewContext(), objectId, pageURL, title, true, false);
     }
 
-
     private ActionURL getVersionURL(String name)
     {
         ActionURL url = new ActionURL(VersionAction.class, getContainer());
         url.addParameter("name", name);
         return url;
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class VersionAction extends SimpleViewAction<WikiNameForm>
@@ -1593,8 +1605,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-
-
     private ActionURL getMakeCurrentURL(String pageName, int version)
     {
         ActionURL url = new ActionURL(MakeCurrentAction.class, getContainer());
@@ -1603,7 +1613,6 @@ public class WikiController extends SpringActionController
 
         return url;
     }
-
 
     @RequiresPermission(ReadPermission.class) //will check in code below
     public class MakeCurrentAction extends FormViewAction<WikiNameForm>
@@ -1656,46 +1665,25 @@ public class WikiController extends SpringActionController
         }
     }
 
-
     public static class WikiManageForm
     {
-        private String _originalName;
         private String _name;
         private String _title;
         private int _parent;
-        private String _childOrder;
         private String _siblingOrder;
         private String _nextAction;
-        private String _containerPath;
         private boolean _shouldIndex;
+        private boolean _addAlias;
+        private String _newName;
+        private String _aliases;
 
-        public String getContainerPath()
-        {
-            return _containerPath;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setContainerPath(String containerPath)
-        {
-            _containerPath = containerPath;
-        }
-
-        public String getChildOrder()
-        {
-            return _childOrder;
-        }
-
-        public void setChildOrder(String childIdList)
-        {
-            _childOrder = childIdList;
-        }
-
-       public boolean isShouldIndex()
+        public boolean isShouldIndex()
        {
             return _shouldIndex;
        }
 
-       public void setShouldIndex(boolean shouldIndex)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setShouldIndex(boolean shouldIndex)
        {
             _shouldIndex = shouldIndex;
        }
@@ -1731,11 +1719,6 @@ public class WikiController extends SpringActionController
             return breakIdList(_siblingOrder);
         }
 
-        public int[] getChildOrderArray()
-        {
-            return breakIdList(_childOrder);
-        }
-
         public String getName()
         {
             return _name;
@@ -1756,17 +1739,6 @@ public class WikiController extends SpringActionController
         public void setTitle(String title)
         {
             _title = title;
-        }
-
-        public String getOriginalName()
-        {
-            return _originalName;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setOriginalName(String name)
-        {
-            _originalName = name;
         }
 
         public int getParent()
@@ -1791,85 +1763,99 @@ public class WikiController extends SpringActionController
             _nextAction = nextAction;
         }
 
-        public void validate(Errors errors)
+        public String getNewName()
         {
-            //check name
-            String newName = getName();
-            String oldName = getOriginalName();
-            if (newName == null)
-                errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
-            else
-            {
-                //check for existing wiki with this name
-                Container c = ContainerManager.getForPath(getContainerPath());
-                if (!newName.equalsIgnoreCase(oldName) && WikiManager.wikiNameExists(c, newName))
-                    errors.rejectValue("name", ERROR_MSG, "A page with the name '" + newName + "' already exists in this folder. Please choose a different name.");
-            }
+            return _newName;
+        }
+
+        public void setNewName(String newName)
+        {
+            _newName = newName;
+        }
+
+        public boolean isAddAlias()
+        {
+            return _addAlias;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setAddAlias(boolean addAlias)
+        {
+            _addAlias = addAlias;
+        }
+
+        public String getAliases()
+        {
+            return _aliases;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setAliases(String aliases)
+        {
+            _aliases = aliases;
         }
     }
 
+    public static class WikiNameForm
+    {
+        private String _name;
+        private String _redirect;
+        private int _parent;
+        private int _version;
+        private boolean _isDeletingSubtree;
 
-     public static class WikiNameForm
-     {
-         private String _name;
-         private String _redirect;
-         private int _parent;
-         private int _version;
-         private boolean _isDeletingSubtree;
-
-         public int getVersion()
+        public int getVersion()
          {
              return _version;
          }
 
-         @SuppressWarnings({"UnusedDeclaration"})
-         public void setVersion(int version)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setVersion(int version)
          {
              _version = version;
          }
 
-         public int getParent()
+        public int getParent()
          {
              return _parent;
          }
 
-         public void setParent(int parent)
+        public void setParent(int parent)
          {
              _parent = parent;
          }
 
-         public String getName()
+        public String getName()
          {
              return _name;
          }
 
-         @SuppressWarnings({"UnusedDeclaration"})
-         public void setName(String name)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setName(String name)
          {
              _name = name;
          }
 
-         public String getRedirect()
+        public String getRedirect()
          {
              return _redirect;
          }
 
-         public void setRedirect(String redirect)
+        public void setRedirect(String redirect)
          {
              _redirect = redirect;
          }
 
-         public boolean getIsDeletingSubtree()
+        public boolean getIsDeletingSubtree()
      {
          return _isDeletingSubtree;
      }
 
-         public void setIsDeletingSubtree(boolean isDeletingSubtree)
+        public void setIsDeletingSubtree(boolean isDeletingSubtree)
          {
              _isDeletingSubtree = isDeletingSubtree;
          }
-     }
-
+    }
 
     public static class ContainerForm
     {
@@ -2022,7 +2008,6 @@ public class WikiController extends SpringActionController
                 {
                     throw new NotFoundException("There is no wiki in the current folder named '" + form.getName() + "'!");
                 }
-
             }
             //endregion
 
@@ -2059,9 +2044,18 @@ public class WikiController extends SpringActionController
                     && null != defFormat && defFormat.length() > 0)
                 form.setFormat(defFormat);
 
-            WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
-                    form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
-                    form.getWebPartId(), getUser());
+            WikiEditModel model = new WikiEditModel(
+                getContainer(),
+                wiki,
+                curVersion,
+                form.getRedirect(),
+                form.getCancel(),
+                form.getFormat(),
+                form.getDefName(),
+                useVisualEditor,
+                form.getWebPartId(),
+                getUser()
+            );
             //endregion
 
             //region stash the wiki so we can build the nav trail
@@ -2463,6 +2457,7 @@ public class WikiController extends SpringActionController
             return _toDelete;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setToDelete(String[] toDelete)
         {
             _toDelete = toDelete;
