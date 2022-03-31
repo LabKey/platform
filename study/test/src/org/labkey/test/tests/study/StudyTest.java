@@ -20,15 +20,20 @@ import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.ContainerFilter;
+import org.labkey.remoteapi.query.Filter;
+import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SaveRowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
+import org.labkey.remoteapi.query.UpdateRowsCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.html.BootstrapMenu;
@@ -130,6 +135,93 @@ public class StudyTest extends StudyBaseTest
     protected boolean isQuickTest()
     {
         return false;
+    }
+
+    @Override
+    public void runApiTests() throws Exception
+    {
+        log("Dataset saveRows API");
+        Connection cn = WebTestHelper.getRemoteApiConnection();
+        InsertRowsCommand insertCmd = new InsertRowsCommand("study", "DEM-1");
+
+        insertCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "first"));
+
+        try
+        {
+            SaveRowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
+
+            // Spot check return values for inserted values and user defined and built-in columns in response
+            assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().get(0).get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: DEMraco", "first", saveResp.getRows().get(0).get("DEMraco"));
+            assertTrue("Save rows return is missing field: DEMasian", saveResp.getRows().get(0).keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", saveResp.getRows().get(0).keySet().contains("ModifiedBy"));
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException("Dataset saveRows - insert error", e);
+        }
+
+        log("Verify inserted row");
+        SelectRowsCommand selectCmd = new SelectRowsCommand("study", "DEM-1");
+
+        selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
+        selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
+        selectCmd.setColumns(Collections.singletonList("*"));
+        SelectRowsResponse selectResp = null;
+        try
+        {
+            selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
+
+            // Spot check response values for inserted values and user defined and built-in columns
+            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().get(0).get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: DEMraco", "first", selectResp.getRows().get(0).get("DEMraco"));
+            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().get(0).keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().get(0).keySet().contains("ModifiedBy"));
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException("Dataset selectRows error", e);
+        }
+
+        log("Updating dataset row via API");
+        UpdateRowsCommand updateCmd = new UpdateRowsCommand("study", "DEM-1");
+        updateCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "second", "lsid", selectResp.getRows().get(0).get("lsid")));
+
+        try
+        {
+            SaveRowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
+
+            // Spot check response values for updated values and user defined and built-in columns
+            assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().get(0).get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: DEMraco", "second", updateResp.getRows().get(0).get("DEMraco"));
+            assertTrue("Save rows return is missing field: DEMasian", updateResp.getRows().get(0).keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", updateResp.getRows().get(0).keySet().contains("ModifiedBy"));
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException("Dataset saveRows - update error", e);
+        }
+
+        log("Verify updated row");
+        selectCmd = new SelectRowsCommand("study", "DEM-1");
+
+        selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
+        selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
+        selectCmd.setColumns(Collections.singletonList("*"));
+        try
+        {
+            selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
+
+            // Spot check response values for updated values and user defined and built-in columns
+            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().get(0).get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: DEMraco", "second", selectResp.getRows().get(0).get("DEMraco"));
+            assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().get(0).keySet().contains("DEMasian"));
+            assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().get(0).keySet().contains("ModifiedBy"));
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException("Dataset selectRows error", e);
+        }
     }
 
     @Override

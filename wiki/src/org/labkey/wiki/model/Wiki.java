@@ -59,25 +59,33 @@ public class Wiki extends Entity implements Serializable
     {
     }
 
-
     public Wiki(Container c, String name)
     {
         setContainerId(c.getId());
         _name = name;
     }
 
+    public Wiki(Wiki wiki)
+    {
+        wiki.copyTo(this);
+        _rowId = wiki._rowId;
+        _name = wiki._name;
+        _parent = wiki._parent;
+        _displayOrder = wiki._displayOrder;
+        _pageVersionId = wiki._pageVersionId;
+        _showAttachments = wiki._showAttachments;
+        _shouldIndex = wiki._shouldIndex;
+    }
 
     public ActionURL getWikiURL(Class<? extends Controller> actionClass, String name)
     {
         return WikiController.getWikiURL(lookupContainer(), actionClass, name);
     }
 
-
     public ActionURL getPageURL()
     {
         return getWikiURL(PageAction.class, _name);
     }
-
 
     public @Nullable ActionURL getVersionsURL()
     {
@@ -85,7 +93,6 @@ public class Wiki extends Entity implements Serializable
             return null;
         return getWikiURL(VersionsAction.class, _name);
     }
-
 
     public ActionURL getManageURL()
     {
@@ -95,12 +102,10 @@ public class Wiki extends Entity implements Serializable
         return getWikiURL(ManageAction.class, _name);
     }
 
-
     public int getRowId()
     {
         return _rowId;
     }
-
 
     @SuppressWarnings({"UnusedDeclaration"})
     public void setRowId(int rowId)

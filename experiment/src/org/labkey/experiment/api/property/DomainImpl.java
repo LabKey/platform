@@ -1346,7 +1346,8 @@ public class DomainImpl implements Domain
     @Override
     public boolean isProvisioned()
     {
-        return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
+        DomainKind<?> domainKind = getDomainKind();
+        return getStorageTableName() != null && domainKind != null && domainKind.getStorageSchemaName() != null;
     }
 
     @Override

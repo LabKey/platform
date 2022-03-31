@@ -298,7 +298,7 @@ public class ExpGeneratorHelper
         ProvenanceService pvs = ProvenanceService.get();
         run.setProtocol(protocol);
         if (null != source)
-            run.setFilePathRoot(source.getRoot());
+            run.setFilePathRootPath(source.getRootPath());
         if (null != runJobId)
             run.setJobId(runJobId);
 

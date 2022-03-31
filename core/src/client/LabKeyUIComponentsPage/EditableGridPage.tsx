@@ -2,10 +2,9 @@
  * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import React, { FC, memo, useCallback, useEffect, useState } from 'react'
+import React, { FC, memo, useCallback, useEffect, useState } from 'react';
 import { List, Map } from 'immutable';
 import {
-    isLoading,
     QueryModel,
     withQueryModels,
     EditableGridPanel,
@@ -16,9 +15,9 @@ import {
     LoadingSpinner,
     Alert,
     resolveErrorMessage,
-} from "@labkey/components";
+} from '@labkey/components';
 
-import {SchemaQueryInputContext, SchemaQueryInputProvider} from "./SchemaQueryInputProvider";
+import { SchemaQueryInputContext, SchemaQueryInputProvider } from './SchemaQueryInputProvider';
 
 const defaultProps = {
     title: 'EditableGridPanel',
@@ -34,7 +33,7 @@ const defaultProps = {
 };
 
 const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
-    const { queryModels, actions } = props;
+    const { queryModels } = props;
     const { model } = queryModels;
     const [dataModel, setDataModel] = useState<QueryModel>();
     const [editorModel, setEditorModel] = useState<EditorModel>();
@@ -81,7 +80,7 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
         []
     );
 
-    if (model.loadErrors?.length > 0) {
+    if (model.hasLoadErrors) {
         return <Alert>{model.loadErrors.join(' ')}</Alert>;
     }
     if (!editorModel || !dataModel) {
@@ -101,7 +100,7 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
     )
 });
 
-export const EditableGridPageWithQueryModels = withQueryModels(EditableGridPageBody);
+export const EditableGridPageWithQueryModels = withQueryModels<{}>(EditableGridPageBody);
 
 export const EditableGridPageImpl: FC<SchemaQueryInputContext> = props => {
     const { queryConfig } = props;
@@ -110,8 +109,7 @@ export const EditableGridPageImpl: FC<SchemaQueryInputContext> = props => {
     if (!queryConfig)
         return null;
 
-    return <EditableGridPageWithQueryModels autoLoad key={queryConfig.id} queryConfigs={queryConfigs}/>
+    return <EditableGridPageWithQueryModels autoLoad key={queryConfig.id} queryConfigs={queryConfigs} />;
 }
 
 export const EditableGridPage = SchemaQueryInputProvider(EditableGridPageImpl);
-

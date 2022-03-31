@@ -31,7 +31,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
@@ -73,9 +72,6 @@ public abstract class XarSource implements Serializable
 
     public abstract ExperimentArchiveDocument getDocument() throws XmlException, IOException;
 
-    @Deprecated
-    public abstract File getRoot();
-
     public abstract Path getRootPath();
 
     /**
@@ -104,8 +100,7 @@ public abstract class XarSource implements Serializable
                     urlToLookup = FileUtil.uriToString(uri);
                 }
             }
-            catch (IllegalArgumentException ignored) {}
-            catch (URISyntaxException ignored) {}
+            catch (IllegalArgumentException | URISyntaxException ignored) {}
             result = canonicalizeDataFileURL(urlToLookup);
             _dataFileURLs.put(dataFileURL, result);
             _dataFileURLs.put(urlToLookup, result);
@@ -115,13 +110,7 @@ public abstract class XarSource implements Serializable
 
     protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
 
-    @Deprecated //Prefer the getLogFilePath version
-    public abstract File getLogFile() throws IOException;       // Log file always local file
-    public Path getLogFilePath() throws IOException
-    {
-        //TODO This should be overridden in inherited classes
-        return getLogFile().toPath();
-    }
+    public abstract Path getLogFilePath() throws IOException;
 
     /**
      * Called before trying to import this XAR to let the source set up any resources that are required 
