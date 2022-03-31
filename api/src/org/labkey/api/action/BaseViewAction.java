@@ -65,6 +65,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -326,6 +328,12 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
+
+        String[] fields = binder.getDisallowedFields();
+        List<String> fieldList = new ArrayList<>(fields != null ? Arrays.asList(fields) : Collections.emptyList());
+        fieldList.addAll(Arrays.asList("class.*", "Class.*", "*.class.*", "*.Class.*"));
+        binder.setDisallowedFields(fieldList.toArray(new String[] {}));
+
         ConvertHelper.getPropertyEditorRegistrar().registerCustomEditors(binder);
         BindingErrorProcessor defaultBEP = binder.getBindingErrorProcessor();
         binder.setBindingErrorProcessor(getBindingErrorProcessor(defaultBEP));
