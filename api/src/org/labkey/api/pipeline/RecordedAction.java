@@ -58,10 +58,12 @@ public class RecordedAction
     private Map<PropertyDescriptor, Object> _props = new LinkedHashMap<>();
     private String _name;
     private String _description;
+    private Date _activityDate;
     private Date _startTime;
     private Date _endTime;
     private Integer _recordCount;
-    private String runName;
+    private String _runName;
+    private String _comments;
 
     // Provenance map (list of from and to lsid pairs)
     private Set<Pair<String,String>> _provenanceMap = new HashSet<>();
@@ -197,12 +199,12 @@ public class RecordedAction
 
     public String getRunName()
     {
-        return runName;
+        return _runName;
     }
 
     public void setRunName(String runName)
     {
-        this.runName = runName;
+        _runName = runName;
     }
 
     public String getDescription()
@@ -213,6 +215,16 @@ public class RecordedAction
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public Date getActivityDate()
+    {
+        return _activityDate;
+    }
+
+    public void setActivityDate(Date activityDate)
+    {
+        _activityDate = activityDate;
     }
 
     public void setStartTime(Date startTime)
@@ -348,6 +360,16 @@ public class RecordedAction
     public void setEnd(boolean end)
     {
         _isEnd = end;
+    }
+
+    public String getComments()
+    {
+        return _comments;
+    }
+
+    public void setComments(String comments)
+    {
+        _comments = comments;
     }
 
     public static class ParameterType implements Serializable

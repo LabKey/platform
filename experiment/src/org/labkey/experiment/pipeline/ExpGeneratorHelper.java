@@ -344,6 +344,10 @@ public class ExpGeneratorHelper
             {
                 stepApp = run.addProtocolApplication(user, step, ExpProtocol.ApplicationType.ProtocolApplication,
                         action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
+                if (action.getActivityDate() != null)
+                    stepApp.setActivityDate(action.getActivityDate());
+                if (action.getComments() != null)
+                    stepApp.setComments(action.getComments());
             }
 
             if (!action.isStart() && !action.isEnd() && !action.getName().equals(action.getDescription()))
