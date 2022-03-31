@@ -248,6 +248,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -6873,8 +6874,6 @@ public class AdminController extends SpringActionController
     {
         private ActionURL _successURL;
 
-        protected Container _newContainer;
-
         @Override
         public void validateCommand(FORM target, Errors errors)
         {
@@ -6928,6 +6927,9 @@ public class AdminController extends SpringActionController
             String folderName = StringUtils.trimToNull(form.getName());
             String folderTitle = (form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle();
             StringBuilder error = new StringBuilder();
+            Consumer<Container> afterCreateHandler = getAfterCreateHandler(form);
+
+            final Container newContainer;
 
             if (Container.isLegalName(folderName, parent.isRoot(), error))
             {
@@ -6975,7 +6977,7 @@ public class AdminController extends SpringActionController
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-                        _newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
+                        newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
                     }
                     else
                     {
@@ -6998,8 +7000,9 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        _newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
-                        _newContainer.setFolderType(type, getUser());
+                        newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
+                        afterCreateHandler.accept(newContainer);
+                        newContainer.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7011,13 +7014,13 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            _newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
+                            newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                            _newContainer.setDefaultModule(defaultModule);
+                            newContainer.setDefaultModule(defaultModule);
                         }
                     }
 
-                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(_newContainer);
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(newContainer);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;
@@ -7027,6 +7030,11 @@ public class AdminController extends SpringActionController
             errors.reject(ERROR_MSG, "Error: " + error + " Please enter a different name.");
             return false;
         }
+
+        /**
+         * Return a Consumer that provides post-creation handling on the new Container
+         */
+        abstract protected Consumer<Container> getAfterCreateHandler(FORM form);
 
         @Override
         public ActionURL getSuccessURL(FORM form)
@@ -7043,6 +7051,12 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public static class CreateFolderAction extends AbstractCreateFolderAction<ManageFoldersForm>
     {
+        @Override
+        protected Consumer<Container> getAfterCreateHandler(ManageFoldersForm form)
+        {
+            // No special handling
+            return container -> {};
+        }
     }
 
     public static class CreateProjectForm extends ManageFoldersForm
@@ -7073,16 +7087,20 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(CreateProjectForm form, BindException errors) throws Exception
+        protected Consumer<Container> getAfterCreateHandler(CreateProjectForm form)
         {
-            boolean success = super.handlePost(form, errors);
-            if (success && form.isAssignProjectAdmin())
+            if (form.isAssignProjectAdmin())
             {
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(_newContainer.getPolicy());
-                policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
-                SecurityPolicyManager.savePolicy(policy);
+                return c -> {
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
+                    policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                    SecurityPolicyManager.savePolicy(policy);
+                };
             }
-            return success;
+            else
+            {
+                return c -> {};
+            }
         }
     }
 

@@ -117,6 +117,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -346,7 +347,7 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx) throws Exception
+    public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx, Consumer<Container> afterCreateHandler) throws Exception
     {
         MemoryVirtualFile vf = new MemoryVirtualFile();
 
@@ -356,6 +357,7 @@ public class ContainerManager
 
         // create the new target container
         Container c = ContainerManager.createContainer(parent, name, title, null, NormalContainerType.NAME, user);
+        afterCreateHandler.accept(c);
 
         // import objects into the target folder
         XmlObject folderXml = vf.getXmlBean("folder.xml");
