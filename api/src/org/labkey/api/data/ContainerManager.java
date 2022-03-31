@@ -117,7 +117,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -361,9 +360,8 @@ public class ContainerManager
 
         // import objects into the target folder
         XmlObject folderXml = vf.getXmlBean("folder.xml");
-        if (folderXml instanceof FolderDocument)
+        if (folderXml instanceof FolderDocument folderDoc)
         {
-            FolderDocument folderDoc = (FolderDocument)folderXml;
             FolderImportContext importCtx = new FolderImportContext(user, c, folderDoc, null, new StaticLoggerGetter(LogManager.getLogger(FolderImporterImpl.class)), vf);
 
             FolderImporterImpl importer = new FolderImporterImpl();
