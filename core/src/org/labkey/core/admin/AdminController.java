@@ -7034,7 +7034,13 @@ public class AdminController extends SpringActionController
         /**
          * Return a Consumer that provides post-creation handling on the new Container
          */
-        abstract protected Consumer<Container> getAfterCreateHandler(FORM form);
+        abstract public Consumer<Container> getAfterCreateHandler(FORM form);
+
+        @Override
+        protected String getCommandClassMethodName()
+        {
+            return "getAfterCreateHandler";
+        }
 
         @Override
         public ActionURL getSuccessURL(FORM form)
@@ -7052,7 +7058,7 @@ public class AdminController extends SpringActionController
     public static class CreateFolderAction extends AbstractCreateFolderAction<ManageFoldersForm>
     {
         @Override
-        protected Consumer<Container> getAfterCreateHandler(ManageFoldersForm form)
+        public Consumer<Container> getAfterCreateHandler(ManageFoldersForm form)
         {
             // No special handling
             return container -> {};
@@ -7087,7 +7093,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        protected Consumer<Container> getAfterCreateHandler(CreateProjectForm form)
+        public Consumer<Container> getAfterCreateHandler(CreateProjectForm form)
         {
             if (form.isAssignProjectAdmin())
             {
