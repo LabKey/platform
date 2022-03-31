@@ -453,7 +453,7 @@ public class StringExpressionFactory
             // Allow substitution format to transform the value, including nulls
             for (SubstitutionFormat f : _formats)
             {
-                o = f.format(o);
+                o = f.format(o, isPreviewMode());
             }
 
             if (o == null)

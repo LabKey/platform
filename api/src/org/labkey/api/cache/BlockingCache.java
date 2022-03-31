@@ -128,7 +128,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
             {
                 if (System.currentTimeMillis() > endTime)
                 {
-                    throw new DeadlockPreventingException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit");
+                    throw new DeadlockPreventingException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit for cache key " + key);
                 }
                 try
                 {

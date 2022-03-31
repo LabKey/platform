@@ -97,27 +97,41 @@
 
         return false;
     }
+
+    function rename()
+    {
+        document.getElementById('rename').style.display = '';
+        document.getElementById('newName').focus();
+        return false;
+    }
 </script>
 
 <labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
-<input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>
 <tr><td>
     <table class="lk-fields-table">
 <%
-    FieldError nameError = errors.getFieldError("name");
-	if (null != nameError)
+    for (FieldError nameError : errors.getFieldErrors("name"))
     {
 		%><tr><td colspan=2><span class="labkey-error"><%=h(context.getMessage(nameError))%></span></td></tr><%
     }
 %>
         <tr>
             <td class='labkey-form-label'><label for="name">Name</label></td>
-            <td><input type="text" style="width:420px" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
+            <td>
+                <input type="text" class="labkey-form-label" style="width:420px; text-align:left;" id="name" name="name" value="<%=h(wiki.getName())%>" readonly="readonly">
+                <%=button("Rename").style("width:100px").submit(true).onClick("return rename()") %>
+            </td>
         </tr>
-        <tr>
-            <td></td><td style="width:420px">WARNING: Changing a page's name will break any links to the page.</td>
+        <tr id="rename" style="display: none;">
+            <td class='labkey-form-label'><label for="newName">Rename</label></td>
+            <td>
+                <table>
+                    <tr><td><label for="newName">New Name&nbsp;</label><td><input type="text" style="width:420px" id="newName" name="newName"></td></tr>
+                    <tr><td><label for="addAlias">Add Alias&nbsp;</label><td><input type="checkbox" name="addAlias" id="addAlias"<%=checked(true)%>>Check this to add '<%=h(wiki.getName())%>' as an alias for this page, to keep existing links and shortcuts working</td></tr>
+                </table>
+            </td>
         </tr>
         <tr>
             <td class='labkey-form-label'><label for="title">Title</label></td>
@@ -129,7 +143,7 @@
             <%
                 SelectBuilder parentBuilder = new SelectBuilder()
                     .name("parent")
-                    .id("id")
+                    .id("parent")
                     .addStyle("width:420px")
                     .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; submit();");
                 parentBuilder.addOption(new OptionBuilder().value("-1").label("[none]").selected(wiki.getParent() == -1).build());
@@ -181,42 +195,22 @@
                 <input type="hidden" name="siblingOrder" value="">
             </td>
         </tr>
-        <%
-            if (bean.showChildren && wiki.hasChildren())
-            {
-        %>
         <tr>
-            <td class='labkey-form-label'><label for="children">Child Order</label></td>
-            <td><table>
-                <tr>
-                    <td>
-                        <%
-                            SelectBuilder childrenBuilder = new SelectBuilder().name("children").id("children").size(10).addStyle("width:500px");
-                            wiki.children().forEach(child->childrenBuilder.addOption(new OptionBuilder()
-                                .value(String.valueOf(child.getRowId()))
-                                .label(child.getLatestVersion().getTitle() + " (" + child.getName() + ")")
-                                .build()));
-                        %>
-                        <%=childrenBuilder%>
-                    </td>
-                    <td valign="top">
-                        <%= button("Move Up").style("width:100px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
-                        <br/>
-                        <%= button("Move Down").style("width:100px;").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
-                    </td>
-                </tr>
-            </table>
-                <input type="hidden" name="childOrder" value="">
+            <td class='labkey-form-label'><label for="aliases">Aliases</label></td>
+            <td>
+                <table>
+                    <tr>
+                        <td>
+                            <textarea name="aliases" id="aliases" style="width:500px" rows="5"><%=h(String.join("\n", bean.aliases))%></textarea>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
-        <%
-            }
-        %>
     </table>
 </td></tr>
 </table>
 
-<input type="hidden" name="originalName" value="<%= h(wiki.getName()) %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
 <%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + q(NextAction.page.name()) + "; return true;").title("Save Changes") %>

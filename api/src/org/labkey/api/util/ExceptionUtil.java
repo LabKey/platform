@@ -632,10 +632,10 @@ public class ExceptionUtil
         }
 
         // Do redirects before response.reset() otherwise we'll lose cookies (e.g., login page)
-        if (ex instanceof RedirectException)
+        if (ex instanceof RedirectException rex)
         {
-            String url = ((RedirectException) ex).getURL();
-            doErrorRedirect(response, url);
+            String url = rex.getURL();
+            doErrorRedirect(response, url, rex.getHttpStatusCode());
             return null;
         }
 
@@ -1002,10 +1002,16 @@ public class ExceptionUtil
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
-
+    // Temporary redirect
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {
-        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        doErrorRedirect(response, url, HttpServletResponse.SC_MOVED_TEMPORARILY);
+    }
+
+    // Pass in HTTP status code to designate temporary vs. permanent redirect
+    private static void doErrorRedirect(HttpServletResponse response, String url, int httpStatusCode)
+    {
+        response.setStatus(httpStatusCode);
         response.setDateHeader("Expires", 0);
         response.setHeader("Location", url);
         response.setContentType("text/html; charset=UTF-8");
@@ -1026,8 +1032,6 @@ public class ExceptionUtil
             LOG.error("doErrorRedirect", x);
         }
     }
-
-
 
     public enum ExceptionInfo
     {

@@ -98,4 +98,5 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
      * Location name for task to run on the LabKey Server itself (inside the Tomcat process).
      */
     String WEBSERVER = "webserver";
+    String WEBSERVER_HIGH_PRIORITY = "webserver-high-priority";
 }

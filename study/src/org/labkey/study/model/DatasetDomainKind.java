@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -396,7 +397,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         arguments.setName(domain.getName());
         String name = arguments.getName();
-        String description = arguments.getDescription();
+        String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
@@ -500,7 +501,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
                             if (arguments.isStrictFieldValidation())
-                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                                throw new ApiUsageException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                         }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);

@@ -19,6 +19,8 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -1273,6 +1275,47 @@ public class DiffMatchPatch
         html.append("<SPAN TITLE=\"i=").append(i).append("\">").append(text)
             .append("</SPAN>");
         break;
+      }
+      if (aDiff.operation != Operation.DELETE) {
+        i += aDiff.text.length();
+      }
+    }
+    return html.toString();
+  }
+
+  private static final String LB = "&para;<BR>";
+
+  /**
+   * Convert a Diff list into a "compact" pretty HTML report. The output is identical to that of diff_prettyHtml()
+   * except that, to highlight the actual changes, this method outputs EQUAL diffs that are more than four lines long
+   * with a shortened summary (first two lines + summary including count of omitted lines + last two lines).
+   * @param diffs List of Diff objects.
+   * @return Compact HTML representation.
+   */
+  public String diff_prettyHtmlCompact(List<Diff> diffs) {
+    StringBuilder html = new StringBuilder();
+    int i = 0;
+    for (Diff aDiff : diffs) {
+      String text = aDiff.text.replace("&", "&amp;").replace("<", "&lt;")
+          .replace(">", "&gt;").replace("\n", LB);
+      switch (aDiff.operation)
+      {
+        case INSERT -> html.append("<INS STYLE=\"background:#E6FFE6;\" TITLE=\"i=").append(i)
+                .append("\">").append(text).append("</INS>");
+        case DELETE -> html.append("<DEL STYLE=\"background:#FFE6E6;\" TITLE=\"i=").append(i)
+                .append("\">").append(text).append("</DEL>");
+        case EQUAL -> {
+                int lines = StringUtils.countMatches(text, LB);
+                if (lines > 4)
+                {
+                    // Compute start and end of the section we want to omit
+                    int start = text.indexOf(LB, text.indexOf(LB) + LB.length()) + LB.length();
+                    int end = text.lastIndexOf(LB,text.lastIndexOf(LB, text.lastIndexOf(LB) - LB.length()) - LB.length()) + LB.length();
+
+                    text = text.substring(0, start) + "<BR><SPAN STYLE=\"color:#808080;\">[" + (lines - 4) + " unchanged lines]</SPAN><BR><BR>" + text.substring(end);
+                }
+                html.append("<SPAN TITLE=\"i=").append(i).append("\">").append(text).append("</SPAN>");
+        }
       }
       if (aDiff.operation != Operation.DELETE) {
         i += aDiff.text.length();
