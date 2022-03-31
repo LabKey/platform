@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -93,10 +94,10 @@ public class PageConfig
 		Default, True, False
 	}
 
-    private record EventListener(@NotNull String id, @NotNull String event, @NotNull String handler) {}
+    private record EventHandler(@NotNull String id, @NotNull String event, @NotNull String handler) {}
 
     // collected javascript handlers
-    private final ArrayList<EventListener> _listeners = new ArrayList<>();
+    private final ArrayList<EventHandler> _eventHandlers = new ArrayList<>();
     private final ArrayList<String> _onDomLoaded = new ArrayList<>();
     private final ArrayList<String> _onDocumentLoaded = new ArrayList<>();
 
@@ -129,6 +130,9 @@ public class PageConfig
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
+
+    public final Date createTime = new Date();
+    public final Throwable createThrowable = new Throwable();
 
     /* TODO make private */
     public PageConfig(HttpServletRequest request)
@@ -541,13 +545,14 @@ public class PageConfig
 
 
     /* TODO: CONSIDER using JavaScriptFragment handler */
+    /* TODO this is misnamed addListener(function) is not the same as element.onclick=function !!!! */
     public void addListener(String id, String event, String handler)
     {
         if (StringUtils.isBlank(id) || StringUtils.isBlank(event))
             throw new IllegalArgumentException();
         if (StringUtils.isBlank(handler))
             return;
-        _listeners.add(new EventListener(id,event,handler));
+        _eventHandlers.add(new EventHandler(id,event,handler));
     }
 
 
@@ -583,10 +588,10 @@ public class PageConfig
 
         out.write("function _on_dom_content_loaded_(){");
         {
-            out.write("const A = function(a,b,c){LABKEY.Utils.attachListener(a,b,c,1);}\n");
+            out.write("const A = function(a,b,c){LABKEY.Utils.attachEventHandler(a,b,c,1);}\n");
             // NOTE: there can be lots of handlers, this is simple de-duping
             HashMap<String, Integer> map = new HashMap<>();
-            for (var l : _listeners)
+            for (var l : _eventHandlers)
             {
                 var index = map.size();
                 var handler = StringUtils.appendIfMissing(l.handler, ";");
@@ -596,7 +601,7 @@ public class PageConfig
                 index = requireNonNullElse(prev, index);
                 out.write("A(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
             }
-            _listeners.clear();
+            _eventHandlers.clear();
 
             for (var handler : _onDomLoaded)
             {

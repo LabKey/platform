@@ -26,7 +26,6 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
@@ -34,11 +33,9 @@ import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.LK.FA;
-import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.createHtmlFragment;
-import static org.labkey.api.util.PageFlowUtil.jsString;
 
 
 /**
@@ -51,7 +48,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     // Button constants
     private static final String CLS = "labkey-button";
     private static final String DISABLEDCLS = "labkey-disabled-button";
-    private static final String MENU_CLS = "labkey-menu-button";
     private static final String PRIMARY_CLS = "primary";
 
     // Composable members
@@ -171,7 +167,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         return submit;
     }
 
-    private String generateOnClick(String id)
+    private String generateOnClick()
     {
         // prepare onclick method and overrides
         final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
@@ -183,7 +179,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         final String qDisabledCls = quote + DISABLEDCLS + quote;
 
         // check if the disabled class is applied, if so, do nothing onclick
-        String onClickMethod = "if(this.className.indexOf(" + qDisabledCls + ") != -1){return false;}";
+        String onClickMethod = "if(this.className.indexOf(" + qDisabledCls + ")!=-1)return false;";
 
         if (isDisableOnClick())
         {
@@ -192,15 +188,17 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
         if (isSubmit())
         {
-            final String submitCode = "submitForm(document.getElementById(" + quote + id + quote + ").form);return false;";
+            final String submitCode = "submitForm(document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form);return false;";
 
-            if ("".equals(onClick))
+            if (StringUtils.isBlank(onClick))
+            {
                 onClickMethod += submitCode;
+            }
             else
             {
                 // we allow the onclick method to cancel the submit
                 // Question: This isn't activated when the user hits 'enter' so why support this?
-                onClickMethod += "this.form=document.getElementById(" + quote + id + quote + ").form;";
+                onClickMethod += "this.form=document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form;";
                 onClickMethod += "if(isTrueOrUndefined(function(){" + onClick + "}.call(this))){" + submitCode + "}";
 
                 if (isDisableOnClick())
@@ -234,10 +232,10 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     {
         var page = HttpView.currentPageConfig();
         var id = getId();
-        if (isBlank(getId()))
+        if (StringUtils.isBlank(getId()))
             id = page.makeId("button_");
         boolean iconOnly = getIconCls() != null;
-        String submitId = page.makeId("form_");
+        String submitId = page.makeId("submit_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String hrefValue = (null == getHref()) ? "#" : getHref();
@@ -245,6 +243,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         var attrs = at(attributes)
             .id(id)
             .at(Attribute.href, hrefValue, title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .data("submitid", submitId)
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
@@ -254,7 +253,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
 
-        page.addListener(id, "click", generateOnClick(submitId));
+        page.addListener(id, "click", generateOnClick());
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,

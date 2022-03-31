@@ -32,7 +32,7 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 //store current container id on client
-var currentContainerId = <%=q(currentContainer == null ? null : currentContainer.getId())%>;
+var currentContainerId = LABKEY.container.id;
 var m = {};
 
 function getForm()
@@ -84,7 +84,7 @@ function loadPages(wikiPageList)
         for(var i = 0; i < wikiPageList.length; i++)
         {
             text = wikiPageList[i].name + " (" + wikiPageList[i].title + ")";
-            fDefaultSelected = wikiPageList[i].name.toLowerCase() == "default";
+            fDefaultSelected = wikiPageList[i].name.toLowerCase() === "default";
             select.options[select.options.length] = new Option(text, wikiPageList[i].name, fDefaultSelected, fDefaultSelected);
         }
     }
@@ -100,7 +100,7 @@ function loadPages(wikiPageList)
 function enableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
-    btn.className = "labkey-button";
+    btn.className = "labkey-button primary";
     btn.href = "";
     btn.disabled = false;
 }
@@ -109,7 +109,7 @@ function disableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
     btn.disabled = true;
-    btn.className = "labkey-disabled-button";
+    btn.className = "labkey-disabled-button primary";
     btn.href = "javascript:return false;";
 }
 
@@ -129,17 +129,18 @@ function onSuccess(containerId, response)
 
 function onError(response, config)
 {
+    var json;
     if (response.status >= 500 && response.status <= 599)
     {
         //exception thrown within the server
         //parse the response text as JSON
-        var json = JSON.parse(response.responseText);
+        json = JSON.parse(response.responseText);
         LABKEY.Utils.alert("The server experienced the following error: " + json.exception);
     }
     else if (response.status >= 400 && response.status <= 499)
     {
         //invalid container id
-        var json = JSON.parse(response.responseText);
+        json = JSON.parse(response.responseText);
         LABKEY.Utils.alert("The server could not find the selected project or folder: " + json.exception);
     }
     else

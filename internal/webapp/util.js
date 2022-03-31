@@ -410,4 +410,3 @@ LABKEY.internal.UserNotificationPanel =
         renderNotifications();
     }
 };
-

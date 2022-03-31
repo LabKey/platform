@@ -847,7 +847,21 @@ LABKEY.Utils = new function(impl, $) {
             if (el)
                 el.addEventListener(eventName, handler);
         };
-        (immediate || document.readyState==="complete") ? fn() : document.addEventListener('load', fn);
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    }
+
+    // attach handlers to element events e.g. onclick=fn() etc.
+    impl.attachEventHandler = function(id, eventName, handler, immediate)
+    {
+        if (!id || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            const el = document.getElementById(id);
+            if (el)
+                el['on' + eventName] = handler;
+        };
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     }
     return impl;
 
