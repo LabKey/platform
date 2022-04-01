@@ -878,10 +878,15 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null && (_reloadExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(_xarSource.getRoot()))))
+            if (existingRun != null)
             {
-                getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
-                existingRun.delete(getUser());
+                Path existingFilePathRoot = existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitivePath(getRootContext().getContainer(), existingRun.getFilePathRootPath());
+                Path newFilePathRoot = _xarSource.getRootPath() == null ? null : FileUtil.getAbsoluteCaseSensitivePath(getRootContext().getContainer(), _xarSource.getRootPath());
+                if (_reloadExistingRuns || !Objects.equals(existingFilePathRoot, newFilePathRoot))
+                {
+                    getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
+                    existingRun.delete(getUser());
+                }
             }
         }
     }
@@ -1403,7 +1408,7 @@ public class XarReader extends AbstractXarImporter
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
                                   @Nullable ExperimentRun run,
                                   Integer sourceApplicationId,
-                                  XarContext context) throws XarFormatException, ExperimentException
+                                  XarContext context) throws ExperimentException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 

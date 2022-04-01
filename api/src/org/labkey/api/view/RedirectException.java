@@ -19,13 +19,15 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
- * When thrown in the context of an HTTP request, sends the client a redirect in the HTTP response. Not treated
- * as a loggable error.
+ * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not
+ * treated as a loggable error. See {@link PermanentRedirectException} if a permanent redirect is desired.
  */
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
-    String _url;
+    private final String _url;
 
     public RedirectException(@NotNull URLHelper url)
     {
@@ -40,5 +42,10 @@ public class RedirectException extends RuntimeException implements SkipMothershi
     public String getURL()
     {
         return _url;
+    }
+
+    public int getHttpStatusCode()
+    {
+        return HttpServletResponse.SC_MOVED_TEMPORARILY;
     }
 }

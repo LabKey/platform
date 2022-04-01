@@ -55,6 +55,7 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -397,7 +398,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         arguments.setName(domain.getName());
         String name = arguments.getName();
-        String description = arguments.getDescription();
+        String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
@@ -526,7 +527,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            UnexpectedException.rethrow(e);     // don't re-wrap runtime exceptions
+            return null;                        // can't get here
         }
     }
 
