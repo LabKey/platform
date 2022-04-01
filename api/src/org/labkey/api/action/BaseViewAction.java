@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -176,13 +177,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public static PropertyValues getPropertyValuesForFormBinding(PropertyValues pvs)
     {
+        if (null == pvs)
+            return null;
         MutablePropertyValues ret = new MutablePropertyValues();
         for (PropertyValue pv : pvs.getPropertyValues())
         {
             String name = pv.getName();
-            if (name.contains("."))
-                continue;
-            if (disallowed.contains(name))
+            if (name.contains(".") || disallowed.contains(name))
                 continue;
             ret.addPropertyValue(pv);
         }
