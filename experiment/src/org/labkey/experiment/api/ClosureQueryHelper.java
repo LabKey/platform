@@ -48,6 +48,8 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOu
 
 public class ClosureQueryHelper
 {
+    final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
+
     final static long CACHE_INVALIDATION_INTERVAL = TimeUnit.MINUTES.toMillis(5);
     final static long CACHE_LRU_AGE_OUT_INTERVAL = TimeUnit.MINUTES.toMillis(30);
 
@@ -190,7 +192,7 @@ public class ClosureQueryHelper
                 return ClosureQueryHelper.getValueSql(sourceType, sourceLsid, objectId, target);
             }
         };
-        ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(colInfo));
+        ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
         ret.setLabel(target.getName());
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
         var builder = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
@@ -203,12 +205,15 @@ public class ClosureQueryHelper
                 var ret = (MutableColumnInfo) super.createLookupColumn(foreignKey, displayField);
                 if (ret != null)
                 {
-                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDataDisplayColumn(foreignKey, colInfo));
+                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
+                    ret.setConceptURI(CONCEPT_URI);
                 }
                 return ret;
             }
         };
         ret.setFk(qfk);
+        ret.setShownInDetailsView(true);
+        ret.setConceptURI(CONCEPT_URI);
         return ret;
     }
 
@@ -441,6 +446,8 @@ public class ClosureQueryHelper
                 return null;
             }
         });
+        wrappedRowId.setConceptURI(CONCEPT_URI);
+        wrappedRowId.setShownInDetailsView(true);
         return wrappedRowId;
     }
 
