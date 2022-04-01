@@ -2030,7 +2030,10 @@ public class PageFlowUtil
         String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
         if (errors.size() > 0)
         {
-            scriptWarnings.add("Unable to complete script check due to errors in HTML");
+            if (scriptWarnings != null)
+            {
+                scriptWarnings.add("Unable to complete script check due to errors in HTML");
+            }
             return null;
         }
 
