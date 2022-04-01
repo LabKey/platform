@@ -447,7 +447,7 @@ public class ClosureQueryHelper
             }
         });
         wrappedRowId.setConceptURI(CONCEPT_URI);
-        wrappedRowId.setShownInDetailsView(true);
+        wrappedRowId.setShownInDetailsView(false);
         return wrappedRowId;
     }
 
