@@ -55,6 +55,7 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -526,7 +527,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            UnexpectedException.rethrow(e);     // don't re-wrap runtime exceptions
+            return null;                        // can't get here
         }
     }
 
