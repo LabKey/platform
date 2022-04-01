@@ -111,7 +111,8 @@ public class CoreWarningProvider implements WarningProvider
         MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
         long maxMem = membean.getHeapMemoryUsage().getMax();
 
-        if (SHOW_ALL_WARNINGS || maxMem > 0 && maxMem < 2*1024*1024*1024L)
+        // Issue 45171 - have a little slop since -Xmx2G ends up with slightly different sized heaps on different VMs
+        if (SHOW_ALL_WARNINGS || maxMem > 0 && maxMem < 2_000_000_000L)
         {
             HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 2GB). LabKey recommends ");
             html.append(new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers"));
