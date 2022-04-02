@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
@@ -215,6 +217,7 @@ import org.labkey.study.reports.ReportManager;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -227,6 +230,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -241,6 +245,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -5056,7 +5062,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DatasetPropertyForm
+    public static class DatasetPropertyForm implements HasBindParameters
     {
         private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
@@ -5068,6 +5074,30 @@ public class StudyController extends BaseStudyController
         public void setDataset(Map<Integer, DatasetVisibilityData> map)
         {
             _map = map;
+        }
+
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues pvs)
+        {
+            Pattern pat = Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
+            for (var pv : pvs.getPropertyValues())
+            {
+                String name = pv.getName();
+                Matcher m = pat.matcher(name);
+                if (m.matches())
+                {
+                    var dvd = _map.get(Integer.parseInt(m.group(1)));
+                    try
+                    {
+                        BeanUtils.setProperty(dvd, m.group(2), pv.getValue());
+                    }
+                    catch (InvocationTargetException|IllegalAccessException e)
+                    {
+                        continue;
+                    }
+                }
+            }
+            return BaseViewAction.springBindParameters(this, "form", pvs);
         }
     }
 
