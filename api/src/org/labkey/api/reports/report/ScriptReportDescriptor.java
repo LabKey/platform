@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.query.xml.ReportDescriptorDocument;
 
 import java.util.Collections;
@@ -81,7 +81,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
     }
 
     @Override
-    public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    public ReportDescriptorDocument getDescriptorDocument(ImportExportContext context)
     {
         // if we are doing folder export (or module file save), we don't want to double save the script property
         if (null != context)

@@ -15,7 +15,7 @@
  */
 package org.labkey.specimen.writer;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -31,7 +31,7 @@ import java.util.Collection;
 public class LocationSpecimenWriter extends StandardSpecimenWriter
 {
     @Override
-    protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
+    protected SQLFragment generateSql(ImportExportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
     {
         SqlDialect d = tinfo.getSqlDialect();
 

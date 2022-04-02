@@ -20,7 +20,7 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -48,7 +48,7 @@ public class ReportWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), ctx.getContainer()));
 

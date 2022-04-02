@@ -20,7 +20,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal;
@@ -57,7 +57,7 @@ public class PageWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void write(Container c, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             FolderDocument.Folder folderXml = ctx.getXml();
             FolderDocument.Folder.Pages folderPagesXML = folderXml.addNewPages();
@@ -97,7 +97,7 @@ public class PageWriterFactory implements FolderWriterFactory
         }
 
 
-        public void addWebPartsToPage(ImportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
+        public void addWebPartsToPage(ImportExportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
         {
             for (WebPart webPart : webpartsInPage)
             {

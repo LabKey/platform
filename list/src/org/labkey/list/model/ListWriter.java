@@ -19,7 +19,7 @@ package org.labkey.list.model;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.BaseColumnInfo;
@@ -86,7 +86,7 @@ public class ListWriter
     static final String SCHEMA_FILENAME = "lists.xml";
     static final String SETTINGS_FILENAME = "settings.xml";
 
-    public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
+    public boolean write(Container c, User user, VirtualFile listsDir, ImportExportContext ctx) throws Exception
     {
         // We exclude picklists because they contain just sampleIds, which will be different in the new container.
         // Picklists are meant to be transient, so not including them in the export makes sense.

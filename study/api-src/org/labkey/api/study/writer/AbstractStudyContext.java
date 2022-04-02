@@ -17,13 +17,14 @@ package org.labkey.api.study.writer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AbstractImportContext;
+import org.labkey.api.admin.AbstractImportExportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.StudyDocument.Study;
 
 import java.util.Set;
 
@@ -32,16 +33,16 @@ import java.util.Set;
  * Date: Apr 23, 2009
  * Time: 10:00:46 AM
  */
-public abstract class AbstractContext extends AbstractImportContext<StudyDocument.Study, StudyDocument>
+public abstract class AbstractStudyContext extends AbstractImportExportContext<Study, StudyDocument>
 {
-    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
+    protected AbstractStudyContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
         super(user, c, studyDoc, dataTypes, logger, root);
     }
 
     // Study node -- interesting to any study writer that needs to set info into study.xml
     @Override
-    public StudyDocument.Study getXml() throws ImportException
+    public Study getXml() throws ImportException
     {
         return getDocument().getStudy();
     }

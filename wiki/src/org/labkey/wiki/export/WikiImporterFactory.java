@@ -242,13 +242,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             throw new ImportException("Could not find a content file for wiki with name \"" + contentName + "\"");
         }
 
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptySet();
-        }
-
         @Override
         public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {

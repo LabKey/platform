@@ -20,7 +20,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleProperty;
@@ -53,7 +53,7 @@ public class ModulePropertiesWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
             FolderDocument.Folder folderXml = ctx.getXml();
             ModulePropertiesType modulePropsXml = folderXml.addNewModuleProperties();

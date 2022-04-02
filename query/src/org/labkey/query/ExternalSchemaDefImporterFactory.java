@@ -16,17 +16,15 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
@@ -45,8 +43,6 @@ import org.labkey.query.persist.ExternalSchemaDefCache;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -101,7 +97,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             }
         }
 
-        private void importSchema(ImportContext<Folder> ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
+        private void importSchema(ImportExportContext<Folder> ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
         {
             XmlObject schemaXmlFile = externalSchemaDir.getXmlBean(schemaFileName);
             String relativePath = root.getRelativePath(schemaFileName);
@@ -196,13 +192,6 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                 form.setTypedValue("metaData", exportedXml.getMetadata().xmlText());
         }
 
-
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
-        }
 
         @Override
         public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException

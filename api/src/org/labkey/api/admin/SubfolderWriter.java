@@ -44,7 +44,7 @@ public class SubfolderWriter extends BaseFolderWriter
     public static final String SUBFOLDERS_FILENAME = "subfolders.xml";
 
     @Override
-    public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         // start with just those child containers that the user has permissions to export.
         List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), ctx.getSubfolderExportPermission());
@@ -87,7 +87,7 @@ public class SubfolderWriter extends BaseFolderWriter
         }
     }
 
-    public void getChildrenToExport(ImportContext context, List<Container> potentialChildren, List<Container> childrenToExport)
+    public void getChildrenToExport(ImportExportContext context, List<Container> potentialChildren, List<Container> childrenToExport)
     {
         for (Container child : potentialChildren)
         {

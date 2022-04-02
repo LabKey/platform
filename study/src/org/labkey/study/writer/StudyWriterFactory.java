@@ -15,12 +15,13 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.study.writer.SimpleStudyWriter;
@@ -34,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 public class StudyWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "study";
@@ -46,7 +46,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         return new StudyFolderWriter();
     }
 
-    public class StudyFolderWriter extends BaseFolderWriter
+    public static class StudyFolderWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -76,13 +76,13 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(ExportType type)
         {
-            return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type; 
+            return ExportType.ALL == type || ExportType.STUDY == type;
         }
 
         @Override
-        public void initialize(ImportContext<FolderDocument.Folder> ctx)
+        public void initialize(FolderExportContext ctx)
         {
             super.initialize(ctx);
 
@@ -99,7 +99,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
             StudyExportContext exportCtx = ctx.getContext(StudyExportContext.class);
 

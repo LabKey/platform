@@ -17,7 +17,7 @@
 package org.labkey.list.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QuerySettings;
@@ -113,7 +113,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> serializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
@@ -132,7 +132,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> deserializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 

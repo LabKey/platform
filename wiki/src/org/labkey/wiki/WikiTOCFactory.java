@@ -16,7 +16,7 @@
 package org.labkey.wiki;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -59,7 +59,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
     }
 
     @Override
-    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> serializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
@@ -86,7 +86,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
     }
 
     @Override
-    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> deserializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 
@@ -109,7 +109,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
     }
 
     @Override
-    public boolean includeInExport(ImportContext ctx, Portal.WebPart webPart)
+    public boolean includeInExport(ImportExportContext ctx, Portal.WebPart webPart)
     {
         String containerId = webPart.getPropertyMap().get("webPartContainer");
         if (containerId != null)

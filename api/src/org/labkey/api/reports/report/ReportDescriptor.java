@@ -22,7 +22,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
@@ -480,7 +480,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return getDescriptorDocument(c, null, false, null);
     }
 
-    public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    public ReportDescriptorDocument getDescriptorDocument(ImportExportContext context)
     {
         return getDescriptorDocument(context.getContainer(), context, true, null);
     }
@@ -489,7 +489,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
      * Builds an XML representation of this descriptor
      * @return
      */
-    protected final ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context, boolean savePermissions, Set<String> propsToSkip)
+    protected final ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportExportContext context, boolean savePermissions, Set<String> propsToSkip)
     {
         if (null == propsToSkip)
             propsToSkip = Collections.emptySet();
@@ -563,7 +563,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return true;
     }
 
-    private void addProperty(@Nullable ImportContext context, ReportPropertyList props, String key, Object value)
+    private void addProperty(@Nullable ImportExportContext context, ReportPropertyList props, String key, Object value)
     {
         ReportPropertyList.Prop prop = props.addNewProp();
         prop.setName(key);
@@ -572,7 +572,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     // Let subclasses transform the property value based on the current context. For example, time charts
     // and participant reports need to map participant IDs to alternate IDs, if that's been requested.
-    protected String adjustPropertyValue(@Nullable ImportContext context, String key, Object value)
+    protected String adjustPropertyValue(@Nullable ImportExportContext context, String key, Object value)
     {
         return String.valueOf(value);
     }
@@ -584,7 +584,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return false;
     }
 
-    public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
+    public void serialize(ImportExportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptorDocument doc = getDescriptorDocument(context);
         dir.saveXmlBean(filename, doc);

@@ -17,11 +17,12 @@ package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileRoot;
@@ -62,14 +63,14 @@ public class FileWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    public boolean selectedByDefault(ExportType type)
     {
         // Files could be very large, so make them opt-in
         return false;
     }
 
     @Override
-    public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         WebdavResource resource = getFilesDirectory(container);
         if (resource != null)

@@ -4,7 +4,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -107,7 +107,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         // We will divide the sample type and data class definitions from the runs into two separate XAR files, the reason is
         // during import we want all data to be imported via the query update service and any lineage will be wired up
@@ -215,7 +215,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         writeDataClassDataFiles(dataClasses, ctx, xarDir, relativizedLSIDs);
     }
 
-    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
         // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
@@ -246,7 +246,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
-    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
         // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
@@ -323,7 +323,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         return columns;
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(ImportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
+    private Collection<ColumnInfo> getColumnsToExport(ImportExportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());

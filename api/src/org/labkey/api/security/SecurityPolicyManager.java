@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -355,7 +355,7 @@ public class SecurityPolicyManager
         }
     }
 
-    public static void importRoleAssignments(ImportContext ctx, MutableSecurityPolicy policy, RoleAssignmentsType assignments)
+    public static void importRoleAssignments(ImportExportContext ctx, MutableSecurityPolicy policy, RoleAssignmentsType assignments)
     {
         for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
         {

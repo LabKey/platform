@@ -16,7 +16,7 @@
 
 package org.labkey.assay.view;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayRunsView;
 import org.labkey.api.assay.AssayService;
@@ -61,7 +61,7 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
     }
 
     @Override
-    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> serializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
@@ -80,7 +80,7 @@ public class AssayRunsWebPartFactory extends AssayBaseWebPartFactory
     }
 
     @Override
-    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> deserializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 

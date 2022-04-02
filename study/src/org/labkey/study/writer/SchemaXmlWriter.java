@@ -15,7 +15,7 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.PHI;
@@ -50,7 +50,7 @@ import java.util.Set;
  * Date: May 27, 2009
  * Time: 11:12:33 AM
  */
-public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportContext<StudyDocument.Study>>
+public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportExportContext<StudyDocument.Study>>
 {
     public static final String SCHEMA_FILENAME = "datasets_metadata.xml";
 
@@ -74,7 +74,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
     }
 
     @Override
-    public void write(List<DatasetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
+    public void write(List<DatasetDefinition> definitions, ImportExportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();

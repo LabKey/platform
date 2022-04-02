@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -723,7 +723,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
 
     @Override
-    public void serializeToFolder(ImportContext ctx, VirtualFile directory) throws IOException
+    public void serializeToFolder(ImportExportContext ctx, VirtualFile directory) throws IOException
     {
         ScriptReportDescriptor descriptor = getDescriptor();
 
@@ -748,7 +748,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         return getSerializedScriptFileName(null);
     }
-    protected String getSerializedScriptFileName(ImportContext context)
+    protected String getSerializedScriptFileName(ImportExportContext context)
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         String extension = "script";

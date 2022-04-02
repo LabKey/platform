@@ -1,7 +1,7 @@
 package org.labkey.api.qc.export;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
@@ -47,7 +47,7 @@ public interface DataStateImportExportHelper
      */
     int getPriority();
 
-    void write(Container container, ImportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml);
+    void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml);
 
     boolean isDataStateInUse(Container container, DataState state);
 

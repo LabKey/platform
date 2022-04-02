@@ -1,6 +1,6 @@
 package org.labkey.study.qc;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
@@ -29,7 +29,7 @@ public class StudyQCImportExportHelper implements DataStateImportExportHelper
     }
 
     @Override
-    public void write(Container container, ImportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml)
+    public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, StudyqcDocument.Studyqc qcXml)
     {
         StudyImpl study = (StudyImpl)StudyService.get().getStudy(container);
 

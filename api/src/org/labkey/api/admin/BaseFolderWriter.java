@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin;
 
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -35,9 +36,9 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    public boolean selectedByDefault(ExportType type)
     {
-        return AbstractFolderContext.ExportType.ALL == type;
+        return ExportType.ALL == type;
     }
 
     @Override
@@ -53,7 +54,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {}
 
     @Override
@@ -63,7 +64,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public void initialize(ImportContext<FolderDocument.Folder> context)
+    public void initialize(FolderExportContext context)
     {
         // Do nothing
     }

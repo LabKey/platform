@@ -17,7 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -261,7 +261,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
+    public void serialize(ImportExportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 
@@ -272,7 +272,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public void serializeToFolder(ImportContext context, VirtualFile dir) throws IOException
+    public void serializeToFolder(ImportExportContext context, VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 

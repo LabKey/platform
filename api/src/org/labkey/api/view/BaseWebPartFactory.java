@@ -20,7 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
@@ -232,19 +232,19 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     }
 
     @Override
-    public Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> serializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         return propertyMap;
     }
 
     @Override
-    public Map<String, String> deserializePropertyMap(ImportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> deserializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
     {
         return propertyMap;
     }
 
     @Override
-    public boolean includeInExport(ImportContext ctx, WebPart webPart)
+    public boolean includeInExport(ImportExportContext ctx, WebPart webPart)
     {
         return true;
     }

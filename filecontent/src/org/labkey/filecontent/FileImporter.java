@@ -121,13 +121,6 @@ public class FileImporter implements FolderImporter
         }
     }
 
-    @NotNull
-    @Override
-    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        return Collections.emptyList();
-    }
-
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override

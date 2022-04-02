@@ -17,11 +17,12 @@
 package org.labkey.list.model;
 
 import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.writer.VirtualFile;
@@ -43,7 +44,7 @@ public class FolderListWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
 
@@ -59,9 +60,9 @@ public class FolderListWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    public boolean selectedByDefault(ExportType type)
     {
-        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+        return ExportType.ALL == type || ExportType.STUDY == type;
     }
 
     public static class Factory implements FolderWriterFactory

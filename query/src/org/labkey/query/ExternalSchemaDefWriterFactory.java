@@ -20,7 +20,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.MultiTablesType;
@@ -62,7 +62,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, ImportExportContext<Folder> ctx, VirtualFile vf) throws Exception
         {
             List<ExternalSchemaDef> externalSchemas = QueryManager.get().getExternalSchemaDefs(c);
             List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);
