@@ -29,7 +29,7 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.ImportableColumn;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.StudyDocument.Study;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 9:51:36 AM
  */
-class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportExportContext<StudyDocument.Study>>
+class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportExportContext<Study>>
 {
     @Override
     public String getDataType()
@@ -50,7 +50,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
     }
 
     @Override
-    public void write(QueryInfo queryInfo, ImportExportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
+    public void write(QueryInfo queryInfo, ImportExportContext<Study> ctx, VirtualFile vf) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();
         Collection<ImportableColumn> columns = queryInfo.getColumns();
@@ -84,7 +84,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
         }
     }
 
-    protected SQLFragment generateSql(ImportExportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
+    protected SQLFragment generateSql(ImportExportContext<Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)
     {
         SQLFragment sql = new SQLFragment().append("SELECT ");
         String comma = "";

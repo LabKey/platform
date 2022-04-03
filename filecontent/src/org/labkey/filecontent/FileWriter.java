@@ -16,13 +16,12 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileRoot;
@@ -32,7 +31,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,7 +68,7 @@ public class FileWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container container, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         WebdavResource resource = getFilesDirectory(container);
         if (resource != null)

@@ -19,8 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.Writer;
-import org.labkey.folder.xml.FolderDocument;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.util.Collection;
 
@@ -29,7 +27,7 @@ import java.util.Collection;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface FolderWriter extends Writer<Container, ImportExportContext<Folder>>
+public interface FolderWriter extends Writer<Container, FolderExportContext>
 {
     @Nullable Collection<Writer> getChildren(boolean sort, boolean forTemplate);
     boolean show(Container c);

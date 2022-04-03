@@ -17,12 +17,11 @@ package org.labkey.wiki.export;
 
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.wiki.WikiWebdavProvider;
 
 
@@ -50,7 +49,7 @@ public class WikiWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container container, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             // Set up the pointer in the folder.xml file
             ctx.getXml().addNewWikis().setDir(DIRECTORY_NAME);
@@ -60,6 +59,5 @@ public class WikiWriterFactory implements FolderWriterFactory
             WikiWebdavProvider.WikiProviderResource parent = new WikiWebdavProvider.WikiProviderResource(new DummyWebdavResource(), container);
             wikiDir.saveWebdavTree(parent, ctx.getUser());
         }
-
     }
 }

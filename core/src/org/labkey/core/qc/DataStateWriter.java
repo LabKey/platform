@@ -1,12 +1,11 @@
 package org.labkey.core.qc;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
@@ -47,7 +46,7 @@ public class DataStateWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container container, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container container, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         DataStateImportExportHelper helper = getHelper(container);
 

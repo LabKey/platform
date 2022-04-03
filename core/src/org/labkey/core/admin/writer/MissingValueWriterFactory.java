@@ -15,17 +15,15 @@
  */
 package org.labkey.core.admin.writer;
 
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.folder.xml.MissingValueIndicatorsType;
 import org.labkey.folder.xml.MissingValueIndicatorsType.MissingValueIndicator;
 
@@ -58,7 +56,7 @@ public class MissingValueWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportExportContext<Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             // Export to the new "folder"-namespace "missingValueIndicator" element
             MissingValueIndicatorsType mvXml = ctx.getXml().addNewMissingValueIndicator();

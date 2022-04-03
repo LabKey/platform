@@ -2,6 +2,7 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportExportContext;
@@ -107,7 +108,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         // We will divide the sample type and data class definitions from the runs into two separate XAR files, the reason is
         // during import we want all data to be imported via the query update service and any lineage will be wired up

@@ -19,9 +19,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -42,7 +42,7 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
         return new NotificationSettingsWriter();
     }
 
-    public class NotificationSettingsWriter extends BaseFolderWriter
+    public static class NotificationSettingsWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -51,7 +51,7 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             FolderDocument.Folder folderXml = ctx.getXml();
 
@@ -77,6 +77,5 @@ public class NotificationSettingsWriterFactory implements FolderWriterFactory
                 files.setLabel(filesOption.getEmailOption());
             }
         }
-
     }
 }

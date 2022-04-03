@@ -19,7 +19,6 @@ import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Collection;
 
@@ -54,7 +53,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public void write(Container object, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {}
 
     @Override
