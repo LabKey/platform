@@ -19,7 +19,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.CompressedXarSource;
@@ -34,7 +33,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.nio.file.Path;
 
@@ -166,15 +164,15 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
     private static class FolderExportXarSourceWrapper
     {
         private final VirtualFile _xarDir;
-        private final ImportExportContext<Folder> _importExportContext;
+        private final FolderImportContext _importContext;
 
         private Path _xarFile;
         private XarSource _xarSource;
 
-        public FolderExportXarSourceWrapper(VirtualFile xarDir, ImportExportContext<Folder> ctx)
+        public FolderExportXarSourceWrapper(VirtualFile xarDir, FolderImportContext ctx)
         {
              _xarDir = xarDir;
-            _importExportContext = ctx;
+            _importContext = ctx;
         }
 
         public void init()
@@ -188,7 +186,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             {
                 if (file.toLowerCase().endsWith(".xar") || file.toLowerCase().endsWith(".xar.xml"))
                 {
-                    _xarFile = FileUtil.getPath(_importExportContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file);
+                    _xarFile = FileUtil.getPath(_importContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file);
                     break;
                 }
             }
@@ -213,7 +211,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                             // get assigned to the subfolder instead of the parent container.
                             // If we were given a non-null job in FolderXarImporter.process(), job.getContainer() will
                             // return the parent container.
-                            _importExportContext.getContainer());
+                            _importContext.getContainer());
                 }
                 else
                 {
@@ -225,7 +223,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                             // get assigned to the subfolder instead of the parent container.
                             // If we were given a non-null job in FolderXarImporter.process(), job.getContainer() will
                             // return the parent container.
-                            _importExportContext.getContainer());
+                            _importContext.getContainer());
                 }
             }
             return _xarSource;

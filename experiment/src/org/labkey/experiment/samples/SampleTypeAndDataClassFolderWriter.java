@@ -5,7 +5,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -58,7 +57,6 @@ import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -219,7 +217,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         writeDataClassDataFiles(dataClasses, ctx, xarDir, relativizedLSIDs);
     }
 
-    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
         // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
@@ -250,7 +248,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
-    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportExportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
         // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
@@ -327,7 +325,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         return columns;
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(ImportExportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
+    private Collection<ColumnInfo> getColumnsToExport(FolderExportContext ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());

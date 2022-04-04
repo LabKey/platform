@@ -6,7 +6,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -37,7 +36,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -170,7 +168,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         }
     }
 
-    protected XarReader getXarReader(@Nullable PipelineJob job, ImportExportContext<Folder> ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
+    protected XarReader getXarReader(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
         Logger log = ctx.getLogger();
@@ -199,7 +197,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         return new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job);
     }
 
-    protected PipelineJob getDummyPipelineJob(ImportExportContext<Folder> ctx)
+    protected PipelineJob getDummyPipelineJob(FolderImportContext ctx)
     {
         return new PipelineJob()
         {
@@ -235,7 +233,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(ImportExportContext<Folder> ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    protected void importTsvData(FolderImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);

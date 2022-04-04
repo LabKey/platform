@@ -18,9 +18,6 @@ package org.labkey.api.admin;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
-
-import java.util.Collection;
 
 /**
  * User: cnathe
@@ -38,12 +35,6 @@ public class BaseFolderWriter implements FolderWriter
     public boolean selectedByDefault(ExportType type)
     {
         return ExportType.ALL == type;
-    }
-
-    @Override
-    public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
-    {
-        return null;
     }
 
     @Override

@@ -20,7 +20,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,7 +33,6 @@ import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
 import org.labkey.data.xml.externalSchema.ExternalSchemaType;
 import org.labkey.data.xml.externalSchema.LinkedSchemaDocument;
 import org.labkey.data.xml.externalSchema.LinkedSchemaType;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.query.controllers.AbstractExternalSchemaForm;
 import org.labkey.query.controllers.ExternalSchemaForm;
 import org.labkey.query.controllers.LinkedSchemaForm;
@@ -97,7 +95,7 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
             }
         }
 
-        private void importSchema(ImportExportContext<Folder> ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
+        private void importSchema(FolderImportContext ctx, VirtualFile root, VirtualFile externalSchemaDir, String schemaFileName) throws Exception
         {
             XmlObject schemaXmlFile = externalSchemaDir.getXmlBean(schemaFileName);
             String relativePath = root.getRelativePath(schemaFileName);

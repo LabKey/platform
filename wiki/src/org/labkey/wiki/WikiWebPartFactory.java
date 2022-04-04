@@ -16,7 +16,8 @@
 package org.labkey.wiki;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportExportContext;
+import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -62,7 +63,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public Map<String, String> serializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> serializePropertyMap(FolderExportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> serializedPropertyMap = new HashMap<>(propertyMap);
 
@@ -85,7 +86,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
     @Override
-    public Map<String, String> deserializePropertyMap(ImportExportContext ctx, Map<String, String> propertyMap)
+    public Map<String, String> deserializePropertyMap(FolderImportContext ctx, Map<String, String> propertyMap)
     {
         Map<String, String> deserializedPropertyMap = new HashMap<>(propertyMap);
 

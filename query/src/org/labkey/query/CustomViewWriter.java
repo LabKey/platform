@@ -20,7 +20,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
@@ -29,7 +28,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.util.List;
 import java.util.Set;
@@ -77,7 +75,7 @@ public class CustomViewWriter extends BaseFolderWriter
                 {
                     if(viewsToExport == null || viewsToExport.contains(customView.getEntityId()))
                     {
-                        VirtualFile customViewDir = ensureViewDirectory(ctx, root);
+                        VirtualFile customViewDir = ensureViewDirectory(root);
                         if (customView.serialize(customViewDir))
                         {
                             // Create the <view> element only if we have a custom view to write
@@ -91,7 +89,7 @@ public class CustomViewWriter extends BaseFolderWriter
     }
 
     // Create the <views> element
-    private VirtualFile ensureViewDirectory(ImportExportContext<FolderDocument.Folder> ctx, VirtualFile root)
+    private VirtualFile ensureViewDirectory(VirtualFile root)
     {
         if (null == _viewDir)
         {

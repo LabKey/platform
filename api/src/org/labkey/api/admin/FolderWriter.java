@@ -15,12 +15,13 @@
  */
 package org.labkey.api.admin;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.Writer;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Writer for a particular type of data, used for folder exports.
@@ -29,7 +30,11 @@ import java.util.Collection;
  */
 public interface FolderWriter extends Writer<Container, FolderExportContext>
 {
-    @Nullable Collection<Writer> getChildren(boolean sort, boolean forTemplate);
+    default @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
+    {
+        return Collections.emptyList();
+    }
+
     boolean show(Container c);
     boolean selectedByDefault(ExportType type);
     void initialize(FolderExportContext context);

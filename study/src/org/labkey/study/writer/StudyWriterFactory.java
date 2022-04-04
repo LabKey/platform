@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -115,9 +116,9 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
+        public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
         {
-            List<Writer> children = new ArrayList<>();
+            List<Writer<?, ?>> children = new ArrayList<>();
             for (SimpleStudyWriter writer : StudySerializationRegistry.get().getSimpleStudyWriters())
             {
                 if (!forTemplate || writer.includeWithTemplate())

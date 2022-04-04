@@ -18,7 +18,7 @@ package org.labkey.study.reports;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.admin.ImportExportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.study.StudyService;
@@ -44,7 +44,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
     }
 
     @Override
-    protected String adjustPropertyValue(@Nullable ImportExportContext context, String key, Object value)
+    protected String adjustPropertyValue(@Nullable FolderExportContext context, String key, Object value)
     {
         if (null != context && context.isAlternateIds() && "groups".equals(key))
         {

@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportExportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.security.permissions.Permission;
 
 import java.io.Serializable;
@@ -69,7 +69,7 @@ public interface ContainerType extends Serializable
      * @param context the import/export context
      * @return Boolean indicating if the container  is to be included for import and/or export given the context
      */
-    boolean includeForImportExport(ImportExportContext context);
+    boolean includeForImportExport(FolderExportContext context);
 
     /**
      * @return Boolean indicating if this container should be removed as part of a portal removal or not

@@ -38,7 +38,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.CoreUrls;
@@ -1778,11 +1777,11 @@ public class CoreController extends SpringActionController
                     writerMap.put("name", dataType);
                     writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
 
-                    Collection<Writer> childWriters = writer.getChildren(true, form.isForTemplate());
-                    if (childWriters != null && childWriters.size() > 0)
+                    Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
+                    if (!childWriters.isEmpty())
                     {
                         List<String> children = new ArrayList<>();
-                        for (Writer child : childWriters)
+                        for (Writer<?, ?> child : childWriters)
                         {
                             dataType = child.getDataType();
                             if (dataType != null)

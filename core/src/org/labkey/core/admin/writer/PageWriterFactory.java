@@ -21,7 +21,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal;
@@ -99,8 +98,7 @@ public class PageWriterFactory implements FolderWriterFactory
             root.saveXmlBean(FILENAME, pagesDocXML);
         }
 
-
-        public void addWebPartsToPage(ImportExportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
+        public void addWebPartsToPage(FolderExportContext ctx, PagesDocument.Pages.Page pageXml, List<WebPart> webpartsInPage)
         {
             for (WebPart webPart : webpartsInPage)
             {

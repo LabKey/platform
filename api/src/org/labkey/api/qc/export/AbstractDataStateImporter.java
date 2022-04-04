@@ -2,8 +2,8 @@ package org.labkey.api.qc.export;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.QCStateManager;
@@ -14,6 +14,7 @@ import java.util.Map;
 
 public abstract class AbstractDataStateImporter
 {
+    // TODO: Switch first parameter to FolderImportContext after we remove legacy StudyQcStatesImporter
     public static void importQCStates(ImportExportContext<?> ctx, StudyqcDocument doc, DataStateImportExportHelper helper) throws ImportException
     {
         StudyqcDocument.Studyqc qcXml = doc.getStudyqc();

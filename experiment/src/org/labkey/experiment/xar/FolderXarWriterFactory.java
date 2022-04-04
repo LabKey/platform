@@ -21,7 +21,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportExportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.XarExportContext;
@@ -33,7 +32,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.OutputStream;
 import java.util.List;
@@ -57,7 +55,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         return new FolderXarWriter();
     }
 
-    public class FolderXarWriter extends BaseFolderWriter
+    public static class FolderXarWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -81,7 +79,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return false;
         }
 
-        private List<ExpRun> getRuns(@Nullable ImportExportContext<FolderDocument.Folder> ctx, Container c)
+        private List<ExpRun> getRuns(@Nullable FolderExportContext ctx, Container c)
         {
             XarExportContext xarCtx = null;
             if (ctx != null)

@@ -46,7 +46,7 @@ public abstract class AbstractImportExportContext<XmlRoot extends XmlObject, Xml
                                                        // TODO; consider ManagedReference for _loggerGetter
     private transient LoggerGetter _loggerGetter;      // Don't serialize; owner of Context must set after construction
     private final @Nullable VirtualFile _root;
-    private final Map<Class<? extends ImportExportContext>, ImportExportContext> _contextMap;
+    private final Map<Class<? extends ImportExportContext<?>>, ImportExportContext<?>> _contextMap;
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
     private boolean _failForUndefinedVisits;
@@ -61,7 +61,7 @@ public abstract class AbstractImportExportContext<XmlRoot extends XmlObject, Xml
     @JsonCreator
     protected AbstractImportExportContext(@JsonProperty("_dataTypes") Set<String> dataTypes, @JsonProperty("_user") User user,
                                           @JsonProperty("_c") Container c, @JsonProperty("_root") VirtualFile root,
-                                          @JsonProperty("_contextMap") Map<Class<? extends ImportExportContext>, ImportExportContext> contextMap)
+                                          @JsonProperty("_contextMap") Map<Class<? extends ImportExportContext<?>>, ImportExportContext<?>> contextMap)
     {
         _dataTypes = dataTypes;
         _user = user;
@@ -219,13 +219,13 @@ public abstract class AbstractImportExportContext<XmlRoot extends XmlObject, Xml
     }
 
     @Override
-    public <K extends ImportExportContext> void addContext(Class<K> contextClass, K context)
+    public <K extends ImportExportContext<?>> void addContext(Class<K> contextClass, K context)
     {
         _contextMap.put(contextClass, context);
     }
 
     @Override
-    public <K extends ImportExportContext> K getContext(Class<K> contextClass)
+    public <K extends ImportExportContext<?>> K getContext(Class<K> contextClass)
     {
         //noinspection unchecked
         return (K)_contextMap.get(contextClass);

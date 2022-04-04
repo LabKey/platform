@@ -69,6 +69,6 @@ public interface ImportExportContext<XmlType extends XmlObject> extends Containe
     }
 
     // These methods let writers add and get module-specific context information
-    <K extends ImportExportContext> void addContext(Class<K> contextClass, K context);
-    <K extends ImportExportContext> K getContext(Class<K> contextClass);
+    <K extends ImportExportContext<?>> void addContext(Class<K> contextClass, K context);
+    <K extends ImportExportContext<?>> K getContext(Class<K> contextClass);
 }
