@@ -227,6 +227,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -5044,7 +5045,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DatasetPropertyForm implements HasBindParameters
+    public static class DatasetPropertyForm implements HasAllowBindParameter
     {
         private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
@@ -5058,29 +5059,21 @@ public class StudyController extends BaseStudyController
             _map = map;
         }
 
+        private static final Pattern pat =  Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
+
         @Override
-        public @NotNull BindException bindParameters(PropertyValues pvs)
+        public Predicate<String> allowBindParameter()
         {
-            Pattern pat = Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
-            for (var pv : pvs.getPropertyValues())
+            return (name) ->
             {
-                String name = pv.getName();
-                Matcher m = pat.matcher(name);
-                if (m.matches())
-                {
-                    var dvd = _map.get(Integer.parseInt(m.group(1)));
-                    try
-                    {
-                        if (null != dvd)
-                            BeanUtils.setProperty(dvd, m.group(2), pv.getValue());
-                    }
-                    catch (InvocationTargetException|IllegalAccessException e)
-                    {
-                        continue;
-                    }
-                }
-            }
-            return BaseViewAction.springBindParameters(this, "form", pvs);
+                if (name.startsWith(SpringActionController.FIELD_MARKER))
+                    name = name.substring(SpringActionController.FIELD_MARKER.length());
+                if (HasAllowBindParameter.getDefaultPredicate().test(name))
+                    return true;
+                if (pat.matcher(name).matches())
+                    return true;
+                return false;
+            };
         }
     }
 

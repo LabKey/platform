@@ -74,6 +74,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * User: matthewb
@@ -173,19 +174,15 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    private static final Set<String> disallowed = new CaseInsensitiveHashSet("class","container","containerid","request","response","user","viewcontext");
-
-    public static PropertyValues getPropertyValuesForFormBinding(PropertyValues pvs)
+    public static PropertyValues getPropertyValuesForFormBinding(PropertyValues pvs, @NotNull Predicate<String> allowBind)
     {
         if (null == pvs)
             return null;
         MutablePropertyValues ret = new MutablePropertyValues();
         for (PropertyValue pv : pvs.getPropertyValues())
         {
-            String name = pv.getName();
-            if (name.contains(".") || disallowed.contains(name))
-                continue;
-            ret.addPropertyValue(pv);
+            if (allowBind.test(pv.getName()))
+                ret.addPropertyValue(pv);
         }
         return ret;
     }
@@ -348,9 +345,9 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
     }
 
-
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
+        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
 
         String[] fields = binder.getDisallowedFields();
@@ -365,7 +362,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         try
         {
             // most paths probably called getPropertyValuesForFormBinding() already, but this is a public static method, so call it again
-            binder.bind(getPropertyValuesForFormBinding(params));
+            binder.bind(getPropertyValuesForFormBinding(params, allow));
             BindException errors = new NullSafeBindException(binder.getBindingResult());
             return errors;
         }
@@ -434,7 +431,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      */
     public static @NotNull BindException simpleBindParameters(Object command, String commandName, PropertyValues params)
     {
-        //params = _fixupPropertyMap(params);
+        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
 
         BindException errors = new NullSafeBindException(command, "Form");
 
@@ -444,6 +441,9 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         {
             String propertyName = pv.getName();
             Object value = pv.getValue();
+            if (!allow.test(propertyName))
+                continue;
+
             try
             {
                 Object converted = value;

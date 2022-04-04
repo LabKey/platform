@@ -27,7 +27,6 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-import static org.labkey.api.action.BaseViewAction.getPropertyValuesForFormBinding;
 import static org.labkey.api.action.BaseViewAction.springBindParameters;
 
 public class SourceForm extends ViewForm implements HasBindParameters
