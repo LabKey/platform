@@ -5071,7 +5071,8 @@ public class StudyController extends BaseStudyController
                     var dvd = _map.get(Integer.parseInt(m.group(1)));
                     try
                     {
-                        BeanUtils.setProperty(dvd, m.group(2), pv.getValue());
+                        if (null != dvd)
+                            BeanUtils.setProperty(dvd, m.group(2), pv.getValue());
                     }
                     catch (InvocationTargetException|IllegalAccessException e)
                     {
