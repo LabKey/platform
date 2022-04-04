@@ -454,7 +454,7 @@ public class ClosureQueryHelper
 
     enum TableType
     {
-        SampleType("Samples", SchemaKey.fromParts("exp","materials") )
+        SampleType("Samples", SchemaKey.fromParts("exp", "materials") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -476,7 +476,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpSampleType && !((ExpSampleType) expObject).isMedia();
                     }
                 },
-        SourceType("Sources", SchemaKey.fromParts("exp","data") )
+        SourceType("RegistryAndSources", SchemaKey.fromParts("exp", "data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -494,10 +494,10 @@ public class ClosureQueryHelper
                     @Override
                     boolean isInstance(ExpObject expObject)
                     {
-                        return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).isSource();
+                        return expObject instanceof ExpDataClass && (((ExpDataClass) expObject).isSource() || ((ExpDataClass) expObject).isRegistry());
                     }
                 },
-        MediaData("MediaData", SchemaKey.fromParts("exp","data") )
+        MediaData("MediaData", SchemaKey.fromParts("exp", "data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -519,7 +519,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).isMedia();
                     }
                 },
-        MediaSamples("MediaSamples", SchemaKey.fromParts("exp","materials") )
+        MediaSamples("MediaSamples", SchemaKey.fromParts("exp", "materials") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -541,28 +541,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpSampleType && ((ExpSampleType) expObject).isMedia();
                     }
                 },
-        Registry("Registry", SchemaKey.fromParts("exp","data") )
-                {
-                    @Override
-                    Collection<? extends ExpObject> getInstances(Container c, User u)
-                    {
-                        return ExperimentServiceImpl.get().getDataClasses(c, u,false)
-                                .stream()
-                                .filter(this::isInstance)
-                                .collect(Collectors.toList());
-                    }
-                    @Override
-                    ExpObject getInstance(Container c, User u, String name)
-                    {
-                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
-                    }
-                    @Override
-                    boolean isInstance(ExpObject expObject)
-                    {
-                        return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).isRegistry();
-                    }
-                },
-        DataClass("OtherData", SchemaKey.fromParts("exp","data") )
+        DataClass("OtherData", SchemaKey.fromParts("exp", "data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
