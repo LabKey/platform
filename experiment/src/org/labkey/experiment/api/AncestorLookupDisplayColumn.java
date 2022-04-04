@@ -60,6 +60,15 @@ public class AncestorLookupDisplayColumn extends DataColumn
         return super.getValue(ctx);
     }
 
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        Long lookupKey = getLookupId(ctx);
+        if (lookupKey != null && lookupKey < 0)
+            return null;
+        return super.renderURL(ctx);
+    }
+
     private Long getLookupId(RenderContext ctx)
     {
         return (Long) _lookupCol.getValue(ctx);
