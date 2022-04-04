@@ -321,6 +321,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
         else
             status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
+        e = ExceptionUtil.unwrapException(e);
+
         try
         {
             writeAndClose(e, status);
