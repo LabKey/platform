@@ -110,6 +110,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
         // We will divide the sample type and data class definitions from the runs into two separate XAR files, the reason is
         // during import we want all data to be imported via the query update service and any lineage will be wired up
         // by the runs XAR.
@@ -124,11 +126,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         boolean exportRuns = false;
         _xarCtx = ctx.getContext(XarExportContext.class);
 
-        Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
+        Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(c, ExpSampleType.class, "export"));
+        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, ctx.getUser(), true))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
-            if (StudyService.get() != null && StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
+            StudyService ss = StudyService.get();
+            if (ss != null && ss.getStudy(c) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
                 continue;
 
             // ignore sample types that are filtered out
@@ -143,14 +146,14 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 Set<Integer> includedSamples = _xarCtx != null ? _xarCtx.getIncludedSamples().get(sampleType.getRowId()) : null;
                 sampleTypes.add(sampleType);
                 typesSelection.addSampleType(sampleType);
-                materialsToExport.addAll(sampleType.getSamples(ctx.getContainer()).stream()
-                        .filter(m -> includedSamples == null || includedSamples.contains(m.getRowId()))
-                        .collect(Collectors.toList()));
+                materialsToExport.addAll(sampleType.getSamples(c).stream()
+                    .filter(m -> includedSamples == null || includedSamples.contains(m.getRowId()))
+                    .toList());
                 exportTypes = true;
             }
         }
 
-        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), false))
+        for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, ctx.getUser(), false))
         {
             // ignore data classes that are filtered out
             if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
@@ -160,8 +163,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
             datasToExport.addAll(dataClass.getDatas().stream()
-                    .filter(d -> includedDatas == null || includedDatas.contains(d.getRowId()))
-                    .collect(Collectors.toList()));
+                .filter(d -> includedDatas == null || includedDatas.contains(d.getRowId()))
+                .toList());
             exportTypes = true;
         }
 

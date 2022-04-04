@@ -85,7 +85,7 @@ public class StudyWriterFactory implements FolderWriterFactory
             super.initialize(ctx);
 
             Container c = ctx.getContainer();
-            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
 
             if (null != study && ctx.getContext(StudyExportContext.class) == null)
             {
@@ -99,6 +99,8 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
+            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
             StudyExportContext exportCtx = ctx.getContext(StudyExportContext.class);
 
             if (null != exportCtx)
@@ -107,7 +109,7 @@ public class StudyWriterFactory implements FolderWriterFactory
                 VirtualFile studyDir = vf.getDir(DEFAULT_DIRECTORY);
 
                 StudyWriter writer = new StudyWriter();
-                StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer()); // TODO: Shouldn't the StudyExportContext hold onto the study?!?
+                StudyImpl study = StudyManager.getInstance().getStudy(c);
                 writer.write(study, exportCtx, studyDir);
             }
         }

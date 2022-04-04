@@ -67,7 +67,7 @@ public class SecurityGroupWriterFactory implements FolderWriterFactory
                 for (Group group : groups)
                 {
                     GroupType xmlGroup = xmlGroups.addNewGroup();
-                    GroupManager.exportGroupMembers(group, new ArrayList<Group>(SecurityManager.getGroupMembers(group, MemberType.GROUPS)), new ArrayList<User>(SecurityManager.getGroupMembers(group, MemberType.ACTIVE_USERS)), xmlGroup);
+                    GroupManager.exportGroupMembers(group, new ArrayList<>(SecurityManager.getGroupMembers(group, MemberType.GROUPS)), new ArrayList<User>(SecurityManager.getGroupMembers(group, MemberType.ACTIVE_USERS)), xmlGroup);
                 }
             }
         }

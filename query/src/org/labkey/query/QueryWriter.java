@@ -60,9 +60,9 @@ public class QueryWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container container, FolderExportContext ctx, VirtualFile root) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = ctx.getContainer();
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
 
         // get all custom queries and metadata xml overrides of built-in tables that have been overridden
         List<QueryDefinition> queries = new ArrayList<>(QueryServiceImpl.get().getQueryDefsAndMetadataOverrides(ctx.getUser(), c));

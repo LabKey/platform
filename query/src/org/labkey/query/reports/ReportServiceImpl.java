@@ -948,12 +948,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
 
-            if (ctx instanceof FolderImportContext)
-            {
-                // remember that we imported this report so we don't try to delete it if
-                // we are importing another report with the same reportKey and name.
-                ((FolderImportContext)ctx).addImportedReport(report.getDescriptor());
-            }
+            // remember that we imported this report so we don't try to delete it if
+            // we are importing another report with the same reportKey and name.
+            ctx.addImportedReport(report.getDescriptor());
 
             // import any security role assignments
             if (reportXml instanceof ReportDescriptorDocument)

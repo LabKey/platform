@@ -40,7 +40,7 @@ public class WikiWriterFactory implements FolderWriterFactory
         return new WikiFolderWriter();
     }
 
-    private class WikiFolderWriter extends BaseFolderWriter
+    private static class WikiFolderWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()

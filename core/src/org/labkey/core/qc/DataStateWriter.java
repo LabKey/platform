@@ -46,13 +46,15 @@ public class DataStateWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container container, FolderExportContext ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        DataStateImportExportHelper helper = getHelper(container);
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
+        DataStateImportExportHelper helper = getHelper(c);
 
         if (helper != null)
         {
-            List<DataState> qcStates = DataStateManager.getInstance().getStates(ctx.getContainer());
+            List<DataState> qcStates = DataStateManager.getInstance().getStates(c);
 
             FolderDocument.Folder.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
             StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
@@ -72,7 +74,7 @@ public class DataStateWriter extends BaseFolderWriter
                         state.setType(StateTypeEnum.Enum.forString(qc.getStateType()));
                 }
             }
-            helper.write(container, ctx, qcXml);
+            helper.write(c, ctx, qcXml);
 
             qcStatesXml.setFile(DEFAULT_SETTINGS_FILE);
             vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);

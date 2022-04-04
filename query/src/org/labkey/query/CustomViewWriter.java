@@ -51,12 +51,12 @@ public class CustomViewWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container container, FolderExportContext ctx, VirtualFile root) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = ctx.getContainer();
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
         User user = ctx.getUser();
-        Set<String> viewsToExport = null;
-        viewsToExport = ctx.getViewIds();
+        Set<String> viewsToExport = ctx.getViewIds();
 
         // TODO: Export views from external schemas as well?
         DefaultSchema folderSchema = DefaultSchema.get(user, c);

@@ -97,11 +97,13 @@ public class FolderWriterImpl extends BaseFolderWriter
     // This writer is responsible for folder.xml. It writes the top-level folder attributes and saves out the bean when it's complete.
     private void writeFolderXml(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
         FolderDocument.Folder folderXml = ctx.getXml();
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         if (ctx.isAddExportComment())
-            XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
+            XmlBeansUtil.addStandardExportComment(folderXml, c, ctx.getUser());
 
         folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
         folderXml.setLabel(c.getName());
@@ -113,7 +115,7 @@ public class FolderWriterImpl extends BaseFolderWriter
             folderXml.setDescription(c.getDescription());
 
         // Ask LookAndFeelProperties for actual stored values (we don't want inherited values)
-        LookAndFeelProperties props = LookAndFeelProperties.getInstance(ctx.getContainer());
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
 
         String defaultDateFormat = props.getDefaultDateFormatStored();
         if (null != defaultDateFormat)

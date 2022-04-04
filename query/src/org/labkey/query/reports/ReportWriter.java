@@ -48,7 +48,9 @@ public class ReportWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), ctx.getContainer()));
+        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
+        Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), c));
         Set<String> reportsToExport = ctx.getReportIds();
         if (reportsToExport != null)
         {

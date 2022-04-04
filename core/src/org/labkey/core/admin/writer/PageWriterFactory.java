@@ -49,7 +49,7 @@ public class PageWriterFactory implements FolderWriterFactory
         return new PageWriter();
     }
 
-    public class PageWriter extends BaseFolderWriter
+    public static class PageWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -60,6 +60,8 @@ public class PageWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
         {
+            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
             FolderDocument.Folder folderXml = ctx.getXml();
             FolderDocument.Folder.Pages folderPagesXML = folderXml.addNewPages();
             folderPagesXML.setFile(PageWriterFactory.FILENAME);
@@ -67,13 +69,13 @@ public class PageWriterFactory implements FolderWriterFactory
             PagesDocument pagesDocXML = PagesDocument.Factory.newInstance();
             PagesDocument.Pages pagesXML = pagesDocXML.addNewPages();
 
-            Map<String,Portal.PortalPage> tabs = Portal.getPages(ctx.getContainer(), true);
+            Map<String,Portal.PortalPage> tabs = Portal.getPages(c, true);
             if (tabs.size() == 0)
             {
                 // if there are no tabs, try getting webparts for the default page ID
                 PagesDocument.Pages.Page pageXml = pagesXML.addNewPage();
                 pageXml.setName(Portal.DEFAULT_PORTAL_PAGE_ID);
-                addWebPartsToPage(ctx, pageXml, Portal.getParts(ctx.getContainer(), Portal.DEFAULT_PORTAL_PAGE_ID));
+                addWebPartsToPage(ctx, pageXml, Portal.getParts(c, Portal.DEFAULT_PORTAL_PAGE_ID));
             }
             else
             {
@@ -88,7 +90,7 @@ public class PageWriterFactory implements FolderWriterFactory
                         pageXml.setCaption(tab.getCaption());
 
                     // for the study folder type(s), the Overview tab can have a pageId of portal.default
-                    List<WebPart> portalPageParts = Portal.getParts(ctx.getContainer(), tab.getPageId());
+                    List<WebPart> portalPageParts = Portal.getParts(c, tab.getPageId());
 
                     addWebPartsToPage(ctx, pageXml, portalPageParts);
                 }

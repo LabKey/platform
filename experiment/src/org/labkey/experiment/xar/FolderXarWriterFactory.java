@@ -136,12 +136,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
+            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
+
             XarExportSelection selection = new XarExportSelection();
             ExperimentService expService = ExperimentService.get();
 
-
             // Get all the experiments in the container.
-            List<? extends ExpExperiment> experiments = expService.getExperiments(ctx.getContainer(), ctx.getUser(), false, false);
+            List<? extends ExpExperiment> experiments = expService.getExperiments(c, ctx.getUser(), false, false);
 
             // Add experiments.
             for(ExpExperiment exp: experiments)
@@ -149,9 +150,9 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                 selection.addExperimentIds(exp.getRowId());
             }
 
-            selection.addProtocolIds(getProtocols(ctx.getContainer()));
+            selection.addProtocolIds(getProtocols(c));
 
-            selection.addRuns(getRuns(ctx, ctx.getContainer()));
+            selection.addRuns(getRuns(ctx, c));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
