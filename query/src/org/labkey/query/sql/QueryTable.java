@@ -30,6 +30,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
@@ -76,11 +77,13 @@ public class QueryTable extends QueryRelation
 
     protected Boolean _generateSelectSQL = null;
 
+
     public QueryTable(Query query, QuerySchema schema, TableInfo table, String alias)
     {
         this(query, schema, alias);
         setTableInfo(table);
     }
+
 
     public QueryTable(Query query, QuerySchema schema, String alias)
     {
@@ -92,6 +95,7 @@ public class QueryTable extends QueryRelation
         _uniqueAliasCounter = _query.incrementAliasCounter();
     }
 
+
     public void setTableInfo(TableInfo table)
     {
         _tableInfo = table;
@@ -102,10 +106,18 @@ public class QueryTable extends QueryRelation
             setSavedName(selectName);
     }
 
+
     @Override
     public TableInfo getTableInfo()
     {
         return _tableInfo;
+    }
+
+
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        return _tableInfo.getSortFields();
     }
 
 

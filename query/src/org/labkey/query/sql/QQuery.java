@@ -77,20 +77,36 @@ public class QQuery extends QExpr
         return null;
     }
 
+
     public QGroupBy getGroupBy()
     {
         return getChildOfType(QGroupBy.class);
     }
+
 
     public QLimit getLimit()
     {
         return getChildOfType(QLimit.class);
     }
 
+
+    public QLimit removeLimit()
+    {
+        return removeChildOfType(QLimit.class);
+    }
+
+
     public QOrder getOrderBy()
     {
         return getChildOfType(QOrder.class);
     }
+
+
+    public QOrder removeOrderBy()
+    {
+        return removeChildOfType(QOrder.class);
+    }
+
 
     @Override
     public void appendSource(SourceBuilder builder)
@@ -117,7 +133,7 @@ public class QQuery extends QExpr
                 return;
             String message = "Unexpected error parsing subselect: " + getSourceText();
             _select.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR:" + message + "#");
+            builder.append("#ERROR:").append(message).append("#");
             return;
         }
         builder.append("(");

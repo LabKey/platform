@@ -22,10 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -93,8 +91,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
                 // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
                 // a parameter for the table's detailsURL.  However, we can use it as the url for this column.
-                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
-                        Collections.singletonMap("name", "Name")));
+                DetailsURL nameURL = new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
+                        Collections.singletonMap("name", "Name"));
+                nameURL.setContainerContext(getContainer());
+                c.setURL(nameURL);
+
                 return c;
             }
 
