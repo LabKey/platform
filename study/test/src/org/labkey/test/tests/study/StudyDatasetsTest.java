@@ -187,7 +187,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         fieldsPanel.removeField(subjectName);
         fieldsPanel.manuallyDefineFields(mySubjectId);
         designerPage.clickSave();
-        checkExpectedErrors(errorCountBefore + 2);
+        checkExpectedErrors(errorCountBefore);
 
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
