@@ -752,4 +752,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         if (null != getUserSchema() && !hasPermission(getUserSchema().getUser(), ReadPermission.class))
             throw new UnauthorizedException(getUserSchema().getSchemaName() + "." + getName());
     }
+
+    default List<Sort.SortField> getSortFields()
+    {
+        return List.of();
+    }
 }
