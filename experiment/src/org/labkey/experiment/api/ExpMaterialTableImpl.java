@@ -673,7 +673,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        if (null != _ss && AppProps.getInstance().isExperimentalFeatureEnabled(ExperimentModule.EXPERIMENTAL_LINEAGE_PARENT_LOOKUP))
+        if (null != _ss)
         {
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
