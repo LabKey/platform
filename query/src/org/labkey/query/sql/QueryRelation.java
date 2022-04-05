@@ -25,6 +25,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -362,12 +363,17 @@ public abstract class QueryRelation
     }
 
 
-
     public String toStringDebug()
     {
         if (null == _parent)
             return getClass().getSimpleName() + ":" +getAlias();
         else
             return _parent.toStringDebug() + "/" + getClass().getSimpleName() + ":" +getAlias();
+    }
+
+
+    public List<Sort.SortField> getSortFields()
+    {
+        return List.of();
     }
 }
