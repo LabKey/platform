@@ -257,7 +257,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
             else
             {
-                throw new NotFoundException("LSID value not found in table - " + table.getName());
+                throw new IllegalStateException("LSID value not found in table - " + table.getName());
             }
         }
 
