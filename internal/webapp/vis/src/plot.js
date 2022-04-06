@@ -1627,14 +1627,18 @@ boxPlot.render();
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
+ * @param {Function} [config.properties.pointSize] (Optional) The LABKEY.vis.Geom.Point size.
  * @param {Function} [config.properties.pointOpacityFn] (Optional) A function to be called with the point data to
  *                  return an opacity value for that point.
  * @param {String} [config.groupBy] (optional) The data property name used to group plot lines and points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
  *                  to that function will be a row of data with access to all values for that row.
  * @param {Function} [config.properties.mouseOverFn] (Optional) The function to call on data point mouse over. The parameters to
- *                  that function will be the click event, the point data, the selection layer, and the DOM element for the point itself.
+ *                  that function will be the mouse event, the point data, the selection layer, and the DOM element for the point itself.
  * @param {Object} [config.properties.mouseOverFnScope] (Optional) The scope to use for the call to mouseOverFn.
+ * @param {Function} [config.properties.mouseOutFn] (Optional) The function to call on data point mouse out. The parameters to
+ *                  that function will be the mouse event, the point data, and the selection layer.
+ * @param {Object} [config.properties.mouseOutFnScope] (Optional) The scope to use for the call to mouseOutFn.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
  * @param {String} [config.properties.lineColor] (Optional) The color to be used for the trend line connecting data points.
@@ -2186,8 +2190,8 @@ boxPlot.render();
             {
                 var pathLayerConfig = {
                     geom: new LABKEY.vis.Geom.Path({
-                        opacity: .6,
-                        size: 2,
+                        opacity: 1,
+                        size: 1,
                         dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum,
                         color: config.properties.lineColor
                     }),
@@ -2279,7 +2283,7 @@ boxPlot.render();
                 geom: new LABKEY.vis.Geom.Point({
                     position: config.properties.position,
                     opacity: config.properties.pointOpacityFn,
-                    size: 3
+                    size: config.properties.pointSize ? config.properties.pointSize : 3
                 }),
                 aes: {}
             };
@@ -2321,11 +2325,16 @@ boxPlot.render();
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
 
                 if (config.properties.mouseOverFn) {
-                    config.properties.mouseOverFn.call(config.properties.mouseOverFnScope || this, event, pointData, layerSel, point, valueName);
+                    config.properties.mouseOverFn.call(config.properties.mouseOverFnScope || this, event, pointData, layerSel, point, valueName, config);
                 }
             };
+
             pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
+
+                if (config.properties.mouseOutFn) {
+                    config.properties.mouseOutFn.call(config.properties.mouseOutFnScope || this, event, pointData, layerSel, valueName, config);
+                }
             };
 
             if (config.properties.pointIdAttr) {
