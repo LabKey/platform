@@ -59,8 +59,6 @@ public class PageWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
         {
-            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
             FolderDocument.Folder folderXml = ctx.getXml();
             FolderDocument.Folder.Pages folderPagesXML = folderXml.addNewPages();
             folderPagesXML.setFile(PageWriterFactory.FILENAME);

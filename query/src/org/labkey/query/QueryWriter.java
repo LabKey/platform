@@ -62,8 +62,6 @@ public class QueryWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
         // get all custom queries and metadata xml overrides of built-in tables that have been overridden
         List<QueryDefinition> queries = new ArrayList<>(QueryServiceImpl.get().getQueryDefsAndMetadataOverrides(ctx.getUser(), c));
         FileNameUniquifier fileNameUniquifier = new FileNameUniquifier();

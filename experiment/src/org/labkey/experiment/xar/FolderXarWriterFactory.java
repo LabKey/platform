@@ -134,8 +134,6 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
-            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
             XarExportSelection selection = new XarExportSelection();
             ExperimentService expService = ExperimentService.get();
 

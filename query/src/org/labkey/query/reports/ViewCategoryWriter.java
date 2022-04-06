@@ -56,8 +56,6 @@ public class ViewCategoryWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
         List<ViewCategory> categories = ViewCategoryManager.getInstance().getAllCategories(c);
 
         if (!categories.isEmpty())

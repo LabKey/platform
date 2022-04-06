@@ -108,8 +108,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
         // We will divide the sample type and data class definitions from the runs into two separate XAR files, the reason is
         // during import we want all data to be imported via the query update service and any lineage will be wired up
         // by the runs XAR.

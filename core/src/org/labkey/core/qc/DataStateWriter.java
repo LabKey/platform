@@ -48,8 +48,6 @@ public class DataStateWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
         DataStateImportExportHelper helper = getHelper(c);
 
         if (helper != null)

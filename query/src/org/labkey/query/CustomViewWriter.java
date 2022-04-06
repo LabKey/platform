@@ -51,8 +51,6 @@ public class CustomViewWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
         User user = ctx.getUser();
         Set<String> viewsToExport = ctx.getViewIds();
 

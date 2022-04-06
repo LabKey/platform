@@ -100,8 +100,6 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
-            assert ctx.getContainer().equals(c); // TODO: Temporary check - remove
-
             StudyExportContext exportCtx = ctx.getContext(StudyExportContext.class);
 
             if (null != exportCtx)
