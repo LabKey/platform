@@ -16,13 +16,20 @@
 
 package org.labkey.query.controllers;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.XML;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 
-public class SourceForm extends ViewForm
+import static org.labkey.api.action.BaseViewAction.springBindParameters;
+
+public class SourceForm extends ViewForm implements HasBindParameters
 {
     public String schemaName;
     public String queryName;
@@ -80,12 +87,6 @@ public class SourceForm extends ViewForm
         ff_redirect = QueryAction.valueOf(action);
     }
 
-    // HACK so that &query.queryName=table works
-    public SourceForm getQuery()
-    {
-        return this;
-    }
-
     private static String DEFAULT_METADATA_TEXT =
             "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
             "  <table tableName=\"%s\" tableDbType=\"NOT_IN_DB\">\n" +
@@ -97,5 +98,15 @@ public class SourceForm extends ViewForm
     public String getDefaultMetadataText()
     {
         return String.format(DEFAULT_METADATA_TEXT, XML.escape(getQueryName()));
+    }
+
+    @Override
+    public @NotNull BindException bindParameters(PropertyValues pvs)
+    {
+        MutablePropertyValues mps = new MutablePropertyValues(pvs);
+        // handle query.queryName
+        if (pvs.contains("query.queryName"))
+            mps.addPropertyValue("queryName",pvs.getPropertyValue("query.queryName").getValue());
+        return springBindParameters(this, "form", mps);
     }
 }

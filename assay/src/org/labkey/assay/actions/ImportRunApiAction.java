@@ -19,11 +19,13 @@ package org.labkey.assay.actions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
@@ -60,6 +62,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -332,7 +336,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), protocol, run.getRowId());
     }
 
-    protected static class ImportRunApiForm extends SimpleApiJsonForm
+    protected static class ImportRunApiForm extends SimpleApiJsonForm implements HasBindParameters
     {
         private Integer _assayId;
         private Integer _batchId;
@@ -544,6 +548,24 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         {
             _allowCrossRunFileInputs = allowCrossRunFileInputs;
         }
+
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues m)
+        {
+            for (PropertyValue pv : m.getPropertyValues())
+            {
+                String name = pv.getName();
+                if (name.endsWith("]"))
+                {
+                    if (name.startsWith("properties["))
+                        getProperties().put(name.substring("properties[".length(), name.length()-1), pv.getValue());
+                    else if (name.startsWith("batchProperties["))
+                        getBatchProperties().put(name.substring("batchProperties[".length(), name.length()-1), pv.getValue());
+                }
+            }
+            return springBindParameters(this, "form", m);
+        }
     }
+
 
 }

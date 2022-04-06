@@ -2018,7 +2018,6 @@ public class PageFlowUtil
 
         String trimmedHtml = StringUtils.trimToEmpty(htmlWithNoDegenerates);
 
-        // AARON: shouldn't re perseve the whitespace here and return html?
         if (trimmedHtml.length() == 0)
             return "";
 
@@ -2030,7 +2029,13 @@ public class PageFlowUtil
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
         String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
         if (errors.size() > 0)
+        {
+            if (scriptWarnings != null)
+            {
+                scriptWarnings.add("Unable to complete script check due to errors in HTML");
+            }
             return null;
+        }
 
         if (null != scriptWarnings)
         {
@@ -2055,6 +2060,7 @@ public class PageFlowUtil
             {
                 _log.error(e.getMessage(), e);
                 errors.add(e.getMessage());
+                scriptWarnings.add("Unable to complete script check due to errors in HTML");
             }
         }
 
@@ -2540,6 +2546,31 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
+
+        @Test
+        public void testScriptDetection()
+        {
+            assertHtmlParsing("<b>No script here, friends</b>", 0, 0);
+            assertHtmlParsing("<p><script>alert('script');</script></p>", 0, 1);
+
+            // Bogus tag trips error reporting, so assume there might be script
+            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 1, 1);
+            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 1, 1);
+
+            // Unclosed tags - not considered an error
+            assertHtmlParsing("<b><script>alert('script');</script>", 0, 1);
+            assertHtmlParsing("<b>No script", 0, 0);
+        }
+
+        private void assertHtmlParsing(String html, int expectedErrors, int expectedScriptWarnings)
+        {
+            List<String> errors = new ArrayList<>();
+            List<String> scriptWarnings = new ArrayList<>();
+            PageFlowUtil.validateHtml(html, errors, scriptWarnings);
+            assertEquals("Wrong number of errors", expectedErrors, errors.size());
+            assertEquals("Wrong number of script warnings", expectedScriptWarnings, scriptWarnings.size());
+        }
+
         @Test
         public void testPhone()
         {
