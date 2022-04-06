@@ -50,6 +50,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -253,6 +254,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                             row.put(pd.getName(), entry.getValue());
                     }
                 }
+            }
+            else
+            {
+                throw new NotFoundException("LSID value not found in table - " + table.getName());
             }
         }
 
