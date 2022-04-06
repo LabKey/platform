@@ -212,7 +212,6 @@ public class ClosureQueryHelper
             }
         };
         ret.setFk(qfk);
-        ret.setShownInDetailsView(true);
         ret.setConceptURI(CONCEPT_URI);
         return ret;
     }
