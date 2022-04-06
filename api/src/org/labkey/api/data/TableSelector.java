@@ -245,6 +245,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return super.resultSetStream();
     }
 
+    /**
+     * Returns an uncached ResultSet Stream that <b>must be closed</b>
+     */
     @Override
     public Stream<ResultSet> uncachedResultSetStream()
     {

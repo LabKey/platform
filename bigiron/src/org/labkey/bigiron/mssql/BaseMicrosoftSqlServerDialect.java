@@ -644,10 +644,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
         if (SELECT.matcher(sql.getSQL()).find())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT IS NOT VALID IN A SUB-SELECT'");
 
         if (!supportsGroupConcat())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT FUNCTION IS NOT INSTALLED'");
 
         SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
 
