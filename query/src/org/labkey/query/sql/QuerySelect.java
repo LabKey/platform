@@ -31,6 +31,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -73,6 +74,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     // these three fields are accessed by QueryPivot
     QGroupBy _groupBy;
     QOrder _orderBy;
+    List<QOrder.SortEntry> _sortEntries;
     QLimit _limit;
     boolean _forceAllowOrderBy = false; // when we know this will not be wrapped by another SELECT
 
@@ -487,6 +489,39 @@ public class QuerySelect extends QueryRelation implements Cloneable
             if (null == column.getAlias())
                 column.setAlias(_aliasManager.decideAlias(column.getName()));
             _columns.put(column._key, column);
+        }
+
+        // fix up ORDER BY position and associate each entry with an alias in the columnList
+        if (null != _orderBy)
+        {
+            _sortEntries = _orderBy.getSort();
+            for (int i=_sortEntries.size()-1 ; i>=0 ; i--)
+            {
+                var entry = _sortEntries.get(i);
+                if (entry.expr() instanceof QIdentifier qId)
+                {
+                    _sortEntries.set(i, new QOrder.SortEntry(entry.expr(), entry.direction(), entry.expr().getTokenText()));
+                }
+                else if (entry.expr() instanceof QNumber qNum)
+                {
+                    double d = qNum.getValue().doubleValue();
+                    int position = qNum.getValue().intValue();
+                    if (d == (double)position && position >= 1 && position <= columnList.size())
+                    {
+                        String alias = columnList.get(position-1).getAlias();
+                        QIdentifier qid = new QIdentifier(alias);
+                        _sortEntries.set(i, new QOrder.SortEntry(qid, entry.direction(), alias));
+                    }
+                    else
+                    {
+                        _sortEntries.remove(i);
+                    }
+                }
+                else if (entry.expr().isConstant())
+                {
+                    _sortEntries.remove(i);
+                }
+            }
         }
     }
 
@@ -1125,14 +1160,13 @@ public class QuerySelect extends QueryRelation implements Cloneable
             {
                 declareFields((QExpr)expr);
             }
-        if (null != _orderBy)
+        if (null != _sortEntries)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            for (var entry : _sortEntries)
             {
-                QExpr expr = entry.getKey();
-                if (expr instanceof QIdentifier && selectAliases.contains(expr.getTokenText()))
+                if (entry.expr() instanceof QIdentifier && selectAliases.contains(entry.expr().getTokenText()))
                     continue;
-                declareFields(expr);
+                declareFields(entry.expr());
             }
         }
 
@@ -1346,11 +1380,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 return f;
             }
 
-            @Override
-            public boolean hasSort()
-            {
-                return _orderBy != null && !_orderBy.childList().isEmpty();
-            }
 
             @Override
             public void setContainerFilter(@NotNull ContainerFilter containerFilter)
@@ -1359,6 +1388,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 // This changes the SQL we'll need to generate, so clear out the cached version
                 _sqlAllColumns = null;
             }
+
 
             @Override
             public String getPublicSchemaName()
@@ -1391,6 +1421,37 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 aliasedColumn.setKeyField(true);
         }
         MemTracker.getInstance().put(ret);
+        return ret;
+    }
+
+
+    @Override
+    public List<Sort.SortField> getSortFields()
+    {
+        if (null == _sortEntries || _sortEntries.isEmpty())
+            return List.of();
+
+        Set<String> selectAliases = new CaseInsensitiveHashSet();
+        for (SelectColumn col : _columns.values())
+            if (null != col.getAlias())
+                selectAliases.add(col.getAlias());
+
+        List<Sort.SortField> ret = new ArrayList<>();
+        for (var entry : _sortEntries)
+        {
+            if (entry.expr() instanceof QIdentifier && selectAliases.contains(entry.expr().getTokenText()))
+            {
+                ret.add(new Sort.SortField(new FieldKey(null, entry.expr().getTokenText()), entry.direction() ? Sort.SortDirection.ASC : Sort.SortDirection.DESC));
+            }
+            else
+            {
+                // fail for non-trivial expression
+                QExpr r = resolveFields(entry.expr(), _orderBy, _orderBy);
+                if (r instanceof QNull)
+                    continue;
+                return List.of();
+            }
+        }
         return ret;
     }
 
@@ -1438,15 +1499,14 @@ public class QuerySelect extends QueryRelation implements Cloneable
             for (QNode expr : _having.children())
                 resolveFields((QExpr)expr, null, _having);
         }
-        if (_orderBy != null)
+        if (_sortEntries != null)
         {
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            for (var entry : _sortEntries)
             {
-                QExpr expr = entry.getKey();
-                if (expr instanceof QIdentifier && aliasSet.containsKey(expr.getTokenText()))
-                    aliasSet.get(expr.getTokenText()).addRef(_orderBy);
+                if (entry.expr() instanceof QIdentifier && aliasSet.containsKey(entry.expr().getTokenText()))
+                    aliasSet.get(entry.expr().getTokenText()).addRef(_orderBy);
                 else
-                    resolveFields(expr, _orderBy, _orderBy);
+                    resolveFields(entry.expr(), _orderBy, _orderBy);
             }
         }
     }
@@ -1699,7 +1759,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             }
             sql.popPrefix();
         }
-        if (_orderBy != null)
+        if (_sortEntries != null && !_sortEntries.isEmpty())
         {
             if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
@@ -1708,21 +1768,20 @@ public class QuerySelect extends QueryRelation implements Cloneable
             else
             {
                 sql.pushPrefix("\nORDER BY ");
-                for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+                for (var entry : _sortEntries)
                 {
-                    QExpr expr = entry.getKey();
-                    if (expr instanceof QIdentifier && aliasMap.containsKey(expr.getTokenText()))
+                    if (entry.expr() instanceof QIdentifier && aliasMap.containsKey(entry.expr().getTokenText()))
                     {
-                        sql.append(aliasMap.get(expr.getTokenText()));
+                        sql.append(aliasMap.get(entry.expr().getTokenText()));
                     }
                     else
                     {
-                        QExpr r = resolveFields(expr, _orderBy, _orderBy);
+                        QExpr r = resolveFields(entry.expr(), _orderBy, _orderBy);
                         if (r instanceof QNull)
                             continue;
                         r.appendSql(sql, _query);
                     }
-                    if (!entry.getValue().booleanValue())
+                    if (!entry.direction())
                         sql.append(" DESC");
                     sql.nextPrefix(",");
                 }
@@ -2479,6 +2538,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return false;
         releaseAllSelected(_orderBy);
         _orderBy = null;
+        _sortEntries = null;
         return true;
     }
 
@@ -2497,7 +2557,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return false;
         if (_where != null)
             return false;
-        if (_orderBy != null)
+        if (_sortEntries != null)
             return false;
         if (_limit != null)
             return false;

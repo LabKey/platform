@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.HasResolvedTables;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -34,6 +35,7 @@ import org.labkey.api.util.MemTracker;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -108,10 +110,13 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         return _relation._query.getContainerFilter();
     }
 
-    public boolean hasSort()
+
+    @Override
+    public final List<Sort.SortField> getSortFields()
     {
-        return false;
+        return _relation.getSortFields();
     }
+
 
     @Override
     public void afterConstruct()
