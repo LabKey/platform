@@ -1642,6 +1642,12 @@ boxPlot.render();
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
  * @param {String} [config.properties.lineColor] (Optional) The color to be used for the trend line connecting data points.
+ * @param {Function} [config.properties.legendMouseOverFn] (Optional) The function to call on legend item mouse over. The parameters to
+ *                  that function will be the mouse event, legend data, and the DOM element for the legend itself.
+ * @param {Object} [config.properties.legendMouseOverFnScope] (Optional) The scope to use for the call to legendMouseOverFn.
+ * @param {Function} [config.properties.legendMouseOutFn] (Optional) The function to call on legend item mouse out. The parameters to
+ *                  that function will be the mouse event, and the legend data.
+ * @param {Object} [config.properties.legendMouseOutFnScope] (Optional) The scope to use for the call to legendMouseOutFn.
  */
 (function(){
     LABKEY.vis.TrendingLinePlotType = {
@@ -2084,6 +2090,23 @@ boxPlot.render();
             }
         }
 
+        config.aes = {
+            x: 'seqValue'
+        };
+
+        if (config.properties.legendMouseOverFn) {
+            config.aes.legend = {};
+            config.aes.legend.mouseOverFn = function(data, item) {
+                config.properties.legendMouseOverFn.call(config.properties.legendMouseOverFnScope || this, data, item);
+            };
+
+            if (config.properties.legendMouseOutFn) {
+                config.aes.legend.mouseOutFn = function(data, item) {
+                    config.properties.legendMouseOutFn.call(config.properties.legendMouseOutFnScope || this, data, item);
+                };
+            }
+        }
+
         if(!config.margins) {
             config.margins = {};
         }
@@ -2104,10 +2127,6 @@ boxPlot.render();
         if(!config.margins.left) {
             config.margins.left = config.labels && config.labels.y ? 75 : 55;
         }
-
-        config.aes = {
-            x: 'seqValue'
-        };
 
         // determine the width the error bars
         if (config.properties.disableRangeDisplay) {

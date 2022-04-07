@@ -1907,6 +1907,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                         y = Math.floor(parseInt(sibling.getAttribute('y'))) - 3.5;
                     return 'translate(' + glyphX + ',' + y + ')';
                 });
+
+        if (plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
+            selection.on('mouseover', function (data) {
+                plot.originalAes.legend.mouseOverFn.call(d3.event, data, this);
+            });
+
+            if (plot.originalAes.legend.mouseOutFn) {
+                selection.on('mouseout', function(data) {
+                    plot.originalAes.legend.mouseOutFn.call(d3.event, data, this);
+                });
+            }
+        }
     };
 
     var setLegendData = function(legendData) {
