@@ -1851,7 +1851,6 @@ public class QueryServiceImpl implements QueryService
             // getColumn() might return a column with a different field key than we asked for!
             if (!column.getFieldKey().equals(fieldKey))
             {
-                LOG.error("WTF: requested " + fieldKey + " got " + column.getFieldKey());
                 if (columnMap.containsKey(column.getFieldKey()))
                     columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
             }
