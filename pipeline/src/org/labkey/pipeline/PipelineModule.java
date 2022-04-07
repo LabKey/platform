@@ -94,6 +94,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
@@ -208,15 +209,27 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
+            Map<String, Object> result = new HashMap<>();
+
             Map<String, Long> jobCounts = new HashMap<>();
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
-            sql.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            sql.append(" GROUP BY Provider");
+            SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
+            jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+            jobSQL.append(" GROUP BY Provider");
 
-            new SqlSelector(PipelineSchema.getInstance().getSchema(), sql).forEach(rs ->
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), jobSQL).forEach(rs ->
                     jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
+            result.put("jobCounts", jobCounts);
 
-            return Collections.singletonMap("jobCounts", jobCounts);
+            Map<String, Long> triggerCounts = new HashMap<>();
+            SQLFragment triggerSQL = new SQLFragment("SELECT COUNT(*) AS TriggerCount, COALESCE(Type, 'Unknown') AS Type, Enabled FROM ");
+            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "sf");
+            triggerSQL.append(" GROUP BY Type, Enabled");
+
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), triggerSQL).forEach(rs ->
+                    triggerCounts.put(rs.getString("Type") + "_" + rs.getBoolean("Enabled"), rs.getLong("TriggerCount")));
+            result.put("triggerCounts", triggerCounts);
+
+            return result;
         });
     }
 
