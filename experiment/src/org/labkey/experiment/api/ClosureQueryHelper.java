@@ -459,7 +459,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,false)
+                                .getSampleTypes(c, u,true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -475,12 +475,12 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpSampleType && !((ExpSampleType) expObject).isMedia();
                     }
                 },
-        SourceType("RegistryAndSources", SchemaKey.fromParts("exp", "data") )
+        RegistryOrSourceType("RegistryAndSources", SchemaKey.fromParts("exp", "data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
-                        return ExperimentServiceImpl.get().getDataClasses(c, u,false)
+                        return ExperimentServiceImpl.get().getDataClasses(c, u,true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -502,7 +502,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return ExperimentServiceImpl.get()
-                                .getDataClasses(c, u,false)
+                                .getDataClasses(c, u,true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -524,7 +524,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return SampleTypeServiceImpl.get()
-                                .getSampleTypes(c, u,false)
+                                .getSampleTypes(c, u,true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
@@ -546,7 +546,7 @@ public class ClosureQueryHelper
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
                         return ExperimentServiceImpl.get()
-                                .getDataClasses(c, u,false)
+                                .getDataClasses(c, u,true)
                                 .stream()
                                 .filter(this::isInstance)
                                 .collect(Collectors.toList());
