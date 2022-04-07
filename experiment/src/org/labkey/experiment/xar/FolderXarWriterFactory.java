@@ -18,9 +18,9 @@ package org.labkey.experiment.xar;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.XarExportContext;
@@ -32,7 +32,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.OutputStream;
 import java.util.List;
@@ -56,7 +55,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         return new FolderXarWriter();
     }
 
-    public class FolderXarWriter extends BaseFolderWriter
+    public static class FolderXarWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -80,7 +79,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return false;
         }
 
-        private List<ExpRun> getRuns(@Nullable ImportContext<FolderDocument.Folder> ctx, Container c)
+        private List<ExpRun> getRuns(@Nullable FolderExportContext ctx, Container c)
         {
             XarExportContext xarCtx = null;
             if (ctx != null)
@@ -133,14 +132,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             XarExportSelection selection = new XarExportSelection();
             ExperimentService expService = ExperimentService.get();
 
-
             // Get all the experiments in the container.
-            List<? extends ExpExperiment> experiments = expService.getExperiments(ctx.getContainer(), ctx.getUser(), false, false);
+            List<? extends ExpExperiment> experiments = expService.getExperiments(c, ctx.getUser(), false, false);
 
             // Add experiments.
             for(ExpExperiment exp: experiments)
@@ -148,9 +146,9 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                 selection.addExperimentIds(exp.getRowId());
             }
 
-            selection.addProtocolIds(getProtocols(ctx.getContainer()));
+            selection.addProtocolIds(getProtocols(c));
 
-            selection.addRuns(getRuns(ctx, ctx.getContainer()));
+            selection.addRuns(getRuns(ctx, c));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);

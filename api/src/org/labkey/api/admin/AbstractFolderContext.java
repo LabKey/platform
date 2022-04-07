@@ -28,7 +28,7 @@ import java.util.Set;
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public abstract class AbstractFolderContext extends AbstractImportContext<Folder, FolderDocument>
+public abstract class AbstractFolderContext extends AbstractImportExportContext<Folder, FolderDocument>
 {
     public enum ExportType
     {

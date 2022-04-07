@@ -57,7 +57,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
@@ -4376,12 +4376,12 @@ public class AdminController extends SpringActionController
             _format = format;
         }
 
-        public AbstractFolderContext.ExportType getExportType()
+        public ExportType getExportType()
         {
             if ("study".equals(_exportType))
-                return AbstractFolderContext.ExportType.STUDY;
+                return ExportType.STUDY;
             else
-                return AbstractFolderContext.ExportType.ALL;
+                return ExportType.ALL;
         }
 
         public void setExportType(String exportType)
@@ -4895,10 +4895,10 @@ public class AdminController extends SpringActionController
                 registeredFolderWriters.add(dataType);
 
                 // for each Writer also determine if there are related children Writers, if so include them also
-                Collection<org.labkey.api.writer.Writer> childWriters = writer.getChildren(true, true);
-                if (childWriters != null && childWriters.size() > 0)
+                Collection<org.labkey.api.writer.Writer<?, ?>> childWriters = writer.getChildren(true, true);
+                if (!childWriters.isEmpty())
                 {
-                    for (org.labkey.api.writer.Writer child : childWriters)
+                    for (org.labkey.api.writer.Writer<?, ?> child : childWriters)
                     {
                         dataType = child.getDataType();
                         if (dataType != null)
@@ -4909,7 +4909,6 @@ public class AdminController extends SpringActionController
         }
         return registeredFolderWriters;
     }
-
 
     public static class FolderSettingsForm implements SettingsForm
     {
