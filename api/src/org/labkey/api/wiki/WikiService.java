@@ -70,6 +70,11 @@ public interface WikiService
     String getContent(Container c, String wikiName);
 
     /**
+     * Returns the raw (unformatted) content for every version of the wiki
+     */
+    List<String> getAllContent(Container c, String wikiName);
+
+    /**
      * Update the content of a wiki
      *
      * @param wikiName The name of the wiki to update
