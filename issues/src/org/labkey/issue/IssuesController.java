@@ -28,7 +28,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -135,6 +137,8 @@ import org.labkey.issue.model.IssuePage;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1567,19 +1571,19 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class MoveIssueForm extends ReturnUrlForm
+    public static class MoveIssueForm extends ReturnUrlForm implements HasBindParameters
     {
-        private String _containerId = null;
+        private String _targetContainerId = null;
         private Integer[] _issueIds = null;
 
-        public String getContainerId()
+        public String getTargetContainerId()
         {
-            return _containerId;
+            return _targetContainerId;
         }
 
-        public void setContainerId(String containerId)
+        public void setTargetContainerId(String targetContainerId)
         {
-            _containerId = containerId;
+            _targetContainerId = targetContainerId;
         }
 
         public Integer[] getIssueIds()
@@ -1592,6 +1596,16 @@ public class IssuesController extends SpringActionController
             _issueIds = issueIds;
         }
 
+        // rename "containerId" -> targetContainerId
+
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues pvs)
+        {
+            MutablePropertyValues mpvs = new MutablePropertyValues(pvs);
+            if (mpvs.contains("containerId"))
+                mpvs.addPropertyValue("targetContainerId", mpvs.getPropertyValue("containerId").getValue());
+            return BaseViewAction.springBindParameters(this, "form", mpvs);
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -1602,7 +1616,7 @@ public class IssuesController extends SpringActionController
         {
             try
             {
-                IssueManager.moveIssues(getUser(), Arrays.asList(form.getIssueIds()), ContainerManager.getForId(form.getContainerId()));
+                IssueManager.moveIssues(getUser(), Arrays.asList(form.getIssueIds()), ContainerManager.getForId(form.getTargetContainerId()));
             }
             catch (IOException x)
             {
