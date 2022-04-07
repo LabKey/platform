@@ -83,8 +83,6 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
     @Override
     public ReportDescriptorDocument getDescriptorDocument(FolderExportContext context)
     {
-        assert context != null;
-
         // if we are doing folder export (or module file save), we don't want to double save the script property
         return getDescriptorDocument(context.getContainer(), context, true, Set.of(Prop.script.name()));
     }
