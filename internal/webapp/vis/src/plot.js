@@ -2025,7 +2025,7 @@ boxPlot.render();
             },
             x: {
                 scaleType: 'discrete',
-                tickMax: 250,
+                tickMax: config.width ? Math.floor(config.width / 5) : undefined,
                 tickFormat: function(index) {
                     // only show a max of 35 labels on the x-axis to avoid overlap
                     if (index % Math.ceil(config.data[config.data.length-1].seqValue / 35) == 0) {
