@@ -23,7 +23,6 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
@@ -206,7 +205,7 @@ public class QueryImporter implements FolderImporter
         }
     }
 
-    private void createQueryDef(ImportContext ctx,
+    private void createQueryDef(FolderImportContext ctx,
                                 Map<SchemaKey, List<String>> createdQueries,
                                 Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange>> changedQueries,
                                 @NotNull String metaFileName, @NotNull QueryDocument queryDoc,

@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * ExportContext with the minimal number of study-related references needed for specimen exports
  */
-public class SimpleStudyExportContext extends AbstractContext
+public class SimpleStudyExportContext extends AbstractStudyContext
 {
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<>();

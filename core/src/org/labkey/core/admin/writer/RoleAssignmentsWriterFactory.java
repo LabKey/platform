@@ -15,12 +15,12 @@
  */
 package org.labkey.core.admin.writer;
 
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -39,7 +39,7 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         return new RoleAssignmentsWriter();
     }
 
-    public class RoleAssignmentsWriter extends BaseFolderWriter
+    public static class RoleAssignmentsWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -48,7 +48,7 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(c);
 
@@ -68,7 +68,7 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(ExportType type)
         {
             return false;
         }

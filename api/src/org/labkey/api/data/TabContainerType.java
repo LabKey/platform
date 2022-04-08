@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 
 public class TabContainerType extends NormalContainerType
 {
@@ -34,7 +34,7 @@ public class TabContainerType extends NormalContainerType
     }
 
     @Override
-    public boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(FolderExportContext context)
     {
         return true;
     }

@@ -156,12 +156,5 @@ public class SubfolderImporterFactory extends AbstractFolderImportFactory
         {
             return dir.getLocation() + "\\" + name;
         }
-
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
-        }
     }
 }

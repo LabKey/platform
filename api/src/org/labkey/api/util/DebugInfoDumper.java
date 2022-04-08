@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -244,6 +245,22 @@ public class DebugInfoDumper
         logWriter.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
                 FileUtils.byteCountToDisplaySize(used) + " from a max of " +
                 FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
+
+        OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+        if (osBean != null)
+        {
+            DecimalFormat f3 = new DecimalFormat("0.000");
+
+            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean)
+            {
+                logWriter.debug("Total OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getTotalMemorySize()));
+                logWriter.debug("Free OS memory (bytes): " + DecimalFormat.getInstance().format(sunOsBean.getFreeMemorySize()));
+                logWriter.debug("OS CPU load: " + f3.format(sunOsBean.getCpuLoad()));
+                logWriter.debug("JVM CPU load: " + f3.format(sunOsBean.getProcessCpuLoad()));
+            }
+            logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
+        }
+
         logWriter.debug("*********************************************");
         Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
         List<Thread> threads = new ArrayList<>(stackTraces.keySet());

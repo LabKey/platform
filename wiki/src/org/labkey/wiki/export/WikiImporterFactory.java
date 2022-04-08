@@ -15,7 +15,6 @@
  */
 package org.labkey.wiki.export;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
@@ -26,7 +25,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.wiki.WikiRendererType;
@@ -43,8 +41,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -240,13 +236,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
 
             throw new ImportException("Could not find a content file for wiki with name \"" + contentName + "\"");
-        }
-
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptySet();
         }
 
         @Override
