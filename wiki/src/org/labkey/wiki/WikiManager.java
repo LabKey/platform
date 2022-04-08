@@ -168,8 +168,8 @@ public class WikiManager implements WikiService
                 null).getObject(Wiki.class);
     }
 
-
-    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory) throws IOException
+    // aliases: null and empty collection are equivalent (no aliases)
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory, @Nullable Collection<String> aliases) throws IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -204,6 +204,12 @@ public class WikiManager implements WikiService
             Table.update(userToInsert, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
             getAttachmentService().addAttachments(wikiInsert.getAttachmentParent(), files, user);
+
+            if (null != aliases)
+            {
+                WikiManager mgr = WikiManager.get();
+                aliases.forEach(alias -> mgr.addAlias(user, wikiInsert, alias, null));
+            }
 
             transaction.commit();
         }
@@ -313,7 +319,7 @@ public class WikiManager implements WikiService
         return true;
     }
 
-    public void addAlias(User user, Wiki wiki, String alias, BindException errors)
+    public void addAlias(User user, Wiki wiki, String alias, @Nullable BindException errors)
     {
         assert null != wiki.getContainerId();
         Map<String, Object> map = new HashMap<>(Map.of("Container", wiki.getContainerId(), "Alias", alias, "PageRowId", wiki.getRowId()));
@@ -324,7 +330,12 @@ public class WikiManager implements WikiService
         catch (RuntimeSQLException e)
         {
             if (e.isConstraintException())
-                errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
+            {
+                if (null != errors)
+                    errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
+                else
+                    LOG.warn("Attempt to add alias to wiki \"" + wiki.getName() + "\" failed; \"" + alias + "\" already exists in this folder.");
+            }
         }
     }
 
@@ -526,11 +537,11 @@ public class WikiManager implements WikiService
         Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wiki.getAttachments();
         List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki.getAttachmentParent(), attachments);
-
+        Collection<String> aliases = WikiSelectManager.getAliases(cSrc, wiki.getRowId());
 
         final WikiVersion[] wikiVersions;
 
-        if(!isCopyingHistory)
+        if (!isCopyingHistory)
         {
             wikiVersions = new WikiVersion[] { srcPage.getLatestVersion() };
         }
@@ -540,7 +551,7 @@ public class WikiManager implements WikiService
         }
 
         boolean firstVersion = true;
-        for(WikiVersion wikiVersion : wikiVersions)
+        for (WikiVersion wikiVersion : wikiVersions)
         {
             //new wiki version
             WikiVersion newWikiVersion = new WikiVersion(destName);
@@ -550,9 +561,9 @@ public class WikiManager implements WikiService
             newWikiVersion.setCreated((wikiVersion.getCreated()));
             newWikiVersion.setRendererTypeEnum(wikiVersion.getRendererTypeEnum());
 
-            if(firstVersion)
+            if (firstVersion)
             {
-                insertWiki(user, cDest, newWikiPage, newWikiVersion, files, isCopyingHistory);
+                insertWiki(user, cDest, newWikiPage, newWikiVersion, files, isCopyingHistory, aliases);
                 firstVersion = false;
             }
             else
@@ -862,7 +873,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            insertWiki(user, c, wiki, wikiversion, null, false);
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
         }
         catch (IOException e)
         {
@@ -1096,7 +1107,7 @@ public class WikiManager implements WikiService
             wikiversion.setTitle("Topic A");
             wikiversion.setBody("[pageA]");
 
-            _m.insertWiki(user, c, wikiA, wikiversion, null, false);
+            _m.insertWiki(user, c, wikiA, wikiversion, null, false, null);
 
             // verify objects
             wikiA = WikiSelectManager.getWikiFromDatabase(c, "pageA");

@@ -14,6 +14,15 @@
     </xsd:complexType>
 
     <xsd:complexType name="wikiType">
+        <xsd:all>
+            <xsd:element name="aliases" minOccurs="0">
+                <xsd:complexType>
+                    <xsd:sequence maxOccurs="unbounded">
+                        <xsd:element name="alias" type="xsd:string" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:all>
         <xsd:attribute name="name" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>The wiki page's name</xsd:documentation>
@@ -44,5 +53,8 @@
                 <xsd:documentation>The order in which this page's attachments should appear, as a semicolon-delimited list of file names</xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="aliasType">
     </xsd:complexType>
 </xsd:schema>

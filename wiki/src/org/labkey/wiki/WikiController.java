@@ -2337,7 +2337,7 @@ public class WikiController extends SpringActionController
 
             //insert new wiki and new version
             User user = getUser();
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
