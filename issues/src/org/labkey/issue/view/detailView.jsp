@@ -71,6 +71,7 @@
     List<IssueObject.CommentObject> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
     IssueListDef issueDef = IssueManager.getIssueListDef(issue);
     EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
+    String relatedFolderName = IssueManager.getDefaultRelatedFolder(c, issueDef.getName());
 
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
@@ -125,6 +126,7 @@
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
     relatedIssues.append(", priority :").append(q(issue.getProperty(IssueObject.Prop.priority)));
     relatedIssues.append(", related :").append(issue.getIssueId());
+    relatedIssues.append(", relatedFolder :").append(q(relatedFolderName));
     relatedIssues.append("})");
 
     List<NavTree> additionalHeaderLinks = new ArrayList<>();

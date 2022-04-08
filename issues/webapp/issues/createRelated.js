@@ -32,10 +32,12 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
     getPanel : function() {
 
         var items = [];
+        this.relatedFolder = this.params.relatedFolder;
 
         this.createCombo = Ext4.create('Ext.form.field.ComboBox', {
             store           : this.getStore(),
             valueField      : 'key',
+            value           : this.relatedFolder,
             displayField    : 'displayName',
             fieldLabel      : 'Folder',
             triggerAction   : 'all',
@@ -50,12 +52,7 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
             listeners : {
                 scope: this,
                 'change': function(cb, value) {
-
-                    rec = cb.getStore().findRecord('key', value);
-                    if (rec){
-                        this.containerPath = rec.get('containerPath');
-                        this.destIssueDefName = rec.get('issueDefName');
-                    }
+                    this.relatedFolder = value;
                 }
             }
         });
@@ -86,36 +83,45 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
 
     getStore: function(){
         // define data models
-        if (!Ext4.ModelManager.isRegistered('Issues.model.Containers')) {
-            Ext4.define('Issues.model.Containers', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'key', type: 'string'},
-                    {name: 'containerPath', type: 'string'},
-                    {name: 'displayName', type: 'string'},
-                    {name: 'issueDefName', type: 'string'}
-                ]
+        if (!this.store) {
+            if (!Ext4.ModelManager.isRegistered('Issues.model.Containers')) {
+                Ext4.define('Issues.model.Containers', {
+                    extend: 'Ext.data.Model',
+                    fields: [
+                        {name: 'key', type: 'string'},
+                        {name: 'containerPath', type: 'string'},
+                        {name: 'displayName', type: 'string'},
+                        {name: 'issueDefName', type: 'string'}
+                    ]
+                });
+            }
+
+            this.store = Ext4.create('Ext.data.Store', {
+                model: 'Issues.model.Containers',
+                autoLoad: true,
+                proxy: {
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('issues', 'getRelatedFolder.api', LABKEY.container.path, {issueDefName : this.issueDefName}),
+                    reader: {
+                        type: 'json',
+                        root: 'containers'
+                    }
+                }
             });
         }
-
-        return Ext4.create('Ext.data.Store', {
-            model: 'Issues.model.Containers',
-            autoLoad: true,
-            proxy: {
-                type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('issues', 'getRelatedFolder.api', LABKEY.container.path, {issueDefName : this.issueDefName}),
-                reader: {
-                    type: 'json',
-                    root: 'containers'
-                }
-            }
-        });
+        return this.store;
     },
 
     handleCreate : function(){
         var formPanel = this.down('form');
 
         if (formPanel && formPanel.getForm() && formPanel.getForm().isValid()){
+            // translate the select target folder
+            var rec = this.getStore().findRecord('key', this.relatedFolder);
+            if (rec){
+                this.containerPath = rec.get('containerPath');
+                this.destIssueDefName = rec.get('issueDefName');
+            }
 
             var form = formPanel.getForm();
             form.submit({
