@@ -207,8 +207,7 @@ public class WikiManager implements WikiService
 
             if (null != aliases)
             {
-                WikiManager mgr = WikiManager.get();
-                aliases.forEach(alias -> mgr.addAlias(user, wikiInsert, alias, null));
+                WikiManager.get().addAliases(wikiInsert, aliases, null);
             }
 
             transaction.commit();
@@ -319,26 +318,48 @@ public class WikiManager implements WikiService
         return true;
     }
 
-    public void addAlias(User user, Wiki wiki, String alias, @Nullable BindException errors)
+    /**
+     * Attempts to add the specified aliases to the specified wiki. This is a best effort operation; failure to add an
+     * alias (e.g., an alias with that name already exists in this container) will result in an error (added to the
+     * BindException collection if not null, otherwise logged as a warning) but adding will continue and no exception
+     * will be thrown.
+     *
+     * Callers are responsible for uncaching this wiki and the wiki container collections
+     */
+    public void addAliases(Wiki wiki, @NotNull Collection<String> aliases, @Nullable BindException errors)
     {
         assert null != wiki.getContainerId();
-        Map<String, Object> map = new HashMap<>(Map.of("Container", wiki.getContainerId(), "Alias", alias, "PageRowId", wiki.getRowId()));
-        try
+        SqlExecutor executor = new SqlExecutor(CommSchema.getInstance().getSchema());
+
+        aliases.forEach(alias->
         {
-            Table.insert(user, CommSchema.getInstance().getTableInfoPageAliases(), map);
-        }
-        catch (RuntimeSQLException e)
-        {
-            if (e.isConstraintException())
+            // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation
+            // exceptions that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so
+            // execute custom INSERT SQL instead.
+            SQLFragment sql = new SQLFragment("INSERT INTO ")
+                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
+                .add(wiki.getContainerId())
+                .add(alias)
+                .add(wiki.getRowId())
+                .append("WHERE NOT EXISTS (SELECT * FROM ")
+                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(" WHERE Container = ? AND Alias = ?)")
+                .add(wiki.getContainerId())
+                .add(alias);
+            int rows = executor.execute(sql);
+
+            if (0 == rows)
             {
                 if (null != errors)
                     errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
                 else
                     LOG.warn("Attempt to add alias to wiki \"" + wiki.getName() + "\" failed; \"" + alias + "\" already exists in this folder.");
             }
-        }
+        });
     }
 
+    // Callers are responsible for uncaching this wiki and the wiki container collections
     // null == wiki ==> delete all aliases in a container
     // null != wiki ==> delete all aliases associated with a wiki
     public void deleteAliases(Container c, @Nullable Wiki wiki)
@@ -348,6 +369,13 @@ public class WikiManager implements WikiService
         if (null != wiki)
             filter.addCondition(FieldKey.fromParts("PageRowId"), wiki.getRowId());
         Table.delete(CommSchema.getInstance().getTableInfoPageAliases(), filter);
+    }
+
+    // Callers are responsible for uncaching this wiki and the wiki container collections
+    public void replaceAliases(Wiki wiki, Collection<String> newAliases, @Nullable BindException errors)
+    {
+        deleteAliases(wiki.lookupContainer(), wiki);
+        addAliases(wiki, newAliases, errors);
     }
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
