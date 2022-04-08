@@ -25,7 +25,6 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.util.FileNameUniquifier;
@@ -34,7 +33,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -62,20 +60,15 @@ public class QueryWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        Container c = ctx.getContainer();
-
         // get all custom queries and metadata xml overrides of built-in tables that have been overridden
         List<QueryDefinition> queries = new ArrayList<>(QueryServiceImpl.get().getQueryDefsAndMetadataOverrides(ctx.getUser(), c));
         FileNameUniquifier fileNameUniquifier = new FileNameUniquifier();
 
-        if (ctx instanceof FolderExportContext feCtx)
-        {
-            Set<String> queryKeysToExport = feCtx.getQueryKeys();
-            if (queryKeysToExport != null)
-                queries.removeIf(queryDef -> !queryKeysToExport.contains(queryDef.getQueryKey()));
-        }
+        Set<String> queryKeysToExport = ctx.getQueryKeys();
+        if (queryKeysToExport != null)
+            queries.removeIf(queryDef -> !queryKeysToExport.contains(queryDef.getQueryKey()));
 
         if (queries.size() > 0)
         {

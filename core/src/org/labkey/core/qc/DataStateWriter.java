@@ -1,11 +1,11 @@
 package org.labkey.core.qc;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
@@ -40,19 +40,19 @@ public class DataStateWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    public boolean selectedByDefault(ExportType type)
     {
-        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+        return ExportType.ALL == type || ExportType.STUDY == type;
     }
 
     @Override
-    public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        DataStateImportExportHelper helper = getHelper(container);
+        DataStateImportExportHelper helper = getHelper(c);
 
         if (helper != null)
         {
-            List<DataState> qcStates = DataStateManager.getInstance().getStates(ctx.getContainer());
+            List<DataState> qcStates = DataStateManager.getInstance().getStates(c);
 
             FolderDocument.Folder.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
             StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
@@ -72,7 +72,7 @@ public class DataStateWriter extends BaseFolderWriter
                         state.setType(StateTypeEnum.Enum.forString(qc.getStateType()));
                 }
             }
-            helper.write(container, ctx, qcXml);
+            helper.write(c, ctx, qcXml);
 
             qcStatesXml.setFile(DEFAULT_SETTINGS_FILE);
             vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);

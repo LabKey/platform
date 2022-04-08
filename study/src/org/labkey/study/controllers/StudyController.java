@@ -36,6 +36,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -241,6 +242,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -5056,7 +5059,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DatasetPropertyForm
+    public static class DatasetPropertyForm implements HasAllowBindParameter
     {
         private Map<Integer, DatasetVisibilityData> _map = MapUtils.lazyMap(new HashMap<>(), FactoryUtils.instantiateFactory(DatasetVisibilityData.class));
 
@@ -5068,6 +5071,23 @@ public class StudyController extends BaseStudyController
         public void setDataset(Map<Integer, DatasetVisibilityData> map)
         {
             _map = map;
+        }
+
+        private static final Pattern pat =  Pattern.compile("dataset\\[(\\d*)\\]\\.(\\w*)");
+
+        @Override
+        public Predicate<String> allowBindParameter()
+        {
+            return (name) ->
+            {
+                if (name.startsWith(SpringActionController.FIELD_MARKER))
+                    name = name.substring(SpringActionController.FIELD_MARKER.length());
+                if (HasAllowBindParameter.getDefaultPredicate().test(name))
+                    return true;
+                if (pat.matcher(name).matches())
+                    return true;
+                return false;
+            };
         }
     }
 

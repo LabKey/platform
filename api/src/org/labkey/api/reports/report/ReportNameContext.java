@@ -17,7 +17,6 @@ package org.labkey.api.reports.report;
 
 
 import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.util.FileNameUniquifier;
 
 /**
@@ -28,7 +27,7 @@ public class ReportNameContext extends FolderExportContext
     private String _serializedName;
     private final FileNameUniquifier _uniquifier = new FileNameUniquifier();
 
-    public ReportNameContext(ImportContext context)
+    public ReportNameContext(FolderExportContext context)
     {
         super(context.getUser(), context.getContainer(), context.getDataTypes(), context.getFormat(), context.getLoggerGetter());
     }

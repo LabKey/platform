@@ -1,13 +1,11 @@
 package org.labkey.experiment.samples;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -22,7 +20,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -39,15 +36,12 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -174,7 +168,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         }
     }
 
-    protected XarReader getXarReader(@Nullable PipelineJob job, ImportContext<Folder> ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
+    protected XarReader getXarReader(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root, Path typesXarFile) throws IOException, ExperimentException
     {
         VirtualFile xarDir = root.getDir(DEFAULT_DIRECTORY);
         Logger log = ctx.getLogger();
@@ -203,7 +197,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         return new FolderXarImporterFactory.FolderExportXarReader(typesXarSource, job);
     }
 
-    protected PipelineJob getDummyPipelineJob(ImportContext<Folder> ctx)
+    protected PipelineJob getDummyPipelineJob(FolderImportContext ctx)
     {
         return new PipelineJob()
         {
@@ -239,7 +233,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(ImportContext<Folder> ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    protected void importTsvData(FolderImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
@@ -313,12 +307,6 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         {
             log.error("Could not find " + schemaName + " schema.");
         }
-    }
-
-    @Override
-    public @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        return Collections.emptyList();
     }
 
     public static class Factory implements FolderImporterFactory

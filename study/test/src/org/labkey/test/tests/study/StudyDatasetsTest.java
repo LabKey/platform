@@ -166,9 +166,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         final String mySubjectId = "MySubjectId";
         final String subjectIdDataset = "SubjectIdTest";
 
-        // Check the number of server errors.
-        int errorCountBefore = getServerErrorCount();
-
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
         waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
@@ -187,7 +184,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         fieldsPanel.removeField(subjectName);
         fieldsPanel.manuallyDefineFields(mySubjectId);
         designerPage.clickSave();
-        checkExpectedErrors(errorCountBefore + 2);
 
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));

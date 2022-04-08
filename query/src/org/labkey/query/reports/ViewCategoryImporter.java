@@ -194,12 +194,6 @@ public class ViewCategoryImporter implements FolderImporter
         logger.info("Done importing " + getDescription());
     }
 
-    @Override
-    public @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        return Collections.emptyList();
-    }
-
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override

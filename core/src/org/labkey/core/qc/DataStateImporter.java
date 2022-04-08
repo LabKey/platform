@@ -62,12 +62,6 @@ public class DataStateImporter extends AbstractDataStateImporter implements Fold
         }
     }
 
-    @Override
-    public @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        return Collections.emptyList();
-    }
-
     @Nullable
     private StudyqcDocument getSettingsFile(FolderImportContext ctx, VirtualFile root) throws Exception
     {
