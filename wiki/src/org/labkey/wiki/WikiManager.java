@@ -320,9 +320,8 @@ public class WikiManager implements WikiService
 
     /**
      * Attempts to add the specified aliases to the specified wiki. This is a best effort operation; failure to add an
-     * alias (e.g., an alias with that name already exists in this container) will result in an error (added to the
-     * BindException collection if not null, otherwise logged as a warning) but adding will continue and no exception
-     * will be thrown.
+     * alias (e.g., an alias that already exists in this container) will result in an error (added to the BindException
+     * collection if not null, otherwise logged as a warning) but adding will continue and no exception will be thrown.
      *
      * Callers are responsible for uncaching this wiki and the wiki container collections
      */
@@ -333,9 +332,9 @@ public class WikiManager implements WikiService
 
         aliases.forEach(alias->
         {
-            // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation
-            // exceptions that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so
-            // execute custom INSERT SQL instead.
+            // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation exceptions
+            // that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so execute custom
+            // INSERT SQL instead.
             SQLFragment sql = new SQLFragment("INSERT INTO ")
                 .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
                 .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
