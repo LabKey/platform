@@ -2014,6 +2014,8 @@ boxPlot.render();
             yAxisScaleOverride = 'linear';
         }
 
+        var tickMax = Math.floor(config.width / 50);
+
         config.scales = {
             color: {
                 scaleType: 'discrete',
@@ -2025,15 +2027,9 @@ boxPlot.render();
             },
             x: {
                 scaleType: 'discrete',
-                tickMax: config.width ? Math.floor(config.width / 5) : undefined,
+                tickMax: tickMax,
                 tickFormat: function(index) {
-                    // only show a max of 35 labels on the x-axis to avoid overlap
-                    if (index % Math.ceil(config.data[config.data.length-1].seqValue / 35) == 0) {
-                        return tickLabelMap[index];
-                    }
-                    else {
-                        return "";
-                    }
+                    return tickLabelMap[index];
                 },
                 tickCls: function(index) {
                     var baseTag = 'ticklabel';
