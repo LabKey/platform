@@ -60,6 +60,7 @@
  *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
  *          <li><strong>tickValues:</strong> Define the axis tick values. Array of values.</li>
  *          <li><strong>tickDigits:</strong> Convert axis tick to exponential form if equal or greater than number of digits</li>
+ *          <li><strong>tickMax:</strong> Maximum number of tick marks to show for an axis.</li>
  *          <li><strong>tickLabelMax:</strong> Maximum number of tick labels to show for a categorical axis.</li>
  *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
  *          <li><strong>tickCls:</strong> Add class to axis label.</li>
@@ -383,6 +384,7 @@ boxPlot.render();
                 newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
+                newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
@@ -2018,6 +2020,7 @@ boxPlot.render();
             },
             x: {
                 scaleType: 'discrete',
+                tickMax: 250,
                 tickFormat: function(index) {
                     // only show a max of 35 labels on the x-axis to avoid overlap
                     if (index % Math.ceil(config.data[config.data.length-1].seqValue / 35) == 0) {

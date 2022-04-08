@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickLabelMax,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
@@ -31,6 +31,15 @@ LABKEY.vis.internal.Axis = function() {
             data = scale.ticks(ticks);
         } else {
             data = scale.domain();
+        }
+
+        if (tickMax && data.length > tickMax) {
+            var nthDataArr = [];
+            var nth = Math.max(Math.floor( data.length / tickMax), 1);
+            for (var i = 0; i < data.length; i=i+nth) {
+                nthDataArr.push(data[i]);
+            }
+            data = nthDataArr;
         }
 
         // issue 22297: axis values can end up with rounding issues (i.e. 1.4000000000000001)
@@ -496,6 +505,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickDigits = function(h) {tickDigits = h; return axis;};
     axis.tickValues = function(h) {tickValues = h; return axis;};
+    axis.tickMax = function(h) {tickMax = h; return axis;};
     axis.tickLabelMax = function(h) {tickLabelMax = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
@@ -833,6 +843,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales[name].tickDigits) {
                 indAxis.tickDigits(plot.scales[name].tickDigits);
+            }
+
+            if (plot.scales[name].tickMax) {
+                indAxis.tickMax(plot.scales[name].tickMax);
             }
 
             if (plot.scales[name].tickLabelMax) {
