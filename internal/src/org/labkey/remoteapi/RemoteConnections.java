@@ -50,7 +50,7 @@ public class RemoteConnections
         """
         Administrators can define remote connections to other LabKey Server instances and then use them in ETLs to move
         data between instances. This feature should be used with care since all schemas in the remote folder will be
-        available to anyone writing or running ETLs.";
+        available to anyone writing or running ETLs.
         """;
 
     public static @NotNull Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
