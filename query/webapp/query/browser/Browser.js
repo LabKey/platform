@@ -175,17 +175,19 @@ Ext4.define('LABKEY.query.browser.Browser', {
             });
         }
         if (LABKEY.Security.currentUser.isAdmin) {
-            tbar.push({
-                xtype: 'querybutton',
-                text: 'Manage Remote Connections',
-                tooltip: 'Manage remote connection credentials for remote LabKey server authentication.',
-                fontCls: 'fa-server',
-                stacked: true,
-                handler: function() {
-                    window.location = LABKEY.ActionURL.buildURL('query', 'manageRemoteConnections');
-                },
-                scope: this
-            });
+            if ("dataintegration" in LABKEY.moduleContext) {
+                tbar.push({
+                    xtype: 'querybutton',
+                    text: 'Manage Remote Connections',
+                    tooltip: 'Manage configurations for remote connections to other LabKey Server instances.',
+                    fontCls: 'fa-server',
+                    stacked: true,
+                    handler: function () {
+                        window.location = LABKEY.ActionURL.buildURL('query', 'manageRemoteConnections');
+                    },
+                    scope: this
+                });
+            }
             if (LABKEY.Security.currentUser.isSystemAdmin) {
                 tbar.push({
                     xtype: 'querybutton',

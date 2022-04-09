@@ -45,6 +45,14 @@ public class RemoteConnections
     public static String CONNECTION_KIND_QUERY = "query";
     public static String CONNECTION_KIND_FILE = "file";
 
+    // Instructions/warning displayed on both manage and edit pages
+    public static String MANAGEMENT_PAGE_INSTRUCTIONS =
+        """
+        Administrators can define remote connections to other LabKey Server instances and then use them in ETLs to move
+        data between instances. This feature should be used with care since all schemas in the remote folder will be
+        available to anyone writing or running ETLs.";
+        """;
+
     public static @NotNull Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
     {
         return PropertyManager.getEncryptedStore().getProperties(container,
