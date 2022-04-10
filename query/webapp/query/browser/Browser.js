@@ -179,7 +179,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 tbar.push({
                     xtype: 'querybutton',
                     text: 'Manage Remote Connections',
-                    tooltip: 'Manage configurations for remote connections to other LabKey Server instances.',
+                    tooltip: 'Manage configurations for ETL connections to other LabKey Server instances.',
+
                     fontCls: 'fa-server',
                     stacked: true,
                     handler: function () {
