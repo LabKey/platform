@@ -183,7 +183,10 @@ public abstract class BaseWikiView extends JspView<Object>
                 customizeURL.addReturnURL(getViewContext().getActionURL());
             }
 
-            setTitleHref(WikiController.getPageURL(wiki, c));
+            if (perms.allowRead(wiki))
+            {
+                setTitleHref(WikiController.getPageURL(wiki, c));
+            }
         }
 
         if (null == context.getRequest().getParameter("_print"))
