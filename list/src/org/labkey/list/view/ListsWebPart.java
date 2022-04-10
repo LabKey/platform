@@ -58,7 +58,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         _narrow = narrow;
 
         setTitle("Lists");
-        setTitleHref(ListController.getBeginURL(getViewContext().getContainer()));
+        setTitleHref(ListController.getBeginURL(portalCtx.getContainer()));
 
         if (portalCtx.hasPermission(DesignListPermission.class))
         {
