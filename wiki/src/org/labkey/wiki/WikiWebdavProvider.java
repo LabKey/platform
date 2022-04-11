@@ -72,19 +72,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * User: matthewb
- * Date: Oct 21, 2008
- * Time: 9:52:40 AM
+ * WikiWebdavProvider is NOT used. It was previously registered to provide a WebDAV @wiki node but was unregistered in
+ * 2019 since clients didn't seem to be using it.
  */
-
 public class WikiWebdavProvider implements WebdavService.Provider
 {
     final static String WIKI_NAME = "@wiki";
     
-    // currently addChildren is called only for web folders
+    // currently, addChildren is called only for web folders
     @Override
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
@@ -154,8 +151,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             List<String> names = WikiSelectManager.getPageNames(_c);
             ArrayList<String> strs = new ArrayList<>();
             strs.add(WikiWriterFactory.WIKIS_FILENAME);
-            if (names != null)
-                strs.addAll(names);
+            strs.addAll(names);
 
             return strs;
         }
@@ -211,7 +207,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
     }
 
     /** An XML file with metadata about all wikis in current container,
-     * including parenting, title, whether or not to show attachments, etc */
+     * including parenting, title, whether to show attachments, etc */
     public static class WikiMetadata extends AbstractDocumentResource
     {
         private final WikiProviderResource _parent;
@@ -277,8 +273,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
                     wikiXml.setTitle(wikiVersion.getTitle());
                     wikiXml.setShowAttachments(wiki.isShowAttachments());
                     wikiXml.setShouldIndex(wiki.isShouldIndex());
-                    List<String> attachmentNames = wiki.getAttachments().stream().map(Attachment::getName).collect(Collectors.toList());
+                    List<String> attachmentNames = wiki.getAttachments().stream().map(Attachment::getName).toList();
                     wikiXml.setAttachmentsOrder(StringUtils.join(attachmentNames, ';'));
+                    Collection<String> aliases = WikiSelectManager.getAliases(_parent._c, wiki.getRowId());
+                    if (!aliases.isEmpty())
+                    {
+                        WikiType.Aliases aliasesXml = wikiXml.addNewAliases();
+                        aliasesXml.setAliasArray(aliases.toArray(new String[0]));
+                    }
                 }
 
                 XmlOptions options = new XmlOptions();
@@ -308,7 +310,6 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return getContent().length;
         }
     }
-    
 
     public static class WikiFolder extends AbstractWebdavResourceCollection
     {
@@ -327,13 +328,11 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki.getAttachmentParent());
         }
 
-
         @Override
         public boolean canDelete(User user, boolean forDelete, List<String> message)
         {
             return false;   // NYI
         }
-
 
         @Override
         public boolean canRename(User user, boolean forRename)
@@ -347,7 +346,6 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return false;
         }
 
-
         @Override
         public boolean exists()
         {
@@ -360,8 +358,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         {
             if (!exists())
                 return Collections.emptyList();
-            List<String> ret = new ArrayList<>();
-            ret.addAll(_attachments.listNames());
+            List<String> ret = new ArrayList<>(_attachments.listNames());
             ret.add(getDocumentName(_wiki));
             return ret;
         }
@@ -401,20 +398,17 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
     }
 
-
     static String getResourcePath(Wiki page)
     {
         String docname = getDocumentName(page);
         return AbstractWebdavResource.c(page.getContainerPath(), WIKI_NAME, page.getName(), docname);
     }
 
-
     static String getResourcePath(Container c, String name, WikiRendererType type)
     {
         String docname = type.getDocumentName(name);
         return AbstractWebdavResource.c(c.getPath(), WIKI_NAME, name,docname);
     }
-
 
     public static String getDocumentName(Wiki wiki)
     {
@@ -429,7 +423,6 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
         return r.getDocumentName(wiki.getName());
     }
-
 
     public static class WikiPageResource extends AbstractDocumentResource
     {

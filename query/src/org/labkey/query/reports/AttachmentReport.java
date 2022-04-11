@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
@@ -339,7 +339,7 @@ public class AttachmentReport extends BaseRedirectReport
     }
 
     @Override
-    public void serializeToFolder(ImportContext context, VirtualFile dir) throws IOException
+    public void serializeToFolder(FolderExportContext context, VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 
@@ -347,7 +347,7 @@ public class AttachmentReport extends BaseRedirectReport
         {
             // for attachment reports, write the attachment to a subdirectory to avoid collisions
             Attachment attachment = getLatestVersion();
-            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
+            ReportNameContext rnc = context.getContext(ReportNameContext.class);
             serializeAttachment(rnc.getSerializedName(), dir, attachment);
             super.serializeToFolder(context, dir);
         }

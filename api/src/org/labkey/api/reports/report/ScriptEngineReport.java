@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -68,7 +68,6 @@ import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.DataView;
@@ -723,7 +722,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
 
     @Override
-    public void serializeToFolder(ImportContext ctx, VirtualFile directory) throws IOException
+    public void serializeToFolder(FolderExportContext ctx, VirtualFile directory) throws IOException
     {
         ScriptReportDescriptor descriptor = getDescriptor();
 
@@ -748,7 +747,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         return getSerializedScriptFileName(null);
     }
-    protected String getSerializedScriptFileName(ImportContext context)
+    protected String getSerializedScriptFileName(FolderExportContext context)
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
         String extension = "script";
@@ -757,15 +756,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         if (engine != null)
             extension = engine.getFactory().getExtensions().get(0);
 
-        if (context != null)
-        {
-            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
-            reportName = rnc.getSerializedName();
-        }
-        else
-        {
-            reportName = ReportUtil.getSerializedName(getDescriptor());
-        }
+        ReportNameContext rnc = context.getContext(ReportNameContext.class);
+        reportName = rnc.getSerializedName();
 
         return FileUtil.makeLegalName(String.format("%s.%s", reportName, extension));
     }

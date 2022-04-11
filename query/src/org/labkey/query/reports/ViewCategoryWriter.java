@@ -15,12 +15,12 @@
  */
 package org.labkey.query.reports;
 
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -48,15 +48,15 @@ public class ViewCategoryWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+    public boolean selectedByDefault(ExportType type)
     {
-        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+        return ExportType.ALL == type || ExportType.STUDY == type;
     }
 
     @Override
-    public void write(Container object, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        List<ViewCategory> categories = ViewCategoryManager.getInstance().getAllCategories(ctx.getContainer());
+        List<ViewCategory> categories = ViewCategoryManager.getInstance().getAllCategories(c);
 
         if (!categories.isEmpty())
         {

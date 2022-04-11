@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
@@ -67,7 +67,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
-    protected String adjustPropertyValue(@Nullable ImportContext context, String key, Object value)
+    protected String adjustPropertyValue(@Nullable FolderExportContext context, String key, Object value)
     {
         if (null != context && context.isAlternateIds() && "json".equals(key))
         {

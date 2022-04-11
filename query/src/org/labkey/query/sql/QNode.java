@@ -152,6 +152,20 @@ abstract public class QNode implements Cloneable
 		setHasTransformableAggregate(hasTransformableAggregate() || child.hasTransformableAggregate());
     }
 
+    public <C extends QNode> C removeChildOfType(Class<C> clazz)
+    {
+        for (int i= 0 ; i< _children.size() ; i++)
+        {
+            QNode child = _children.get(i);
+            if (clazz.isAssignableFrom(child.getClass()))
+            {
+                _children.remove(i);
+                return (C) child;
+            }
+        }
+        return null;
+    }
+
 	void _replaceChildren(LinkedList<QNode> list)
 	{
 	    boolean hasTransformableAggregate = false;

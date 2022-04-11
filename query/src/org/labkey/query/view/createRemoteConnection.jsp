@@ -30,17 +30,13 @@
     RemoteConnections.RemoteConnectionForm remoteConnectionForm = ((JspView<RemoteConnections.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
     String name = remoteConnectionForm.getConnectionName();
     String url = remoteConnectionForm.getUrl();
-    String user = remoteConnectionForm.getUser();
-    String container = remoteConnectionForm.getContainer();
+    String userEmail = remoteConnectionForm.getUserEmail();
+    String folderPath = remoteConnectionForm.getFolderPath();
     String connectionKind = remoteConnectionForm.getConnectionKind();
     boolean editConnection = StringUtils.isNotEmpty(name);
     String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
 %>
-<p>
-    Administrators can define external remote connections to alternate LabKey servers.
-    This feature should be used with care since, depending
-    on your configuration, any user with access to the remote site could view arbitrary data in your remote server.
-</p>
+<p><%=h(RemoteConnections.MANAGEMENT_PAGE_INSTRUCTIONS)%></p>
 <labkey:errors/>
 <br>
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
@@ -48,9 +44,9 @@
     <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%=url%>" forceSmallContext="true"
                   contextContent="Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name."
                   isRequired="true"/>
-    <labkey:input type="text" label="User *" name="user" id="user" size="50" value="<%=user%>" isRequired="true"/>
+    <labkey:input type="text" label="User *" name="userEmail" id="userEmail" size="50" value="<%=userEmail%>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="password" id="password" size="50" isRequired="true"/>
-    <labkey:input type="text" label="Folder Path *" name="container" id="container" size="50" value="<%=container%>"
+    <labkey:input type="text" label="Folder Path *" name="folderPath" id="folderPath" size="50" value="<%=folderPath%>"
                   contextContent="Enter the folder path on the LabKey server. An example folder path is 'My Folder/My Subfolder'." forceSmallContext="true"
                   isRequired="true"/>
 

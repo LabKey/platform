@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.FolderType;
@@ -198,7 +198,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.canHaveChildren();
     }
 
-    public boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(FolderExportContext context)
     {
         // only include subfolders if requested by user (otherwise just container tabs)
         // but don't include the current folder in the case of creating a folder from template

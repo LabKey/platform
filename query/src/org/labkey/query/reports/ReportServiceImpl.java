@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -93,7 +94,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -490,8 +490,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
             String reportXml = "";
-            // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(ImportContext)
-            FolderImportContext ex = new FolderImportContext(user, c, (Path)null, null, null, null);
+            // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(FolderExportContext)
+            FolderExportContext ex = new FolderExportContext(user, c, null, null, null);
             ReportDescriptorDocument reportDoc = report.getDescriptor().getDescriptorDocument(ex);
             try (StringWriter writer = new StringWriter())
             {
@@ -948,12 +948,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
 
-            if (ctx instanceof FolderImportContext)
-            {
-                // remember that we imported this report so we don't try to delete it if
-                // we are importing another report with the same reportKey and name.
-                ((FolderImportContext)ctx).addImportedReport(report.getDescriptor());
-            }
+            // remember that we imported this report so we don't try to delete it if
+            // we are importing another report with the same reportKey and name.
+            ctx.addImportedReport(report.getDescriptor());
 
             // import any security role assignments
             if (reportXml instanceof ReportDescriptorDocument)
