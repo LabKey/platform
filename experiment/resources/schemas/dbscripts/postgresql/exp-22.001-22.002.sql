@@ -1,1 +1,1 @@
-UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun' WHERE Status IS NULL;
+UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun' AND Status IS NULL;
