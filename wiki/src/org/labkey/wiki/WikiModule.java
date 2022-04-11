@@ -222,7 +222,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
             try
             {
-                getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+                getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
             }
             catch (IOException e)
             {
