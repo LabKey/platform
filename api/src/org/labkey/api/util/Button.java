@@ -28,6 +28,7 @@ import java.util.Map;
 
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute;
+import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
@@ -70,6 +71,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     private final String style;
     private final String confirmMessage;
     private final String target;
+    private final boolean inlineScript;
 
     private Button(ButtonBuilder builder)
     {
@@ -92,6 +94,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         this.style = builder.style;
         this.confirmMessage = builder.confirmMessage;
         this.target = builder.target;
+        this.inlineScript = builder.inlineScript;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
@@ -239,10 +242,12 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
         String hrefValue = (null == getHref()) ? "#" : getHref();
+        String clickHandler = generateOnClick();
 
         var attrs = at(attributes)
             .id(id)
             .at(Attribute.href, hrefValue, title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .at(inlineScript, onclick, clickHandler)
             .data("submitid", submitId)
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
@@ -253,7 +258,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
 
-        page.addListener(id, "click", generateOnClick());
+        if (!inlineScript)
+            page.addListener(id, "click", generateOnClick());
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
@@ -270,6 +276,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
+        private boolean inlineScript = false;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -318,6 +325,13 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         public ButtonBuilder submit(boolean submit)
         {
             this.submit = submit;
+            return this;
+        }
+
+        /* ONLY WHEN RENDER MARKUP INTO JAVASSCRIPT CODE */
+        public ButtonBuilder inlineScript()
+        {
+            this.inlineScript = true;
             return this;
         }
 
