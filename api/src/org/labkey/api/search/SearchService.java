@@ -55,6 +55,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -227,6 +228,15 @@ public interface SearchService
         default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
         default HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier) { return null; }
         default Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier) { return null; }
+        default Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+        {
+            Map<String, Map<String, Object>> results = new HashMap<>();
+            for (String resourceIdentifier : resourceIdentifiers)
+            {
+                results.put(resourceIdentifier, getCustomSearchJson(user, resourceIdentifier));
+            }
+            return results;
+        }
     }
 
 
@@ -426,6 +436,7 @@ public interface SearchService
     WebdavResource resolveResource(@NotNull String resourceIdentifier);
     HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier);
     Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier);
+    Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers);
 
     void addSearchResultTemplate(@NotNull SearchResultTemplate template);
     @Nullable SearchResultTemplate getSearchResultTemplate(@Nullable String name);

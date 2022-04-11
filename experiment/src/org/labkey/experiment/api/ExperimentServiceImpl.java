@@ -519,6 +519,18 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    public @NotNull List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds)
+    {
+        if (rowIds.size() == 0)
+            return Collections.emptyList();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN);
+        filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
+
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
+
+    }
+
+    @Override
     public List<ExpDataImpl> getExpDatas(Container container, @Nullable DataType type, @Nullable String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);

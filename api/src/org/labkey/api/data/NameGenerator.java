@@ -677,10 +677,16 @@ public class NameGenerator
             else
                 dataTypes.addAll(ExperimentService.get().getDataClasses(_container, user, true));
         }
+
+        boolean isCurrentDataType = inputDataType != null && inputDataType.equals(currentDataType);
+
         if (inputDataType != null && dataTypes.isEmpty())
         {
-            _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
-            return null;
+            if (!isCurrentDataType)
+            {
+                _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+                return null;
+            }
         }
 
         for (ExpObject dataType : dataTypes)
@@ -709,6 +715,28 @@ public class NameGenerator
                 }
             }
 
+        }
+
+        if ((isCurrentDataType || inputDataType == null) && !_domainProperties.isEmpty())
+        {
+            Map<String, GWTPropertyDescriptor> domainFields = new CaseInsensitiveHashMap<>();
+            _domainProperties.forEach(prop -> domainFields.put(prop.getName(), prop));
+
+            GWTPropertyDescriptor col = domainFields.get(lookupField);
+            if (col != null)
+            {
+                PropertyType pt = null;
+                if (col.getConceptURI() != null || col.getRangeURI() != null)
+                    pt = PropertyType.getFromURI(col.getConceptURI(), col.getRangeURI(), null);
+
+                if (pt != null)
+                    return getNamePartPreviewValue(pt, lookupField);
+                else
+                {
+                    _syntaxErrors.add("Invalid lineage lookup: " + fkTok.toString() + ".");
+                    return null;
+                }
+            }
         }
 
         _syntaxErrors.add("Lineage lookup field does not exist: " + fkTok.toString());
@@ -1486,9 +1514,18 @@ public class NameGenerator
                     }
                 }
 
-                ctx.putAll(inputs);
+                // if a single input or lookup is found, return the object, not the list
+                Map<String, Object> inputValues = new HashMap<>();
+                inputs.forEach((key, value) -> {
+                    Object inputValue = value;
+                    if (value.size() == 1)
+                        inputValue = value.iterator().next();
+                    else if (value.size() == 0)
+                        inputValue = null;
+                    inputValues.put(key, inputValue);
+                });
+                ctx.putAll(inputValues);
 
-                // if a single lookup is found, return the object, not the list
                 Map<String, Object> lookupValues = new HashMap<>();
                 inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : value.get(0)));
                 ctx.putAll(lookupValues);

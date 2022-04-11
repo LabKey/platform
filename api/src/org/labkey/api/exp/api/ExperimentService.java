@@ -168,6 +168,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull
     List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
 
+    @NotNull
+    List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds);
+
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
 
     @NotNull

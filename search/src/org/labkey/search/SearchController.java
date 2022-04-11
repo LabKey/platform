@@ -80,6 +80,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -611,8 +613,21 @@ public class SearchController extends SpringActionController
                 arr = new Object[hits.size()];
 
                 int i=0;
-                for (SearchService.SearchHit hit : hits)
+                int batchSize = 1000;
+                Map<String, Map<String, Object>> docDataMap = new HashMap<>();
+                for (int ind = 0; ind < hits.size(); ind++)
                 {
+                    if (ind % batchSize == 0)
+                    {
+                        int batchEnd = Math.min(hits.size(), ind + batchSize);
+                        List<String> docIds = new ArrayList<>();
+                        for (int j = ind; j < batchEnd; j++)
+                            docIds.add(hits.get(j).docid);
+
+                        docDataMap = ss.getCustomSearchJsonMap(getUser(), docIds);
+                    }
+
+                    SearchService.SearchHit hit = hits.get(ind);
                     JSONObject o = new JSONObject();
                     String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
 
@@ -627,7 +642,7 @@ public class SearchController extends SpringActionController
 
                     if (form.isExperimentalCustomJson())
                     {
-                        Map<String, Object> custom = ss.getCustomSearchJson(getUser(), hit.docid);
+                        Map<String, Object> custom = docDataMap.get(hit.docid);
                         if (custom != null)
                             o.put("data", custom);
                     }
