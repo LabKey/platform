@@ -197,7 +197,6 @@ api/src/org/labkey/api/action/StatusReportingRunnableAction.java -text
 api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/admin/AbstractFolderContext.java -text
 api/src/org/labkey/api/admin/AbstractFolderImportFactory.java -text
-api/src/org/labkey/api/admin/AbstractImportContext.java -text
 api/src/org/labkey/api/admin/ActionsHelper.java -text
 api/src/org/labkey/api/admin/AdminBean.java -text
 api/src/org/labkey/api/admin/AdminConsoleHeaderLinkProvider.java -text
@@ -217,7 +216,6 @@ api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
 api/src/org/labkey/api/admin/FolderWriter.java -text
 api/src/org/labkey/api/admin/FolderWriterFactory.java -text
 api/src/org/labkey/api/admin/FolderWriterImpl.java -text
-api/src/org/labkey/api/admin/ImportContext.java -text
 api/src/org/labkey/api/admin/ImportException.java -text
 api/src/org/labkey/api/admin/ImportOptions.java -text
 api/src/org/labkey/api/admin/InvalidFileException.java -text
@@ -3170,7 +3168,6 @@ study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
-study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/TopLevelStudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text

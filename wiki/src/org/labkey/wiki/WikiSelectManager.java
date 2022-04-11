@@ -50,7 +50,7 @@ import java.util.Set;
 public class WikiSelectManager
 {
     // List of page names in this folder, in depth-first tree order
-    public static List<String> getPageNames(Container c)
+    public static @NotNull List<String> getPageNames(Container c)
     {
         return getWikiCollections(c).getNames();
     }
