@@ -86,7 +86,7 @@ public class ClosureQueryHelper
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
     static String pgMaterialClosureSql = """
-            SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
+            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
                 SELECT Start_, End_,
@@ -119,7 +119,7 @@ public class ClosureQueryHelper
             """, (MAX_LINEAGE_LOOKUP_DEPTH));
 
     static String mssqlMaterialClosureSql = """
-            SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
+            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
                 SELECT Start_, End_,

@@ -36,7 +36,7 @@ public class AncestorLookupDisplayColumn extends DataColumn
     @Override
     public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
     {
-        Long lookupKey = getLookupId(ctx);
+        Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return HtmlString.unsafe("<span style=\"color: gray;\"><"+ (-lookupKey) + " values></span>");
         return super.getFormattedHtml(ctx);
@@ -45,7 +45,7 @@ public class AncestorLookupDisplayColumn extends DataColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        Long lookupKey = getLookupId(ctx);
+        Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return  (-lookupKey) + " values";
         return super.getDisplayValue(ctx);
@@ -54,7 +54,7 @@ public class AncestorLookupDisplayColumn extends DataColumn
     @Override
     public Object getValue(RenderContext ctx)
     {
-        Long lookupKey = getLookupId(ctx);
+        Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return lookupKey;
         return super.getValue(ctx);
@@ -63,14 +63,14 @@ public class AncestorLookupDisplayColumn extends DataColumn
     @Override
     public String renderURL(RenderContext ctx)
     {
-        Long lookupKey = getLookupId(ctx);
+        Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return null;
         return super.renderURL(ctx);
     }
 
-    private Long getLookupId(RenderContext ctx)
+    private Integer getLookupId(RenderContext ctx)
     {
-        return (Long) _lookupCol.getValue(ctx);
+        return (Integer) _lookupCol.getValue(ctx);
     }
 }
