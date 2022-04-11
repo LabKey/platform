@@ -30,6 +30,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
@@ -39,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -53,8 +56,6 @@ public class ClosureQueryHelper
     final static long CACHE_INVALIDATION_INTERVAL = TimeUnit.MINUTES.toMillis(5);
     final static long CACHE_LRU_AGE_OUT_INTERVAL = TimeUnit.MINUTES.toMillis(30);
 
-
-
     /* TODO/CONSIDER every SampleType and Dataclass should have a unique ObjectId so it can be stored as an in lineage tables (e.g. edge/closure tables) */
 
     record ClosureTable(MaterializedQueryHelper helper, AtomicInteger counter, TableType type, String lsid) {};
@@ -62,6 +63,21 @@ public class ClosureQueryHelper
     static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
     // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
     static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<>(100,0.75f,true);
+
+    static
+    {
+        MemTracker.getInstance().register(new MemTrackerListener()
+        {
+            @Override
+            public void beforeReport(Set<Object> set)
+            {
+                synchronized (queryHelpers)
+                {
+                    queryHelpers.values().forEach(ch -> set.add(ch.helper));
+                }
+            }
+        });
+    }
 
 
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
@@ -131,6 +147,8 @@ public class ClosureQueryHelper
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
             GROUP BY targetId, Start_
             """;
+
+
 
 
     static SQLFragment selectIntoSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
