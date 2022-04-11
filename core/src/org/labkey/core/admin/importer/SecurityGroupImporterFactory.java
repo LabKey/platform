@@ -92,13 +92,6 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
-        }
-
         @Override
         public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {

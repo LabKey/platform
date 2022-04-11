@@ -45,6 +45,14 @@ public class RemoteConnections
     public static String CONNECTION_KIND_QUERY = "query";
     public static String CONNECTION_KIND_FILE = "file";
 
+    // Instructions/warning displayed on both manage and edit pages
+    public static String MANAGEMENT_PAGE_INSTRUCTIONS =
+        """
+        Administrators can define remote connections to other LabKey Server instances and then use them in ETLs to move
+        data between instances. This feature should be used with care since all schemas in the remote folder will be
+        available to anyone writing or running ETLs.
+        """;
+
     public static @NotNull Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
     {
         return PropertyManager.getEncryptedStore().getProperties(container,
@@ -59,9 +67,9 @@ public class RemoteConnections
         boolean changingName = editing && !name.equals(newName);
 
         String url = remoteConnectionForm.getUrl();
-        String user = remoteConnectionForm.getUser();
+        String user = remoteConnectionForm.getUserEmail();
         String password = remoteConnectionForm.getPassword();
-        String folderPath = remoteConnectionForm.getContainer();
+        String folderPath = remoteConnectionForm.getFolderPath();
         String connectionKind = remoteConnectionForm.getConnectionKind();
 
         if (StringUtils.isBlank(newName) || url == null || user == null || password == null || (CONNECTION_KIND_QUERY.equals(connectionKind) && folderPath == null))
@@ -152,7 +160,7 @@ public class RemoteConnections
         private String _url;
         private String _user;
         private String _password;
-        private String _container;
+        private String _folderPath;
         private String _newConnectionName;
         private String _connectionKind;
 
@@ -180,12 +188,12 @@ public class RemoteConnections
             _url = url;
         }
 
-        public String getUser()
+        public String getUserEmail()
         {
             return _user;
         }
 
-        public void setUser(String user)
+        public void setUserEmail(String user)
         {
             _user = user;
         }
@@ -200,14 +208,14 @@ public class RemoteConnections
             _password = password;
         }
 
-        public String getContainer()
+        public String getFolderPath()
         {
-            return _container;
+            return _folderPath;
         }
 
-        public void setContainer(String container)
+        public void setFolderPath(String folderPath)
         {
-            _container = container;
+            _folderPath = folderPath;
         }
 
         public String getNewConnectionName()

@@ -25,6 +25,7 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 
@@ -42,8 +43,14 @@ public interface FolderImporter
 
     void process(@Nullable PipelineJob job, FolderImportContext ctx, VirtualFile root) throws Exception;
 
-    @NotNull
-    Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root) throws Exception;
+    /**
+     * Execute any post processing and return warnings. This is called after process() has been called on all importers.
+     * Default is to do nothing and return no warnings.
+     */
+    default @NotNull Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root) throws Exception
+    {
+        return Collections.emptyList();
+    }
 
     /**
      * Map of children data type names to boolean indicating if it is valid for the given import archive context.

@@ -20,14 +20,12 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.ExportDirType;
-import org.labkey.folder.xml.FolderDocument;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -48,17 +46,13 @@ public class ReportWriter extends BaseFolderWriter
     }
 
     @Override
-    public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+    public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
-        Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), ctx.getContainer()));
-
-        if (ctx instanceof FolderExportContext feCtx)
+        Set<Report> reports = new LinkedHashSet<>(ReportService.get().getReports(ctx.getUser(), c));
+        Set<String> reportsToExport = ctx.getReportIds();
+        if (reportsToExport != null)
         {
-            Set<String> reportsToExport = feCtx.getReportIds();
-            if (reportsToExport != null)
-            {
-                reports.removeIf(reportObj -> !reportsToExport.contains(reportObj.getDescriptor().getEntityId()));
-            }
+            reports.removeIf(reportObj -> !reportsToExport.contains(reportObj.getDescriptor().getEntityId()));
         }
 
         if (reports.size() > 0)

@@ -60,6 +60,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         return new SubfolderWriter();
     }
 
+    @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         LOG.info("Exporting folder to " + vf.getLocation());
@@ -100,7 +101,7 @@ public class FolderWriterImpl extends BaseFolderWriter
 
         // Insert standard comment explaining where the data lives, who exported it, and when
         if (ctx.isAddExportComment())
-            XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
+            XmlBeansUtil.addStandardExportComment(folderXml, c, ctx.getUser());
 
         folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
         folderXml.setLabel(c.getName());
@@ -112,7 +113,7 @@ public class FolderWriterImpl extends BaseFolderWriter
             folderXml.setDescription(c.getDescription());
 
         // Ask LookAndFeelProperties for actual stored values (we don't want inherited values)
-        LookAndFeelProperties props = LookAndFeelProperties.getInstance(ctx.getContainer());
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
 
         String defaultDateFormat = props.getDefaultDateFormatStored();
         if (null != defaultDateFormat)

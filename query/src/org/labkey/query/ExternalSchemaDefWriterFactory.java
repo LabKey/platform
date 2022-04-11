@@ -18,9 +18,9 @@ package org.labkey.query;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.MultiTablesType;
@@ -29,7 +29,6 @@ import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
 import org.labkey.data.xml.externalSchema.ExternalSchemaType;
 import org.labkey.data.xml.externalSchema.LinkedSchemaDocument;
 import org.labkey.data.xml.externalSchema.LinkedSchemaType;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -62,7 +61,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             List<ExternalSchemaDef> externalSchemas = QueryManager.get().getExternalSchemaDefs(c);
             List<LinkedSchemaDef> linkedSchemas = QueryManager.get().getLinkedSchemaDefs(c);

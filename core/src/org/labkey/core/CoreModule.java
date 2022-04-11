@@ -128,6 +128,7 @@ import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -169,6 +170,7 @@ import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
+import org.labkey.core.admin.logger.LoggingTestCase;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
@@ -264,7 +266,7 @@ import java.util.stream.Collectors;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = LogManager.getLogger(CoreModule.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
 
     static
     {
@@ -1088,6 +1090,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             LoggerController.TestCase.class,
+            LoggingTestCase.class,
             LoginController.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,

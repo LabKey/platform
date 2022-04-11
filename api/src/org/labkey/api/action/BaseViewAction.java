@@ -21,11 +21,12 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
@@ -33,6 +34,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
 import org.springframework.beans.BeanUtils;
@@ -71,6 +73,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * User: matthewb
@@ -79,7 +83,7 @@ import java.util.Map;
  */
 public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig
 {
-    protected static final Logger logger = LogManager.getLogger(BaseViewAction.class);
+    protected static final Logger logger = LogHelper.getLogger(BaseViewAction.class, "BaseViewAction");
 
     private PageConfig _pageConfig = null;
     private PropertyValues _pvs;
@@ -87,7 +91,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     private boolean _debug = false;
 
     protected boolean _print = false;
-    protected Class _commandClass;
+    protected Class<?> _commandClass;
     protected String _commandName = "form";
 
     protected BaseViewAction()
@@ -98,15 +102,15 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             return;
 
         // inspect the action's *public* methods to determine form class
-        Class typeBest = null;
+        Class<?> typeBest = null;
         for (Method m : this.getClass().getMethods())
         {
             if (methodName.equals(m.getName()))
             {
-                Class[] types = m.getParameterTypes();
+                Class<?>[] types = m.getParameterTypes();
                 if (types.length < 1)
                     continue;
-                Class typeCurrent = types[0];
+                Class<?> typeCurrent = types[0];
                 assert null == _commandClass || typeCurrent.equals(_commandClass);
 
                 // Using templated classes to extend a base action can lead to multiple
@@ -136,10 +140,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    public void setProperties(Map m)
+    public void setProperties(Map<?,?> m)
     {
         _pvs = new MutablePropertyValues(m);
     }
+
 
     /* Doesn't guarantee non-null, non-empty */
     public Object getProperty(String key, String d)
@@ -148,11 +153,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return pv == null ? d : pv.getValue();
     }
 
-    public Object getProperty(Enum key)
+
+    public Object getProperty(Enum<?> key)
     {
         PropertyValue pv = _pvs.getPropertyValue(key.name());
         return pv == null ? null : pv.getValue();
     }
+
 
     public Object getProperty(String key)
     {
@@ -164,6 +171,20 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     public PropertyValues getPropertyValues()
     {
         return _pvs;
+    }
+
+
+    public static PropertyValues getPropertyValuesForFormBinding(PropertyValues pvs, @NotNull Predicate<String> allowBind)
+    {
+        if (null == pvs)
+            return null;
+        MutablePropertyValues ret = new MutablePropertyValues();
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            if (allowBind.test(pv.getName()))
+                ret.addPropertyValue(pv);
+        }
+        return ret;
     }
 
 
@@ -324,9 +345,9 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
     }
 
-
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
+        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
 
         String[] fields = binder.getDisallowedFields();
@@ -340,7 +361,8 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         binder.setFieldMarkerPrefix(SpringActionController.FIELD_MARKER);
         try
         {
-            binder.bind(params);
+            // most paths probably called getPropertyValuesForFormBinding() already, but this is a public static method, so call it again
+            binder.bind(getPropertyValuesForFormBinding(params, allow));
             BindException errors = new NullSafeBindException(binder.getBindingResult());
             return errors;
         }
@@ -409,7 +431,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      */
     public static @NotNull BindException simpleBindParameters(Object command, String commandName, PropertyValues params)
     {
-        //params = _fixupPropertyMap(params);
+        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
 
         BindException errors = new NullSafeBindException(command, "Form");
 
@@ -419,10 +441,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         {
             String propertyName = pv.getName();
             Object value = pv.getValue();
+            if (!allow.test(propertyName))
+                continue;
+
             try
             {
                 Object converted = value;
-                Class propClass = PropertyUtils.getPropertyType(command, propertyName);
+                Class<?> propClass = PropertyUtils.getPropertyType(command, propertyName);
                 if (null == propClass)
                     continue;
                 if (value == null)
@@ -450,7 +475,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             catch (Exception x)
             {
                 errors.addError(new ObjectError(commandName, new String[]{"Error"}, new Object[] {value}, x.getMessage()));
-                LogManager.getLogger(BaseViewAction.class).error("unexpected error", x);
+                logger.error("unexpected error", x);
             }
         }
         return errors;
@@ -551,7 +576,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Class getWrappedClass()
+        public Class<?> getWrappedClass()
         {
             return object.getClass();
         }
@@ -637,14 +662,14 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _debug;
     }
 
-    public @NotNull Class getCommandClass()
+    public @NotNull Class<?> getCommandClass()
     {
         if (null == _commandClass)
             throw new IllegalStateException("NULL _commandClass in " + getClass().getName());
         return _commandClass;
     }
 
-    public void setCommandClass(@NotNull Class commandClass)
+    public void setCommandClass(@NotNull Class<?> commandClass)
     {
         _commandClass = commandClass;
     }

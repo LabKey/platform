@@ -590,13 +590,16 @@ public class WikiController extends SpringActionController
             Collection<String> existingAliases = WikiSelectManager.getAliases(getContainer(), _wiki.getRowId());
             if (!newAliases.equals(existingAliases))
             {
-                WikiManager mgr = WikiManager.get();
-                mgr.deleteAliases(c, wiki);
-
-                // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
-                // regardless of errors, complete all other edits.
-                newAliases.forEach(alias->mgr.addAlias(getUser(), _wiki, alias, errors));
-                WikiCache.uncache(c, wiki, true);
+                try
+                {
+                    // Best effort for alias editing -- reshow with error message if duplicates are encountered, but
+                    // regardless of errors here, complete all other edits.
+                    WikiManager.get().replaceAliases(_wiki, newAliases, errors);
+                }
+                finally
+                {
+                    WikiCache.uncache(c, wiki, true);
+                }
             }
 
             getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
@@ -2337,7 +2340,7 @@ public class WikiController extends SpringActionController
 
             //insert new wiki and new version
             User user = getUser();
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page

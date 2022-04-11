@@ -175,13 +175,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
-        }
-
         @Override
         public @Nullable Map<String, Boolean> getChildrenDataTypes(String archiveFilePath, User user, Container container) throws ImportException, IOException
         {
