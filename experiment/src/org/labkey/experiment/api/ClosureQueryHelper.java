@@ -61,7 +61,7 @@ public class ClosureQueryHelper
 
     static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
     // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
-    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<String, Long>(100,0.75f,true);
+    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<>(100,0.75f,true);
 
 
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
