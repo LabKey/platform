@@ -717,7 +717,7 @@ public class NameGenerator
 
         }
 
-        if ((isCurrentDataType || inputDataType == null) && !_domainProperties.isEmpty())
+        if ((isCurrentDataType || inputDataType == null) && _domainProperties != null && !_domainProperties.isEmpty())
         {
             Map<String, GWTPropertyDescriptor> domainFields = new CaseInsensitiveHashMap<>();
             _domainProperties.forEach(prop -> domainFields.put(prop.getName(), prop));
