@@ -32,12 +32,12 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
     getPanel : function() {
 
         var items = [];
-        this.relatedFolder = this.params.relatedFolder;
+        this.defaultRelatedFolder = this.params.defaultRelatedFolder;
+        this.currentIssueDef = this.params.currentIssueDef;
 
         this.createCombo = Ext4.create('Ext.form.field.ComboBox', {
             store           : this.getStore(),
             valueField      : 'key',
-            value           : this.relatedFolder,
             displayField    : 'displayName',
             fieldLabel      : 'Folder',
             triggerAction   : 'all',
@@ -52,7 +52,12 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
             listeners : {
                 scope: this,
                 'change': function(cb, value) {
-                    this.relatedFolder = value;
+                    // translate the select target folder
+                    var rec = cb.getStore().findRecord('key', value);
+                    if (rec){
+                        this.containerPath = rec.get('containerPath');
+                        this.destIssueDefName = rec.get('issueDefName');
+                    }
                 }
             }
         });
@@ -106,6 +111,21 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
                         type: 'json',
                         root: 'containers'
                     }
+                },
+                listeners: {
+                    scope: this,
+                    load: {
+                        fn : function(cmp, records, success){
+                            // if the configured related folder is available and accessible to the current user, select it
+                            // by default, else just use this existing issue def
+                            if (cmp.findRecord('key', this.defaultRelatedFolder)){
+                                this.createCombo.setValue(this.defaultRelatedFolder);
+                            }
+                            else if (cmp.findRecord('key', this.currentIssueDef)){
+                                this.createCombo.setValue(this.currentIssueDef);
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -116,13 +136,6 @@ Ext4.define('Issues.window.CreateRelatedIssue', {
         var formPanel = this.down('form');
 
         if (formPanel && formPanel.getForm() && formPanel.getForm().isValid()){
-            // translate the select target folder
-            var rec = this.getStore().findRecord('key', this.relatedFolder);
-            if (rec){
-                this.containerPath = rec.get('containerPath');
-                this.destIssueDefName = rec.get('issueDefName');
-            }
-
             var form = formPanel.getForm();
             form.submit({
                 url : LABKEY.ActionURL.buildURL('issues', 'insert.view', this.containerPath, {issueDefName : this.destIssueDefName}),

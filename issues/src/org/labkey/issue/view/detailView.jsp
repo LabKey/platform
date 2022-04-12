@@ -126,7 +126,8 @@
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
     relatedIssues.append(", priority :").append(q(issue.getProperty(IssueObject.Prop.priority)));
     relatedIssues.append(", related :").append(issue.getIssueId());
-    relatedIssues.append(", relatedFolder :").append(q(relatedFolderName));
+    relatedIssues.append(", defaultRelatedFolder :").append(q(relatedFolderName));
+    relatedIssues.append(", currentIssueDef :").append(q(String.join("|", getContainer().getPath(), issueDef.getName())));
     relatedIssues.append("})");
 
     List<NavTree> additionalHeaderLinks = new ArrayList<>();
