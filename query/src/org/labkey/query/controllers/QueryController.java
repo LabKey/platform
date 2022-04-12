@@ -4265,7 +4265,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class ApiTestAction extends SimpleViewAction<Object>
     {
         @Override
@@ -7209,7 +7209,8 @@ public class QueryController extends SpringActionController
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
-                new DeleteNamedSetAction()
+                new DeleteNamedSetAction(),
+                new ApiTestAction()
             );
 
 
@@ -7229,7 +7230,6 @@ public class QueryController extends SpringActionController
                 new SaveSourceQueryAction(),
 
                 new TruncateTableAction(),
-                new ApiTestAction(),
                 new AdminAction(),
                 new ManageRemoteConnectionsAction(),
                 new ReloadExternalSchemaAction(),
