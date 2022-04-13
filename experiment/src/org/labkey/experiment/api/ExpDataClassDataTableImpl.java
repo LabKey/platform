@@ -645,7 +645,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // TODO: validate dataFileUrl column, it will be saved later
 
             // Generate LSID before inserting
-            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class));
+            step0.addColumn(lsidCol, (Supplier<String>) () -> svc.generateGuidLSID(c, ExpData.class)); //
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));

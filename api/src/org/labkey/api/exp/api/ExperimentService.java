@@ -105,6 +105,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     // Constant used by ExpDataIterators.AliasDataIterator
     String ALIASCOLUMNALIAS = "org.labkey.experiment.ExpDataIterators$AliasDataIterator#ALIAS";
 
+    String LSID_COUNTER_DB_SEQUENCE_PREFIX = "LsidCounter-";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -470,9 +472,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
 
+    Pair<String, String> generateLsidWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz);
+
     String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
 
     String generateGuidLSID(Container container, DataType type);
+
+    Pair<String, String> generateLsidWithDBSeq(@NotNull Container container, @NotNull DataType type);
 
     DataType getDataType(String namespacePrefix);
 

@@ -1412,7 +1412,7 @@ public class XarReader extends AbstractXarImporter
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
-        String declaredType = xbMaterial.getCpasType();
+        String declaredType = xbMaterial.getCpasType();//
         if (null == declaredType)
             declaredType = ExpMaterial.DEFAULT_CPAS_TYPE;
         if (declaredType.contains("${"))

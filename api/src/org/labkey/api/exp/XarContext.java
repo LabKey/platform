@@ -55,6 +55,7 @@ public class XarContext
 
     private final Map<String, String> _substitutions;
 
+    public static final String XAR_JOB_ID_NAME = "XarJobId";
     private static final String XAR_FILE_ID_NAME = "XarFileId";
     private static final String EXPERIMENT_RUN_ID_NAME = "ExperimentRun.RowId";
     private static final String CONTAINER_ID_NAME = "Container.RowId";
@@ -95,15 +96,27 @@ public class XarContext
 
     public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job)
     {
-        this(jobDescription, c, user, job, AppProps.getInstance().getDefaultLsidAuthority());
+        this(jobDescription, c, user, job, AppProps.getInstance().getDefaultLsidAuthority(), null);
     }
 
     public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job, String defaultLsidAuthority)
+    {
+        this(jobDescription, c, user, job, defaultLsidAuthority, null);
+    }
+
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job, @Nullable Map<String, String> substitutions)
+    {
+        this(jobDescription, c, user, job, AppProps.getInstance().getDefaultLsidAuthority(), substitutions);
+    }
+
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job, String defaultLsidAuthority, @Nullable Map<String, String> substitutions)
     {
         _jobDescription = jobDescription;
         _originalURLs = new HashMap<>();
         _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<>();
         _substitutions = new HashMap<>();
+        if (substitutions != null)
+            _substitutions.putAll(substitutions);
 
         _job = job;
 

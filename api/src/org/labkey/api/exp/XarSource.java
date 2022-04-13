@@ -65,6 +65,11 @@ public abstract class XarSource implements Serializable
         _xarContext = new XarContext(description, container, user, job);
     }
 
+    public XarSource(String description, Container container, User user, @Nullable PipelineJob job, @Nullable Map<String, String> substitutions)
+    {
+        _xarContext = new XarContext(description, container, user, job, substitutions);
+    }
+
     public XarSource(PipelineJob job)
     {
         _xarContext = new XarContext(job);

@@ -260,6 +260,12 @@ public class DomainImpl implements Domain
     }
 
     @Override
+    public void setName(String name)
+    {
+        _dd = _dd.edit().setName(name).build();
+    }
+
+    @Override
     public void setDescription(String description)
     {
         _dd = _dd.edit().setDescription(description).build();

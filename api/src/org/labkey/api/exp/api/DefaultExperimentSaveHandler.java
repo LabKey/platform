@@ -552,7 +552,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 }
 
                 if (material == null)
-                    material = createMaterial(context, sampleType, materialName);
+                    material = createMaterial(context, sampleType, materialName); // TODO sample rename
             }
         }
 
@@ -600,7 +600,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             XarContext context = new XarContext("DeriveSamples", viewContext.getContainer(), viewContext.getUser());
             try
             {
-                materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, ExpMaterial.DEFAULT_CPAS_TYPE);
+                materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, ExpMaterial.DEFAULT_CPAS_TYPE); // TODO sample rename
             }
             catch (XarFormatException e)
             {

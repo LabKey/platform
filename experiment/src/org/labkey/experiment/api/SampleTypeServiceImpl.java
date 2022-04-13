@@ -477,6 +477,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
 
+    @Override
+    public Pair<String, String> getSampleTypeSamplePrefixLsids(Container container)
+    {
+        Pair<String, String> lsidDbSeq = ExperimentService.get().generateLsidWithDBSeq(container, ExpSampleType.class);
+        String sampleTypeLsidStr = lsidDbSeq.first;
+        Lsid sampleTypeLsid = Lsid.parse(sampleTypeLsidStr);
+
+        String dbSeqStr = lsidDbSeq.second;
+        String samplePrefixLsid = new Lsid.LsidBuilder("Sample", "Folder-" + container.getRowId() + "." + dbSeqStr, "").toString();
+
+        return new Pair<>(sampleTypeLsid.toString(), samplePrefixLsid);
+    }
+
     /**
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
@@ -674,8 +687,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (category != null && category.length() > categoryMax)
             throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
 
-        Lsid lsid = getSampleTypeLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
+        Pair<String, String> dbSeqLsids = getSampleTypeSamplePrefixLsids(c);
+        String lsid = dbSeqLsids.first;
+        String materialPrefixLsid = dbSeqLsids.second;
+        Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
@@ -738,10 +753,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
-        source.setLSID(lsid.toString());
+        source.setLSID(lsid);
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(materialPrefixLsid);
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         if (aliquotNameExpression != null)
@@ -911,6 +926,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
+        String newName = StringUtils.trimToNull(update.getName());
+        boolean hasNameChange = false;
+        if (!st.getName().equals(newName))
+        {
+            hasNameChange = true;
+            st.setName(newName);
+            // todo update domain design name
+        }
+
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
         if (description == null || !description.equals(newDescription))
@@ -963,7 +987,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
 
             if (!errors.hasErrors())
             {
