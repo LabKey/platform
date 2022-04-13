@@ -574,7 +574,17 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (loader != null)
                 loader.close();
             if (null != file)
-                file.closeInputStream();
+            {
+                try
+                {
+                    file.closeInputStream();
+                }
+                catch (IllegalStateException e)
+                {
+                    // This is fine, this means that the exception that we caught above was thrown before we ever opened
+                    // the InputStream for the file.
+                }
+            }
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
                 dataFile.delete();
         }
