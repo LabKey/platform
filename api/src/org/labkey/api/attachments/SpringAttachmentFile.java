@@ -100,11 +100,11 @@ public class SpringAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream() throws IOException
     {
-        if (_in == null)
-            throw new IllegalStateException("No input stream is active for this SpringAttachmentFile");
-
-        _in.close();
-        _in = null;
+        if (_in != null)
+        {
+            _in.close();
+            _in = null;
+        }
     }
 
     public static List<AttachmentFile> createList(Map<String, MultipartFile> fileMap)
