@@ -43,7 +43,6 @@ public class GetRelatedFolder extends ReadOnlyApiAction<IssuesController.IssuesF
         ApiSimpleResponse response = new ApiSimpleResponse();
         LinkedList<Map<String, String>> containers = new LinkedList<>();
 
-        // exclude current container
         IssueManager.getIssueListDefs(null).forEach(def -> {
             Container c = ContainerManager.getForId(def.getContainerId());
             if (c.hasPermission(getUser(), InsertPermission.class))

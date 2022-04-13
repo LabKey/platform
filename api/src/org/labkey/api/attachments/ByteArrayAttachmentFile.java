@@ -64,6 +64,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     {
         if (_inputStream != null)
             throw new IllegalStateException("An unclosed input stream is already active for this ByteArrayAttachmentFile");
+
         _inputStream = new BufferedInputStream(new ByteArrayInputStream(_content));
         return _inputStream;
     }
@@ -73,7 +74,9 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     {
         if (_inputStream == null)
             throw new IllegalStateException("No input stream is active for this ByteArrayAttachmentFile");
+
         _inputStream.close();
+        _inputStream = null;
     }
 
     @Override
