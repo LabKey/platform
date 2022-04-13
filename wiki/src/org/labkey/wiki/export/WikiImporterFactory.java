@@ -117,7 +117,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         // continue to be indexed by default
                         boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
                         Collection<String> aliases = wikiXml.isSetAliases() ? Arrays.asList(wikiXml.getAliases().getAliasArray()) : Collections.emptyList();
-                        // TODO: Pass in aliases to importWiki() and persist
 
                         // TODO: We should add VirtualFile.getName()
                         String folderName = new File(wikiSubDir.getLocation()).getName();

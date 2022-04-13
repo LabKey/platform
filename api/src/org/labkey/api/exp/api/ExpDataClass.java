@@ -71,6 +71,10 @@ public interface ExpDataClass extends ExpObject
 
     boolean isMedia();
 
+    boolean isRegistry();
+
+    boolean isSource();
+
     //
     // URLS
     //
