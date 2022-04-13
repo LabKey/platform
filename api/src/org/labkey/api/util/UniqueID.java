@@ -35,11 +35,9 @@ public class UniqueID
     // Initialize a unique counter to use within this request
     public static void initializeRequestScopedUID(HttpServletRequest request)
     {
+        initializeSessionScopedUID(request);
         if (null == request.getAttribute(ViewServlet.REQUEST_UID_COUNTER))
-        {
             request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
-            initializeSessionScopedUID(request);
-        }
     }
 
     // Initialize a unique counter to use within a session

@@ -140,7 +140,7 @@ public class PageConfig
         _request = request;
         UniqueID.initializeRequestScopedUID(_request);
 
-        _uid = (AtomicInteger)request.getAttribute(ViewServlet.REQUEST_UID_COUNTER);
+        _uid = (AtomicInteger)_request.getAttribute(ViewServlet.REQUEST_UID_COUNTER);
         // kinda random looking hex value, but takes a while to repeat
         _sid = String.format("%04x", UniqueID.getSessionScopedUID(_request));
     }
