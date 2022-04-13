@@ -999,6 +999,22 @@ public class WikiManager implements WikiService
     }
 
     @Override
+    public List<String> getAllContent(Container c, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+
+        if (null == wiki)
+            return null;
+
+        List<String> allContent = new ArrayList<>();
+
+        for (WikiVersion version : WikiSelectManager.getAllVersions(wiki))
+            allContent.add(version.getBody());
+
+        return allContent;
+    }
+
+    @Override
     public boolean updateContent(Container c, User user, String wikiName, String content, @Nullable Integer newVersionThreshold)
     {
         if (content != null)

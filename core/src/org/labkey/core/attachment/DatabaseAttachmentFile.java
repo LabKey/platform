@@ -119,6 +119,9 @@ public class DatabaseAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream()
     {
+        if (_is == null)
+            throw new IllegalStateException("No input stream is active for this DatabaseAttachmentFile");
+
         IOUtils.closeQuietly(_is);
         _is = null;
         _rs = ResultSetUtil.close(_rs);

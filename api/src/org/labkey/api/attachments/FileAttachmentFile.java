@@ -71,6 +71,9 @@ public class FileAttachmentFile implements AttachmentFile
     @Override
     public InputStream openInputStream() throws IOException
     {
+        if (_in != null)
+            throw new IllegalStateException("An unclosed input stream is already active for this FileAttachmentFile");
+
         _in = new FileInputStream(_file);
         return _in;
     }
@@ -78,8 +81,11 @@ public class FileAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream() throws IOException
     {
-        if (null != _in)
-            _in.close();
+        if (_in == null)
+            throw new IllegalStateException("No input stream is active for this FileAttachmentFile");
+
+        _in.close();
+        _in = null;
     }
 
     @Override
