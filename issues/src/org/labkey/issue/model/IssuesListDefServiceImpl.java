@@ -76,7 +76,9 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         if (defaultUser != null)
             assignedToUser = defaultUser.getUserId();
 
-        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser);
+        String relatedFolderName = IssueManager.getDefaultRelatedFolder(container, defName);
+
+        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser, relatedFolderName);
     }
 
     @Override
@@ -139,6 +141,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         }
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
+        IssueManager.setPropDefaultRelatedFolder(container, name, properties.getRelatedFolderName());
     }
 
     @Override

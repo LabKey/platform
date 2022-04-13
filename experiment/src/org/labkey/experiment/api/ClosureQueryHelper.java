@@ -30,7 +30,10 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -38,18 +41,20 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 
 
 public class ClosureQueryHelper
 {
+    final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
+
     final static long CACHE_INVALIDATION_INTERVAL = TimeUnit.MINUTES.toMillis(5);
     final static long CACHE_LRU_AGE_OUT_INTERVAL = TimeUnit.MINUTES.toMillis(30);
-
-
 
     /* TODO/CONSIDER every SampleType and Dataclass should have a unique ObjectId so it can be stored as an in lineage tables (e.g. edge/closure tables) */
 
@@ -57,7 +62,22 @@ public class ClosureQueryHelper
 
     static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
     // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
-    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<String, Long>(100,0.75f,true);
+    static final Map<String, Long> lruQueryHelpers = new LinkedHashMap<>(100,0.75f,true);
+
+    static
+    {
+        MemTracker.getInstance().register(new MemTrackerListener()
+        {
+            @Override
+            public void beforeReport(Set<Object> set)
+            {
+                synchronized (queryHelpers)
+                {
+                    queryHelpers.values().forEach(ch -> set.add(ch.helper));
+                }
+            }
+        });
+    }
 
 
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
@@ -82,7 +102,7 @@ public class ClosureQueryHelper
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
     static String pgMaterialClosureSql = """
-            SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
+            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
                 SELECT Start_, End_,
@@ -115,7 +135,7 @@ public class ClosureQueryHelper
             """, (MAX_LINEAGE_LOOKUP_DEPTH));
 
     static String mssqlMaterialClosureSql = """
-            SELECT Start_, CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS rowId, targetId
+            SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
                 SELECT Start_, End_,
@@ -127,6 +147,8 @@ public class ClosureQueryHelper
                 WHERE Depth_ > 0 AND materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL) _inner_
             GROUP BY targetId, Start_
             """;
+
+
 
 
     static SQLFragment selectIntoSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
@@ -162,18 +184,18 @@ public class ClosureQueryHelper
 
 
     /*
-     * This can be used to add a column directly to a exp table, or to create a column
+     * This can be used to add a column directly to an exp table, or to create a column
      * in an intermediate fake lookup table
      */
-    static MutableColumnInfo createLineageLookupColumn(final ColumnInfo fkRowId, ExpObject source, ExpObject target)
+    static MutableColumnInfo createLineageDataLookupColumn(final ColumnInfo fkRowId, ExpObject source, ExpObject target)
     {
         if (!(source instanceof ExpSampleType) && !(source instanceof ExpDataClass))
             throw new IllegalStateException();
         if (!(target instanceof ExpSampleType) && !(target instanceof ExpDataClass))
             throw new IllegalStateException();
 
-        final TableType sourceType = source instanceof ExpSampleType ? TableType.SampleType : TableType.DataClass;
-        final TableType targetType = target instanceof ExpSampleType ? TableType.SampleType : TableType.DataClass;
+        final TableType sourceType = TableType.fromExpObject(source);
+        final TableType targetType = TableType.fromExpObject(target);
 
         TableInfo parentTable = fkRowId.getParentTable();
         var ret = new ExprColumn(parentTable, target.getName(), new SQLFragment("#ERROR#"), JdbcType.INTEGER)
@@ -188,12 +210,27 @@ public class ClosureQueryHelper
                 return ClosureQueryHelper.getValueSql(sourceType, sourceLsid, objectId, target);
             }
         };
+        ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
         ret.setLabel(target.getName());
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
-        var qfk = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
+        var builder = new QueryForeignKey.Builder(schema, parentTable.getContainerFilter()).table(target.getName()).key("rowid");
         if (sourceType != targetType)
-            qfk.schema(targetType.schemaKey);
+            builder.schema(targetType.schemaKey);
+        var qfk = new QueryForeignKey(builder) {
+            @Override
+            public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
+            {
+                var ret = (MutableColumnInfo) super.createLookupColumn(foreignKey, displayField);
+                if (ret != null)
+                {
+                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
+                    ret.setConceptURI(CONCEPT_URI);
+                }
+                return ret;
+            }
+        };
         ret.setFk(qfk);
+        ret.setConceptURI(CONCEPT_URI);
         return ret;
     }
 
@@ -384,7 +421,7 @@ public class ClosureQueryHelper
 
 
     /*
-     * Code to create the lineage parent lookup column and intermediate lookups that use ClosureQueryHelper
+     * Code to create the lineage ancestor lookup column and intermediate lookups that use ClosureQueryHelper
      */
 
     public static MutableColumnInfo createLineageLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowid, ExpObject source)
@@ -426,38 +463,125 @@ public class ClosureQueryHelper
                 return null;
             }
         });
+        wrappedRowId.setConceptURI(CONCEPT_URI);
+        wrappedRowId.setShownInDetailsView(false);
         return wrappedRowId;
     }
 
 
     enum TableType
     {
-        SampleType("Materials", SchemaKey.fromParts("exp","materials") )
+        SampleType("Samples", SchemaKey.fromParts("exp", "materials") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
-                        return SampleTypeServiceImpl.get().getSampleTypes(c, u,false);
+                        return SampleTypeServiceImpl.get()
+                                .getSampleTypes(c, u,true)
+                                .stream()
+                                .filter(this::isInstance)
+                                .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
                         return SampleTypeServiceImpl.get().getSampleType(c, u, name);
                     }
+                    @Override
+                    boolean isInstance(ExpObject expObject)
+                    {
+                        return expObject instanceof ExpSampleType && !((ExpSampleType) expObject).isMedia();
+                    }
                 },
-        DataClass("Data", SchemaKey.fromParts("exp","data") )
+        RegistryOrSourceType("RegistryAndSources", SchemaKey.fromParts("exp", "data") )
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
                     {
-                        return ExperimentServiceImpl.get().getDataClasses(c, u,false);
+                        return ExperimentServiceImpl.get().getDataClasses(c, u,true)
+                                .stream()
+                                .filter(this::isInstance)
+                                .collect(Collectors.toList());
                     }
                     @Override
                     ExpObject getInstance(Container c, User u, String name)
                     {
                         return ExperimentServiceImpl.get().getDataClass(c, u, name);
                     }
-                };
+                    @Override
+                    boolean isInstance(ExpObject expObject)
+                    {
+                        return expObject instanceof ExpDataClass && (((ExpDataClass) expObject).isSource() || ((ExpDataClass) expObject).isRegistry());
+                    }
+                },
+        MediaData("MediaData", SchemaKey.fromParts("exp", "data") )
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return ExperimentServiceImpl.get()
+                                .getDataClasses(c, u,true)
+                                .stream()
+                                .filter(this::isInstance)
+                                .collect(Collectors.toList());
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                    }
+                    @Override
+                    boolean isInstance(ExpObject expObject)
+                    {
+                        return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).isMedia();
+                    }
+                },
+        MediaSamples("MediaSamples", SchemaKey.fromParts("exp", "materials") )
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return SampleTypeServiceImpl.get()
+                                .getSampleTypes(c, u,true)
+                                .stream()
+                                .filter(this::isInstance)
+                                .collect(Collectors.toList());
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return SampleTypeServiceImpl.get().getSampleType(c, u, name);
+                    }
+                    @Override
+                    boolean isInstance(ExpObject expObject)
+                    {
+                        return expObject instanceof ExpSampleType && ((ExpSampleType) expObject).isMedia();
+                    }
+                },
+        DataClass("OtherData", SchemaKey.fromParts("exp", "data") )
+                {
+                    @Override
+                    Collection<? extends ExpObject> getInstances(Container c, User u)
+                    {
+                        return ExperimentServiceImpl.get()
+                                .getDataClasses(c, u,true)
+                                .stream()
+                                .filter(this::isInstance)
+                                .collect(Collectors.toList());
+                    }
+                    @Override
+                    ExpObject getInstance(Container c, User u, String name)
+                    {
+                        return ExperimentServiceImpl.get().getDataClass(c, u, name);
+                    }
+                    @Override
+                    boolean isInstance(ExpObject expObject)
+                    {
+                        return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).getCategory() == null;
+                    }
+                },
+        ;
+
 
         final String lookupName;
         final SchemaKey schemaKey;
@@ -470,6 +594,15 @@ public class ClosureQueryHelper
 
         abstract Collection<? extends ExpObject> getInstances(Container c, User u);
         abstract ExpObject getInstance(Container c, User u, String name);
+        abstract boolean isInstance(ExpObject object);
+
+        static TableType fromExpObject(ExpObject object)
+        {
+            for (TableType type:  TableType.values())
+                if (type.isInstance(object))
+                    return type;
+            throw new NotFoundException("No table type found for object " + object.getName() + " with class " + object.getClass());
+        }
     };
 
 
@@ -493,7 +626,7 @@ public class ClosureQueryHelper
                         var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
                         if (null == target)
                             return null;
-                        return ClosureQueryHelper.createLineageLookupColumn(parent, source, target);
+                        return ClosureQueryHelper.createLineageDataLookupColumn(parent, source, target);
                     }
 
                     @Override
@@ -521,7 +654,7 @@ public class ClosureQueryHelper
             super(userSchema.getDbSchema(), "Lineage Lookup", userSchema);
             ColumnInfo wrap = new BaseColumnInfo("rowid", this, JdbcType.INTEGER);
             for (var target : type.getInstances(_userSchema.getContainer(), _userSchema.getUser()))
-                addColumn(ClosureQueryHelper.createLineageLookupColumn(wrap, source, target));
+                addColumn(ClosureQueryHelper.createLineageDataLookupColumn(wrap, source, target));
         }
 
         @Override
