@@ -253,9 +253,9 @@ function validate()
             if (!ft.isWorkbookType() && (includeProjectLevelTypes || !ft.isProjectOnlyType()))
             {
                 var inputId = "folderTypeRadio" + getRequestScopedUID();
-                addListener(inputId, "click", "changeFolderType()");
+                addHandler(inputId, "click", "changeFolderType()");
                 var spanId = "folderTypeSpan" + getRequestScopedUID();
-                addListener(spanId, "click", "document.folderModules.folderType[" + radioIndex + "].checked = true");
+                addHandler(spanId, "click", "document.folderModules.folderType[" + radioIndex + "].checked = true");
     %>
                 <tr>
                     <td valign="top">
@@ -319,7 +319,7 @@ for (Module module : allModules)
         if (!module.canBeEnabled(c))
             continue;
         var id = "activeModules[" + i + "]";
-        addListener(id, "click", "return updateDefaultOptions(this)");
+        addHandler(id, "click", "return updateDefaultOptions(this)");
         %>
         <input type="checkbox" id="<%=h(id)%>" name="activeModules"
                title="<%= h(module.getTabName(context))%>"

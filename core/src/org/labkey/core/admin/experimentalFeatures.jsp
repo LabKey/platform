@@ -60,7 +60,7 @@
 </div>
 <% } %>
 </div>
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%=getScriptNonce()%>">
     (function () {
         let inputList = document.querySelectorAll('div.list-group-item input');
         inputList.forEach(function (input) {

@@ -2064,10 +2064,11 @@ public class PageFlowUtil
 
     public static HtmlString getScriptTag(String path)
     {
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         return HtmlStringBuilder.of()
             .append(HtmlString.unsafe("<script src=\""))
             .append(staticResourceUrl(path))
-            .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"))
+            .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"))
             .getHtmlString();
     }
 
@@ -2098,12 +2099,13 @@ public class PageFlowUtil
         builder.append(JavaScriptFragment.unsafe(");\n"));
         builder.append(HtmlString.unsafe("</script>\n"));
 
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         for (String s : includes)
         {
-            HtmlStringBuilder scriptReference = HtmlStringBuilder.of(HtmlString.unsafe("<script src=\""))
-                .append(ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s))
-                .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"));
-            builder.append(scriptReference);
+            var path = ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s);
+            builder.append(HtmlString.unsafe("<script src=\""))
+                    .append(HtmlString.of(path))
+                    .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"));
         }
 
         return builder.getSafeToRender();
