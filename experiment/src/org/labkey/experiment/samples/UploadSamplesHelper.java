@@ -907,7 +907,7 @@ public abstract class UploadSamplesHelper
                 if (nameGen != null)
                 {
                     generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
-                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();// TODO sample rename
+                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
                 }
                 else
                     addRowError("Error creating naming pattern generator.");

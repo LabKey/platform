@@ -932,7 +932,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             hasNameChange = true;
             st.setName(newName);
-            // todo update domain design name
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());

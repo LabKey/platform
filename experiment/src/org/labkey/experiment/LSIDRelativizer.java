@@ -102,14 +102,14 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (("Sample".equals(prefix) || "Material".equals(prefix)))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion()); // TODO sample rename
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Data".equals(prefix))
             {
                 // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
                 // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
                 // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
-                return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION; //TODO sample rename
+                return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {

@@ -124,7 +124,7 @@ public class ExpGeneratorHelper
     static private ExpData addData(Container container, User user, Map<URI, ExpData> datas, URI originalURI)
     {
         // todo: this code shouldn't know about the TransformDataType
-        Lsid lsid = new Lsid(ExperimentService.get().generateGuidLSID(container, ExperimentService.get().getDataType("Transform"))); //
+        Lsid lsid = new Lsid(ExperimentService.get().generateGuidLSID(container, ExperimentService.get().getDataType("Transform")));
         ExpData data = ExperimentService.get().createData(container, FileUtil.uriToString(originalURI), lsid.toString());
 
         if (data != null)
