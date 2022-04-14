@@ -591,7 +591,9 @@ public class LinkedSchema extends ExternalSchema
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
             // and per-dataset checks are skipped.
-            _allowedPolicyResourceIds.add(sourceContainer.getResourceId());
+
+            // Must save the policy's (not the container's) resource ID to support inheritance correctly, #45225
+            _allowedPolicyResourceIds.add(sourceContainer.getPolicy().getResourceId());
 
             StudyService ss = StudyService.get();
             if (null != ss)
