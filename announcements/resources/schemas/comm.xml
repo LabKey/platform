@@ -367,7 +367,7 @@
     <versionColumnName>Modified</versionColumnName>
     <titleColumn>EntityId</titleColumn>
   </table>
-  <table tableName="CurrentWikiVersions" tableDbType="VIEW">
+  <table tableName="CurrentWikiVersions" tableDbType="VIEW" useColumnOrder="true">
     <description>Contains one row per wiki page joined to its most current wiki version</description>
     <tableUrl>/wiki/page.view?name=${Name}</tableUrl>
     <columns>
@@ -400,9 +400,6 @@
       <column columnName="Version">
         <url>/wiki/version.view?name=${Name}&amp;version=${Version}</url>
       </column>
-      <column columnName="Body">
-        <isHidden>true</isHidden>
-      </column>
       <column columnName="RendererType"/>
       <column columnName="CreatedBy"/>
       <column columnName="Created">
@@ -412,9 +409,10 @@
       <column columnName="Modified">
         <formatString>DateTime</formatString>
       </column>
+      <column columnName="Body"/>
     </columns>
   </table>
-  <table tableName="AllWikiVersions" tableDbType="VIEW">
+  <table tableName="AllWikiVersions" tableDbType="VIEW" useColumnOrder="true">
     <description>Contains one row per wiki version joined to its parent wiki page, providing the full version history of all pages</description>
     <tableUrl>/wiki/version.view?name=${Name}&amp;version=${Version}</tableUrl>
     <columns>
@@ -447,9 +445,6 @@
       <column columnName="Version">
         <url>/wiki/version.view?name=${Name}&amp;version=${Version}</url>
       </column>
-      <column columnName="Body">
-        <isHidden>true</isHidden>
-      </column>
       <column columnName="RendererType"/>
       <column columnName="CreatedBy"/>
       <column columnName="Created">
@@ -459,6 +454,7 @@
       <column columnName="Modified">
         <formatString>DateTime</formatString>
       </column>
+      <column columnName="Body"/>
     </columns>
   </table>
   <table tableName="UserList" tableDbType="TABLE">
