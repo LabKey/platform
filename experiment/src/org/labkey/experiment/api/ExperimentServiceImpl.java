@@ -594,7 +594,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataImpl createData(Container container, @NotNull DataType type)
     {
-        Lsid lsid = new Lsid(generateGuidLSID(container, type)); //
+        Lsid lsid = new Lsid(generateGuidLSID(container, type));
         return createData(container, lsid.getObjectId(), lsid.toString());
     }
 

@@ -191,7 +191,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
-            XarExporter exporter = new XarExporter(relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger()); //
+            XarExporter exporter = new XarExporter(relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_TYPES_NAME))
             {
                 exporter.writeAsArchive(fOut);

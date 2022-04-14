@@ -1339,9 +1339,9 @@ public class SpecimenImporter extends SpecimenTableManager
         {
             ExpSampleType source = SampleTypeService.get().createSampleType();
             source.setContainer(info.getContainer());
-            source.setMaterialLSIDPrefix(prefix);// no need for change
+            source.setMaterialLSIDPrefix(prefix);
             source.setName(SpecimenService.SAMPLE_TYPE_NAME);
-            source.setLSID(SampleTypeService.get().getSampleTypeLsid(SpecimenService.SAMPLE_TYPE_NAME, info.getContainer()).toString()); // no need to change
+            source.setLSID(SampleTypeService.get().getSampleTypeLsid(SpecimenService.SAMPLE_TYPE_NAME, info.getContainer()).toString());
             source.setDescription("Study specimens for " + info.getContainer().getPath());
             source.save(null);
             cpasType = source.getLSID();

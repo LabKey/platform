@@ -716,7 +716,7 @@ public class XarExporter
         }
 
         DataClassType dataClassType = _archive.getDataClasses().addNewDataClass();
-        dataClassType.setAbout(_relativizedLSIDs.relativize(dataClass.getLSID())); //
+        dataClassType.setAbout(_relativizedLSIDs.relativize(dataClass.getLSID()));
 
         dataClassType.setName(dataClass.getName());
 
