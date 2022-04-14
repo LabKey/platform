@@ -67,7 +67,7 @@ public class Link extends DisplayElement implements HasHtmlString
              else
                  clickEvent = lb.onClick;
         }
-        page.addListener(lb.id, "click", clickEvent);
+        page.addHandler(lb.id, "click", clickEvent);
         return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)

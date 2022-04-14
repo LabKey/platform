@@ -1405,7 +1405,7 @@ public class PageFlowUtil
         if (null == id)
             id = HttpView.currentPageConfig().makeId("dropdown_");
         String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
-        HttpView.currentPageConfig().addListener(id+"PopupLink", "click", onclick);
+        HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
                 SPAN(id(id+"PopupText"), text),
@@ -1422,7 +1422,7 @@ public class PageFlowUtil
 
         String anchorId = page.makeId("A_");
         String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
-        page.addListener(anchorId, "click", onclick);
+        page.addHandler(anchorId, "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
                 IMG(id(imageId).at(title,text, DOM.Attribute.src,imageSrc,height,imageHeight,width,imageWidth)))
@@ -1435,7 +1435,7 @@ public class PageFlowUtil
     {
         PageConfig page = HttpView.currentPageConfig();
         String id = page.makeId("a_");
-        page.addListener(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
+        page.addHandler(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
         return DOM.createHtmlFragment(
             A(at(properties).id(id).at(DOM.Attribute.href,href),
                 SPAN(id(imageId).at(title,text).cl(imageCls)))
@@ -1620,7 +1620,7 @@ public class PageFlowUtil
             {
                 var config = HttpView.currentPageConfig();
                 id = config.makeId("helpPopup");
-                config.addListener(id, "click", onClickScript);
+                config.addHandler(id, "click", onClickScript);
             }
             return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
         }
@@ -1644,9 +1644,9 @@ public class PageFlowUtil
             {
                 var config = HttpView.currentPageConfig();
                 id = config.makeId("helpPopup");
-                config.addListener(id, "click", onClickScript);
-                config.addListener(id, "mouseout", "return hideHelpDivDelay();");
-                config.addListener(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+                config.addHandler(id, "click", onClickScript);
+                config.addHandler(id, "mouseout", "return hideHelpDivDelay();");
+                config.addHandler(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
             }
             return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
                     .at(inlineScript, onclick, onClickScript)

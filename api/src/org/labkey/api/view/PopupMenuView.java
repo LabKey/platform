@@ -210,7 +210,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write("<i class=\"" + itemImageCls + "\"></i>");
         out.write(PageFlowUtil.filter(item.getText()));
         out.write("</a>");
-        HttpView.currentPageConfig().addListener(id, "click", item.getScript());
+        HttpView.currentPageConfig().addHandler(id, "click", item.getScript());
     }
 
     public static String getMenuFilterItemCls(NavTree tree)

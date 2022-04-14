@@ -544,9 +544,11 @@ public class PageConfig
     }
 
 
-    /* TODO: CONSIDER using JavaScriptFragment handler */
-    /* TODO this is misnamed addListener(function) is not the same as element.onclick=function !!!! */
-    public void addListener(String id, String event, String handler)
+    /**
+     *  NOTE element.addListener(function) is not the same as element.onclick=function!
+     * This is for onevent handlers
+     */
+    public void addHandler(String id, String event, String handler)
     {
         if (StringUtils.isBlank(id) || StringUtils.isBlank(event))
             throw new IllegalArgumentException();

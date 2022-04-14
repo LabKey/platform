@@ -259,7 +259,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(iconOnly, "icon-only");
 
         if (!inlineScript)
-            page.addListener(id, "click", generateOnClick());
+            page.addHandler(id, "click", generateOnClick());
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,

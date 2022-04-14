@@ -826,6 +826,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     protected void addListener(String id, String event, String handler)
     {
-        _pageConfig.addListener(id,event,handler);
+        _pageConfig.addHandler(id,event,handler);
     }
 }

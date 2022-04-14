@@ -194,7 +194,7 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
                 String image = collapsed ? "plus.gif" : "minus.gif";
                 id = config.makeId("navtree");
                 out.printf("<a id=\"%s\" href=\"%s\">", id, filter(expandCollapseUrl));
-                config.addListener(id, "click", "return LABKEY.Utils.toggleLink(this,true);");
+                config.addHandler(id, "click", "return LABKEY.Utils.toggleLink(this,true);");
                 out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
@@ -202,7 +202,7 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
 
             id = config.makeId("navtree");
             out.printf("</td><td id=\"%s\" class=\"labkey-nav-tree-text\"", id);
-            config.addListener(id, "click", onClickScript);
+            config.addHandler(id, "click", onClickScript);
             out.println(">");
 
             if (null == link)
@@ -229,7 +229,7 @@ public class NavTreeMenu extends WebPartView<Object> implements Collapsible
                 }
                 if (null != nav.getScript())
                 {
-                    config.addListener(nav.getId(), "click", nav.getScript());
+                    config.addHandler(nav.getId(), "click", nav.getScript());
                 }
                 out.print(">");
                 out.print(filter(nav.getText()));
