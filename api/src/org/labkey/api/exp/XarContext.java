@@ -55,8 +55,8 @@ public class XarContext
 
     private final Map<String, String> _substitutions;
 
-    public static final String XAR_JOB_ID_NAME = "XarJobId";
-    private static final String XAR_FILE_ID_NAME = "XarFileId";
+    public static final String XAR_JOB_ID_NAME = "XarJobId"; // XarJobId is the same for all tasks in the job
+    private static final String XAR_FILE_ID_NAME = "XarFileId"; // XarFileId differs per import task for the same job
     private static final String EXPERIMENT_RUN_ID_NAME = "ExperimentRun.RowId";
     private static final String CONTAINER_ID_NAME = "Container.RowId";
     private static final String SHARED_CONTAINER_ID_NAME = "SharedContainer.RowId";
