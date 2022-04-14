@@ -104,44 +104,6 @@ public class ReportImporter implements FolderImporter
     }
 
     @Override
-    @NotNull
-    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
-        // fire the query change listeners for older archives to fix-up these dataset label references
-        if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
-        {
-            StudyService svc = StudyService.get();
-            Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
-            if (study != null)
-            {
-                List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                for (Dataset dataset : study.getDatasets())
-                {
-                    if (!dataset.getName().equals(dataset.getLabel()))
-                    {
-                        queryPropertyChanges.add(new QueryChangeListener.QueryPropertyChange<>(
-                                QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), "study").getQueryDefForTable(dataset.getName()),
-                                QueryChangeListener.QueryProperty.Name,
-                                dataset.getLabel(),
-                                dataset.getName()
-                        ));
-                    }
-                }
-
-                if (queryPropertyChanges.size() > 0)
-                {
-                    ctx.getLogger().info("Post-processing reports, custom views, and query snapshots to use dataset name instead of label");
-                    QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, new SchemaKey(null, "study"), QueryChangeListener.QueryProperty.Name, queryPropertyChanges);
-                    ctx.getLogger().info("Done post-processing dataset label to name conversion");
-                }
-            }
-        }
-
-        return Collections.emptyList();
-    }
-
-    @Override
     public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return ctx.getDir("reports") != null;

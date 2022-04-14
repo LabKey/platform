@@ -42,6 +42,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MultisetRateAccumulator;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.SystemMaintenance;
@@ -663,32 +664,75 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return res.getCustomSearchResult(user, resourceIdentifier.substring(i+1));
     }
 
-    @Override
-    public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+    private Pair<String, String> getResourceResolverKeyIdentifier(@NotNull String resourceIdentifier)
     {
         int i = resourceIdentifier.indexOf(":");
         if (i == -1)
             return null;
         String prefix = resourceIdentifier.substring(0, i);
-        ResourceResolver res = _resolvers.get(prefix);
 
-        if (null == res)
+        if (_resolvers.containsKey(prefix))
+            return new Pair<>(prefix, resourceIdentifier.substring(i+1));
+
+        // Special case to allow customizing docs whose docId does not starting with category.
+        // For example, assay design doc id is of "containerId:assays:rowId"
+        if (resourceIdentifier.matches(".+[:].+[:].+"))
         {
-            // Special case to allow customizing docs whose docId does not starting with category.
-            // For example, assay design doc id is of "containerId:assays:rowId"
-            if (resourceIdentifier.matches(".+[:].+[:].+"))
-            {
-                String[] idParts = resourceIdentifier.split(":");
-                String resolverName = idParts[1];
-                res = _resolvers.get(resolverName);
-                if (res != null)
-                    return res.getCustomSearchJson(user, idParts[2]);
-            }
-
-            return null;
+            String[] idParts = resourceIdentifier.split(":");
+            String resolverName = idParts[1];
+            if (_resolvers.containsKey(resolverName))
+                return new Pair<>(resolverName, idParts[2]);
         }
 
-        return res.getCustomSearchJson(user, resourceIdentifier.substring(i+1));
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+    {
+        Pair<String, String> resourceResolverKeyIdentifier = getResourceResolverKeyIdentifier(resourceIdentifier);
+        if (resourceResolverKeyIdentifier != null)
+        {
+            ResourceResolver res = _resolvers.get(resourceResolverKeyIdentifier.first);
+            if (res == null)
+                return null;
+
+            return res.getCustomSearchJson(user, resourceResolverKeyIdentifier.second);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+    {
+        Map<String, Map<String, Object>> jsonMap = new HashMap<>();
+        Map<String, Map<String/*short identifier*/, String/*full identifier*/>> resolverIdentifiers = new HashMap<>();
+        for (String resourceIdentifier : resourceIdentifiers)
+        {
+            Pair<String, String> resourceResolverKeyIdentifier = getResourceResolverKeyIdentifier(resourceIdentifier);
+            if (resourceResolverKeyIdentifier == null)
+                continue;;
+            resolverIdentifiers
+                    .computeIfAbsent(resourceResolverKeyIdentifier.first, (k) -> new HashMap<>())
+                    .put(resourceResolverKeyIdentifier.second, resourceIdentifier);
+        }
+
+        for (String resolver : resolverIdentifiers.keySet())
+        {
+            ResourceResolver res = _resolvers.get(resolver);
+            if (res != null)
+            {
+                Map<String, String> identifiersMap = resolverIdentifiers.get(resolver);
+                Set<String> shortIdentifiers = identifiersMap.keySet();
+                Map<String, Map<String, Object>> searchJsonMap = res.getCustomSearchJsonMap(user, shortIdentifiers);
+
+                for (String shortIdentifier : searchJsonMap.keySet())
+                    jsonMap.put(identifiersMap.get(shortIdentifier), searchJsonMap.get(shortIdentifier));
+            }
+        }
+
+        return jsonMap;
     }
 
     private final List<SearchResultTemplate> _templates = new CopyOnWriteArrayList<>();

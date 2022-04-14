@@ -38,6 +38,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -132,6 +133,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -162,7 +164,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 22.001;
+        return 22.002;
     }
 
     @Nullable
@@ -324,6 +326,19 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
             }
+
+            @Override
+            public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+            {
+                Map<String, ExpData> idDataMap = ExpDataImpl.fromDocumentIds(resourceIdentifiers);
+                if (idDataMap == null)
+                    return null;
+
+                Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
+                for (String resourceIdentifier : idDataMap.keySet())
+                    searchJsonMap.put(resourceIdentifier, ExperimentJSONConverter.serializeData(idDataMap.get(resourceIdentifier), user, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                return searchJsonMap;
+            }
         });
     }
 
@@ -403,6 +418,32 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
             }
+
+            @Override
+            public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+            {
+                Set<Integer> rowIds = new HashSet<>();
+                Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+                for (String resourceIdentifier : resourceIdentifiers)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(categoryName + ":", ""));
+                    if (rowId != 0)
+                    {
+                        rowIds.add(rowId);
+                        rowIdIdentifierMap.put(rowId, resourceIdentifier);
+                    }
+
+                }
+
+                Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
+                for (ExpMaterial material : ExperimentService.get().getExpMaterials(rowIds))
+                {
+                    searchJsonMap.put(rowIdIdentifierMap.get(material.getRowId()), ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS));
+                }
+
+                return searchJsonMap;
+            }
+
         });
     }
 

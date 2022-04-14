@@ -361,7 +361,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (isAliquot && isSampleMetaField)
             {
-                LOG.warn("Sample metadata update has been skipped for an aliquot");
+                Object oldMetaValue = oldRow.get(updateField);
+                if (!Objects.equals(oldMetaValue, updateValue))
+                    LOG.warn("Sample metadata update has been skipped for an aliquot");
             }
             else if (!isAliquot && isAliquotField)
             {

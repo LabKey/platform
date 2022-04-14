@@ -66,6 +66,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.Input.InputBuilder;
@@ -576,8 +577,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return ret;
     }
 
-    @Nullable
-    public static ExpDataImpl fromDocumentId(String resourceIdentifier)
+    private static Pair<Integer, ExpDataClass> getRowIdClassNameContainerFromDocumentId(String resourceIdentifier, Map<String, ExpDataClassImpl> dcCache)
     {
         if (resourceIdentifier.startsWith("data:"))
             resourceIdentifier = resourceIdentifier.substring("data:".length());
@@ -589,27 +589,99 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         String dataClassName = path.get(1);
         String rowIdString = path.get(2);
 
-        Container c = ContainerManager.getForId(containerId);
-        if (c == null)
-            return null;
-
-        ExpDataClass dc = null;
-        if (dataClassName.length() > 0 && !dataClassName.equals("-"))
-            dc = ExperimentService.get().getDataClass(c, dataClassName);
-        Integer rowId;
+        int rowId;
         try
         {
             rowId = Integer.parseInt(rowIdString);
+            if (rowId == 0)
+                return null;
         }
         catch (NumberFormatException ex)
         {
             return null;
         }
 
+        Container c = ContainerManager.getForId(containerId);
+        if (c == null)
+            return null;
+
+        ExpDataClass dc = null;
+        if (dataClassName.length() > 0 && !dataClassName.equals("-"))
+        {
+            String dcKey = containerId + '-' + dataClassName;
+            dc = dcCache.computeIfAbsent(dcKey, (x) -> ExperimentServiceImpl.get().getDataClass(c, dataClassName));
+        }
+
+        return new Pair<>(rowId, dc);
+    }
+
+    @Nullable
+    public static ExpDataImpl fromDocumentId(String resourceIdentifier)
+    {
+        Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, new HashMap<>());
+        if (rowIdDataClass == null)
+            return null;
+
+        Integer rowId = rowIdDataClass.first;
+        ExpDataClass dc = rowIdDataClass.second;
+
         if (dc != null)
             return ExperimentServiceImpl.get().getExpData(dc, rowId);
         else
             return ExperimentServiceImpl.get().getExpData(rowId);
+    }
+
+    @Nullable
+    public static Map<String, ExpData> fromDocumentIds(Collection<String> resourceIdentifiers)
+    {
+        Map<Integer, String> rowIdIdentifierMap = new HashMap<>();
+        Map<String, ExpDataClassImpl> dcCache = new HashMap<>();
+        Map<Integer, ExpDataClass> dcMap = new HashMap<>();
+        Map<Integer, List<Integer>> dcRowIdMap = new HashMap<>(); // data rowIds with dataClass
+        List<Integer> rowIds = new ArrayList<>(); // data rowIds without dataClass
+        for (String resourceIdentifier : resourceIdentifiers)
+        {
+            Pair<Integer, ExpDataClass> rowIdDataClass = getRowIdClassNameContainerFromDocumentId(resourceIdentifier, dcCache);
+            if (rowIdDataClass == null)
+                continue;
+
+            Integer rowId = rowIdDataClass.first;
+            ExpDataClass dc = rowIdDataClass.second;
+
+            rowIdIdentifierMap.put(rowId, resourceIdentifier);
+
+            if (dc != null)
+            {
+                dcMap.put(dc.getRowId(), dc);
+                dcRowIdMap
+                        .computeIfAbsent(dc.getRowId(), (k) -> new ArrayList<>())
+                        .add(rowId);
+            }
+            else
+                rowIds.add(rowId);
+        }
+
+        List<ExpData> expDatas = new ArrayList<>();
+        if (!rowIds.isEmpty())
+            expDatas.addAll(ExperimentServiceImpl.get().getExpDatas(rowIds));
+
+        if (!dcRowIdMap.isEmpty())
+        {
+            for (Integer dataClassId : dcRowIdMap.keySet())
+            {
+                ExpDataClass dc = dcMap.get(dataClassId);
+                if (dc != null)
+                    expDatas.addAll(ExperimentServiceImpl.get().getExpDatas(dc, dcRowIdMap.get(dataClassId)));
+            }
+        }
+
+        Map<String, ExpData> identifierDatas = new HashMap<>();
+        for (ExpData data : expDatas)
+        {
+            identifierDatas.put(rowIdIdentifierMap.get(data.getRowId()), data);
+        }
+
+        return identifierDatas;
     }
 
     @Override
