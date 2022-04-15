@@ -1669,17 +1669,24 @@ public class QueryServiceImpl implements QueryService
     {
         AliasManager manager = new AliasManager(table, columns);
 
+        /* What is the difference between ret and columnMap?
+         *   "ret" is the list of columns that needs to be selected, while columnMap may include some
+         *   additional "intermediate" lookup columns.  For instance, if you select A, and A/B/C,
+         *   then columnMap will end up with A/B.
+         */
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>();
         for (ColumnInfo column : columns)
-            columnMap.put(column.getFieldKey(), column);
-
-        ArrayList<ColumnInfo> ret = new ArrayList<>(columns);
+        {
+            columnMap.putIfAbsent(column.getFieldKey(), column);
+            ret.putIfAbsent(column.getFieldKey(), column);
+        }
 
         // Add container column if needed
         ColumnInfo containerColumn = table.getColumn("Container");
         if (null != containerColumn && !columnMap.containsKey(containerColumn.getFieldKey()) && containerColumn.isRequired())
         {
-            ret.add(containerColumn);
             columnMap.put(FieldKey.fromString("Container"), containerColumn);
+            ret.putIfAbsent(containerColumn.getFieldKey(), containerColumn);
         }
 
         // foreign keys
@@ -1708,7 +1715,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                    ret.add(col);
+                    ret.putIfAbsent(col.getFieldKey(),col);
             }
         }
 
@@ -1719,9 +1726,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                    ret.add(col);
-                else if (columnMap.containsKey(fieldKey))
-                    ret.add(columnMap.get(fieldKey));
+                    ret.putIfAbsent(col.getFieldKey(),col);
             }
         }
 
@@ -1732,7 +1737,7 @@ public class QueryServiceImpl implements QueryService
                 ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
                 if (col != null)
                 {
-                    ret.add(col);
+                    ret.putIfAbsent(col.getFieldKey(),col);
                     resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
                 }
                 //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
@@ -1760,13 +1765,13 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
-        allInvolvedColumns.addAll(ret);
-        return ret;
+        allInvolvedColumns.addAll(ret.values());
+        return new ArrayList<>(ret.values());
     }
 
 
-    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
-                                                     ArrayList<ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
+    private void resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
+                                                     LinkedHashMap<FieldKey,ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
     {
         if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
         {
@@ -1796,29 +1801,23 @@ public class QueryServiceImpl implements QueryService
                 }
             }
 
-            ret.addAll(toAdd);
+            toAdd.forEach(c -> ret.putIfAbsent(c.getFieldKey(), c));
             allInvolvedColumns.addAll(toAdd);
         }
         else
         {
             if (!addSortKeysOnly)
             {
-                if (!columnMap.containsKey(col.getFieldKey()))
-                    ret.add(col);
+                ret.putIfAbsent(col.getFieldKey(),col);
                 allInvolvedColumns.add(col);
             }
         }
-
-        return ret;
     }
 
 
     private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
         if (fieldKey == null)
-            return null;
-
-        if (columnMap.containsKey(fieldKey))
             return null;
 
         // This could be made more general, but I don't think there's a need.  To reduce testing
@@ -1848,10 +1847,7 @@ public class QueryServiceImpl implements QueryService
             if (!column.getFieldKey().equals(fieldKey))
             {
                 if (columnMap.containsKey(column.getFieldKey()))
-                {
                     columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
-                    return null;
-                }
             }
 
             return column;

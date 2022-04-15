@@ -248,6 +248,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public Map<String, Map<String, Object>> getCustomSearchJsonMap(User user, @NotNull Collection<String> resourceIdentifiers)
+    {
+        return null;
+    }
+
+    @Override
     public void addSearchResultTemplate(@NotNull SearchResultTemplate template)
     {
     }

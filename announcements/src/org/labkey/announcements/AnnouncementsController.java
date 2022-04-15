@@ -37,6 +37,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -145,6 +146,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE_RENDERER_TYPE;
@@ -2714,7 +2716,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static class ThreadForm
+    public static class ThreadForm implements HasAllowBindParameter
     {
         private AnnouncementModel _thread;
 
@@ -2726,6 +2728,17 @@ public class AnnouncementsController extends SpringActionController
         public void setThread(AnnouncementModel thread)
         {
             _thread = thread;
+        }
+
+        @Override
+        public Predicate<String> allowBindParameter()
+        {
+            return (name) ->
+            {
+                if (HasAllowBindParameter.getDefaultPredicate().test(name))
+                    return true;
+                return name.startsWith("thread.") && !name.toLowerCase().contains(".class.");
+            };
         }
     }
 

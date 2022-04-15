@@ -17,12 +17,14 @@
 package org.labkey.core.attachment;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import java.util.Map;
  */
 public class DatabaseAttachmentFile implements AttachmentFile
 {
+    private static final Logger LOG = LogHelper.getLogger(DatabaseAttachmentFile.class, "Attachment file stored in the DB");
     private final Attachment _attachment;
     private final String _contentType;
     private final int _fileSize;
@@ -119,11 +122,13 @@ public class DatabaseAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream()
     {
-        if (_is == null)
-            throw new IllegalStateException("No input stream is active for this DatabaseAttachmentFile");
-
-        IOUtils.closeQuietly(_is);
-        _is = null;
-        _rs = ResultSetUtil.close(_rs);
+        if (_is != null)
+        {
+            IOUtils.closeQuietly(_is);
+            _is = null;
+            _rs = ResultSetUtil.close(_rs);
+        }
+        else
+            LOG.warn("No input stream is active for this DatabaseAttachmentFile");
     }
 }
