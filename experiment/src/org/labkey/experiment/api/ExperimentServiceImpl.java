@@ -7694,6 +7694,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
             wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
+            wrappedProtocol.setStatus(ExpProtocol.Status.Active);
             baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
             baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
             baseProtocol.setContainer(baseProtocol.getContainer());
