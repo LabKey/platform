@@ -92,7 +92,7 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
                 GroupManager.importGroupMembers(GroupManager.getGroup(ctx.getContainer(), xmlGroupType.getName(), xmlGroupType.getType()), xmlGroupType, ctx.getLogger(), ctx.getContainer());
             }
 
-            ctx.getUser().refreshGroups(); // The import user's own groups may have changed as the result of this import, #45273
+            ctx.getUser().refreshGroups(); // The import user's own groups may have changed as the result of this import, Issue #45273
         }
 
         @NotNull
