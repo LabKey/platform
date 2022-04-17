@@ -21,10 +21,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -54,6 +56,9 @@ public abstract class XarSource implements Serializable
     private final Map<String, ExpProtocol> _databaseProtocols = new HashMap<>();
     private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<>();
     private final Map<String, Map<String, ExpData>> _data = new HashMap<>();
+
+    private final Map<String, ExpSampleType> _xarSampleTypes = new HashMap<>();
+    private final Map<String, ExpDataClass> _xarDataClasses = new HashMap<>();
 
     protected final Map<String, String> _dataFileURLs = new HashMap<>();
 
@@ -264,4 +269,25 @@ public abstract class XarSource implements Serializable
     {
         return _xarContext;
     }
+
+    public void addSampleType(String sampleTypeLSID, ExpSampleType sampleType)
+    {
+        _xarSampleTypes.put(sampleTypeLSID, sampleType);
+    }
+
+    public ExpSampleType getSampleType(String sampleTypeLSID)
+    {
+        return _xarSampleTypes.get(sampleTypeLSID);
+    }
+
+    public void addDataClass(String sampleTypeLSID, ExpDataClass dataClass)
+    {
+        _xarDataClasses.put(sampleTypeLSID, dataClass);
+    }
+
+    public ExpDataClass getDataClass(String sampleTypeLSID)
+    {
+        return _xarDataClasses.get(sampleTypeLSID);
+    }
+
 }
