@@ -228,6 +228,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             Parameter entityId = new Parameter("entityid", JdbcType.GUID);
             ParameterMapStatement pm = new ParameterMapStatement(protocolApplicationTable.getSchema().getScope(), tx.getConnection(),
                     new SQLFragment("UPDATE " + protocolApplicationTable.getSelectName() + " SET EntityId = ? WHERE RowId = ?", entityId, rowId), null);
+            int count = 0;
 
             for (var application: applications)
             {
@@ -236,6 +237,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     rowId.setValue(application.getRowId());
                     entityId.setValue(new GUID());
                     pm.addBatch();
+                    count = count + 1;
+
+                    if (count == 1000)
+                    {
+                        count = 0;
+                        pm.executeBatch();
+                    }
                 }
             }
 
