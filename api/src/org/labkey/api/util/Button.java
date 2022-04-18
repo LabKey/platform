@@ -328,7 +328,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             return this;
         }
 
-        /* ONLY WHEN RENDER MARKUP INTO JAVASSCRIPT CODE */
+        /* ONLY WHEN RENDER MARKUP INTO JAVASCRIPT CODE */
+
         public ButtonBuilder inlineScript()
         {
             this.inlineScript = true;
