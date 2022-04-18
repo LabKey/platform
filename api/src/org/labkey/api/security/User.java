@@ -215,7 +215,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public void refreshGroups()
     {
-        _groups = null;
+        if (!isGuest()) // GuestUser explicitly sets groups in its constructor
+            _groups = null;
     }
 
     public boolean isFirstLogin()
