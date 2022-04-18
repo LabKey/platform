@@ -513,6 +513,15 @@ public class PageConfig
     }
 
 
+    /** Helper to create unique id's for HTML elements.  Is similar to the .jsp pattern:
+     *      var id = "prefix" + getRequestScopedUID();
+     *  Instead in JSP use:
+     *      var id = makeId("prefix");
+     *  or in JAVA:
+     *     var id = config.makeId("prefix");
+     * @param prefix non-empty String
+     * @return unique element id
+     */
     public String makeId(String prefix)
     {
         return prefix + _sid + _uid.incrementAndGet(); // we can concatenate without a separator because _sid is fixed width
@@ -520,7 +529,7 @@ public class PageConfig
 
 
     @NotNull
-    public static String getScriptNonce(HttpServletRequest request)
+    public static String getScriptNonceHeader(HttpServletRequest request)
     {
         String nonce = (String)request.getAttribute("HttpUtil.class#ScriptNonce");
         if (nonce != null)
@@ -530,12 +539,14 @@ public class PageConfig
         return nonce;
     }
 
+
     /* helpers for complying with strict Content-Security-Policy */
     @NotNull
     public HtmlString getScriptNonce()
     {
-        return HtmlString.of(getScriptNonce(_request));
+        return HtmlString.of(getScriptNonceHeader(_request));
     }
+
 
     public HtmlString getScriptTagStart()
     {

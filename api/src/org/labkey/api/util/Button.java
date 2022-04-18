@@ -191,6 +191,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
         if (isSubmit())
         {
+            // Grab the id of a form element vial the data.submitid attribute on the button.  This is used to navigate to the form.
+            // This attribute is set in getHtmlString() using .data() in the attributes builder.
             final String submitCode = "submitForm(document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form);return false;";
 
             if (StringUtils.isBlank(onClick))
@@ -248,7 +250,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .id(id)
             .at(Attribute.href, hrefValue, title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
             .at(inlineScript, onclick, clickHandler)
-            .data("submitid", submitId)
+            .data("submitid", submitId)         // this id is used by the event handler, stash in a data attribute rather than hard-coding in the handler source
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())

@@ -216,7 +216,7 @@ public class AuthFilter implements Filter
         if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-unsafe-inline"))
         {
             String csp = StringUtils.trimToEmpty(((HttpServletResponse) response).getHeader("Content-Security-Policy"));
-            String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonce(req) + "'";
+            String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonceHeader(req) + "'";
             if (!csp.contains(nonceDirectiveValue))
             {
                 if (!csp.contains("script-src "))
