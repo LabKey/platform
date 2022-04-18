@@ -499,7 +499,7 @@
             <xs:element name="shownInInsertView" type="xs:boolean" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Defaults to true. Set to false if the column should not shown in insert views.
+                        Defaults to true. Set to false if the column should not be shown in insert views.
                         Supported for SQL metadata, dataset import/export and list import/export.
                     </xs:documentation>
                 </xs:annotation>
@@ -507,7 +507,7 @@
             <xs:element name="shownInUpdateView" type="xs:boolean" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Defaults to true. Set to false if the column should not shown in update views.
+                        Defaults to true. Set to false if the column should not be shown in update views.
                         Supported for SQL metadata, dataset import/export and list import/export.
                     </xs:documentation>
                 </xs:annotation>
@@ -515,7 +515,7 @@
             <xs:element name="shownInDetailsView" type="xs:boolean" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Defaults to true. Set to false if the column should not shown in details views.
+                        Defaults to true. Set to false if the column should not be shown in details views.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
