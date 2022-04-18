@@ -247,7 +247,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 }
             }
 
-            pm.executeBatch();
+            if (count > 0) pm.executeBatch();
+
             tx.commit();
         }
     }
