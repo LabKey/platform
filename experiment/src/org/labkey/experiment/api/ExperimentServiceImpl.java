@@ -7313,6 +7313,8 @@ public class ExperimentServiceImpl implements ExperimentService
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
                                         GWTDomain<? extends GWTPropertyDescriptor> update)
     {
+        ValidationException errors;
+
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
@@ -7324,6 +7326,13 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 hasNameChange = true;
                 dataClass.setName(newName);
+                ExpDataClass existing = getDataClass(c, u, newName);
+                if (existing != null)
+                {
+                    errors = new ValidationException();
+                    errors.addError(new SimpleValidationError("DataClass '" + newName + "' already exists."));
+                    return errors;
+                }
             }
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
@@ -7332,14 +7341,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
             {
-                ValidationException errors = new ValidationException();
+                errors = new ValidationException();
                 errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                 return errors;
             }
         }
 
-        ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             dataClass.save(u);

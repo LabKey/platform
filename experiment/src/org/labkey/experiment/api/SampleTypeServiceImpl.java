@@ -924,12 +924,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
+        ValidationException errors;
+
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newName = StringUtils.trimToNull(update.getName());
         boolean hasNameChange = false;
         if (!st.getName().equals(newName))
         {
+            ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
+            if (duplicateType != null)
+            {
+                errors = new ValidationException();
+                errors.addError(new SimpleValidationError("A Sample Type with name '" + newName + "' already exists."));
+                return errors;
+            }
+
             hasNameChange = true;
             st.setName(newName);
         }
@@ -952,7 +962,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
-                    ValidationException errors = new ValidationException();
+                    errors = new ValidationException();
                     errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
@@ -982,7 +992,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setCategory(options.getCategory());
         }
 
-        ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
