@@ -1585,7 +1585,7 @@ public class PageFlowUtil
             return this;
         }
 
-        /* ONLY USE TO RENDER INTO JAVASSCRIPT CODE */
+        /* ONLY USE TO RENDER INTO JAVASCRIPT CODE */
         public HelpPopupBuilder inlineScript()
         {
             this.inlineScript = true;
