@@ -21,10 +21,12 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -222,16 +224,22 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             var protocolApplicationTable = ExperimentService.get().getTinfoProtocolApplication();
             List<ProtocolApplication> applications = new TableSelector(protocolApplicationTable).getArrayList(ProtocolApplication.class);
+            Parameter rowId = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter entityId = new Parameter("entityid", JdbcType.GUID);
+            ParameterMapStatement pm = new ParameterMapStatement(protocolApplicationTable.getSchema().getScope(), tx.getConnection(),
+                    new SQLFragment("UPDATE " + protocolApplicationTable.getSelectName() + " SET EntityId = ? WHERE RowId = ?", entityId, rowId), null);
 
             for (var application: applications)
             {
                 if (application.getEntityId() == null)
                 {
-                    application.setEntityId(new GUID());
-                    Table.update(ctx.getUpgradeUser(), protocolApplicationTable, application, application.getRowId());
+                    rowId.setValue(application.getRowId());
+                    entityId.setValue(new GUID());
+                    pm.addBatch();
                 }
             }
 
+            pm.executeBatch();
             tx.commit();
         }
     }
