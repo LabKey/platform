@@ -213,6 +213,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _groups;
     }
 
+    public void refreshGroups()
+    {
+        _groups = null;
+    }
 
     public boolean isFirstLogin()
     {
