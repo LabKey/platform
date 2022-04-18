@@ -598,7 +598,7 @@
     </div>
 </div>
 <% } %>
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%=getScriptNonce()%>">
     +function($){
         'use strict';
 

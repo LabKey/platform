@@ -59,7 +59,7 @@
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var resizer = new Ext4.Resizable("query", {
         handles: 'se',
         minWidth: 200,

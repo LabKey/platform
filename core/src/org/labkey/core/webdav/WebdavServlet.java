@@ -139,14 +139,10 @@ public class WebdavServlet extends HttpServlet
         dav.setUrlResourcePath(fullPath);
         int stackSize = HttpView.getStackSize();
         // Only track non-GET requests
-        try (RequestInfo t = "GET".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath))
+        try (RequestInfo t = "GET".equalsIgnoreCase(method) ? null : MemTracker.get().startProfiler(request, method.toUpperCase() + " " + fullPath);
+            var autoClose= HttpView.initForRequest(context, request, response))
         {
-            HttpView.initForRequest(context, request, response);
             dav.handleRequest(request, response);
-        }
-        finally
-        {
-            HttpView.resetStackSize(stackSize);
         }
     }
 

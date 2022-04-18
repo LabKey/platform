@@ -40,7 +40,7 @@
     Errors errors = getErrors("form");
     Wiki wiki = bean.wiki;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function saveWikiList(listName, targetName)
     {
         var wikiSelect = document.manage[listName];
@@ -217,7 +217,7 @@
 <%= button("Delete").href(urlFor(DeleteAction.class).addParameter("name", wiki.getName())) %>
 <%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + q(NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     existingWikiPages = <%=new JSONArray(bean.pageNames)%>;
 
     function checkWikiName(name)

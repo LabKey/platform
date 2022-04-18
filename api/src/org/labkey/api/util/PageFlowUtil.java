@@ -154,11 +154,16 @@ import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
-import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
+import static org.labkey.api.util.HtmlString.NBSP;
 
 
 public class PageFlowUtil
@@ -1394,57 +1399,47 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
                                                   String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"labkey-menu-text-link dropdown-toggle\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
-                (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";
+        if (null == id)
+            id = HttpView.currentPageConfig().makeId("dropdown_");
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
+                SPAN(id(id+"PopupText"), text),
+                NBSP,
+                SPAN(cl("fa","fa-caret-down").at(style,"position:relative;color:lightgray;")))
+        );
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static String generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
+        var page = HttpView.currentPageConfig();
 
-        return "<a href=\"" + filter(href) +"\" " + additions +
-            " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-            "><img id=\"" + imageId + "\" title=\"" + filter(text) + "\" src=\"" + imageSrc + "\" " +
-            (imageHeight == null ? "" : " height=\"" + imageHeight + "\"") + (imageWidth == null ? "" : " width=\"" + imageWidth + "\"") + "/></a>";
+        String anchorId = page.makeId("A_");
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        page.addHandler(anchorId, "click", onclick);
+        return DOM.createHtmlFragment(
+            A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
+                IMG(id(imageId).at(title,text, DOM.Attribute.src,imageSrc,height,imageHeight,width,imageWidth)))
+        );
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static String generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
                                                        String imageId, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a href=\"" + filter(href) +"\" " + additions +
-                " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
-                "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
-    }
-
-    // TODO: Why no HTML filtering?
-    private static String getAttributes(Map<String, String> properties)
-    {
-        if (properties == null || properties.isEmpty())
-            return "";
-
-        StringBuilder attributes = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            attributes.append(entry.getKey());
-            attributes.append("=\"");
-            attributes.append(entry.getValue());
-            attributes.append("\" ");
-        }
-
-        return attributes.toString();
+        PageConfig page = HttpView.currentPageConfig();
+        String id = page.makeId("a_");
+        page.addHandler(id,"click","if (this.className.indexOf('labkey-disabled-button') != -1) return false;");
+        return DOM.createHtmlFragment(
+            A(at(properties).id(id).at(DOM.Attribute.href,href),
+                SPAN(id(imageId).at(title,text).cl(imageCls)))
+        );
     }
 
     /**
@@ -1477,72 +1472,187 @@ public class PageFlowUtil
         return link(text).href(url).toString();
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return helpPopup(title, helpText, htmlHelpText, 0);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
         return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String onClickScript)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, onClickScript);
     }
 
+
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
     {
         return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
-    {
-        if (title == null && !htmlHelpText)
-        {
-            // use simple tooltip
-            if (onClickScript == null)
-                onClickScript = "return false";
 
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(onClickScript).append("\" title=\"");
-            link.append(filter(helpText));
-            link.append("\">").append(linkHtml).append("</a>");
-            return link.toString();
+    @Deprecated // use popupHelp() or JspBase.helpPopup()
+    public static String helpPopup(String titleText, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
+    {
+        if (null == titleText && !isHtmlHelpText)
+        {
+            return popupHelp(helpText).link(HtmlString.unsafe(linkHtml)).script(onClickScript).toString();
         }
         else
         {
-            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
-            showHelpDivArgs.append(filter(jsString(filter(title)), true)).append(", ");
-            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
-            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
-            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
-            showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
-            if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
+            HtmlString helpHtml = isHtmlHelpText ? HtmlString.unsafe(helpText) : HtmlString.unsafe(filter(helpText,true));
+            return popupHelp(helpHtml, titleText).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
+        }
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull String helpText)
+    {
+        return new HelpPopupBuilder(helpText);
+    }
+
+
+    public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
+    {
+        return new HelpPopupBuilder(helpHtml, titleText);
+    }
+
+
+    public static class HelpPopupBuilder implements SafeToRender, HasHtmlString
+    {
+        final String helpText;
+        final String titleText;
+        final HtmlString helpHtml;
+        HtmlString linkHtml = HtmlString.unsafe("<span class=\"labkey-help-pop-up\">?</span>");
+        int width = 0;
+        String onClickScript = null;
+        boolean inlineScript = false;
+
+        HelpPopupBuilder(@NotNull String helpText)
+        {
+            this.helpText = helpText;
+            this.helpHtml = null;
+            this.titleText = null;
+        }
+
+        HelpPopupBuilder(@NotNull HtmlString helpHtml, String titleText)
+        {
+            this.helpHtml = helpHtml;
+            this.helpText = null;
+            this.titleText = titleText;
+        }
+
+        public HelpPopupBuilder link(HtmlString linkHtml)
+        {
+            this.linkHtml = linkHtml;
+            return this;
+        }
+
+        public HelpPopupBuilder width(int width)
+        {
+            this.width = width;
+            return this;
+        }
+
+        public HelpPopupBuilder script(String onClickScript)
+        {
+            this.onClickScript = onClickScript;
+            return this;
+        }
+
+        /* ONLY USE TO RENDER INTO JAVASCRIPT CODE */
+        public HelpPopupBuilder inlineScript()
+        {
+            this.inlineScript = true;
+            return this;
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            assert(helpText != null || helpHtml != null);
+            if (null != helpText)
+                return textPopup();
+            else
+                return htmlPopup();
+        }
+
+        private HtmlString textPopup()
+        {
+            Objects.requireNonNull(helpText);
+
+            String id = null;
             if (onClickScript == null)
+                onClickScript = "return false";
+
+            if (!inlineScript)
             {
-                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+                var config = HttpView.currentPageConfig();
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
             }
-            StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"");
-            link.append(onClickScript);
-            link.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
-            link.append(showHelpDivArgs).append(");\"");
-            link.append(">").append(linkHtml).append("</a>");
-            return link.toString();
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
+        }
+
+        private HtmlString htmlPopup()
+        {
+            Objects.requireNonNull(helpHtml);
+
+            String id = null;
+            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
+            showHelpDivArgs.append(jsString(filter(titleText,true))).append(", ");
+            showHelpDivArgs.append(jsString(helpHtml.toString()));
+            if (width == 0)
+                showHelpDivArgs.append(", ").append("'auto'");
+            else
+                showHelpDivArgs.append(", ").append(jsString(width + "px"));
+            if (onClickScript == null)
+                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+
+            if (!inlineScript)
+            {
+                var config = HttpView.currentPageConfig();
+                id = config.makeId("helpPopup");
+                config.addHandler(id, "click", onClickScript);
+                config.addHandler(id, "mouseout", "return hideHelpDivDelay();");
+                config.addHandler(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+            }
+            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
+                    .at(inlineScript, onclick, onClickScript)
+                    .at(inlineScript, onmouseout, "return hideHelpDivDelay();")
+                    .at(inlineScript, onmouseover, "return showHelpDivDelay(" + showHelpDivArgs + ");"),
+                    linkHtml));
         }
     }
 
@@ -1814,7 +1924,7 @@ public class PageFlowUtil
         if (cssFiles.size() > 0)
         {
             SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
-            scriptBuilder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+            scriptBuilder.append(HttpView.currentPageConfig().getScriptTagStart());
             scriptBuilder.append(JavaScriptFragment.unsafe("LABKEY.requestedCssFiles("));
             String comma = "";
 
@@ -1945,7 +2055,7 @@ public class PageFlowUtil
         }
 
         return builder
-            .append(HtmlString.unsafe("<script type=\"text/javascript\">\n"))
+            .append(HttpView.currentPageConfig().getScriptTagStart())
             .append(JavaScriptFragment.unsafe("LABKEY.init("))
             .append(jsInitObject(context, config, resources, includePostParameters))
             .append(JavaScriptFragment.unsafe(");\n"))
@@ -1954,10 +2064,11 @@ public class PageFlowUtil
 
     public static HtmlString getScriptTag(String path)
     {
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         return HtmlStringBuilder.of()
             .append(HtmlString.unsafe("<script src=\""))
             .append(staticResourceUrl(path))
-            .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"))
+            .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"))
             .getHtmlString();
     }
 
@@ -1974,7 +2085,7 @@ public class PageFlowUtil
 
         SafeToRenderBuilder builder = SafeToRenderBuilder.of();
 
-        builder.append(HtmlString.unsafe("<script type=\"text/javascript\">\n"));
+        builder.append(HttpView.currentPageConfig().getScriptTagStart());
         builder.append(JavaScriptFragment.unsafe("LABKEY.loadedScripts("));
         String comma = "";
         for (String s : implicitIncludes)
@@ -1988,12 +2099,13 @@ public class PageFlowUtil
         builder.append(JavaScriptFragment.unsafe(");\n"));
         builder.append(HtmlString.unsafe("</script>\n"));
 
+        HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         for (String s : includes)
         {
-            HtmlStringBuilder scriptReference = HtmlStringBuilder.of(HtmlString.unsafe("<script src=\""))
-                .append(ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s))
-                .append(HtmlString.unsafe("\" type=\"text/javascript\"></script>\n"));
-            builder.append(scriptReference);
+            var path = ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s);
+            builder.append(HtmlString.unsafe("<script src=\""))
+                    .append(HtmlString.of(path))
+                    .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"));
         }
 
         return builder.getSafeToRender();

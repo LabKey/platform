@@ -47,7 +47,7 @@
         margin-bottom: 5px;
     }
 </style>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList()
 {
     var itemList = "";

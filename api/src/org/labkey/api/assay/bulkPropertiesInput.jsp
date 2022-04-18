@@ -34,7 +34,7 @@
     String existingValue = form.getRawBulkProperties();
     boolean useBulk = form.isBulkUploadAttempted();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function toggleBulkProperties()
     {
         if (document.getElementById(<%=q(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME + "On")%>).checked)
@@ -77,7 +77,7 @@
         </td>
     </tr>
 </table>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     // Allow tabs in the TSV text area
     <labkey:loadClientDependencies>
         Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);

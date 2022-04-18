@@ -37,7 +37,7 @@
     String tdRequired = "<input type=\"checkbox\" name=\"required\">";
     String tdRememberSiteValue = "<input type=\"checkbox\" name=\"rememberSiteValue\">";
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function moveRow(elem, up)
     {
         var table = document.getElementById("inputTable");

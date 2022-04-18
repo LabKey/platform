@@ -32,7 +32,7 @@
     Container c = getContainer();
 %>
 <div id="fmp"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
         Ext4.create('LABKEY.ext4.panel.FolderManagement', {
             renderTo: 'fmp',

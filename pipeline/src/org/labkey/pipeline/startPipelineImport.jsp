@@ -65,7 +65,7 @@
     <div id="startPipelineImportForm"></div>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 Ext4.onReady(function()
 {
     LABKEY.Ajax.request({

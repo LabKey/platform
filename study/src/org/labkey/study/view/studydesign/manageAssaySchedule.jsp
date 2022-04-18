@@ -54,7 +54,7 @@
     String returnUrl = form.getReturnUrl() != null ? form.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()
     {
         Ext4.create('LABKEY.VaccineDesign.AssaySchedulePanel', {

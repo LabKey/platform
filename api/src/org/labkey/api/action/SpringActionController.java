@@ -269,7 +269,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public PageConfig defaultPageConfig()
     {
-        PageConfig page = new PageConfig();
+        PageConfig page = HttpView.currentPageConfig();
 
         HttpServletRequest request = getViewContext().getRequest();
         if (null != StringUtils.trimToNull(request.getParameter("_print")) ||
@@ -368,7 +368,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
            HttpView view = SimpleErrorView.fromMessage(x.getMessage());
 
-           PageConfig page = new PageConfig();
+           PageConfig page = new PageConfig(request);
            page.setTemplate(Dialog);
            renderInTemplate(getViewContext(), null, page, view);
            return null;
@@ -526,7 +526,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(x, pageConfig);
+            handleException(x, context, pageConfig);
             throwable = x;
         }
         finally
@@ -542,7 +542,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Throwable x, PageConfig pageConfig)
+    protected void handleException(Throwable x, ViewContext context, PageConfig pageConfig)
     {
         HttpServletRequest request = getViewContext().getRequest();
         HttpServletResponse response = getViewContext().getResponse();
@@ -559,7 +559,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
         }
             
-        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, pageConfig);
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false, context, pageConfig);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }

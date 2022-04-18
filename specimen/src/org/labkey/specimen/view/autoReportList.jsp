@@ -65,7 +65,7 @@ This folder does not contain a study.
     else
     {
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function showOrHide(suffix)
     {
         var reportParameters = document.getElementById('reportParameters' + suffix);

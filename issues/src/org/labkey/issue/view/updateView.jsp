@@ -158,7 +158,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function filterRe(e, input, re){
         if (e.isSpecialKey())
             return true;
@@ -313,7 +313,7 @@
                         <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
                             }
                         %>
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             var duplicateInput = document.getElementsByName('duplicate')[0];
                             var duplicateOrig = duplicateInput.value;
                             var resolutionSelect = document.getElementsByName('resolution')[0];
@@ -351,7 +351,7 @@
                     <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
                         <%=bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), builder->builder.id("related"))%>
 
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                         </script><%
 

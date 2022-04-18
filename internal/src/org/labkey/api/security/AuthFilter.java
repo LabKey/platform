@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -28,6 +29,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.template.PageConfig;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -210,6 +212,22 @@ public class AuthFilter implements Filter
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-unsafe-inline"))
+        {
+            String csp = StringUtils.trimToEmpty(((HttpServletResponse) response).getHeader("Content-Security-Policy"));
+            String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonceHeader(req) + "'";
+            if (!csp.contains(nonceDirectiveValue))
+            {
+                if (!csp.contains("script-src "))
+                {
+                    if (StringUtils.isNotBlank(csp))
+                        csp = StringUtils.appendIfMissing(csp, ";");
+                    csp += "script-src 'unsafe-eval' http: https:  " + nonceDirectiveValue + " 'strict-dynamic';";
+                }
+                ((HttpServletResponse) response).setHeader("Content-Security-Policy", csp);
+            }
+        }
 
         try
         {

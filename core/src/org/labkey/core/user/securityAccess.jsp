@@ -65,7 +65,7 @@
     int cellPadding = 3;
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init(true, {
         dismissDelay: 15000,
         trackMouse: true

@@ -115,7 +115,7 @@
         </td>
     </tr>
 </table>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
             var delimEl = $("#<%=h(delimGUID)%>"),

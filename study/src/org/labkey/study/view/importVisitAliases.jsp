@@ -46,7 +46,7 @@
         </tr>
     </table>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     <labkey:loadClientDependencies>
         Ext.EventManager.on('tsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
     </labkey:loadClientDependencies>

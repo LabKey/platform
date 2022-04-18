@@ -131,7 +131,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var isUpgrade = <%=bean.isUpgrade()%>;
 
     Ext4.onReady(function(){

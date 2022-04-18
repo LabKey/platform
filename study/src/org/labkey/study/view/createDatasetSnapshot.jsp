@@ -113,7 +113,7 @@
 <%--These line brakes are for th edit snapshot case where there can be a DataRegion below this section--%>
 <br/>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var manualUpdate = document.querySelector('#manualUpdate');
     var updateDelay = document.querySelector('#updateDelay');

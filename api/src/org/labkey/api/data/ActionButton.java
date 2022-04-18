@@ -451,7 +451,7 @@ public class ActionButton extends DisplayElement implements Cloneable
 
         button.attributes(attributes);
 
-        out.write(button.toString());
+        button.build().render(ctx, out);
     }
 
     @Override

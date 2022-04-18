@@ -64,7 +64,7 @@
 %>
 <%=formatMissedErrors("form")%>
 <div id="createFormDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init();
 
     Ext4.onReady(function(){

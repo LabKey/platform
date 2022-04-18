@@ -64,7 +64,7 @@
 
 </style>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init();
     var R_EXTENSIONS = 'R,r';
     var PERL_EXTENSIONS = 'pl';
