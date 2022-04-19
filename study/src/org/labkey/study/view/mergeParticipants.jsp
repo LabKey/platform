@@ -68,7 +68,7 @@
 </div>
 <div id="mergeResults-div"></div>
 <div id="previewPanel-div" class="labkey-data-region-wrap"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function(){
         var jsSubjectNounColumnName = <%= q(subjectNounColumnName) %>;
         var oldIdField;

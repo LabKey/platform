@@ -40,7 +40,7 @@
     <div class="otherLoginMechanismsContent"></div>
 </div>
 
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%= scriptNonce %>">
     if (LABKEY.ActionURL.getParameter('returnUrl')) {
         document.getElementById('registerButton').href += 'returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
     }

@@ -122,7 +122,7 @@
 <%= button("Cancel").href(returnURL) %>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function toggleAllRows(checkbox)
     {
         var i;

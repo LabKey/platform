@@ -100,6 +100,9 @@ public class WikiSchema extends UserSchema
             table.setDeleteURL(AbstractTableInfo.LINK_DISABLER);
             table.init();
 
+            // Don't show Body column by default
+            table.setDefaultVisibleColumns(table.getDefaultVisibleColumns().stream().filter(col->!col.getName().equals("Body")).toList());
+
             // Change default sort to newest->oldest
             var pk = table.getMutableColumn("RowId");
             pk.setSortDirection(Sort.SortDirection.DESC);

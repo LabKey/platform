@@ -30,7 +30,7 @@
 
 </textarea>
 <button onclick="getData()">get data</button>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 if (Ext4||Ext)
 {
     var resizer = new (Ext4||Ext).Resizable("json", {

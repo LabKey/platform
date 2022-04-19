@@ -46,7 +46,7 @@
 <div id="queryReportForm">
 </div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var getReturnUrl = function() {
         var returnUrl = LABKEY.ActionURL.getReturnUrl();

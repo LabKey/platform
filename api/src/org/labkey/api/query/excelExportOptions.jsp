@@ -105,7 +105,7 @@
         </td>
     </tr>
 </table>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         LABKEY.DataRegion.registerPane(<%=q(model.getDataRegionName())%>, function(dr) {
             var xlsExportEl = $("#<%=h(xlsGUID)%>");

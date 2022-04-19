@@ -40,7 +40,7 @@
     boolean showSystemStatuses = settings.isUseShoppingCart();
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function showSystemRows(value)
 {
     document.getElementById("systemStatusRow").style.display = value ? "" : "none";

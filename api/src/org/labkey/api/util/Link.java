@@ -18,14 +18,16 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
-import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.rel;
 import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.Attribute.title;
@@ -52,20 +54,32 @@ public class Link extends DisplayElement implements HasHtmlString
     @Override
     public Appendable appendTo(Appendable out)
     {
-        A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
+        // would be nice to be able to be able to call getRequestScopedUID() here
+        String clickEvent = null;
+        var page = HttpView.currentPageConfig();
+        if (isBlank(lb.id))
+            lb.id = page.makeId("a_");
+
+        if (lb.usePost || isNotEmpty(lb.onClick))
+        {
+             if (lb.usePost)
+                 clickEvent = PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage);
+             else
+                 clickEvent = lb.onClick;
+        }
+        page.addHandler(lb.id, "click", clickEvent);
+        return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)
                 .at(lb.usePost, href, null, lb.href)
                 .at(target, lb.target)
-                .at(lb.usePost, onclick, PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage), lb.onClick)
                 .at(rel, lb.rel)
                 .at(title, lb.title)
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),
-            lb.iconCls!=null ? null : lb.html
+                (lb.iconCls!=null ? null : lb.html)
         ).appendTo(out);
-        return out;
     }
 
     @Override

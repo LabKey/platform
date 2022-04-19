@@ -37,7 +37,7 @@
     TourModel model = me.getModelBean();
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY._tour.title = <%=q(model.getTitle())%>;
     LABKEY._tour.description = <%=q(model.getDescription())%>;
     LABKEY._tour.mode = <%=model.getMode()%>;

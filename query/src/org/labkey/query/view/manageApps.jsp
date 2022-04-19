@@ -39,7 +39,7 @@
     OlapController.ManageAppForm bean = (OlapController.ManageAppForm)HttpView.currentModel();
     Collection<OlapSchemaDescriptor> cubeDefs = ServerManager.getDescriptors(getContainer());
 %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function deleteApp(contextName)
     {
         LABKEY.Ajax.request({

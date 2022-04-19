@@ -188,7 +188,7 @@
     </div>
 
 <% if (webPartId > 0) { %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function customizeProjectWebpart<%=webPartId%>(webpartId, pageId, index)
     {

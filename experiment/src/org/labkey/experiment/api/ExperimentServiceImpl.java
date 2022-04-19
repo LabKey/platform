@@ -2454,7 +2454,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         Map<String,String> map = new HashMap<>();

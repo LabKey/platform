@@ -79,7 +79,7 @@
     String renderId = form.getComponentId() != null ? form.getComponentId() : "chart-wizard-report";
 %>
 <div id="<%=h(renderId)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var init = function(reportId, renderTo, canEdit, editUrl)
     {

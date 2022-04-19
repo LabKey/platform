@@ -42,7 +42,7 @@
 <%=formatMissedErrors("form")%>
 <p></p>
 <div id="setInitialFolderSettingsDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
         Ext4.FocusManager.enable(false);
         var projectDefault = "<%=h(projectDefaultRoot.replace("\\", "\\\\"))%>";

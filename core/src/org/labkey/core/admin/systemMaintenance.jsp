@@ -184,7 +184,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     // global functions for script calls from this Form
     var validateForm, submitSystemMaintenance;

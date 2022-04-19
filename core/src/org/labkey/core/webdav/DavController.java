@@ -475,7 +475,7 @@ public class DavController extends SpringActionController
                     {
                         try
                         {
-                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
+                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(getRequest()), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
                             return WebdavStatus.fromCode(status.code);
                         }
                         catch (Exception e)
@@ -5840,7 +5840,7 @@ public class DavController extends SpringActionController
             if (resourceRootPath != null)
                 page.root = resourceRootPath;
 
-            PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
+            PageConfig config = new PageConfig(getViewContext().getRequest(), resource.getPath() + "-- webdav");
 
             if ("html".equals(getViewContext().getRequest().getParameter("listing")))
             {

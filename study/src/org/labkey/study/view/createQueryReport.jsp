@@ -45,7 +45,7 @@
 
     String paramStart = QueryParam.schemaName.toString() + "=" + StudySchema.getInstance().getSchemaName();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function verifyLabel()
     {
 

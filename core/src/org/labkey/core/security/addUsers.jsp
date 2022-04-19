@@ -36,7 +36,7 @@
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     document.addEventListener("DOMContentLoaded", function() {
         if (LABKEY.ActionURL.getParameter('provider')) {
             document.getElementById('provider').value = LABKEY.ActionURL.getParameter('provider');

@@ -74,7 +74,7 @@
         first = false;
     } %>
 </table>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function hideAllCollectors()
     {
         <%

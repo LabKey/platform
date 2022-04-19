@@ -33,7 +33,7 @@
 <%=formatMissedErrors("form")%>
 <p>Please choose the initial security configuration for the new <%= h(c.getContainerNoun())%>.</p>
 <div id="folderPermissionsDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
         var isProject = <%=c.isProject()%>;
         var hasNext = isProject || <%= !c.getFolderType().getExtraSetupSteps(c).isEmpty() %>;

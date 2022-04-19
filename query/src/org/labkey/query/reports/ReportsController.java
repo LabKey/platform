@@ -142,6 +142,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
@@ -169,6 +170,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -857,9 +859,27 @@ public class ReportsController extends SpringActionController
 
             MockHttpServletResponse mr = new MockHttpServletResponse();
             mr.setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.displayName());
-            resultsView.render(getViewContext().getRequest(), mr);
 
-            if (mr.getStatus() != HttpServletResponse.SC_OK){
+            ViewContext nested = new ViewContext(getViewContext());
+            nested.setResponse(mr);
+            try (var init = HttpView.initForRequest(nested, getViewContext().getRequest(), mr))
+            {
+                resultsView.render(getViewContext().getRequest(), mr);
+                var config = HttpView.currentPageConfig();
+                var sw = new StringWriter();
+                config.endOfBodyScript(sw);
+                var script = sw.toString();
+                if (!script.isBlank())
+                {
+                    var out = mr.getWriter();
+                    out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
+                    out.print(script);
+                    out.print("</script>");
+                }
+            }
+
+            if (mr.getStatus() != HttpServletResponse.SC_OK)
+            {
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }

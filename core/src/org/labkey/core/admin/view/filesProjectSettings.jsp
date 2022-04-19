@@ -238,7 +238,7 @@
     <input type="hidden" value="true">
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function updateSelection(isChange)
     {
         var cloudRootName = document.getElementById('cloudRootName');

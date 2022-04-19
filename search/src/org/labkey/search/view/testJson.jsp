@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.api.jsp.JspContext" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <div id="searchDiv">
     
 </div>
 
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 var searchField;
 var store;
 

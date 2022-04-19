@@ -60,7 +60,7 @@ boolean isCloudRoot = FileContentService.get().isCloudRoot(c);
 <labkey:errors/>
 <div id="exportForm"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 Ext4.onReady(function(){
 

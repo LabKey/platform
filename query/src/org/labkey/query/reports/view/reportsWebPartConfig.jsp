@@ -120,7 +120,7 @@
     <input type="hidden" name="<%=h(sectionName)%>" id="showSectionHidden">
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     function getSectionNames()
     {

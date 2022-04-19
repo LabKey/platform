@@ -27,6 +27,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ModuleHtmlViewCacheHandler;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
@@ -157,8 +158,10 @@ public class ModuleHtmlView extends HtmlView
 
         String contextPath = null != context.getContextPath() ? context.getContextPath() : "invalid context path";
         String containerPath = null != context.getContainer() ? context.getContainer().getPath() : "invalid container";
+        String scriptNonce = HttpView.currentPageConfig().getScriptNonce().toString();
         String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", Matcher.quoteReplacement(contextPath)); // 17751
         ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", Matcher.quoteReplacement(containerPath));
+        ret = ret.replaceAll("<%=\\s*scriptNonce\\s*%>", Matcher.quoteReplacement(scriptNonce));
 
         return ret;
     }

@@ -129,18 +129,24 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
                         ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
                         ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
 
-                        content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING));
-                        content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING));
+                        content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING).inlineScript());
+                        content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING).inlineScript());
                     }
                 }
 
                 ActionURL detailsUrl = new ActionURL(ManageRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
 
-                content.append(PageFlowUtil.button("Details").href(detailsUrl));
+                content.append(PageFlowUtil.button("Details").href(detailsUrl).inlineScript());
             }
             content.append("</div>");
             setDisplayHtml(content.toString());
             super.renderGridCellContents(ctx, out);
+        }
+
+        @Override
+        public String getName()
+        {
+            return "RequestOptions";
         }
     }
 
@@ -222,4 +228,6 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
     {
         getSettings().setAllowCustomizeView(showCustomizeLink);
     }
+
+
 }

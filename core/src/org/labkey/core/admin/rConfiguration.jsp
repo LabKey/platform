@@ -155,7 +155,7 @@
 </div>
 </labkey:form>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function($) {
     var useParent = $("input[name='overrideDefault'][value='parent']");
     var overrideParent = $("input[name='overrideDefault'][value='override']");

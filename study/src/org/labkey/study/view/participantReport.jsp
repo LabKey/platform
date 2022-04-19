@@ -89,7 +89,7 @@
 
 <div id="<%=h(filterRenderId)%>" class="report-filter-window-outer" style="position:<%=h(bean.isAllowOverflow() ? "absolute" : "absolute")%>;"></div>
 <div id="<%=h(renderId)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function(){
         var pr = Ext4.create('LABKEY.ext4.ParticipantReport', {

@@ -151,7 +151,7 @@
     <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>
 </labkey:form><br/><br/>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 <%
     // create an array of email templates with their replacement parameters
