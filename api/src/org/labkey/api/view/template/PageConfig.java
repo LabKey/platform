@@ -606,24 +606,14 @@ public class PageConfig
 
         if (AppProps.getInstance().isDevMode())
         {
-            Map<String, Set<String>> handlers = new HashMap<>();
+            Set<String> eventIds = new HashSet<>();
             for (EventHandler h : _eventHandlers)
             {
-                final String id = h.id;
-                final String event = h.event;
-                final Set<String> events;
-                if (!handlers.containsKey(id))
+                final String eventId = h.event + "#" + h.id;
+
+                if (!eventIds.add(eventId))
                 {
-                    events = new HashSet<>();
-                    handlers.put(id, events);
-                }
-                else
-                {
-                    events = handlers.get(id);
-                }
-                if (!events.add(event))
-                {
-                    LOG.error("Malformed page. Multiple handlers defined for the same 'id:event'. " + id + ":" + event);
+                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same 'event#id'. " + eventId);
                 }
             }
         }
