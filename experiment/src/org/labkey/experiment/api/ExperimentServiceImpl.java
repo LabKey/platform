@@ -1268,7 +1268,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Pair<String, String> generateLsidWithDBSeq(Container container, String lsidPrefix)
     {
-        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(container, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, 1);
+        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, 1);
         String dbSeqStr = String.valueOf(newSequence.next());
         String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
         return new Pair<>(lsid, dbSeqStr);
