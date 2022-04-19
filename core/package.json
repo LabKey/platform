@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.10.0",
-    "@labkey/components": "2.155.0-fb-sampleTypeRename.1",
+    "@labkey/components": "2.156.0-fb-sampleTypeRename.1",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
