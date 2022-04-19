@@ -1672,6 +1672,118 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class SchemaQuery
+    {
+        private String schemaName;
+        private String queryName;
+        private String viewName;
+
+        public void setViewName(String viewName)
+        {
+            this.viewName = viewName;
+        }
+
+        public String getViewName()
+        {
+            return this.viewName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            this.queryName = queryName;
+        }
+
+        public String getQueryName()
+        {
+            return this.queryName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+
+        public String getSchemaName()
+        {
+            return this.schemaName;
+        }
+    }
+
+    public static class ExportTabsForm
+    {
+        private String filename;
+        private List<SchemaQuery> tabModels;
+
+        public void setFilename(String filename)
+        {
+            this.filename = filename;
+        }
+
+        public String getFilename()
+        {
+            return this.filename;
+        }
+
+        public void setTabModels(List<SchemaQuery> tabModels)
+        {
+            this.tabModels = tabModels;
+        }
+
+        public List<SchemaQuery> getTabModels()
+        {
+            return this.tabModels;
+        }
+
+        public Collection<QueryView> getTabViews(ViewContext viewContext)
+        {
+            List<QueryView> queryViews = new ArrayList<>();
+            getTabModels().forEach(model -> {
+                QueryForm qf = new QueryForm();
+                qf.setQueryName(model.queryName);
+                qf.setSchemaName(model.schemaName);
+                qf.setViewName(model.viewName);
+                qf.setViewContext(viewContext);
+                qf.setDataRegionName(model.queryName);
+
+                qf.getSchema();
+                queryViews.add(qf.getQueryView());
+            });
+
+            return queryViews;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.Export.class)
+    public static class ExportTabsXLSXAction extends ReadOnlyApiAction<ExportTabsForm>
+//    public static class ExportTabsXLSXAction extends _ExportQuery<ExportTabsForm>
+    {
+        @Override
+        public Object execute(ExportTabsForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setHeader("X-Robots-Tag", "noindex");
+            response.setHeader("Content-Disposition", "attachment");
+
+            Collection<QueryView> queryViews = form.getTabViews(getViewContext());
+
+            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
+            {
+                writer.setFilenamePrefix(form.getFilename());
+                for(QueryView qv : queryViews)
+                {
+                    qv.exportToExcelSheet(writer);
+                }
+
+                writer.getWorkbook().setActiveSheet(0);
+                writer.writeWorkbook(response);
+                return null; //Returning anything here will cause error as excel writer will close the response stream
+            }
+        }
+    }
+
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static class TemplateForm extends ExportQueryForm
     {
@@ -1787,7 +1899,16 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumnMap(), form.getFilenamePrefix());
+            view.exportToExcel( new QueryView.ExcelExportConfig(getViewContext().getResponse(), form.getHeaderType())
+                    .setTemplateOnly(true)
+                    .setInsertColumnsOnly(form.insertColumnsOnly)
+                    .setDocType(fileType)
+                    .setRespectView(respectView)
+                    .setIncludeColumns(form.getIncludeColumns())
+                    .setExcludeColumns(form.getExcludeColumns())
+                    .setRenamedColumns(form.getRenameColumnMap())
+                    .setPrefix(form.getFilenamePrefix())
+            );
         }
     }
 

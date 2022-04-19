@@ -500,6 +500,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     {
         try
         {
+            renderNewSheet();
             _write(stream);
         }
         catch (IOException e)
@@ -508,13 +509,37 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
+    /**
+     * Renders the sheet then writes out the workbook to supplied stream
+     * @param response to write out the file
+     */
     public void write(HttpServletResponse response)
     {
         write(response, getFilenamePrefix());
     }
 
+    /**
+     * Writes out the workbook to the response stream
+     * @param response to write to
+     */
+    public void writeWorkbook(HttpServletResponse response)
+    {
+        writeWorkbook(response, getFilenamePrefix());
+    }
+
     // Create the spreadsheet and stream it to the browser.
     public void write(HttpServletResponse response, String filenamePrefix)
+    {
+        renderNewSheet();
+        writeWorkbook(response, filenamePrefix);
+    }
+
+    /**
+     * Write workbook out to supplied response
+     * @param response to write to
+     * @param filenamePrefix string to prepend to a time stamp as filename
+     */
+    public void writeWorkbook(HttpServletResponse response, String filenamePrefix)
     {
         try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
         {
@@ -540,7 +565,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private void _write(OutputStream stream) throws IOException
     {
         _docType.setMetadata(_workbook, _metadata);
-        renderNewSheet();
         _workbook.write(stream);
         stream.flush();
     }
