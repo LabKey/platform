@@ -19,11 +19,13 @@ package org.labkey.api.view.template;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -32,6 +34,7 @@ import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -48,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +73,9 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
  */
 public class PageConfig
 {
+
+    private static final Logger LOG = LogHelper.getLogger(PageConfig.class, "Log problems generating pages.");
+
     /**
      * Warning: Any changes to this enum require corresponding changes in ViewServiceImpl
      */
@@ -596,6 +603,30 @@ public class PageConfig
         // IMMEDIATE
 
         // DOM CONTENT LOADED
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            Map<String, Set<String>> handlers = new HashMap<>();
+            for (EventHandler h : _eventHandlers)
+            {
+                final String id = h.id;
+                final String event = h.event;
+                final Set<String> events;
+                if (!handlers.containsKey(id))
+                {
+                    events = new HashSet<>();
+                    handlers.put(id, events);
+                }
+                else
+                {
+                    events = handlers.get(id);
+                }
+                if (!events.add(event))
+                {
+                    LOG.error("Malformed page. Multiple handlers defined for the same 'id:event'. " + id + ":" + event);
+                }
+            }
+        }
 
         out.write("(function() {\n"); // anonymous scope
 
