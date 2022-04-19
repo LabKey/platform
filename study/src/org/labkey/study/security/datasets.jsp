@@ -319,7 +319,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
 }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function setAllSelections(value)
 {
     var form = document.getElementById("datasetSecurityForm");

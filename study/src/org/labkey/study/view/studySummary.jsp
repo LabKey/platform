@@ -77,7 +77,7 @@
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
     editMetadataURL.addReturnURL(bean.getCurrentURL());
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.requiresCss("editInPlaceElement.css");
 </script>
 <table width="100%">

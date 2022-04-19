@@ -33,7 +33,7 @@
     CustomizeMenuForm bean = me.getModelBean();
 %>
 <div id="someUniqueElement2"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext.onReady(function() {
 
         var bean = <%= text(new JSONObject(bean).toString()) %>;

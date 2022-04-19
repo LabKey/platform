@@ -51,7 +51,7 @@
 <labkey:panel>
     <div id=<%=h(renderId)%>></div>
 </labkey:panel>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     <labkey:loadClientDependencies>
         Ext4.onReady(function(){
 

@@ -144,7 +144,7 @@
     if (!bean.isPrint())
     {
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var hidden = true;
 
     /**

@@ -266,7 +266,7 @@ if (form.getWizardStep() != WizardStep.UPLOAD_PARTICIPANTS &&
 </labkey:form>
 
 <!-- Allows us to override the form destination, so that other actions can receive the form -->
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function sendFormTo(actionName)
     {
         oldActionName = document.forms.createRepositoryForm.action;

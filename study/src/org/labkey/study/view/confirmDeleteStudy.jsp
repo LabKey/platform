@@ -21,7 +21,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function deleteStudy_onSubmit()
     {
         var confirmed = document.querySelector("#deleteStudyConfirm").checked ? true : false;

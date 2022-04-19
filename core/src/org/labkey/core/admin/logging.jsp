@@ -24,7 +24,7 @@
         dependencies.add("Ext3");
     }
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
 var timeRenderer = Ext.util.Format.dateRenderer("H:m:s");
 var timestampRenderer = function(l){ return timeRenderer(new Date(l)); };

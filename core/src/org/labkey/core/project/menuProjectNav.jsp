@@ -119,7 +119,7 @@
 %>
 </div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function($) {
         var p = document.getElementById('permalink');
         var pvis = document.getElementById('permalink_vis');

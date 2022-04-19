@@ -382,6 +382,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
                         "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
                         "search to find the other select values.", false);
+        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

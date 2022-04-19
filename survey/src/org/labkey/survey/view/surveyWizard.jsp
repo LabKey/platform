@@ -79,7 +79,7 @@
 <div id=<%=q(headerRenderId)%>></div>
 <div id=<%=q(formRenderId)%>></div>
 <div id=<%=q(footerRenderId)%>></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function(){
 

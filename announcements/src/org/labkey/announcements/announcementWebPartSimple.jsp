@@ -112,7 +112,7 @@ TD.message-short .message-less, TD.message-short .message-more
     display:none;    
 }
 </style>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var messageMore, messageLess;
     Ext4.onReady(function() {

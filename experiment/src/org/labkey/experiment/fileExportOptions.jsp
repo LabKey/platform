@@ -27,7 +27,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
 HtmlString guid = HtmlString.of(GUID.makeGUID());
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.FileExportOptions = {};
 (function($) {
     LABKEY.FileExportOptions.setFileDownloadEnabled = function(enabled, guid)

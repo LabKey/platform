@@ -35,7 +35,7 @@
 
 <labkey:errors />
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var selectedFileNames;
     var taskId = LABKEY.ActionURL.getParameter("taskId");

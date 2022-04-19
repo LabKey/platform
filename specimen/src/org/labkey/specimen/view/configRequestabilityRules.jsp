@@ -33,7 +33,7 @@
     // TODO: This should use Selector.js
     Container c = getContainer();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext.QuickTips.init();
     window.onbeforeunload = LABKEY.beforeunload();
 

@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
@@ -156,7 +157,7 @@ public class MiniProfiler
         Settings settings = getSettings(user);
 
         return JavaScriptFragment.unsafe(
-            "<script type='text/javascript'>\n" +
+            HttpView.currentPageConfig().getScriptTagStart().toString() +
             "LABKEY.internal.MiniProfiler.init({\n" +
             "  currentId:" + currentId + ",\n" +
             "  ids:" + ids + ",\n" +

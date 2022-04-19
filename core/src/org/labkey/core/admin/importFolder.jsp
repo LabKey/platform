@@ -240,7 +240,7 @@
 <%
     }
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()  {
         // note: client dependencies declared in ManagementTabStrip
         var templateFolders = [];

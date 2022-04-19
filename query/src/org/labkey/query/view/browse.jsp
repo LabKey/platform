@@ -36,7 +36,7 @@
     <input type="hidden" id="x4-history-field" />
     <iframe id="x4-history-frame"></iframe>
 </form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
         Ext4.Ajax.timeout = 60 * 1000; // 1 minute
         Ext4.QuickTips.init();

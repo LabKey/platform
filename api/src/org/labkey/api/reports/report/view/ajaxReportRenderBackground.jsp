@@ -34,7 +34,7 @@
     // TODO: Fix these URLs
     ActionURL startReportURL = urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function startJob()
     {
         Ext4.Ajax.request({

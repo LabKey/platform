@@ -50,7 +50,7 @@
     }
 </style>
 <div id="updateDomainDiv"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function($)
 {
     var schemaName = <%=  q(model.schemaName) %>;

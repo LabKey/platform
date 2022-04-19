@@ -25,7 +25,7 @@
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
 %>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function saveList(listName)
 {
     var itemList = "";

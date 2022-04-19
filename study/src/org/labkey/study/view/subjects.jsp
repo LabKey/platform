@@ -92,7 +92,7 @@
     boolean isParticipantsListPage = StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(param);
     String conditionalStyling = (isParticipantsListPage) ? "overflow-y:auto;" : "overflow-y:auto; height: 470px;";
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 <%=unsafe(viewObject)%> = (function()
 {
     var $h = Ext4.util.Format.htmlEncode;

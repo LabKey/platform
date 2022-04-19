@@ -61,7 +61,7 @@
     }
 </style>
 <labkey:errors/>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function success(workbookInfo, request)
     {
         window.location = LABKEY.ActionURL.buildURL("project", "start", workbookInfo.path);

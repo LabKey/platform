@@ -123,7 +123,7 @@
                 <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %>
             </li>
         </ul>
-        <script>
+        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
             (function($) {
 
                 var titleSameAsName = $('#titleSameAsName'),

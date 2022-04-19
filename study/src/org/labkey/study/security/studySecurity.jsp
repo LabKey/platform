@@ -73,7 +73,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     // With up to three different sections and three different save buttons, it would be great to provide a custom message
     // that indicates to the user where unsaved changes exist. However, to prevent scamming, modern browsers no longer
     // support custom messages. Best we can do is a generic warning if navigating away with unsaved changes.
