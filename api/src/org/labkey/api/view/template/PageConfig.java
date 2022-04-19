@@ -609,11 +609,11 @@ public class PageConfig
             Set<String> eventIds = new HashSet<>();
             for (EventHandler h : _eventHandlers)
             {
-                final String eventId = h.event + "#" + h.id;
+                final String eventId = h.id + "#" + h.event;
 
                 if (!eventIds.add(eventId))
                 {
-                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same 'event#id'. " + eventId);
+                    LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': " + eventId);
                 }
             }
         }
