@@ -97,7 +97,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 String id = "";
                 int ind = suffix.indexOf(".");
                 if (ind > 0)
-                    id = suffix.substring(suffix.indexOf("."));
+                    id = suffix.substring(ind);
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
             }
             else if (("Sample".equals(prefix) || "Material".equals(prefix)))

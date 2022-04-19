@@ -1266,7 +1266,7 @@ public class ExperimentServiceImpl implements ExperimentService
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
     }
 
-    private Pair<String, String> generateLsidWithDBSeq(Container container, String lsidPrefix)
+    private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
         Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
         if (!container.isProject() && container.getProject() != null)
@@ -1295,9 +1295,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public Pair<String, String> generateLsidWithDBSeq(Container container, Class<? extends ExpObject> clazz)
+    public Pair<String, String> generateLSIDWithDBSeq(Container container, Class<? extends ExpObject> clazz)
     {
-        return generateLsidWithDBSeq(container, getNamespacePrefix(clazz));
+        return generateLSIDWithDBSeq(container, getNamespacePrefix(clazz));
     }
 
     @Override
@@ -1307,9 +1307,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public Pair<String, String> generateLsidWithDBSeq(Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(Container container, DataType type)
     {
-        return generateLsidWithDBSeq(container, type.getNamespacePrefix());
+        return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
 
     @Override
@@ -3911,7 +3911,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public Lsid getDataClassLsid(Container container)
     {
-        return Lsid.parse(generateLsidWithDBSeq(container, ExpDataClass.class).first);
+        return Lsid.parse(generateLSIDWithDBSeq(container, ExpDataClass.class).first);
     }
 
     @Override
@@ -7326,7 +7326,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             validateDataClassOptions(c, u, options);
             String newName = StringUtils.trimToNull(options.getName());
-            if (!dataClass.getName().equals(newName))
+            if (newName != null && !dataClass.getName().equals(newName))
             {
                 hasNameChange = true;
                 dataClass.setName(newName);

@@ -89,7 +89,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -480,7 +479,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public Pair<String, String> getSampleTypeSamplePrefixLsids(Container container)
     {
-        Pair<String, String> lsidDbSeq = ExperimentService.get().generateLsidWithDBSeq(container, ExpSampleType.class);
+        Pair<String, String> lsidDbSeq = ExperimentService.get().generateLSIDWithDBSeq(container, ExpSampleType.class);
         String sampleTypeLsidStr = lsidDbSeq.first;
         Lsid sampleTypeLsid = Lsid.parse(sampleTypeLsidStr);
 
@@ -930,7 +929,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         String newName = StringUtils.trimToNull(update.getName());
         boolean hasNameChange = false;
-        if (!st.getName().equals(newName))
+        if (newName != null && !st.getName().equals(newName))
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
