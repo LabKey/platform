@@ -114,12 +114,12 @@ public class SampleTypeContentsView extends QueryView
                 "   var selected = data.selected.join(';');" +
                     DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});" +
                 "   if (selected.length === 0) {" +
-                "       window.location = '" + url.getLocalURIString() + "';" +
+                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString()) + ";" +
                 "   }" +
                 "   else {" +
-                "       window.location = '" + url.getLocalURIString() +
+                "       window.location = " + PageFlowUtil.jsString(url.getLocalURIString() +
                 (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "") +
-                        (isOuput ? "materialOutputs" : "materialInputs") + "=' + selected" +
+                        (isOuput ? "materialOutputs" : "materialInputs") + "=") + "+encodeURIComponent(selected)" +
                 "   }" +
                 "}";
     }
@@ -161,7 +161,11 @@ public class SampleTypeContentsView extends QueryView
         ActionButton button = super.createDeleteButton();
         if (button != null)
         {
-            button.setScript("LABKEY.experiment.confirmDelete('" + this.getDataRegionName() + "', '" + getSchema().getName() + "', '" + getQueryDef().getName() + "', '" + getSelectionKey() + "', 'sample', 'samples')");
+            button.setScript("LABKEY.experiment.confirmDelete(" +
+                    PageFlowUtil.jsString(getDataRegionName()) + ", " +
+                    PageFlowUtil.jsString(getSchema().getName())  + ", " +
+                    PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
+                    PageFlowUtil.jsString(getSelectionKey()) + ", 'sample', 'samples')");
             button.setRequiresSelection(true);
         }
         return button;
