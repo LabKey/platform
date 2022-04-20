@@ -560,10 +560,14 @@ public class XarReader extends AbstractXarImporter
 
     private ExpSampleTypeImpl loadSampleType(SampleSetType sampleSet) throws XarFormatException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
-        ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
+        String sampleSetName = sampleSet.getName();
+        ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(getContainer(), sampleSetName);
 
-        getLog().debug("Importing SampleType with LSID '" + lsid + "'");
+        getLog().debug("Importing SampleType with name '" + sampleSetName + "'");
+        String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
+        if (existingMaterialSource == null)
+            existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
+
         ExpSampleTypeImpl materialSource = SampleTypeServiceImpl.get().createSampleType();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
@@ -656,7 +660,11 @@ public class XarReader extends AbstractXarImporter
             if (_strictValidateExistingSampleType)
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
-                IdentifiableEntity.diff(materialSource.getName(), existingMaterialSource.getName(), "Name", diffs);
+                IdentifiableEntity.diff(materialSource.getNameExpression(), existingMaterialSource.getNameExpression(), "Name Expression", diffs);
+                IdentifiableEntity.diff(materialSource.getAliquotNameExpression(), existingMaterialSource.getAliquotNameExpression(), "Aliquot Name Expression", diffs);
+                IdentifiableEntity.diff(materialSource.getLabelColor(), existingMaterialSource.getLabelColor(), "Label Color", diffs);
+                IdentifiableEntity.diff(materialSource.getMetricUnit(), existingMaterialSource.getMetricUnit(), "Metric Unit", diffs);
+                IdentifiableEntity.diff(materialSource.getCategory(), existingMaterialSource.getCategory(), "Category", diffs);
 
                 // Issue 37936 - Skip validation of description for the magic specimen/sample link, which is auto-generated based on the container name
                 if (!existingMaterialSource.getName().equalsIgnoreCase(SpecimenService.SAMPLE_TYPE_NAME))
@@ -667,15 +675,16 @@ public class XarReader extends AbstractXarImporter
                 }
                 if (!diffs.isEmpty())
                 {
-                    getLog().error("The SampleSet specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    getLog().error("The SampleSet specified with name '" + sampleSetName + "' has " + diffs.size() + " differences from the one that has already been loaded");
                     for (IdentifiableEntity.Difference diff : diffs)
                     {
                         getLog().error(diff.toString());
                     }
-                    throw new XarFormatException("SampleSet with LSID '" + lsid + "' does not match existing SampleSet");
+                    throw new XarFormatException("SampleSet with name '" + sampleSetName + "' does not match existing SampleSet");
                 }
             }
 
+            _xarSource.addSampleType(lsid, existingMaterialSource);
             return existingMaterialSource;
         }
 
@@ -686,10 +695,14 @@ public class XarReader extends AbstractXarImporter
 
     private ExpDataClass loadDataClass(DataClassType dataClassType) throws ExperimentException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
-        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(lsid);
+        String dataClassName = dataClassType.getName();
+        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(getContainer(), dataClassName);
 
-        getLog().debug("Importing DataClass with LSID '" + lsid + "'");
+        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
+        if (existingDataClass == null)
+            existingDataClass = ExperimentService.get().getDataClass(lsid);
+
+        getLog().debug("Importing DataClass with name '" + dataClassName + "'");
         DataClass bean = new DataClass();
         bean.setContainer(getContainer());
         bean.setName(dataClassType.getName());
@@ -719,7 +732,6 @@ public class XarReader extends AbstractXarImporter
             if (_strictValidateExistingSampleType)
             {
                 List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
-                IdentifiableEntity.diff(dataClassType.getName(), existingDataClass.getName(), "Name", diffs);
                 IdentifiableEntity.diff(dataClassType.getDescription(), existingDataClass.getDescription(), "Description", diffs);
                 IdentifiableEntity.diff(dataClassType.getNameExpression(), existingDataClass.getNameExpression(), "Name Expression", diffs);
                 IdentifiableEntity.diff(dataClassType.getCategory(), existingDataClass.getCategory(), "Category", diffs);
@@ -734,6 +746,8 @@ public class XarReader extends AbstractXarImporter
                     throw new XarFormatException("DataClass with LSID '" + lsid + "' does not match existing DataClass");
                 }
             }
+
+            _xarSource.addDataClass(lsid, existingDataClass);
             return existingDataClass;
         }
         dataClass.save(getUser());
@@ -1419,7 +1433,9 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
-        ExpSampleTypeImpl sampleSet = checkMaterialCpasType(declaredType);
+        ExpSampleType sampleSet = checkMaterialCpasType(declaredType);
+        if (sampleSet != null)
+            declaredType = sampleSet.getLSID();
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
         String rootMaterialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getRootMaterialLSID(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
@@ -1429,7 +1445,7 @@ public class XarReader extends AbstractXarImporter
         if (material == null && sampleSet != null)
         {
             // Try resolving it by name within the sample type in case we have it under a different LSID
-            material = sampleSet.getSample(context.getContainer(), xbMaterial.getName());
+            material = (ExpMaterialImpl) sampleSet.getSample(context.getContainer(), xbMaterial.getName());
             if (material != null)
             {
                 // Remember this as an alternate LSID during import
@@ -1631,15 +1647,16 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "Data");
         }
-        checkDataCpasType(declaredType);
+        ExpDataClass expDataClass = checkDataCpasType(declaredType);
+        if (expDataClass != null)
+            declaredType = expDataClass.getLSID();
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
-        ExpDataClassImpl expDataClass = ExperimentServiceImpl.get().getDataClass(declaredType);
         if (expData == null && expDataClass != null)
         {
             // Try resolving it by name within the data class in case we have it under a different LSID
-            ExpDataImpl data = expDataClass.getData(getContainer(), xbData.getName());
+            ExpDataImpl data = (ExpDataImpl) expDataClass.getData(getContainer(), xbData.getName());
             if (data != null)
             {
                 // Remember this as an alternate LSID during import

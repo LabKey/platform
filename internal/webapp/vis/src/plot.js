@@ -60,6 +60,7 @@
  *          <li><strong>tickFormat:</strong> Add axis label formatting.</li>
  *          <li><strong>tickValues:</strong> Define the axis tick values. Array of values.</li>
  *          <li><strong>tickDigits:</strong> Convert axis tick to exponential form if equal or greater than number of digits</li>
+ *          <li><strong>tickMax:</strong> Maximum number of tick marks to show for an axis.</li>
  *          <li><strong>tickLabelMax:</strong> Maximum number of tick labels to show for a categorical axis.</li>
  *          <li><strong>tickHoverText:</strong>: Adds hover text for axis labels.</li>
  *          <li><strong>tickCls:</strong> Add class to axis label.</li>
@@ -383,6 +384,7 @@ boxPlot.render();
                 newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
+                newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
@@ -1627,17 +1629,28 @@ boxPlot.render();
  * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
+ * @param {Array} [config.properties.shapeRange] (Optional) The array of shape values to use for the data points.
+ * @param {Function} [config.properties.pointSize] (Optional) The LABKEY.vis.Geom.Point size.
  * @param {Function} [config.properties.pointOpacityFn] (Optional) A function to be called with the point data to
  *                  return an opacity value for that point.
  * @param {String} [config.groupBy] (optional) The data property name used to group plot lines and points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
  *                  to that function will be a row of data with access to all values for that row.
  * @param {Function} [config.properties.mouseOverFn] (Optional) The function to call on data point mouse over. The parameters to
- *                  that function will be the click event, the point data, the selection layer, and the DOM element for the point itself.
+ *                  that function will be the mouse event, the point data, the selection layer, and the DOM element for the point itself.
  * @param {Object} [config.properties.mouseOverFnScope] (Optional) The scope to use for the call to mouseOverFn.
+ * @param {Function} [config.properties.mouseOutFn] (Optional) The function to call on data point mouse out. The parameters to
+ *                  that function will be the mouse event, the point data, and the selection layer.
+ * @param {Object} [config.properties.mouseOutFnScope] (Optional) The scope to use for the call to mouseOutFn.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
  * @param {String} [config.properties.lineColor] (Optional) The color to be used for the trend line connecting data points.
+ * @param {Function} [config.properties.legendMouseOverFn] (Optional) The function to call on legend item mouse over. The parameters to
+ *                  that function will be the mouse event, legend data, and the DOM element for the legend itself.
+ * @param {Object} [config.properties.legendMouseOverFnScope] (Optional) The scope to use for the call to legendMouseOverFn.
+ * @param {Function} [config.properties.legendMouseOutFn] (Optional) The function to call on legend item mouse out. The parameters to
+ *                  that function will be the mouse event, and the legend data.
+ * @param {Object} [config.properties.legendMouseOutFnScope] (Optional) The scope to use for the call to legendMouseOutFn.
  */
 (function(){
     LABKEY.vis.TrendingLinePlotType = {
@@ -2001,21 +2014,22 @@ boxPlot.render();
             yAxisScaleOverride = 'linear';
         }
 
+        var tickMax = Math.floor(config.width / 50);
+
         config.scales = {
             color: {
                 scaleType: 'discrete',
                 range: config.properties.colorRange
             },
+            shape: {
+                scaleType: 'discrete',
+                range: config.properties.shapeRange
+            },
             x: {
                 scaleType: 'discrete',
+                tickMax: tickMax,
                 tickFormat: function(index) {
-                    // only show a max of 35 labels on the x-axis to avoid overlap
-                    if (index % Math.ceil(config.data[config.data.length-1].seqValue / 35) == 0) {
-                        return tickLabelMap[index];
-                    }
-                    else {
-                        return "";
-                    }
+                    return tickLabelMap[index];
                 },
                 tickCls: function(index) {
                     var baseTag = 'ticklabel';
@@ -2080,6 +2094,23 @@ boxPlot.render();
             }
         }
 
+        config.aes = {
+            x: 'seqValue'
+        };
+
+        if (config.properties.legendMouseOverFn) {
+            config.aes.legend = {};
+            config.aes.legend.mouseOverFn = function(data, item) {
+                config.properties.legendMouseOverFn.call(config.properties.legendMouseOverFnScope || this, data, item);
+            };
+
+            if (config.properties.legendMouseOutFn) {
+                config.aes.legend.mouseOutFn = function(data, item) {
+                    config.properties.legendMouseOutFn.call(config.properties.legendMouseOutFnScope || this, data, item);
+                };
+            }
+        }
+
         if(!config.margins) {
             config.margins = {};
         }
@@ -2100,10 +2131,6 @@ boxPlot.render();
         if(!config.margins.left) {
             config.margins.left = config.labels && config.labels.y ? 75 : 55;
         }
-
-        config.aes = {
-            x: 'seqValue'
-        };
 
         // determine the width the error bars
         if (config.properties.disableRangeDisplay) {
@@ -2186,8 +2213,8 @@ boxPlot.render();
             {
                 var pathLayerConfig = {
                     geom: new LABKEY.vis.Geom.Path({
-                        opacity: .6,
-                        size: 2,
+                        opacity: 1,
+                        size: 1,
                         dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum,
                         color: config.properties.lineColor
                     }),
@@ -2279,7 +2306,7 @@ boxPlot.render();
                 geom: new LABKEY.vis.Geom.Point({
                     position: config.properties.position,
                     opacity: config.properties.pointOpacityFn,
-                    size: 3
+                    size: config.properties.pointSize ? config.properties.pointSize : 3
                 }),
                 aes: {}
             };
@@ -2321,11 +2348,16 @@ boxPlot.render();
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 5).ease("elastic");
 
                 if (config.properties.mouseOverFn) {
-                    config.properties.mouseOverFn.call(config.properties.mouseOverFnScope || this, event, pointData, layerSel, point, valueName);
+                    config.properties.mouseOverFn.call(config.properties.mouseOverFnScope || this, event, pointData, layerSel, point, valueName, config);
                 }
             };
+
             pointLayerConfig.aes.mouseOutFn = function(event, pointData, layerSel) {
                 d3.select(event.srcElement).transition().duration(800).attr("stroke-width", 1).ease("elastic");
+
+                if (config.properties.mouseOutFn) {
+                    config.properties.mouseOutFn.call(config.properties.mouseOutFnScope || this, event, pointData, layerSel, valueName, config);
+                }
             };
 
             if (config.properties.pointIdAttr) {

@@ -255,6 +255,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
             }
         }
+        ExperimentServiceImpl.get().clearDataClassCache(getContainer());
         ExperimentServiceImpl.get().indexDataClass(this);
     }
 

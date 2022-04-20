@@ -1266,6 +1266,18 @@ public class ExperimentServiceImpl implements ExperimentService
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
     }
 
+    private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
+    {
+        Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, 1);
+        String dbSeqStr = String.valueOf(newSequence.next());
+        String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
+        return new Pair<>(lsid, dbSeqStr);
+    }
+
     private String generateGuidLSID(Container container, String lsidPrefix)
     {
         return generateLSID(container, lsidPrefix, GUID.makeGUID());
@@ -1283,9 +1295,21 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    public Pair<String, String> generateLSIDWithDBSeq(Container container, Class<? extends ExpObject> clazz)
+    {
+        return generateLSIDWithDBSeq(container, getNamespacePrefix(clazz));
+    }
+
+    @Override
     public String generateGuidLSID(Container container, DataType type)
     {
         return generateGuidLSID(container, type.getNamespacePrefix());
+    }
+
+    @Override
+    public Pair<String, String> generateLSIDWithDBSeq(Container container, DataType type)
+    {
+        return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
 
     @Override
@@ -3885,9 +3909,9 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
-    public Lsid getDataClassLsid(String name, Container container)
+    public Lsid getDataClassLsid(Container container)
     {
-        return Lsid.parse(generateLSID(container, ExpDataClass.class, name));
+        return Lsid.parse(generateLSIDWithDBSeq(container, ExpDataClass.class).first);
     }
 
     @Override
@@ -7205,7 +7229,7 @@ public class ExperimentServiceImpl implements ExperimentService
         validateDataClassName(c, u, name);
         validateDataClassOptions(c, u, options);
 
-        Lsid lsid = getDataClassLsid(name, c);
+        Lsid lsid = getDataClassLsid(c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
@@ -7293,11 +7317,27 @@ public class ExperimentServiceImpl implements ExperimentService
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
                                         GWTDomain<? extends GWTPropertyDescriptor> update)
     {
+        ValidationException errors;
+
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
+        boolean hasNameChange = false;
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
+            String newName = StringUtils.trimToNull(options.getName());
+            if (newName != null && !dataClass.getName().equals(newName))
+            {
+                hasNameChange = true;
+                dataClass.setName(newName);
+                ExpDataClass existing = getDataClass(c, u, newName);
+                if (existing != null)
+                {
+                    errors = new ValidationException();
+                    errors.addError(new SimpleValidationError("DataClass '" + newName + "' already exists."));
+                    return errors;
+                }
+            }
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
@@ -7305,18 +7345,17 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
             {
-                ValidationException errors = new ValidationException();
+                errors = new ValidationException();
                 errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                 return errors;
             }
         }
 
-        ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             dataClass.save(u);
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
 
             if (!errors.hasErrors())
             {

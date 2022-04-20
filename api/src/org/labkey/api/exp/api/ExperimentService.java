@@ -29,7 +29,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
-import org.labkey.api.exp.ExperimentRunForm;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -104,6 +103,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     // Constant used by ExpDataIterators.AliasDataIterator
     String ALIASCOLUMNALIAS = "org.labkey.experiment.ExpDataIterators$AliasDataIterator#ALIAS";
+
+    String LSID_COUNTER_DB_SEQUENCE_PREFIX = "LsidCounter-";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
@@ -470,9 +471,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
 
+    Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz);
+
     String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
 
     String generateGuidLSID(Container container, DataType type);
+
+    Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, @NotNull DataType type);
 
     DataType getDataType(String namespacePrefix);
 

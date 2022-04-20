@@ -119,6 +119,8 @@ public class XarExporter
 
     private String _xarXmlFileName = "experiment.xar.xml";
 
+    public static final String MATERIAL_PREFIX_PLACEHOLDER_SUFFIX = "sfx";
+
     /**
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
@@ -604,8 +606,6 @@ public class XarExporter
 
     public void addSampleType(ExpSampleType sampleType) throws ExperimentException
     {
-        final String PLACEHOLDER_SUFFIX = "sfx";
-
         if (sampleType == null || _sampleSetLSIDs.contains(sampleType.getLSID()))
         {
             return;
@@ -621,9 +621,9 @@ public class XarExporter
         xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
 
         // we need to temporarily fake up a full Lsid in order to relativize properly
-        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + PLACEHOLDER_SUFFIX);
-        if (materialPrefix.endsWith(PLACEHOLDER_SUFFIX))
-            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - PLACEHOLDER_SUFFIX.length());
+        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + MATERIAL_PREFIX_PLACEHOLDER_SUFFIX);
+        if (materialPrefix.endsWith(MATERIAL_PREFIX_PLACEHOLDER_SUFFIX))
+            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.length());
         xSampleSet.setMaterialLSIDPrefix(materialPrefix);
         xSampleSet.setName(sampleType.getName());
         if (sampleType.getDescription() != null)

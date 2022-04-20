@@ -564,10 +564,15 @@ public class DomainUtil
         return created;
     }
 
+    @NotNull
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    {
+        return updateDomainDescriptor(orig, update, container, user, false);
+    }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
 
@@ -592,6 +597,9 @@ public class DomainUtil
             validationException.addError(new SimpleValidationError("Unauthorized"));
             return validationException;
         }
+
+        if (updateDomainName)
+            d.setName(update.getName());
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're

@@ -26,10 +26,10 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 /**
@@ -54,24 +54,28 @@ public abstract class AbstractXarImporter
         if (declaredType != null && !ExpData.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
             // check if this is a reference to a data class
-
             result = ExperimentService.get().getDataClass(declaredType);
             if (result == null)
+                result = _xarSource.getDataClass(declaredType);
+
+            if (result == null)
                 throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' referenced for Data object.");
+
         }
         return result;
     }
 
-    protected ExpSampleTypeImpl checkMaterialCpasType(String declaredType) throws ExperimentException
+    protected ExpSampleType checkMaterialCpasType(String declaredType) throws ExperimentException
     {
-        ExpSampleTypeImpl result = null;
+        ExpSampleType result = null;
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
             result = SampleTypeServiceImpl.get().getSampleType(declaredType);
             if (result == null)
-            {
+                result = _xarSource.getSampleType(declaredType);
+
+            if (result == null)
                 throw new ExperimentException("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
-            }
         }
         return result;
     }
