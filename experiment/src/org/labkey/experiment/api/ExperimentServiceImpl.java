@@ -3880,6 +3880,18 @@ public class ExperimentServiceImpl implements ExperimentService
             filter.addCondition(FieldKey.fromParts("Container"), c);
         }
         Sort sort = new Sort("-Created");
+        List<ExpDataImpl> results = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArrayList(Data.class));
+        if (!results.isEmpty() || !canonicalURL.endsWith("/"))
+            return results;
+
+        // if canonicalURL endsWith "/", try query without trailing "/"
+        // see ExpDataImpl.setDataFileURI
+        filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), canonicalURL.substring(0, canonicalURL.length() - 1));
+        if (c != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), c);
+        }
+
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArrayList(Data.class));
     }
 
