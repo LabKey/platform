@@ -89,7 +89,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -477,6 +476,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
 
+    @Override
+    public Pair<String, String> getSampleTypeSamplePrefixLsids(Container container)
+    {
+        Pair<String, String> lsidDbSeq = ExperimentService.get().generateLSIDWithDBSeq(container, ExpSampleType.class);
+        String sampleTypeLsidStr = lsidDbSeq.first;
+        Lsid sampleTypeLsid = Lsid.parse(sampleTypeLsidStr);
+
+        String dbSeqStr = lsidDbSeq.second;
+        String samplePrefixLsid = new Lsid.LsidBuilder("Sample", "Folder-" + container.getRowId() + "." + dbSeqStr, "").toString();
+
+        return new Pair<>(sampleTypeLsid.toString(), samplePrefixLsid);
+    }
+
     /**
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
@@ -674,8 +686,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (category != null && category.length() > categoryMax)
             throw new ExperimentException("Category may not exceed " + categoryMax + " characters.");
 
-        Lsid lsid = getSampleTypeLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
+        Pair<String, String> dbSeqLsids = getSampleTypeSamplePrefixLsids(c);
+        String lsid = dbSeqLsids.first;
+        String materialPrefixLsid = dbSeqLsids.second;
+        Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
@@ -738,10 +752,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
-        source.setLSID(lsid.toString());
+        source.setLSID(lsid);
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(materialPrefixLsid);
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         if (aliquotNameExpression != null)
@@ -909,7 +923,25 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
+        ValidationException errors;
+
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
+
+        String newName = StringUtils.trimToNull(update.getName());
+        boolean hasNameChange = false;
+        if (newName != null && !st.getName().equals(newName))
+        {
+            ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
+            if (duplicateType != null)
+            {
+                errors = new ValidationException();
+                errors.addError(new SimpleValidationError("A Sample Type with name '" + newName + "' already exists."));
+                return errors;
+            }
+
+            hasNameChange = true;
+            st.setName(newName);
+        }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
@@ -929,7 +961,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
-                    ValidationException errors = new ValidationException();
+                    errors = new ValidationException();
                     errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
@@ -959,11 +991,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 st.setCategory(options.getCategory());
         }
 
-        ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
 
             if (!errors.hasErrors())
             {

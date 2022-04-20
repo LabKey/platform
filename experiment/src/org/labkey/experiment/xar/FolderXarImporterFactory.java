@@ -223,7 +223,8 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                             // get assigned to the subfolder instead of the parent container.
                             // If we were given a non-null job in FolderXarImporter.process(), job.getContainer() will
                             // return the parent container.
-                            _importContext.getContainer());
+                            _importContext.getContainer(),
+                            _importContext.getXarJobIdContext());
                 }
             }
             return _xarSource;

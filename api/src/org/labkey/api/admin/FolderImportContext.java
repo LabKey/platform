@@ -17,12 +17,15 @@ package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -32,8 +35,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 
 /**
  * User: cnathe
@@ -43,7 +50,11 @@ public class FolderImportContext extends AbstractFolderContext
 {
     private Path _folderXml;
 
+    private String _xarJobId;
+
     private final HashSet<String> _importedReports = new HashSet<>();
+
+    private static final String FOLDER_IMPORT_DB_SEQUENCE_PREFIX = "FolderImportJobCounter-";
 
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -56,6 +67,8 @@ public class FolderImportContext extends AbstractFolderContext
     {
         super(user, c, null, dataTypes, logger, root);
         _folderXml = folderXml;
+        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(c, FOLDER_IMPORT_DB_SEQUENCE_PREFIX, 0, 1);
+        _xarJobId = "Xar-" + newSequence.next();
     }
 
     public FolderImportContext(User user, Container c, FolderDocument folderDoc, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
@@ -130,6 +143,19 @@ public class FolderImportContext extends AbstractFolderContext
         {
             return null;
         }
+    }
+
+    public String getXarJobId()
+    {
+        return _xarJobId;
+    }
+
+    public Map<String, String> getXarJobIdContext()
+    {
+        return new HashMap<>()
+        {{
+            put(XAR_JOB_ID_NAME, _xarJobId);
+        }};
     }
 
     public boolean isImportedReport(ReportDescriptor d)

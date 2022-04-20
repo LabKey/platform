@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static org.labkey.experiment.XarExporter.MATERIAL_PREFIX_PLACEHOLDER_SUFFIX;
+
 /**
  * Various options for representing LSIDs when exporting XAR files.
  * User: jeckels
@@ -74,6 +76,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
 
+            String sharedFolderSuffix = "Folder-" + ContainerManager.getSharedContainer().getRowId();
+            String containerSubstitution = sharedFolderSuffix.equals(suffix) ? XarContext.SHARED_CONTAINER_ID_SUBSTITUTION : XarContext.CONTAINER_ID_SUBSTITUTION;
+
             if ("ExperimentRun".equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
@@ -82,7 +87,20 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Sample".equals(prefix) || "Material".equals(prefix))
+            else if (MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.equals(lsid.getObjectId()))
+            {
+                /*
+                 * old prefix: "xxx:Sample:123.sampleTypeName"
+                 * new prefix: "xxx:Sample:Folder-123.345" (Sample:Folder-ContainerRowId.DBSeq)
+                 * relative lsid: "xxx:Sample:Folder-yyy.xarJobId.345" (need to add xarJobId because DBSeq might not be unique in target folder)
+                 */
+                String id = "";
+                int ind = suffix.indexOf(".");
+                if (ind > 0)
+                    id = suffix.substring(ind);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
+            }
+            else if (("Sample".equals(prefix) || "Material".equals(prefix)))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
@@ -95,9 +113,13 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
-                String sharedFolderSuffix = "Folder-" + ContainerManager.getSharedContainer().getRowId();
-                String containerSubstitution = sharedFolderSuffix.equals(suffix) ? XarContext.SHARED_CONTAINER_ID_SUBSTITUTION : XarContext.CONTAINER_ID_SUBSTITUTION;
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + "", lsid.getObjectId(), lsid.getVersion());
+                String xarFileId = "";
+                if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
+                {
+                    xarFileId = ".${XarJobId}"; // DBSeq in lsid might collide in target folder, add XarJobId to guarantee uniqueness
+                }
+
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + xarFileId, lsid.getObjectId(), lsid.getVersion());
             }
 
             return lsid.toString();
