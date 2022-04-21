@@ -155,16 +155,7 @@ import java.util.zip.ZipException;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute.height;
-import static org.labkey.api.util.DOM.Attribute.href;
-import static org.labkey.api.util.DOM.Attribute.onclick;
-import static org.labkey.api.util.DOM.Attribute.onmouseout;
-import static org.labkey.api.util.DOM.Attribute.onmouseover;
-import static org.labkey.api.util.DOM.Attribute.style;
-import static org.labkey.api.util.DOM.Attribute.tabindex;
-import static org.labkey.api.util.DOM.Attribute.title;
-import static org.labkey.api.util.DOM.Attribute.valign;
-import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.Attribute.*;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
