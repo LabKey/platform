@@ -223,7 +223,7 @@ public class AuthFilter implements Filter
                 {
                     if (StringUtils.isNotBlank(csp))
                         csp = StringUtils.appendIfMissing(csp, ";");
-                    csp += "script-src 'unsafe-eval' http: https:  " + nonceDirectiveValue + " 'strict-dynamic';";
+                    csp += "script-src 'unsafe-eval' http: https:  " + nonceDirectiveValue + ";";
                 }
                 ((HttpServletResponse) response).setHeader("Content-Security-Policy", csp);
             }

@@ -828,4 +828,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         _pageConfig.addHandler(id,event,handler);
     }
+
+    protected PageConfig getPageConfig()
+    {
+        return _pageConfig;
+    }
 }

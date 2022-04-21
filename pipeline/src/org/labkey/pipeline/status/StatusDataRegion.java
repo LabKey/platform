@@ -24,6 +24,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.PageConfig;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -75,8 +77,9 @@ public class StatusDataRegion extends DataRegion
 
         String controller = SpringActionController.getControllerName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
+        PageConfig config = HttpView.currentPageConfig();
 
-        out.write("<script type=\"text/javascript\">\n" +
+        out.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
                         "if (!LABKEY.pipeline.statusUpdateInstance)\n" +

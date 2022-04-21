@@ -135,6 +135,7 @@
 
         Map<String, List<Group>> accessGroups = row.getAccessGroups();
         Set<String> roleNames = accessGroups.keySet();
+        getPageConfig().addHandlerForQuerySelector("A.roleToggleLink", "click", "return LABKEY.Utils.toggleLink(this, false);");
         if (roleNames.size() > 0)
         {
 %>
@@ -143,7 +144,7 @@
                     <tbody>
                     <tr class="labkey-nav-tree-row labkey-header" >
                         <td class="labkey-nav-tree-text" align="left" style="border:0 none;">
-                            <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
+                            <a style="color:#000000;" class="roleToggleLink" href="#">
                                 <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
                                 <span><%=h(row.getAccess() + (inherited ? "*" : ""))%></span>
                             </a>

@@ -42,24 +42,22 @@
             document.getElementById('provider').value = LABKEY.ActionURL.getParameter('provider');
         }
     });
-    var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
-    var permissionLink_show = '<a href="#blank" class="labkey-button" onclick="showUserAccess();"><span>permissions</span><\/a>';
 
     function enableText()
     {
-        var checkBoxElem = document.getElementById("cloneUserCheck");
-        var textElem = document.getElementById("cloneUser");
+        const checkBoxElem = document.getElementById("cloneUserCheck");
+        const textElem = document.getElementById("cloneUser");
 
         if (checkBoxElem != null && textElem != null)
         {
-            var checked = checkBoxElem.checked;
+            const checked = checkBoxElem.checked;
 
             textElem.disabled = !checked;
             textElem.value = "";
 
-            var permissionElem = document.getElementById("permissions");
-            if (permissionElem != null)
-                permissionElem.innerHTML = checked ? permissionLink_show : permissionLink_hide;
+            const showUserAccessElem = document.getElementById("showUserAccessLink");
+            if (showUserAccessElem != null)
+                showUserAccessElem.style.display = checked ? 'inline' : 'none';
         }
     }
 
@@ -114,8 +112,12 @@
                 <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
         <tr>
-            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:<span id="auto-completion-div"></span>
-            <span id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></span></td>
+            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck">Clone permissions from user:<span id="auto-completion-div"></span>
+            <span id=permissions><a id="showUserAccessLink" href="#" class="labkey-button" style="display:none">permissions</a></span></td>
+            <%
+                addHandler("cloneUserCheck", "click", "enableText();");
+                addHandler("showUserAccessLink", "click", "showUserAccess();");
+            %>
         </tr>
         <tr><td>
             <br><input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail"><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%></label><br><br>
@@ -146,4 +148,6 @@
     %>
 
 </labkey:form>
-<script for=window event=onload type="text/javascript">try {document.getElementById("newUsers").focus();} catch(x){}</script>
+<%
+    getPageConfig().setFocusId("newusers");
+%>
