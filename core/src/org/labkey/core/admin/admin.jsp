@@ -37,6 +37,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="java.time.temporal.ChronoUnit" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -87,7 +88,7 @@
 
     LocalDateTime serverTime = LocalDateTime.now();
     LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
-    long duration = Duration.between(serverTime, databaseTime).toSeconds();
+    long duration = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
 
     // Warn if greater than this many seconds
     long warningSeconds = 10;
