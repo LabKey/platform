@@ -64,7 +64,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div class="x4-boundlist-item" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
+                        '<div class="x4-item-disabled" style="color: #999999; padding: 3px 20px;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
                     '</tpl>',
                 '</tpl>')
         });
