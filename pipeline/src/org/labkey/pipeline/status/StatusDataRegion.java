@@ -79,7 +79,7 @@ public class StatusDataRegion extends DataRegion
         String action = SpringActionController.getActionName(_apiAction);
         PageConfig config = HttpView.currentPageConfig();
 
-        out.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+        out.write("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(config.getScriptNonce()) + "\">" +
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
                         "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
