@@ -90,10 +90,10 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     {name: 'displayName', type: 'string'},
                     {name: 'concatenatedName', type: 'string',
                         convert : function(v, record) {
-                            // concatenate both displayName and email so they can both be used
+                            // concatenate displayName and email so they can both be used
                             // to search for users
-                            if (record && record.raw && record.raw.email && record.raw.displayName)
-                                return record.raw.email + ' ' + record.raw.displayName;
+                            if (record && record.raw && record.raw.active && record.raw.email && record.raw.displayName)
+                                return record.raw.email + ' (' + record.raw.displayName + ')';
                             return '';
                         }
                     }
