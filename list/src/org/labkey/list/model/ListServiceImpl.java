@@ -67,7 +67,7 @@ public class ListServiceImpl implements ListService
     @Override
     public Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility)
     {
-        return getLists(container, user, checkVisibility, true, true);
+        return getLists(container, user, checkVisibility, true, false);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class ListServiceImpl implements ListService
     @Nullable
     public ListDefinition getList(Container container, String name)
     {
-        return getList(container, name, true);
+        return getList(container, name, false);
     }
 
     @Override

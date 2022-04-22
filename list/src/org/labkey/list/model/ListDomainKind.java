@@ -496,7 +496,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
-                else if (ListService.get().getList(container, update.getName(), false) != null)
+                else if (ListService.get().getList(container, update.getName()) != null)
                 {
                     return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }
