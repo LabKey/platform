@@ -79,7 +79,6 @@ public class IssueServiceImpl implements IssueService
                         {
                             duplicateOf = IssueManager.getIssue(null, user, issueObject.getDuplicate());
                         }
-                        issueObject.beforeResolve(container, user);
                         issueObject.resolve(user);
                     }
                     case reopen -> issueObject.open(container, user);
