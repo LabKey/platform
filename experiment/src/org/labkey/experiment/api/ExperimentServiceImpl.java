@@ -182,6 +182,7 @@ import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
@@ -1746,6 +1747,10 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException
     {
+        if (!source.getXarContext().getSubstitutions().containsKey(XAR_JOB_ID_NAME) && pipelineJob != null)
+        {
+            source.getXarContext().addSubstitution(XAR_JOB_ID_NAME, pipelineJob.getJobGUID());
+        }
         XarReader reader = new XarReader(source, pipelineJob);
         reader.setReloadExistingRuns(options.isReplaceExistingRuns());
         reader.setUseOriginalFileUrl(options.isUseOriginalDataFileUrl());
