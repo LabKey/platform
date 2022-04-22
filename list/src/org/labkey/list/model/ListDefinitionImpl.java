@@ -713,6 +713,11 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    public ActionURL urlImport(Container c)
+    {
+        return urlForName(ListController.UploadListItemsAction.class, c);
+    }
+
     @Override
     public ActionURL urlShowDefinition()
     {
@@ -722,7 +727,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public ActionURL urlShowData(Container c)
     {
-        return urlFor(ListController.GridAction.class, c);
+        return urlForName(ListController.GridAction.class, c);
     }
 
     @Override
@@ -752,7 +757,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public ActionURL urlDetails(@Nullable Object pk, Container c)
     {
-        ActionURL url = urlFor(ListController.DetailsAction.class, c);
+        ActionURL url = urlForName(ListController.DetailsAction.class, c);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
 
         if (null != pk)
@@ -784,6 +789,13 @@ public class ListDefinitionImpl implements ListDefinition
     {
         ActionURL ret = new ActionURL(actionClass, c);
         ret.addParameter("listId", getListId());
+        return ret;
+    }
+
+    private ActionURL urlForName(Class<? extends Controller> actionClass, Container c)
+    {
+        ActionURL ret = new ActionURL(actionClass, c);
+        ret.addParameter("name", getName());
         return ret;
     }
 

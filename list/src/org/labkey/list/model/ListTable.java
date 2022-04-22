@@ -314,8 +314,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             setImportURL(LINK_DISABLER);
         else
         {
-            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class, _userSchema.getContainer());
-            setImportURL(new DetailsURL(importURL));
+            setImportURL(new DetailsURL(listDef.urlImport(_userSchema.getContainer())));
         }
 
         if (!listDef.getAllowDelete() || !_canAccessPhi)
