@@ -153,13 +153,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public int compareTo(@NotNull Module m)
-    {
-        //sort by name--core module will override to ensure first in sort
-        return getName().compareToIgnoreCase(m.getName());
-    }
-
-    @Override
     final public void initialize()
     {
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
@@ -1083,7 +1076,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url)
             throws ServletException, IOException
     {
-        int stackSize = -1;
         Controller controller = getController(request, url.getController());
 
         if (controller == null)
@@ -1094,14 +1086,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         ViewContext rootContext = new ViewContext(request, response, url);
 
-        try
+        try (var ignored =HttpView.initForRequest(rootContext, request, response))
         {
-            stackSize = HttpView.getStackSize();
-
             response.setContentType("text/html;charset=UTF-8");
             ResponseHelper.setNoCache(response);
 
-            HttpView.initForRequest(rootContext, request, response);
             assert rootContext == HttpView.currentContext();
 
             // Store the original URL in case we need to redirect for authentication
@@ -1126,11 +1115,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             _log.error("error", x);
             throw new ServletException(x);
-        }
-        finally
-        {
-            assert HttpView.getStackSize() == stackSize + 1;
-            HttpView.resetStackSize(stackSize);
         }
     }
 

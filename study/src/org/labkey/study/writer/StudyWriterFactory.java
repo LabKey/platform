@@ -15,25 +15,24 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.admin.AbstractFolderContext;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 
 public class StudyWriterFactory implements FolderWriterFactory
 {
@@ -46,7 +45,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         return new StudyFolderWriter();
     }
 
-    public class StudyFolderWriter extends BaseFolderWriter
+    public static class StudyFolderWriter extends BaseFolderWriter
     {
         @Override
         public String getDataType()
@@ -76,18 +75,18 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+        public boolean selectedByDefault(ExportType type)
         {
-            return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type; 
+            return ExportType.ALL == type || ExportType.STUDY == type;
         }
 
         @Override
-        public void initialize(ImportContext<FolderDocument.Folder> ctx)
+        public void initialize(FolderExportContext ctx)
         {
             super.initialize(ctx);
 
             Container c = ctx.getContainer();
-            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
 
             if (null != study && ctx.getContext(StudyExportContext.class) == null)
             {
@@ -99,7 +98,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
+        public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
         {
             StudyExportContext exportCtx = ctx.getContext(StudyExportContext.class);
 
@@ -109,15 +108,15 @@ public class StudyWriterFactory implements FolderWriterFactory
                 VirtualFile studyDir = vf.getDir(DEFAULT_DIRECTORY);
 
                 StudyWriter writer = new StudyWriter();
-                StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer()); // TODO: Shouldn't the StudyExportContext hold onto the study?!?
+                StudyImpl study = StudyManager.getInstance().getStudy(c);
                 writer.write(study, exportCtx, studyDir);
             }
         }
 
         @Override
-        public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
+        public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
         {
-            List<Writer> children = new ArrayList<>();
+            List<Writer<?, ?>> children = new ArrayList<>();
             for (SimpleStudyWriter writer : StudySerializationRegistry.get().getSimpleStudyWriters())
             {
                 if (!forTemplate || writer.includeWithTemplate())

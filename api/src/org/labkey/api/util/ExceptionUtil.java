@@ -583,17 +583,17 @@ public class ExceptionUtil
 
     public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, null, null);
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, @Nullable PageConfig pageConfig)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure, ViewContext context, @Nullable PageConfig pageConfig)
     {
-        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, pageConfig);
+        return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG, context, pageConfig);
     }
 
     static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
-        SearchService ss, Logger log, @Nullable PageConfig pageConfig)
+        SearchService ss, Logger log, ViewContext context, @Nullable PageConfig pageConfig)
     {
         try
         {
@@ -632,10 +632,10 @@ public class ExceptionUtil
         }
 
         // Do redirects before response.reset() otherwise we'll lose cookies (e.g., login page)
-        if (ex instanceof RedirectException)
+        if (ex instanceof RedirectException rex)
         {
-            String url = ((RedirectException) ex).getURL();
-            doErrorRedirect(response, url);
+            String url = rex.getURL();
+            doErrorRedirect(response, url, rex.getHttpStatusCode());
             return null;
         }
 
@@ -855,13 +855,13 @@ public class ExceptionUtil
             response.setStatus(responseStatus);
             for (Map.Entry<String, String> entry : headers.entrySet())
                 response.addHeader(entry.getKey(), entry.getValue());
-            renderErrorPage(ex, responseStatus, message, request, response, pageConfig, errorType, log, startupFailure);
+            renderErrorPage(ex, responseStatus, message, request, response, context, pageConfig, errorType, log, startupFailure);
         }
 
         return null;
     }
 
-    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig originalConfig, ErrorRenderer.ErrorType errorType, Logger log, boolean startupFailure)
+    private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, ViewContext context, PageConfig originalConfig, ErrorRenderer.ErrorType errorType, Logger log, boolean startupFailure)
     {
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
@@ -875,24 +875,6 @@ public class ExceptionUtil
             errorType = ErrorRenderer.ErrorType.notFound;
         }
 
-        // Setup a fresh PageConfig, as we don't want to pull in ClientDependencies or other config that might have
-        // been initialized from the "real" page that we ultimately didn't render due to an error
-        PageConfig pageConfig = new PageConfig();
-
-        // Issue 41891: do not add google analytics on error pages.
-        pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
-
-        if (originalConfig == null)
-        {
-            pageConfig.setTemplate(PageConfig.Template.Home);
-        }
-        else
-        {
-            pageConfig.setTemplate(originalConfig.getTemplate());
-            pageConfig.setFrameOption(originalConfig.getFrameOption());
-        }
-
-        ViewContext context = HttpView.currentContext();
         if (context == null)
         {
             // context is null in cases of garbage urls, this helps in rendering error page in App template
@@ -901,46 +883,66 @@ public class ExceptionUtil
             context.setResponse(response);
         }
 
-        HttpView<?> errorView;
-        try
+        // Setup a fresh PageConfig, as we don't want to pull in ClientDependencies or other config that might have
+        // been initialized from the "real" page that we ultimately didn't render due to an error
+        try (var ignored = HttpView.initForRequest(context, request, response))
         {
-            renderer.setErrorType(errorType);
+            PageConfig pageConfig = HttpView.currentPageConfig();
 
-            Path originalContainerPath = (Path)request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
+            // Issue 41891: do not add google analytics on error pages.
+            pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
-            // Issue 43387 - don't render the full header if the container referenced in the request isn't the same
-            if (ex instanceof UnauthorizedException && (context.getContainer() == null || !context.getContainer().getParsedPath().equals(originalContainerPath)))
+            if (originalConfig == null)
             {
-                renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, null);
+                pageConfig.setTemplate(PageConfig.Template.Home);
             }
             else
             {
-                if (HttpView.hasCurrentView())
+                pageConfig.setTemplate(originalConfig.getTemplate());
+                pageConfig.setFrameOption(originalConfig.getFrameOption());
+            }
+
+            HttpView<?> errorView;
+            try
+            {
+                renderer.setErrorType(errorType);
+
+                Path originalContainerPath = (Path) request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
+
+                // Issue 43387 - don't render the full header if the container referenced in the request isn't the same
+                if (ex instanceof UnauthorizedException && (context.getContainer() == null || !context.getContainer().getParsedPath().equals(originalContainerPath)))
                 {
-                    errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                    renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, null);
                 }
                 else
                 {
-                    // context can be null for configuration exceptions depending on how far server got through initialization
-                    errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                    if (HttpView.hasCurrentView())
+                    {
+                        errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                    }
+                    else
+                    {
+                        // context can be null for configuration exceptions depending on how far server got through initialization
+                        errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                    }
+
+                    addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+                }
+            }
+            catch (ConfigurationException ce)
+            {
+                throw ce;
+            }
+            catch (Exception e)
+            {
+                // non config exceptions like SqlScriptException that occur during startup
+                if (null != ModuleLoader.getInstance().getStartupFailure())
+                {
+                    throw new ConfigurationException(ex.getMessage(), ex);
                 }
 
-                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+                renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, e);
             }
-        }
-        catch (ConfigurationException ce)
-        {
-            throw ce;
-        }
-        catch (Exception e)
-        {
-            // non config exceptions like SqlScriptException that occur during startup
-            if (null != ModuleLoader.getInstance().getStartupFailure())
-            {
-                throw new ConfigurationException(ex.getMessage(), ex);
-            }
-
-            renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, e);
         }
     }
 
@@ -1000,10 +1002,16 @@ public class ExceptionUtil
         errorView.getView().render(errorView.getModel(), request, response);
     }
 
-
+    // Temporary redirect
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {
-        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        doErrorRedirect(response, url, HttpServletResponse.SC_MOVED_TEMPORARILY);
+    }
+
+    // Pass in HTTP status code to designate temporary vs. permanent redirect
+    private static void doErrorRedirect(HttpServletResponse response, String url, int httpStatusCode)
+    {
+        response.setStatus(httpStatusCode);
         response.setDateHeader("Expires", 0);
         response.setHeader("Location", url);
         response.setContentType("text/html; charset=UTF-8");
@@ -1024,8 +1032,6 @@ public class ExceptionUtil
             LOG.error("doErrorRedirect", x);
         }
     }
-
-
 
     public enum ExceptionInfo
     {
@@ -1189,7 +1195,7 @@ public class ExceptionUtil
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
-            ActionURL url = ExceptionUtil.handleException(req, res, ex, null, false, dummySearch, dummyLog, null);
+            ActionURL url = ExceptionUtil.handleException(req, res, ex, null, false, dummySearch, dummyLog, null, null);
             ExceptionResponse ret = new ExceptionResponse();
             ret.redirect = url;
             ret.response = res;

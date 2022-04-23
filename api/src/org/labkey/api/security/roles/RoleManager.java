@@ -121,6 +121,7 @@ public class RoleManager
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new PlatformDeveloperRole(), false);
+        registerRole(new ProjectCreatorRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)

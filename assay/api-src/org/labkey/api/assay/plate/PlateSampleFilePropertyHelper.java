@@ -16,6 +16,11 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayDataCollector;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.actions.PlateUploadForm;
+import org.labkey.api.assay.nab.NabUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
@@ -23,7 +28,6 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.assay.nab.NabUrls;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -31,10 +35,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.actions.PlateUploadForm;
-import org.labkey.api.assay.AssayDataCollector;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.InsertView;
@@ -213,11 +213,9 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             return null;
 
         Map<String, Map<DomainProperty, String>> allProperties = new HashMap<>();
-        try
+        try (DataLoader loader = DataLoaderService.get().createLoader(metadataFile, null, true, null, ExcelLoader.FILE_TYPE))
         {
             Map<String, WellGroupTemplate> sampleGroupNames = getSampleWellGroupNameMap();
-
-            DataLoader loader = DataLoaderService.get().createLoader(metadataFile, null, true, null, ExcelLoader.FILE_TYPE);
 
             boolean hasSampleNameCol = false;
             ColumnDescriptor[] columns = loader.getColumns();

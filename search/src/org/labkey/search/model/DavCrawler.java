@@ -110,7 +110,7 @@ public class DavCrawler implements ShutdownListener
         //long length;
     }
 
-    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(1000, CacheManager.WEEK,"crawler indexing errors");
+    private static final Cache<Path, ResourceInfo> errors = CacheManager.getCache(1000, CacheManager.WEEK, "Crawler indexing errors");
 
 
     // to make testing easier, break out the interface for persisting crawl state
@@ -230,7 +230,8 @@ public class DavCrawler implements ShutdownListener
         if (null != start)
         {
             _log.debug("START CONTINUOUS " + start.toString());
-            _paths.updatePath(start, null, nextCrawl, true);
+            // make sure path exists, don't update if it already exists.
+            _paths.insertPath(start, nextCrawl);
         }
 
         pingCrawler();
@@ -292,6 +293,8 @@ public class DavCrawler implements ShutdownListener
             // CONSIDER: delete previously indexed resources in child containers as well
             if (null == _directory || !_directory.isCollection() || !_directory.shouldIndex() || skipContainer(_directory))
             {
+                if (Path.rootPath.equals(_path))
+                    return;
                 if (_path.startsWith(getResolver().getRootPath()))
                     _paths.deletePath(_path);
                 return;
@@ -563,7 +566,8 @@ public class DavCrawler implements ShutdownListener
                 Date nextCrawl = e.getValue().second;
 
                 _log.debug("add to queue: " + path.toString());
-                crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
+                if (!Path.rootPath.equals(path))
+                    crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
             }
         }
         return crawlQueue.isEmpty() ? null : crawlQueue.removeFirst();

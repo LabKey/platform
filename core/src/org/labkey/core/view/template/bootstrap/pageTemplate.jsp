@@ -33,12 +33,6 @@
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
-
-    String onLoad = "";
-    if (StringUtils.isNotEmpty(model.getFocus()))
-        onLoad += "(document." + model.getFocus() + "?document." + model.getFocus() + ".focus():null);";
-    if (model.getShowPrintDialog())
-        onLoad += "window.print(); ";
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,9 +63,9 @@
                %><%=text(script)%><%
            }
        }
-    %>
+%>
 </head>
-<body onload="<%=h(onLoad)%>" class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
+<body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
@@ -96,38 +90,18 @@
     <% me.include(me.getView("footer"), out); %>
     </div>
 </footer>
-<% } %>
-<%
-    String anchor = null;
-    if (null != url)
-    {
-        anchor = model.getAnchor(url);
-    }
-    if (null != anchor)
-    {
-%>
-<script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script>
-<%
-    }
-%>
-<script type="text/javascript">
+<% }
+if (null != me.getViewContext().getContainer()) {
+%><a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a><%
+}
+%><!-- <%= h(request.getHeader("User-Agent")) %> -->
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.loadScripts();
-    LABKEY.showNavTrail();
-
-    // for any non-app LKS page, we want to opt-in to the standard session invalid handling
-    <% if (!me.isAppTemplate()) { %>
-        if (LABKEY.WebSocket) LABKEY.WebSocket.initWebSocket();
-    <% } %>
+    LABKEY.showNavTrail();<%
+    if (!me.isAppTemplate()) { %>
+    if (LABKEY.WebSocket) LABKEY.WebSocket.initWebSocket();
+<%  }
+    model.endOfBodyScript(out); %>
 </script>
-<!-- <%= h(request.getHeader("User-Agent")) %> -->
-<%
-    // container is null for notfound pages
-    if (null != me.getViewContext().getContainer())
-    {
-%>
-        <a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
-<%
-    }
-%>
 </body>
 </html>

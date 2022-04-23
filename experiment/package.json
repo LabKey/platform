@@ -12,10 +12,9 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.132.1"
+    "@labkey/components": "2.156.0"
   },
   "devDependencies": {
-    "@labkey/build": "5.0.0",
-    "resolve-url-loader": "3.1.2"
+    "@labkey/build": "6.0.0"
   }
 }

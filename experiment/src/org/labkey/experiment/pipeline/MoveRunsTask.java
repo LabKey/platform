@@ -208,14 +208,6 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         }
 
         @Override
-        public File getRoot()
-        {
-            if (FileUtil.hasCloudScheme(_root))
-                throw new RuntimeException("Root is in cloud.");
-            return getRootPath().toFile();
-        }
-
-        @Override
         public Path getRootPath()
         {
             return FileUtil.stringToPath(_sourceContainer, _root);
@@ -244,9 +236,9 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         }
 
         @Override
-        public File getLogFile()
+        public Path getLogFilePath()
         {
-            return _logFile;
+            return _logFile.toPath();
         }
 
         public String toString()

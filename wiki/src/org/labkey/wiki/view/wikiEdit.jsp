@@ -42,11 +42,12 @@
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
+    final boolean existingWiki = null != model.getEntityId();
     final String ID_PREFIX = "wiki-input-";
     final HtmlString H_ID_PREFIX = h("wiki-input-");
     String sep;
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY._wiki.setProps({
         entityId: <%=q(model.getEntityId())%>,
         rowId: <%= model.getRowId() %>,
@@ -120,9 +121,9 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name * <%= helpPopup("Name", "This field is required") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=H_ID_PREFIX%>name">Name<%=text(existingWiki ? helpPopup("Name", "Wiki pages can be renamed on the Manage page").toString() : " * " + helpPopup("Name", "This field is required"))%></label></td>
                     <td width="99%">
-                        <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"/>
+                        <input type="text" name="name" id="<%=H_ID_PREFIX%>name" size="80" maxlength="255"<%=text(existingWiki ? " class=\"labkey-form-label\" style=\"text-align:left;padding:1px 2px;\" readonly=\"readonly\"" : "")%>/>
                     </td>
                 </tr>
                 <tr>
@@ -184,7 +185,7 @@
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
                                 <labkey:form action="">
                                     <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=H_ID_PREFIX%>body" name="body"></textarea>
-                                    <script type="text/javascript">LABKEY.Utils.tabInputHandler('#<%=H_ID_PREFIX%>body');</script>
+                                    <script type="text/javascript" nonce="<%=getScriptNonce()%>">LABKEY.Utils.tabInputHandler('#<%=H_ID_PREFIX%>body');</script>
                                 </labkey:form>
                             </div>
                         </div>

@@ -128,6 +128,7 @@ import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -169,6 +170,7 @@ import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SecurityGroupImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
+import org.labkey.core.admin.logger.LoggingTestCase;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationServiceImpl;
 import org.labkey.core.admin.sql.SqlScriptController;
@@ -264,7 +266,7 @@ import java.util.stream.Collectors;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = LogManager.getLogger(CoreModule.class);
+    private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
 
     static
     {
@@ -276,14 +278,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
-    }
-
-    @Override
-    public int compareTo(@NotNull Module m)
-    {
-        //core module always sorts first
-        // TODO: Nice try, but this doesn't work consistently, since no one told DefaultModule.compareTo() that core is special -- fix this or remove the override
-        return (m instanceof CoreModule) ? 0 : -1;
     }
 
     @Override
@@ -388,6 +382,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
                         "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
                         "search to find the other select values.", false);
+        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
+                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -583,7 +579,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "();");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -1094,6 +1090,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             LoggerController.TestCase.class,
+            LoggingTestCase.class,
             LoginController.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,

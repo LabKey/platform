@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -65,7 +65,7 @@ public class SecurityPolicyManager
 {
     private static final Logger logger = LogManager.getLogger(SecurityPolicyManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "SecurityPolicies");
+    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "Security policies");
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
@@ -355,7 +355,7 @@ public class SecurityPolicyManager
         }
     }
 
-    public static void importRoleAssignments(ImportContext ctx, MutableSecurityPolicy policy, RoleAssignmentsType assignments)
+    public static void importRoleAssignments(FolderImportContext ctx, MutableSecurityPolicy policy, RoleAssignmentsType assignments)
     {
         for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
         {

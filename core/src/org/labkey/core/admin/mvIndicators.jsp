@@ -150,7 +150,7 @@
     </table>
     <%= button("Save").submit(true).onClick("return validate();") %>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var maxRowId = <%=rowId%>;
 

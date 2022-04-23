@@ -46,7 +46,7 @@
     JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getUser(), bean.objectId);
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).getJavaScriptFragment(2) %>;
 LABKEY.page.result = <%= result.getJavaScriptFragment(2) %>;

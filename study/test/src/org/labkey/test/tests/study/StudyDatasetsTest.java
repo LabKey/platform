@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
-import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.ext4.Window;
@@ -70,18 +68,19 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     private static final String TIME_CHART_REPORT_NAME = "Time Chart: Body Temp + Pulse For Group 2";
     private static final String SCATTER_PLOT_REPORT_NAME = "Scatter: Systolic vs Diastolic";
     private static final String PTID_REPORT_NAME = "Mouse Report: 2 Dem Vars + 3 Other Vars";
-    private static Map<String, String> EXPECTED_REPORTS = new HashMap<>();
-    private static Map<String, String> EXPECTED_CUSTOM_VIEWS = new HashMap<>();
+    private static final Map<String, String> EXPECTED_REPORTS = new HashMap<>();
+    private static final Map<String, String> EXPECTED_CUSTOM_VIEWS = new HashMap<>();
     private static final String DATASET_HEADER = "mouseId\tsequenceNum\tXTest\tYTest\tZTest\n";
     private static final String DATASET_B_DATA =
-            "a1\t1\tx1\ty1\tz1\n" +
-            "a2\t2\tx2\ty2\tz2\n" +
-            "a3\t3\tx3\ty3\tz3\n" +
-            "a4\t4\tx4\ty4\tz4\n" +
-            "a5\t5\tx5\ty5\tz5\n" +
-            "a6\t6\tx6\ty6\tz6\n";
-    private static final String DATASET_B_MERGE =
-            "a4\t4\tx4_merged\ty4_merged\tz4_merged\n";
+        """
+        a1\t1\tx1\ty1\tz1
+        a2\t2\tx2\ty2\tz2
+        a3\t3\tx3\ty3\tz3
+        a4\t4\tx4\ty4\tz4
+        a5\t5\tx5\ty5\tz5
+        a6\t6\tx6\ty6\tz6
+        """;
+    private static final String DATASET_B_MERGE = "a4\t4\tx4_merged\ty4_merged\tz4_merged\n";
 
     @Override
     protected BrowserType bestBrowser()
@@ -168,9 +167,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         final String mySubjectId = "MySubjectId";
         final String subjectIdDataset = "SubjectIdTest";
 
-        // Check the number of server errors.
-        int errorCountBefore = getServerErrorCount();
-
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
         waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
@@ -189,7 +185,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         fieldsPanel.removeField(subjectName);
         fieldsPanel.manuallyDefineFields(mySubjectId);
         designerPage.clickSave();
-        checkExpectedErrors(errorCountBefore + 2);
 
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
@@ -221,12 +216,12 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     protected void renameDataset(String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
         DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
-                .selectDatasetByName(orgName)
-                .clickEditDefinition();
+            .selectDatasetByName(orgName)
+            .clickEditDefinition();
 
         editDatasetPage
-                .setName(newName)
-                .setDatasetLabel(newLabel);
+            .setName(newName)
+            .setDatasetLabel(newLabel);
 
         for (String fieldName : fieldNames)
         {
@@ -257,8 +252,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     protected void importDatasetData(String datasetName, String header, String tsv, boolean checkMergeOption, String msg)
     {
         _studyHelper.goToManageDatasets()
-                .selectDatasetByName(datasetName)
-                .clickViewData();
+            .selectDatasetByName(datasetName)
+            .clickViewData();
         waitForText("All data");
         new DataRegionTable("Dataset", getDriver()).clickImportBulkData();
         waitForText("Copy/paste text");
@@ -283,13 +278,13 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     protected void deleteFields(String name)
     {
         DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
-                .selectDatasetByName(name)
-                .clickEditDefinition();
+            .selectDatasetByName(name)
+            .clickEditDefinition();
 
         editDatasetPage.getFieldsPanel()
-                .getField("ZTest").clickRemoveField(true);
+            .getField("ZTest").clickRemoveField(true);
         editDatasetPage.getFieldsPanel()
-                .getField("YTest").clickRemoveField(true);
+            .getField("YTest").clickRemoveField(true);
 
         List<String> remainingFields = editDatasetPage.getFieldsPanel().fieldNames();
         assertEquals(Arrays.asList("XTest"), remainingFields);
@@ -300,9 +295,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void checkFieldsPresent(String name, String... items)
     {
-        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
-                .selectDatasetByName(name)
-                .clickEditDefinition();
+        _studyHelper.goToManageDatasets()
+            .selectDatasetByName(name)
+            .clickEditDefinition();
 
         for (String item : items)
         {
@@ -315,8 +310,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     {
         navigateToFolder(getProjectName(), getFolderName());
         _studyHelper.goToManageDatasets()
-                .selectDatasetByName(name)
-                .clickViewData();
+            .selectDatasetByName(name)
+            .clickViewData();
         waitForText(items);
     }
 
@@ -436,9 +431,9 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertFalse("Facet panel failed to reflect opposite filter", facetPanel.getGroupCheckbox(GROUP2A).isChecked());
     }
 
-    // in 13.2 Sprint 1 we changed reports and views so that they are associated with query name instead of label (i.e. dataset name instead of label)
-    // there is also a migration step that happens when importing study archives with version < 13.11 to fixup these report/view references
-    // this method verifies that migration on import for a handful of reports and views
+    // This used to test 13.2 "fixup" code where imported reports & views attached to dataset labels were migrated to
+    // the corresponding name. In 22.7, this migration code was removed and the reports in test folder archives were
+    // updated to modern standards. But this is still a reasonable test case to ensure report import acts as expected.
     @LogMethod
     private void verifyReportAndViewDatasetReferences()
     {

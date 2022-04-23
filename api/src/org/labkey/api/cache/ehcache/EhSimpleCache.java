@@ -107,13 +107,25 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public int getLimit()
     {
-        return _cache.getCacheConfiguration().getMaxElementsInMemory();
+        return (int)_cache.getCacheConfiguration().getMaxEntriesLocalHeap();
     }
 
     @Override
     public int size()
     {
         return (int)_cache.getStatistics().getObjectCount();
+    }
+
+    @Override
+    public int getExpirations()
+    {
+        return (int)_cache.getLiveCacheStatistics().getExpiredCount();
+    }
+
+    @Override
+    public int getEvictions()
+    {
+        return (int)_cache.getStatistics().getEvictionCount();
     }
 
     @Override

@@ -123,7 +123,7 @@ This study was created from a vaccine study protocol with the following descript
         ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
         editMetadataURL.addReturnURL(getActionURL());
     %>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="<%=getScriptNonce()%>">
         LABKEY.requiresCss("editInPlaceElement.css");
     </script>
     <table width="100%">

@@ -136,7 +136,7 @@ public class DomainUtil
             Container lookupContainer = property.getLookup().getContainer();
             if (lookupContainer == null)
                 lookupContainer = property.getContainer();
-            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaName());
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaKey());
             if (schema != null)
             {
                 TableInfo table = schema.getTable(property.getLookup().getQueryName());
@@ -298,7 +298,7 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
-        DomainKind kind = dd.getDomainKind();
+        DomainKind<?> kind = dd.getDomainKind();
         if (kind != null)
         {
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
@@ -407,7 +407,9 @@ public class DomainUtil
         {
             gwtProp.setLookupContainer(prop.getLookup().getContainer() == null ? null : prop.getLookup().getContainer().getPath());
             gwtProp.setLookupQuery(prop.getLookup().getQueryName());
-            gwtProp.setLookupSchema(prop.getLookup().getSchemaName());
+            var key = prop.getLookup().getSchemaKey();
+            if (null != key)
+               gwtProp.setLookupSchema(key.toString());
         }
         return gwtProp;
     }
@@ -562,10 +564,15 @@ public class DomainUtil
         return created;
     }
 
+    @NotNull
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    {
+        return updateDomainDescriptor(orig, update, container, user, false);
+    }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
 
@@ -590,6 +597,9 @@ public class DomainUtil
             validationException.addError(new SimpleValidationError("Unauthorized"));
             return validationException;
         }
+
+        if (updateDomainName)
+            d.setName(update.getName());
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're

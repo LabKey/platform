@@ -27,7 +27,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;

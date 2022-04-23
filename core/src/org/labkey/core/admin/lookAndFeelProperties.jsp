@@ -365,7 +365,7 @@
 </tr>
 </table>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var _form = new LABKEY.Form({ formElement: 'form-preferences'});
 
     function confirmReset()

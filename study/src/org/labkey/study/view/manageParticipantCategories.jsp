@@ -53,7 +53,7 @@
     Use this page to define a group and add <%= h(subjectNounPlural.toLowerCase()) %> to it.</p>
 <div id="participantCategoriesGrid"></div>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
         Ext4.QuickTips.init();

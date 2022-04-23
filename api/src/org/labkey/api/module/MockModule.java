@@ -73,12 +73,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public int compareTo(@NotNull Module m)
-    {
-        return (m instanceof MockModule) ? 0 : 1;
-    }
-
-    @Override
     public void initialize()
     {
     }

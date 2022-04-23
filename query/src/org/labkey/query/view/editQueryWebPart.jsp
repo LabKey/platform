@@ -39,7 +39,7 @@
     String renderId = "edit-query-" + getRequestScopedUID();
 %>
 <div id="<%=h(renderId)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
 
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});

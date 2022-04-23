@@ -167,6 +167,19 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return ExpSchema.DataClassCategoryType.media.name().equalsIgnoreCase(getCategory());
     }
 
+    @Override
+    public boolean isRegistry()
+    {
+        return ExpSchema.DataClassCategoryType.registry.name().equalsIgnoreCase(getCategory());
+    }
+
+    @Override
+    public boolean isSource()
+    {
+        return ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(getCategory());
+    }
+
+
     @Nullable
     @Override
     public ExpSampleType getSampleType()
@@ -242,6 +255,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
             }
         }
+        ExperimentServiceImpl.get().clearDataClassCache(getContainer());
         ExperimentServiceImpl.get().indexDataClass(this);
     }
 

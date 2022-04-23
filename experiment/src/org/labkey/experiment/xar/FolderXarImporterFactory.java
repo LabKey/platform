@@ -15,19 +15,17 @@
  */
 package org.labkey.experiment.xar;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.CompressedXarSource;
+import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NotFoundException;
@@ -35,11 +33,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.folder.xml.FolderDocument.Folder;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * User: vsharma
@@ -159,13 +154,6 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             ctx.getLogger().info("Done importing " + getDescription());
         }
 
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptyList();
-        }
-
         @Override
         public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
         {
@@ -176,12 +164,12 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
     private static class FolderExportXarSourceWrapper
     {
         private final VirtualFile _xarDir;
-        private final ImportContext<Folder> _importContext;
+        private final FolderImportContext _importContext;
 
         private Path _xarFile;
-        private CompressedXarSource _xarSource;
+        private XarSource _xarSource;
 
-        public FolderExportXarSourceWrapper(VirtualFile xarDir, ImportContext<Folder> ctx)
+        public FolderExportXarSourceWrapper(VirtualFile xarDir, FolderImportContext ctx)
         {
              _xarDir = xarDir;
             _importContext = ctx;
@@ -196,7 +184,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
             for (String file: _xarDir.list())
             {
-                if (file.toLowerCase().endsWith(".xar"))
+                if (file.toLowerCase().endsWith(".xar") || file.toLowerCase().endsWith(".xar.xml"))
                 {
                     _xarFile = FileUtil.getPath(_importContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file);
                     break;
@@ -209,20 +197,35 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             return _xarFile;
         }
 
-        public CompressedXarSource getXarSource(PipelineJob job)
+        public XarSource getXarSource(PipelineJob job)
         {
             if (_xarSource == null)
             {
-                _xarSource =  new CompressedXarSource(
-                        getXarFile(),
-                        job,
-                        // Initialize the XarSource with the container from the ImportContext instead of the job
-                        // so that a XarContext with the correct folder gets created, and runs imported to subfolders
-                        // get assigned to the subfolder instead of the parent container.
-                        // If were were given a non-null job in FolderXarImporter.process(), job.getContainer() will
-                        // return the parent container.
-                        _importContext.getContainer())
-                ;
+                if (getXarFile().getFileName().toString().endsWith(".xar.xml"))
+                {
+                    _xarSource = new FileXarSource(
+                            getXarFile(),
+                            job,
+                            // Initialize the XarSource with the container from the ImportContext instead of the job
+                            // so that a XarContext with the correct folder gets created, and runs imported to subfolders
+                            // get assigned to the subfolder instead of the parent container.
+                            // If we were given a non-null job in FolderXarImporter.process(), job.getContainer() will
+                            // return the parent container.
+                            _importContext.getContainer());
+                }
+                else
+                {
+                    _xarSource = new CompressedXarSource(
+                            getXarFile(),
+                            job,
+                            // Initialize the XarSource with the container from the ImportContext instead of the job
+                            // so that a XarContext with the correct folder gets created, and runs imported to subfolders
+                            // get assigned to the subfolder instead of the parent container.
+                            // If we were given a non-null job in FolderXarImporter.process(), job.getContainer() will
+                            // return the parent container.
+                            _importContext.getContainer(),
+                            _importContext.getXarJobIdContext());
+                }
             }
             return _xarSource;
         }

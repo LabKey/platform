@@ -15,19 +15,17 @@
  */
 package org.labkey.wiki.export;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.wiki.WikiRendererType;
@@ -35,7 +33,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.wiki.WikiType;
 import org.labkey.data.xml.wiki.WikisDocument;
 import org.labkey.data.xml.wiki.WikisType;
-import org.labkey.folder.xml.FolderDocument.Folder;
 import org.labkey.wiki.WikiManager;
 import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.model.Wiki;
@@ -45,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -54,6 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: jeckels
@@ -117,10 +116,11 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         // ensure that older versions of exported wikis that do not have the shouldIndex bit set
                         // continue to be indexed by default
                         boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
+                        Collection<String> aliases = wikiXml.isSetAliases() ? Arrays.asList(wikiXml.getAliases().getAliasArray()) : Collections.emptyList();
 
                         // TODO: We should add VirtualFile.getName()
                         String folderName = new File(wikiSubDir.getLocation()).getName();
-                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, folderName, ctx, displayOrder++, wikiXml.getAttachmentsOrder());
+                        Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, folderName, ctx, displayOrder++, wikiXml.getAttachmentsOrder(), aliases);
                         if (wikiXml.getParent() != null)
                         {
                             parentsToBeSet.put(wiki, wikiXml.getParent());
@@ -134,7 +134,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                         VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
                         if (null != wikiSubDir && !importedFolderNames.contains(wikiSubDirName))
                         {
-                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, wikiSubDirName, ctx, displayOrder++, null);
+                            importWiki(wikiSubDirName, null, true, true, wikiSubDir, wikiSubDirName, ctx, displayOrder++, null, null);
                             importedFolderNames.add(wikiSubDirName);
                         }
                     }
@@ -167,7 +167,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, ImportContext<Folder> ctx, int displayOrder, String attachmentOrder) throws IOException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, String folderName, FolderImportContext ctx, int displayOrder, String attachmentOrder, @Nullable Collection<String> aliases) throws IOException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), name);
             List<String> existingAttachmentNames = new ArrayList<>();
@@ -208,16 +208,17 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                     attachments.add(new InputStreamAttachmentFile(aIS, fileName));
                 }
             }
-            if (attachmentOrder != null) {
+            if (attachmentOrder != null)
+            {
                 AtomicInteger inc = new AtomicInteger();
-                Map<String, Integer> attachmentOrderMap = List.of(attachmentOrder.split(";")).stream().collect(Collectors.toMap(i -> i, i -> inc.getAndIncrement()));
+                Map<String, Integer> attachmentOrderMap = Stream.of(attachmentOrder.split(";")).collect(Collectors.toMap(i -> i, i -> inc.getAndIncrement()));
                 attachments.sort(Comparator.comparing(e -> attachmentOrderMap.get(e.getFilename())));
             }
 
             wikiversion.setTitle(title == null ? wiki.getName() : title);
             if (existingWiki == null)
             {
-                WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments, false);
+                WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments, false, aliases);
             }
             else
             {
@@ -241,13 +242,6 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             }
 
             throw new ImportException("Could not find a content file for wiki with name \"" + contentName + "\"");
-        }
-
-        @NotNull
-        @Override
-        public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-        {
-            return Collections.emptySet();
         }
 
         @Override

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
@@ -74,7 +75,8 @@ public class PanelButton extends ActionButton
 
         out.write(btn);
         // register panel with friendly name as well as ID
-        out.write("\n<script>" +
+        var page = HttpView.currentPageConfig();
+        out.write("\n" + page.getScriptTagStart() +
                 "LABKEY.DataRegion.registerPane(" + PageFlowUtil.jsString(_dataRegionName) + ", function(dr) {\n" + // see DataRegion.js#_defaultShow()
                 "     dr.publishPanel(" + PageFlowUtil.jsString(panelId) + ",null,null,null,null,"+ PageFlowUtil.jsString(_panelName) + ");\n" +
                 "});</script>\n");

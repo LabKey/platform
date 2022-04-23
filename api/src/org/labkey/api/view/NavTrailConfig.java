@@ -17,7 +17,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.module.Module;
 
 import java.util.ArrayList;
 
@@ -26,13 +26,13 @@ import java.util.ArrayList;
  * Date: Sep 21, 2005
  * Time: 4:26:39 PM
  */
-public class NavTrailConfig extends PageConfig
+public class NavTrailConfig
 {
     private final ArrayList<NavTree> _extraChildren = new ArrayList<>();
 
     public NavTrailConfig(ViewContext context)
     {
-        super(context.getActionURL().getController());
+        // super(context.getActionURL().getController());
     }
 
     public NavTrailConfig()
@@ -68,20 +68,6 @@ public class NavTrailConfig extends PageConfig
 
     public NavTree[] getExtraChildren()
     {
-        return _extraChildren.toArray(new NavTree[_extraChildren.size()]);
-    }
-
-
-    // overrides to down-cast return type
-    @Override
-    public NavTrailConfig setHelpTopic(HelpTopic topic)
-    {
-        return (NavTrailConfig)super.setHelpTopic(topic);
-    }
-
-    @Override
-    public NavTrailConfig setTitle(String title)
-    {
-        return (NavTrailConfig)super.setTitle(title);
+        return _extraChildren.toArray(new NavTree[0]);
     }
 }

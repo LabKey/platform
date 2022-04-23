@@ -21,17 +21,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
@@ -56,6 +57,9 @@ public abstract class XarSource implements Serializable
     private final Map<String, Map<String, ExpMaterial>> _materials = new HashMap<>();
     private final Map<String, Map<String, ExpData>> _data = new HashMap<>();
 
+    private final Map<String, ExpSampleType> _xarSampleTypes = new HashMap<>();
+    private final Map<String, ExpDataClass> _xarDataClasses = new HashMap<>();
+
     protected final Map<String, String> _dataFileURLs = new HashMap<>();
 
     @NotNull
@@ -66,15 +70,17 @@ public abstract class XarSource implements Serializable
         _xarContext = new XarContext(description, container, user, job);
     }
 
+    public XarSource(String description, Container container, User user, @Nullable PipelineJob job, @Nullable Map<String, String> substitutions)
+    {
+        _xarContext = new XarContext(description, container, user, job, substitutions);
+    }
+
     public XarSource(PipelineJob job)
     {
         _xarContext = new XarContext(job);
     }
 
     public abstract ExperimentArchiveDocument getDocument() throws XmlException, IOException;
-
-    @Deprecated
-    public abstract File getRoot();
 
     public abstract Path getRootPath();
 
@@ -104,8 +110,7 @@ public abstract class XarSource implements Serializable
                     urlToLookup = FileUtil.uriToString(uri);
                 }
             }
-            catch (IllegalArgumentException ignored) {}
-            catch (URISyntaxException ignored) {}
+            catch (IllegalArgumentException | URISyntaxException ignored) {}
             result = canonicalizeDataFileURL(urlToLookup);
             _dataFileURLs.put(dataFileURL, result);
             _dataFileURLs.put(urlToLookup, result);
@@ -115,13 +120,7 @@ public abstract class XarSource implements Serializable
 
     protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
 
-    @Deprecated //Prefer the getLogFilePath version
-    public abstract File getLogFile() throws IOException;       // Log file always local file
-    public Path getLogFilePath() throws IOException
-    {
-        //TODO This should be overridden in inherited classes
-        return getLogFile().toPath();
-    }
+    public abstract Path getLogFilePath() throws IOException;
 
     /**
      * Called before trying to import this XAR to let the source set up any resources that are required 
@@ -270,4 +269,25 @@ public abstract class XarSource implements Serializable
     {
         return _xarContext;
     }
+
+    public void addSampleType(String sampleTypeLSID, ExpSampleType sampleType)
+    {
+        _xarSampleTypes.put(sampleTypeLSID, sampleType);
+    }
+
+    public ExpSampleType getSampleType(String sampleTypeLSID)
+    {
+        return _xarSampleTypes.get(sampleTypeLSID);
+    }
+
+    public void addDataClass(String sampleTypeLSID, ExpDataClass dataClass)
+    {
+        _xarDataClasses.put(sampleTypeLSID, dataClass);
+    }
+
+    public ExpDataClass getDataClass(String sampleTypeLSID)
+    {
+        return _xarDataClasses.get(sampleTypeLSID);
+    }
+
 }

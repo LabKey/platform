@@ -30,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -164,7 +163,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.print.attribute.standard.Media;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -287,9 +285,9 @@ public class QueryController extends SpringActionController
                 // package the remote-connection properties into the remoteConnectionForm and pass them along
                 Map<String, String> map1 = RemoteConnections.getRemoteConnection(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY, name, getContainer());
                 remoteConnectionForm.setUrl(map1.get("URL"));
-                remoteConnectionForm.setUser(map1.get("user"));
+                remoteConnectionForm.setUserEmail(map1.get("user"));
                 remoteConnectionForm.setPassword(map1.get("password"));
-                remoteConnectionForm.setContainer(map1.get("container"));
+                remoteConnectionForm.setFolderPath(map1.get("container"));
             }
             setHelpTopic("remoteConnection");
             return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", remoteConnectionForm, errors);
@@ -4267,7 +4265,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class ApiTestAction extends SimpleViewAction<Object>
     {
         @Override
@@ -7211,7 +7209,8 @@ public class QueryController extends SpringActionController
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
-                new DeleteNamedSetAction()
+                new DeleteNamedSetAction(),
+                new ApiTestAction()
             );
 
 
@@ -7231,7 +7230,6 @@ public class QueryController extends SpringActionController
                 new SaveSourceQueryAction(),
 
                 new TruncateTableAction(),
-                new ApiTestAction(),
                 new AdminAction(),
                 new ManageRemoteConnectionsAction(),
                 new ReloadExternalSchemaAction(),

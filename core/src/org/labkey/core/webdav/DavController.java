@@ -475,7 +475,7 @@ public class DavController extends SpringActionController
                     {
                         try
                         {
-                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
+                            ExceptionUtil.renderErrorView(getViewContext(), new PageConfig(getRequest()), ErrorRenderer.ErrorType.notFound, status.code, message, null, false, false );
                             return WebdavStatus.fromCode(status.code);
                         }
                         catch (Exception e)
@@ -4766,7 +4766,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "webdav errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {
@@ -5046,19 +5046,6 @@ public class DavController extends SpringActionController
         if (!StringUtils.isEmpty(contentDisposition))
         {
             getResponse().setContentDisposition(contentDisposition);
-            try
-            {
-                // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
-                if (HttpUtil.isChrome(getRequest()))
-                {
-                    Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
-                    getResponse().setContentDisposition(contentDisposition + "; filename=" + requestPath.getName());
-                }
-            }
-            catch (URISyntaxException x)
-            {
-               // pass
-            }
         }
 
         // Find content type
@@ -5853,7 +5840,7 @@ public class DavController extends SpringActionController
             if (resourceRootPath != null)
                 page.root = resourceRootPath;
 
-            PageConfig config = new PageConfig(resource.getPath() + "-- webdav");
+            PageConfig config = new PageConfig(getViewContext().getRequest(), resource.getPath() + "-- webdav");
 
             if ("html".equals(getViewContext().getRequest().getParameter("listing")))
             {

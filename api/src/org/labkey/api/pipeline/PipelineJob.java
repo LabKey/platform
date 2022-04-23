@@ -1598,12 +1598,12 @@ abstract public class PipelineJob extends Job implements Serializable
                     try
                     {
                         Files.createDirectories(parentFile);
+                        write(message, t, level);
                     }
                     catch (IOException dirE)
                     {
                         _log.error("Failed appending to file. Unable to create parent directories", e);
                     }
-                    write(message, t, level);
                 }
                 else
                     _log.error("Failed appending to file.", e);

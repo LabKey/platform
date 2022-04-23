@@ -29,7 +29,7 @@ String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js
 %>
 <script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
 <%=getScriptTag(jsPath)%>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
 <%=unsafe(GWTView.PROPERTIES_OBJECT_NAME)%> = <%=new JSONObject(bean.getProperties()).getJavaScriptFragment(3)%>;
 </script>

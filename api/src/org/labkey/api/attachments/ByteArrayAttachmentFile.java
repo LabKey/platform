@@ -16,6 +16,9 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.util.logging.LogHelper;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,6 +31,7 @@ import java.io.InputStream;
  */
 public class ByteArrayAttachmentFile implements AttachmentFile
 {
+    private static final Logger LOG = LogHelper.getLogger(ByteArrayAttachmentFile.class, "Attachment file for byte arrays");
     private final String _contentType;
     private final byte[] _content;
     private final String _fileName;
@@ -64,6 +68,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     {
         if (_inputStream != null)
             throw new IllegalStateException("An unclosed input stream is already active for this ByteArrayAttachmentFile");
+
         _inputStream = new BufferedInputStream(new ByteArrayInputStream(_content));
         return _inputStream;
     }
@@ -71,9 +76,13 @@ public class ByteArrayAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream() throws IOException
     {
-        if (_inputStream == null)
-            throw new IllegalStateException("No input stream is active for this ByteArrayAttachmentFile");
-        _inputStream.close();
+        if (_inputStream != null)
+        {
+            _inputStream.close();
+            _inputStream = null;
+        }
+        else
+            LOG.warn("No input stream is active for this ByteArrayAttachmentFile");
     }
 
     @Override

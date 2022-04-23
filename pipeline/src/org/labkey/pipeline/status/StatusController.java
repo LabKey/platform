@@ -83,6 +83,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Set;
@@ -556,7 +557,15 @@ public class StatusController extends SpringActionController
                     String basename = statusName.substring(0, statusName.lastIndexOf('.'));
 
                     Path dir = fileStatus.getParent();
-                    Path fileShow = dir.resolve(fileName);
+                    Path fileShow;
+                    try
+                    {
+                        fileShow = dir.resolve(fileName);
+                    }
+                    catch (InvalidPathException ex)
+                    {
+                        fileShow = null;
+                    }
 
                     if (NetworkDrive.exists(fileShow))
                     {

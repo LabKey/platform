@@ -241,7 +241,7 @@
     }
 </style>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 (function($) {
     var tableReady = false;
     LABKEY.Utils.onReady(function ()
@@ -775,12 +775,26 @@
         return QueryService.get().getColumns(t, keys);
     }
 
+    final CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
 
-    static final CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
-            "lsid", "sourcelsid", "sequencenum", "qcstate", "participantid",
-            "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit",
-            "container", "_key", "datasets", "folder");
+    boolean skipColumn(ColumnInfo col)
+    {
+        if (skipColumns.isEmpty())
+        {
+            skipColumns.addAll( "lsid", "sourcelsid", "sequencenum", "qcstate", "participantid",
+                    "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit",
+                    "container", "_key", "datasets", "folder");
 
+            final String subjectColumnName = StudyService.get().getSubjectColumnName(getContainer());
+            final String subjectVisitColumnName = StudyService.get().getSubjectVisitColumnName(getContainer());
+
+            skipColumns.add(subjectColumnName);
+            skipColumns.add(subjectVisitColumnName);
+            skipColumns.add(subjectVisitColumnName + "/visit");
+        }
+
+        return (skipColumns.contains(col.getName())) || col.isMvIndicatorColumn();
+    }
 
     List<ColumnInfo> sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
     {
@@ -790,7 +804,7 @@
             ArrayList<ColumnInfo> list = new ArrayList<>(sortMap.size());
             for (ColumnInfo col : cols)
             {
-                if (sortMap.containsKey(col.getName()))
+                if (!skipColumn(col) && sortMap.containsKey(col.getName()))
                 {
                     int index = sortMap.get(col.getName());
                     while (list.size() <= index)
@@ -806,21 +820,11 @@
         }
 
         // default list
-        String subjectColumnName = StudyService.get().getSubjectColumnName(getContainer());
-        String subjectVisitColumnName = StudyService.get().getSubjectVisitColumnName(getContainer());
         List<ColumnInfo> ret = new ArrayList<>(cols.size());
         for (ColumnInfo col : cols)
         {
-            if (skipColumns.contains(col.getName()))
-                continue;
-            if (StringUtils.equalsIgnoreCase(subjectColumnName,col.getName()))
-                continue;
-            if (StringUtils.equalsIgnoreCase(subjectVisitColumnName,col.getName()))
-                continue;
-
-            if (col.isMvIndicatorColumn())
-                continue;
-            ret.add(col);
+            if (!skipColumn(col))
+                ret.add(col);
         }
         return ret;
     }

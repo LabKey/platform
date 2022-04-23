@@ -75,6 +75,7 @@ import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
 import org.labkey.wiki.query.WikiSchema;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -90,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * User: mbellew
@@ -166,8 +168,8 @@ public class WikiManager implements WikiService
                 null).getObject(Wiki.class);
     }
 
-
-    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory) throws IOException
+    // aliases: null and empty collection are equivalent (no aliases)
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory, @Nullable Collection<String> aliases) throws IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -203,6 +205,11 @@ public class WikiManager implements WikiService
 
             getAttachmentService().addAttachments(wikiInsert.getAttachmentParent(), files, user);
 
+            if (null != aliases)
+            {
+                WikiManager.get().addAliases(wikiInsert, aliases, null);
+            }
+
             transaction.commit();
         }
         finally
@@ -228,7 +235,7 @@ public class WikiManager implements WikiService
      *
      * @param copyHistory true to propagate the user and date created from the previous wiki version, else just use the current user
      *                    and current date.
-     * @param createNewVersion by default we create a new wiki version for each update, if this is set to false we will update
+     * @param createNewVersion by default, we create a new wiki version for each update, if this is set to false we will update
      *                         the latest wiki version.
      */
     private boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory, boolean createNewVersion)
@@ -311,7 +318,64 @@ public class WikiManager implements WikiService
         return true;
     }
 
+    /**
+     * Attempts to add the specified aliases to the specified wiki. This is a best effort operation; failure to add an
+     * alias (e.g., an alias that already exists in this container) will result in an error (added to the BindException
+     * collection if not null, otherwise logged as a warning) but adding will continue and no exception will be thrown.
+     *
+     * Callers are responsible for uncaching this wiki and the wiki container collections
+     */
+    public void addAliases(Wiki wiki, @NotNull Collection<String> aliases, @Nullable BindException errors)
+    {
+        assert null != wiki.getContainerId();
+        SqlExecutor executor = new SqlExecutor(CommSchema.getInstance().getSchema());
 
+        aliases.forEach(alias->
+        {
+            // Table.insert() provides no way to conditionalize the insert, resulting in constraint violation exceptions
+            // that kill the current transaction on PostgreSQL. We want "best effort" inserts here, so execute custom
+            // INSERT SQL instead.
+            SQLFragment sql = new SQLFragment("INSERT INTO ")
+                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
+                .add(wiki.getContainerId())
+                .add(alias)
+                .add(wiki.getRowId())
+                .append("WHERE NOT EXISTS (SELECT * FROM ")
+                .append(CommSchema.getInstance().getTableInfoPageAliases().getSelectName())
+                .append(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
+                .add(wiki.getContainerId())
+                .add(alias);
+            int rows = executor.execute(sql);
+
+            if (0 == rows)
+            {
+                if (null != errors)
+                    errors.rejectValue("name", ERROR_MSG, "Warning: Alias '" + alias + "' already exists in this folder.");
+                else
+                    LOG.warn("Attempt to add alias to wiki \"" + wiki.getName() + "\" failed; \"" + alias + "\" already exists in this folder.");
+            }
+        });
+    }
+
+    // Callers are responsible for uncaching this wiki and the wiki container collections
+    // null == wiki ==> delete all aliases in a container
+    // null != wiki ==> delete all aliases associated with a wiki
+    public void deleteAliases(Container c, @Nullable Wiki wiki)
+    {
+        assert null != c;
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        if (null != wiki)
+            filter.addCondition(FieldKey.fromParts("PageRowId"), wiki.getRowId());
+        Table.delete(CommSchema.getInstance().getTableInfoPageAliases(), filter);
+    }
+
+    // Callers are responsible for uncaching this wiki and the wiki container collections
+    public void replaceAliases(Wiki wiki, Collection<String> newAliases, @Nullable BindException errors)
+    {
+        deleteAliases(wiki.lookupContainer(), wiki);
+        addAliases(wiki, newAliases, errors);
+    }
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {
@@ -329,6 +393,7 @@ public class WikiManager implements WikiService
                     new SimpleFilter(FieldKey.fromParts("pageentityId"), wiki.getEntityId()));
             Table.delete(comm.getTableInfoPages(),
                     new SimpleFilter(FieldKey.fromParts("entityId"), wiki.getEntityId()));
+            deleteAliases(c, wiki);
 
             getAttachmentService().deleteAttachments(wiki.getAttachmentParent());
 
@@ -419,17 +484,15 @@ public class WikiManager implements WikiService
         }
     }
 
-
     public void purgeContainer(Container c)
     {
-        WikiCache.uncache(c);
-
         DbScope scope = comm.getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             new SqlExecutor(comm.getSchema()).execute("UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", c.getId());
             new SqlExecutor(comm.getSchema()).execute("DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", c.getId());
+            deleteAliases(c, null);
 
             // Clear all wiki webpart properties that refer to this container. This includes wiki and wiki TOC
             // webparts in this and potentially other containers. #13937
@@ -439,8 +502,9 @@ public class WikiManager implements WikiService
 
             transaction.commit();
         }
-    }
 
+        WikiCache.uncache(c);
+    }
 
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {
@@ -500,11 +564,11 @@ public class WikiManager implements WikiService
         Wiki wiki = WikiSelectManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wiki.getAttachments();
         List<AttachmentFile> files = getAttachmentService().getAttachmentFiles(wiki.getAttachmentParent(), attachments);
-
+        Collection<String> aliases = WikiSelectManager.getAliases(cSrc, wiki.getRowId());
 
         final WikiVersion[] wikiVersions;
 
-        if(!isCopyingHistory)
+        if (!isCopyingHistory)
         {
             wikiVersions = new WikiVersion[] { srcPage.getLatestVersion() };
         }
@@ -514,7 +578,7 @@ public class WikiManager implements WikiService
         }
 
         boolean firstVersion = true;
-        for(WikiVersion wikiVersion : wikiVersions)
+        for (WikiVersion wikiVersion : wikiVersions)
         {
             //new wiki version
             WikiVersion newWikiVersion = new WikiVersion(destName);
@@ -524,9 +588,9 @@ public class WikiManager implements WikiService
             newWikiVersion.setCreated((wikiVersion.getCreated()));
             newWikiVersion.setRendererTypeEnum(wikiVersion.getRendererTypeEnum());
 
-            if(firstVersion)
+            if (firstVersion)
             {
-                insertWiki(user, cDest, newWikiPage, newWikiVersion, files, isCopyingHistory);
+                insertWiki(user, cDest, newWikiPage, newWikiVersion, files, isCopyingHistory, aliases);
                 firstVersion = false;
             }
             else
@@ -836,7 +900,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            insertWiki(user, c, wiki, wikiversion, null, false);
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
         }
         catch (IOException e)
         {
@@ -932,6 +996,22 @@ public class WikiManager implements WikiService
             return version.getBody();
 
         return null;
+    }
+
+    @Override
+    public List<String> getAllContent(Container c, String wikiName)
+    {
+        Wiki wiki = WikiSelectManager.getWiki(c, wikiName);
+
+        if (null == wiki)
+            return null;
+
+        List<String> allContent = new ArrayList<>();
+
+        for (WikiVersion version : WikiSelectManager.getAllVersions(wiki))
+            allContent.add(version.getBody());
+
+        return allContent;
     }
 
     @Override
@@ -1070,7 +1150,7 @@ public class WikiManager implements WikiService
             wikiversion.setTitle("Topic A");
             wikiversion.setBody("[pageA]");
 
-            _m.insertWiki(user, c, wikiA, wikiversion, null, false);
+            _m.insertWiki(user, c, wikiA, wikiversion, null, false, null);
 
             // verify objects
             wikiA = WikiSelectManager.getWikiFromDatabase(c, "pageA");

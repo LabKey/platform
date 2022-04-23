@@ -32,6 +32,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.ServletException;
@@ -39,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -129,9 +131,22 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         {
             MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
             mr.setCharacterEncoding("UTF-8");
-            try
+            ViewContext nested = new ViewContext(getViewContext());
+            nested.setResponse(mr);
+            try (var init = HttpView.initForRequest(nested, request, mr))
             {
                 WebPartView.this.render(request, mr);
+                var config = HttpView.currentPageConfig();
+                var sw = new StringWriter();
+                config.endOfBodyScript(sw);
+                var script = sw.toString();
+                if (!script.isBlank())
+                {
+                    var out = mr.getWriter();
+                    out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
+                    out.print(script);
+                    out.print("</script>");
+                }
             }
             catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
             {

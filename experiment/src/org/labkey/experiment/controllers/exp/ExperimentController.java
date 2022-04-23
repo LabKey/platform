@@ -148,6 +148,7 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1025,13 +1026,12 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DataClassForm form, BindException errors)
         {
             _dataClass = form.getDataClass(null);
-            ensureCorrectContainer(getContainer(), _dataClass, getViewContext());
+            return new VBox(getDataClassPropertiesView(), getDataClassContentsView(errors));
+        }
 
-            ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
-            UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
-            if (dataClassSchema == null)
-                throw new NotFoundException("exp.dataclass schema not found");
-            QueryView queryView = dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
+        private DetailsView getDataClassPropertiesView()
+        {
+            ExpSchema expSchema = new ExpSchema(getUser(), _dataClass.getContainer());
 
             TableInfo table = ExpSchema.TableType.DataClasses.createTable(expSchema, null, null);
             QueryUpdateForm tvf = new QueryUpdateForm(table, getViewContext(), null);
@@ -1041,28 +1041,71 @@ public class ExperimentController extends SpringActionController
 
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
+            boolean inDefinitionContainer = getContainer().equals(_dataClass.getContainer());
 
-            DomainKind domainKind = _dataClass.getDomain().getDomainKind();
+            DomainKind<?> domainKind = _dataClass.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _dataClass.getDomain()))
             {
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
                 updateURL.addReturnURL(getViewContext().getActionURL());
-                ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
-                updateButton.setDisplayPermission(DesignDataClassPermission.class);
-                updateButton.setPrimary(true);
-                bb.add(updateButton);
 
-                ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, _dataClass.getContainer());
+                if (inDefinitionContainer)
+                {
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
+                    updateButton.setDisplayPermission(DesignDataClassPermission.class);
+                    updateButton.setPrimary(true);
+                    bb.add(updateButton);
+                }
+                else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
+                {
+                    ActionButton updateButton = new ActionButton("Edit");
+                    updateButton.setURL("javascript:void(0)");
+                    updateButton.setActionType(ActionButton.Action.SCRIPT);
+                    updateButton.setScript("javascript: if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
+                    updateButton.setPrimary(true);
+                    bb.add(updateButton);
+                }
+
+                ActionURL deleteURL = new ActionURL(DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
                 deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
                 ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
-                deleteButton.setDisplayPermission(DesignDataClassPermission.class);
-                bb.add(deleteButton);
+
+                if (inDefinitionContainer)
+                {
+                    deleteButton.setDisplayPermission(DesignDataClassPermission.class);
+                    bb.add(deleteButton);
+                }
+                else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
+                {
+                    bb.add(deleteButton);
+                }
             }
             detailsView.getDataRegion().setButtonBar(bb);
 
-            return new VBox(detailsView, queryView);
+            if (!inDefinitionContainer)
+            {
+                ActionURL definitionURL = urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId());
+                Link.LinkBuilder link = PageFlowUtil.link(_dataClass.getContainer().getPath())
+                        .href(definitionURL)
+                        .clearClasses();
+                SimpleDisplayColumn definedInCol = new SimpleDisplayColumn(link.toString());
+                definedInCol.setCaption("Defined In");
+                detailsView.getDataRegion().addDisplayColumn(definedInCol);
+            }
+
+            return detailsView;
+        }
+
+        private QueryView getDataClassContentsView(BindException errors)
+        {
+            ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
+            UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
+            if (dataClassSchema == null)
+                throw new NotFoundException("exp.dataclass schema not found");
+
+            return dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
         }
 
         @Override
@@ -2254,59 +2297,62 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ApiUsageException("Unable to parse file " + realContent + ", it is likely of an unsupported file type");
             }
-            DataLoader tabLoader = dlf.createLoader(realContent, true);
-            tabLoader.setScanAheadLineCount(5000);
-            ColumnDescriptor[] cols = tabLoader.getColumns();
 
-            if (ignoreTypes)
-                for (ColumnDescriptor col : cols)
-                    col.clazz = String.class;
-
-            JSONArray rowsArray = new JSONArray();
-            JSONArray headerArray = new JSONArray();
-            for (ColumnDescriptor col : cols)
+            try (DataLoader tabLoader = dlf.createLoader(realContent, true))
             {
-                if (extended)
-                {
-                    JSONObject valueObject = new JSONObject();
-                    valueObject.put("value", col.name);
-                    headerArray.put(valueObject);
-                }
-                else
-                {
-                    headerArray.put(col.name);
-                }
-            }
-            rowsArray.put(headerArray);
-            for (Map<String, Object> rowMap : tabLoader)
-            {
-                // headers count as a row to be consistent
-                if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
-                    break;
+                tabLoader.setScanAheadLineCount(5000);
+                ColumnDescriptor[] cols = tabLoader.getColumns();
 
-                JSONArray rowArray = new JSONArray();
+                if (ignoreTypes)
+                    for (ColumnDescriptor col : cols)
+                        col.clazz = String.class;
+
+                JSONArray rowsArray = new JSONArray();
+                JSONArray headerArray = new JSONArray();
                 for (ColumnDescriptor col : cols)
                 {
-                    Object value = rowMap.get(col.name);
                     if (extended)
                     {
                         JSONObject valueObject = new JSONObject();
-                        valueObject.put("value", value);
-                        rowArray.put(valueObject);
+                        valueObject.put("value", col.name);
+                        headerArray.put(valueObject);
                     }
                     else
                     {
-                        rowArray.put(value);
+                        headerArray.put(col.name);
                     }
                 }
-                rowsArray.put(rowArray);
-            }
+                rowsArray.put(headerArray);
+                for (Map<String, Object> rowMap : tabLoader)
+                {
+                    // headers count as a row to be consistent
+                    if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
+                        break;
 
-            JSONObject sheetJSON = new JSONObject();
-            sheetJSON.put("name", "flat");
-            sheetJSON.put("data", rowsArray);
-            sheetsArray = new JSONArray();
-            sheetsArray.put(sheetJSON);
+                    JSONArray rowArray = new JSONArray();
+                    for (ColumnDescriptor col : cols)
+                    {
+                        Object value = rowMap.get(col.name);
+                        if (extended)
+                        {
+                            JSONObject valueObject = new JSONObject();
+                            valueObject.put("value", value);
+                            rowArray.put(valueObject);
+                        }
+                        else
+                        {
+                            rowArray.put(value);
+                        }
+                    }
+                    rowsArray.put(rowArray);
+                }
+
+                JSONObject sheetJSON = new JSONObject();
+                sheetJSON.put("name", "flat");
+                sheetJSON.put("data", rowsArray);
+                sheetsArray = new JSONArray();
+                sheetsArray.put(sheetJSON);
+            }
         }
         ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
         JSONObject workbookJSON = new JSONObject();
@@ -2368,12 +2414,13 @@ public class ExperimentController extends SpringActionController
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
                 ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
 
-                Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType);
-
-                response.setContentType(docType.getMimeType());
-                response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
-                ResponseHelper.setPrivate(response);
-                workbook.write(response.getOutputStream());
+                try (Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType))
+                {
+                    response.setContentType(docType.getMimeType());
+                    response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+                    ResponseHelper.setPrivate(response);
+                    workbook.write(response.getOutputStream());
+                }
             }
             catch (JSONException | ClassCastException e)
             {

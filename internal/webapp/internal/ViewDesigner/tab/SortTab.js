@@ -98,9 +98,9 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.SortTab', {
                             var fieldMeta = me.fieldMetaStore.getById(fieldKey.toUpperCase());
                             if (fieldMeta)
                             {
-                                // caption is already htmlEncoded
-                                if (fieldMeta.data.caption && fieldMeta.data.caption != "&nbsp;") {
-                                    return fieldMeta.data.caption;
+                                var caption = fieldMeta.get('caption');
+                                if (caption) {
+                                    return Ext4.htmlEncode(caption);
                                 }
                                 return Ext4.htmlEncode(fieldMeta.data.name);
                             }

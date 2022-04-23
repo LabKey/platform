@@ -86,7 +86,7 @@
 </style>
 <div id="status" class="labkey-status-info" style="visibility: hidden;" width="100%">(status)</div>
 <div id="query-editor-panel" class="extContainer"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
 
         Ext4.QuickTips.init();

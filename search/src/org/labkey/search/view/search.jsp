@@ -280,7 +280,7 @@
             <small>
                 <a class="search-advanced-toggle">advanced options</a>
                 <% if (form.getIncludeHelpLink()) { %>
-                | <a target="_blank" href="<%=text(SearchUtils.getHelpTopic().getHelpTopicHref())%>">help</a>
+                | <a target="_blank" href="<%=text(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
                 <% } %>
             </small>
             <% } %>
@@ -598,7 +598,7 @@
     </div>
 </div>
 <% } %>
-<script type="application/javascript">
+<script type="application/javascript" nonce="<%=getScriptNonce()%>">
     +function($){
         'use strict';
 

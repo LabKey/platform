@@ -16,8 +16,10 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +33,7 @@ import java.io.InputStream;
  */
 public class FileAttachmentFile implements AttachmentFile
 {
+    private static final Logger LOG = LogHelper.getLogger(FileAttachmentFile.class, "Attachment file for file system files");
     private final File _file;
     private final String _filename;
 
@@ -71,6 +74,9 @@ public class FileAttachmentFile implements AttachmentFile
     @Override
     public InputStream openInputStream() throws IOException
     {
+        if (_in != null)
+            throw new IllegalStateException("An unclosed input stream is already active for this FileAttachmentFile");
+
         _in = new FileInputStream(_file);
         return _in;
     }
@@ -78,8 +84,13 @@ public class FileAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream() throws IOException
     {
-        if (null != _in)
+        if (_in != null)
+        {
             _in.close();
+            _in = null;
+        }
+        else
+            LOG.warn("No input stream is active for this FileAttachmentFile");
     }
 
     @Override

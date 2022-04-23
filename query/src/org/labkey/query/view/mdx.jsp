@@ -41,7 +41,7 @@
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     var connection = null;
 

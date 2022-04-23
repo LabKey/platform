@@ -16,8 +16,10 @@
 
 package org.labkey.api.attachments;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -36,6 +38,7 @@ import java.util.Map;
  */
 public class SpringAttachmentFile implements AttachmentFile
 {
+    private static final Logger LOG = LogHelper.getLogger(SpringAttachmentFile.class, "Attachment file for uploaded files");
     private final MultipartFile _file;
     private final String _filename;
 
@@ -90,6 +93,9 @@ public class SpringAttachmentFile implements AttachmentFile
     @Override
     public InputStream openInputStream() throws IOException
     {
+        if (_in != null)
+            throw new IllegalStateException("An unclosed input stream is already active for this SpringAttachmentFile");
+
         _in = _file.getInputStream();
         return _in;
     }
@@ -97,8 +103,13 @@ public class SpringAttachmentFile implements AttachmentFile
     @Override
     public void closeInputStream() throws IOException
     {
-        if (null != _in)
+        if (_in != null)
+        {
             _in.close();
+            _in = null;
+        }
+        else
+            LOG.warn("No input stream is active for this SpringAttachmentFile");
     }
 
     public static List<AttachmentFile> createList(Map<String, MultipartFile> fileMap)

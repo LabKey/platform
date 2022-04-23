@@ -75,13 +75,6 @@ public class FolderListImporter implements FolderImporter
     }
 
     @Override
-    @NotNull
-    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
-    {
-        return Collections.emptyList();
-    }
-
-    @Override
     public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
     {
         return ctx.getDir("lists") != null;

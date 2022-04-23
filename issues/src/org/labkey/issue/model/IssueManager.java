@@ -132,7 +132,7 @@ public class IssueManager
     // UNDONE: Keywords, Summary, etc.
 
     private static final IssuesSchema _issuesSchema = IssuesSchema.getInstance();
-    
+
     public static final int NOTIFY_ASSIGNEDTO_OPEN = 1;     // if a bug is assigned to me
     public static final int NOTIFY_ASSIGNEDTO_UPDATE = 2;   // if a bug assigned to me is modified
     public static final int NOTIFY_CREATED_UPDATE = 4;      // if a bug I created is modified
@@ -150,23 +150,13 @@ public class IssueManager
     private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
     private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
 
-    private static final String CAT_ASSIGNED_TO_LIST = "issueAssignedToList";
     private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
-
-    private static final String CAT_DEFAULT_ASSIGNED_TO_LIST = "issueDefaultAsignedToList";
     private static final String PROP_DEFAULT_ASSIGNED_TO_USER = "issueDefaultAssignedToUser";
-
-    private static final String CAT_DEFAULT_MOVE_TO_LIST = "issueDefaultMoveToList";
-    private static final String PROP_DEFAULT_MOVE_TO_CONTAINER = "issueDefaultMoveToContainer";
-
     private static final String CAT_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromCategory";
     private static final String PROP_DEFAULT_INHERIT_FROM_CONTAINER = "issueDefaultInheritFromProperty";
-
-    private static final String CAT_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
-    private static final String PROP_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
+    private static final String PROP_DEFAULT_RELATED_FOLDER = "issueDefaultsRelatedFolder";
 
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
-    public static final String PICK_LIST_NAME = "pickListColumns";
 
     private IssueManager()
     {
@@ -251,8 +241,8 @@ public class IssueManager
      * Returns a linked list of all comments for the argument Issue together with comments
      * of all related issues sorted by creation date.
      *
-     * @param   issue   an issue to retrieve comments from
-     * @return          the sorted linked list of all related comments
+     * @param issue an issue to retrieve comments from
+     * @return the sorted linked list of all related comments
      */
     public static List<IssueObject.CommentObject> getCommentsForRelatedIssues(IssueObject issue, User user)
     {
@@ -292,8 +282,8 @@ public class IssueManager
      * Determine if the parameter issue has related issues.  Returns true if the issue has related
      * issues and false otherwise.
      *
-     * @param   issue   The issue to query
-     * @return          boolean return value
+     * @param issue The issue to query
+     * @return boolean return value
      */
     public static boolean hasRelatedIssues(IssueObject issue, User user)
     {
@@ -350,8 +340,8 @@ public class IssueManager
                     if (!batchErrors.hasErrors())
                     {
                         assert results.size() == 1;
-                        issue.setIssueId((int)results.get(0).get("IssueId"));
-                        issue.setIssueDefId((Integer)results.get(0).get("issueDefId"));
+                        issue.setIssueId((int) results.get(0).get("IssueId"));
+                        issue.setIssueDefId((Integer) results.get(0).get("issueDefId"));
                     }
                     else
                         throw batchErrors;
@@ -359,7 +349,7 @@ public class IssueManager
                 else
                 {
                     issue.beforeUpdate(user);
-                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row) , null, null);
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), null, null);
                 }
                 issue.setRelated(related);
                 saveComments(user, issue);
@@ -458,7 +448,7 @@ public class IssueManager
     }
 
 
-    private static final Cache<String, Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
+    private static final Cache<String, Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists");
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
@@ -575,7 +565,7 @@ public class IssueManager
         Container inheritFrom = getInheritFromContainer(c);
 
         //Return the container from which admin settings were inherited from
-        if(inheritFrom != null)
+        if (inheritFrom != null)
             return inheritFrom;
         return c;
     }
@@ -584,10 +574,10 @@ public class IssueManager
     @NotNull
     public static EntryTypeNames getEntryTypeNames(Container container, String issueDefName)
     {
-        Map<String,String> props = PropertyManager.getProperties(container, getPropMapName(issueDefName));
+        Map<String, String> props = PropertyManager.getProperties(container, getPropMapName(issueDefName));
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName =props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
+            ret.singularName = props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
             ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
         return ret;
@@ -602,7 +592,6 @@ public class IssueManager
     }
 
     /**
-     *
      * @param container
      * @param inheritingVals
      * @return EntryTypeNames of a container with inherited settings, or of current container.
@@ -610,12 +599,12 @@ public class IssueManager
     public static EntryTypeNames getEntryTypeNames(Container container, boolean inheritingVals)
     {
         Container c;
-        if(inheritingVals)
+        if (inheritingVals)
             c = getInheritFromOrCurrentContainer(container);
         else
             c = container;
 
-        Map<String,String> props = PropertyManager.getProperties(c, CAT_ENTRY_TYPE_NAMES);
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
             ret.singularName = props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
@@ -637,12 +626,21 @@ public class IssueManager
         props.save();
     }
 
+    private static String getPropertyValue(Container c, String issueDefName, String key)
+    {
+        return PropertyManager.getProperties(c, getPropMapName(issueDefName)).get(key);
+    }
+
+    private static void setPropertyValue(Container c, String issueDefName, String key, String value)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
+        props.put(key, value);
+        props.save();
+    }
+
     public static @Nullable Group getAssignedToGroup(Container c, String issueDefName)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
-
-        String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
-
+        String groupId = getPropertyValue(c, issueDefName, PROP_ASSIGNED_TO_GROUP);
         if (null == groupId)
             return null;
 
@@ -651,16 +649,13 @@ public class IssueManager
 
     public static void saveAssignedToGroup(Container c, String issueDefName,  @Nullable Group group)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
-        props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
-        props.save();
+        setPropertyValue(c, issueDefName, PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
         uncache();  // uncache the assigned to list
     }
 
     public static @Nullable User getDefaultAssignedToUser(Container c, String issueDefName)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
-        String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
+        String userId = getPropertyValue(c, issueDefName, PROP_DEFAULT_ASSIGNED_TO_USER);
         if (null == userId)
             return null;
         User user = UserManager.getUser(Integer.parseInt(userId));
@@ -673,9 +668,17 @@ public class IssueManager
 
     public static void saveDefaultAssignedToUser(Container c, String issueDefName, @Nullable User user)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
-        props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
-        props.save();
+        setPropertyValue(c, issueDefName, PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
+    }
+
+    public static String getDefaultRelatedFolder(Container c, String issueDefName)
+    {
+        return getPropertyValue(c, issueDefName, PROP_DEFAULT_RELATED_FOLDER);
+    }
+
+    public static void setPropDefaultRelatedFolder(Container c, String issueDefName, String relatedFolder)
+    {
+        setPropertyValue(c, issueDefName, PROP_DEFAULT_RELATED_FOLDER, relatedFolder);
     }
 
     public static Collection<Container> getMoveDestinationContainers(Container c, User user, String issueDefName)
@@ -794,8 +797,7 @@ public class IssueManager
 
     public static Sort.SortDirection getCommentSortDirection(Container c, String issueDefName)
     {
-        Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
-        String direction = props.get(CAT_COMMENT_SORT);
+        String direction = getPropertyValue(c, issueDefName, CAT_COMMENT_SORT);
         if (direction != null)
         {
             try
@@ -809,9 +811,7 @@ public class IssueManager
 
     public static void saveCommentSortDirection(Container c, String issueDefName, @NotNull Sort.SortDirection direction)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
-        props.put(CAT_COMMENT_SORT, direction.toString());
-        props.save();
+        setPropertyValue(c, issueDefName, CAT_COMMENT_SORT, direction.toString());
         uncache();  // uncache the assigned to list
     }
 

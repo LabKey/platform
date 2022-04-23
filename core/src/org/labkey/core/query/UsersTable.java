@@ -557,6 +557,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 try (InputStream is = file.openInputStream())
                 {
                     BufferedImage image = ImageIO.read(is);
+                    file.closeInputStream();
                     float desiredSize = ThumbnailService.ImageType.Large.getHeight();
 
                     if (image == null)
@@ -589,6 +590,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     {
                         ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
                         svc.replaceThumbnail(wrapper, imageType, null, null);
+                        file.closeInputStream();
                     }
                     catch (IOException e)
                     {

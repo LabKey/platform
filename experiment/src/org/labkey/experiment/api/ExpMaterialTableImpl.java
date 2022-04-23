@@ -71,6 +71,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -79,6 +80,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -674,6 +676,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
+
+        if (null != _ss)
+        {
+            MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
+            addColumn(lineageLookup);
+        }
     }
 
     @Override

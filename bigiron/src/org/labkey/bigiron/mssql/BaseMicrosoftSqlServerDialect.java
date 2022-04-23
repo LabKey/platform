@@ -55,6 +55,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 
 import javax.servlet.ServletException;
@@ -643,10 +644,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
         if (SELECT.matcher(sql.getSQL()).find())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT IS NOT VALID IN A SUB-SELECT'");
 
         if (!supportsGroupConcat())
-            return new SQLFragment("'NOT SUPPORTED'");
+            return new SQLFragment("'NOT SUPPORTED - GROUP_CONCAT FUNCTION IS NOT INSTALLED'");
 
         SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
 
@@ -1697,7 +1698,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if ("2008R2".equals(_versionYear))
+        if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
             warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 

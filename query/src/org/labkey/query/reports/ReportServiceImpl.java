@@ -26,8 +26,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.AbstractContainerListener;
@@ -94,7 +94,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -491,8 +490,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
             String reportXml = "";
-            // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(ImportContext)
-            FolderImportContext ex = new FolderImportContext(user, c, (Path)null, null, null, null);
+            // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(FolderExportContext)
+            FolderExportContext ex = new FolderExportContext(user, c, null, null, null);
             ReportDescriptorDocument reportDoc = report.getDescriptor().getDescriptorDocument(ex);
             try (StringWriter writer = new StringWriter())
             {
@@ -884,7 +883,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override @Nullable
-    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
+    public Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
     {
         Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml, root, xmlFileName);
         if (report != null)
@@ -897,11 +896,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
             }
 
-            List<Report> existingReports = new ArrayList<>(getReports(ctx.getUser(), ctx.getContainer(), key));
-
-            // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
-            // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
-            // NOTE: this will then be fixed up in the ReportImporter.postProcess
+            // In 13.2, there was a change to use dataset names instead of labels for query references in reports, views, etc.
+            // We used to fix these up, but we no longer support that. For now, log an error to alert admins.
             if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
             {
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
@@ -909,28 +905,25 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
                 if (study != null && schema != null && schema.equals("study"))
                 {
-                    Dataset dataset = study.getDatasetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    String queryName = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                    Dataset dataset = study.getDatasetByLabel(queryName);
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
-                        String newKey = ReportUtil.getReportKey(schema, dataset.getName());
-                        existingReports.addAll(getReports(ctx.getUser(), ctx.getContainer(), newKey));
+                        ctx.getLogger().error("Report \"" + xmlFileName + "\" could not be imported. Its queryName is \"" + queryName +
+                            ",\" which is a dataset label. Dataset labels are no longer supported; queryName should be set to the dataset name (\"" + dataset.getName() + "\") instead.");
+                        return null;
                     }
                 }
             }
 
-            for (Report existingReport : existingReports)
+            for (Report existingReport : getReports(ctx.getUser(), ctx.getContainer(), key))
             {
                 if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
                 {
-                    boolean shouldDelete = true;
-                    if (ctx instanceof FolderImportContext)
-                    {
-                        // Don't delete reports we just added.  This can happen if the reportKey is not unique and
-                        // we have two or more reports with the same name.  This also works in the reload case since
-                        // existing reports will not have the same report ids as the newly imported/created ones.
-                        if (((FolderImportContext)ctx).isImportedReport(existingReport.getDescriptor()))
-                            shouldDelete = false;
-                    }
+                    // Don't delete reports we just added. This can happen if the reportKey is not unique and
+                    // we have two or more reports with the same name. This also works in the reload case since
+                    // existing reports will not have the same report ids as the newly imported/created ones.
+                    boolean shouldDelete = !ctx.isImportedReport(existingReport.getDescriptor());
 
                     if (shouldDelete)
                         deleteReport(new DefaultContainerUser(ctx.getContainer(), ctx.getUser()), existingReport);
@@ -949,17 +942,13 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
 
-            if (ctx instanceof FolderImportContext)
-            {
-                // remember that we imported this report so we don't try to delete it if
-                // we are importing another report with the same reportKey and name.
-                ((FolderImportContext)ctx).addImportedReport(report.getDescriptor());
-            }
+            // remember that we imported this report so we don't try to delete it if
+            // we are importing another report with the same reportKey and name.
+            ctx.addImportedReport(report.getDescriptor());
 
             // import any security role assignments
-            if (reportXml instanceof ReportDescriptorDocument)
+            if (reportXml instanceof ReportDescriptorDocument doc)
             {
-                ReportDescriptorDocument doc = ((ReportDescriptorDocument)reportXml);
                 ReportDescriptorType descriptorType = doc.getReportDescriptor();
 
                 if (descriptorType.isSetRoleAssignments())
@@ -998,7 +987,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     private static class CategoryListener implements ViewCategoryListener
     {
-        private ReportServiceImpl _instance;
+        private final ReportServiceImpl _instance;
 
         private CategoryListener(ReportServiceImpl instance)
         {

@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
@@ -31,6 +32,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static org.labkey.experiment.XarExporter.MATERIAL_PREFIX_PLACEHOLDER_SUFFIX;
 
 /**
  * Various options for representing LSIDs when exporting XAR files.
@@ -73,6 +76,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
 
+            String sharedFolderSuffix = "Folder-" + ContainerManager.getSharedContainer().getRowId();
+            String containerSubstitution = sharedFolderSuffix.equals(suffix) ? XarContext.SHARED_CONTAINER_ID_SUBSTITUTION : XarContext.CONTAINER_ID_SUBSTITUTION;
+
             if ("ExperimentRun".equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
@@ -81,7 +87,20 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Sample".equals(prefix) || "Material".equals(prefix))
+            else if (MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.equals(lsid.getObjectId()))
+            {
+                /*
+                 * old prefix: "xxx:Sample:123.sampleTypeName"
+                 * new prefix: "xxx:Sample:Folder-123.345" (Sample:Folder-ContainerRowId.DBSeq)
+                 * relative lsid: "xxx:Sample:Folder-yyy.xarJobId.345" (need to add xarJobId because DBSeq might not be unique in target folder)
+                 */
+                String id = "";
+                int ind = suffix.indexOf(".");
+                if (ind > 0)
+                    id = suffix.substring(ind);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
+            }
+            else if (("Sample".equals(prefix) || "Material".equals(prefix)))
             {
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
@@ -94,7 +113,13 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion());
+                String xarFileId = "";
+                if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
+                {
+                    xarFileId = ".${XarJobId}"; // DBSeq in lsid might collide in target folder, add XarJobId to guarantee uniqueness
+                }
+
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + xarFileId, lsid.getObjectId(), lsid.getVersion());
             }
 
             return lsid.toString();
@@ -190,15 +215,15 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     {
         private final LSIDRelativizer _relativizer;
 
-        private Map<String, String> _originalToRelative = new HashMap<>();
+        private final Map<String, String> _originalToRelative = new HashMap<>();
 
         // Maintain a separate set of values so we can quickly determine if one is already in use instead of having
         // to traverse the whole map. See issue 39260
-        private Set<String> _relativized = new HashSet<>();
+        private final Set<String> _relativized = new HashSet<>();
 
         // Also keep track of the next suffix to append for a given LSID prefix so we don't have to run through the full
         // sequence of values we already scanned the last time. See issue 39260
-        private Map<String, Integer> _nextExportVersion = new HashMap<>();
+        private final Map<String, Integer> _nextExportVersion = new HashMap<>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;

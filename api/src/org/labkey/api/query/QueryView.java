@@ -3004,7 +3004,6 @@ public class QueryView extends WebPartView<Object>
     public NavTrailConfig getNavTrailConfig()
     {
         NavTrailConfig ret = new NavTrailConfig(getRootContext());
-        ret.setTitle(getQueryDef().getName());
         ret.setExtraChildren(new NavTree(getSchema().getSchemaName() + " queries", getSchema().urlFor(QueryAction.begin)));
         return ret;
     }

@@ -38,8 +38,9 @@ public class QueryLogging
     private final boolean _readOnly;
     private final boolean _metadataQuery;
     private final String _debugName;
-    private boolean _shouldAudit = true;
+    private boolean _shouldAudit = false;
     private SelectQueryAuditProvider _selectQueryAuditProvider = null;
+    private RuntimeException _exceptionToThrowIfLoggingIsEnabled = null;
 
     public QueryLogging()
     {
@@ -178,5 +179,15 @@ public class QueryLogging
     public SelectQueryAuditProvider getSelectQueryAuditProvider()
     {
         return _selectQueryAuditProvider;
+    }
+
+    public void setExceptionToThrowIfLoggingIsEnabled(RuntimeException exceptionToThrowIfLoggingIsEnabled)
+    {
+        _exceptionToThrowIfLoggingIsEnabled = exceptionToThrowIfLoggingIsEnabled;
+    }
+
+    public RuntimeException getExceptionToThrowIfLoggingIsEnabled()
+    {
+        return _exceptionToThrowIfLoggingIsEnabled;
     }
 }

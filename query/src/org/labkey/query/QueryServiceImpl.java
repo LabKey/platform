@@ -40,12 +40,9 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.query.column.BuiltInColumnTypes;
-import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -56,7 +53,8 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
-import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
+import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -64,7 +62,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -78,7 +75,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -130,7 +126,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -159,9 +154,9 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions cache", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
-    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
+    private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
     private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
     {
@@ -195,7 +190,7 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
+    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module, String>> _schemaLinkActions = new ConcurrentHashMap<>();
@@ -1674,17 +1669,24 @@ public class QueryServiceImpl implements QueryService
     {
         AliasManager manager = new AliasManager(table, columns);
 
+        /* What is the difference between ret and columnMap?
+         *   "ret" is the list of columns that needs to be selected, while columnMap may include some
+         *   additional "intermediate" lookup columns.  For instance, if you select A, and A/B/C,
+         *   then columnMap will end up with A/B.
+         */
+        LinkedHashMap<FieldKey, ColumnInfo> ret = new LinkedHashMap<>();
         for (ColumnInfo column : columns)
-            columnMap.put(column.getFieldKey(), column);
-
-        ArrayList<ColumnInfo> ret = new ArrayList<>(columns);
+        {
+            columnMap.putIfAbsent(column.getFieldKey(), column);
+            ret.putIfAbsent(column.getFieldKey(), column);
+        }
 
         // Add container column if needed
         ColumnInfo containerColumn = table.getColumn("Container");
         if (null != containerColumn && !columnMap.containsKey(containerColumn.getFieldKey()) && containerColumn.isRequired())
         {
-            ret.add(containerColumn);
             columnMap.put(FieldKey.fromString("Container"), containerColumn);
+            ret.putIfAbsent(containerColumn.getFieldKey(), containerColumn);
         }
 
         // foreign keys
@@ -1713,7 +1715,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                    ret.add(col);
+                    ret.putIfAbsent(col.getFieldKey(),col);
             }
         }
 
@@ -1724,9 +1726,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                    ret.add(col);
-                else if (columnMap.containsKey(fieldKey))
-                    ret.add(columnMap.get(fieldKey));
+                    ret.putIfAbsent(col.getFieldKey(),col);
             }
         }
 
@@ -1737,7 +1737,7 @@ public class QueryServiceImpl implements QueryService
                 ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
                 if (col != null)
                 {
-                    ret.add(col);
+                    ret.putIfAbsent(col.getFieldKey(),col);
                     resolveSortColumns(col, columnMap, manager, ret, allInvolvedColumns, false);
                 }
                 //the column might be displayed, but also used as a sort.  if so, we need to ensure we include sortFieldKeys
@@ -1765,13 +1765,13 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
-        allInvolvedColumns.addAll(ret);
-        return ret;
+        allInvolvedColumns.addAll(ret.values());
+        return new ArrayList<>(ret.values());
     }
 
 
-    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
-                                                     ArrayList<ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
+    private void resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
+                                                     LinkedHashMap<FieldKey,ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
     {
         if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
         {
@@ -1801,29 +1801,23 @@ public class QueryServiceImpl implements QueryService
                 }
             }
 
-            ret.addAll(toAdd);
+            toAdd.forEach(c -> ret.putIfAbsent(c.getFieldKey(), c));
             allInvolvedColumns.addAll(toAdd);
         }
         else
         {
             if (!addSortKeysOnly)
             {
-                if (!columnMap.containsKey(col.getFieldKey()))
-                    ret.add(col);
+                ret.putIfAbsent(col.getFieldKey(),col);
                 allInvolvedColumns.add(col);
             }
         }
-
-        return ret;
     }
 
 
     private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
         if (fieldKey == null)
-            return null;
-
-        if (columnMap.containsKey(fieldKey))
             return null;
 
         // This could be made more general, but I don't think there's a need.  To reduce testing
@@ -1853,10 +1847,7 @@ public class QueryServiceImpl implements QueryService
             if (!column.getFieldKey().equals(fieldKey))
             {
                 if (columnMap.containsKey(column.getFieldKey()))
-                {
                     columnMap.put(fieldKey, columnMap.get(column.getFieldKey()));
-                    return null;
-                }
             }
 
             return column;

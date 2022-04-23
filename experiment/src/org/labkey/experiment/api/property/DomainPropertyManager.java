@@ -76,7 +76,7 @@ public class DomainPropertyManager
     }
 
     private static final ConditionalFormatLoader CONDITIONAL_FORMAT_LOADER = new ConditionalFormatLoader();
-    private static final DatabaseCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = new DatabaseCache<>(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "ConditionalFormats");
+    private static final DatabaseCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = new DatabaseCache<>(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats");
 
     private DomainPropertyManager(){}
 
@@ -174,7 +174,7 @@ public class DomainPropertyManager
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };
 
-    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property Validators"), PV_LOADER);
+    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators"), PV_LOADER);
     private static final Collection<PropertyValidator> EMPTY_COLLECTION = Collections.emptyList();
 
 

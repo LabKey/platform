@@ -53,7 +53,7 @@ class UserCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
 
-    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User Collections")
+    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections")
     {
         @Override
         protected Cache<String, UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
@@ -62,13 +62,11 @@ class UserCache
             return new BlockingCache<>(shared, new UserCollectionsLoader());
         }
 
-
-
         @Override
         protected Cache<String, UserCollections> createTemporaryCache(TrackingCache<String, UserCollections> sharedCache)
         {
             Tracking tracking = sharedCache.getTrackingCache();
-            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getStats());
+            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getTransactionStats());
             return new BlockingCache<>(temp, new UserCollectionsLoader());
         }
     };
@@ -76,7 +74,6 @@ class UserCache
     private UserCache()
     {
     }
-
 
     // Return a new copy of the User with this userId, or null if user doesn't exist
     static @Nullable User getUser(int userId)

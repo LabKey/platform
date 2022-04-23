@@ -254,7 +254,7 @@ if (!pipelineSet)
     </labkey:panel>
 <% } %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function truncateTable()
     {
         var msg = "Are you sure you wish to delete all rows for the dataset "+ '<%=h(dataset.getName())%>' + "?<br>";

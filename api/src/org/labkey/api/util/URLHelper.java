@@ -1004,6 +1004,37 @@ public class URLHelper implements Cloneable, Serializable
         }
 
         @Test
+        public void testQuotes() throws URISyntaxException
+        {
+            // Test that single and double quotes are encoded in URLs.  Helps ensure that they are safe in various contexts even if not re-encoded.
+            String s;
+            s = new URLHelper("http://server/single'quote/?q'uery=p'aram").toString();
+            assertFalse(s.contains("'"));
+            try
+            {
+                s = new URLHelper("http://server/double\"quote/?q\"uery=p\"aram").toString();
+                fail("Expected throw URISyntaxException");
+            }
+            catch (URISyntaxException x)
+            {
+                /* expected */
+            }
+            s = new URLHelper("http://server/doublequote/?q\"uery=p\"aram").toString();
+            assertFalse(s.contains("\""));
+            try
+            {
+                s = new URLHelper("http://server/back\\slash/?q\\uery=p\\aram").toString();
+                fail("Expected throw URISyntaxException");
+            }
+            catch (URISyntaxException x)
+            {
+                /* expected */
+            }
+            s = new URLHelper("http://server/backslash/?q\\uery=p\\aram").toString();
+            assertFalse(s.contains("\\"));
+        }
+
+        @Test
         public void testParseWithHash() throws URISyntaxException
         {
             URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +

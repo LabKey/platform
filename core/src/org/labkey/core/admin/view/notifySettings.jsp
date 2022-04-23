@@ -35,7 +35,7 @@
     MessageConfigService.EmailConfigForm bean = ((JspView <MessageConfigService.EmailConfigForm>)HttpView.currentView()).getModelBean();
 %>
 <div id="<%=h(panelDiv)%>"></div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
         var emailDefaultCombo = Ext4.create('Ext.form.field.ComboBox', {

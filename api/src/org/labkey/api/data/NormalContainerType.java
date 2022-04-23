@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 
@@ -42,7 +42,7 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public boolean includeForImportExport(ImportContext context)
+    public boolean includeForImportExport(FolderExportContext context)
     {
        return context.isIncludeSubfolders();
     }

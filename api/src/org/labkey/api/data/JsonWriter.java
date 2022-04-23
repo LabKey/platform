@@ -277,12 +277,12 @@ public class JsonWriter
         }
         else
         {
-            props.put("shortCaption", dc.getCaption());
+            props.put("shortCaption", dc.getCaption(null, false));
         }
 
-        props.put("caption", dc.getCaption());
+        props.put("caption", dc.getCaption(null, false));
         if (includeDomainFormat)
-            props.put("label", dc.getCaption());
+            props.put("label", dc.getCaption(null, false));
 
         if (includeLookup && cinfo != null)
         {

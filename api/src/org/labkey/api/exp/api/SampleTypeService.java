@@ -30,6 +30,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -158,6 +159,8 @@ public interface SampleTypeService
     ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
 
     Lsid getSampleTypeLsid(String name, Container container);
+
+    Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);
 
     /**
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.

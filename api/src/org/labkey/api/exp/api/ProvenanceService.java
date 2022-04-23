@@ -55,6 +55,12 @@ public interface ProvenanceService
     String DATA_OUTPUTS = "dataOutputs";
     String PROPERTIES = "properties";
 
+    String ACTIVITY_DATE = "activityDate";
+    String START_TIME = "startTime";
+    String END_TIME = "endTime";
+    String RECORD_COUNT = "recordCount";
+    String COMMENTS = "comments";
+
     @NotNull
     static ProvenanceService get()
     {

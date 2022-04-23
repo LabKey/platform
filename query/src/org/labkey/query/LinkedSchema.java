@@ -16,7 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,10 +42,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
@@ -60,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,9 +95,12 @@ public class LinkedSchema extends ExternalSchema
         });
     }
 
+    private static final Logger LOG = LogHelper.getLogger(LinkedSchema.class, "Warnings about linked schemas");
+
     private final UserSchema _sourceSchema;
     private final Collection<String> _availableQueries;
     private final Map<String, QueryDefinition> _resolvedQueries = new CaseInsensitiveHashMap<>();
+
     private boolean _resolvedAllQueries = false;
 
 
@@ -103,7 +109,7 @@ public class LinkedSchema extends ExternalSchema
         Container sourceContainer = def.lookupSourceContainer();
         if (sourceContainer == null)
         {
-            LogManager.getLogger(LinkedSchema.class).warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
+            LOG.warn("Source container '" + def.getSourceContainerId() + "' not found for linked schema " + def.getUserSchemaName());
             return null;
         }
 
@@ -111,28 +117,10 @@ public class LinkedSchema extends ExternalSchema
         String sourceSchemaName = def.getSourceSchemaName();
         if (sourceSchemaName == null && template != null)
             sourceSchemaName = template.getSourceSchemaName();
-
-        // Disallow recursive linked schema
-        if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
-        {
-            LogManager.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
-            return null;
-        }
-
-        // Create the source schema with the user that created the linked schema.
-        // The linked schema queries will be executed with the same permission as the the linked schema creator.
-        // CONSIDER: Add an "execute as" setting on the LinkedSchemaDef to specify a different user.
-        User sourceSchemaUser = UserManager.getUser(def.getCreatedBy());
-        if (sourceSchemaUser == null)
-        {
-            LogManager.getLogger(LinkedSchema.class).warn("Source schema user '" + def.getCreatedBy() + "' not found");
-            return null;
-        }
-
-        UserSchema sourceSchema = getSourceSchema(sourceSchemaName, sourceContainer, sourceSchemaUser);
+        UserSchema sourceSchema = getSourceSchema(def, sourceSchemaName, sourceContainer, user);
         if (sourceSchema == null)
         {
-            LogManager.getLogger(LinkedSchema.class).warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
+            LOG.warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
             return null;
         }
 
@@ -176,8 +164,16 @@ public class LinkedSchema extends ExternalSchema
         return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables, availableQueries);
     }
 
-    private static UserSchema getSourceSchema(String sourceSchemaName, Container sourceContainer, User sourceSchemaUser)
+    private static UserSchema getSourceSchema(LinkedSchemaDef def, String sourceSchemaName, Container sourceContainer, User user)
     {
+        // Disallow recursive linked schema
+        if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
+        {
+            LOG.warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
+            return null;
+        }
+
+        User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
         SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
 
         return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaKey);
@@ -360,9 +356,9 @@ public class LinkedSchema extends ExternalSchema
             String cols = StringUtils.trim(metaData.getIncludeColumnsList());
             if (!StringUtils.equals("*",cols))
             {
-                includedFields = Arrays.asList(StringUtils.split(cols,";")).stream()
-                        .map((col)->new FieldKey(null,col))
-                        .collect(Collectors.toSet());
+                includedFields = Arrays.stream(StringUtils.split(cols,";"))
+                    .map((col)->new FieldKey(null,col))
+                    .collect(Collectors.toSet());
             }
         }
 
@@ -584,27 +580,40 @@ public class LinkedSchema extends ExternalSchema
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
-        private final Set<String> _allowedContainerIds;
+        private static final int[] NO_GROUPS = new int[0];
 
-        public LinkedSchemaUserWrapper(User realUser, Set<Container> dependentContainers)
+        private final Set<String> _allowedPolicyResourceIds = new HashSet<>();
+
+        public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
-            super(realUser, realUser.getGroups(), Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
 
-            // Get the policy container id for the dependent containers
-            _allowedContainerIds = dependentContainers.stream().map(Container::getPolicy).map(SecurityPolicy::getContainerId).collect(Collectors.toUnmodifiableSet());
+            // Current container policy and (if it exists) current study policy are the only policies that get
+            // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
+            // and per-dataset checks are skipped.
+
+            // Must save the policy's (not the container's) resource ID to support inheritance correctly, #45225
+            _allowedPolicyResourceIds.add(sourceContainer.getPolicy().getResourceId());
+
+            StudyService ss = StudyService.get();
+            if (null != ss)
+            {
+                Study study = ss.getStudy(sourceContainer);
+                if (null != study)
+                    _allowedPolicyResourceIds.add(study.getPolicy().getResourceId());
+            }
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // For the linked schema's source container and any dependent containers,
-            // grant ReaderRole via the LimitedUser implementation.
-            if (_allowedContainerIds.contains(policy.getContainerId()))
+            // If the policy is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
+            if (_allowedPolicyResourceIds.contains(policy.getResourceId()))
             {
                 return super.getContextualRoles(policy);
             }
 
-            // For all other containers, just rely on normal permissions
+            // For all other containers and policies, no permissions
             return Collections.emptySet();
         }
     }

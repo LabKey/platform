@@ -91,9 +91,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            new WikiWebPartFactory(),
+            new MenuWikiWebPartFactory(),
             new WikiTOCFactory(),
-            new MenuWikiWebPartFactory()
+            new WikiWebPartFactory()
         );
     }
 
@@ -222,7 +222,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
             try
             {
-                getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+                getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false, null);
             }
             catch (IOException e)
             {

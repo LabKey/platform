@@ -37,7 +37,7 @@
     SpecimenRequestActor[] actors = bean.getActors();
     ActionURL deleteDefaultRequirement = urlFor(SpecimenController.DeleteDefaultRequirementAction.class).addParameter("id",0);
 %>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 function verifyNewRequirement(prefix)
 {
     var actorElement = document.getElementById(prefix + "Actor");

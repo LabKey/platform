@@ -57,7 +57,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
@@ -80,8 +80,8 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -138,6 +138,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.CreateProjectPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -247,7 +248,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -958,7 +961,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.naturalOrder());
+            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
@@ -2801,7 +2804,7 @@ public class AdminController extends SpringActionController
                 throw new RedirectException(redirect);
             }
 
-            List<TrackingCache> caches = CacheManager.getKnownCaches();
+            List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
 
             if (form.getDebugName() != null)
             {
@@ -2832,16 +2835,22 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Caches", cacheStats);
+            appendStats(html, "Caches", cacheStats, false);
 
             html.append("<br/><br/>\n");
-            appendStats(html, "Transaction Caches", transactionStats);
+            appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html.toString());
         }
 
-        private void appendStats(StringBuilder html, String title, List<CacheStats> stats)
+        private void appendStats(StringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
         {
+            List<CacheStats> stats = skipUnusedCaches ?
+                allStats.stream()
+                    .filter(stat->stat.getMaxSize() > 0)
+                    .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
+                allStats;
+
             Collections.sort(stats);
 
             html.append("<p><b>");
@@ -2857,6 +2866,7 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Misses</td>");
             html.append("<td class=\"labkey-column-header\">Puts</td>");
             html.append("<td class=\"labkey-column-header\">Expirations</td>");
+            html.append("<td class=\"labkey-column-header\">Evictions</td>");
             html.append("<td class=\"labkey-column-header\">Removes</td>");
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
@@ -2867,6 +2877,7 @@ public class AdminController extends SpringActionController
             long misses = 0;
             long puts = 0;
             long expirations = 0;
+            long evictions = 0;
             long removes = 0;
             long clears = 0;
             int rowCount = 0;
@@ -2878,6 +2889,7 @@ public class AdminController extends SpringActionController
                 misses += stat.getMisses();
                 puts += stat.getPuts();
                 expirations += stat.getExpirations();
+                evictions += stat.getEvictions();
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
@@ -2886,11 +2898,10 @@ public class AdminController extends SpringActionController
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
                 Long limit = stat.getLimit();
-                Long maxSize = stat.getMaxSize();
+                long maxSize = stat.getMaxSize();
 
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
-
 
                 html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
@@ -2904,12 +2915,21 @@ public class AdminController extends SpringActionController
             double ratio = 0 != gets ? misses / (double)gets : 0;
             html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
             html.append("</table>\n");
         }
+
+        private static final List<String> PREFIXES_TO_SKIP = List.of(
+            "java.base/java.lang.Thread.getStackTrace",
+            "org.labkey.api.cache.CacheManager",
+            "org.labkey.api.cache.DbCache",
+            "org.labkey.api.cache.Throttle",
+            "org.labkey.api.data.DatabaseCache",
+            "org.labkey.api.module.ModuleResourceCache"
+        );
 
         private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
@@ -2917,8 +2937,17 @@ public class AdminController extends SpringActionController
 
             if (creationStackTrace != null)
             {
+                boolean trimming = true;
                 for (StackTraceElement element : creationStackTrace)
                 {
+                    // Skip the first few uninteresting stack trace elements to highlight the caller we care about
+                    if (trimming)
+                    {
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                            continue;
+
+                        trimming = false;
+                    }
                     sb.append(element);
                     sb.append("\n");
                 }
@@ -4348,12 +4377,12 @@ public class AdminController extends SpringActionController
             _format = format;
         }
 
-        public AbstractFolderContext.ExportType getExportType()
+        public ExportType getExportType()
         {
             if ("study".equals(_exportType))
-                return AbstractFolderContext.ExportType.STUDY;
+                return ExportType.STUDY;
             else
-                return AbstractFolderContext.ExportType.ALL;
+                return ExportType.ALL;
         }
 
         public void setExportType(String exportType)
@@ -4867,10 +4896,10 @@ public class AdminController extends SpringActionController
                 registeredFolderWriters.add(dataType);
 
                 // for each Writer also determine if there are related children Writers, if so include them also
-                Collection<org.labkey.api.writer.Writer> childWriters = writer.getChildren(true, true);
-                if (childWriters != null && childWriters.size() > 0)
+                Collection<org.labkey.api.writer.Writer<?, ?>> childWriters = writer.getChildren(true, true);
+                if (!childWriters.isEmpty())
                 {
-                    for (org.labkey.api.writer.Writer child : childWriters)
+                    for (org.labkey.api.writer.Writer<?, ?> child : childWriters)
                     {
                         dataType = child.getDataType();
                         if (dataType != null)
@@ -4881,7 +4910,6 @@ public class AdminController extends SpringActionController
         }
         return registeredFolderWriters;
     }
-
 
     public static class FolderSettingsForm implements SettingsForm
     {
@@ -6864,18 +6892,17 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public static class CreateFolderAction extends FormViewAction<ManageFoldersForm>
+    private static abstract class AbstractCreateFolderAction<FORM extends ManageFoldersForm> extends FormViewAction<FORM>
     {
         private ActionURL _successURL;
 
         @Override
-        public void validateCommand(ManageFoldersForm target, Errors errors)
+        public void validateCommand(FORM target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
 
@@ -6888,7 +6915,7 @@ public class AdminController extends SpringActionController
                     form.setFolderType(folderType.getName());
                 }
             }
-            JspView<ManageFoldersForm> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
+            JspView<FORM> statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
             Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
@@ -6916,12 +6943,15 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        public boolean handlePost(FORM form, BindException errors) throws Exception
         {
             Container parent = getViewContext().getContainerNoTab();
             String folderName = StringUtils.trimToNull(form.getName());
             String folderTitle = (form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle();
             StringBuilder error = new StringBuilder();
+            Consumer<Container> afterCreateHandler = getAfterCreateHandler(form);
+
+            final Container newContainer;
 
             if (Container.isLegalName(folderName, parent.isRoot(), error))
             {
@@ -6938,7 +6968,6 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    Container c;
                     String folderType = form.getFolderType();
 
                     if (null == folderType)
@@ -6970,7 +6999,7 @@ public class AdminController extends SpringActionController
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
+                        newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
                     }
                     else
                     {
@@ -6993,8 +7022,9 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
-                        c.setFolderType(type, getUser());
+                        newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
+                        afterCreateHandler.accept(newContainer);
+                        newContainer.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7006,13 +7036,13 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            c.setFolderType(FolderType.NONE, activeModules, getUser());
+                            newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                            c.setDefaultModule(defaultModule);
+                            newContainer.setDefaultModule(defaultModule);
                         }
                     }
 
-                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(c);
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(newContainer);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;
@@ -7023,8 +7053,19 @@ public class AdminController extends SpringActionController
             return false;
         }
 
+        /**
+         * Return a Consumer that provides post-creation handling on the new Container
+         */
+        abstract public Consumer<Container> getAfterCreateHandler(FORM form);
+
         @Override
-        public ActionURL getSuccessURL(ManageFoldersForm form)
+        protected String getCommandClassMethodName()
+        {
+            return "getAfterCreateHandler";
+        }
+
+        @Override
+        public ActionURL getSuccessURL(FORM form)
         {
             return _successURL;
         }
@@ -7032,6 +7073,62 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class CreateFolderAction extends AbstractCreateFolderAction<ManageFoldersForm>
+    {
+        @Override
+        public Consumer<Container> getAfterCreateHandler(ManageFoldersForm form)
+        {
+            // No special handling
+            return container -> {};
+        }
+    }
+
+    public static class CreateProjectForm extends ManageFoldersForm
+    {
+        private boolean _assignProjectAdmin = false;
+
+        public boolean isAssignProjectAdmin()
+        {
+            return _assignProjectAdmin;
+        }
+
+        @SuppressWarnings("unused")
+        public void setAssignProjectAdmin(boolean assignProjectAdmin)
+        {
+            _assignProjectAdmin = assignProjectAdmin;
+        }
+    }
+
+    @RequiresPermission(CreateProjectPermission.class)
+    public static class CreateProjectAction extends AbstractCreateFolderAction<CreateProjectForm>
+    {
+        @Override
+        public void validateCommand(CreateProjectForm target, Errors errors)
+        {
+            super.validateCommand(target, errors);
+            if (!getContainer().isRoot())
+                errors.reject(ERROR_MSG, "Must be invoked from the root");
+        }
+
+        @Override
+        public Consumer<Container> getAfterCreateHandler(CreateProjectForm form)
+        {
+            if (form.isAssignProjectAdmin())
+            {
+                return c -> {
+                    MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
+                    policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                    SecurityPolicyManager.savePolicy(policy);
+                };
+            }
+            else
+            {
+                return c -> {};
+            }
         }
     }
 
@@ -8660,7 +8757,8 @@ public class AdminController extends SpringActionController
                 var defaultFolderType = manager.getDefaultFolderType();
                 // If a default folder type has not yet been configuration use "Collaboration" folder type as the default
                 defaultFolderType = defaultFolderType != null ? defaultFolderType : manager.getFolderType(CollaborationFolderType.TYPE_NAME);
-                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(), defaultFolderType);
+                boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
+                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(userHasEnableRestrictedModulesPermission), defaultFolderType);
             }
 
             return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", bean, errors);
@@ -10562,7 +10660,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AdjustTimestampsForm adjustTimestampsForm)
         {
-            return  PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 

@@ -35,7 +35,7 @@
     int rowId = me.getModelBean().getQueryView().getWebPartRowId();
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function() {
         Ext4.create('Ext.panel.Panel', {

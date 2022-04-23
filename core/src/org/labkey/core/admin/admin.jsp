@@ -87,7 +87,7 @@
 
     LocalDateTime serverTime = LocalDateTime.now();
     LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
-    long duration = Duration.between(serverTime, databaseTime).toSeconds();
+    long duration = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
 
     // Warn if greater than this many seconds
     long warningSeconds = 10;
@@ -240,7 +240,7 @@
         </labkey:panel>
     </div>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function($) {
 
         var defaultRoute = "links";

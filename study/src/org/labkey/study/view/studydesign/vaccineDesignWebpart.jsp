@@ -65,7 +65,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()
     {
         Ext4.create('LABKEY.VaccineDesign.ImmunogensGrid', {

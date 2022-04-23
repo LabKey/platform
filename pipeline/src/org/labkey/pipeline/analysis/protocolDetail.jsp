@@ -46,7 +46,7 @@
     Button.ButtonBuilder cancelButton = button("Cancel").href(returnUrl);
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()
     {
         var el = Ext4.get("xmlParameters");

@@ -121,7 +121,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 }
                 catch (Exception e)
                 {
-                    HtmlString.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
+                    html = HtmlString.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
                 }
             }
             else
@@ -173,14 +173,20 @@ public abstract class BaseWikiView extends JspView<Object>
             updateContentURL.addParameter("redirect", url.getLocalURIString());
         }
 
-        if (isWebPart() && perms.allowAdmin())
+        if (isWebPart())
         {
-            // the customize URL should always be for the current container (not the wiki webpart's container)
-            customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
-            customizeURL.addParameter("webPartId", _webPartId);
-            customizeURL.addReturnURL(getViewContext().getActionURL());
+            if (perms.allowAdmin())
+            {
+                // the customize URL should always be for the current container (not the wiki webpart's container)
+                customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
+                customizeURL.addParameter("webPartId", _webPartId);
+                customizeURL.addReturnURL(getViewContext().getActionURL());
+            }
 
-            setTitleHref(WikiController.getPageURL(wiki, c));
+            if (perms.allowRead(wiki))
+            {
+                setTitleHref(WikiController.getPageURL(wiki, c));
+            }
         }
 
         if (null == context.getRequest().getParameter("_print"))

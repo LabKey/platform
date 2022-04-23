@@ -105,7 +105,7 @@ These permissions control whether pipeline files can be downloaded and updated v
 %>
 <%= button("Submit").submit(true) %>
 </labkey:form>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 toggleEnableFTP(document.getElementById("enabledCheckbox"));
         
 function toggleEnableFTP(checkbox)

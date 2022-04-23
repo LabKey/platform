@@ -20,16 +20,19 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -83,6 +86,8 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1316,7 +1321,7 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class BasicGetContainersForm
+    public static class BasicGetContainersForm implements HasBindParameters
     {
         private Container[] _container;
         private boolean _includeSubfolders = false;
@@ -1342,16 +1347,24 @@ public class ProjectController extends SpringActionController
             _depth = depth;
         }
 
-        public Container[] getContainer()
+        public Container[] getContainers()
         {
             return _container;
         }
 
-        public void setContainer(Container[] container)
+        public void setContainers(Container[] container)
         {
             _container = container;
         }
 
+        @Override
+        public @NotNull BindException bindParameters(PropertyValues pvs)
+        {
+            MutablePropertyValues mpvs = new MutablePropertyValues(pvs);
+            if (pvs.contains("container"))
+                mpvs.addPropertyValue("containers", pvs.getPropertyValue("container").getValue());
+            return BaseViewAction.springBindParameters(this, "form", mpvs);
+        }
     }
 
     public static class GetContainersForm extends BasicGetContainersForm
@@ -1486,15 +1499,15 @@ public class ProjectController extends SpringActionController
                         return c;
                     return c1.getTitle().compareTo(c2.getTitle());
                 });
-                form.setContainer(list.toArray(new Container[list.size()]));
+                form.setContainers(list.toArray(new Container[list.size()]));
             }
 
             Map<String, Object> resultMap;
-            if (form.isMultipleContainers() || (form.getContainer() != null && form.getContainer().length > 1))
+            if (form.isMultipleContainers() || (form.getContainers() != null && form.getContainers().length > 1))
             {
                 Set<Container> containers = new LinkedHashSet<>();
-                if (form.getContainer() != null)
-                    containers.addAll(Arrays.asList(form.getContainer()));
+                if (form.getContainers() != null)
+                    containers.addAll(Arrays.asList(form.getContainers()));
 
                 if (containers.isEmpty())
                     containers.add(getContainer());
@@ -1510,8 +1523,8 @@ public class ProjectController extends SpringActionController
             else
             {
                 Container c = getContainer();
-                if (form.getContainer() != null && form.getContainer().length > 0)
-                    c = form.getContainer()[0];
+                if (form.getContainers() != null && form.getContainers().length > 0)
+                    c = form.getContainers()[0];
                 if (null != c) // 17166
                     resultMap = getContainerJSON(c, user, propertiesToSerialize);
                 else
@@ -1680,8 +1693,8 @@ public class ProjectController extends SpringActionController
             int requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
 
             Container c = getContainer();
-            if (form.getContainer() != null && form.getContainer().length > 0)
-                c = form.getContainer()[0];
+            if (form.getContainers() != null && form.getContainers().length > 0)
+                c = form.getContainers()[0];
 
             List<String> containerPaths = c == null ? Collections.emptyList() : getVisibleChildren(c, 0, requestedDepth);
             response.put("containers", containerPaths);

@@ -82,7 +82,7 @@ public abstract class AutoCompleteTag extends SimpleTagBase
 
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
         StringBuilder sb = new StringBuilder()
-            .append("<script type=\"text/javascript\">\n")
+            .append("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n")
             .append("    LABKEY.requiresScript('completion',function(){\n")
             .append("        Ext4.onReady(function(){\n")
             .append("            Ext4.create('LABKEY.element.AutoCompletionField', {\n")

@@ -94,7 +94,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // cache engine definitions by:
     // - "ALL" -> all engines
     // - container+context -> engines scoped to a single container and context enum
-    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "script engine defs", (key, argument) -> {
+    private static final BlockingCache<String, List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "Script engine definitions", (key, argument) -> {
         if (key == ALL_ENGINES)
         {
             // fetch all script engine definitions
