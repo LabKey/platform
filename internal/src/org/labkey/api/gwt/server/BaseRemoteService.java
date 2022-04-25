@@ -17,8 +17,6 @@
 package org.labkey.api.gwt.server;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
@@ -43,8 +41,6 @@ import java.util.Vector;
  */
 public abstract class BaseRemoteService extends RemoteServiceServlet
 {
-    private static Logger _log = LogManager.getLogger(BaseRemoteService.class);
-
     protected ViewContext _context;
     public BaseRemoteService(ViewContext context)
     {
@@ -108,7 +104,6 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
     {
         failure = ExceptionUtil.unwrapException(failure);
         ExceptionUtil.logExceptionToMothership(getThreadLocalRequest(), failure);
-        _log.error("GWT Service Error", failure);
 
         HttpServletResponse response = getThreadLocalResponse();
         try

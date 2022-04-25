@@ -376,10 +376,10 @@ LABKEY.internal.UserNotificationPanel =
 
                         let groupRowIds = LABKEY.notifications.grouping[groupings[i]];
                         for (let j = 0; j < groupRowIds.length; j++) {
-                            const info = LABKEY.notifications[rowId];
-                            if (isNaN(parseInt(groupRowIds[j])))
-                                continue;
                             const rowId = parseInt(groupRowIds[j]);
+                            if (isNaN(rowId))
+                                continue;
+                            const info = LABKEY.notifications[rowId];
 
                             // get the date/time display string based on the current date
                             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
