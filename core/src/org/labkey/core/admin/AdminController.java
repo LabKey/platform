@@ -7121,7 +7121,7 @@ public class AdminController extends SpringActionController
             {
                 return c -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
-                    policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                    policy.addRoleAssignment(getUser(), ProjectAdminRole.class);
                     SecurityPolicyManager.savePolicy(policy);
                 };
             }
@@ -7234,16 +7234,16 @@ public class AdminController extends SpringActionController
                             Group g = (Group) p;
                             if (!g.isProjectGroup())
                             {
-                                np.addRoleAssignment(p, r);
+                                np.addRoleAssignment(p, r, false);
                             }
                             else
                             {
-                                np.addRoleAssignment(groupMap.get(p), r);
+                                np.addRoleAssignment(groupMap.get(p), r, false);
                             }
                         }
                         else
                         {
-                            np.addRoleAssignment(p, r);
+                            np.addRoleAssignment(p, r, false);
                         }
                     }
                     SecurityPolicyManager.savePolicy(np);
