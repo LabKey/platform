@@ -641,7 +641,7 @@ public class PageConfig
         if (AppProps.getInstance().isDevMode())
         {
             Set<String> eventIds = new HashSet<>();
-            for (EventHandler h : _eventHandlers)
+            for (EventHandler h : _eventHandlers.values())
             {
                 final String eventId = h.id + "#" + h.event;
 
