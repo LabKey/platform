@@ -1040,57 +1040,6 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CopySinglePageAction extends FormHandlerAction<CopyWikiForm>
-    {
-        private ActionURL _successURL;
-
-        @Override
-        public void validateCommand(CopyWikiForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
-        {
-            String pageName = form.getPageName();
-            Container cSrc = getSourceContainer(form.getSourceContainer());
-            Container cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
-
-            if (errors.hasErrors())
-                return false;
-
-            if (pageName == null || cSrc == null || cDest == null)
-                throw new NotFoundException();
-
-            //user must have admin perms on both source and destination container
-            if (!cDest.hasPermission(getUser(), AdminPermission.class))
-                throw new UnauthorizedException();
-
-            Wiki srcPage = WikiSelectManager.getWiki(cSrc, pageName);
-            if (srcPage == null)
-                throw new NotFoundException();
-
-            //get existing destination wiki names
-            List<String> destPageNames = WikiSelectManager.getPageNames(cDest);
-
-            //copy single page
-            Wiki newWikiPage = getWikiManager().copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.getIsCopyingHistory());
-
-            displayWikiModuleInDestContainer(cDest);
-
-            _successURL = getPageURL(newWikiPage, cDest);
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(CopyWikiForm copyWikiForm)
-        {
-            return _successURL;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
         @Override
