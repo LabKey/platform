@@ -100,7 +100,7 @@ public class TableViewFormTestCase extends Assert
     {
         Container test = JunitUtil.getTestContainer();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(FolderAdminRole.class));
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), FolderAdminRole.class);
         SecurityPolicyManager.savePolicy(policy);
 
         ViewContext ctx = new ViewContext(HttpView.currentContext());
