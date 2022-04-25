@@ -1009,8 +1009,8 @@ public class WikiController extends SpringActionController
                 List<String> srcPageNames;
 
                 if (parentPage != null)
-                    // TODO: make subtrees work; previously begetWikiManager().getSubTreePageList(cSrc, parentPage), now
-                    // somethinge like WikiSelectManager.getDescendents(cSrc, name)
+                    // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
+                    // something like WikiSelectManager.getDescendents(cSrc, name)
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
                 else
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
