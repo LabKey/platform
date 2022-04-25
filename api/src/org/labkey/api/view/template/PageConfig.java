@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -101,10 +102,20 @@ public class PageConfig
 		Default, True, False
 	}
 
-    private record EventHandler(@NotNull String id, @NotNull String event, @NotNull String handler) {}
+    private record EventHandler(String id, String selector, @NotNull String event, @NotNull String handler) {
+        public EventHandler {
+            // exactly one of id or selector must be non-null
+            assert (null==id) != (null==selector);
+        }
+
+        public String getKey()
+        {
+            return null!=id ? ("id:" + id + "." + event) : ("selector:" + id + "." + event);
+        }
+    }
 
     // collected javascript handlers
-    private final ArrayList<EventHandler> _eventHandlers = new ArrayList<>();
+    private final LinkedHashMap<String,EventHandler> _eventHandlers = new LinkedHashMap<>();
     private final ArrayList<String> _onDomLoaded = new ArrayList<>();
     private final ArrayList<String> _onDocumentLoaded = new ArrayList<>();
 
@@ -562,6 +573,13 @@ public class PageConfig
     }
 
 
+    private void _addHandler(EventHandler eh)
+    {
+        var prev = _eventHandlers.put(eh.getKey(), eh);
+        assert null==prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
+    }
+
+
     /**
      *  NOTE element.addListener(function) is not the same as element.onclick=function!
      * This is for onevent handlers
@@ -572,7 +590,23 @@ public class PageConfig
             throw new IllegalArgumentException();
         if (StringUtils.isBlank(handler))
             return;
-        _eventHandlers.add(new EventHandler(id,event,handler));
+        _addHandler(new EventHandler(id,null,event,handler));
+    }
+
+
+    /**
+     *   When a page wants to attach an event handler to a lot of elements, it may be
+     *   more efficient to specify a selector than a long list of ids.
+     *
+     *   All elements that match this selector must have the same handler!
+     */
+    public void addHandlerForQuerySelector(String selector, String event, String handler)
+    {
+        if (StringUtils.isBlank(selector) || StringUtils.isBlank(event))
+            throw new IllegalArgumentException();
+        if (StringUtils.isBlank(handler))
+            return;
+        _addHandler(new EventHandler(null, selector, event,handler));
     }
 
 
@@ -607,7 +641,7 @@ public class PageConfig
         if (AppProps.getInstance().isDevMode())
         {
             Set<String> eventIds = new HashSet<>();
-            for (EventHandler h : _eventHandlers)
+            for (EventHandler h : _eventHandlers.values())
             {
                 final String eventId = h.id + "#" + h.event;
 
@@ -625,7 +659,7 @@ public class PageConfig
             out.write("const A = function(a,b,c){LABKEY.Utils.attachEventHandler(a,b,c,1);}\n");
             // NOTE: there can be lots of handlers, this is simple de-duping
             HashMap<String, Integer> map = new HashMap<>();
-            for (var l : _eventHandlers)
+            for (var l : _eventHandlers.values())
             {
                 var index = map.size();
                 var handler = StringUtils.appendIfMissing(l.handler, ";");
@@ -633,7 +667,10 @@ public class PageConfig
                 if (null == prev)
                     out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints
                 index = requireNonNullElse(prev, index);
-                out.write("A(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
+                if (null != l.id)
+                    out.write("A(" + jsString(l.id) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ");\n");
+                else
+                    out.write("LABKEY.Utils.attachEventHandlerForQuerySelector(" + jsString(l.selector) + "," + jsString(l.event) + ",h" + requireNonNullElse(prev, index) + ",1);\n");
             }
             _eventHandlers.clear();
 
