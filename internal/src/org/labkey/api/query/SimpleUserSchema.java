@@ -182,8 +182,8 @@ public class SimpleUserSchema extends UserSchema
         if (table == null)
             throw new NotFoundException("Table '" + queryName + "' not found in this container '" + getContainer().getPath() + "'.");
 
-        if (table instanceof SimpleTable)
-            return ((SimpleTable)table).getDomainURI();
+        if (table instanceof SimpleTable st)
+            return st.getDomainURI();
         return null;
     }
 
