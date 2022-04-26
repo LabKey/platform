@@ -22,7 +22,6 @@ import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
@@ -145,7 +144,7 @@ public class ReportingWriter
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
 
-        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHIType.NotPHI.name());
+        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHI.NotPHI.name());
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
