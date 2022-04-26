@@ -32,7 +32,7 @@ public class PicklistSampleCompareType extends CompareType
         if (user == null || container == null)
             return new SimpleFilter.FalseClause();
 
-        ListDefinition listDef = ListService.get().getList(container, listName);
+        ListDefinition listDef = ListService.get().getList(container, listName, true);
         if (listDef == null || !listDef.isPicklist())
             return new SimpleFilter.FalseClause();
 
