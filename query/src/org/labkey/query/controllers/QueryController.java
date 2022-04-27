@@ -154,6 +154,7 @@ import org.labkey.query.xml.TestCaseType;
 import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataAccessException;
@@ -1672,47 +1673,10 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class SchemaQuery
-    {
-        private String schemaName;
-        private String queryName;
-        private String viewName;
-
-        public void setViewName(String viewName)
-        {
-            this.viewName = viewName;
-        }
-
-        public String getViewName()
-        {
-            return this.viewName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            this.queryName = queryName;
-        }
-
-        public String getQueryName()
-        {
-            return this.queryName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            this.schemaName = schemaName;
-        }
-
-        public String getSchemaName()
-        {
-            return this.schemaName;
-        }
-    }
-
-    public static class ExportTabsForm
+    public static class ExportTabsForm extends ExportQueryForm implements CustomApiForm
     {
         private String filename;
-        private List<SchemaQuery> tabModels;
+        private List<ExportQueryForm> tabModels;
 
         public void setFilename(String filename)
         {
@@ -1724,40 +1688,56 @@ public class QueryController extends SpringActionController
             return this.filename;
         }
 
-        public void setTabModels(List<SchemaQuery> tabModels)
+        public void setTabModels(List<ExportQueryForm> tabModels)
         {
             this.tabModels = tabModels;
         }
 
-        public List<SchemaQuery> getTabModels()
+        public List<ExportQueryForm> getTabModels()
         {
             return this.tabModels;
         }
 
-        public Collection<QueryView> getTabViews(ViewContext viewContext)
+        /**
+         * Several json properties are coming in as Single valued arrays and aren't getting bound correctly
+         * Flattening them to single values (similar to how they are bound for ExportQueryForm) allows them to be properly bound.
+         * @param props
+         */
+        private void flattenProps(JSONObject props)
         {
-            List<QueryView> queryViews = new ArrayList<>();
-            getTabModels().forEach(model -> {
-                QueryForm qf = new QueryForm();
-                qf.setQueryName(model.queryName);
-                qf.setSchemaName(model.schemaName);
-                qf.setViewName(model.viewName);
-                qf.setViewContext(viewContext);
-                qf.setDataRegionName(model.queryName);
+            for(Map.Entry<String, Object> entry : props.entrySet())
+            {
+                if (entry.getValue() instanceof JSONArray)
+                {
+                    String key = entry.getKey();
+                    props.put(key, ((JSONArray) entry.getValue()).getString(0));
+                }
+            }
+        }
 
-                qf.getSchema();
-                queryViews.add(qf.getQueryView());
-            });
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            setFilename(props.get("filename").toString());
+            List<ExportQueryForm> forms = new ArrayList<>();
 
-            return queryViews;
+            for (JSONObject querymodel : ((JSONArray)props.get("tabModels")).toJSONObjectArray())
+            {
+                flattenProps(querymodel);
+                ExportQueryForm qf = new ExportQueryForm();
+                qf.setViewContext(this.getViewContext());
+
+                qf.bindParameters(new MutablePropertyValues(querymodel));
+                forms.add(qf);
+            }
+
+            setTabModels(forms);
         }
     }
 
-    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
     public static class ExportTabsXLSXAction extends ReadOnlyApiAction<ExportTabsForm>
-//    public static class ExportTabsXLSXAction extends _ExportQuery<ExportTabsForm>
     {
         @Override
         public Object execute(ExportTabsForm form, BindException errors) throws Exception
@@ -1767,14 +1747,20 @@ public class QueryController extends SpringActionController
             response.setHeader("X-Robots-Tag", "noindex");
             response.setHeader("Content-Disposition", "attachment");
 
-            Collection<QueryView> queryViews = form.getTabViews(getViewContext());
-
             try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
             {
                 writer.setFilenamePrefix(form.getFilename());
-                for(QueryView qv : queryViews)
+                ViewContext viewContext = getViewContext();
+                for(ExportQueryForm qf : form.getTabModels())
                 {
-                    qv.exportToExcelSheet(writer);
+                    qf.setViewContext(viewContext);
+                    qf.getSchema();
+
+                    QueryView qv = qf.getQueryView();
+                    qv.exportToExcelSheet(writer, new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                            .setExcludeColumns(qf.getExcludeColumns())
+                            .setRenamedColumns(qf.getRenameColumnMap())
+                    );
                 }
 
                 writer.getWorkbook().setActiveSheet(0);

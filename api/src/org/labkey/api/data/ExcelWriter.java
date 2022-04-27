@@ -203,6 +203,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     protected final Workbook _workbook;
 
+    // Some columns may need to be Aliased (e.g., Name -> Sample ID)
+    private Map<String, String> _renameColumnMap;
+
     public ExcelWriter()
     {
         this(ExcelDocumentType.xls);
@@ -229,6 +232,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns)
     {
         this(factory, displayColumns, ExcelDocumentType.xls);
+    }
+
+    public ExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
+    {
+        this(factory, displayColumns, docType);
+        _renameColumnMap = renameColumnMap;
     }
 
     public void setCaptionType(ColumnHeaderType type)
@@ -839,6 +848,26 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             if (_captionRowFrozen)
                 sheet.createFreezePane(0, getCurrentRow());
         }
+
+        if (_renameColumnMap == null || _renameColumnMap.isEmpty())
+            return;
+
+        renderRenamedColumns(sheet, visibleColumns);
+    }
+
+    public void renderRenamedColumns(Sheet sheet, List<ExcelColumn> visibleColumns)
+    {
+        int row = getCurrentRow() - 1;
+        for (int col = 0; col < visibleColumns.size(); col++)
+        {
+            String originalColName = visibleColumns.get(col).getName();
+            if (_renameColumnMap.containsKey(originalColName))
+            {
+                Cell cell = sheet.getRow(row).getCell(col);
+                if (cell != null)
+                    cell.setCellValue(_renameColumnMap.get(originalColName));
+            }
+        }
     }
 
     protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException, IOException
@@ -921,5 +950,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void close()
     {
         // No-op: Results are closed via try-with-resources at render time
+    }
+
+    public void setRenameColumnMap(Map<String, String> renameColumnMap)
+    {
+        this._renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
     }
 }

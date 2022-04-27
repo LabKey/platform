@@ -371,10 +371,12 @@ public class QueryView extends WebPartView<Object>
      * Writes this query view as a sheet in the provided ExcelWriter (CALLER MUST CLOSE)
      * @param writer to write to
      */
-    public void exportToExcelSheet(ExcelWriter writer)
+    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config)
     {
-        configureExcelWriter(writer);
-        writer.setSheetName(getDataRegionName());
+        configureExcelWriter(writer, config);
+        String name = getQueryDef().getName();
+        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(getDataRegionName()) ? getDataRegionName() : "Data";
+        writer.setSheetName(name);
         writer.setAutoSize(true);
         writer.renderNewSheet();
         logAuditEvent("Exported to Excel", writer.getDataRowCount());
@@ -2420,16 +2422,20 @@ public class QueryView extends WebPartView<Object>
 
         RenderContext rc = configureForExcelExport(docType, view, rgn);
 
-        ExcelWriter ew = renameColumnMap == null || renameColumnMap.isEmpty() ?
-                new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType) :
-                new AliasColumnExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
+        ExcelWriter ew = new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
 
         ew.setFilenamePrefix(getSettings().getQueryName());
         ew.setAutoSize(true);
         return ew;
     }
 
-    public ExcelWriter configureExcelWriter(ExcelWriter excelWriter)
+    /**
+     * Sets configuration settings for the provided ExcelWriter according the provided config and this QueryView
+     * @param excelWriter to configure (CALLER TO CLOSE)
+     * @param config additional properties to set on the writer
+     * @return
+     */
+    public ExcelWriter configureExcelWriter(ExcelWriter excelWriter, ExcelExportConfig config)
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
@@ -2439,46 +2445,11 @@ public class QueryView extends WebPartView<Object>
         rgn.setAllowAsync(false);
         excelWriter.setDisplayColumns(getExportColumns(rgn.getDisplayColumns()));
         excelWriter.setResultsFactory(()->rgn.getResults(rc));
-
-        QuerySettings settings = getSettings();
-        settings.setShowRows(ShowRows.PAGINATED);
-        settings.setMaxRows(excelWriter.getDocumentType().getMaxRows());
-        settings.setOffset(Table.NO_OFFSET);
+        excelWriter.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
+        excelWriter.setRenameColumnMap(config.getRenamedColumns());
+        excelWriter.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
 
         return excelWriter;
-    }
-
-    private static class AliasColumnExcelWriter extends ExcelWriter
-    {
-        private final Map<String, String> _renameColumnMap;
-
-        public AliasColumnExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
-        {
-            super(factory, displayColumns, docType);
-            _renameColumnMap = renameColumnMap;
-        }
-
-        @Override
-        public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws
-                ExcelWriter.MaxRowsExceededException
-        {
-
-            super.renderColumnCaptions(sheet, visibleColumns);
-            if (_renameColumnMap == null || _renameColumnMap.isEmpty())
-                return;
-
-            int row = getCurrentRow() - 1;
-            for (int col = 0; col < visibleColumns.size(); col++)
-            {
-                String originalColName = visibleColumns.get(col).getName();
-                if (_renameColumnMap.containsKey(originalColName))
-                {
-                    Cell cell = sheet.getRow(row).getCell(col);
-                    if (cell != null)
-                        cell.setCellValue(_renameColumnMap.get(originalColName));
-                }
-            }
-        }
     }
 
     protected ExcelWriter getExcelTemplateWriter(@NotNull ExcelExportConfig config)
@@ -2555,9 +2526,7 @@ public class QueryView extends WebPartView<Object>
         }
 
         List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
-        return config.getRenamedColumns().isEmpty() ?
-                new ExcelWriter(()->null, displayColumns, config.getDocType()) :
-                new AliasColumnExcelWriter(()->null, displayColumns, config.getDocType(), config.getRenamedColumns());
+        return new ExcelWriter(()->null, displayColumns, config.getDocType(), config.getRenamedColumns());
     }
 
     protected List<DisplayColumn> getExcelTemplateDisplayColumns(List<FieldKey> fieldKeys)
