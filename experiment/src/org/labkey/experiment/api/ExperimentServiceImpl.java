@@ -3878,7 +3878,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         // if canonicalURL endsWith "/", try query without trailing "/"
         // see ExpDataImpl.setDataFileURI
-        if (canonicalURL.endsWith("/"))
+        if (canonicalURL != null && canonicalURL.endsWith("/"))
             dataFielUrl = canonicalURL.substring(0, canonicalURL.length() - 1);
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), dataFielUrl);
