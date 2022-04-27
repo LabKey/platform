@@ -233,6 +233,7 @@ public class IssueServiceImpl implements IssueService
         if (issueListDef == null)
         {
             issueObject.setIssueDefId(defaultIssueListDef.getRowId());
+            issueListDef = defaultIssueListDef;
         }
 
         if (action == Issue.action.reopen)

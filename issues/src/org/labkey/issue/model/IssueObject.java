@@ -152,7 +152,10 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         setAssignedTo(IssueManager.validateAssignedTo(c, getAssignedTo()));
     }
 
-
+    /**
+     * This method should be called before the form is initially shown to automatically
+     * populate some fields affected by issue resolution
+     */
     public void beforeResolve(Container c, User u)
     {
         setStatus(statusRESOLVED);

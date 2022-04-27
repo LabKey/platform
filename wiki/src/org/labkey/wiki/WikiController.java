@@ -66,7 +66,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TextExtractor;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -1010,8 +1009,8 @@ public class WikiController extends SpringActionController
                 List<String> srcPageNames;
 
                 if (parentPage != null)
-                    // TODO: make subtrees work; previously begetWikiManager().getSubTreePageList(cSrc, parentPage), now
-                    // somethinge like WikiSelectManager.getDescendents(cSrc, name)
+                    // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
+                    // something like WikiSelectManager.getDescendents(cSrc, name)
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
                 else
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
@@ -1036,57 +1035,6 @@ public class WikiController extends SpringActionController
             }
 
             return true;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class CopySinglePageAction extends FormHandlerAction<CopyWikiForm>
-    {
-        private ActionURL _successURL;
-
-        @Override
-        public void validateCommand(CopyWikiForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
-        {
-            String pageName = form.getPageName();
-            Container cSrc = getSourceContainer(form.getSourceContainer());
-            Container cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
-
-            if (errors.hasErrors())
-                return false;
-
-            if (pageName == null || cSrc == null || cDest == null)
-                throw new NotFoundException();
-
-            //user must have admin perms on both source and destination container
-            if (!cDest.hasPermission(getUser(), AdminPermission.class))
-                throw new UnauthorizedException();
-
-            Wiki srcPage = WikiSelectManager.getWiki(cSrc, pageName);
-            if (srcPage == null)
-                throw new NotFoundException();
-
-            //get existing destination wiki names
-            List<String> destPageNames = WikiSelectManager.getPageNames(cDest);
-
-            //copy single page
-            Wiki newWikiPage = getWikiManager().copyPage(getUser(), cSrc, srcPage, cDest, destPageNames, null, form.getIsCopyingHistory());
-
-            displayWikiModuleInDestContainer(cDest);
-
-            _successURL = getPageURL(newWikiPage, cDest);
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(CopyWikiForm copyWikiForm)
-        {
-            return _successURL;
         }
     }
 

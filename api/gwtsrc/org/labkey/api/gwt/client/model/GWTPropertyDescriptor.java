@@ -20,12 +20,10 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
-import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
-import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +65,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty recommendedVariable = new BooleanProperty(false);
     private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
     private StringProperty facetingBehaviorType = new StringProperty();
-    private StringProperty phi = new StringProperty(PHIType.NotPHI.name());
+    private StringProperty phi = new StringProperty("NotPHI"); // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
     private BooleanProperty isExcludeFromShifting = new BooleanProperty();
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();

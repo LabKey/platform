@@ -1405,7 +1405,7 @@ public class PageFlowUtil
     public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
                                                   String id, Map<String, String> properties)
     {
-        if (null == id)
+        if (StringUtils.isBlank(id))
             id = HttpView.currentPageConfig().makeId("dropdown_");
         String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
         HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);

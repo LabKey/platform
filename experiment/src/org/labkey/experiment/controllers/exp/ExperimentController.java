@@ -1048,7 +1048,7 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
-                updateURL.addReturnURL(getViewContext().getActionURL());
+                updateURL.addReturnURL(urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId()));
 
                 if (inDefinitionContainer)
                 {
