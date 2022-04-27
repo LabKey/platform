@@ -52,7 +52,6 @@ import org.labkey.api.view.ActionURL;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;

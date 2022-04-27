@@ -27,7 +27,7 @@ public class WrappedColumnInfo
     /* create a delegating columnInfo wrapper, the returned columnInfo is Mutable, but if you want to set a LOT of properties
      * use wrapCopy() instead (e.g. for PropertyColumn.copyAttributes())
      *
-     * NOTE: BaseColumnInfo.copyAttribtuesFrom() does not copy displayField/filterField, here we drop it if the parentTables don't match
+     * NOTE: BaseColumnInfo.copyAttributesFrom() does not copy displayField/filterField, here we drop it if the parentTables don't match
     public static MutableColumnInfo wrapDelegating(TableInfo parent_, FieldKey fieldKey_, ColumnInfo delegate_, String label_, String alias_)
     {
         AbstractWrappedColumnInfo inner = new AbstractWrappedColumnInfo(delegate_)

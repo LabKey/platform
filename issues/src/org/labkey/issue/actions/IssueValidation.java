@@ -44,11 +44,14 @@ import org.labkey.issue.model.IssueObject;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Created by klum on 2/3/2017.
@@ -58,7 +61,6 @@ public class IssueValidation
     public static void validateRequiredFields(@Nullable IssueListDef issueListDef, @Nullable CustomColumnConfiguration customColumnConfiguration,
                                               Issue issue, User user, Errors errors)
     {
-        String requiredFields = "";
         final Map<String, Object> newFields = issue.getProperties();
         MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
 
@@ -66,15 +68,21 @@ public class IssueValidation
         if (issueListDef != null)
         {
             TableInfo tableInfo = issueListDef.createTable(user);
+            List<FieldKey> validatedFields = new ArrayList<>(tableInfo.getUserEditableColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList()));
+
             for (Map.Entry<String, Object> entry : newFields.entrySet())
             {
                 // special case the assigned to field if the status is closed
                 if (entry.getKey().equalsIgnoreCase("assignedTo") && IssueObject.statusCLOSED.equals(issue.getStatus()))
+                {
+                    validatedFields.remove(FieldKey.fromParts("assignedTo"));
                     continue;
+                }
 
                 ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
                 if (col != null)
                 {
+                    validatedFields.remove(col.getFieldKey());
                     for (ColumnValidator validator : ColumnValidators.create(col, null))
                     {
                         String msg = validator.validate(0, entry.getValue());
@@ -92,9 +100,25 @@ public class IssueValidation
                     }
                 }
             }
+
+            // Requests from the API may be sparse, in this case we need to check any remaining required fields that may
+            // not have been in the request.
+            validatedFields.remove(FieldKey.fromParts("status"));
+            for (FieldKey fieldKey : validatedFields)
+            {
+                var column = tableInfo.getColumn(fieldKey);
+                if (column != null)
+                {
+                    ColumnValidator validator = ColumnValidators.createRequiredValidator(column, null, false);
+                    if (validator != null)
+                    {
+                        String msg = validator.validate(0, null);
+                        if (msg != null)
+                            requiredErrors.reject(SpringActionController.ERROR_MSG, msg);
+                    }
+                }
+            }
         }
-        if (newFields.containsKey("comment"))
-            validateRequired(user, "comment", String.valueOf(newFields.get("comment")), requiredFields, customColumnConfiguration, requiredErrors);
 
         // When resolving Duplicate, the 'duplicate' field should be set.
         if ("Duplicate".equals(newFields.get("resolution")))

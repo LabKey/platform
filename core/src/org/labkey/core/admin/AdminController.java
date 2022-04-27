@@ -6598,7 +6598,7 @@ public class AdminController extends SpringActionController
         }
 
         /**
-         * Note: this is designed to allow code to specify a set of children to delete in bulk.  The main use-case is workbooks,
+         * Note: this is designed to allow code to specify a set of children to delete in bulk. The main use-case is workbooks,
          * but it will work for non-workbook children as well.
          */
         public List<Container> getTargetContainers(final Container currentContainer) throws IllegalArgumentException
@@ -7121,7 +7121,7 @@ public class AdminController extends SpringActionController
             {
                 return c -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
-                    policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                    policy.addRoleAssignment(getUser(), ProjectAdminRole.class);
                     SecurityPolicyManager.savePolicy(policy);
                 };
             }
@@ -7234,16 +7234,16 @@ public class AdminController extends SpringActionController
                             Group g = (Group) p;
                             if (!g.isProjectGroup())
                             {
-                                np.addRoleAssignment(p, r);
+                                np.addRoleAssignment(p, r, false);
                             }
                             else
                             {
-                                np.addRoleAssignment(groupMap.get(p), r);
+                                np.addRoleAssignment(groupMap.get(p), r, false);
                             }
                         }
                         else
                         {
-                            np.addRoleAssignment(p, r);
+                            np.addRoleAssignment(p, r, false);
                         }
                     }
                     SecurityPolicyManager.savePolicy(np);
@@ -7451,7 +7451,7 @@ public class AdminController extends SpringActionController
 
                     if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
                     {
-                        throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children.  You do not have admin permission on all subfolders.");
+                        throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children. You do not have admin permission on all subfolders.");
                     }
 
                     if (target.equals(ContainerManager.getSharedContainer()) || target.equals(ContainerManager.getHomeContainer()))
@@ -8556,7 +8556,7 @@ public class AdminController extends SpringActionController
 
             return new HtmlView(DIV(
                 !hasFiles ? null : DIV(cl("labkey-warning-messages"),
-                        "This module still has files on disk.  Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
+                        "This module still has files on disk. Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
                         null==module.getExplodedPath()?null:UL(LI(module.getExplodedPath().getPath())),
                         null==module.getZippedPath()?null:UL(LI(module.getZippedPath().getPath()))
                     ),

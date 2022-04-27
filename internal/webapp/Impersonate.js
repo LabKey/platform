@@ -64,7 +64,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     '<tpl if="active">',
                         '<div class="x4-boundlist-item">{email:htmlEncode} ({displayName:htmlEncode})</div>',
                     '<tpl else>',
-                        '<div class="x4-boundlist-item" style="color: #999999;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
+                        '<div class="x4-item-disabled" style="color: #999999; padding: 3px 20px;">{email:htmlEncode} ({displayName:htmlEncode}) (inactive)</div>',
                     '</tpl>',
                 '</tpl>')
         });
@@ -90,10 +90,10 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                     {name: 'displayName', type: 'string'},
                     {name: 'concatenatedName', type: 'string',
                         convert : function(v, record) {
-                            // concatenate both displayName and email so they can both be used
+                            // concatenate displayName and email so they can both be used
                             // to search for users
-                            if (record && record.raw && record.raw.email && record.raw.displayName)
-                                return record.raw.email + ' ' + record.raw.displayName;
+                            if (record && record.raw && record.raw.active && record.raw.email && record.raw.displayName)
+                                return record.raw.email + ' (' + record.raw.displayName + ')';
                             return '';
                         }
                     }

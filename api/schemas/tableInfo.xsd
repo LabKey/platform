@@ -950,7 +950,7 @@
             <xs:element name="ontology" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        This is a parent element for ontology related metadata.  This includes the description of what this column "measures", as well as
+                        This is a parent element for ontology related metadata. This includes the description of what this column "measures", as well as
                         additional information specific to concept-valued columns.
                     </xs:documentation>
                 </xs:annotation>
@@ -1006,8 +1006,8 @@
             <xs:element name="subtree" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        This is a slash ('/') separated path of concepts codes.  The values in this column are expected
-                        to be children of the tree rooted at this path.  This is not yet enforced, but this is used to
+                        This is a slash ('/') separated path of concepts codes. The values in this column are expected
+                        to be children of the tree rooted at this path. This is not yet enforced, but this is used to
                         disambiguate synonyms on import, and to modify the display of concepts that are not in the expected tree.
                     </xs:documentation>
                 </xs:annotation>
@@ -1022,7 +1022,7 @@
             <xs:element name="importColumn" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Name of column which holds the imported/provided/reported label for this concept.  The LabKey import
+                        Name of column which holds the imported/provided/reported label for this concept. The LabKey import
                         code will try to use the value provided in the named column to resolve a concept code defined in the source ontology.
                     </xs:documentation>
                 </xs:annotation>
@@ -1030,7 +1030,7 @@
         </xs:all>
         <xs:attribute name="source" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>Short name of the target ontology for this column.  E.g. "SNOMED_CT" or "NCI"</xs:documentation>
+                <xs:documentation>Short name of the target ontology for this column. E.g. "SNOMED_CT" or "NCI"</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:anyAttribute processContents="lax" namespace="##any"/>
@@ -1521,6 +1521,7 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <!-- Important: Keep this in sync with org.labkey.api.data.PHI enum -->
     <xs:simpleType name="PHIType">
         <xs:restriction base="xs:string">
             <xs:enumeration value="NotPHI">
