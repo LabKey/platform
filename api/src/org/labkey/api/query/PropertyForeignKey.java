@@ -130,6 +130,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
     protected FieldKey decideColumnName(ColumnInfo parent, String displayField, PropertyDescriptor pd)
     {
+        //return new FieldKey(parent.getFieldKey(), pd.getName());
         return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
     }
 

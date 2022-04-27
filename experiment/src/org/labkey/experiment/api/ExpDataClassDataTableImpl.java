@@ -64,8 +64,10 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -75,6 +77,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -127,6 +130,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 {
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
+
+    private Map<String, Pair<String, ConceptURIVocabularyDomainProvider>> _vocabularyDomainProviders = new CaseInsensitiveHashMap<>();
 
     @Override
     protected ContainerFilter getDefaultContainerFilter()
@@ -422,11 +427,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             if (isVisibleByDefault(col))
                 defaultVisible.add(FieldKey.fromParts(col.getName()));
+
+            String conceptURI = col.getConceptURI();
+            if (conceptURI != null)
+            {
+                ConceptURIVocabularyDomainProvider conceptURIVocabularyDomainProvider = PropertyService.get().getConceptUriVocabularyDomainProvider(conceptURI);
+                if (conceptURIVocabularyDomainProvider != null)
+                    _vocabularyDomainProviders.put(conceptURIVocabularyDomainProvider.getVocabularyDomainName(col.getName(), _dataClass), new Pair<>(col.getName(), conceptURIVocabularyDomainProvider));
+            }
         }
 
         addColumn(Column.DataFileUrl);
 
-        addVocabularyDomains();
+        List<FieldKey> vocabularyDomainFields = addVocabularyDomainFields();
+        defaultVisible.addAll(vocabularyDomainFields);
+
         addColumn(Column.Properties);
 
         ColumnInfo colInputs = addColumn(Column.Inputs);
@@ -465,7 +480,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addExpObjectMethod();
     }
 
-
     @Override
     public ColumnInfo getExpObjectColumn()
     {
@@ -474,7 +488,51 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return ret;
     }
 
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain, @NotNull String lookupColName)
+    {
+        return new PropertyForeignKey(_userSchema, getContainerFilter(), domain)
+        {
+            @Override
+            public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
+            {
+                super.decorateColumn(columnInfo, pd);
+                columnInfo.setURL(StringExpressionFactory.createURL(
+                        new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getContainer())
+                                .addParameter("lsid", "${LSID}")
+                                .addParameter("name", "${" + columnInfo.getFieldKey() + "}")));
+            }
+        };
+    }
 
+    public List<FieldKey> addVocabularyDomainFields()
+    {
+        List<FieldKey> domainFields = new ArrayList<>();
+
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
+        for (Domain domain : domains)
+        {
+            String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
+            var col = this.addDomainColumns(domain, columnName);
+            col.setLabel(domain.getName());
+            col.setDescription("Properties from " + domain.getLabel(getContainer()));
+
+            Pair<String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = _vocabularyDomainProviders.get(domain.getName());
+            if (fieldVocabularyDomainProvider != null)
+            {
+                List<FieldKey> fieldKeys = fieldVocabularyDomainProvider.second.addVocabularyLookupColumns(_dataClass, this, col, fieldVocabularyDomainProvider.first);
+                if (fieldKeys != null)
+                    domainFields.addAll(fieldKeys);
+            }
+        }
+
+        return domainFields;
+    }
+
+    @Override
+    public void addVocabularyDomains()
+    {
+        addVocabularyDomainFields();
+    }
 
     @NotNull
     @Override

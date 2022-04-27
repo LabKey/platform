@@ -32,7 +32,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.RuntimeValidationException;
@@ -255,6 +257,21 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 }
             }
         }
+
+        Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
+        if (domain != null)
+        {
+            for (DomainProperty property : domain.getProperties())
+            {
+                if (StringUtils.isEmpty(property.getConceptURI()))
+                    continue;
+
+                ConceptURIVocabularyDomainProvider provider = PropertyService.get().getConceptUriVocabularyDomainProvider(property.getConceptURI());
+                if (provider != null)
+                    provider.ensureVocabularyDomain(property.getName(), this, user);
+            }
+        }
+
         ExperimentServiceImpl.get().clearDataClassCache(getContainer());
         ExperimentServiceImpl.get().indexDataClass(this);
     }

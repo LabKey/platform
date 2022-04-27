@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
@@ -111,13 +112,16 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
                 var pair = propCols.computeIfAbsent(propertyURI, (s) -> {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, this.schema.getContainer());
                     // limit to only vocabulary properties -- assay Run still uses OntologyManager and we don't want to show those properties
-                    if (pd != null && pd.isVocabulary())
+                    if (pd != null && pd.isVocabulary() && pd.getPropertyType() != PropertyType.ATTACHMENT)
                     {
                         PropertyColumn pc = new PropertyColumn(pd, propTable, "objectUri", this.schema.getContainer(), this.schema.getUser(), false);
                         // use the property URI as the column's FieldKey name
                         String label = pc.getLabel();
                         pc.setFieldKey(FieldKey.fromParts(pd.getPropertyURI()));
                         pc.setLabel(label);
+
+                        if (pc.getPropertyType() == PropertyType.ATTACHMENT && pc.getURL() == null)
+                            pc.setPropertyType(PropertyType.STRING);
 
                         DisplayColumn dc = pc.getDisplayColumnFactory().createRenderer(pc);
                         // apply date and number formats

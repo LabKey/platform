@@ -323,6 +323,11 @@ abstract public class ExpTableImpl<C extends Enum>
         return colProperty;
     }
 
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain, @NotNull String lookupColName)
+    {
+        return new PropertyForeignKey(_userSchema, getContainerFilter(), domain);
+    }
+
     /**
      * Create a hidden column as a fake lookup to include all columns in the domain.
      * @param domain The domain to add columns from
@@ -332,7 +337,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
     {
         var colProperty = wrapColumn(lookupColName, getLSIDColumn());
-        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
+        colProperty.setFk(getDomainColumnForeignKey(domain, lookupColName));
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
         colProperty.setIsUnselectable(true);
