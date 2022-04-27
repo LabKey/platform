@@ -1922,7 +1922,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     return 'translate(' + glyphX + ',' + y + ')';
                 });
 
-        if (plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
+        if (plot.originalAes && plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
             selection.on('mouseover', function (data) {
                 plot.originalAes.legend.mouseOverFn.call(d3.event, data, this);
             });

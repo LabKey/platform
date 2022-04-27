@@ -37,6 +37,7 @@ class GuestUser extends User
     }
 
     // For serialization
+    @SuppressWarnings("unused")
     protected GuestUser() { }
 
     @Override
@@ -49,5 +50,11 @@ class GuestUser extends User
     public boolean isActive()
     {
         return true;
+    }
+
+    @Override
+    public void refreshGroups()
+    {
+        // Don't clear out GuestUser's groups since they're set in its constructor
     }
 }

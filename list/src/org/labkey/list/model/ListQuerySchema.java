@@ -84,7 +84,7 @@ public class ListQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return ListManager.get().getLists(getContainer(), getUser(), false, true, true)
+        return ListManager.get().getLists(getContainer(), getUser(), false, true, false)
             .stream()
             .map(ListDef::getName)
             .collect(Collectors.toSet());
@@ -94,7 +94,7 @@ public class ListQuerySchema extends UserSchema
     public QueryDefinition getQueryDefForTable(String name)
     {
         QueryDefinition qdef = super.getQueryDefForTable(name);
-        ListDefinition list = ListService.get().getList(getContainer(), name);
+        ListDefinition list = ListService.get().getList(getContainer(), name, true);
         if (list != null)
             qdef.setIsIncludedForLookups(!list.isPicklist());
         return qdef;
@@ -104,7 +104,7 @@ public class ListQuerySchema extends UserSchema
     @Nullable
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ListDefinition def = ListService.get().getList(getContainer(), name);
+        ListDefinition def = ListService.get().getList(getContainer(), name, true);
         if (def != null)
         {
             Domain domain = def.getDomain();
@@ -126,7 +126,7 @@ public class ListQuerySchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        ListDefinition def = ListService.get().getList(getContainer(), settings.getQueryName());
+        ListDefinition def = ListService.get().getList(getContainer(), settings.getQueryName(), true);
         if (def != null)
         {
             return new ListQueryView(def, this, settings, errors);
@@ -139,7 +139,7 @@ public class ListQuerySchema extends UserSchema
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();
-        ListDefinition listDef = ListService.get().getList(container, queryName);
+        ListDefinition listDef = ListService.get().getList(container, queryName, true);
         if (null == listDef)
             throw new NotFoundException("List '" + queryName + "' was not found in the container '" + container.getPath() + "'.");
         Domain domain = listDef.getDomain();
