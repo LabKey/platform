@@ -3874,14 +3874,14 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public List<ExpDataImpl> getAllExpDataByURL(String canonicalURL, @Nullable Container c)
     {
-        String dataFielUrl = canonicalURL;
+        String dataFileUrl = canonicalURL;
 
         // if canonicalURL endsWith "/", try query without trailing "/"
         // see ExpDataImpl.setDataFileURI
         if (canonicalURL != null && canonicalURL.endsWith("/"))
-            dataFielUrl = canonicalURL.substring(0, canonicalURL.length() - 1);
+            dataFileUrl = canonicalURL.substring(0, canonicalURL.length() - 1);
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), dataFielUrl);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), dataFileUrl);
         if (c != null)
         {
             filter.addCondition(FieldKey.fromParts("Container"), c);
