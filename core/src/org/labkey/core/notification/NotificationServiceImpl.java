@@ -25,6 +25,8 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -36,6 +38,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -60,6 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: cnathe
@@ -82,6 +86,8 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         ContainerManager.addContainerListener(this);
     }
 
+    /** Cache the number of unread notifications per user (key is a user ID) to avoid a DB query on every page load */
+    private final Cache<Integer, Long> _unreadCountCache = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Unread notification counts");
 
     /* for compatibility with code that uses/used MailHelper directly */
     @Override
@@ -121,10 +127,10 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         }
 
         // if a notification already exists for this user/objectid/type, remove it (i.e. replace with new one)
-        NotificationService.get().removeNotifications(c, notification.getObjectId(),
+        removeNotifications(c, notification.getObjectId(),
                 Collections.singletonList(notification.getType()), notification.getUserId());
 
-        return NotificationService.get().addNotification(c, createdByUser, notification);
+        return addNotification(c, createdByUser, notification);
     }
 
     @Override
@@ -133,7 +139,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     {
         if (recipient != null)
         {
-            String fullUrlStr = linkUrl.getBaseServerURI() + linkUrl.toString();
+            String fullUrlStr = linkUrl.getBaseServerURI() + linkUrl;
 
             // create the notification message email
             MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
@@ -151,10 +157,8 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             m.setEncodedHtmlContent(html.toString());
 
             // send the message and create the new notification for this user and report
-            Notification notification = NotificationService.get().sendMessage(c, createdByUser, recipient, m,
+            return sendMessage(c, createdByUser, recipient, m,
                 "view", linkUrl.toString(), id, type, true);
-
-            return notification;
         }
 
         return null;
@@ -175,9 +179,20 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         notification.setContainer(container.getEntityId());
         Notification ret = Table.insert(user, getTable(), notification);
 
+        clearUnreadCache(notification.getUserId());
         NotificationEndpoint.sendEvent(notification.getUserId(), NotificationService.class);
 
         return ret;
+    }
+
+    private void clearUnreadCache(int userId)
+    {
+        getTable().getSchema().getScope().addCommitTask(() -> _unreadCountCache.remove(userId), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    private void clearUnreadCache()
+    {
+        getTable().getSchema().getScope().addCommitTask(_unreadCountCache::clear, DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     @Override
@@ -187,9 +202,10 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public long getNotificationCountByUser(Container container, int notifyUserId, boolean unreadOnly)
+    public long getUnreadNotificationCountByUser(Container container, int notifyUserId)
     {
-        return createSelectorByUserOrType(container, null, notifyUserId, unreadOnly).getRowCount();
+        return _unreadCountCache.get(notifyUserId, null,
+                (k, a) -> createSelectorByUserOrType(container, null, notifyUserId, true).getRowCount());
     }
 
     @Override
@@ -202,9 +218,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
     {
         List<String> types = new ArrayList<>();
-        typeLabels.forEach(label -> {
-            types.addAll(_labelTypesMap.get(label));
-        });
+        typeLabels.forEach(label -> types.addAll(_labelTypesMap.get(label)));
         return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly);
     }
 
@@ -258,34 +272,17 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     @Override
     public int markAsRead(Container container, User user, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
     {
-        SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
-        filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
-
-        TableSelector selector = new TableSelector(getTable(), filter, null);
-        List<Notification> notifications = selector.getArrayList(Notification.class);
-
-        // update the ReadOn date to current date
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("ReadOn", new Date());
-
-        try(DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
-        {
-            for (Notification notification : notifications)
-            {
-                Table.update(user, getTable(), fields, notification.getRowId());
-            }
-            transaction.commit();
-        }
-
-        NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
-
-        return notifications.size();
+        return markAsRead(user, getNotificationUpdateFilter(container, objectId, types, notifyUserId), notifyUserId);
     }
 
     @Override
     public int markAsRead(@NotNull User user, int rowid)
     {
-        SimpleFilter filter = getNotificationUpdateFilter(user.getUserId(), rowid);
+        return markAsRead(user, getNotificationUpdateFilter(user.getUserId(), rowid), user.getUserId());
+    }
+
+    private int markAsRead(User user, SimpleFilter filter, int notifyUserId)
+    {
         filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.ISBLANK);
 
         TableSelector selector = new TableSelector(getTable(), filter, null);
@@ -304,11 +301,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             transaction.commit();
         }
 
-        NotificationEndpoint.sendEvent(user.getUserId(), NotificationService.class);
+        clearUnreadCache(notifyUserId);
+        NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
 
         return notifications.size();
     }
-
 
     @Override
     public int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
@@ -318,7 +315,10 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
             int ret = Table.delete(getTable(), filter);
             if (ret > 0)
+            {
+                clearUnreadCache(notifyUserId);
                 NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
+            }
             return ret;
         }
     }
@@ -328,6 +328,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     {
         SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, null);
         int ret = Table.delete(getTable(), filter);
+        clearUnreadCache();
         /* TODO ? notify everyone, or don't worry about it? */
         return ret;
     }
@@ -375,42 +376,36 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     @Override
     public String getNotificationTypeLabel(@NotNull String type)
     {
-        if (_typeLabelMap.containsKey(type))
-            return _typeLabelMap.get(type);
-        else
-            return "Other";
+        return _typeLabelMap.getOrDefault(type, "Other");
     }
 
     @Override
     public String getNotificationTypeIconCls(@NotNull String type)
     {
-        if (_typeIconMap.containsKey(type))
-            return _typeIconMap.get(type);
-        else
-            return "fa-bell";
+        return _typeIconMap.getOrDefault(type, "fa-bell");
     }
 
 
     @Override
-    public void sendServerEvent(int userId, Class clazz)
+    public void sendServerEvent(int userId, Class<?> clazz)
     {
         NotificationEndpoint.sendEvent(userId, clazz);
     }
 
     @Override
-    public void sendServerEvent(int userId, Enum e)
+    public void sendServerEvent(int userId, Enum<?> e)
     {
         NotificationEndpoint.sendEvent(userId, e);
     }
 
     @Override
-    public void sendServerEvent(List<Integer> userIds, Enum e)
+    public void sendServerEvent(List<Integer> userIds, Enum<?> e)
     {
         NotificationEndpoint.sendEvent(userIds, e);
     }
 
     @Override
-    public void sendServerEvent(List<Integer> userIds, Class clazz)
+    public void sendServerEvent(List<Integer> userIds, Class<?> clazz)
     {
         NotificationEndpoint.sendEvent(userIds, clazz);
     }
@@ -424,6 +419,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "Container");
+        clearUnreadCache();
     }
 
     //

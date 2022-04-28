@@ -72,7 +72,7 @@ public interface NotificationService
      * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
      * list returned by getNotificationsByUser(), and is significantly more efficient to query.
      */
-    long getNotificationCountByUser(Container container, int notifyUserId, boolean unreadOnly);
+    long getUnreadNotificationCountByUser(Container container, int notifyUserId);
 
     /*
      * Returns a list of notifications for a specific user based on the specified type.
@@ -140,13 +140,13 @@ public interface NotificationService
     /*
      * send event to browser
      */
-    void sendServerEvent(int userId, Class clazz);
+    void sendServerEvent(int userId, Class<?> clazz);
     /*
      * send event to browser
      */
-    void sendServerEvent(int userId, Enum e);
+    void sendServerEvent(int userId, Enum<?> e);
 
-    void sendServerEvent(List<Integer> userIds, Enum e);
+    void sendServerEvent(List<Integer> userIds, Enum<?> e);
 
-    void sendServerEvent(List<Integer> userIds, Class clazz);
+    void sendServerEvent(List<Integer> userIds, Class<?> clazz);
 }
