@@ -1077,7 +1077,7 @@ public class SecurityController extends SpringActionController
                 ew.setAutoSize(true);
                 ew.setSheetName(group + " Members");
                 ew.setFooter(group + " Members");
-                ew.write(response);
+                ew.renderSheetAndWrite(response);
             }
         }
     }

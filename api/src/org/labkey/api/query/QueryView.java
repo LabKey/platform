@@ -19,8 +19,6 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2763,7 +2761,7 @@ public class QueryView extends WebPartView<Object>
                 ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
                 if (config.getPrefix() != null)
                     ew.setFilenamePrefix(config.getPrefix());
-                ew.write(config.getResponse());
+                ew.renderSheetAndWrite(config.getResponse());
 
                 if (!config.getTemplateOnly())
                     logAuditEvent("Exported to Excel", ew.getDataRowCount());
@@ -2792,7 +2790,7 @@ public class QueryView extends WebPartView<Object>
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
-                ew.write(stream);
+                ew.renderSheetAndWrite(stream);
                 stream.flush();
                 String extension = docType.name();
                 String filename = includeTimestamp ?

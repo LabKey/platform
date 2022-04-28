@@ -505,7 +505,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     // Write the spreadsheet to the file system.
-    public void write(OutputStream stream)
+    public void renderSheetAndWrite(OutputStream stream)
     {
         try
         {
@@ -518,13 +518,19 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
+    @Deprecated // Use renamed method renderSheetAndWrite
+    public void write(HttpServletResponse response)
+    {
+        renderSheetAndWrite(response);
+    }
+
     /**
      * Renders the sheet then writes out the workbook to supplied stream
      * @param response to write out the file
      */
-    public void write(HttpServletResponse response)
+    public void renderSheetAndWrite(HttpServletResponse response)
     {
-        write(response, getFilenamePrefix());
+        renderSheetAndWrite(response, getFilenamePrefix());
     }
 
     /**
@@ -537,7 +543,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     // Create the spreadsheet and stream it to the browser.
-    public void write(HttpServletResponse response, String filenamePrefix)
+    public void renderSheetAndWrite(HttpServletResponse response, String filenamePrefix)
     {
         renderNewSheet();
         writeWorkbook(response, filenamePrefix);
