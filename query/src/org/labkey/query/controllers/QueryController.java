@@ -1673,10 +1673,10 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ExportTabsForm extends ExportQueryForm implements CustomApiForm
+    public static class ExportQueriesForm extends ExportQueryForm implements CustomApiForm
     {
         private String filename;
-        private List<ExportQueryForm> tabModels;
+        private List<ExportQueryForm> queryForms;
 
         public void setFilename(String filename)
         {
@@ -1688,14 +1688,14 @@ public class QueryController extends SpringActionController
             return this.filename;
         }
 
-        public void setTabModels(List<ExportQueryForm> tabModels)
+        public void setQueryForms(List<ExportQueryForm> queryForms)
         {
-            this.tabModels = tabModels;
+            this.queryForms = queryForms;
         }
 
-        public List<ExportQueryForm> getTabModels()
+        public List<ExportQueryForm> getQueryForms()
         {
-            return this.tabModels;
+            return this.queryForms;
         }
 
         /**
@@ -1721,26 +1721,36 @@ public class QueryController extends SpringActionController
             setFilename(props.get("filename").toString());
             List<ExportQueryForm> forms = new ArrayList<>();
 
-            for (JSONObject querymodel : ((JSONArray)props.get("tabModels")).toJSONObjectArray())
+            JSONArray models = (JSONArray)props.get("queryForms");
+            if (models == null)
             {
-                flattenProps(querymodel);
+                QueryController.LOG.error("No models to export; Form's `queryForms` property was null");
+                throw new RuntimeValidationException("No queries to export; Form's `queryForms` property was null");
+            }
+
+            for (JSONObject queryModel : models.toJSONObjectArray())
+            {
+                flattenProps(queryModel);
                 ExportQueryForm qf = new ExportQueryForm();
                 qf.setViewContext(this.getViewContext());
 
-                qf.bindParameters(new MutablePropertyValues(querymodel));
+                qf.bindParameters(new MutablePropertyValues(queryModel));
                 forms.add(qf);
             }
 
-            setTabModels(forms);
+            setQueryForms(forms);
         }
     }
 
+    /**
+     * Export multiple query forms
+     */
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public static class ExportTabsXLSXAction extends ReadOnlyApiAction<ExportTabsForm>
+    public static class ExportQueriesXLSXAction extends ReadOnlyApiAction<ExportQueriesForm>
     {
         @Override
-        public Object execute(ExportTabsForm form, BindException errors) throws Exception
+        public Object execute(ExportQueriesForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
             HttpServletResponse response = getViewContext().getResponse();
@@ -1751,7 +1761,7 @@ public class QueryController extends SpringActionController
             {
                 writer.setFilenamePrefix(form.getFilename());
                 ViewContext viewContext = getViewContext();
-                for(ExportQueryForm qf : form.getTabModels())
+                for(ExportQueryForm qf : form.getQueryForms())
                 {
                     qf.setViewContext(viewContext);
                     qf.getSchema();
