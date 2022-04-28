@@ -38,8 +38,6 @@ import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;

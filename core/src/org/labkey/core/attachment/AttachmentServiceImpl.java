@@ -47,6 +47,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -1613,7 +1614,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void checkSecurityPolicy(AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        if (null != attachmentParent.getSecurityPolicy())
+        if (null != attachmentParent.getSecurableResource())
         {
             User user = null;
             try
@@ -1632,10 +1633,10 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private void checkSecurityPolicy(User user, AttachmentParent attachmentParent) throws UnauthorizedException
     {
-        SecurityPolicy securityPolicy = attachmentParent.getSecurityPolicy();
-        if (null != securityPolicy)
+        SecurableResource securableResource = attachmentParent.getSecurableResource();
+        if (null != securableResource)
         {
-            if (null == user || !securityPolicy.hasPermission(user, ReadPermission.class))
+            if (null == user || !securableResource.hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("User does not have permission to access this secure resource.");
         }
     }

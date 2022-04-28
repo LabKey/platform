@@ -1286,7 +1286,7 @@ public class ContainerManager
                 if (!f.isInFolderNav())
                     continue;
 
-                boolean hasPolicyRead = f.getPolicy().hasPermission(user, ReadPermission.class);
+                boolean hasPolicyRead = f.hasPermission(user, ReadPermission.class);
 
                 boolean skip = (
                         !hasPolicyRead ||
@@ -1347,7 +1347,7 @@ public class ContainerManager
                             for (Container p : ancestors)
                             {
                                 if (!permission.containsKey(p.getId()))
-                                    permission.put(p.getId(), p.getPolicy().hasPermission(user, ReadPermission.class));
+                                    permission.put(p.getId(), p.hasPermission(user, ReadPermission.class));
                                 boolean hasRead = permission.get(p.getId());
 
                                 if (p.equals(localRoot))
@@ -1366,7 +1366,7 @@ public class ContainerManager
                         {
                             hasAncestryRead = containersToRoot(f).stream().allMatch(p -> {
                                 if (!permission.containsKey(p.getId()))
-                                    permission.put(p.getId(), p.getPolicy().hasPermission(user, ReadPermission.class));
+                                    permission.put(p.getId(), p.hasPermission(user, ReadPermission.class));
                                 return permission.get(p.getId());
                             });
                         }
@@ -1418,7 +1418,7 @@ public class ContainerManager
                             else
                             {
                                 if (!permission.containsKey(missing.getId()))
-                                    permission.put(missing.getId(), missing.getPolicy().hasPermission(user, ReadPermission.class));
+                                    permission.put(missing.getId(), missing.hasPermission(user, ReadPermission.class));
 
                                 if (!permission.get(missing.getId()))
                                 {

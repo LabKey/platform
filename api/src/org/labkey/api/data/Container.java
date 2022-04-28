@@ -646,8 +646,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //this seems much more cumbersome than it should be
         for (Report report : ReportService.get().getReports(user, this))
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
-            if (policy.hasPermission(user, AdminPermission.class))
+            if (report.getDescriptor().hasPermission(user, AdminPermission.class))
                 ret.add(report.getDescriptor());
         }
 
@@ -655,8 +654,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         PipeRoot root = PipelineService.get().findPipelineRoot(this);
         if (null != root)
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
-            if (policy.hasPermission(user, AdminPermission.class))
+            if (root.hasPermission(user, AdminPermission.class))
                 ret.add(root);
         }
 
