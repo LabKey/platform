@@ -89,7 +89,8 @@ public class FolderWriterImpl extends BaseFolderWriter
             subfolderWriter.write(c, ctx, vf);
         }
 
-        writeFolderXml(c, ctx, vf);
+        if (ctx.isIncludeFolderXml())
+            writeFolderXml(c, ctx, vf);
 
         LOG.info("Done exporting folder to " + vf.getLocation());
     }
