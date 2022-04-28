@@ -2343,6 +2343,7 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
         rgn.setShowPagination(false);
+        rgn.prepareDisplayColumns(getContainer());
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
         TSVGridWriter tsv = new TSVGridWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), renameColumnMap);
