@@ -1236,7 +1236,7 @@ public class SecurityManager
 
         for (String hash : history)
         {
-            if (SecurityManager.matchPassword(password, hash))
+            if (matchPassword(password, hash))
                 return true;
         }
 
@@ -3053,13 +3053,6 @@ public class SecurityManager
     }
 
 
-    /**
-     * This is a choke point for checking permissions.
-     * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
-     *
-     * This lets the SecurityPolicy object just handle its own ACL-like functionality e.g. computing the
-     * permissions that it explicitly assigns (resolving roles and groups).
-     */
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
@@ -3070,6 +3063,13 @@ public class SecurityManager
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
+    /**
+     * This is a choke point for checking permissions.
+     * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
+     *
+     * This lets the SecurityPolicy object just handle its own ACL-like functionality e.g. computing the
+     * permissions that it explicitly assigns (resolving roles and groups).
+     */
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
     {
         if (policy == null)
@@ -3088,7 +3088,7 @@ public class SecurityManager
         return granted;
     }
 
-    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
@@ -3438,7 +3438,7 @@ public class SecurityManager
             // again with SecurityManager.hasPermissions
             policy = new MutableSecurityPolicy(testFolder);
             // Test Site User and Guest groups
-            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no permission check", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
 
             policy.addRoleAssignment(user, ReaderRole.class);
             assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
@@ -3705,25 +3705,25 @@ public class SecurityManager
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
 
-                var usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                var usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userAC.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                var usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                var usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
                 assertEquals(2, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(1, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(3, usersWithAny.size());
                 assertTrue(usersWithAny.contains(userAB.getValue()));
                 assertTrue(usersWithAny.contains(userAC.getValue()));

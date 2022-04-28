@@ -58,7 +58,6 @@ Any user with READ access to this folder may view some summary data. However, ac
             <th width=100>PER&nbsp;DATASET<%=helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
             <th width=100>NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
     <%
-    SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
     List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
@@ -68,7 +67,7 @@ Any user with READ access to this folder may view some summary data. However, ac
         String name = group.getName();
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";
-        boolean hasFolderRead = folderPolicy.hasPermission(group, ReadPermission.class);
+        boolean hasFolderRead = getContainer().hasPermission(group, ReadPermission.class);
         boolean hasUpdatePerm = studyPolicy.hasNonInheritedPermission(group, UpdatePermission.class);
         boolean hasReadSomePerm = studyPolicy.hasNonInheritedPermission(group, ReadSomePermission.class);
         boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasNonInheritedPermission(group, ReadPermission.class);

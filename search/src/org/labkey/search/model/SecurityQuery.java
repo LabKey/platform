@@ -200,8 +200,7 @@ class SecurityQuery extends Query
         if (null == canRead)
         {
             SecurableResource sr = new _SecurableResource(resourceId, _containerIds.get(containerId));
-            SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
-            canRead = p.hasPermission(_user, ReadPermission.class);
+            canRead = sr.hasPermission(_user, ReadPermission.class);
             _securableResourceIds.put(resourceId, canRead);
         }
 

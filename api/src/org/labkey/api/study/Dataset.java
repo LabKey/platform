@@ -315,6 +315,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
     void save(User user) throws SQLException;
 
+    @Override
     boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
 
     /**

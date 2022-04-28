@@ -1130,7 +1130,7 @@ public class PipelineController extends SpringActionController
                 throw new NotFoundException();
 
             // check pipeline ACL
-            if (!SecurityPolicyManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
+            if (!pipeRoot.hasPermission(getUser(), ReadPermission.class))
                 throw new UnauthorizedException();
 
             File file = pipeRoot.resolvePath(form.getPath());

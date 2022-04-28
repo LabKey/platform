@@ -203,7 +203,7 @@ public class MenuViewFactory
             containersTemp = new ArrayList<>();
         }
 
-        if (!context.getContainer().getPolicy().hasPermission(user, AdminPermission.class))
+        if (!context.getContainer().hasPermission(user, AdminPermission.class))
         {
             // If user doesn't have Admin permission, don't show "_" containers
             List<Container> adjustedContainers = new ArrayList<>();

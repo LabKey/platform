@@ -76,8 +76,7 @@ public class ShortURLServiceImpl implements ShortURLService
     @Override
     public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException
     {
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(record);
-        if (!policy.hasPermission(user, DeletePermission.class))
+        if (!record.hasPermission(user, DeletePermission.class))
         {
             throw new UnauthorizedException("You are not authorized to delete the short URL '" + record.getShortURL() + "'");
         }
@@ -138,8 +137,7 @@ public class ShortURLServiceImpl implements ShortURLService
         }
         else
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(existingRecord);
-            if (!policy.hasPermission(user, UpdatePermission.class))
+            if (!existingRecord.hasPermission(user, UpdatePermission.class))
             {
                 throw new UnauthorizedException("You are not authorized to edit the short URL '" + shortURL + "'");
             }

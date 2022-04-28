@@ -218,7 +218,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
 
         // Policy must have all permissions in permissionsRequired
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-        if (!SecurityManager.hasAllPermissions(this.getClass().getName()+"_checkActionPermissions",
+        if (!SecurityManager.hasAllPermissions(this.getClass().getName() + "_checkActionPermissions",
                 policy, user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
 

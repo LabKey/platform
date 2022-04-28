@@ -403,7 +403,7 @@ public class StudyServiceImpl implements StudyService
     {
         Study study = StudyManager.getInstance().getStudy(container);
 
-        if(null == study || !SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class))
+        if(null == study || !container.hasPermission(user, ReadPermission.class))
             return Collections.emptyList();
         else
             return Collections.singletonList(study);

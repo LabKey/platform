@@ -749,7 +749,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!resource.hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
 
             //get the existing policy so we can audit how it's changed
@@ -957,7 +957,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!resource.hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to delete the security policy for this resource!");
 
             SecurityPolicyManager.deletePolicy(resource);
