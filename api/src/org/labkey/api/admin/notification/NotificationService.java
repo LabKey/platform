@@ -72,7 +72,7 @@ public interface NotificationService
      * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
      * list returned by getNotificationsByUser(), and is significantly more efficient to query.
      */
-    long getUnreadNotificationCountByUser(Container container, int notifyUserId);
+    long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId);
 
     /*
      * Returns a list of notifications for a specific user based on the specified type.

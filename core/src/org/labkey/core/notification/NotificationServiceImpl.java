@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
@@ -38,7 +39,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -49,6 +49,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 
@@ -86,8 +87,16 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         ContainerManager.addContainerListener(this);
     }
 
-    /** Cache the number of unread notifications per user (key is a user ID) to avoid a DB query on every page load */
-    private final Cache<Integer, Long> _unreadCountCache = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Unread notification counts");
+    /** Cache the number of unread notifications per user (key is User ID/Container RowId paid) to avoid a DB query on every page load */
+    private final Cache<Pair<Integer, Integer>, Long> _unreadCountCache = new BlockingCache<>(
+            CacheManager.getCache(CacheManager.UNLIMITED,
+                    TimeUnit.HOURS.toMillis(1),
+                    "Unread notification counts"),
+            (k, a) -> {
+                // The container may be null
+                Container c = k.second == null ? null : ContainerManager.getForRowId(k.second);
+                return createSelectorByUserOrType(c, null, k.first, true).getRowCount();
+            });
 
     /* for compatibility with code that uses/used MailHelper directly */
     @Override
@@ -115,9 +124,8 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             String contentType = m.getContentType();
             notification.setContentType(contentType);
             Object contentObject = m.getContent();
-            if (contentObject instanceof MimeMultipart)
+            if (contentObject instanceof MimeMultipart mm)
             {
-                MimeMultipart mm = (MimeMultipart) contentObject;
                 notification.setContent(mm.getBodyPart(0).getContent().toString(), mm.getBodyPart(0).getContentType());
             }
             else if (null != contentObject)
@@ -149,12 +157,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             m.setTextContent(body + "\n" + linkUrl);
 
             // replicate the message body as html with an <a> tag
-            StringBuilder html = new StringBuilder();
-            html.append("<html><head></head><body>");
-            html.append(PageFlowUtil.filter(body, true, true));
-            html.append("<br/><a href='" + fullUrlStr + "'>" + fullUrlStr + "</a>");
-            html.append("</body></html>");
-            m.setEncodedHtmlContent(html.toString());
+            String html = "<html><head></head><body>" +
+                    PageFlowUtil.filter(body, true, true) +
+                    "<br/><a href='" + fullUrlStr + "'>" + fullUrlStr + "</a>" +
+                    "</body></html>";
+            m.setEncodedHtmlContent(html);
 
             // send the message and create the new notification for this user and report
             return sendMessage(c, createdByUser, recipient, m,
@@ -187,7 +194,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
 
     private void clearUnreadCache(int userId)
     {
-        getTable().getSchema().getScope().addCommitTask(() -> _unreadCountCache.remove(userId), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+        // Remove notifications for user in all containers
+        getTable().getSchema().getScope().addCommitTask(
+                () -> _unreadCountCache.removeUsingFilter((p) -> p.first.intValue() == userId),
+                DbScope.CommitTaskOption.IMMEDIATE,
+                DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     private void clearUnreadCache()
@@ -202,10 +213,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public long getUnreadNotificationCountByUser(Container container, int notifyUserId)
+    public long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId)
     {
-        return _unreadCountCache.get(notifyUserId, null,
-                (k, a) -> createSelectorByUserOrType(container, null, notifyUserId, true).getRowCount());
+        return _unreadCountCache.get(new Pair<>(notifyUserId, container == null ? null : container.getRowId()));
     }
 
     @Override
@@ -276,9 +286,9 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     }
 
     @Override
-    public int markAsRead(@NotNull User user, int rowid)
+    public int markAsRead(@NotNull User user, int rowId)
     {
-        return markAsRead(user, getNotificationUpdateFilter(user.getUserId(), rowid), user.getUserId());
+        return markAsRead(user, getNotificationUpdateFilter(user.getUserId(), rowId), user.getUserId());
     }
 
     private int markAsRead(User user, SimpleFilter filter, int notifyUserId)
@@ -344,11 +354,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
         return filter;
     }
 
-    private SimpleFilter getNotificationUpdateFilter(int userid, int rowid)
+    private SimpleFilter getNotificationUpdateFilter(int userid, int rowId)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("UserID"), userid);
-        filter.addCondition(FieldKey.fromParts("RowId"), rowid);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
         return filter;
     }
 
@@ -517,11 +527,11 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             assertEquals("Unexpected number of notifications for type 'type2'", 0, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
         }
 
-        private Notification addNotification(Container container, User user, Notification notification, String expectedErrorPrefix) throws ValidationException
+        private void addNotification(Container container, User user, Notification notification, String expectedErrorPrefix) throws ValidationException
         {
             try
             {
-                return _service.addNotification(container, user, notification);
+                _service.addNotification(container, user, notification);
             }
             catch(ValidationException e)
             {
@@ -529,8 +539,6 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
                     assertTrue(e.getMessage().startsWith(expectedErrorPrefix));
                 else
                     throw e;
-
-                return null;
             }
         }
 
