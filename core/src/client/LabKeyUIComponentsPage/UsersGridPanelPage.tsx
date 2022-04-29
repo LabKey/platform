@@ -2,20 +2,20 @@
  * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import React from 'react'
+import React from 'react';
 import { List } from 'immutable';
 import { getServerContext, PermissionTypes, Utils } from '@labkey/api';
 import {
     Alert,
     LoadingSpinner,
-    PermissionsPageContextProvider,
-    PermissionsProviderProps,
+    InjectedPermissionsPage,
     SecurityPolicy,
     UsersGridPanel,
     fetchContainerSecurityPolicy,
     queryGridInvalidate,
     SCHEMAS,
     User,
+    withPermissionsPage,
 } from '@labkey/components';
 
 interface State {
@@ -25,9 +25,9 @@ interface State {
     message: string
 }
 
-class UsersGridPanelPageImpl extends React.PureComponent<PermissionsProviderProps, State> {
+class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage, State> {
 
-    constructor(props: PermissionsProviderProps) {
+    constructor(props: InjectedPermissionsPage) {
         super(props);
 
         this.state = {
@@ -110,5 +110,5 @@ class UsersGridPanelPageImpl extends React.PureComponent<PermissionsProviderProp
     }
 }
 
-export const UsersGridPanelPage = PermissionsPageContextProvider(UsersGridPanelPageImpl);
+export const UsersGridPanelPage = withPermissionsPage<{}>(UsersGridPanelPageImpl);
 
