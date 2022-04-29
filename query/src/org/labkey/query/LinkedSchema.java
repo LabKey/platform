@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -42,6 +43,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -173,7 +175,7 @@ public class LinkedSchema extends ExternalSchema
             return null;
         }
 
-        User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
+        User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer, def.getSourceSchemaName());
         SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
 
         return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaKey);
@@ -578,15 +580,25 @@ public class LinkedSchema extends ExternalSchema
         return paramValues;
     }
 
+    private static Set<Role> getUserRoles(String sourceSchemaName)
+    {
+        if (AbstractAuditTypeProvider.QUERY_SCHEMA_NAME.equalsIgnoreCase(sourceSchemaName))
+        {
+            // Issue 45347 - special case auditLog schema to always be able to see the data
+            return Set.of(RoleManager.getRole(ReaderRole.class), RoleManager.getRole(CanSeeAuditLogRole.class));
+        }
+        return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+    }
+
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
         private static final int[] NO_GROUPS = new int[0];
 
         private final Set<String> _allowedPolicyResourceIds = new HashSet<>();
 
-        public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
+        public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
-            super(realUser, NO_GROUPS, Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            super(realUser, NO_GROUPS, getUserRoles(sourceSchemaName), false);
 
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
