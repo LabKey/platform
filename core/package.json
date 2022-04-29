@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.10.0",
-    "@labkey/components": "2.161.0-fb-fix-45304.1",
+    "@labkey/components": "2.162.0",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
