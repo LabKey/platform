@@ -3095,6 +3095,11 @@ public class QueryView extends WebPartView<Object>
         return _apiResponseView;
     }
 
+    public void setApiResponseView(boolean apiResponseView)
+    {
+        _apiResponseView = apiResponseView;
+    }
+
     public boolean isUseQueryViewActionExportURLs()
     {
         return _useQueryViewActionExportURLs;
