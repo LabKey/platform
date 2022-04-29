@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
@@ -112,6 +113,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataClass;
@@ -173,6 +175,8 @@ import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCO
 
 public class XarReader extends AbstractXarImporter
 {
+    private static final Logger LOG = LogHelper.getLogger(XarReader.class, "XAR parsing");
+
     private final Set<String> _experimentLSIDs = new HashSet<>();
     private final Map<String, Integer> _propertyIdMap = new HashMap<>();
     private final Map<Integer, String> _runWorkflowTaskMap = new HashMap<>();
@@ -1089,8 +1093,11 @@ public class XarReader extends AbstractXarImporter
 
                 workflowTaskLSID = workflowTaskLSID.split(":")[1];
             }
-            // remember which job created the run so we can show this run on the job details page
-            vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
+            if (_job != null)
+            {
+                // remember which job created the run so we can show this run on the job details page
+                vals.setJobId(PipelineService.get().getJobId(_job.getUser(), _job.getContainer(), _job.getJobGUID()));
+            }
 
             ExpRunImpl impl = new ExpRunImpl(vals);
             try
@@ -2105,7 +2112,7 @@ public class XarReader extends AbstractXarImporter
         ExpProtocolImpl protocolImpl = new ExpProtocolImpl(protocol);
 
         _xarSource.addProtocol(protocolImpl);
-        XarReaderRegistry.get().postProcessImportedProtocol(getContainer(), getUser(), protocolImpl, _job.getLogger());
+        XarReaderRegistry.get().postProcessImportedProtocol(getContainer(), getUser(), protocolImpl, _job == null ? LOG : _job.getLogger());
     }
 
     private void loadActionSet(ProtocolActionSetType actionSet) throws XarFormatException
@@ -2433,20 +2440,13 @@ public class XarReader extends AbstractXarImporter
             SimpleTypeNames.Enum valType = sVal.getValueType();
             try
             {
-                switch (valType.intValue())
-                {
-                    case (SimpleTypeNames.INT_INTEGER):
-                        val = Integer.valueOf(sVal.getStringValue());
-                        break;
-                    case (SimpleTypeNames.INT_DOUBLE):
-                        val = Double.valueOf(sVal.getStringValue());
-                        break;
-                    case (SimpleTypeNames.INT_DATE_TIME):
-                        val = new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));
-                        break;
-                    default:
-                        val = sVal.getStringValue();
-                }
+                val = switch (valType.intValue())
+                        {
+                            case (SimpleTypeNames.INT_INTEGER) -> Integer.valueOf(sVal.getStringValue());
+                            case (SimpleTypeNames.INT_DOUBLE) -> Double.valueOf(sVal.getStringValue());
+                            case (SimpleTypeNames.INT_DATE_TIME) -> new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));
+                            default -> sVal.getStringValue();
+                        };
             }
             catch (ConversionException e)
             {

@@ -143,7 +143,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
                     {
-                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
+                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
                         try
                         {
                             runsXarSource.init();
@@ -184,7 +184,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             job = getDummyPipelineJob(ctx);
         }
 
-        XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
+        XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
         try
         {
             typesXarSource.init();
