@@ -84,42 +84,13 @@ var testExceptionReport = function() {
 };
 
 var testMothershipReport = function(type, level, title) {
-    LABKEY.Ajax.request({
-        url: LABKEY.ActionURL.buildURL("admin", "testMothershipReport"),
-        method: "POST",
-        params: {
-            type: type,
-            level: level
-        },
-        success: LABKEY.Utils.getCallbackWrapper(function(response)
-        {
-            var report = JSON.parse(response).report;
-            var reportStr = '';
-            if (report != undefined)
-            {
-                var indent = 4;
-                if (report.jsonMetrics != undefined)
-                {
-                    report.jsonMetrics = JSON.parse(report.jsonMetrics);
-                }
-                else if (report.stackTrace != undefined)
-                {
-                    report.stackTrace = report.stackTrace.replace(/(?:\r\n|\r|\n)/g, '<br/>').replace(/\t/g, '&nbsp;'.repeat(indent * 8));
-                }
-                reportStr = JSON.stringify(report, null, indent);
-            }
-            else {
-                reportStr = 'An error occurred generating the sample report.';
-            }
-            // Use setTimeout() because Safari doesn't let you call window.open in an async callback
-            setTimeout(() => {
-                var sampleTab = window.open('about:blank', '_blank');
-                sampleTab.document.write('<span style="white-space: pre-wrap;">Sample ' + title + ' Report for Level ' + level + '</span><br/><br/>');
-                sampleTab.document.write('<span style="white-space: pre-wrap;">' + reportStr + '</span>');
-                sampleTab.document.close();
-            });
-        })
-    });
+
+    var url = LABKEY.ActionURL.buildURL("admin", "testMothershipReport", null, { type: type, level: level });
+    var sampleTab = window.open(url, '_blank');
+
+    if (!sampleTab) {
+        window.alert('Failed to open test report - see browser console for details');
+    }
 };
 </script>
 
@@ -209,7 +180,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <table>
             <tr>
-                <td valign="top">
+                <td style="vertical-align: top">
                     <label>
                         <input type="radio" name="usageReportingLevel" id="usageReportingLevel1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
                         <strong>OFF</strong> - Do not check for updates or report any usage data.
@@ -217,7 +188,7 @@ Click the Save button at any time to accept the current settings and continue.</
                 </td>
             </tr>
             <tr>
-                <td valign="top">
+                <td style="vertical-align: top">
                     <label>
                         <input type="radio" name="usageReportingLevel" id="usageReportingLevel2" onchange="enableUsageTest();"
                                value="<%=UsageReportingLevel.ON%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>>
