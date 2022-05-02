@@ -368,11 +368,13 @@ public class QueryView extends WebPartView<Object>
     /**
      * Writes this query view as a sheet in the provided ExcelWriter (CALLER MUST CLOSE)
      * @param writer to write to
+     * @param config settings to apply to writer prior to sheet export
+          * @param sheetName Name to give to sheet, if not unique within workbook existing sheet will be overwritten
      */
-    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config)
+    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config, @Nullable String sheetName)
     {
         configureExcelWriter(writer, config);
-        String name = getQueryDef().getName();
+        String name = StringUtils.isNotBlank(sheetName)? sheetName : getQueryDef().getName();
         name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(getDataRegionName()) ? getDataRegionName() : "Data";
         writer.setSheetName(name);
         writer.setAutoSize(true);

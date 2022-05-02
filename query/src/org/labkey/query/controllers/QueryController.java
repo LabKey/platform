@@ -1767,9 +1767,11 @@ public class QueryController extends SpringActionController
                     qf.getSchema();
 
                     QueryView qv = qf.getQueryView();
-                    qv.exportToExcelSheet(writer, new QueryView.ExcelExportConfig(response, qf.getHeaderType())
-                            .setExcludeColumns(qf.getExcludeColumns())
-                            .setRenamedColumns(qf.getRenameColumnMap())
+                    qv.exportToExcelSheet(writer,
+                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                                .setExcludeColumns(qf.getExcludeColumns())
+                                .setRenamedColumns(qf.getRenameColumnMap()),
+                            qf.getSheetName()
                     );
                 }
 
@@ -1915,6 +1917,17 @@ public class QueryController extends SpringActionController
         protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
         FieldKey[] excludeColumn;
         Map<String, String> renameColumns = null;
+        private String sheetName;
+
+        public void setSheetName(String sheetName)
+        {
+            this.sheetName = sheetName;
+        }
+
+        public String getSheetName()
+        {
+            return this.sheetName;
+        }
 
         public ColumnHeaderType getHeaderType()
         {
