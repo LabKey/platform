@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -79,29 +78,6 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                 }
             }
 
-            @Override
-            public @Nullable String getFormattedText(RenderContext ctx)
-            {
-                try
-                {
-                    JSONObject value = getValueFromCtx(ctx);
-                    if (null == value)
-                        return "";
-
-                    ObjectMapper mapper = new ObjectMapper();
-                    DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
-                    pp.indentArraysWith(new DefaultIndenter());
-
-                    Object json = mapper.readValue(value.toString(), Object.class);
-                    String strValue = mapper.writer(pp).writeValueAsString(json);
-                    return PageFlowUtil.filter(strValue, true);
-                }
-                catch (IOException e)
-                {
-                    return "Bad import alias object";
-                }
-            }
-
             @NotNull
             @Override
             public HtmlString getFormattedHtml(RenderContext ctx)
@@ -112,7 +88,14 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                     if (null == value)
                         return HtmlString.EMPTY_STRING;
 
-                    return HtmlString.unsafe("<div>" + getFormattedText(ctx) + "</div>");
+                    ObjectMapper mapper = new ObjectMapper();
+                    DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
+                    pp.indentArraysWith(new DefaultIndenter());
+
+                    Object json = mapper.readValue(value.toString(), Object.class);
+                    String strValue = mapper.writer(pp).writeValueAsString(json);
+                    String filteredValue = PageFlowUtil.filter(strValue, true);
+                    return HtmlString.unsafe("<div>" + filteredValue + "</div>");
                 }
                 catch (IOException e)
                 {
