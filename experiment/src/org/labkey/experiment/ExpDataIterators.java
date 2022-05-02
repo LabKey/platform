@@ -1173,7 +1173,7 @@ public class ExpDataIterators
             if (sampleType == null)
                 throw new ValidationException("Invalid sample type: " + dataType);
 
-            aliquotParent = findMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+            aliquotParent = ExperimentService.get().findExpMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
 
             if (aliquotParent == null)
             {
@@ -1205,7 +1205,7 @@ public class ExpDataIterators
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, null, null, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -1238,7 +1238,7 @@ public class ExpDataIterators
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
@@ -1254,7 +1254,7 @@ public class ExpDataIterators
 
                     if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
@@ -1288,7 +1288,7 @@ public class ExpDataIterators
                             throw new ValidationException(message);
                         }
 
-                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
@@ -1309,7 +1309,7 @@ public class ExpDataIterators
 
                     if (!isEmptyEntity)
                     {
-                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             childData.put(data, dataRole(data, user));
                         else
@@ -1403,18 +1403,6 @@ public class ExpDataIterators
         return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
 
-    private static ExpMaterial findMaterial(Container c, User user, ExpSampleType sampleType, String sampleTypeName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
-            throws ValidationException
-    {
-        return ExperimentService.get().findExpMaterial(c, user, sampleType, sampleTypeName, sampleName, cache, materialCache);
-    }
-
-    private static ExpData findData(Container c, User user, @NotNull ExpDataClass dataClass, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
-            throws ValidationException
-    {
-        return ExperimentService.get().findExpData(c, user, dataClass, dataClassName, dataName, cache, dataCache);
-    }
-
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
@@ -1480,7 +1468,6 @@ public class ExpDataIterators
             return hasNext;
         }
     }
-
 
     // This should be used AFTER StandardDataIteratorBuilder, say at the beginning of PersistDataIteratorBuilder (below)
     // The incoming dataiterator should bound to target table and have complete ColumnInfo metadata
