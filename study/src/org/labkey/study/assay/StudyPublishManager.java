@@ -1693,6 +1693,9 @@ public class StudyPublishManager implements StudyPublishService
             if (qs != null)
             {
                 QueryView view = new QueryView(userSchema, qs, null);
+                // Issue 45238 - configure as API style invocation to skip setting up buttons and other items that
+                // rely on being invoked inside an HTTP request/ViewContext
+                view.setApiResponseView(true);
                 DataView dataView = view.createDataView();
                 for (Map.Entry<FieldKey, ColumnInfo> entry : dataView.getDataRegion().getSelectColumns().entrySet())
                 {

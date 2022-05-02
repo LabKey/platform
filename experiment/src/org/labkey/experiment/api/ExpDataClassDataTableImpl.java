@@ -134,12 +134,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     private Map<String, Tuple3<String, String, ConceptURIVocabularyDomainProvider>> _vocabularyDomainProviders;
 
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(_userSchema);
-    }
-
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
         super(name, ExperimentService.get().getTinfoData(), schema, cf);

@@ -212,7 +212,10 @@
                             LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
                         ],
                         containerFilter: 'CurrentAndSiblings'
-                    })
+                    }),
+                    tpl : new Ext4.XTemplate(
+                        '<tpl for="."><div class="x4-boundlist-item">{Name:htmlEncode}</div></tpl>'
+                    ),
                 });
             }
         });

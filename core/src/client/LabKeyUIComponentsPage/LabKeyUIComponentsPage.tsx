@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { fromJS, List, Map } from 'immutable';
 import {
     Alert,
+    AppContextProvider,
     AppURL,
     Cards,
     ConfirmModal,
@@ -175,6 +176,7 @@ export class App extends React.Component<any, State> {
 
         return (
             <ServerContextProvider initialContext={serverContext}>
+                <AppContextProvider>
                 <p>
                     This page is setup to show examples of shared React components from
                     the <a href={'https://github.com/LabKey/labkey-ui-components'} target={'_blank'}>labkey-ui-components</a> repository.
@@ -476,6 +478,7 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
+                </AppContextProvider>
             </ServerContextProvider>
         )
     }

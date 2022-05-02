@@ -5631,8 +5631,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (ExpMaterialImpl mat : materials)
         {
             runMaterialMap.put(mat.getRowId(), mat);
-            ExpProtocolApplication sourceApplication = mat.getSourceApplication();
-            Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
+            Integer srcAppId = mat.getDataObject().getSourceApplicationId();
             ExpProtocolApplicationImpl protApp = resolveProtApp(expRun, protStepMap, srcAppId);
             protApp.getOutputMaterials().add(mat);
             mat.markAsPopulated(protApp);

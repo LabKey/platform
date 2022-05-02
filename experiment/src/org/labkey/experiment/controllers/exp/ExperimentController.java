@@ -237,6 +237,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -887,7 +888,7 @@ public class ExperimentController extends SpringActionController
             VBox vbox = super.getView(form, errors);
 
             List<ExpMaterial> materialsToInvestigate = new ArrayList<>();
-            final List<ExpRun> successorRuns = new ArrayList<>();
+            final Set<ExpRun> successorRuns = new HashSet<>();
             materialsToInvestigate.add(_material);
             Set<ExpMaterial> investigatedMaterials = new HashSet<>();
             while (!materialsToInvestigate.isEmpty())
@@ -897,8 +898,11 @@ public class ExperimentController extends SpringActionController
                 {
                     for (ExpRun r : ExperimentService.get().getRunsUsingMaterials(m.getRowId()))
                     {
-                        successorRuns.add(r);
-                        materialsToInvestigate.addAll(r.getMaterialOutputs());
+                        // Only expand the material outputs of the run if it's our first time looking at the run
+                        if (successorRuns.add(r))
+                        {
+                            materialsToInvestigate.addAll(r.getMaterialOutputs());
+                        }
                     }
                 }
                 if (successorRuns.size() > 1000)

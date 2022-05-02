@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -54,17 +55,26 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
@@ -73,13 +83,14 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -91,6 +102,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,6 +118,8 @@ import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 
 public class ExpDataIterators
 {
+    private static final Logger LOG = LogHelper.getLogger(ExpDataIterators.class, "Experiment data related data iterators");
+
     public static class CounterDataIteratorBuilder implements DataIteratorBuilder
     {
         private final DataIteratorBuilder _in;
@@ -388,7 +402,7 @@ public class ExpDataIterators
         final List<Integer> _keys = new ArrayList<>();
         final UserSchema _schema;
         private boolean _isDerivation = false;
-        private Integer _rowIdCol;
+        final Integer _rowIdCol;
 
         protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
@@ -403,10 +417,9 @@ public class ExpDataIterators
             Map<String, Integer> nameMap = DataIteratorUtil.createColumnNameMap(di);
             _rowIdCol = nameMap.get("rowid");
 
-            for (Map.Entry<String, Integer> entry : DataIteratorUtil.createColumnNameMap(di).entrySet())
+            for (String name : nameMap.keySet())
             {
-                String name = entry.getKey();
-                if (UploadSamplesHelper.isInputOutputHeader(name) || equalsIgnoreCase("parent", name))
+                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name))
                 {
                     _isDerivation = true;
                     break;
@@ -516,9 +529,8 @@ public class ExpDataIterators
                 Object lsidValue = get(_lsidCol);
                 Object flagValue = get(_flagCol);
 
-                if (lsidValue instanceof String)
+                if (lsidValue instanceof String lsid)
                 {
-                    String lsid = (String)lsidValue;
                     String flag = Objects.toString(flagValue, null);
 
                     try
@@ -526,7 +538,8 @@ public class ExpDataIterators
                         if (_isSample)
                         {
                             ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
-                            sample.setComment(_user, flag);
+                            if (sample != null)
+                                sample.setComment(_user, flag);
                         }
                         else
                         {
@@ -634,7 +647,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (UploadSamplesHelper.isInputOutputHeader(name) || _isSample && equalsIgnoreCase("parent",name))
+                if (ExperimentService.isInputOutputColumn(name) || _isSample && equalsIgnoreCase("parent",name))
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                 }
@@ -773,13 +786,13 @@ public class ExpDataIterators
                         }
                     }
 
-                    List<UploadSamplesHelper.UploadSampleRunRecord> runRecords = new ArrayList<>();
+                    List<UploadSampleRunRecord> runRecords = new ArrayList<>();
                     Set<String> lsids = new LinkedHashSet<>();
                     lsids.addAll(_parentNames.keySet());
                     lsids.addAll(_aliquotParents.keySet());
                     for (String lsid : lsids)
                     {
-                        Set<Pair<String, String>> parentNames = _parentNames.containsKey(lsid) ? _parentNames.get(lsid) : Collections.emptySet();
+                        Set<Pair<String, String>> parentNames = _parentNames.getOrDefault(lsid, Collections.emptySet());
 
                         ExpRunItem runItem;
                         String aliquotedFrom = _aliquotParents.get(lsid);
@@ -809,12 +822,12 @@ public class ExpDataIterators
                         Pair<RunInputOutputBean, RunInputOutputBean> pair;
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
-                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                            pair = resolveInputsAndOutputs(
                                     _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
                         }
                         else
                         {
-                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                            pair = resolveInputsAndOutputs(
                                     _user, _container, null, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
                         }
 
@@ -827,7 +840,7 @@ public class ExpDataIterators
                         // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
                         if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())
                         {
-                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = UploadSamplesHelper.clearSampleSourceRun(_user, (ExpMaterial) runItem);
+                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearSampleSourceRun(_user, (ExpMaterial) runItem);
                             String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
                             lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
                             if (!lockCheckMessage.isEmpty())
@@ -847,16 +860,16 @@ public class ExpDataIterators
                                 {
                                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                                    previousSampleRelatives = UploadSamplesHelper.clearSampleSourceRun(_user, sample);
+                                    previousSampleRelatives = clearSampleSourceRun(_user, sample);
                                 }
                                 currentMaterialMap = new HashMap<>();
                                 currentMaterial = sample;
-                                currentMaterialMap.put(sample, UploadSamplesHelper.sampleRole(sample));
+                                currentMaterialMap.put(sample, sampleRole(sample));
                             }
                             else
                             {
                                 ExpData data = (ExpData) runItem;
-                                currentDataMap = Collections.singletonMap(data, UploadSamplesHelper.dataRole(data, _user));
+                                currentDataMap = Collections.singletonMap(data, dataRole(data, _user));
                             }
 
                             if (pair.first != null)
@@ -870,7 +883,7 @@ public class ExpDataIterators
 
                                 Map<ExpData, String> parentDataMap = pair.first.getDatas();
 
-                                UploadSamplesHelper.record(_isSample, runRecords,
+                                record(_isSample, runRecords,
                                         parentMaterialMap, currentMaterialMap,
                                         parentDataMap, currentDataMap, pair.first.getAliquotParent(), currentMaterial);
                             }
@@ -884,7 +897,7 @@ public class ExpDataIterators
                                 if (!lockCheckMessage.isEmpty())
                                     throw new ValidationException(lockCheckMessage);
 
-                                UploadSamplesHelper.record(false, runRecords,
+                                record(false, runRecords,
                                         currentMaterialMap, childMaterialMap,
                                         currentDataMap, childDataMap, null, null);
                             }
@@ -943,6 +956,451 @@ public class ExpDataIterators
             messages.add(message);
         }
         return StringUtils.join(messages, " ");
+    }
+
+    /**
+     * Clear the source protocol application for this material.
+     * If the run that created this material is not a sample derivation run, throw an error -- we don't
+     * want to delete an assay run, for example.
+     * If the run has more than the sample as an output, the material is removed as an output of the run
+     * otherwise the run will be deleted.
+     */
+    @NotNull
+    private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    {
+        ExpProtocolApplication existingSourceApp = material.getSourceApplication();
+        Set<ExpMaterial> previousSampleParents = Collections.emptySet();
+        Set<ExpMaterial> previousSampleChildren = Collections.emptySet();
+        if (existingSourceApp == null)
+            return Pair.of(previousSampleParents, previousSampleChildren);
+
+        ExpRun existingDerivationRun = existingSourceApp.getRun();
+        if (existingDerivationRun == null)
+            return Pair.of(previousSampleParents, previousSampleChildren);
+
+        ExpProtocol protocol = existingDerivationRun.getProtocol();
+
+        if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
+            return Pair.of(previousSampleParents, previousSampleChildren);;
+
+        if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
+        {
+            throw new ValidationException(
+                    "Can't remove source run '" + existingDerivationRun.getName() + "'" +
+                            " of protocol '" + protocol.getName() + "'" +
+                            " for sample '" + material.getName() + "' since it is not a sample derivation run");
+        }
+
+        previousSampleParents = existingDerivationRun.getMaterialInputs().keySet();
+        previousSampleChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
+
+        List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
+        List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
+        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(material))))
+        {
+            LOG.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
+            // if run has no other outputs, delete the run completely
+            material.setSourceApplication(null);
+            material.save(user);
+            existingDerivationRun.delete(user);
+        }
+        else
+        {
+            LOG.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
+            // if the existing run has other outputs, remove the run as the source application for this sample
+            // and remove it as an output from the run
+            material.setSourceApplication(null);
+            material.save(user);
+            ExpProtocolApplication outputApp = existingDerivationRun.getOutputProtocolApplication();
+            if (outputApp != null)
+                outputApp.removeMaterialInput(user, material);
+            existingSourceApp.removeMaterialInput(user, material);
+            ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
+        }
+        return Pair.of(previousSampleParents, previousSampleChildren);
+    }
+
+    /**
+     * Collect the output material or data into a run record.
+     * When merge is true, the outputs will be combined with
+     * an existing record with the same input parents, if possible.
+     */
+    private static void record(boolean merge,
+                              List<UploadSampleRunRecord> runRecords,
+                              Map<ExpMaterial, String> parentMaterialMap,
+                              Map<ExpMaterial, String> childMaterialMap,
+                              Map<ExpData, String> parentDataMap,
+                              Map<ExpData, String> childDataMap,
+                              ExpMaterial aliquotParent,
+                              ExpMaterial aliquotChild)
+    {
+        if (merge)
+        {
+            Set<ExpMaterial> parentMaterials = parentMaterialMap.keySet();
+            Set<ExpData> parentDatas = parentDataMap.keySet();
+
+            // find existing RunRecord with the same set of parents and add output children to it
+            for (UploadSampleRunRecord record : runRecords)
+            {
+                if (record._aliquotInput != null && record._aliquotInput.equals(aliquotParent))
+                {
+                    record._aliquotOutputs.add(aliquotChild);
+                    return;
+                }
+                else if ((!record.getInputMaterialMap().isEmpty() || !record.getInputDataMap().isEmpty()) && record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
+                {
+                    if (record._outputMaterial.isEmpty())
+                        record._outputMaterial = childMaterialMap;
+                    else
+                        record._outputMaterial.putAll(childMaterialMap);
+
+                    if (record._outputData.isEmpty())
+                        record._outputData = childDataMap;
+                    else
+                        record._outputData.putAll(childDataMap);
+                    return;
+                }
+            }
+        }
+
+        // otherwise, create new run record
+        List<ExpMaterial> aliquots = null;
+        if (aliquotChild != null)
+        {
+            aliquots = new LinkedList<>();
+            aliquots.add(aliquotChild);
+        }
+
+        runRecords.add(new UploadSampleRunRecord(parentMaterialMap, childMaterialMap, parentDataMap, childDataMap, aliquotParent, aliquots));
+    }
+
+    public static class UploadSampleRunRecord implements SimpleRunRecord
+    {
+        private final Map<ExpMaterial, String> _inputMaterial;
+        Map<ExpMaterial, String> _outputMaterial;
+        Map<ExpData, String> _inputData;
+        Map<ExpData, String> _outputData;
+
+        ExpMaterial _aliquotInput;
+        List<ExpMaterial> _aliquotOutputs;
+
+        public UploadSampleRunRecord(Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial,
+                                     Map<ExpData, String> inputData, Map<ExpData, String> outputData,
+                                     ExpMaterial aliquotInput, List<ExpMaterial> aliquotChildren)
+        {
+            _inputMaterial = inputMaterial;
+            _outputMaterial = outputMaterial;
+            _inputData = inputData;
+            _outputData = outputData;
+            _aliquotInput = aliquotInput;
+            _aliquotOutputs = aliquotChildren;
+        }
+
+        @Override
+        public Map<ExpMaterial, String> getInputMaterialMap()
+        {
+            return _inputMaterial;
+        }
+
+        @Override
+        public Map<ExpMaterial, String> getOutputMaterialMap()
+        {
+            return _outputMaterial;
+        }
+
+        @Override
+        public Map<ExpData, String> getInputDataMap()
+        {
+            return _inputData;
+        }
+
+        @Override
+        public Map<ExpData, String> getOutputDataMap()
+        {
+            return _outputData;
+        }
+
+        @Override
+        public ExpMaterial getAliquotInput()
+        {
+            return _aliquotInput;
+        }
+
+        @Override
+        public List<ExpMaterial> getAliquotOutputs()
+        {
+            return _aliquotOutputs;
+        }
+    }
+
+    /**
+     * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
+     * DataInputs/<data class name> or MaterialInputs/<sample type name>. Either / or . works as a delimiter
+     *
+     * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
+     *                will be incorporated into the resolved inputs and outputs
+     * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
+     *                    indicate the parent should be removed.
+     * @throws ExperimentException
+     */
+    @NotNull
+    private static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, @Nullable ExpRunItem runItem,
+                                                                                       Set<Pair<String, String>> entityNamePairs,
+                                                                                       RemapCache cache,
+                                                                                       Map<Integer, ExpMaterial> materialMap,
+                                                                                       Map<Integer, ExpData> dataMap,
+                                                                                       Map<String, ExpSampleType> sampleTypes,
+                                                                                       Map<String, ExpDataClass> dataClasses,
+                                                                                       @Nullable String aliquotedFrom,
+                                                                                       String dataType /*sample type or source type name*/)
+            throws ValidationException, ExperimentException
+    {
+        Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
+        Map<ExpData, String> parentData = new LinkedHashMap<>();
+        Set<String> parentDataTypesToRemove = new CaseInsensitiveHashSet();
+        Set<String> parentSampleTypesToRemove = new CaseInsensitiveHashSet();
+
+        Map<ExpMaterial, String> childMaterials = new HashMap<>();
+        Map<ExpData, String> childData = new HashMap<>();
+        boolean isMerge = runItem != null;
+
+        ExpMaterial aliquotParent = null;
+        boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
+        if (isAliquot)
+        {
+            ExpSampleType sampleType = sampleTypes.computeIfAbsent(dataType, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+            if (sampleType == null)
+                throw new ValidationException("Invalid sample type: " + dataType);
+
+            aliquotParent = ExperimentService.get().findExpMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+
+            if (aliquotParent == null)
+            {
+                String message = "Aliquot parent '" + aliquotedFrom + "' not found.";
+                throw new ValidationException(message);
+            }
+            else if (!aliquotParent.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            {
+                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStateLabel()));
+            }
+        }
+
+        for (Pair<String, String> pair : entityNamePairs)
+        {
+            String entityColName = pair.first;
+            String entityName = pair.second;
+            boolean isEmptyEntity = StringUtils.isEmpty(entityName);
+
+            String[] parts = entityColName.split("[./]");
+            if (parts.length == 1)
+            {
+                if (parts[0].equalsIgnoreCase("parent"))
+                {
+                    if (!isEmptyEntity)
+                    {
+                        if (isAliquot)
+                        {
+                            String message = "Sample derivation parent input is not allowed for aliquots.";
+                            throw new ValidationException(message);
+                        }
+
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, null, null, entityName, cache, materialMap);
+                        if (sample != null)
+                            parentMaterials.put(sample, sampleRole(sample));
+                        else
+                        {
+                            String message = "Sample input '" + entityName + "' not found";
+                            throw new ValidationException(message);
+                        }
+                    }
+                }
+            }
+            if (parts.length == 2)
+            {
+                String namePart = QueryKey.decodePart(parts[1]);
+                if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                {
+                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                    if (sampleType == null)
+                        throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
+
+                    if (isEmptyEntity)
+                    {
+                        if (isMerge && !isAliquot)
+                            parentSampleTypesToRemove.add(namePart);
+                    }
+                    else
+                    {
+                        if (isAliquot)
+                        {
+                            String message = "Sample derivation parent input is not allowed for aliquots";
+                            throw new ValidationException(message);
+                        }
+
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        if (sample != null)
+                            parentMaterials.put(sample, sampleRole(sample));
+                        else
+                            throw new ValidationException("Sample '" + entityName + "' not found in Sample Type '" + namePart + "'.");
+
+                    }
+                }
+                else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
+                {
+                    ExpSampleType sampleType = sampleTypes.computeIfAbsent(namePart, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+                    if (sampleType == null)
+                        throw new ValidationException(String.format("Invalid import alias: child SampleType [%1$s] does not exist or may have been deleted", namePart));
+
+                    if (!isEmptyEntity)
+                    {
+                        ExpMaterial sample = ExperimentService.get().findExpMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
+                        if (sample != null)
+                        {
+                            if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
+                                childMaterials.put(sample, sampleRole(sample));
+                            else
+                            {
+                                String message = "Sample derivation output is not allowed for aliquots.";
+                                throw new ValidationException(message);
+                            }
+                        }
+                        else
+                            throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
+                    }
+                }
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                {
+                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                    if (dataClass == null)
+                        throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
+
+                    if (isEmptyEntity)
+                    {
+                        if (isMerge && !isAliquot)
+                            parentDataTypesToRemove.add(namePart);
+                    }
+                    else
+                    {
+                        if (isAliquot)
+                        {
+                            String message = entityColName + " is not allowed for aliquots";
+                            throw new ValidationException(message);
+                        }
+
+                        ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        if (data != null)
+                            parentData.put(data, dataRole(data, user));
+                        else
+                        {
+
+                            if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
+                                throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
+                            else
+                                throw new ValidationException("Data input '" + entityName + "' not found in in Data Class '" + namePart + "'.");
+                        }
+                    }
+                }
+                else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
+                {
+                    ExpDataClass dataClass = dataClasses.computeIfAbsent(namePart, (name) -> ExperimentService.get().getDataClass(c, user, name));
+                    if (dataClass == null)
+                        throw new ValidationException(String.format("Invalid import alias: child DataClass [%1$s] does not exist or may have been deleted", namePart));
+
+                    if (!isEmptyEntity)
+                    {
+                        ExpData data = ExperimentService.get().findExpData(c, user, dataClass, namePart, entityName, cache, dataMap);
+                        if (data != null)
+                            childData.put(data, dataRole(data, user));
+                        else
+                            throw new ValidationException("Data output '" + entityName + "' in DataClass '" + namePart + "' not found");
+                    }
+                }
+            }
+        }
+
+        if (isMerge)
+        {
+            ExpLineageOptions options = new ExpLineageOptions();
+            options.setChildren(false);
+            options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
+
+            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
+            if (currentParents.first != null)
+            {
+                Map<ExpData, String> existingParentData = new HashMap<>();
+                currentParents.first.forEach((dataParent) -> {
+                    ExpDataClass dataClass = dataParent.getDataClass(user);
+                    String role = dataRole(dataParent, user);
+                    if (dataClass != null && !parentData.containsValue(role) && !parentDataTypesToRemove.contains(role))
+                    {
+                        existingParentData.put(dataParent, role);
+                    }
+                });
+                parentData.putAll(existingParentData);
+            }
+            if (currentParents.second != null)
+            {
+                boolean isExistingAliquot = false;
+                if (runItem instanceof ExpMaterial currentMaterial)
+                {
+                    isExistingAliquot = !StringUtils.isEmpty(currentMaterial.getAliquotedFromLSID());
+
+                    if (isExistingAliquot && !isAliquot)
+                        throw new ValidationException("AliquotedFrom is absent for aliquot " + currentMaterial.getName() + ".");
+                    else if (!isExistingAliquot && isAliquot)
+                        throw new ValidationException("Unable to change sample to aliquot " + currentMaterial.getName() + ".");
+                    else if (isExistingAliquot)
+                    {
+                        if (!currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())
+                                && !currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getName())) // for insert using merge, parent name is temporarily stored as lsid
+                            throw new ValidationException("Aliquot parents cannot be updated for sample " + currentMaterial.getName() + ".");
+                        else if (currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())) // when AliquotedFromLSID is lsid, aliquot is already processed
+                            aliquotParent = null; // already exist, not need to recreate
+                    }
+                }
+
+                Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
+                if (isExistingAliquot && currentParents.second.size() > 1)
+                    throw new ValidationException("Invalid parents for aliquot " + runItem.getName() + ".");
+
+                if (!isAliquot)
+                {
+                    for (ExpMaterial materialParent : currentParents.second)
+                    {
+                        ExpSampleType sampleType = materialParent.getSampleType();
+                        String role = sampleRole(materialParent);
+                        if (sampleType != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
+                            existingParentMaterials.put(materialParent, role);
+                    }
+                    parentMaterials.putAll(existingParentMaterials);
+                }
+            }
+        }
+
+        RunInputOutputBean parents = null;
+
+        if (!parentMaterials.isEmpty() || !parentData.isEmpty() || !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty() || aliquotParent != null)
+            parents = new RunInputOutputBean(parentMaterials, parentData, aliquotParent, !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty());
+
+        RunInputOutputBean children = null;
+        if (!childMaterials.isEmpty() || !childData.isEmpty())
+            children = new RunInputOutputBean(childMaterials, childData, null);
+
+        return Pair.of(parents, children);
+    }
+
+    private static String sampleRole(ExpMaterial material)
+    {
+        ExpSampleType st = material.getSampleType();
+        return st != null ? st.getName() : "Sample";
+    }
+
+    private static String dataRole(ExpData data, User user)
+    {
+        ExpDataClass dc = data.getDataClass(user);
+        return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
 
     public static class SearchIndexIteratorBuilder implements DataIteratorBuilder
@@ -1010,7 +1468,6 @@ public class ExpDataIterators
             return hasNext;
         }
     }
-
 
     // This should be used AFTER StandardDataIteratorBuilder, say at the beginning of PersistDataIteratorBuilder (below)
     // The incoming dataiterator should bound to target table and have complete ColumnInfo metadata
