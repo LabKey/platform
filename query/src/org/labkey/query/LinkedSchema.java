@@ -580,7 +580,8 @@ public class LinkedSchema extends ExternalSchema
         return paramValues;
     }
 
-    private static Set<Role> getUserRoles(String sourceSchemaName)
+    /** Most linked schemas grant only ReaderRole, but individual source schemas can be special-cased */
+    private static Set<Role> getContextualRoleForTargetSchema(String sourceSchemaName)
     {
         if (AbstractAuditTypeProvider.QUERY_SCHEMA_NAME.equalsIgnoreCase(sourceSchemaName))
         {
@@ -598,7 +599,7 @@ public class LinkedSchema extends ExternalSchema
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
-            super(realUser, NO_GROUPS, getUserRoles(sourceSchemaName), false);
+            super(realUser, NO_GROUPS, getContextualRoleForTargetSchema(sourceSchemaName), false);
 
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
