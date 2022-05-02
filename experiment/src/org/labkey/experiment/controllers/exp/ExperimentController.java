@@ -1056,14 +1056,14 @@ public class ExperimentController extends SpringActionController
 
                 if (inDefinitionContainer)
                 {
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Data Class", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(DesignDataClassPermission.class);
                     updateButton.setPrimary(true);
                     bb.add(updateButton);
                 }
                 else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
                 {
-                    ActionButton updateButton = new ActionButton("Edit");
+                    ActionButton updateButton = new ActionButton("Edit Data Class");
                     updateButton.setURL("javascript:void(0)");
                     updateButton.setActionType(ActionButton.Action.SCRIPT);
                     updateButton.setScript("javascript: if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
@@ -1074,7 +1074,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL deleteURL = new ActionURL(DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
                 deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
-                ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
+                ActionButton deleteButton = new ActionButton(deleteURL, "Delete Data Class", ActionButton.Action.LINK);
 
                 if (inDefinitionContainer)
                 {
