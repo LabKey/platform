@@ -585,7 +585,10 @@ public class LinkedSchema extends ExternalSchema
     {
         if (AbstractAuditTypeProvider.QUERY_SCHEMA_NAME.equalsIgnoreCase(sourceSchemaName))
         {
-            // Issue 45347 - special case auditLog schema to always be able to see the data
+            // Issue 45347 - special case auditLog schema to always be able to see the data, based on the assumption
+            // that only those with site-level admin permission can create or edit linked schema definitions (enforced
+            // by InsertLinkedSchemaAction and EditLinkedSchemaAction) and that they only share data from the source
+            // container (enforced by LinkedSchemaUserWrapper)
             return Set.of(RoleManager.getRole(ReaderRole.class), RoleManager.getRole(CanSeeAuditLogRole.class));
         }
         return Collections.singleton(RoleManager.getRole(ReaderRole.class));
