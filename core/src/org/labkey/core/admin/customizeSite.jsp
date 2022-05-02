@@ -75,22 +75,17 @@ var enableTestButtion = function(el, level) {
 
 var testUsageReport = function() {
     var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
-    testMothershipReport('CheckForUpdates', level, 'Usage');
+    testMothershipReport('CheckForUpdates', level);
 };
 
 var testExceptionReport = function() {
     var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
-    testMothershipReport('ReportException', level, 'Exception');
+    testMothershipReport('ReportException', level);
 };
 
-var testMothershipReport = function(type, level, title) {
-
+var testMothershipReport = function (type, level) {
     var url = LABKEY.ActionURL.buildURL("admin", "testMothershipReport", null, { type: type, level: level });
-    var sampleTab = window.open(url, '_blank');
-
-    if (!sampleTab) {
-        window.alert('Failed to open test report - see browser console for details');
-    }
+    window.open(url, '_blank', 'noopener noreferrer');
 };
 </script>
 
