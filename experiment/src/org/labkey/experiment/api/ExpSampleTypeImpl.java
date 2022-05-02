@@ -69,7 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,6 +98,8 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
     public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
+
+    private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
     private Domain _domain;
     private NameGenerator _nameGen;
@@ -782,7 +783,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public Lsid.LsidBuilder generateSampleLSID()
     {
-        return UploadSamplesHelper.generateSampleLSID(this.getDataObject());
+        return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + MATERIAL_LSID_SUFFIX);
     }
 
     @Override
