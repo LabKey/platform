@@ -128,12 +128,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(_userSchema);
-    }
-
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
         super(name, ExperimentService.get().getTinfoData(), schema, cf);

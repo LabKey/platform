@@ -38,6 +38,7 @@ public class FolderExportContext extends AbstractFolderContext
     private final boolean _alternateIds;
     private final boolean _maskClinic;
 
+    private boolean _includeFolderXml;
     private boolean _includeSubfolders;
     private Set<String> _viewIds;
     private Set<String> _reportIds;
@@ -63,6 +64,7 @@ public class FolderExportContext extends AbstractFolderContext
         }
 
         _format = format;
+        _includeFolderXml = true;
         _includeSubfolders = includeSubfolders;
         _phiLevel = phiLevel;
         _shiftDates = shiftDates;
@@ -74,6 +76,16 @@ public class FolderExportContext extends AbstractFolderContext
     public String getFormat()
     {
         return _format;
+    }
+
+    public void setIncludeFolderXml(boolean includeFolderXml)
+    {
+        _includeFolderXml = includeFolderXml;
+    }
+
+    public boolean isIncludeFolderXml()
+    {
+        return _includeFolderXml;
     }
 
     @Override
