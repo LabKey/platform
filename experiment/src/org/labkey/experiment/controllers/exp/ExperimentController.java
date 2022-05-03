@@ -891,25 +891,34 @@ public class ExperimentController extends SpringActionController
             final Set<ExpRun> successorRuns = new HashSet<>();
             materialsToInvestigate.add(_material);
             Set<ExpMaterial> investigatedMaterials = new HashSet<>();
-            while (!materialsToInvestigate.isEmpty())
+            do
             {
-                ExpMaterial m = materialsToInvestigate.remove(0);
-                if (investigatedMaterials.add(m))
+                // Query for all the next tier of materials at once - issue 45402
+                List<? extends ExpRun> followupRuns = ExperimentService.get().getRunsUsingMaterials(materialsToInvestigate);
+
+                // Mark this set as investigated and reset for the next cycle
+                investigatedMaterials.addAll(materialsToInvestigate);
+                materialsToInvestigate = new ArrayList<>();
+
+                for (ExpRun r : followupRuns)
                 {
-                    for (ExpRun r : ExperimentService.get().getRunsUsingMaterials(m.getRowId()))
+                    // Only expand the material outputs of the run if it's our first time visiting it
+                    if (successorRuns.add(r))
                     {
-                        // Only expand the material outputs of the run if it's our first time looking at the run
-                        if (successorRuns.add(r))
-                        {
-                            materialsToInvestigate.addAll(r.getMaterialOutputs());
-                        }
+                        materialsToInvestigate.addAll(r.getMaterialOutputs());
                     }
                 }
+
                 if (successorRuns.size() > 1000)
                 {
+                    // Give up - there may be a cycle or other problematic data
                     break;
                 }
+
+                // Cull the ones we've already looked up
+                materialsToInvestigate.removeAll(investigatedMaterials);
             }
+            while (!materialsToInvestigate.isEmpty());
 
             StringBuilder updateLinks = new StringBuilder();
             ExpSampleType st = _material.getSampleType();
