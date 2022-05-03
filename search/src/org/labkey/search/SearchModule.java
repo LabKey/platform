@@ -66,7 +66,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 22.002;
+        return 22.003;
     }
 
     @Override
@@ -182,7 +182,10 @@ public class SearchModule extends DefaultModule
                     SearchService ss = SearchService.get();
 
                     if (null != ss)
+                    {
                         ss.deleteIndex();
+                        ss.indexFull(true);
+                    }
                 }
             });
         }
