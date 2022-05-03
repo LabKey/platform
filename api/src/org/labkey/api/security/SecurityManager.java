@@ -81,7 +81,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -2084,10 +2083,9 @@ public class SecurityManager
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
         Collection<User> allUsers = UserManager.getActiveUsers();
         List<User> users = new ArrayList<>(allUsers.size());
-        SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (hasAllPermissions(null, policy, user, perms, Set.of()))
+            if (hasAllPermissions(null, c, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -2097,10 +2095,9 @@ public class SecurityManager
     {
         Collection<User> allUsers = UserManager.getActiveUsers();
         List<User> users = new ArrayList<>(allUsers.size());
-        SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (hasAnyPermissions(null, policy, user, perms, Set.of()))
+            if (hasAnyPermissions(null, c, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -3053,14 +3050,26 @@ public class SecurityManager
     }
 
 
+    @Deprecated // TODO: Delete
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
     }
 
+    public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ALL);
+    }
+
+    @Deprecated // TODO: Delete
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
         return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
+    }
+
+    public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, SecurityPolicyManager.getPolicy(resource), principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
     /**
@@ -3122,25 +3131,26 @@ public class SecurityManager
     }
 
     /**
-     * Returns the roles the principal is playing, either due to
-     * direct assignment, or due to membership in a group that is
-     * assigned the role.
+     * Returns the roles the principal is playing from direct principal assignment, membership in a group that is
+     * assigned roles, or the principal's contextual roles.
      * @param principal The principal
-     * @return The roles this principal is playing
+     * @return A mutable {@code Set<Role>} of roles this principal is playing
      */
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
+    public static @NotNull Set<Role> getEffectiveRoles(@NotNull SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        return getEffectiveRoles(policy, principal, true);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
+        Set<Role> roles = getEffectiveRolesFromPolicy(policy, principal);
+        roles.addAll(principal.getContextualRoles(policy));
+        return roles;
     }
 
-    @NotNull
-    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeContextualRoles)
+    /**
+     * Does not include contextual roles. Returns a mutable {@code Set<Role>}.
+     */
+    public static @NotNull Set<Role> getEffectiveRolesFromPolicy(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
     {
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
-        if (includeContextualRoles)
-            roles.addAll(principal.getContextualRoles(policy));;
         return roles;
     }
 
@@ -3406,61 +3416,79 @@ public class SecurityManager
                 }
             };
 
-            // TODO: Create new subfolder with no permissions and use it below
-            Container parentFolder = JunitUtil.getTestContainer();
-            Container testFolder = ContainerManager.createContainer(parentFolder, "subfolder");
-
-            // Test Site User and Guest groups
-            assertFalse("no permission check", testFolder.hasPermission(user, ReadPermission.class));
-
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
-            addRoleAssignment(policy, user, ReaderRole.class);
-            assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
-            assertFalse("no insert permission", testFolder.hasPermission(user, InsertPermission.class));
-            assertFalse("no update permission", testFolder.hasPermission(user, UpdatePermission.class));
-
             Group guestGroup = getGroup(Group.groupGuests);
-            addRoleAssignment(policy, guestGroup, ReaderRole.class);
-            assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
-            assertFalse("no insert permission", testFolder.hasPermission(user, InsertPermission.class));
-            assertFalse("no update permission", testFolder.hasPermission(user, UpdatePermission.class));
-
             Group userGroup = getGroup(Group.groupUsers);
-            addRoleAssignment(policy, userGroup, EditorRole.class);
-            assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
-            assertTrue("insert permission", testFolder.hasPermission(user, InsertPermission.class));
-            assertTrue("update permission", testFolder.hasPermission(user, UpdatePermission.class));
+            Container parentFolder = JunitUtil.getTestContainer();
+            Container testFolder = null;
 
-            // Guest
-            assertTrue("read permission", testFolder.hasPermission(User.guest, ReadPermission.class));
-            assertFalse("no insert permission", testFolder.hasPermission(User.guest, InsertPermission.class));
-            assertFalse("no update permission", testFolder.hasPermission(User.guest, UpdatePermission.class));
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "perms_subfolder");
 
+                // Test Site User and Guest groups
+                assertFalse("no permission check", testFolder.hasPermission(user, ReadPermission.class));
 
-            // again with hasPermissions
-            policy = new MutableSecurityPolicy(testFolder);
-            // Test Site User and Guest groups
-            assertFalse("no permission check", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class);
+                assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
+                assertFalse("no insert permission", testFolder.hasPermission(user, InsertPermission.class));
+                assertFalse("no update permission", testFolder.hasPermission(user, UpdatePermission.class));
 
-            policy.addRoleAssignment(user, ReaderRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                addRoleAssignment(policy, guestGroup, ReaderRole.class);
+                assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
+                assertFalse("no insert permission", testFolder.hasPermission(user, InsertPermission.class));
+                assertFalse("no update permission", testFolder.hasPermission(user, UpdatePermission.class));
 
-            policy.addRoleAssignment(guestGroup, ReaderRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                addRoleAssignment(policy, userGroup, EditorRole.class);
+                assertTrue("read permission", testFolder.hasPermission(user, ReadPermission.class));
+                assertTrue("insert permission", testFolder.hasPermission(user, InsertPermission.class));
+                assertTrue("update permission", testFolder.hasPermission(user, UpdatePermission.class));
 
-            policy.addRoleAssignment(userGroup, EditorRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertTrue("insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertTrue("update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                // Guest
+                assertTrue("read permission", testFolder.hasPermission(User.guest, ReadPermission.class));
+                assertFalse("no insert permission", testFolder.hasPermission(User.guest, InsertPermission.class));
+                assertFalse("no update permission", testFolder.hasPermission(User.guest, UpdatePermission.class));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testuser);
+            }
 
-            // Guest
-            assertTrue("read permission", hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            try
+            {
+                // Recreate subfolder
+                testFolder = ContainerManager.createContainer(parentFolder, "perms_subfolder");
+
+                // again with hasPermissions
+
+                // Test Site User and Guest groups
+                assertFalse("no permission check", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                addRoleAssignment(policy, guestGroup, ReaderRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                addRoleAssignment(policy, userGroup, EditorRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertTrue("insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertTrue("update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                // Guest
+                assertTrue("read permission", hasAllPermissions(null, testFolder, User.guest, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, User.guest, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testuser);
+            }
         }
 
         private void addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Class<? extends Role> roleClass)
@@ -3472,39 +3500,50 @@ public class SecurityManager
         @Test
         public void testReadOnlyImpersonate()
         {
-            Container testFolder = JunitUtil.getTestContainer();
+            Container parentFolder = JunitUtil.getTestContainer();
 
             // Ignore all contextual roles for the test user
             final User testuser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
-            User user = new User(testuser.getEmail(), 1000000);
+            User user = new User(testuser.getEmail(), testuser.getUserId());
             user.setImpersonationContext(new ReadOnlyImpersonatingContext());
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
-            // Test Site User and Guest groups
-            assertFalse("no permission check", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            Container testFolder = null;
 
-            policy.addRoleAssignment(user, ReaderRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "impersonate_subfolder");
 
-            Group guestGroup = getGroup(Group.groupGuests);
-            policy.addRoleAssignment(guestGroup, ReaderRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                // Test Site User and Guest groups
+                assertFalse("no permission check", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
 
-            Group userGroup = getGroup(Group.groupUsers);
-            policy.addRoleAssignment(userGroup, EditorRole.class);
-            assertTrue("read permission", hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("insert permission", hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("update permission", hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
 
-            // Guest
-            assertTrue("read permission", hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
-            assertFalse("no insert permission", hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
-            assertFalse("no update permission", hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+                Group guestGroup = getGroup(Group.groupGuests);
+                addRoleAssignment(policy, guestGroup, ReaderRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                Group userGroup = getGroup(Group.groupUsers);
+                addRoleAssignment(policy, userGroup, EditorRole.class);
+                assertTrue("read permission", hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("insert permission", hasAllPermissions(null, testFolder, user, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("update permission", hasAllPermissions(null, testFolder, user, Set.of(UpdatePermission.class), Set.of()));
+
+                // Guest
+                assertTrue("read permission", hasAllPermissions(null, testFolder, User.guest, Set.of(ReadPermission.class), Set.of()));
+                assertFalse("no insert permission", hasAllPermissions(null, testFolder, User.guest, Set.of(InsertPermission.class), Set.of()));
+                assertFalse("no update permission", hasAllPermissions(null, testFolder, User.guest, Set.of(UpdatePermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testuser);
+            }
         }
 
 
@@ -3674,8 +3713,10 @@ public class SecurityManager
         @Test
         public void testGetUsersWithPermissions() throws Exception
         {
-            Container parent = JunitUtil.getTestContainer();
-            Container test = null;
+            final Container parentFolder = JunitUtil.getTestContainer();
+            final User testuser = TestContext.get().getUser();
+
+            Container testFolder = null;
             Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
             Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
             Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
@@ -3689,49 +3730,33 @@ public class SecurityManager
                         addUser(p.getKey(), null, false);
                     p.setValue(UserManager.getUser(p.getKey()));
                 }
-                // Create a mock container
-                String id = GUID.makeGUID();
-                test = new Container(parent, "test" + id, id, -1, 0, new Date(), 0, false)
-                {
-                    MutableSecurityPolicy p = null;
-                    @Override
-                    public @NotNull SecurityPolicy getPolicy()
-                    {
-                        if (null == p)
-                            p = new MutableSecurityPolicy(this);
-                        return p;
-                    }
-                    @Override
-                    public boolean isForbiddenProject(User user)
-                    {
-                        return false;
-                    }
-                };
-                MutableSecurityPolicy policy = (MutableSecurityPolicy)test.getPolicy();
-                policy.addAssignment(new RoleAssignment(id,userAB.getValue(),new RoleAB()));
-                policy.addAssignment(new RoleAssignment(id,userAC.getValue(),new RoleAC()));
-                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
-                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
 
-                var usersWithAll = new HashSet<>(getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                testFolder = ContainerManager.createContainer(parentFolder, "getusers_subfolder");
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, userAB.getValue(), new RoleAB());
+                addRoleAssignment(policy, userAC.getValue(), new RoleAC());
+                addRoleAssignment(policy, userABC.getValue(), new RoleAB());
+                addRoleAssignment(policy, userABC.getValue(), new RoleAC());
+
+                var usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userAC.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                var usersWithAny = new HashSet<>(getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                var usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionA.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet<>(getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionB.class)));
                 assertEquals(2, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet<>(getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionB.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet<>(getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAll = new HashSet<>(getUsersWithPermissions(testFolder, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(1, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet<>(getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAny = new HashSet<>(getUsersWithOneOf(testFolder, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(3, usersWithAny.size());
                 assertTrue(usersWithAny.contains(userAB.getValue()));
                 assertTrue(usersWithAny.contains(userAC.getValue()));
@@ -3742,7 +3767,17 @@ public class SecurityManager
                 for (var p : Arrays.asList(userAB, userAC, userABC))
                     if (null != p.getValue())
                         UserManager.deleteUser(p.getValue().getUserId());
+
+                ContainerManager.delete(testFolder, testuser);
             }
+        }
+
+        private void addRoleAssignment(MutableSecurityPolicy policy, UserPrincipal principal, Role role)
+        {
+            if (!RoleManager.isPermissionRegistered((Class<? extends Permission>) role.getClass()))
+                RoleManager.registerRole(role, false);
+            policy.addRoleAssignment(principal, role);
+            SecurityPolicyManager.savePolicy(policy);
         }
     }
 
@@ -3760,23 +3795,23 @@ public class SecurityManager
             super("RoleAC", "RoleAC", PermissionA.class, PermissionC.class);
         }
     }
-    static class PermissionA extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionA extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionA()
+        public PermissionA()
         {
             super("PermissionA","PermissionA");
         }
     }
-    static class PermissionB extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionB extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionB()
+        public PermissionB()
         {
             super("PermissionB","PermissionB");
         }
     }
-    static class PermissionC extends AbstractPermission implements Permission.TestPermission
+    public static class PermissionC extends AbstractPermission implements Permission.TestPermission
     {
-        PermissionC()
+        public PermissionC()
         {
             super("PermissionC","PermissionC");
         }

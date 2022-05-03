@@ -427,10 +427,7 @@ public class ReportUtil
 
         if (role != null)
         {
-            SecurityPolicy policy = container.getPolicy();
-            Set<Role> roles = SecurityManager.getEffectiveRoles(policy, user);
-
-            return roles.contains(role);
+            return SecurityManager.getEffectiveRoles(container, user).contains(role);
         }
         return false;
     }

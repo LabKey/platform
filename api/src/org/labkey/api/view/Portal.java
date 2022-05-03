@@ -668,8 +668,7 @@ public class Portal implements ModuleChangeListener
 
                 if (permissionContainer != null && permission != null)
                 {
-                    SecurityPolicy policy = permissionContainer.getPolicy();
-                    hasPermission = SecurityManager.hasAllPermissions(part.getName(), policy, context.getUser(), Set.of(permission.getClass()), Set.of());
+                    hasPermission = SecurityManager.hasAllPermissions(part.getName(), permissionContainer, context.getUser(), Set.of(permission.getClass()), Set.of());
                 }
 
                 // If the permissionContainer is null, or the permission is missing, then we only show the webpart if

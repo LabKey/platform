@@ -90,7 +90,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), QUERY_NAME);
 			_c = parent.getContainer();
-			setPolicy(_c.getPolicy());
+			setPolicy(_c.getPolicy(), _c);
 		}
 		
 		@Override
@@ -147,7 +147,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), schemaName);
 			_parent = parent;
-			setPolicy(_parent._c.getPolicy());
+			setPolicy(_parent._c.getPolicy(), _parent._c);
 		}
 		
 		@Override
@@ -202,7 +202,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), query.getName() + ".sql");
 			_parent = parent;
-			setPolicy(_parent._parent._c.getPolicy());
+			setPolicy(_parent._parent._c.getPolicy(), _parent._parent._c);
 			_q = query;
 			if (_q instanceof QueryDefinitionImpl)
 				_qdef = ((QueryDefinitionImpl)_q).getQueryDef();

@@ -760,14 +760,13 @@ public class AnnouncementsController extends SpringActionController
     {
         Role editorRole = RoleManager.getRole(EditorRole.class);
         Group group = SecurityManager.getGroup(groupId);
-        return null != group && SecurityManager.hasAllPermissions(null, getContainer().getPolicy(), group, editorRole.getPermissions(), Set.of());
+        return null != group && SecurityManager.hasAllPermissions(null, getContainer(), group, editorRole.getPermissions(), Set.of());
     }
 
 
     @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
-        private URLHelper _returnURL;
         protected HttpView _attachmentErrorView;
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
@@ -846,13 +845,12 @@ public class AnnouncementsController extends SpringActionController
             }
 
             _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnURL);
-            _returnURL = returnURL;
 
             boolean success = (null == _attachmentErrorView);
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                throw new RedirectException(_returnURL);
+                throw new RedirectException(returnURL);
 
             return false;
         }

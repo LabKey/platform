@@ -216,10 +216,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
         }
 
-        // Policy must have all permissions in permissionsRequired
-        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+        // User must have all permissions in permissionsRequired
         if (!SecurityManager.hasAllPermissions(this.getClass().getName() + "_checkActionPermissions",
-                policy, user, permissionsRequired, contextualRoles))
+                c, user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
 
         CSRF.Method csrfCheck = actionClass.isAnnotationPresent(CSRF.class) ? actionClass.getAnnotation(CSRF.class).value() : CSRF.Method.POST;
@@ -232,8 +231,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         {
             permissionsAnyOf = new HashSet<>();
             Collections.addAll(permissionsAnyOf, requiresAnyOf.value());
-            if (!SecurityManager.hasAnyPermissions(this.getClass().getName()+"_checkActionPermissions",
-                    policy, user, permissionsAnyOf, contextualRoles))
+            if (!SecurityManager.hasAnyPermissions(this.getClass().getName() + "_checkActionPermissions",
+                    c, user, permissionsAnyOf, contextualRoles))
                 throw new UnauthorizedException();
         }
 

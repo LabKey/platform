@@ -38,6 +38,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -114,6 +115,7 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
+    @Deprecated
     public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
     {
         this(folder.getPath(), name);
@@ -123,16 +125,25 @@ public class FileSystemResource extends AbstractWebdavResource
         _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
     }
 
+    public FileSystemResource(WebdavResource folder, String name, File file, SecurableResource securableResource)
+    {
+        this(folder.getPath(), name);
+        _folder = folder;
+        _name = name;
+        setPolicy(null, securableResource);
+        _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
+    }
+
     public FileSystemResource(FileSystemResource folder, String relativePath)
     {
         this(folder.getPath(), relativePath);
         _folder = folder;
-        setPolicy(folder.getPolicy());
+        setPolicy(folder.getPolicy(), folder.getSecurableResource());
 
         _files = new ArrayList<>(folder._files.size());
         _files.addAll(folder._files.stream()
-                .map(file -> new FileInfo(new File(file.getFile(), relativePath)))
-                .collect(Collectors.toList()));
+            .map(file -> new FileInfo(new File(file.getFile(), relativePath)))
+            .toList());
     }
 
     public FileSystemResource(Path path, File file, SecurityPolicy policy)
