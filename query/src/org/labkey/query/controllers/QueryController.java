@@ -1707,7 +1707,7 @@ public class QueryController extends SpringActionController
         {
             for(Map.Entry<String, Object> entry : props.entrySet())
             {
-                if (entry.getValue() instanceof JSONArray)
+                if (entry.getValue() instanceof JSONArray && ((JSONArray)entry.getValue()).length() == 1)
                 {
                     String key = entry.getKey();
                     props.put(key, ((JSONArray) entry.getValue()).getString(0));
@@ -7313,6 +7313,7 @@ public class QueryController extends SpringActionController
                 new ExportScriptAction(),
                 new ExportRowsExcelAction(),
                 new ExportRowsXLSXAction(),
+                new ExportQueriesXLSXAction(),
                 new ExportExcelTemplateAction(),
                 new ExportRowsTsvAction(),
                 controller.new ExcelWebQueryDefinitionAction(),
