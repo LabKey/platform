@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -82,6 +83,7 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -97,12 +99,14 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
@@ -114,6 +118,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -624,6 +629,37 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         return (!col.isHidden() && !col.isUnselectable() && !DEFAULT_HIDDEN_COLS.contains(col.getName()));
+    }
+
+    @Override
+    public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
+    {
+        Set<String> excludeColumns = new HashSet<>();
+        if (!getVocabularyDomainProviders().isEmpty())
+        {
+            for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
+            {
+                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
+                if (fieldVocabularyDomainProvider != null)
+                {
+                    excludeColumns.addAll(fieldVocabularyDomainProvider.third.getImportTemplateExcludeColumns(fieldVocabularyDomainProvider.second));
+                }
+            }
+        }
+
+        if (excludeColumns.size() > 0)
+        {
+            List<Pair<String, String>> templates = new ArrayList<>();
+            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+            for (String excludeKey : excludeColumns)
+                url.addParameter("excludeColumn", excludeKey);
+            templates.add(Pair.of("Download Template", url.toString()));
+            return templates;
+
+        }
+
+        return super.getImportTemplates(ctx);
     }
 
     @NotNull
