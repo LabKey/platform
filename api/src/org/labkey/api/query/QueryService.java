@@ -618,6 +618,7 @@ public interface QueryService
 
     default boolean isProductSubfolderDataEnabled()
     {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SUBFOLDER_DATA_ENABLED);
+        return true;
+        // return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SUBFOLDER_DATA_ENABLED);
     }
 }
