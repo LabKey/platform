@@ -21,32 +21,40 @@ public class AuditUpgradeCode implements UpgradeCode
     {
         boolean isPostgres = DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL();
         DbScope scope = AuditSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit'").getArrayList(String.class);
-            LOG.info("Found " + tableNames.size() + " audit tables to update.");
+        List<String> tableNames = new SqlSelector(scope, "SELECT StorageTableName FROM exp.domainDescriptor WHERE StorageSchemaName='audit'").getArrayList(String.class);
+        LOG.info("Found " + tableNames.size() + " audit tables to update.");
+
+        tableNames.forEach(tableName -> {
+            LOG.info("Updating audit table: " + tableName);
+            long start = System.currentTimeMillis();
+
             SQLFragment sql = new SQLFragment();
-            tableNames.forEach(tableName -> {
-                if (isPostgres)
-                    sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId TYPE BIGINT;\n");
-                else
-                {
-                    String pkName = tableName + "_pk";
-                    sql.append("ALTER TABLE audit.").append(tableName).append(" DROP CONSTRAINT ").append(pkName).append(";\n");
-                    sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId BIGINT NOT NULL;\n");
-                    sql.append("ALTER TABLE audit.").append(tableName).append(" ADD CONSTRAINT ").append(pkName).append(" PRIMARY KEY (RowId);\n");
-                }
-            });
-            if (!sql.isEmpty())
+
+            if (isPostgres)
+                sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId TYPE BIGINT;\n");
+            else
+            {
+                String pkName = tableName + "_pk";
+                sql.append("ALTER TABLE audit.").append(tableName).append(" DROP CONSTRAINT ").append(pkName).append(";\n");
+                sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId BIGINT NOT NULL;\n");
+                sql.append("ALTER TABLE audit.").append(tableName).append(" ADD CONSTRAINT ").append(pkName).append(" PRIMARY KEY (RowId);\n");
+            }
+
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 SqlExecutor se = new SqlExecutor(scope);
                 se.execute(sql);
+                transaction.commit();
             }
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+            finally
+            {
+                long elapsed = System.currentTimeMillis() - start;
+                LOG.info(tableName + " update time: " + elapsed / (1000 * 60) + " min");
+            }
+        });
     }
 }

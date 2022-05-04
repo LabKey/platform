@@ -90,21 +90,21 @@ public abstract class AbstractActionPermissionTest extends Assert
         Map<String, User> users = createUsers(LKS_ROLE_EMAILS);
 
         MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
-        policy.addRoleAssignment(users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
-        policy.addRoleAssignment(users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
-        policy.addRoleAssignment(users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
-        policy.addRoleAssignment(users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
-        policy.addRoleAssignment(users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
-        policy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
-        policy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
+        policy.addRoleAssignment(users.get(FOLDER_ADMIN_EMAIL), FolderAdminRole.class);
+        policy.addRoleAssignment(users.get(EDITOR_EMAIL), EditorRole.class);
+        policy.addRoleAssignment(users.get(AUTHOR_EMAIL), AuthorRole.class);
+        policy.addRoleAssignment(users.get(READER_EMAIL), ReaderRole.class);
+        policy.addRoleAssignment(users.get(SUBMITTER_EMAIL), SubmitterRole.class);
+        policy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), EditorRole.class);
+        policy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), AuthorRole.class);
         SecurityPolicyManager.savePolicy(policy);
 
         MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(c.getProject(), c.getProject().getPolicy());
-        projectPolicy.addRoleAssignment(users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
+        projectPolicy.addRoleAssignment(users.get(PROJECT_ADMIN_EMAIL), ProjectAdminRole.class);
 
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
-        rootPolicy.addRoleAssignment(users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
-        rootPolicy.addRoleAssignment(users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        rootPolicy.addRoleAssignment(users.get(SITE_ADMIN_EMAIL), SiteAdminRole.class);
+        rootPolicy.addRoleAssignment(users.get(APPLICATION_ADMIN_EMAIL), ApplicationAdminRole.class);
         if (null != TRUSTED_ANALYST_ROLE)
         {
             rootPolicy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);

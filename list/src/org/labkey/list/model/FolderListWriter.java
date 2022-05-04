@@ -44,7 +44,7 @@ public class FolderListWriter extends BaseFolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
-        if (ListService.get().hasLists(c, true))
+        if (ListService.get().hasLists(c, false))
         {
             VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 

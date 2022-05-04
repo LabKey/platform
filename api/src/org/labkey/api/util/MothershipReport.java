@@ -80,6 +80,8 @@ public class MothershipReport implements Runnable
     private static boolean showSelfReportExceptions = false;
     private static int _droppedExceptionCount = 0;
 
+    public final static String JSON_METRICS_KEY = "jsonMetrics";
+
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()
     {
@@ -465,13 +467,12 @@ public class MothershipReport implements Runnable
             try
             {
                 serializedMetrics = mapper.writeValueAsString(metrics);
+                addParam(JSON_METRICS_KEY, serializedMetrics);
             }
             catch (JsonProcessingException e)
             {
-                // TODO: Where to report, what to do?
-                serializedMetrics = "Exception serializing json metrics. " + e.getMessage();
+                LOG.error("Failed to serialize JSON metrics", e);
             }
-            addParam("jsonMetrics", serializedMetrics);
         }
     }
 }

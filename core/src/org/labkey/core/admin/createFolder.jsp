@@ -490,7 +490,10 @@
                             store: Ext4.create('Ext.data.ArrayStore', {
                                 fields: ['id', 'path'],
                                 data: templateFolders
-                            })
+                            }),
+                            tpl : new Ext4.XTemplate(
+                                '<tpl for="."><div class="x4-boundlist-item">{path:htmlEncode}</div></tpl>'
+                            ),
                         },{
                             html: 'Folder objects to copy:',
                             cls: 'labkey-wizard-header'

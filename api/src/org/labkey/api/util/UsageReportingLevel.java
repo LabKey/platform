@@ -173,6 +173,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         return _upgradeMessage;
     }
 
+    @Nullable
     public static MothershipReport generateReport(UsageReportingLevel level, MothershipReport.Target target)
     {
         if (level.doGeneration())

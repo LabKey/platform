@@ -812,13 +812,13 @@ public class ReportUtil
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor(), false));
             // make sure the Administrators remains readers of this report
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ReaderRole.class));
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), ReaderRole.class);
 
-            List<Role> princalAssignedRoles = policy.getAssignedRoles(principal);
-            if (toAdd && princalAssignedRoles.isEmpty())
-                policy.addRoleAssignment(principal, RoleManager.getRole(ReaderRole.class));
-            else if (!toAdd && !princalAssignedRoles.isEmpty())
-                policy.addRoleAssignment(principal, RoleManager.getRole(NoPermissionsRole.class));
+            List<Role> principalAssignedRoles = policy.getAssignedRoles(principal);
+            if (toAdd && principalAssignedRoles.isEmpty())
+                policy.addRoleAssignment(principal, ReaderRole.class);
+            else if (!toAdd && !principalAssignedRoles.isEmpty())
+                policy.addRoleAssignment(principal, NoPermissionsRole.class);
             
             SecurityPolicyManager.savePolicy(policy);
             report.getDescriptor().setOwner(null); // force the report to be "custom"
@@ -836,7 +836,7 @@ public class ReportUtil
             {
                 Group group = groupId != 0 ? SecurityManager.getGroup(groupId) : null;
                 if (null != group)
-                    policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
+                    policy.addRoleAssignment(group, ReaderRole.class);
             }
         }
         if (userIds != null && !userIds.isEmpty())
@@ -845,7 +845,7 @@ public class ReportUtil
             {
                 User user = userId != 0 ? UserManager.getUser(userId) : null;
                 if (null != user)
-                    policy.addRoleAssignment(user, RoleManager.getRole(ReaderRole.class));
+                    policy.addRoleAssignment(user, ReaderRole.class);
             }
         }
 

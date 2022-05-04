@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -295,7 +296,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<? extends ExpMaterial> getExpMaterialsByLsid(Collection<String> lsids);
 
-    ExpMaterial getExpMaterial(String lsid);
+    @Nullable ExpMaterial getExpMaterial(String lsid);
 
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
@@ -382,6 +383,19 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start);
 
     Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start);
+
+    static boolean isInputOutputColumn(String columnName)
+    {
+        if (StringUtils.isBlank(columnName))
+            return false;
+
+        String prefix = columnName.split("[./]")[0];
+
+        return ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(prefix) ||
+               ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(prefix) ||
+               ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
+               ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
+    }
 
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,

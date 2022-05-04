@@ -314,8 +314,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             setImportURL(LINK_DISABLER);
         else
         {
-            ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class, _userSchema.getContainer());
-            setImportURL(new DetailsURL(importURL));
+            setImportURL(new DetailsURL(listDef.urlImport(_userSchema.getContainer())));
         }
 
         if (!listDef.getAllowDelete() || !_canAccessPhi)
@@ -410,7 +409,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // currently, picklists don't contain PHI and can always be deleted
-        if (_list.isPicklist() && InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm))
+        if (_list.isPicklist() && (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm) || DeletePermission.class.equals(perm)))
             return getContainer().hasPermission(user, ManagePicklistsPermission.class);
 
         boolean gate = true;

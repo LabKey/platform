@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarContext;
@@ -30,6 +31,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 /**
@@ -38,11 +40,14 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
  */
 public abstract class AbstractXarImporter
 {
+    private static final Logger LOG = LogHelper.getLogger(AbstractXarImporter.class, "XAR imports");
+
     protected final XarSource _xarSource;
+    @Nullable
     protected final PipelineJob _job;
     protected ExperimentArchiveType _experimentArchive;
 
-    public AbstractXarImporter(XarSource source, PipelineJob job)
+    public AbstractXarImporter(XarSource source, @Nullable PipelineJob job)
     {
         _xarSource = source;
         _job = job;
@@ -91,8 +96,8 @@ public abstract class AbstractXarImporter
         }
     }
 
-    protected User getUser() { return _job.getUser(); }
-    protected Logger getLog() { return _job.getLogger(); }
-    protected Container getContainer() { return _job.getContainer(); }
+    protected User getUser() { return _job == null ? _xarSource.getXarContext().getUser() : _job.getUser(); }
+    protected Logger getLog() { return _job == null ? LOG : _job.getLogger(); }
+    protected Container getContainer() { return _job == null ? _xarSource.getXarContext().getContainer() : _job.getContainer(); }
     protected XarContext getRootContext() { return _xarSource.getXarContext(); }
 }

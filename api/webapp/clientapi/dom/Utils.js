@@ -848,21 +848,36 @@ LABKEY.Utils = new function(impl, $) {
                 el.addEventListener(eventName, handler);
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
-    }
+    };
 
     // attach handlers to element events e.g. onclick=fn() etc.
-    impl.attachEventHandler = function(id, eventName, handler, immediate)
+    impl.attachEventHandler = function(el, eventName, handler, immediate)
     {
-        if (!id || !eventName || !handler)
+        if (!el || !eventName || !handler)
             return;
         const fn = function()
         {
-            const el = document.getElementById(id);
+            if (typeof el === "string")
+                el = document.getElementById(el);
             if (el)
                 el['on' + eventName] = handler;
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
-    }
+    };
+
+    impl.attachEventHandlerForQuerySelector = function(selector, eventName, handler, immediate)
+    {
+        if (!selector || !eventName || !handler)
+            return;
+        const fn = function()
+        {
+            const list = document.querySelectorAll(selector);
+            for (let i in list)
+                list[i]['on' + eventName] = handler;
+        };
+        (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    };
+
     return impl;
 
 }(LABKEY.Utils || new function() { return {}; }, jQuery);
