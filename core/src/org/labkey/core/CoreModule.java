@@ -992,6 +992,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
                 .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
                 .collect(Collectors.toList()));
+            results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             return results;
         });
 

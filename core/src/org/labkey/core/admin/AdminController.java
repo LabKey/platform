@@ -9785,19 +9785,27 @@ public class AdminController extends SpringActionController
                         target,
                         ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
-            Map<String, Object> result = new LinkedHashMap<>();
-            if (null != report)
+
+            Map<String, Object> params = new LinkedHashMap<>();
+            if (report != null)
             {
-                result.put("report", report.getParams());
+                params.putAll(report.getParams());
+                // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
+                Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
+                if (jsonMetrics instanceof String)
+                {
+                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    params.put(MothershipReport.JSON_METRICS_KEY, o);
+                }
                 if (form.isSubmit())
                 {
                     report.setForwardedFor(form.getForwardedFor());
                     report.run();
                     if (null != report.getContent())
-                        result.put("upgradeMessage", report.getContent());
+                        params.put("upgradeMessage", report.getContent());
                 }
             }
-            return new ObjectMapper().writeValueAsString(result);
+            return new ApiSimpleResponse(params);
         }
     }
 
