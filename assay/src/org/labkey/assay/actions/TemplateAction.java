@@ -69,7 +69,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 
         try (ExcelWriter xl = new ExcelWriter(()->dr.getResults(ctx), dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx))
         {
-            xl.write(getViewContext().getResponse());
+            xl.renderSheetAndWrite(getViewContext().getResponse());
         }
         return null;
     }

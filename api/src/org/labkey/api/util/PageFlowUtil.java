@@ -248,6 +248,9 @@ public class PageFlowUtil
                 case '>':
                     sb.append("&gt;");
                     break;
+                case '\\':
+                    sb.append("&#92;");
+                    break;
                 case '\n':
                     if (encodeSpace)
                         sb.append("<br>\n");
