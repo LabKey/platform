@@ -1,9 +1,11 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.attachments.AttachmentParentFactory;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.query.ExpTable;
@@ -29,4 +31,6 @@ public interface ConceptURIVocabularyDomainProvider
     Map<String, Object> getUpdateRowProperties(User user, Container c, Map<String, Object> rowStripped, Map<String, Object> oldRow, AttachmentParentFactory attachmentParentFactory, String sourceFieldName, String propertyColumnName, boolean hasMultipleSourceFields);
 
     Collection<String> getImportTemplateExcludeColumns(String propertyColumnName);
+
+    FieldKey getColumnFieldKey(ColumnInfo parent, PropertyDescriptor pd);
 }

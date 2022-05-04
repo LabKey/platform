@@ -7305,11 +7305,8 @@ public class ExperimentServiceImpl implements ExperimentService
             domain.save(u);
             impl.save(u);
 
-            // after create, iterate properteis and set
-
             //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
-            // TODO
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();

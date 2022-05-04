@@ -533,10 +533,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             @Override
             protected FieldKey decideColumnName(ColumnInfo parent, String displayField, PropertyDescriptor pd)
             {
-                // TODO why is this needed?
-                return new FieldKey(parent.getFieldKey(), pd.getName());
-//                return new FieldKey(parent.getFieldKey(), "$P" + pd.getPropertyId());
-            }
+                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                if (fieldVocabularyDomainProvider != null)
+                    return fieldVocabularyDomainProvider.third.getColumnFieldKey(parent, pd);
+
+                return super.decideColumnName(parent, displayField, pd);
+          }
 
         };
     }
