@@ -112,7 +112,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
                 var pair = propCols.computeIfAbsent(propertyURI, (s) -> {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, this.schema.getContainer());
                     // limit to only vocabulary properties -- assay Run still uses OntologyManager and we don't want to show those properties
-                    if (pd != null && pd.isVocabulary() && pd.getPropertyType() != PropertyType.ATTACHMENT)
+                    if (pd != null && pd.isVocabulary())
                     {
                         PropertyColumn pc = new PropertyColumn(pd, propTable, "objectUri", this.schema.getContainer(), this.schema.getUser(), false);
                         // use the property URI as the column's FieldKey name
