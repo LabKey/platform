@@ -1761,12 +1761,15 @@ boxPlot.render();
         };
 
         // Handles Y Axis domain when performing percent or standard deviation conversions
-        var convertYAxisDomain = function (value, stddev, mean) {
+        var convertYAxisDomain = function (value, stddev, mean, include3StdDev) {
             var maxValue, minValue;
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
+            } else if (include3StdDev && stddev) {
+                maxValue = mean + (3.2 * stddev);
+                minValue = mean - (3.2 * stddev);
             }
 
             if (maxValue !== undefined && minValue !== undefined) {
@@ -1885,10 +1888,10 @@ boxPlot.render();
                     }
 
                     if (row[valProp] !== undefined) {
-                        convertYAxisDomain(row[valProp], row[sdProp], row[meanProp]);
+                        convertYAxisDomain(row[valProp], row[sdProp], row[meanProp], !config.properties.combined);
                     }
                     else if (row[valRightProp] !== undefined) {
-                        convertYAxisDomain(row[valRightProp], row[sdProp], row[meanProp]);
+                        convertYAxisDomain(row[valRightProp], row[sdProp], row[meanProp], !config.properties.combined);
                     }
                 }
             }
