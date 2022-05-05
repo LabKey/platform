@@ -274,7 +274,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case Folder:
             {
-                var c = wrapColumn("Container", getRealTable().getColumn("Container"));
+                var c = wrapColumn(alias, getRealTable().getColumn("Container"));
                 c.setLabel("Folder");
                 c.setShownInDetailsView(false);
                 return c;
@@ -341,7 +341,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.ModifiedBy);
         addColumn(Column.Flag);
         addColumn(Column.DataClass);
-        addColumn(Column.Folder);
+        addContainerColumn(Column.Folder, null);
         addColumn(Column.Description);
         addColumn(Column.Alias);
 

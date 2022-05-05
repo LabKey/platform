@@ -19,8 +19,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
@@ -364,6 +363,23 @@ public class QueryView extends WebPartView<Object>
                 out.write("<br>");
             }
         }
+    }
+
+    /**
+     * Writes this query view as a sheet in the provided ExcelWriter (CALLER MUST CLOSE)
+     * @param writer to write to
+     * @param config settings to apply to writer prior to sheet export
+          * @param sheetName Name to give to sheet, if not unique within workbook existing sheet will be overwritten
+     */
+    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config, @Nullable String sheetName)
+    {
+        configureExcelWriter(writer, config);
+        String name = StringUtils.isNotBlank(sheetName)? sheetName : getQueryDef().getName();
+        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(getDataRegionName()) ? getDataRegionName() : "Data";
+        writer.setSheetName(name);
+        writer.setAutoSize(true);
+        writer.renderNewSheet();
+        logAuditEvent("Exported to Excel", writer.getDataRowCount());
     }
 
 
@@ -2395,53 +2411,49 @@ public class QueryView extends WebPartView<Object>
         return getExcelWriter(docType, null);
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumnMap) throws IOException
+    public ExcelWriter getExcelWriter(@NotNull ExcelExportConfig config) throws IOException
+    {
+        return getExcelWriter(config.getDocType(), config.getRenamedColumns());
+    }
+
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, @Nullable Map<String, String> renameColumnMap) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
         RenderContext rc = configureForExcelExport(docType, view, rgn);
 
-        ExcelWriter ew = renameColumnMap == null || renameColumnMap.isEmpty() ? new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
+        ExcelWriter ew = new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
+
         ew.setFilenamePrefix(getSettings().getQueryName());
         ew.setAutoSize(true);
         return ew;
     }
 
-    private static class AliasColumnExcelWriter extends ExcelWriter
+    /**
+     * Sets configuration settings for the provided ExcelWriter according the provided config and this QueryView
+     * @param excelWriter to configure (CALLER TO CLOSE)
+     * @param config additional properties to set on the writer
+     * @return
+     */
+    public ExcelWriter configureExcelWriter(ExcelWriter excelWriter, ExcelExportConfig config)
     {
-        private final Map<String, String> _renameColumnMap;
+        DataView view = createDataView();
+        DataRegion rgn = view.getDataRegion();
 
-        public AliasColumnExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
-        {
-            super(factory, displayColumns, docType);
-            _renameColumnMap = renameColumnMap;
-        }
+        RenderContext rc = configureForExcelExport(excelWriter.getDocumentType(), view, rgn);
+        rgn.prepareDisplayColumns(view.getViewContext().getContainer());
+        rgn.setAllowAsync(false);
+        excelWriter.setDisplayColumns(getExportColumns(rgn.getDisplayColumns()));
+        excelWriter.setResultsFactory(()->rgn.getResults(rc));
+        excelWriter.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
+        excelWriter.setRenameColumnMap(config.getRenamedColumns());
+        excelWriter.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
 
-        @Override
-        public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws
-                ExcelWriter.MaxRowsExceededException
-        {
-
-            super.renderColumnCaptions(sheet, visibleColumns);
-            if (_renameColumnMap == null || _renameColumnMap.isEmpty())
-                return;
-
-            int row = getCurrentRow() - 1;
-            for (int col = 0; col < visibleColumns.size(); col++)
-            {
-                String originalColName = visibleColumns.get(col).getName();
-                if (_renameColumnMap.containsKey(originalColName))
-                {
-                    Cell cell = sheet.getRow(row).getCell(col);
-                    if (cell != null)
-                        cell.setCellValue(_renameColumnMap.get(originalColName));
-                }
-            }
-        }
+        return excelWriter;
     }
 
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, @NotNull Map<String, String> renameCols, @NotNull ExcelWriter.ExcelDocumentType docType)
+    protected ExcelWriter getExcelTemplateWriter(@NotNull ExcelExportConfig config)
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -2456,21 +2468,21 @@ public class QueryView extends WebPartView<Object>
         List<FieldKey> fieldKeys = new ArrayList<>(20);
         TableInfo t = createTable();
 
-        if (!respectView)
+        if (!config.getRespectView())
         {
             for (ColumnInfo columnInfo : t.getColumns())
             {
                 FieldKey fieldKey = columnInfo.getFieldKey();
                 // Issue 43760: "isUserEditable" does not mean what you think it means. UniqueIdFields must be marked as "UserEditable"
                 // in order to show up in a details view, but then that makes them show up in the export, where they shouldn't.  Booo.
-                if (includeCols.contains(fieldKey) || (columnInfo.isUserEditable() && !columnInfo.isUniqueIdField()))
+                if (config.getIncludeColumns().contains(fieldKey) || (columnInfo.isUserEditable() && !columnInfo.isUniqueIdField()))
                 {
                     fieldKeys.add(fieldKey);
                 }
             }
 
             // Add remaining includeCols to the end
-            for (FieldKey includeCol : includeCols)
+            for (FieldKey includeCol : config.getIncludeColumns())
             {
                 if (!fieldKeys.contains(includeCol))
                     fieldKeys.add(includeCol);
@@ -2480,7 +2492,7 @@ public class QueryView extends WebPartView<Object>
         else
         {
             // get list of required columns so we can verify presence
-            Set<FieldKey> requiredCols = new HashSet<>(includeCols);
+            Set<FieldKey> requiredCols = new HashSet<>(config.getIncludeColumns());
             for (ColumnInfo c : t.getColumns())
             {
                 if (c.inferIsShownInInsertView())
@@ -2514,7 +2526,8 @@ public class QueryView extends WebPartView<Object>
             fieldKeys.addAll(requiredCols);
         }
 
-        return getExcelTemplateWriter(fieldKeys, docType, renameCols);
+        List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
+        return new ExcelWriter(()->null, displayColumns, config.getDocType(), config.getRenamedColumns());
     }
 
     protected List<DisplayColumn> getExcelTemplateDisplayColumns(List<FieldKey> fieldKeys)
@@ -2554,13 +2567,6 @@ public class QueryView extends WebPartView<Object>
         return displayColumns;
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType, Map<String, String> renameCols)
-    {
-        List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
-
-        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(()->null, displayColumns, docType) : new AliasColumnExcelWriter(()->null, displayColumns, docType, renameCols);
-    }
-
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
     {
         if (getSettings().getShowRows() == ShowRows.ALL)
@@ -2580,50 +2586,186 @@ public class QueryView extends WebPartView<Object>
         return rc;
     }
 
+    public static class ExcelExportConfig
+    {
+        private HttpServletResponse response;
+        private ColumnHeaderType headerType;
+        private Workbook workbook = null;
+        private ExcelWriter.ExcelDocumentType docType = ExcelWriter.ExcelDocumentType.xlsx;
+        private Map<String, String> renamedColumns = new HashMap<>();
+        private boolean templateOnly = false;
+        private boolean insertColumnsOnly = false;
+        private boolean respectView = false;
+        private List<FieldKey> includeColumns = Collections.emptyList();
+        private List<FieldKey> excludeColumns = Collections.emptyList();
+        private String prefix = null;
+
+        public ExcelExportConfig(HttpServletResponse response, ColumnHeaderType headerType)
+        {
+            this.response = response;
+            this.headerType = headerType;
+        }
+
+        public ExcelExportConfig setPrefix(String prefix)
+        {
+            this.prefix = prefix;
+            return this;
+        }
+
+        public String getPrefix()
+        {
+            return this.prefix;
+        }
+
+        public ExcelExportConfig setExcludeColumns(List<FieldKey> excludeColumns)
+        {
+            this.excludeColumns = excludeColumns;
+            return this;
+        }
+
+        public List<FieldKey> getExcludeColumns()
+        {
+            return this.excludeColumns;
+        }
+
+        public ExcelExportConfig setIncludeColumns(List<FieldKey> includeColumns)
+        {
+            this.includeColumns = includeColumns;
+            return this;
+        }
+
+        public List<FieldKey> getIncludeColumns()
+        {
+            return this.includeColumns;
+        }
+
+        public ExcelExportConfig setRespectView(boolean respectView)
+        {
+            this.respectView = respectView;
+            return this;
+        }
+
+        public boolean getRespectView()
+        {
+            return this.respectView;
+        }
+
+        public ExcelExportConfig setInsertColumnsOnly(boolean insertColumnsOnly)
+        {
+            this.insertColumnsOnly = insertColumnsOnly;
+            return this;
+        }
+
+        public boolean getInsertColumnsOnly()
+        {
+            return this.insertColumnsOnly;
+        }
+
+        public ExcelExportConfig setHeaderType(ColumnHeaderType headerType)
+        {
+            this.headerType = headerType;
+            return this;
+        }
+
+        public ColumnHeaderType getHeaderType()
+        {
+            return this.headerType;
+        }
+
+        public ExcelExportConfig setTemplateOnly(boolean templateOnly)
+        {
+            this.templateOnly = templateOnly;
+            return this;
+        }
+
+        public boolean getTemplateOnly()
+        {
+            return this.templateOnly;
+        }
+
+        public ExcelExportConfig setRenamedColumns(Map<String, String> renamedColumns)
+        {
+            this.renamedColumns = renamedColumns;
+            return this;
+        }
+
+        public Map<String, String> getRenamedColumns()
+        {
+            return this.renamedColumns;
+        }
+
+        public ExcelExportConfig setDocType(ExcelWriter.ExcelDocumentType docType)
+        {
+            this.docType = docType;
+            return this;
+        }
+
+        public ExcelWriter.ExcelDocumentType getDocType()
+        {
+            return this.docType;
+        }
+
+        public ExcelExportConfig setResponse(HttpServletResponse response)
+        {
+            this.response = response;
+            return this;
+        }
+
+        public @NotNull HttpServletResponse getResponse()
+        {
+            return this.response;
+        }
+        public ExcelExportConfig setWorkbook(Workbook workbook)
+        {
+            this.workbook = workbook;
+            return this;
+        }
+
+        public @Nullable Workbook getWorkbook()
+        {
+            return this.workbook;
+        }
+    }
+
     public void exportToExcel(HttpServletResponse response) throws IOException
     {
-        exportToExcel(response, getColumnHeaderType(), ExcelWriter.ExcelDocumentType.xlsx);
+        exportToExcel(new ExcelExportConfig(response, getColumnHeaderType()));
+    }
+
+    public void exportToExcel(HttpServletResponse response, Workbook workbook) throws IOException
+    {
+        exportToExcel(new ExcelExportConfig(response, getColumnHeaderType()).setWorkbook(workbook));
     }
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), null);
+        exportToExcel(new ExcelExportConfig(response, headerType).setDocType(docType));
     }
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType, @NotNull Map<String, String> renameColumn) throws IOException
     {
-        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), renameColumn, null);
+        exportToExcel(
+                new ExcelExportConfig(response, headerType)
+                        .setDocType(docType)
+                        .setRenamedColumns(renameColumn)
+        );
     }
 
-    public void exportToExcel(HttpServletResponse response,
-                                 boolean templateOnly,
-                                 ColumnHeaderType headerType,
-                                 boolean insertColumnsOnly,
-                                 ExcelWriter.ExcelDocumentType docType,
-                                 boolean respectView,
-                                 List<FieldKey> includeColumns,
-                                 List<FieldKey> excludeColumns,
-                                 @NotNull Map<String, String> renameColumnMap,
-                                 @Nullable String prefix
-                                 )
-            throws IOException
+    public void exportToExcel(ExcelExportConfig config) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumnMap, docType)
-                    : (renameColumnMap.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumnMap)))
+            try (ExcelWriter ew = config.getTemplateOnly() ? getExcelTemplateWriter(config) : getExcelWriter(config))
             {
-                if (headerType == null)
-                    headerType = getColumnHeaderType();
-                ew.setCaptionType(headerType);
-                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns, excludeColumns);
-                if (prefix != null)
-                    ew.setFilenamePrefix(prefix);
-                ew.write(response);
+                ew.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
+                ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
+                if (config.getPrefix() != null)
+                    ew.setFilenamePrefix(config.getPrefix());
+                ew.renderSheetAndWrite(config.getResponse());
 
-                if (!templateOnly)
+                if (!config.getTemplateOnly())
                     logAuditEvent("Exported to Excel", ew.getDataRowCount());
             }
         }
@@ -2650,7 +2792,7 @@ public class QueryView extends WebPartView<Object>
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
-                ew.write(stream);
+                ew.renderSheetAndWrite(stream);
                 stream.flush();
                 String extension = docType.name();
                 String filename = includeTimestamp ?

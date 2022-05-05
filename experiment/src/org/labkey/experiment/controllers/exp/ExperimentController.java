@@ -891,25 +891,34 @@ public class ExperimentController extends SpringActionController
             final Set<ExpRun> successorRuns = new HashSet<>();
             materialsToInvestigate.add(_material);
             Set<ExpMaterial> investigatedMaterials = new HashSet<>();
-            while (!materialsToInvestigate.isEmpty())
+            do
             {
-                ExpMaterial m = materialsToInvestigate.remove(0);
-                if (investigatedMaterials.add(m))
+                // Query for all the next tier of materials at once - issue 45402
+                List<? extends ExpRun> followupRuns = ExperimentService.get().getRunsUsingMaterials(materialsToInvestigate);
+
+                // Mark this set as investigated and reset for the next cycle
+                investigatedMaterials.addAll(materialsToInvestigate);
+                materialsToInvestigate = new ArrayList<>();
+
+                for (ExpRun r : followupRuns)
                 {
-                    for (ExpRun r : ExperimentService.get().getRunsUsingMaterials(m.getRowId()))
+                    // Only expand the material outputs of the run if it's our first time visiting it
+                    if (successorRuns.add(r))
                     {
-                        // Only expand the material outputs of the run if it's our first time looking at the run
-                        if (successorRuns.add(r))
-                        {
-                            materialsToInvestigate.addAll(r.getMaterialOutputs());
-                        }
+                        materialsToInvestigate.addAll(r.getMaterialOutputs());
                     }
                 }
+
                 if (successorRuns.size() > 1000)
                 {
+                    // Give up - there may be a cycle or other problematic data
                     break;
                 }
+
+                // Cull the ones we've already looked up
+                materialsToInvestigate.removeAll(investigatedMaterials);
             }
+            while (!materialsToInvestigate.isEmpty());
 
             StringBuilder updateLinks = new StringBuilder();
             ExpSampleType st = _material.getSampleType();
@@ -1056,14 +1065,14 @@ public class ExperimentController extends SpringActionController
 
                 if (inDefinitionContainer)
                 {
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Data Class", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(DesignDataClassPermission.class);
                     updateButton.setPrimary(true);
                     bb.add(updateButton);
                 }
                 else if (_dataClass.getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
                 {
-                    ActionButton updateButton = new ActionButton("Edit");
+                    ActionButton updateButton = new ActionButton("Edit Data Class");
                     updateButton.setURL("javascript:void(0)");
                     updateButton.setActionType(ActionButton.Action.SCRIPT);
                     updateButton.setScript("javascript: if (window.confirm('This data class is defined in the " + _dataClass.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + updateURL + "' }");
@@ -1074,7 +1083,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL deleteURL = new ActionURL(DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
                 deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
-                ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
+                ActionButton deleteButton = new ActionButton(deleteURL, "Delete Data Class", ActionButton.Action.LINK);
 
                 if (inDefinitionContainer)
                 {
