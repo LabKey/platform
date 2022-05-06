@@ -130,7 +130,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                 version = StudyDesignManager.get().getStudyDesignVersion(container, studyId);
 
             if (null == version)
-                throw new NotFoundException("Protocol " + studyId + (revision >= 0 ? ", Revision " + revision : "") + " not found!");
+                return null;
 
             GWTStudyDefinition template = getTemplate();
             GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), template.getCavdStudyId() == studyId ? null : template, getUser(), container);
