@@ -1721,7 +1721,7 @@ boxPlot.render();
             if (isNaN(calc))
                 return 100;
 
-            return Math.abs(calc);
+            return calc;
         };
 
         var convertToStandardDeviation = function(value, mean, stddev) {
@@ -1729,7 +1729,7 @@ boxPlot.render();
             if (isNaN(calc))
                 return 0;
 
-            return Math.abs(calc);
+            return calc;
         };
 
         var convertValues = function(conversion) {
