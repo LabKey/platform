@@ -201,7 +201,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         {
             if (_xarSource == null)
             {
-                if (getXarFile().getFileName().toString().endsWith(".xar.xml"))
+                if (getXarFile().getFileName().toString().toLowerCase().endsWith(".xar.xml"))
                 {
                     _xarSource = new FileXarSource(
                             getXarFile(),
