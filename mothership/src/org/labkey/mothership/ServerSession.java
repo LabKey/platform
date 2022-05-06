@@ -54,6 +54,9 @@ public class ServerSession
     private String _usageReportingLevel;
     private String _exceptionReportingLevel;
     private String _jsonMetrics;
+    private String _serverHostName;
+    private String _serverIP;
+    private Integer _originalServerSessionId;
 
     public String getDatabaseProductVersion()
     {
@@ -313,5 +316,35 @@ public class ServerSession
     public void setJsonMetrics(String jsonMetrics)
     {
         _jsonMetrics = jsonMetrics;
+    }
+
+    public String getServerHostName()
+    {
+        return _serverHostName;
+    }
+
+    public void setServerHostName(String serverHostName)
+    {
+        _serverHostName = serverHostName;
+    }
+
+    public String getServerIP()
+    {
+        return _serverIP;
+    }
+
+    public void setServerIP(String serverIP)
+    {
+        _serverIP = serverIP;
+    }
+
+    public Integer getOriginalServerSessionId()
+    {
+        return _originalServerSessionId;
+    }
+
+    public void setOriginalServerSessionId(Integer originalServerSessionId)
+    {
+        _originalServerSessionId = originalServerSessionId;
     }
 }

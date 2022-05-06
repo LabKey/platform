@@ -532,6 +532,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return getMutableColumn(colName, true);
     }
 
+    /** @return a BaseColumnInfo, will throw if column doesn't exist or exists and is locked */
+    @NotNull
+    public MutableColumnInfo getMutableColumnOrThrow(@NotNull String colName)
+    {
+        MutableColumnInfo result = getMutableColumn(colName, true);
+        if (result == null)
+        {
+            UserSchema schema = getUserSchema();
+            throw new IllegalArgumentException("Could not find column '" + colName + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
+        }
+        return result;
+    }
+
     /**
      * @param resolveIfNeeded false if only the already-added columns should be checked, and resolveColumn() should
      *                        not be called. Useful because some implementations may have expensive checks they

@@ -154,7 +154,7 @@ public class MothershipSchema extends UserSchema
         FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         SQLFragment descriptionSQL = new SQLFragment("CASE WHEN " +
                 ExprColumn.STR_TABLE_ALIAS + ".VcsBranch IS NULL OR " + ExprColumn.STR_TABLE_ALIAS + ".BuildTime IS NULL THEN " +
@@ -190,11 +190,12 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
-        result.getMutableColumn("SoftwareReleaseId").setFk(new QueryForeignKey.Builder(this, cf).table(SOFTWARE_RELEASE_TABLE_NAME));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("SoftwareReleaseId").setFk(new QueryForeignKey.Builder(this, cf).table(SOFTWARE_RELEASE_TABLE_NAME));
+        result.getMutableColumnOrThrow("OriginalServerSessionId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_SESSION_TABLE_NAME));
 
-        result.getMutableColumn("ServerInstallationId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_INSTALLATION_TABLE_NAME));
-        result.getMutableColumn("ServerInstallationId").setLabel("Server");
+        result.getMutableColumnOrThrow("ServerInstallationId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_INSTALLATION_TABLE_NAME));
+        result.getMutableColumnOrThrow("ServerInstallationId").setLabel("Server");
 
         var earliestCol = result.getColumn("EarliestKnownTime");
         var latestCol = result.getColumn("LastKnownTime");
@@ -207,7 +208,7 @@ public class MothershipSchema extends UserSchema
         result.addColumn(exceptionCountCol);
 
         List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(FieldKey.fromString("VcsRevision"));
+        defaultCols.add(FieldKey.fromString("SoftwareReleaseId/Description"));
         defaultCols.add(FieldKey.fromString("Duration"));
         defaultCols.add(FieldKey.fromString("LastKnownTime"));
         defaultCols.add(FieldKey.fromString("DatabaseProductName"));
@@ -218,7 +219,6 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
         defaultCols.add(FieldKey.fromString("ServletContainer"));
-        defaultCols.add(FieldKey.fromString("BuildTime"));
         result.setDefaultVisibleColumns(defaultCols);
 
         ActionURL base = new ActionURL(MothershipController.ShowServerSessionDetailAction.class, getContainer());
@@ -236,9 +236,9 @@ public class MothershipSchema extends UserSchema
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
         url.addParameter("serverInstallationId","${ServerInstallationId}");
-        result.getMutableColumn("ServerHostName").setURL(StringExpressionFactory.createURL(url));
+        result.getMutableColumnOrThrow("ServerHostName").setURL(StringExpressionFactory.createURL(url));
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         result.setTitleColumn("ServerHostName");
 
@@ -318,25 +318,25 @@ public class MothershipSchema extends UserSchema
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getMutableColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
+        result.getMutableColumnOrThrow("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
-        result.getMutableColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
+        result.getMutableColumnOrThrow("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 
         result.setTitleColumn("ExceptionStackTraceId");
         DetailsURL url = new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId"));
         result.setDetailsURL(url);
 
-        result.getMutableColumn("ExceptionStackTraceId").setURL(url);
-        result.getMutableColumn("ExceptionStackTraceId").setLabel("Exception");
-        result.getMutableColumn("ExceptionStackTraceId").setFormat("'#'0");
-        result.getMutableColumn("ExceptionStackTraceId").setExcelFormatString("0");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setURL(url);
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setLabel("Exception");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setFormat("'#'0");
+        result.getMutableColumnOrThrow("ExceptionStackTraceId").setExcelFormatString("0");
 
-        result.getMutableColumn("Container").setFk(new ContainerForeignKey(this, cf));
-        result.getMutableColumn("AssignedTo").setFk(new UserIdQueryForeignKey(this, true));
-        result.getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
+        result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this, cf));
+        result.getMutableColumnOrThrow("AssignedTo").setFk(new UserIdQueryForeignKey(this, true));
+        result.getMutableColumnOrThrow("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
@@ -369,13 +369,13 @@ public class MothershipSchema extends UserSchema
         FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this, cf);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getMutableColumn("URL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumnOrThrow("URL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result1 = new DataColumn(colInfo);
             result1.setURLExpression(StringExpressionFactory.create("${URL}", false));
             return result1;
         });
-        result.getMutableColumn("ReferrerURL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumnOrThrow("ReferrerURL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result12 = new DataColumn(colInfo);
             result12.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
@@ -390,20 +390,20 @@ public class MothershipSchema extends UserSchema
         result.addCondition(containerSQL);
 
         // Decorate the stack trace id column and make it a lookup
-        var stackTraceIdColumn = result.getMutableColumn("ExceptionStackTraceId");
+        var stackTraceIdColumn = result.getMutableColumnOrThrow("ExceptionStackTraceId");
         stackTraceIdColumn.setLabel("Exception");
         stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
         stackTraceIdColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(EXCEPTION_STACK_TRACE_TABLE_NAME).build());
 
-        result.getMutableColumn("PageflowName").setLabel("Controller");
-        result.getMutableColumn("PageflowAction").setLabel("Action");
+        result.getMutableColumnOrThrow("PageflowName").setLabel("Controller");
+        result.getMutableColumnOrThrow("PageflowAction").setLabel("Action");
 
-        result.getMutableColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
-        result.getMutableColumn("ServerSessionId").setLabel("Session");
-        result.getMutableColumn("ServerSessionId").setFormat("'#'0");
-        result.getMutableColumn("ServerSessionId").setExcelFormatString("0");
+        result.getMutableColumnOrThrow("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
+        result.getMutableColumnOrThrow("ServerSessionId").setLabel("Session");
+        result.getMutableColumnOrThrow("ServerSessionId").setFormat("'#'0");
+        result.getMutableColumnOrThrow("ServerSessionId").setExcelFormatString("0");
         ForeignKey fk = new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSION_TABLE_NAME).build();
-        result.getMutableColumn("ServerSessionId").setFk(fk);
+        result.getMutableColumnOrThrow("ServerSessionId").setFk(fk);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ServerSessionId"));
