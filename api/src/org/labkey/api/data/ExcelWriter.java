@@ -203,6 +203,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     protected final Workbook _workbook;
 
+    // Some columns may need to be Aliased (e.g., Name -> Sample ID)
+    private Map<String, String> _renameColumnMap;
+
     public ExcelWriter()
     {
         this(ExcelDocumentType.xls);
@@ -229,6 +232,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns)
     {
         this(factory, displayColumns, ExcelDocumentType.xls);
+    }
+
+    public ExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
+    {
+        this(factory, displayColumns, docType);
+        _renameColumnMap = renameColumnMap;
     }
 
     public void setCaptionType(ColumnHeaderType type)
@@ -496,10 +505,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     // Write the spreadsheet to the file system.
-    public void write(OutputStream stream)
+    public void renderSheetAndWrite(OutputStream stream)
     {
         try
         {
+            renderNewSheet();
             _write(stream);
         }
         catch (IOException e)
@@ -508,13 +518,43 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
+    @Deprecated // Use renamed method renderSheetAndWrite
     public void write(HttpServletResponse response)
     {
-        write(response, getFilenamePrefix());
+        renderSheetAndWrite(response);
+    }
+
+    /**
+     * Renders the sheet then writes out the workbook to supplied stream
+     * @param response to write out the file
+     */
+    public void renderSheetAndWrite(HttpServletResponse response)
+    {
+        renderSheetAndWrite(response, getFilenamePrefix());
+    }
+
+    /**
+     * Writes out the workbook to the response stream
+     * @param response to write to
+     */
+    public void writeWorkbook(HttpServletResponse response)
+    {
+        writeWorkbook(response, getFilenamePrefix());
     }
 
     // Create the spreadsheet and stream it to the browser.
-    public void write(HttpServletResponse response, String filenamePrefix)
+    public void renderSheetAndWrite(HttpServletResponse response, String filenamePrefix)
+    {
+        renderNewSheet();
+        writeWorkbook(response, filenamePrefix);
+    }
+
+    /**
+     * Write workbook out to supplied response
+     * @param response to write to
+     * @param filenamePrefix string to prepend to a time stamp as filename
+     */
+    public void writeWorkbook(HttpServletResponse response, String filenamePrefix)
     {
         try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
         {
@@ -540,7 +580,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private void _write(OutputStream stream) throws IOException
     {
         _docType.setMetadata(_workbook, _metadata);
-        renderNewSheet();
         _workbook.write(stream);
         stream.flush();
     }
@@ -815,6 +854,26 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             if (_captionRowFrozen)
                 sheet.createFreezePane(0, getCurrentRow());
         }
+
+        if (_renameColumnMap == null || _renameColumnMap.isEmpty())
+            return;
+
+        renderRenamedColumns(sheet, visibleColumns);
+    }
+
+    public void renderRenamedColumns(Sheet sheet, List<ExcelColumn> visibleColumns)
+    {
+        int row = getCurrentRow() - 1;
+        for (int col = 0; col < visibleColumns.size(); col++)
+        {
+            String originalColName = visibleColumns.get(col).getName();
+            if (_renameColumnMap.containsKey(originalColName))
+            {
+                Cell cell = sheet.getRow(row).getCell(col);
+                if (cell != null)
+                    cell.setCellValue(_renameColumnMap.get(originalColName));
+            }
+        }
     }
 
     protected void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException, IOException
@@ -897,5 +956,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void close()
     {
         // No-op: Results are closed via try-with-resources at render time
+    }
+
+    public void setRenameColumnMap(Map<String, String> renameColumnMap)
+    {
+        this._renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
     }
 }

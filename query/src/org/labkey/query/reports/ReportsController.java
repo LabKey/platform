@@ -142,7 +142,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
@@ -2480,7 +2479,7 @@ public class ReportsController extends SpringActionController
                 if (report instanceof CrosstabReport)
                 {
                     ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
-                    writer.write(getViewContext().getResponse());
+                    writer.renderSheetAndWrite(getViewContext().getResponse());
                 }
             }
             return null;
