@@ -608,6 +608,7 @@ public class UserManager
         return (int)new TableSelector(CORE.getTableInfoUsersData(), filter, null).getRowCount();
     }
 
+    /** @return the number of user accounts, not including deactivated users */
     public static int getActiveUserCount()
     {
         return UserCache.getActiveUserCount();

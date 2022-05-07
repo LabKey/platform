@@ -777,7 +777,7 @@ public class MothershipController extends SpringActionController
         private String _serverGUID;
 
         private Integer _userCount;
-        private Integer _activeUserCount;
+        private Integer _recentUserCount;
         private Integer _projectCount;
         private Integer _containerCount;
         private Integer _heapSize;
@@ -903,14 +903,24 @@ public class MothershipController extends SpringActionController
             _userCount = userCount;
         }
 
+        // retained for backwards compatibility with 22.5 and earlier
         public Integer getActiveUserCount()
         {
-            return _activeUserCount;
+            return _recentUserCount;
+        }
+        public void setActiveUserCount(Integer recentUserCount)
+        {
+            _recentUserCount = recentUserCount;
         }
 
-        public void setActiveUserCount(Integer activeUserCount)
+        public Integer getRecentUserCount()
         {
-            _activeUserCount = activeUserCount;
+            return _recentUserCount;
+        }
+
+        public void setRecentUserCount(Integer recentUserCount)
+        {
+            _recentUserCount = recentUserCount;
         }
 
         public Integer getProjectCount()
@@ -1044,7 +1054,7 @@ public class MothershipController extends SpringActionController
             session.setRuntimeOS(getRuntimeOS());
             session.setJavaVersion(getJavaVersion());
             session.setContainer(container.getId());
-            session.setActiveUserCount(getActiveUserCount());
+            session.setRecentUserCount(getActiveUserCount());
             session.setUserCount(getUserCount());
             session.setProjectCount(getProjectCount());
             session.setContainerCount(getContainerCount());
