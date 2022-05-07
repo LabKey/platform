@@ -1054,7 +1054,7 @@ public class MothershipController extends SpringActionController
             session.setRuntimeOS(getRuntimeOS());
             session.setJavaVersion(getJavaVersion());
             session.setContainer(container.getId());
-            session.setRecentUserCount(getActiveUserCount());
+            session.setRecentUserCount(getRecentUserCount());
             session.setUserCount(getUserCount());
             session.setProjectCount(getProjectCount());
             session.setContainerCount(getContainerCount());
