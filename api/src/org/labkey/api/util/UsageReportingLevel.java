@@ -101,7 +101,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             Date startDate = cal.getTime();
-            report.addParam("activeUserCount", UserManager.getRecentUserCount(startDate));
+            report.addParam("recentUserCount", UserManager.getRecentUserCount(startDate));
             // Other counts within the last 30 days
             metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
             metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));

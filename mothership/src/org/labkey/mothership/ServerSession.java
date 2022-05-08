@@ -43,7 +43,7 @@ public class ServerSession
     private Boolean _enterprisePipelineEnabled;
 
     private Integer _userCount;
-    private Integer _activeUserCount;
+    private Integer _recentUserCount;
     private Integer _projectCount;
     private Integer _containerCount;
     private Integer _heapSize;
@@ -208,14 +208,14 @@ public class ServerSession
         _userCount = userCount;
     }
 
-    public Integer getActiveUserCount()
+    public Integer getRecentUserCount()
     {
-        return _activeUserCount;
+        return _recentUserCount;
     }
 
-    public void setActiveUserCount(Integer activeUserCount)
+    public void setRecentUserCount(Integer recentUserCount)
     {
-        _activeUserCount = activeUserCount;
+        _recentUserCount = recentUserCount;
     }
 
     public Integer getProjectCount()
