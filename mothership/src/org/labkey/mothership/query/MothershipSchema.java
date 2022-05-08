@@ -19,6 +19,7 @@ package org.labkey.mothership.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -186,7 +187,18 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable<MothershipSchema> createServerSessionTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
+        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf)
+        {
+            @Override
+            protected ColumnInfo resolveColumn(String name)
+            {
+                if ("activeUserCount".equalsIgnoreCase(name))
+                {
+                    return getColumn("recentUserCount");
+                }
+                return super.resolveColumn(name);
+            }
+        };
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
@@ -215,7 +227,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("RuntimeOS"));
         defaultCols.add(FieldKey.fromString("JavaVersion"));
         defaultCols.add(FieldKey.fromString("UserCount"));
-        defaultCols.add(FieldKey.fromString("ActiveUserCount"));
+        defaultCols.add(FieldKey.fromString("RecentUserCount"));
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
         defaultCols.add(FieldKey.fromString("ServletContainer"));

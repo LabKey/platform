@@ -157,7 +157,7 @@
             <column columnName="JavaVersion"/>
             <column columnName="EnterprisePipelineEnabled"/>
             <column columnName="UserCount"/>
-            <column columnName="ActiveUserCount"/>
+            <column columnName="RecentUserCount"/>
             <column columnName="ProjectCount"/>
             <column columnName="ContainerCount"/>
             <column columnName="HeapSize">

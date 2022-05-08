@@ -372,7 +372,7 @@ public class MothershipManager
                 existingSession.setServerHostName(hostName);
                 existingSession.setContainerCount(getBestInteger(existingSession.getContainerCount(), session.getContainerCount()));
                 existingSession.setProjectCount(getBestInteger(existingSession.getProjectCount(), session.getProjectCount()));
-                existingSession.setActiveUserCount(getBestInteger(existingSession.getActiveUserCount(), session.getActiveUserCount()));
+                existingSession.setRecentUserCount(getBestInteger(existingSession.getRecentUserCount(), session.getRecentUserCount()));
                 existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
                 existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
                 existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));

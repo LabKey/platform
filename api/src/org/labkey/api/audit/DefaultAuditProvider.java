@@ -77,18 +77,6 @@ public class DefaultAuditProvider implements AuditLogService, AuditLogService.Re
     }
 
     @Override
-    public String getTableName()
-    {
-        return "default";
-    }
-
-    @Override
-    public TableInfo getTable(ViewContext context, String name)
-    {
-        return null;
-    }
-
-    @Override
     public UserSchema createSchema(User user, Container container)
     {
         return new DefaultAuditSchema(user, container);
