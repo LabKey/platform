@@ -42,9 +42,9 @@ import org.labkey.api.util.StringExpression;
 
 public class PdLookupForeignKey extends AbstractForeignKey
 {
-    User _user;
-    PropertyDescriptor _pd;
-    Container _currentContainer;
+    final User _user;
+    final PropertyDescriptor _pd;
+    final Container _currentContainer;
     private Container _targetContainer;
     private TableInfo _tableInfo = null;
 
@@ -54,7 +54,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     static public PdLookupForeignKey create(
-        @NotNull QuerySchema sourceSchema,
+        @Nullable QuerySchema sourceSchema,
         @NotNull User user,
         @NotNull Container container,
         @NotNull PropertyDescriptor pd
@@ -64,7 +64,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     static public PdLookupForeignKey create(
-        @NotNull QuerySchema sourceSchema,
+        @Nullable QuerySchema sourceSchema,
         @NotNull User user,
         @NotNull Container container,
         @NotNull PropertyDescriptor pd,
@@ -73,8 +73,8 @@ public class PdLookupForeignKey extends AbstractForeignKey
     {
         assert container != null : "Container cannot be null";
 
-        Container targetContainer = pd.getLookupContainer() == null ? null : ContainerManager.getForId(pd.getLookupContainer());
-        SchemaKey lookupSchemaKey = null == pd.getLookupSchema() ? null : SchemaKey.fromString(pd.getLookupSchema());
+        Container targetContainer = getLookupContainer(pd);
+        SchemaKey lookupSchemaKey = getLookupSchemaKey(pd);
         String lookupQuery = pd.getLookupQuery();
 
         // check for conceptURI if the lookup container/schema/query are not already specified
@@ -98,15 +98,25 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     protected PdLookupForeignKey(
-        @NotNull QuerySchema sourceSchema,
-        Container currentContainer,
+        @Nullable QuerySchema sourceSchema,
+        @NotNull Container currentContainer,
         @NotNull User user,
         @Nullable ContainerFilter cf,
-        PropertyDescriptor pd,
-        SchemaKey lookupSchemaKey,
-        String lookupQuery,
-        // TODO: This parameter is not respected! Missed in a previous refactor.
-        Container targetContainer
+        @NotNull PropertyDescriptor pd
+    )
+    {
+        this(sourceSchema, currentContainer, user, cf, pd, getLookupSchemaKey(pd), pd.getLookupQuery(), getLookupContainer(pd));
+    }
+
+    private PdLookupForeignKey(
+        @Nullable QuerySchema sourceSchema,
+        @NotNull Container currentContainer,
+        @NotNull User user,
+        @Nullable ContainerFilter cf,
+        @NotNull PropertyDescriptor pd,
+        @Nullable SchemaKey lookupSchemaKey,
+        @Nullable String lookupQuery,
+        @Nullable Container targetContainer
     )
     {
         super(sourceSchema, cf, lookupSchemaKey, lookupQuery, null, null);
@@ -114,7 +124,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         _user = user;
         assert currentContainer != null : "Container cannot be null";
         _currentContainer = currentContainer;
-        _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
+        _targetContainer = targetContainer;
     }
 
     @Override
@@ -136,6 +146,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
     @Override
+    @Nullable
     public TableInfo getLookupTableInfo()
     {
         if (_lookupSchemaKey == null || _tableName == null)
@@ -173,6 +184,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return table;
     }
 
+    @Nullable
     private TableInfo findTableInfo(Container container)
     {
         if (container == null)
@@ -257,5 +269,15 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null == columnName)
             return null;
         return LookupForeignKey.getDetailsURL(parent, lookupTable, columnName);
+    }
+
+    private static @Nullable Container getLookupContainer(@NotNull PropertyDescriptor pd)
+    {
+        return pd.getLookupContainer() == null ? null : ContainerManager.getForId(pd.getLookupContainer());
+    }
+
+    private static @Nullable SchemaKey getLookupSchemaKey(@NotNull PropertyDescriptor pd)
+    {
+        return pd.getLookupSchema() == null ? null : SchemaKey.fromString(pd.getLookupSchema());
     }
 }
