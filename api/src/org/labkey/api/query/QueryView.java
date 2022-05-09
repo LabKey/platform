@@ -2413,7 +2413,9 @@ public class QueryView extends WebPartView<Object>
 
     public ExcelWriter getExcelWriter(@NotNull ExcelExportConfig config) throws IOException
     {
-        return getExcelWriter(config.getDocType(), config.getRenamedColumns());
+        // Call the appropriate overridden method
+        ExcelWriter ew = getExcelWriter(config.getDocType());
+        return configureExcelWriter(ew, config);
     }
 
     public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, @Nullable Map<String, String> renameColumnMap) throws IOException
