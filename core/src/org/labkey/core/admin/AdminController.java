@@ -34,6 +34,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -10180,7 +10181,15 @@ public class AdminController extends SpringActionController
         res.put("health", result);
 
         LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
-        res.put("scriptEngines", mgr.getEngineDefinitions());
+        JSONArray arr = new JSONArray();
+        for (ExternalScriptEngineDefinition def : mgr.getEngineDefinitions())
+        {
+            var m = ((ObjectFactory<ExternalScriptEngineDefinition>)ObjectFactory.Registry.getFactory(def.getClass())).toMap(def, null);
+            m.remove("password");
+            m.remove("configuration");
+            arr.put(m);
+        }
+        res.put("scriptEngines", arr);
 
         return res;
     }
