@@ -328,7 +328,10 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                                 fixupJsonResponse.call(this, null, resp, options, c);
                             }
                         },
-                        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+                        failure: function(resp, options) {
+                            fixupJsonResponse.call(this, null, resp, options, c);
+                            // LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+                        }
                     });
                 }, this);
             },
