@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_XML_NAME;
 
 public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImporter
 {
@@ -57,7 +58,7 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
 
             for (String file: xarDir.list())
             {
-                if (file.equalsIgnoreCase(XAR_TYPES_NAME))
+                if (file.equalsIgnoreCase(XAR_TYPES_NAME) || file.equalsIgnoreCase(XAR_TYPES_XML_NAME))
                 {
                     if (typesXarFile == null)
                         typesXarFile = xarDirPath.resolve(file);
