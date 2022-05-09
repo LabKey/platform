@@ -92,6 +92,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
         {
             report.addParam("userCount", UserManager.getActiveUserCount());
+            report.addParam("systemUserCount", UserManager.getSystemUserCount());
 
             report.addParam("containerCount", ContainerManager.getContainerCount());
             report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());

@@ -1,6 +1,13 @@
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 {
@@ -21,10 +28,10 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return "Limit Active Users settings";
     }
 
-    @Override
-    public void save()
+    public void save(@Nullable User user)
     {
         super.save();
+        writeAuditLogEvent(ContainerManager.getRoot(), user);
     }
 
     private static final String USER_WARNING = "userWarning";
@@ -92,5 +99,30 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
     public String getUserLimitMessage()
     {
         return lookupStringValue(USER_LIMIT_MESSAGE, "");
+    }
+
+    public Map<String, Object> getMetricsMap()
+    {
+        Map<String, Object> map = new HashMap<>();
+        map.put(USER_WARNING, isUserWarning());
+        map.put(USER_WARNING_LEVEL, getUserWarningLevel());
+        map.put(USER_WARNING_MESSAGE, getUserWarningMessage());
+        map.put(USER_LIMIT, isUserLimit());
+        map.put(USER_LIMIT_LEVEL, getUserLimitLevel());
+        map.put(USER_LIMIT_MESSAGE, getUserLimitMessage());
+
+        return map;
+    }
+
+    public static void populateStartupProperties()
+    {
+        Collection<ConfigProperty> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
+        if (!userLimitsProperties.isEmpty())
+        {
+            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+            userLimitsProperties
+                .forEach(prop -> settings.storeStringValue(prop.getName(), prop.getValue()));
+            settings.save(null);
+        }
     }
 }

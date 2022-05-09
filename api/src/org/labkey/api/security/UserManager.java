@@ -614,9 +614,15 @@ public class UserManager
         return UserCache.getActiveUserCount();
     }
 
-    public static long getActiveRealUserCount()
+    public static int getActiveRealUserCount()
     {
         return UserCache.getActiveRealUserCount();
+    }
+
+    /** Active users who are marked as "system" users, i.e., excluded from user limits **/
+    public static int getSystemUserCount()
+    {
+        return UserCache.getSystemUserCount();
     }
 
     public static String validGroupName(String name, @NotNull PrincipalType type)
