@@ -43,7 +43,7 @@ public class ServerSession
     private Boolean _enterprisePipelineEnabled;
 
     private Integer _userCount;
-    private Integer _activeUserCount;
+    private Integer _recentUserCount;
     private Integer _projectCount;
     private Integer _containerCount;
     private Integer _heapSize;
@@ -54,6 +54,9 @@ public class ServerSession
     private String _usageReportingLevel;
     private String _exceptionReportingLevel;
     private String _jsonMetrics;
+    private String _serverHostName;
+    private String _serverIP;
+    private Integer _originalServerSessionId;
 
     public String getDatabaseProductVersion()
     {
@@ -205,14 +208,14 @@ public class ServerSession
         _userCount = userCount;
     }
 
-    public Integer getActiveUserCount()
+    public Integer getRecentUserCount()
     {
-        return _activeUserCount;
+        return _recentUserCount;
     }
 
-    public void setActiveUserCount(Integer activeUserCount)
+    public void setRecentUserCount(Integer recentUserCount)
     {
-        _activeUserCount = activeUserCount;
+        _recentUserCount = recentUserCount;
     }
 
     public Integer getProjectCount()
@@ -313,5 +316,35 @@ public class ServerSession
     public void setJsonMetrics(String jsonMetrics)
     {
         _jsonMetrics = jsonMetrics;
+    }
+
+    public String getServerHostName()
+    {
+        return _serverHostName;
+    }
+
+    public void setServerHostName(String serverHostName)
+    {
+        _serverHostName = serverHostName;
+    }
+
+    public String getServerIP()
+    {
+        return _serverIP;
+    }
+
+    public void setServerIP(String serverIP)
+    {
+        _serverIP = serverIP;
+    }
+
+    public Integer getOriginalServerSessionId()
+    {
+        return _originalServerSessionId;
+    }
+
+    public void setOriginalServerSessionId(Integer originalServerSessionId)
+    {
+        _originalServerSessionId = originalServerSessionId;
     }
 }
