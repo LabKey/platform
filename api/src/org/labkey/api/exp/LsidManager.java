@@ -15,7 +15,6 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +38,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.HashMap;
@@ -55,10 +55,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class LsidManager
 {
-    private static Logger LOG = LogManager.getLogger(LsidManager.class);
+    private static final Logger LOG = LogHelper.getLogger(LsidManager.class, "Manages LsidHandler implementations for resolving LSID-specific behavior");
     private static final LsidManager INSTANCE = new LsidManager();
 
-    private final Map<String, Map<String, LsidHandler>> _authorityMap = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, LsidHandler<?>>> _authorityMap = new ConcurrentHashMap<>();
     private final List<LsidHandlerFinder> _lsidHandlerFinders = new CopyOnWriteArrayList<>();
 
     private LsidManager()
@@ -177,7 +177,7 @@ public class LsidManager
     {
         private final AssayProvider _provider;
         private final ExpProtocol _protocol;
-        private int _rowId;
+        private final int _rowId;
 
         public AssayResultIdentifiable(AssayProvider provider, OntologyObject oo, ExpProtocol protocol, int rowId)
         {
@@ -247,14 +247,14 @@ public class LsidManager
         _lsidHandlerFinders.add(finder);
     }
 
-    public void registerHandler(String prefix, LsidHandler handler, String authority)
+    public void registerHandler(String prefix, LsidHandler<?> handler, String authority)
     {
-        Map<String, LsidHandler> handlerMap = _authorityMap.computeIfAbsent(authority, k -> new HashMap<>());
+        Map<String, LsidHandler<?>> handlerMap = _authorityMap.computeIfAbsent(authority, k -> new HashMap<>());
 
         handlerMap.put(prefix, handler);
     }
 
-    public void registerHandler(String prefix, LsidHandler handler)
+    public void registerHandler(String prefix, LsidHandler<?> handler)
     {
         registerHandler(prefix, handler, getDefaultAuthority());
     }
@@ -271,7 +271,7 @@ public class LsidManager
 
     public Container getContainer(Lsid lsid)
     {
-        LsidHandler handler = findHandler(lsid);
+        LsidHandler<?> handler = findHandler(lsid);
         if (null != handler)
             return handler.getContainer(lsid);
         return null;
@@ -284,7 +284,7 @@ public class LsidManager
 
     public boolean hasPermission(Lsid lsid, User user, Class<? extends ReadPermission> perm)
     {
-        LsidHandler handler = findHandler(lsid);
+        LsidHandler<?> handler = findHandler(lsid);
         return null != handler && handler.hasPermission(lsid, user, perm);
     }
 
@@ -303,9 +303,9 @@ public class LsidManager
     {
         @Nullable
         @Override
-        public LsidHandler findHandler(String authority, String namespacePrefix)
+        public LsidHandler<?> findHandler(String authority, String namespacePrefix)
         {
-            Map<String, LsidHandler> handlerMap = _authorityMap.get(authority);
+            Map<String, LsidHandler<?>> handlerMap = _authorityMap.get(authority);
 
             //Try the default authority for this server if not found
             if (null == handlerMap)
@@ -318,7 +318,7 @@ public class LsidManager
         }
     }
 
-    private LsidHandler findHandler(Lsid lsid)
+    private LsidHandler<?> findHandler(Lsid lsid)
     {
         String authority = lsid.getAuthority();
         String namespacePrefix = lsid.getNamespacePrefix();
@@ -332,7 +332,7 @@ public class LsidManager
         // This mechanism allows LsidHandlers to come and go during a server session, e.g., as file-based assay definitions change
         for (LsidHandlerFinder finder : _lsidHandlerFinders)
         {
-            LsidHandler handler = finder.findHandler(authority, namespacePrefix);
+            LsidHandler<?> handler = finder.findHandler(authority, namespacePrefix);
 
             if (null != handler)
                 return handler;
@@ -343,12 +343,12 @@ public class LsidManager
 
     public interface LsidHandlerFinder
     {
-        @Nullable LsidHandler findHandler(String authority, String namespacePrefix);
+        @Nullable LsidHandler<?> findHandler(String authority, String namespacePrefix);
     }
 
     public Identifiable getObject(Lsid lsid)
     {
-        LsidHandler handler = findHandler(lsid);
+        LsidHandler<?> handler = findHandler(lsid);
         if (null != handler)
             return handler.getObject(lsid);
         else
@@ -357,7 +357,7 @@ public class LsidManager
 
     public ActionURL getDisplayURL(Lsid lsid)
     {
-        LsidHandler handler = findHandler(lsid);
+        LsidHandler<?> handler = findHandler(lsid);
         if (null != handler)
             return handler.getDisplayURL(lsid);
 
@@ -381,7 +381,7 @@ public class LsidManager
         List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);
         if (objectURIs.isEmpty())
         {
-            LOG.info("No objects to resolve in container (" + c.getId() + "): " + c.toString());
+            LOG.info("No objects to resolve in container (" + c.getId() + "): " + c);
             return true;
         }
 
