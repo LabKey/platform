@@ -1,9 +1,14 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -124,5 +129,35 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
                 .forEach(prop -> settings.storeStringValue(prop.getName(), prop.getValue()));
             settings.save(null);
         }
+    }
+
+    public static @Nullable HtmlString getWarningMessage(Container c, User user)
+    {
+        if (c.hasPermission(user, AddUserPermission.class))
+        {
+            int activeUsers = UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
+            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+            int warningLevel = settings.getUserWarningLevel();
+            int limitLevel = settings.getUserLimitLevel();
+
+            if (settings.isUserLimit() && activeUsers >= limitLevel)
+                return substitute(settings.getUserLimitMessage(), activeUsers, warningLevel, limitLevel);
+
+            if (settings.isUserWarning() && activeUsers >= warningLevel)
+                return substitute(settings.getUserWarningMessage(), activeUsers, warningLevel, limitLevel);
+        }
+
+        return null;
+    }
+
+    private static HtmlString substitute(String message, int activeUsers, int warningLevel, int limitLevel)
+    {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("ActiveUsers", activeUsers);
+        map.put("WarningLevel", warningLevel);
+        map.put("LimitLevel", limitLevel);
+        map.put("RemainingUsers", limitLevel - activeUsers);
+
+        return HtmlString.unsafe(StringExpressionFactory.create(message).eval(map));
     }
 }
