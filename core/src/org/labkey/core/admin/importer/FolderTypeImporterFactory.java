@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin.importer;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
@@ -27,15 +26,12 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument.Folder;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -168,7 +164,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                     ctx.getLogger().debug("[" + c.getPath() + "] Active modules: " + activeModules.stream().map(Module::getName).collect(Collectors.joining(", ")));
                     // It's sorta BrandNew, but not really; say it's not and SubImporter will handle container tabs correctly
                     BindException errors = new BindException(new Object(), "dummy");
-                    c.setFolderType(folderType, activeModules, ctx.getUser(), errors);
+                    c.setFolderType(folderType, ctx.getUser(), errors, activeModules);
                     for (ObjectError error : errors.getAllErrors())
                     {
                         ctx.getLogger().error(error.getDefaultMessage());
