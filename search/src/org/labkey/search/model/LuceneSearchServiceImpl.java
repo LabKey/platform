@@ -1015,12 +1015,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private boolean isWorkingFile(@NotNull WebdavResource r)
     {
         // MS Office opens temp/working files with '~', ignore these. Issue #45005
-        if (r.getName().startsWith("~") || r.getName().startsWith(".~"))
-        {
-            return true;
-        }
-
-        return false;
+        return r.getName().startsWith("~") || r.getName().startsWith(".~");
     }
 
     private boolean isTooBig(FileStream fs, String contentType) throws IOException
