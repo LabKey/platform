@@ -90,9 +90,9 @@
         var txt, data = record.data;
 
         if (data.enabled)
-            txt = '<b>' + value + '</b><br>';
+            txt = '<b>' + Ext4.htmlEncode(value) + '</b><br>';
         else
-            txt = '<b><span class="labkey-disabled">' + value + '</span></b><br>';
+            txt = '<b><span class="labkey-disabled">' +  Ext4.htmlEncode(value) + '</span></b><br>';
 
         if (data.extensions === R_EXTENSIONS)
         {
@@ -101,8 +101,8 @@
             if (data.sandboxed)
                 txt = txt.concat('<i>sandboxed : true</i><br>');
         }
-        txt = txt.concat('<i>enabled : ' + data.enabled + '</i><br>');
-        txt = txt.concat('<i>external : ' + data.external + '</i><br>');
+        txt = txt.concat('<i>enabled : ' + Ext4.htmlEncode(data.enabled) + '</i><br>');
+        txt = txt.concat('<i>external : ' + Ext4.htmlEncode(data.external) + '</i><br>');
 
         return txt;
     }
@@ -161,7 +161,7 @@
                     if (val.hidden)
                         config.hidden = true;
                     if (val.description) {
-                        config.labelAttrTpl = " data-qtitle='" + val.label + "' data-qtip='" + val.description + "'";
+                        config.labelAttrTpl = " data-qtitle='" + Ext4.htmlEncode(val.label) + "' data-qtip='" + Ext4.htmlEncode(val.description) + "'";
                     }
                     imageFields.push(config);
                 });
