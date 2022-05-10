@@ -54,6 +54,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -99,7 +100,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 {
     private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
-
+    private final Map<String, ConceptURIVocabularyDomainProvider> _conceptUriVocabularyProvider = new ConcurrentHashMap<>();
 
     @Override
     public IPropertyType getType(Container container, String typeURI)
@@ -657,6 +658,18 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                             })
                 )
         );
+    }
+
+    @Override
+    public void registerConceptUriVocabularyDomainProvider(String conceptUri, ConceptURIVocabularyDomainProvider provider)
+    {
+        _conceptUriVocabularyProvider.put(conceptUri, provider);
+    }
+
+    @Override
+    public ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri)
+    {
+        return _conceptUriVocabularyProvider.get(conceptUri);
     }
 
     public static class TestCase extends Assert
