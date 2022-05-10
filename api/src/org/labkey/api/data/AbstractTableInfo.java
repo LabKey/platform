@@ -358,26 +358,21 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
             return ret;
-        ColumnInfo titleColumn = getColumn(getTitleColumn());
+        ColumnInfo titleColumn = titleColumnInfo != null ? titleColumnInfo : getColumn(getTitleColumn());
         if (titleColumn == null)
             return ret;
 
         List<ColumnInfo> cols;
         final int titleIndex;
-        if (titleColumnInfo != null && !(firstColumn.equals(titleColumnInfo)))
-        {
-            cols = Arrays.asList(firstColumn, titleColumnInfo);
-            titleIndex = 2;
-        }
-        else if (firstColumn == titleColumn || firstColumn.equals(titleColumnInfo))
-        {
-            cols = Arrays.asList(firstColumn);
-            titleIndex = 1;
-        }
-        else
+        if (!(firstColumn.equals(titleColumn)))
         {
             cols = Arrays.asList(firstColumn, titleColumn);
             titleIndex = 2;
+        }
+        else
+        {
+            cols = Arrays.asList(firstColumn);
+            titleIndex = 1;
         }
 
         SimpleFilter filter = null;
