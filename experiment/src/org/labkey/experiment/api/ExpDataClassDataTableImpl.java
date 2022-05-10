@@ -77,7 +77,6 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
@@ -391,7 +390,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
             if (dp != null && pd != null)
             {
-                PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey);
+                PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter());
                 wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
 
                 if (pd.getPropertyType() == PropertyType.ATTACHMENT)
@@ -416,10 +415,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     wrappedMvCol.getFieldKey();
                     wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
                 }
-
-                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
-                if (!isTargetLookup && wrapped.getFk() instanceof PdLookupForeignKey)
-                    ((PdLookupForeignKey) wrapped.getFk()).setContainerFilter(getContainerFilter());
             }
 
             addColumn(wrapped);

@@ -44,7 +44,7 @@
     <%= model.getPreloadTags() %>
     <title><%= h(model.getTitle()) %></title>
     <% if (me.isAppTemplate()) { %>
-    <%= PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies()) %>
+    <%= PageFlowUtil.getAppIncludes(getViewContext(), model) %>
     <% } else { %>
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
     <% } %>

@@ -715,20 +715,20 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
      */
     static class IssuesPdLookupForeignKey extends PdLookupForeignKey
     {
-        private User _user;
-        private Container _container;
-        private String _propName;
+        private final User _user;
+        private final Container _container;
+        private final String _propName;
 
         public IssuesPdLookupForeignKey(IssuesQuerySchema schema, PropertyDescriptor pd)
         {
-            super(schema, schema.getContainer(), schema.getUser(), null, pd, null==pd.getLookupSchema()?null:SchemaKey.fromString(pd.getLookupSchema()), pd.getLookupQuery(), pd.getContainer());
+            super(schema, schema.getContainer(), schema.getUser(), null, pd);
             _user = schema.getUser();
             _container = schema.getContainer();
             _propName = pd.getName();
         }
 
         @Override
-        public NamedObjectList getSelectList(RenderContext ctx)
+        public @NotNull NamedObjectList getSelectList(RenderContext ctx)
         {
             NamedObjectList objectList = super.getSelectList(ctx);
             Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);

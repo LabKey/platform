@@ -74,6 +74,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -134,7 +135,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 public class ModuleLoader implements Filter, MemTrackerListener
 {
-    private static final Logger _log = LogManager.getLogger(ModuleLoader.class);
+    private static final Logger _log = LogHelper.getLogger(ModuleLoader.class, "Initializes and starts up all modules");
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
@@ -157,11 +158,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static TomcatVersion _tomcatVersion = null;
     private static JavaVersion _javaVersion = null;
 
-    private static final String BANNER = "\n" +
-            "   __                                   \n" +
-            "   ||  |  _ |_ |/ _     (\u00af _  _   _  _\n" +
-            "  (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_|  \n" +
-            "                    /                  ";
+    private static final String BANNER = """
+
+             __                                  \s
+             ||  |  _ |_ |/ _     (\u00af _  _   _  _
+            (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_| \s
+                              /                 \s""".indent(2);
 
     private boolean _deferUsageReport = false;
     private File _webappDir;
@@ -306,8 +308,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()) &&
                     !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName()))
                 return null;
-            Class interfaces[] = new Class[] {ExplodedModuleService.class};
-            return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
+            return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(),
+                    new Class[] {ExplodedModuleService.class},
+                    new _Proxy(obj));
         }
 
         private _Proxy(Object obj)
@@ -349,7 +352,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // TODO move call to ContextListener.fireModuleChangeEvent() into this method
         synchronized (_modulesLock)
         {
-            List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry(dir,archive)));
+            List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry<>(dir,archive)));
             if (moduleList.isEmpty())
             {
                 throw new IllegalStateException("Not a valid module: " + archive.getName());
@@ -609,10 +612,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         if (!modulesRequiringUpgrade.isEmpty())
-            _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade.toString());
+            _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade);
 
         if (!additionalSchemasRequiringUpgrade.isEmpty())
-            _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas") + " requiring upgrade: " + additionalSchemasRequiringUpgrade.toString());
+            _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas") + " requiring upgrade: " + additionalSchemasRequiringUpgrade);
 
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
@@ -1733,8 +1736,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (null != requiredModules)
         {
             List<String> missedModules = Arrays.stream(requiredModules.split(","))
-                .filter(name->!_moduleMap.containsKey(name))
-                .collect(Collectors.toList());
+                    .filter(name -> !_moduleMap.containsKey(name)).toList();
 
             if (!missedModules.isEmpty())
                 setStartupFailure(new ConfigurationException("Required module" + (missedModules.size() > 1 ? "s" : "") + " not present: " + missedModules));
@@ -1877,8 +1879,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         List<Module> result = new ArrayList<>(modules.size());
         result.addAll(getModules()
-            .stream().filter(modules::contains)
-            .collect(Collectors.toList()));
+                .stream().filter(modules::contains).toList());
         Collections.reverse(result);
         return result;
     }
@@ -1956,14 +1957,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     _controllerNameToModule.put(key, module);
                     _controllerNameToModule.put(key.toLowerCase(), module);
 
-                    Class clazz = entry.getValue();
-                    for (Class innerClass : clazz.getClasses())
+                    Class<?> clazz = entry.getValue();
+                    for (Class<?> innerClass : clazz.getClasses())
                     {
-                        for (Class inter : innerClass.getInterfaces())
+                        for (Class<?> inter : innerClass.getInterfaces())
                         {
-                            Class[] supr = inter.getInterfaces();
-                            if (supr != null && supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                UrlProviderService.getInstance().registerUrlProvider(inter, innerClass);
+                            Class<?>[] supr = inter.getInterfaces();
+                            if (supr.length == 1 && UrlProvider.class.equals(supr[0]))
+                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>)inter, innerClass);
                         }
                     }
                 }

@@ -80,8 +80,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     public static final String DEFAULT_DIRECTORY = "sample-types";
     public static final String XAR_TYPES_NAME = "sample_types.xar";             // the file which contains the sample type and data class definitions
     public static final String XAR_RUNS_NAME = "runs.xar";                      // the file which contains the derivation runs for sample types and data classes
-    private static final String XAR_TYPES_XML_NAME = XAR_TYPES_NAME + ".xml";
-    private static final String XAR_RUNS_XML_NAME = XAR_RUNS_NAME + ".xml";
+    public static final String XAR_TYPES_XML_NAME = XAR_TYPES_NAME + ".xml";
+    public static final String XAR_RUNS_XML_NAME = XAR_RUNS_NAME + ".xml";
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
     public static final String SAMPLE_STATUS_PREFIX = "SAMPLE_STATUS_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";

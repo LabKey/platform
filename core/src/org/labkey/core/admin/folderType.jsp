@@ -51,7 +51,7 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     final ViewContext context = getViewContext();
     Container c = getContainer();
     boolean userHasEnableRestrictedModulesPermission = c.hasEnableRestrictedModules(getUser());
-    Collection<FolderType> allFolderTypes = FolderTypeManager.get().getEnabledFolderTypes(userHasEnableRestrictedModulesPermission);
+    List<FolderType> allFolderTypes = new ArrayList<>(FolderTypeManager.get().getEnabledFolderTypes(userHasEnableRestrictedModulesPermission));
     List<Module> allModules = new ArrayList<>(ModuleLoader.getInstance().getModules(userHasEnableRestrictedModulesPermission));
     allModules.sort(Comparator.comparing(module -> module.getTabName(context), String.CASE_INSENSITIVE_ORDER));
     Set<Module> activeModules = c.getActiveModules();
@@ -67,6 +67,9 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
     FolderType folderType = c.getFolderType();
     String path = c.getPath();
     boolean includeProjectLevelTypes = c.isProject();       // Only include Dataspace as an option if container is a project
+
+    // Sort by label, which may not match with the official name
+    allFolderTypes.sort(Comparator.comparing(x -> x.getLabel().toLowerCase()));
 
     for (FolderType ft : allFolderTypes)
     {

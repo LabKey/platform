@@ -53,6 +53,28 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     /** Consider using getTableWithFactory(String, ContainerFilter.Factory) instead */
     TableInfo getTable(String name, @Nullable ContainerFilter cf);
 
+    @NotNull
+    default TableInfo getTableOrThrow(String name)
+    {
+        TableInfo result = getTable(name);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("Could not find table '" + name + "' in schema '" + getSchemaName() + "'");
+        }
+        return result;
+    }
+
+    @NotNull
+    default TableInfo getTableOrThrow(String name, @Nullable ContainerFilter cf)
+    {
+        TableInfo result = getTable(name, cf);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("Could not find table '" + name + "' in schema '" + getSchemaName() + "'");
+        }
+        return result;
+    }
+
     /**
      * The schema already knows its container and user, we don't need to redundantly create a ContainerFilter with the
      * same info.
