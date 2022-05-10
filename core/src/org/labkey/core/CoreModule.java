@@ -1005,6 +1005,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
             results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
+            results.put("systemUserCount", UserManager.getSystemUserCount());
             return results;
         });
 

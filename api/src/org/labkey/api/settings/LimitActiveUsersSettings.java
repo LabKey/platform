@@ -166,11 +166,9 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
             if (settings.isUserWarning() && activeUsers >= warningLevel)
                 return substitute(settings.getUserWarningMessage(), activeUsers, warningLevel, limitLevel);
-        }
 
-        if (showAllWarnings)
-        {
-            return HtmlString.of("There are 10 active users on this deployment and the user limit is set to 15, which means there are 5 users remaining that can be added.");
+            if (showAllWarnings)
+                return HtmlString.of("There are 10 active users on this deployment and the user limit is set to 15, which means there are 5 users remaining that can be added.");
         }
 
         return null;
