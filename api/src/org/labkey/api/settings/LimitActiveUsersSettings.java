@@ -12,6 +12,7 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
@@ -152,12 +153,25 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     private static HtmlString substitute(String message, int activeUsers, int warningLevel, int limitLevel)
     {
-        Map<String, Integer> map = new HashMap<>();
+        Map<String, Integer> map = populatePropertyMap(new HashMap<>(), activeUsers, warningLevel, limitLevel);
+
+        return HtmlString.unsafe(StringExpressionFactory.create(message).eval(map));
+    }
+
+    private static Map<String, Integer> populatePropertyMap(Map<String, Integer> map, int activeUsers, int warningLevel, int limitLevel)
+    {
         map.put("ActiveUsers", activeUsers);
         map.put("WarningLevel", warningLevel);
         map.put("LimitLevel", limitLevel);
         map.put("RemainingUsers", limitLevel - activeUsers);
 
-        return HtmlString.unsafe(StringExpressionFactory.create(message).eval(map));
+        return map;
+    }
+
+    public static Map<String, Integer> getPropertyMap()
+    {
+        LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+
+        return populatePropertyMap(new LinkedHashMap<>(), UserManager.getActiveUserCount() - UserManager.getSystemUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
     }
 }
