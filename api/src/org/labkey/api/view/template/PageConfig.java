@@ -148,6 +148,7 @@ public class PageConfig
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
+    private boolean _includePermissions = false;
 
     public final Date createTime = new Date();
     public final Throwable createThrowable = new Throwable();
@@ -352,6 +353,16 @@ public class PageConfig
     public void setIncludePostParameters(boolean includePostParameters)
     {
         _includePostParameters = includePostParameters;
+    }
+
+    public boolean isIncludePermissions()
+    {
+        return _includePermissions;
+    }
+
+    public void setIncludePermissions(boolean includePermissions)
+    {
+        _includePermissions = includePermissions;
     }
 
     public void addMetaTag(String name, String value)
