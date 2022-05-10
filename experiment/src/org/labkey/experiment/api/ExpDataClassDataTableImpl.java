@@ -510,7 +510,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return ret;
     }
 
-    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain, @NotNull String lookupColName)
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain)
     {
         return new PropertyForeignKey(_userSchema, getContainerFilter(), domain)
         {

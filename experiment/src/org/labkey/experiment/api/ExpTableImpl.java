@@ -323,7 +323,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return colProperty;
     }
 
-    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain, @NotNull String lookupColName)
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain)
     {
         return new PropertyForeignKey(_userSchema, getContainerFilter(), domain);
     }
@@ -337,7 +337,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
     {
         var colProperty = wrapColumn(lookupColName, getLSIDColumn());
-        colProperty.setFk(getDomainColumnForeignKey(domain, lookupColName));
+        colProperty.setFk(getDomainColumnForeignKey(domain));
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
         colProperty.setIsUnselectable(true);
