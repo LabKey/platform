@@ -4,7 +4,9 @@ public class PeptideCharacteristic
 {
     private String _sequence;
     private Double _intensity;
+    private String _intensityColor;
     private Double _confidence;
+    private String _confidenceColor;
 
     public String getSequence()
     {
@@ -26,6 +28,16 @@ public class PeptideCharacteristic
         _intensity = intensity;
     }
 
+    public String getIntensityColor()
+    {
+        return _intensityColor;
+    }
+
+    public void setIntensityColor(String intensityColor)
+    {
+        _intensityColor = intensityColor;
+    }
+
     public Double getConfidence()
     {
         return _confidence;
@@ -34,5 +46,15 @@ public class PeptideCharacteristic
     public void setConfidence(Double confidence)
     {
         _confidence = confidence;
+    }
+
+    public String getConfidenceColor()
+    {
+        return _confidenceColor;
+    }
+
+    public void setConfidenceColor(String confidenceColor)
+    {
+        _confidenceColor = confidenceColor;
     }
 }

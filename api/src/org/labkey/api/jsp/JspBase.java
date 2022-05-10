@@ -64,6 +64,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
@@ -230,6 +231,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     public JSONObject toJsonObject(Collection<Object> c)
+    {
+        return new JSONObject(c);
+    }
+
+    public JSONObject toJsonObject(Map<?, ?> c)
     {
         return new JSONObject(c);
     }
