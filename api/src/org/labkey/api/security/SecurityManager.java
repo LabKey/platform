@@ -79,6 +79,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -995,13 +996,17 @@ public class SecurityManager
         return addUser(email, currentUser, true);
     }
 
-    /** @param currentUser the user who is adding the new user. Used to set createdBy on the new user record
+    /**
+     * @param currentUser the user who is adding the new user. Used to set createdBy on the new user record
      * @param createLogin false in the case of a new LDAP or SSO user authenticating for the first time, or true
      *                    in any other case (e.g., manually added LDAP user), so we need an additional check below
      *                    to avoid sending verification emails to an LDAP user.
      */
     public static @NotNull NewUserStatus addUser(ValidEmail email, @Nullable User currentUser, boolean createLogin) throws UserManagementException
     {
+        if (new LimitActiveUsersSettings().isUserLimitReached())
+            throw new UserManagementException(email, "No more users can be added to this deployment");
+
         NewUserStatus status = new NewUserStatus(email);
 
         if (UserManager.userExists(email))

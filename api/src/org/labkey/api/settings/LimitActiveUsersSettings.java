@@ -120,6 +120,15 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return map;
     }
 
+    public boolean isUserLimitReached()
+    {
+        if (!isUserLimit())
+            return false;
+
+        int activeUsers = UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
+        return activeUsers >= getUserLimitLevel();
+    }
+
     public static void populateStartupProperties()
     {
         Collection<ConfigProperty> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
