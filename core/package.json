@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.12.0",
-    "@labkey/components": "2.164.0",
+    "@labkey/components": "2.167.0-fb-editableGridPanelForUpdate.0",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
