@@ -268,7 +268,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
                 ConceptURIVocabularyDomainProvider provider = PropertyService.get().getConceptUriVocabularyDomainProvider(property.getConceptURI());
                 if (provider != null)
-                    provider.ensureVocabularyDomain(property.getName(), this, user);
+                    provider.ensureDomain(property.getName(), this, user);
             }
         }
 

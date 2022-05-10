@@ -1,5 +1,7 @@
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -16,21 +18,24 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/*
+ * Property fields can have a Vocabulary Domain attached to them. For example, SMILES columns use vocabulary properties to store molecular properties.
+ */
 public interface ConceptURIVocabularyDomainProvider
 {
-    Domain ensureVocabularyDomain(String propertyName, ExpObject expObject, User user);
+    @NotNull Domain ensureDomain(@NotNull String propertyName, @NotNull ExpObject expObject, User user);
 
-    List<FieldKey> addVocabularyLookupColumns(ExpObject expObject, ExpTable expTable, MutableColumnInfo parentCol, String sourceFieldName);
+    @Nullable List<FieldKey> addLookupColumns(@NotNull ExpObject expObject, @NotNull ExpTable expTable, @NotNull MutableColumnInfo parentCol, @NotNull String sourceFieldName);
 
-    String getVocabularyDomainURI(String smilesFieldName, ExpObject expObject);
+    @Nullable String getDomainURI(@NotNull String sourceFieldName, @NotNull ExpObject expObject);
 
-    String getVocabularyDomainName(String sourceFieldName, ExpObject expObject);
+    @Nullable String getDomainName(@NotNull String sourceFieldName, @NotNull ExpObject expObject);
 
-    DataIteratorBuilder getDataIteratorBuilder(DataIteratorBuilder data, ExpDataClass expDataClass, AttachmentParentFactory attachmentParentFactory, Container container, User user);
+    @NotNull DataIteratorBuilder getDataIteratorBuilder(@NotNull DataIteratorBuilder data, @NotNull ExpDataClass expDataClass, @NotNull AttachmentParentFactory attachmentParentFactory, Container container, User user);
 
-    Map<String, Object> getUpdateRowProperties(User user, Container c, Map<String, Object> rowStripped, Map<String, Object> oldRow, AttachmentParentFactory attachmentParentFactory, String sourceFieldName, String propertyColumnName, boolean hasMultipleSourceFields);
+    @NotNull Map<String, Object> getUpdateRowProperties(User user, Container c, @NotNull Map<String, Object> rowStripped, Map<String, Object> oldRow, @NotNull AttachmentParentFactory attachmentParentFactory, @NotNull String sourceFieldName, @NotNull String propertyColumnName, boolean hasMultipleSourceFields);
 
-    Collection<String> getImportTemplateExcludeColumns(String propertyColumnName);
+    @NotNull Collection<String> getImportTemplateExcludeColumns(@NotNull String propertyColumnName);
 
-    FieldKey getColumnFieldKey(ColumnInfo parent, PropertyDescriptor pd);
+    @NotNull FieldKey getColumnFieldKey(@NotNull ColumnInfo parent, @NotNull PropertyDescriptor pd);
 }
