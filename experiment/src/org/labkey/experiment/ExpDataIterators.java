@@ -688,7 +688,19 @@ public class ExpDataIterators
                     {
                         if (o instanceof String)
                         {
-                            aliquotParentName = (String) o;
+                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            {
+                                tabLoader.setDelimiterCharacter(',');
+                                try
+                                {
+                                    // There will be only one aliquot parent, but we want to parse the name in the same way we do for other names
+                                    aliquotParentName = tabLoader.getFirstNLines(1)[0][0];
+                                }
+                                catch (IOException e)
+                                {
+                                    getErrors().addRowError(new ValidationException("Unable to parse aliquot parent name from " + o, "AliquotedFrom"));
+                                }
+                            }
                         }
                         else if (o instanceof Number)
                         {
