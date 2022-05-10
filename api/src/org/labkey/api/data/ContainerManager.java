@@ -371,21 +371,11 @@ public class ContainerManager
         return c;
     }
 
-    public static void refreshFolderType(Container c, User user, BindException errors)
-    {
-        setFolderType(c, c.getFolderType(), user, errors, true);
-    }
-
     public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
-    {
-        setFolderType(c, folderType, user, errors, false);
-    }
-
-    private static void setFolderType(Container c, FolderType folderType, User user, BindException errors, boolean forceSet)
     {
         FolderType oldType = c.getFolderType();
 
-        if (!forceSet && folderType.equals(oldType))
+        if (folderType.equals(oldType))
             return;
 
         List<String> errorStrings = new ArrayList<>();
@@ -437,11 +427,11 @@ public class ContainerManager
 
             if (c.isContainerTab())
             {
-                Boolean containerTabTypeOverridden = false;
+                boolean containerTabTypeOverridden = false;
                 FolderTab tab = c.getParent().getFolderType().findTab(c.getName());
                 if (null != tab && !folderType.equals(tab.getFolderType()))
                     containerTabTypeOverridden = true;
-                props.put(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN, containerTabTypeOverridden.toString());
+                props.put(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN, Boolean.toString(containerTabTypeOverridden));
             }
             props.save();
 
@@ -1865,7 +1855,6 @@ public class ContainerManager
 
     private static void _removeFromCache(Container c)
     {
-        Container project = c.getProject();
         Container parent = c.getParent();
 
         CACHE.remove(CONTAINER_PREFIX + toString(c));
@@ -2001,11 +1990,6 @@ public class ContainerManager
         MultiValuedMap<Container, Container> mm = new ArrayListValuedHashMap<>();
         mm.put(null, root);
         addChildren(root, mmIds, mm);
-        for (Container key : mm.keySet())
-        {
-            List<Container> siblings = new ArrayList<>(mm.get(key));
-            Collections.sort(siblings);
-        }
         return mm;
     }
 
@@ -2514,7 +2498,7 @@ public class ContainerManager
                     {
                         assertTrue(delete(c, TestContext.get().getUser()));
                     }
-                    catch(Exception e){}
+                    catch(Exception ignored){}
                     fail("Should have thrown illegal argument when trying to create container with name: " + name);
                 }
                 catch(IllegalArgumentException e)
@@ -2805,7 +2789,7 @@ public class ContainerManager
         public Container[] handleArray(ResultSet rs) throws SQLException
         {
             ArrayList<Container> list = handleArrayList(rs);
-            return list.toArray(new Container[list.size()]);
+            return list.toArray(new Container[0]);
         }
     }
 
