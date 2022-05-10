@@ -985,7 +985,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             String contentType = r.getContentType();
-            if (isImage(contentType) || isZip(contentType))
+            if (isImage(contentType) || isZip(contentType) || isWorkingFile(r))
                 return false;
             FileStream fs = r.getFileStream(User.getSearchUser());
             if (null == fs)
@@ -998,10 +998,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     DocumentParser p = detectParser(r, null);
                     return p != null;
                 }
-                else if (isTempFile(r))
-                {
-                    return false;
-                }
+
                 return true;
             }
             finally
@@ -1015,10 +1012,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    private boolean isTempFile(@NotNull WebdavResource r)
+    private boolean isWorkingFile(@NotNull WebdavResource r)
     {
         // MS Office opens temp/working files with '~', ignore these. Issue #45005
-        if (r.getName().startsWith("~"))
+        if (r.getName().startsWith("~") || r.getName().startsWith(".~"))
         {
             return true;
         }
