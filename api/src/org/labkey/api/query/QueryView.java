@@ -1673,7 +1673,7 @@ public class QueryView extends WebPartView<Object>
                 item = new NavTree(label, url);
                 item.setSelected(true);
             }
-            item.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].clearSelected({quiet: true});");
+            item.setScript(DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});");
             item.setId(getBaseMenuId() + ":GridViews:" + label);
             button.addMenuItem(item);
         }
