@@ -29,8 +29,6 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -133,13 +131,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private LockState _lockState = null;
     private LocalDate _expirationDate = null;
 
-    private final static Cache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
+    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
             CacheManager.getCache(
                     Constants.getMaxContainers(),
                     CacheManager.DAY,
-                    "Required modules per containers"));
-
-    private final static CacheLoader<GUID, Set<Module>> REQUIRED_MODULE_LOADER =
+                    "Required modules per containers"),
             (key, argument) -> {
                 if (!(argument instanceof Container c))
                 {
@@ -158,7 +154,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 }
 
                 return Collections.unmodifiableSet(requiredModules);
-            };
+            });
 
     static
     {
@@ -1021,7 +1017,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        return REQUIRED_MODULES_CACHE.get(getEntityId(), this, REQUIRED_MODULE_LOADER);
+        return REQUIRED_MODULES_CACHE.get(getEntityId(), this);
     }
 
     public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
