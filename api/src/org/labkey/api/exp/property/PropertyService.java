@@ -135,4 +135,8 @@ public interface PropertyService
     void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter);
 
     Set<DomainProperty> findVocabularyProperties(Container container, Set<String> colNameMap);
+
+    void registerConceptUriVocabularyDomainProvider(String conceptUri, ConceptURIVocabularyDomainProvider provider);
+
+    ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri);
 }
