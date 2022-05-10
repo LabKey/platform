@@ -103,6 +103,10 @@ public class CoreWarningProvider implements WarningProvider
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
         }
+        else if (SHOW_ALL_WARNINGS)
+        {
+            warnings.add(HtmlString.of("Here is a sample ribbon message."));
+        }
     }
 
     private void getHeapSizeWarnings(Warnings warnings)

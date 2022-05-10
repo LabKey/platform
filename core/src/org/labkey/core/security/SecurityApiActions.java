@@ -2106,7 +2106,7 @@ public class SecurityApiActions
                     UserManager.clearUserList();
                 }
 
-                // if only one user being added, keep response object at top level for backwards compatibility
+                // if only one user being added, write response properties to the top level as well for backwards compatibility
                 if (validEmails.size() == 1)
                 {
                     response.put("userId", user.getUserId());
