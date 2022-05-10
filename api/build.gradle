@@ -934,59 +934,44 @@ dependencies {
         )
     )
 
-//TODO Confirm removal -- reference removed while shelved
-//    BuildUtils.addExternalDependency(
-//        project,
-//        new ExternalDependency(
-//            "org.apache.logging.log4j:log4j-1.2-api:${log4j2Version}",
-//            "Log4j",
-//            "Apache",
-//            "https://logging.apache.org/log4j/2.x/",
-//            ExternalDependency.APACHE_2_LICENSE_NAME,
-//            ExternalDependency.APACHE_2_LICENSE_URL,
-//            "Logging",
-//        )
-//    )
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.httpcomponents:httpmime:${httpmimeVersion}",
+            "Apache HTTP Mime",
+            "Apache",
+            "http://hc.apache.org/httpcomponents-client-ga",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "HTTP client for requests of remote servers",
+        )
+    )
 
-//TODO: Remove? -- were in previous jars.txt, but no reference in the build.gradle file
-//    BuildUtils.addExternalDependency(
-//        project,
-//        new ExternalDependency(
-//            "org.apache.httpcomponents:httpmime:${httpmimeVersion}",
-//            "Apache HTTP Mime",
-//            "Apache",
-//            "http://hc.apache.org/httpcomponents-client-ga",
-//            ExternalDependency.APACHE_2_LICENSE_NAME,
-//            ExternalDependency.APACHE_2_LICENSE_URL,
-//            "HTTP client for requests of remote servers",
-//        )
-//    )
-//
-//    BuildUtils.addExternalDependency(
-//        project,
-//        new ExternalDependency(
-//            "com.googlecode.json-simple:json-simple:${jsonSimpleVersion}",
-//            "JSON.simple - A Simple Java toolkit for JSON",
-//            "JSON.simple",
-//            "https://code.google.com/p/json-simple/",
-//            ExternalDependency.APACHE_2_LICENSE_NAME,
-//            ExternalDependency.APACHE_2_LICENSE_URL,
-//            "JSON parser for remoteapi",
-//        )
-//    )
-//
-//    BuildUtils.addExternalDependency(
-//        project,
-//        new ExternalDependency(
-//            "net.sf.opencsv:opencsv:${opencsvVersion}",
-//            "OpenCSV",
-//            "OpenCSV",
-//            "http://opencsv.sourceforge.net/",
-//            ExternalDependency.APACHE_2_LICENSE_NAME,
-//            ExternalDependency.APACHE_2_LICENSE_URL,
-//            "Parsing CSV files",
-//        )
-//    )
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.googlecode.json-simple:json-simple:${jsonSimpleVersion}",
+            "JSON.simple - A Simple Java toolkit for JSON",
+            "JSON.simple",
+            "https://code.google.com/p/json-simple/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "JSON parser for remoteapi",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.sf.opencsv:opencsv:${opencsvVersion}",
+            "OpenCSV",
+            "OpenCSV",
+            "http://opencsv.sourceforge.net/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parsing CSV files",
+        )
+    )
 
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
