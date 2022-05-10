@@ -79,6 +79,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -94,6 +95,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -718,7 +720,19 @@ public class ExpDataIterators
                         Collection<String> parentNames;
                         if (o instanceof String)
                         {
-                            parentNames = Arrays.asList(((String) o).split(","));
+                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            {
+                                tabLoader.setDelimiterCharacter(',');
+                                try
+                                {
+                                    parentNames = Arrays.asList(tabLoader.getFirstNLines(1)[0]);
+                                }
+                                catch (IOException e)
+                                {
+                                    parentNames = Collections.emptyList();
+                                    getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
+                                }
+                            }
                         }
                         else if (o instanceof JSONArray)
                         {
