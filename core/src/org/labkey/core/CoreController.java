@@ -781,7 +781,7 @@ public class CoreController extends SpringActionController
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
-                    newContainer.setFolderType(folderType, getUser());
+                    newContainer.setFolderType(folderType, getUser(), errors);
                 }
                 if (!ensureModules.isEmpty())
                 {

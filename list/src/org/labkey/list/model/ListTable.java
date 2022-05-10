@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.view.ActionURL;
 import org.labkey.list.controllers.ListController;
 
 import java.sql.Connection;
@@ -224,7 +223,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setFieldKey(new FieldKey(null,pd.getName()));
-                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"));
+                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter());
 
                         if (pd.isMvEnabled())
                         {
@@ -261,12 +260,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             col.setURL(StringExpressionFactory.createURL(
                                 ListController.getDownloadURL(listDef, "${EntityId}", "${" + col.getName() + "}")
                             ));
-                        }
-
-                        if (_list.isPicklist() && PICKLIST_SAMPLE_ID.equalsIgnoreCase(pd.getName()))
-                        {
-                            if (col.getFk() instanceof PdLookupForeignKey)
-                                ((PdLookupForeignKey) col.getFk()).setContainerFilter(getContainerFilter());
                         }
                     }
 
@@ -503,7 +496,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 .setKeyColumns(new CaseInsensitiveHashSet(getPkColumnNames()));
     }
 
-
     public class _DataIteratorBuilder implements DataIteratorBuilder
     {
         DataIteratorContext _context;
@@ -557,13 +549,11 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         }
     }
 
-
     @Override
     public ParameterMapStatement insertStatement(Connection conn, User user) throws SQLException
     {
         return StatementUtils.insertStatement(conn, this, getContainer(), user, false, true);
     }
-
 
     @Override
     public ParameterMapStatement updateStatement(Connection conn, User user, Set<String> columns)
