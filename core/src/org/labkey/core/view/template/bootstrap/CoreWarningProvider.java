@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -96,6 +97,10 @@ public class CoreWarningProvider implements WarningProvider
                 warnings.add(upgradeMessage);
             }
         }
+
+        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), SHOW_ALL_WARNINGS);
+        if (null != warning)
+            warnings.add(warning);
 
         if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
         {

@@ -32,6 +32,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -92,6 +93,7 @@ import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -264,6 +266,7 @@ public class UserController extends SpringActionController
     {
         if (null != PropertyService.get())
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()), AdminPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "Limit Active Users", new ActionURL(LimitActiveUsersAction.class, ContainerManager.getRoot()));
     }
 
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord, boolean canManageDetailsUser)
@@ -3006,6 +3009,130 @@ public class UserController extends SpringActionController
         }
     }
 
+    public static class LimitActiveUsersForm
+    {
+        private boolean _userWarning = false;
+        private int _userWarningLevel = 0;
+        private String _userWarningMessage = "";
+        private boolean _userLimit = false;
+        private int _userLimitLevel = 0;
+        private String _userLimitMessage = "";
+
+        public boolean isUserWarning()
+        {
+            return _userWarning;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarning(boolean userWarning)
+        {
+            _userWarning = userWarning;
+        }
+
+        public int getUserWarningLevel()
+        {
+            return _userWarningLevel;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarningLevel(int userWarningLevel)
+        {
+            _userWarningLevel = userWarningLevel;
+        }
+
+        public String getUserWarningMessage()
+        {
+            return _userWarningMessage;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarningMessage(String userWarningMessage)
+        {
+            _userWarningMessage = userWarningMessage;
+        }
+
+        public boolean isUserLimit()
+        {
+            return _userLimit;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimit(boolean userLimit)
+        {
+            _userLimit = userLimit;
+        }
+
+        public int getUserLimitLevel()
+        {
+            return _userLimitLevel;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimitLevel(int userLimitLevel)
+        {
+            _userLimitLevel = userLimitLevel;
+        }
+
+        public String getUserLimitMessage()
+        {
+            return _userLimitMessage;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimitMessage(String userLimitMessage)
+        {
+            _userLimitMessage = userLimitMessage;
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class LimitActiveUsersAction extends FormViewAction<LimitActiveUsersForm>
+    {
+        @Override
+        public void validateCommand(LimitActiveUsersForm form, Errors errors)
+        {
+            if (form.isUserWarning() && form.getUserWarningLevel() <= 0)
+                errors.reject(ERROR_MSG, "User warning level must be a positive integer");
+            if (form.isUserLimit() && form.getUserLimitLevel() <= 0)
+                errors.reject(ERROR_MSG, "User limit level must be a positive integer");
+            if (form.isUserWarning() && form.isUserLimit() && form.getUserWarningLevel() > form.getUserLimitLevel())
+                errors.reject(ERROR_MSG, "User limit level must be greater than or equal to user warning level");
+        }
+
+        @Override
+        public ModelAndView getView(LimitActiveUsersForm form, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/user/limitActiveUsers.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(LimitActiveUsersForm form, BindException errors)
+        {
+            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+            settings.setUserWarning(form.isUserWarning());
+            settings.setUserWarningLevel(form.getUserWarningLevel());
+            settings.setUserWarningMessage(form.getUserWarningMessage());
+            settings.setUserLimitLevel(form.getUserLimitLevel());
+            settings.setUserLimitMessage(form.getUserLimitMessage());
+            settings.setUserLimit(form.isUserLimit());
+            settings.save(getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(LimitActiveUsersForm form)
+        {
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Limit Active Users", getClass(), getContainer());
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -3045,7 +3172,8 @@ public class UserController extends SpringActionController
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ShowUserPreferencesAction()
+                controller.new ShowUserPreferencesAction(),
+                new LimitActiveUsersAction()
             );
         }
     }

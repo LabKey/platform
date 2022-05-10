@@ -110,6 +110,7 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
@@ -905,6 +906,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // populate folder types from startup properties as appropriate for not bootstrap
         FolderTypeManager.get().populateWithStartupProps();
+        LimitActiveUsersSettings.populateStartupProperties();
 
         AdminController.registerAdminConsoleLinks();
         AdminController.registerManagementTabs();
@@ -1002,6 +1004,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
             results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
+            results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             return results;
         });
 
