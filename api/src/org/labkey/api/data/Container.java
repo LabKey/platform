@@ -465,7 +465,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @SafeVarargs
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet(Arrays.asList(perms)), Set.of());
+        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
     public boolean isForbiddenProject(User user)
@@ -899,24 +899,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _defaultModule;
     }
 
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules)
-    {
-        BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user)
-    {
-        BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, user, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
-    {
-        setFolderType(folderType, ensureModules, null, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user, BindException errors)
+    public void setFolderType(FolderType folderType, User user, BindException errors, Set<Module> ensureModules)
     {
         setFolderType(folderType, user, errors);
         if (!errors.hasErrors())
@@ -1217,11 +1200,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
             propsWritable.save();
         }
 
-        Set<Module> modules = new HashSet<>();
-
         // always put the required modules in the set
         // note that this will pickup the modules from the folder type's getActiveModules()
-        modules.addAll(getRequiredModules());
+        Set<Module> modules = new HashSet<>(getRequiredModules());
 
         // add all modules found in user preferences:
         for (String moduleName : props.keySet())

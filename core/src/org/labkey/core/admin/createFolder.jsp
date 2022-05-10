@@ -94,8 +94,8 @@
                     //force custom to appear at end
                     return b.label == 'Custom' ? -1
                         : a.label == 'Custom' ? 1
-                        : (a.label > b.label) ? 1
-                        : (a.label < b.label) ? -1
+                        : (a.label.toLowerCase() > b.label.toLowerCase()) ? 1
+                        : (a.label.toLowerCase() < b.label.toLowerCase()) ? -1
                         : 0
                 });
                 

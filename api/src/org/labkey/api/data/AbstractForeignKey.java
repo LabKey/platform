@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
@@ -233,7 +234,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     }
 
     @Override
-    public NamedObjectList getSelectList(RenderContext ctx)
+    public @NotNull NamedObjectList getSelectList(RenderContext ctx)
     {
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
