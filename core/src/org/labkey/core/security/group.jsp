@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -296,6 +297,17 @@ else
     </div><%
 }
 %><br>
+
+<%
+    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+    if (settings.isUserLimit())
+    {
+%>
+    Number of new users that can be added: <%=settings.getRemainingUserCount()%><br><br>
+<%
+    }
+%>
+
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
     <labkey:autoCompleteTextArea name="names" url="<%=completionUrl%>" rows="8" cols="70"/>

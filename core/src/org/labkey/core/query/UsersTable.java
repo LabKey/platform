@@ -15,8 +15,8 @@
  */
 package org.labkey.core.query;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -101,7 +101,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     private Set<String> _illegalColumns;
     private boolean _mustCheckPermissions = true;
-    private boolean _canSeeDetails;
+    private final boolean _canSeeDetails;
     private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
 

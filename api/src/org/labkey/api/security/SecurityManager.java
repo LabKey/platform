@@ -1005,7 +1005,7 @@ public class SecurityManager
     public static @NotNull NewUserStatus addUser(ValidEmail email, @Nullable User currentUser, boolean createLogin) throws UserManagementException
     {
         if (new LimitActiveUsersSettings().isUserLimitReached())
-            throw new UserManagementException(email, "No more users can be added to this deployment");
+            throw new UserManagementException(email, "User limit has been reached so no more users can be added to this deployment");
 
         NewUserStatus status = new NewUserStatus(email);
 

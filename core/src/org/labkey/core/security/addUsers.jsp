@@ -17,6 +17,8 @@
 %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
+<%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -35,6 +37,7 @@
 %>
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
+    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     document.addEventListener("DOMContentLoaded", function() {
@@ -93,15 +96,25 @@
 </script>
 
 <labkey:form action="<%=urlFor(AddUsersAction.class)%>" method="POST">
-    <table><%
+    <table>
+        <%
             if (getErrors("form").hasErrors());
-            { %>
-        <tr><td><labkey:errors /></td></tr><%
+            {
+        %>
+        <tr><td><labkey:errors /></td></tr>
+        <%
             }
             HtmlString msg = form.getMessage();
             if (!HtmlString.isBlank(msg))
             {
                 %><tr><td><div class="labkey-message"><%=msg%></div></td></tr><%
+            }
+            if (settings.isUserLimit())
+            {
+        %>
+        <tr><td>Number of users that can be added: <%=settings.getRemainingUserCount()%></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <%
             }
         %>
         <tr>
@@ -124,7 +137,19 @@
         </td></tr>
         <tr>
             <td>
-                <labkey:button text="Add Users" />
+<%
+    ButtonBuilder submit = button("Add Users");
+    if (settings.isUserLimitReached())
+    {
+        submit.enabled(false);
+        submit.tooltip("User limit has been reached");
+    }
+    else
+    {
+        submit.submit(true);
+    }
+%>
+                <%=submit%>
                 <% if (form.getReturnURLHelper() == null) { %>
                 <%= button("Done").href(urlFor(ShowUsersAction.class)) %>
                 <% }

@@ -432,7 +432,6 @@ public class UserManager
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
-
         }
 
         @Override
@@ -518,7 +517,6 @@ public class UserManager
         return includeDeactivated ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
     }
 
-
     public static List<Integer> getUserIds()
     {
         return UserCache.getUserIds();
@@ -558,7 +556,6 @@ public class UserManager
         return Result.success(userFolder);
     }
 
-
     public static String sanitizeEmailAddress(String email)
     {
         if (email == null)
@@ -570,7 +567,6 @@ public class UserManager
         }
         return email;
     }
-
 
     public static void addToUserHistory(User principal, String message)
     {
@@ -593,10 +589,9 @@ public class UserManager
         AuditLogService.get().addEvent(user, event);
     }
 
-
-    public static boolean hasNoUsers()
+    public static boolean hasUsers()
     {
-        return 0 == getActiveUserCount();
+        return getActiveUserCount() > 0;
     }
 
     public static boolean hasNoRealUsers()
@@ -913,7 +908,7 @@ public class UserManager
             return;
 
         if (active && new LimitActiveUsersSettings().isUserLimitReached())
-            throw new UserManagementException(userToAdjust.getEmail(), "No more users can be added to this deployment");
+            throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment");
 
         Integer userId = userToAdjust.getUserId();
 

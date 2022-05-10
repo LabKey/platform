@@ -120,13 +120,24 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return map;
     }
 
+    /** Active users - system users **/
+    public int getActiveUserCount()
+    {
+        return UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
+    }
+
     public boolean isUserLimitReached()
     {
         if (!isUserLimit())
             return false;
 
-        int activeUsers = UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
-        return activeUsers >= getUserLimitLevel();
+        return getActiveUserCount() >= getUserLimitLevel();
+    }
+
+    /** Valid to call only if user limit is on **/
+    public int getRemainingUserCount()
+    {
+        return Math.max(getUserLimitLevel() - getActiveUserCount(), 0);
     }
 
     public static void populateStartupProperties()
@@ -145,8 +156,8 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
     {
         if (c.hasPermission(user, AddUserPermission.class))
         {
-            int activeUsers = UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
             LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+            int activeUsers = settings.getActiveUserCount();
             int warningLevel = settings.getUserWarningLevel();
             int limitLevel = settings.getUserLimitLevel();
 
@@ -172,7 +183,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         map.put("ActiveUsers", activeUsers);
         map.put("WarningLevel", warningLevel);
         map.put("LimitLevel", limitLevel);
-        map.put("RemainingUsers", limitLevel - activeUsers);
+        map.put("RemainingUsers", Math.max(limitLevel - activeUsers, 0));
 
         return map;
     }
@@ -181,6 +192,6 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
     {
         LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 
-        return populatePropertyMap(new LinkedHashMap<>(), UserManager.getActiveUserCount() - UserManager.getSystemUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
+        return populatePropertyMap(new LinkedHashMap<>(), settings.getActiveUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
     }
 }

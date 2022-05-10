@@ -103,6 +103,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -322,11 +323,20 @@ public class UserController extends SpringActionController
         boolean canAddUser = user.hasRootPermission(AddUserPermission.class) || getContainer().hasPermission(user, AddUserPermission.class);
         boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
         boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
+        boolean noMoreUsers = new LimitActiveUsersSettings().isUserLimitReached();
 
         if (canAddUser)
         {
             ActionButton insert = new ActionButton(urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
-            insert.setActionType(ActionButton.Action.LINK);
+            if (noMoreUsers)
+            {
+                insert.setEnabled(false);
+                insert.setTooltip("User limit has been reached");
+            }
+            else
+            {
+                insert.setActionType(ActionButton.Action.LINK);
+            }
             gridButtonBar.add(insert);
         }
 
@@ -340,8 +350,16 @@ public class UserController extends SpringActionController
                 gridButtonBar.add(deactivate);
 
                 ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
-                activate.setRequiresSelection(true);
-                activate.setActionType(ActionButton.Action.POST);
+                if (noMoreUsers)
+                {
+                    activate.setEnabled(false);
+                    activate.setTooltip("User limit has been reached");
+                }
+                else
+                {
+                    activate.setRequiresSelection(true);
+                    activate.setActionType(ActionButton.Action.POST);
+                }
                 gridButtonBar.add(activate);
             }
 
@@ -1565,7 +1583,7 @@ public class UserController extends SpringActionController
             // for the root container or if the user is site/app admin, use the site users table
             String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
-            // TODO don't hack on the TableInfo, shouldn't the schma check canSeeuserDetails() and has AdminPermission?
+            // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
             TableInfo table = schema.getTable(userTableName, null, true, true);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
@@ -1638,10 +1656,21 @@ public class UserController extends SpringActionController
 
                 if (!isOwnRecord && canManageDetailsUser)
                 {
-                    ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
-                    deactivateUrl.addParameter("userId", _detailsUserId);
-                    deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
-                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
+                    // Can't reactivate any users if user limit has been reached
+                    if (new LimitActiveUsersSettings().isUserLimitReached() && !detailsUser.isActive())
+                    {
+                        ActionButton disabledDeactivate = new ActionButton("Deactivate");
+                        disabledDeactivate.setEnabled(false);
+                        disabledDeactivate.setTooltip("User limit has been reached");
+                        bb.add(disabledDeactivate);
+                    }
+                    else
+                    {
+                        ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
+                        deactivateUrl.addParameter("userId", _detailsUserId);
+                        deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
+                        bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
+                    }
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
                     deleteUrl.addParameter("userId", _detailsUserId);
