@@ -3132,7 +3132,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UserManagementPermission.class)
+    @RequiresPermission(AddUserPermission.class)
     public static class GetUserLimitSettingsAction extends ReadOnlyApiAction<Object>
     {
         @Override

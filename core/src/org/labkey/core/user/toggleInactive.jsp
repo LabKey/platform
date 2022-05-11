@@ -59,7 +59,7 @@
         if (settings.isUserLimit())
         {
     %>
-    <tr><td>Number of users that can be added or reactivated: <%=settings.getRemainingUserCount()%></td></tr>
+    <tr><td>Number of users that can be added<%=h(getContainer().isRoot() ? " or reactivated" : "")%>: <%=settings.getRemainingUserCount()%></td></tr>
     <tr><td>&nbsp;</td></tr>
     <%
         }

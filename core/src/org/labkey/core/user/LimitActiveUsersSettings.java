@@ -7,7 +7,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.HtmlString;
@@ -157,7 +157,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     public static @Nullable HtmlString getWarningMessage(Container c, User user, boolean showAllWarnings)
     {
-        if (c.hasPermission(user, UserManagementPermission.class))
+        if (c.hasPermission(user, AddUserPermission.class))
         {
             LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
             int activeUsers = getActiveUserCount();
@@ -171,7 +171,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
                 return substitute(settings.getUserWarningMessage(), activeUsers, warningLevel, limitLevel);
 
             if (showAllWarnings)
-                return HtmlString.of("There are 10 active users on this deployment and the user limit is set to 15, which means there are 5 users remaining that can be added.");
+                return HtmlString.of("There are 10 active users on this deployment and the user limit is set to 15, which means 5 users can be added.");
         }
 
         return null;
