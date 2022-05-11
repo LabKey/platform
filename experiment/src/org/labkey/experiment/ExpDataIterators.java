@@ -84,6 +84,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
@@ -688,21 +689,7 @@ public class ExpDataIterators
                     {
                         if (o instanceof String)
                         {
-                            try (TabLoader tabLoader = new TabLoader((String) o))
-                            {
-                                tabLoader.setDelimiterCharacter(',');
-                                try
-                                {
-                                    String[][] values = tabLoader.getFirstNLines(1);
-                                    if (values.length > 0)
-                                        // There will be only one aliquot parent, but we want to parse the name in the same way we do for other names
-                                        aliquotParentName = values[0][0];
-                                }
-                                catch (IOException e)
-                                {
-                                    getErrors().addRowError(new ValidationException("Unable to parse aliquot parent name from " + o, "AliquotedFrom"));
-                                }
-                            }
+                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
                         }
                         else if (o instanceof Number)
                         {
