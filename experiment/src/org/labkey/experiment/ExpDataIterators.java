@@ -693,8 +693,10 @@ public class ExpDataIterators
                                 tabLoader.setDelimiterCharacter(',');
                                 try
                                 {
-                                    // There will be only one aliquot parent, but we want to parse the name in the same way we do for other names
-                                    aliquotParentName = tabLoader.getFirstNLines(1)[0][0];
+                                    String[][] values = tabLoader.getFirstNLines(1);
+                                    if (values.length > 0)
+                                        // There will be only one aliquot parent, but we want to parse the name in the same way we do for other names
+                                        aliquotParentName = values[0][0];
                                 }
                                 catch (IOException e)
                                 {
@@ -737,7 +739,11 @@ public class ExpDataIterators
                                 tabLoader.setDelimiterCharacter(',');
                                 try
                                 {
-                                    parentNames = Arrays.asList(tabLoader.getFirstNLines(1)[0]);
+                                    String[][] values = tabLoader.getFirstNLines(1);
+                                    if (values.length > 0)
+                                        parentNames = Arrays.asList(values[0]);
+                                    else
+                                        parentNames = Collections.emptyList();
                                 }
                                 catch (IOException e)
                                 {
