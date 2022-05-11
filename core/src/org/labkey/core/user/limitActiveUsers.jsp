@@ -6,8 +6,8 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
-<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController.LimitActiveUsersAction" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>

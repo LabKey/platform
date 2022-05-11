@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController.ShowUsersAction" %>
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

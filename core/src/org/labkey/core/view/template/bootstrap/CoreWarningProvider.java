@@ -25,7 +25,6 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -38,6 +37,7 @@ import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.user.LimitActiveUsersSettings;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;

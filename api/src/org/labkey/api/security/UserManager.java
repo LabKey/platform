@@ -51,7 +51,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link;
@@ -907,7 +906,7 @@ public class UserManager
         if (userToAdjust.isActive() == active)
             return;
 
-        if (active && new LimitActiveUsersSettings().isUserLimitReached())
+        if (active && LimitActiveUserService.get().isUserLimitReached())
             throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment");
 
         Integer userId = userToAdjust.getUserId();

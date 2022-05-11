@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
-<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -39,6 +38,7 @@
 <%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.GroupExportAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.StandardDeleteGroupAction" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!

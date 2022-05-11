@@ -105,7 +105,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -3133,7 +3132,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) // TODO: What perms?? Admin??
+    @RequiresPermission(UserManagementPermission.class)
     public static class GetUserLimitSettingsAction extends ReadOnlyApiAction<Object>
     {
         @Override

@@ -1,4 +1,4 @@
-package org.labkey.api.settings;
+package org.labkey.core.user;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -7,8 +7,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AddUserPermission;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -123,7 +124,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
     }
 
     /** Active users - system users **/
-    public int getActiveUserCount()
+    public static int getActiveUserCount()
     {
         return UserManager.getActiveUserCount() - UserManager.getSystemUserCount();
     }
@@ -156,10 +157,10 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     public static @Nullable HtmlString getWarningMessage(Container c, User user, boolean showAllWarnings)
     {
-        if (c.hasPermission(user, AddUserPermission.class))
+        if (c.hasPermission(user, UserManagementPermission.class))
         {
             LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
-            int activeUsers = settings.getActiveUserCount();
+            int activeUsers = getActiveUserCount();
             int warningLevel = settings.getUserWarningLevel();
             int limitLevel = settings.getUserLimitLevel();
 
@@ -197,7 +198,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
     {
         LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 
-        return populatePropertyMap(new LinkedHashMap<>(), settings.getActiveUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
+        return populatePropertyMap(new LinkedHashMap<>(), getActiveUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
     }
 
     public static ApiSimpleResponse getApiResponse(Container c, User user)
@@ -205,9 +206,10 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 
         ApiSimpleResponse response = new ApiSimpleResponse();
-        response.put("messageHtml", LimitActiveUsersSettings.getWarningMessage(c, user, false));
-        response.put("activeUsers", settings.getActiveUserCount());
-        response.put("userLimit", settings.getUserLimitLevel());
+        response.put("messageHtml", getWarningMessage(c, user, false));
+        response.put("activeUsers", getActiveUserCount());
+        response.put("userLimit", settings.isUserLimit());
+        response.put("userLimitLevel", settings.getUserLimitLevel());
         response.put("remainingUsers", settings.getRemainingUserCount());
         response.put("success", true);
 

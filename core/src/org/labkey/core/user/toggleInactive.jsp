@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.settings.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

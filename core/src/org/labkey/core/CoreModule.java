@@ -85,6 +85,7 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LimitActiveUserService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -110,7 +111,6 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
-import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
@@ -228,6 +228,7 @@ import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
+import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
@@ -297,6 +298,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
         ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
+        LimitActiveUserService.setInstance(() -> new LimitActiveUsersSettings().isUserLimitReached());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();

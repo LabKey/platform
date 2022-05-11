@@ -79,7 +79,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
-import org.labkey.api.settings.LimitActiveUsersSettings;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -1004,7 +1003,7 @@ public class SecurityManager
      */
     public static @NotNull NewUserStatus addUser(ValidEmail email, @Nullable User currentUser, boolean createLogin) throws UserManagementException
     {
-        if (new LimitActiveUsersSettings().isUserLimitReached())
+        if (LimitActiveUserService.get().isUserLimitReached())
             throw new UserManagementException(email, "User limit has been reached so no more users can be added to this deployment");
 
         NewUserStatus status = new NewUserStatus(email);
