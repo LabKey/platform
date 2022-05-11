@@ -16,7 +16,7 @@ commons-validator-1.7.jar|Commons Validator|1.7|{link:Apache|http://jakarta.apac
 core-renderer-R8.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
 ehcache-core-2.6.8.jar|Ehcache|2.6.8|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
 fop-2.3.jar|Formatting Objects Processor (FOP)|2.3|{link:Apache|http://xmlgraphics.apache.org/fop/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Used to export SVG visualizations to image and PDF formats
-guava-31.0.1-jre.jar|Guava: Google Core Libraries for Java|31.0.1-jre|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
+guava-31.1-jre.jar|Guava: Google Core Libraries for Java|31.1-jre|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-servlet-2.8.2.jar|Server Support for Google Web Toolkit|2.8.2|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Support for rich web apps
 hamcrest-core-1.3.jar|Hamcrest|1.3|{link:Java Hamcrest|http://hamcrest.org/JavaHamcrest/}|{link:New BSD License|http://www.opensource.org/licenses/bsd-license.php}||Library for writing declartive matches for testing
 httpclient-4.5.13.jar|Apache HTTP Client|4.5.13|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
@@ -36,14 +36,14 @@ jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{
 junit-4.13.2.jar|JUnit|4.13.2|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl-2.6.3.jar|API|2.6.3|{link:jexcelapi|http://www.jexcelapi.org/}|{link:LGPL|http://www.opensource.org/licenses/lgpl-license.php}|jeckels|Java Excel library
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
-log4j-api-2.17.1.jar|Log4j|2.17.1|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
-log4j-core-2.17.1.jar|Log4j|2.17.1|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
+log4j-api-2.17.2.jar|Log4j|2.17.2|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
+log4j-core-2.17.2.jar|Log4j|2.17.2|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV files
 pdfbox-2.0.25.jar|Apache PDFBox®|2.0.25|{link:PDFBox|https://pdfbox.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extract text and produce thumbnails from PDFs
 poi-5.2.0.jar|Apache POI|5.2.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-5.2.0.jar|Apache POI OOXML|5.2.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|klum|Provide polling file watcher for cifs file systems
-postgresql-42.3.3.jar|PostgreSQL JDBC Driver|42.3.3|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
+postgresql-42.3.5.jar|PostgreSQL JDBC Driver|42.3.5|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
