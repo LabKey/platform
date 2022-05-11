@@ -1,12 +1,14 @@
 package org.labkey.api.settings;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -196,5 +198,19 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 
         return populatePropertyMap(new LinkedHashMap<>(), settings.getActiveUserCount(), settings.getUserWarningLevel(), settings.getUserLimitLevel());
+    }
+
+    public static ApiSimpleResponse getApiResponse(Container c, User user)
+    {
+        LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        response.put("messageHtml", LimitActiveUsersSettings.getWarningMessage(c, user, false));
+        response.put("activeUsers", settings.getActiveUserCount());
+        response.put("userLimit", settings.getUserLimitLevel());
+        response.put("remainingUsers", settings.getRemainingUserCount());
+        response.put("success", true);
+
+        return response;
     }
 }

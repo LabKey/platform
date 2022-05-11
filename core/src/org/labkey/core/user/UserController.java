@@ -3133,6 +3133,16 @@ public class UserController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class) // TODO: What perms?? Admin??
+    public static class GetUserLimitSettingsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            return LimitActiveUsersSettings.getApiResponse(getContainer(), getUser());
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
