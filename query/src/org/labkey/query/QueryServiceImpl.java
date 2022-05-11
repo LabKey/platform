@@ -1566,6 +1566,11 @@ public class QueryServiceImpl implements QueryService
         // When determining the alias, use the field key with the canonical casing for this column name, not the one
         // that was passed in. This makes sure that we generate the exact same JOIN SQL.
         AliasedColumn ret = new QAliasedColumn(key, manager.decideAlias(lookup.getFieldKey().toString()), lookup, true);
+
+        ColumnInfo columnInfo = table.getColumn(key.toString());
+        if (columnInfo != null && columnInfo.getDisplayColumnFactory() != null)
+            ret.setDisplayColumnFactory(columnInfo.getDisplayColumnFactory());
+
         columnMap.put(key, ret);
 
         return ret;
