@@ -37,7 +37,8 @@
     AbstractQueryImportAction.ImportViewBean bean = (AbstractQueryImportAction.ImportViewBean)HttpView.currentModel();
     final String copyPasteDivId = makeId("copyPasteDiv");
     final String uploadFileDivId = makeId("uploadFileDiv");
-    String tsvId = makeId("tsv");
+    // Issue: 45133 Many tests depend on the 'tsv3' ID
+    String tsvId = "tsv3"; //makeId("tsv");
     String errorDivId = makeId("errorDiv");
     String extraFormFields = "";
 
