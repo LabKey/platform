@@ -2102,7 +2102,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static class ContainerFieldComparatorSource extends FieldComparatorSource
     {
         @Override
-        public FieldComparator<?> newComparator(String fieldname, int numHits, int sortPos, boolean reversed)
+        public FieldComparator<?> newComparator(String fieldname, int numHits, boolean enabledSkipping, boolean reversed)
         {
             return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
                 @Override
@@ -2139,7 +2139,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             /* pass */
         }
     }
-
 
     // to avoid generating a lot of garbage, try to avoid excessive allocating and freeing a lot of ByteBuffers
     static final ThreadLocal<SoftReference<ByteBuffer>> bufferStash = ThreadLocal.withInitial(() -> new SoftReference<>(null));

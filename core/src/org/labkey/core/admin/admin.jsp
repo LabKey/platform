@@ -243,18 +243,23 @@
 </div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function($) {
-
-        var defaultRoute = "links";
-
         function loadRoute(hash) {
-            if (!hash || hash === '#') {
-                hash = '#' + defaultRoute;
+            var adminNav = $('#lk-admin-nav');
+            adminNav.find('a').removeClass('active');
+
+            var activeSection = adminNav.find('a[href=\'' + $.escapeSelector(hash) + '\']');
+
+            // Section does not exist -- default to default route
+            if (activeSection.length === 0) {
+                hash = '#links';
+                activeSection = adminNav.find('a[href=\'' + $.escapeSelector(hash) + '\']');
             }
 
-            $('#lk-admin-nav').find('a').removeClass('active');
-            $('#lk-admin-nav').find('a[href=\'' + hash + '\']').addClass('active');
-            $('.lk-admin-section').hide();
-            $('.lk-admin-section[id=\'' + hash.replace('#', '') + '\']').show();
+            if (activeSection.length) {
+                activeSection.addClass('active');
+                $('.lk-admin-section').hide();
+                $('.lk-admin-section[id=\'' + hash.replace('#', '') + '\']').show();
+            }
         }
 
         $(window).on('hashchange', function() {
