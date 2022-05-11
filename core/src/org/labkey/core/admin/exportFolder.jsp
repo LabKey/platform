@@ -219,6 +219,20 @@ Ext4.onReady(function(){
 
                     exportForm.getForm().submit();
                 }
+            }, {
+                text:'Clear All Objects',
+                handler: function(btn) {
+                    const leftColumnItems = exportForm.items.items[0].items.items;
+                    for (const item of leftColumnItems)
+                        if (item.xtype === 'checkbox')
+                            item.setValue(false);
+                }
+            }, {
+                text:'Reset',
+                handler: function(btn) {
+                    document.getElementById('exportForm').innerHTML = '';
+                    initializeForm(initExportForm, <%=q(form.getExportType().toString())%>)
+                }
             }],
             buttonAlign:'left',
             listeners : {
@@ -233,7 +247,6 @@ Ext4.onReady(function(){
                                     child.setDisabled(!checked);
                                 });
                             });
-
                         });
                     }
                 }
@@ -248,19 +261,24 @@ Ext4.onReady(function(){
                 'NotPHI';
     };
 
+    initializeForm(initExportForm, <%=q(form.getExportType().toString())%>);
+});
+
+function initializeForm(initExportForm, exportType)
+{
     LABKEY.Ajax.request({
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
         method: 'POST',
         jsonData: {
-            exportType: <%=q(form.getExportType().toString())%>
+            exportType: exportType
         },
         scope: this,
         success: function (response) {
-            var responseText = Ext4.decode(response.responseText);
+            const responseText = Ext4.decode(response.responseText);
             initExportForm(responseText['writers']);
         }
     });
-});
+}
 
 </script>
 
