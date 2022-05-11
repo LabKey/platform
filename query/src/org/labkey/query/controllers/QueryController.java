@@ -1699,20 +1699,33 @@ public class QueryController extends SpringActionController
         }
 
         /**
-         * Several json properties are coming in as Single valued arrays and aren't getting bound correctly
-         * Flattening them to single values (similar to how they are bound for ExportQueryForm) allows them to be properly bound.
+         * Map JSON to Spring PropertyValue objects.
          * @param props
          */
-        private void flattenProps(JSONObject props)
+        private MutablePropertyValues getPropertyValues(JSONObject props)
         {
+            // Collecting mapped properties as a list because adding them to an existing MutablePropertyValues object replaces existing values
+            List<PropertyValue> properties = new ArrayList<>();
+
             for(Map.Entry<String, Object> entry : props.entrySet())
             {
-                if (entry.getValue() instanceof JSONArray && ((JSONArray)entry.getValue()).length() == 1)
+                String key = entry.getKey();
+                if (entry.getValue() instanceof JSONArray)
                 {
-                    String key = entry.getKey();
-                    props.put(key, ((JSONArray) entry.getValue()).getString(0));
+                    // Split arrays into individual pairs to be bound (Issue #45452)
+                    JSONArray val = (JSONArray) entry.getValue();
+                    for(int i=0; i < val.length();i++)
+                    {
+                        properties.add(new PropertyValue(key, val.getString(i)));
+                    }
+                }
+                else
+                {
+                    properties.add(new PropertyValue(key, entry.getValue()));
                 }
             }
+
+            return new MutablePropertyValues(properties);
         }
 
         @Override
@@ -1730,11 +1743,10 @@ public class QueryController extends SpringActionController
 
             for (JSONObject queryModel : models.toJSONObjectArray())
             {
-                flattenProps(queryModel);
                 ExportQueryForm qf = new ExportQueryForm();
                 qf.setViewContext(this.getViewContext());
 
-                qf.bindParameters(new MutablePropertyValues(queryModel));
+                qf.bindParameters(getPropertyValues(queryModel));
                 forms.add(qf);
             }
 

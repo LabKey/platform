@@ -25,8 +25,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.FolderType;
@@ -70,6 +73,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 
+import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -126,6 +130,68 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private LockState _lockState = null;
     private LocalDate _expirationDate = null;
+
+    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
+            CacheManager.getCache(
+                    Constants.getMaxContainers(),
+                    CacheManager.DAY,
+                    "Required modules per containers"),
+            (key, argument) -> {
+                if (!(argument instanceof Container c))
+                {
+                    throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
+                }
+                Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
+                requiredModules.add(ModuleLoader.getInstance().getModule("API"));
+                requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
+
+                for (Container child: c.getChildren())
+                {
+                    if (child.isWorkbook())
+                    {
+                        requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
+                    }
+                }
+
+                return Collections.unmodifiableSet(requiredModules);
+            });
+
+    static
+    {
+        // Clear the required modules cache on any change to the container tree or container properties
+        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        {
+            @Override
+            public void containerCreated(Container c, User user)
+            {
+                REQUIRED_MODULES_CACHE.clear();
+            }
+
+            @Override
+            public void containerDeleted(Container c, User user)
+            {
+                REQUIRED_MODULES_CACHE.clear();
+            }
+
+            @Override
+            public void containerMoved(Container c, Container oldParent, User user)
+            {
+                REQUIRED_MODULES_CACHE.clear();
+            }
+
+            @Override
+            public @NotNull Collection<String> canMove(Container c, Container newParent, User user)
+            {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt)
+            {
+                REQUIRED_MODULES_CACHE.clear();
+            }
+        });
+    }
 
     // Might add others in the future (e.g., ReadOnly)
     public enum LockState
@@ -465,7 +531,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @SafeVarargs
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet(Arrays.asList(perms)), Set.of());
+        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
     public boolean isForbiddenProject(User user)
@@ -899,24 +965,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _defaultModule;
     }
 
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules)
-    {
-        BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user)
-    {
-        BindException errors = new BindException(new Object(), "dummy");
-        setFolderType(folderType, ensureModules, user, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, BindException errors)
-    {
-        setFolderType(folderType, ensureModules, null, errors);
-    }
-
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules, User user, BindException errors)
+    public void setFolderType(FolderType folderType, User user, BindException errors, Set<Module> ensureModules)
     {
         setFolderType(folderType, user, errors);
         if (!errors.hasErrors())
@@ -968,19 +1017,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        Set<Module> requiredModules = new HashSet<>(getRequiredModulesForFolderType(getFolderType()));
-        requiredModules.add(ModuleLoader.getInstance().getModule("API"));
-        requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
-
-        for (Container child: getChildren())
-        {
-            if (child.isWorkbook())
-            {
-                requiredModules.addAll(getRequiredModulesForFolderType(child.getFolderType()));
-            }
-        }
-
-        return requiredModules;
+        return REQUIRED_MODULES_CACHE.get(getEntityId(), this);
     }
 
     public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
@@ -1217,11 +1254,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
             propsWritable.save();
         }
 
-        Set<Module> modules = new HashSet<>();
-
         // always put the required modules in the set
         // note that this will pickup the modules from the folder type's getActiveModules()
-        modules.addAll(getRequiredModules());
+        Set<Module> modules = new HashSet<>(getRequiredModules());
 
         // add all modules found in user preferences:
         for (String moduleName : props.keySet())
@@ -1591,10 +1626,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasEnableRestrictedModules(@Nullable User user)
     {
-        boolean userHasEnableRestrictedModules = false;
-        if (null != user && hasPermission(user, EnableRestrictedModules.class))
-            userHasEnableRestrictedModules = true;
-        return userHasEnableRestrictedModules;
+        return null != user && hasPermission(user, EnableRestrictedModules.class);
     }
 
     public boolean hasRestrictedActiveModule(Set<Module> activeModules)

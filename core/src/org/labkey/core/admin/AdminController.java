@@ -5137,7 +5137,7 @@ public class AdminController extends SpringActionController
 
             if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
             {
-                container.setFolderType(FolderType.NONE, activeModules, getUser(), errors);
+                container.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                 Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                 container.setDefaultModule(defaultModule);
             }
@@ -5147,7 +5147,7 @@ public class AdminController extends SpringActionController
                 if (container.isContainerTab() && folderType.hasContainerTabs())
                     errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
                 else
-                    container.setFolderType(folderType, activeModules, getUser(), errors);
+                    container.setFolderType(folderType, getUser(), errors, activeModules);
             }
             if (errors.hasErrors())
                 return false;
@@ -7024,7 +7024,7 @@ public class AdminController extends SpringActionController
 
                         newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
                         afterCreateHandler.accept(newContainer);
-                        newContainer.setFolderType(type, getUser());
+                        newContainer.setFolderType(type, getUser(), errors);
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7036,7 +7036,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
+                            newContainer.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             newContainer.setDefaultModule(defaultModule);
                         }

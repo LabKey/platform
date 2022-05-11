@@ -758,7 +758,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
-                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
+                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"), getContainerFilter());
 
                 if (idCols.contains(dp))
                 {
@@ -789,10 +789,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     addColumn(mvColumn);
                     propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                 }
-
-                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
-                if (!isTargetLookup && propColumn.getFk() instanceof PdLookupForeignKey)
-                    ((PdLookupForeignKey) propColumn.getFk()).setContainerFilter(getContainerFilter());
             }
 
             if (!mvColumns.contains(propColumn.getFieldKey()))
