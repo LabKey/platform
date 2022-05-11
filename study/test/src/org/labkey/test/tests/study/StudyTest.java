@@ -38,6 +38,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
@@ -761,12 +762,12 @@ public class StudyTest extends StudyBaseTest
             assertTextPresent("unknown QC", "1234_B");
 
             // Issue 21234: Dataset import no longer merges rows during import
-            DataRegionTable.findDataRegion(this).clickImportBulkData();
+            ImportDataPage importDataPage = DataRegion(getDriver()).find().clickImportBulkData();
             _tsv = "mouseid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\n" +
                     "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
                     "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
-            setFormElement(Locator.id("tsv3"), _tsv);
-            _listHelper.submitImportTsv_error("Duplicate dataset row");
+            importDataPage.setText(_tsv);
+            importDataPage.submitExpectingError("Duplicate dataset row");
 
             // Update a row and check the QC flag is defaulted to the study default 'unknown QC'
             {
