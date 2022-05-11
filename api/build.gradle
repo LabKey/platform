@@ -150,7 +150,7 @@ dependencies {
     api "org.apache.tomcat:tomcat-websocket-api:${apacheTomcatVersion}"
     api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
     // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
-    creditable "org.labkey.api:labkey-client-api:${project.labkeyClientApiVersion}"
+//    creditable "org.labkey.api:labkey-client-api:${project.labkeyClientApiVersion}"
     creditable runtime
     runtimeOnly runtime
 
