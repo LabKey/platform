@@ -164,6 +164,7 @@ public class ContainerManager
         Policy,
         /** The default or active set of modules in the container has changed */
         Modules,
+        FolderType,
         WebRoot,
         AttachmentDirectory,
         PipelineRoot,
@@ -435,6 +436,7 @@ public class ContainerManager
             }
             props.save();
 
+            ContainerManager.notifyContainerChange(c.getId(), Property.FolderType, user);
             folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
             // TODO: Not needed? I don't think we've changed the container's state.
