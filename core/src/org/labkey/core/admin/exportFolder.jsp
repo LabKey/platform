@@ -92,7 +92,7 @@ Ext4.onReady(function(){
                 hideLabel: true,
                 boxLabel: parentName,
                 name: "types",
-                itemId: parentName,
+                itemId: parentName.replaceAll(',', ''),
                 inputValue: parentName,
                 checked: checked,
                 objectType: "parent"
@@ -108,7 +108,7 @@ Ext4.onReady(function(){
                         hideLabel: true,
                         boxLabel: childName,
                         name: "types",
-                        itemId: childName,
+                        itemId: childName.replaceAll(',', ''),
                         inputValue: childName,
                         checked: checked,
                         objectType: "child",
@@ -231,7 +231,7 @@ Ext4.onReady(function(){
                 text:'Reset',
                 handler: function(btn) {
                     document.getElementById('exportForm').innerHTML = '';
-                    initializeForm(initExportForm, <%=q(form.getExportType().toString())%>)
+                    initializeForm(initExportForm);
                 }
             }],
             buttonAlign:'left',
@@ -261,16 +261,16 @@ Ext4.onReady(function(){
                 'NotPHI';
     };
 
-    initializeForm(initExportForm, <%=q(form.getExportType().toString())%>);
+    initializeForm(initExportForm);
 });
 
-function initializeForm(initExportForm, exportType)
+function initializeForm(initExportForm)
 {
     LABKEY.Ajax.request({
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
         method: 'POST',
         jsonData: {
-            exportType: exportType
+            exportType: <%=q(form.getExportType().toString())%>
         },
         scope: this,
         success: function (response) {
