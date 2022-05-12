@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Aggregate.Result;
@@ -402,8 +404,21 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         // TODO: Shouldn't actually need the sub-query in the TableSelector case... just use a "COUNT(*)" ExprColumn directly with the filter + table
         // For now, produce "SELECT 1 FROM ..." in the sub-select and ignore the sort
-        TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
-        return super.getRowCount(sqlFactory) - sqlFactory._scrollOffset;      // Corner case -- asking for rowCount with offset on a dialect that doesn't support offset
+
+        var offset = this._offset;
+        var maxRows = this._maxRows;
+        try
+        {
+            _offset = Table.NO_OFFSET;
+            _maxRows = Table.ALL_ROWS;
+            TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
+            return super.getRowCount(sqlFactory);
+        }
+        finally
+        {
+            this._offset = offset;
+            this._maxRows = maxRows;
+        }
     }
 
     @Override
@@ -669,6 +684,29 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 return null;
 
             return aggregateSql.append(" FROM (").append(innerSql).append(") S");
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void count45482()
+        {
+            TableInfo table = CoreSchema.getInstance().getTableInfoContainers();
+
+            long countOrig = new TableSelector(table).getRowCount();
+            assertTrue(countOrig >= 2);
+
+            TableSelector selectorOffset = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), null, null);
+            selectorOffset.setOffset(2);
+            long countOffset = selectorOffset.getRowCount();
+            assertEquals(countOrig, countOffset);
+
+            TableSelector selectorMaxRows = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), null, null);
+            selectorMaxRows.setMaxRows((int)countOrig-2);
+            long countMaxRows = selectorMaxRows.getRowCount();
+            assertEquals(countOrig, countMaxRows);
         }
     }
 }
