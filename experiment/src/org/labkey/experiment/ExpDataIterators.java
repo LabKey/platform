@@ -721,6 +721,8 @@ public class ExpDataIterators
                         Collection<String> parentNames;
                         if (o instanceof String)
                         {
+                            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+                            // using TabLoader instead of just splitting on the comma.
                             try (TabLoader tabLoader = new TabLoader((String) o))
                             {
                                 tabLoader.setDelimiterCharacter(',');
