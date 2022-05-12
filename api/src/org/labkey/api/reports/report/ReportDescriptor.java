@@ -119,7 +119,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         json,
         serializedReportName,
         moduleReportCreatedDate, // creation date of module report, used by cds
-        showInDashboard, // used in Argos (show visible reports in the grid, show in my links if this is true)
+        showInDashboard, // show visible reports in the grid, show in my links if this is true or null
         showInParticipantView // boolean used in participant view for showing the saved charts for a dataset
     }
 
