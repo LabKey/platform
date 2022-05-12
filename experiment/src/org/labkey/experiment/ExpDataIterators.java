@@ -79,10 +79,12 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
@@ -94,6 +96,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -686,7 +689,7 @@ public class ExpDataIterators
                     {
                         if (o instanceof String)
                         {
-                            aliquotParentName = (String) o;
+                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
                         }
                         else if (o instanceof Number)
                         {
@@ -718,7 +721,33 @@ public class ExpDataIterators
                         Collection<String> parentNames;
                         if (o instanceof String)
                         {
-                            parentNames = Arrays.asList(((String) o).split(","));
+                            if (((String) o).trim().isEmpty())
+                            {
+                                parentNames = Arrays.asList(((String) o).trim());
+                            }
+                            else
+                            {
+                                // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+                                // using TabLoader instead of just splitting on the comma.
+                                try (TabLoader tabLoader = new TabLoader((String) o))
+                                {
+                                    tabLoader.setDelimiterCharacter(',');
+                                    tabLoader.setUnescapeBackslashes(false);
+                                    try
+                                    {
+                                        String[][] values = tabLoader.getFirstNLines(1);
+                                        if (values.length > 0)
+                                            parentNames = Arrays.asList(values[0]);
+                                        else
+                                            parentNames = Collections.emptyList();
+                                    }
+                                    catch (IOException e)
+                                    {
+                                        parentNames = Collections.emptyList();
+                                        getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
+                                    }
+                                }
+                            }
                         }
                         else if (o instanceof JSONArray)
                         {
