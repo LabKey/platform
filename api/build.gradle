@@ -149,8 +149,7 @@ dependencies {
     api "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
     api "org.apache.tomcat:tomcat-websocket-api:${apacheTomcatVersion}"
     api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
-    // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
-//    creditable "org.labkey.api:labkey-client-api:${project.labkeyClientApiVersion}"
+
     creditable runtime
     runtimeOnly runtime
 
@@ -163,7 +162,594 @@ dependencies {
     // These are required for running unit tests through the server junit controller
 //    external test
 
-//// SPRING
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.jetbrains:annotations:${annotationsVersion}",
+            "Compiler annotations",
+            "JetBrains",
+            "http://www.jetbrains.com/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Annotations to enable compile-time checking for null",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.xmlgraphics:batik-codec:${batikVersion}",
+            "Apache Batik Codec",
+            "Apache",
+            "http://xmlgraphics.apache.org/batik/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "FOP dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.xmlgraphics:batik-transcoder:${batikVersion}",
+            "Apache Batik Transcoder",
+            "Apache",
+            "http://xmlgraphics.apache.org/batik/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "FOP dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "cglib:cglib-nodep:${cglibNodepVersion}",
+            "Code Generation Library",
+            "SourceForge",
+            "http://sourceforge.net/projects/cglib/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Used by Spring Framework and jMock",
+        )
+    )
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}",
+            "Commons Beanutils",
+            "Apache",
+            "http://jakarta.apache.org/commons/beanutils/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Reading/writing beans",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-codec:commons-codec:${commonsCodecVersion}",
+            "Commons Codec",
+            "Apache",
+            "http://jakarta.apache.org/commons/codec/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-collections4:${commonsCollections4Version}",
+            "Commons Collections",
+            "Apache",
+            "https://commons.apache.org/proper/commons-collections/index.html",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Helpful collections",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
+            "Commons Database Connection Pool",
+            "Apache",
+            "http://commons.apache.org/proper/commons-dbcp/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Database connection pooling - Mondrian and TargetedMS dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-io:commons-io:${commonsIoVersion}",
+            "Commons I/O",
+            "Apache",
+            "http://jakarta.apache.org/commons/io/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "I/O utility classes",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-lang3:${commonsLang3Version}",
+            "Commons Lang",
+            "Apache",
+            "http://jakarta.apache.org/commons/lang/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Language helpers",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-logging:commons-logging:${commonsLoggingVersion}",
+            "Commons Logging",
+            "Apache",
+            "http://jakarta.apache.org/commons/logging/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Bridge API to different logging implementations",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-pool:commons-pool:${commonsPoolVersion}",
+            "Commons Pool",
+            "Apache",
+            "http://commons.apache.org/pool/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Object pooling - Pipeline & TargetedMS dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-validator:commons-validator:${commonsValidatorVersion}",
+            "Commons Validator",
+            "Apache",
+            "http://jakarta.apache.org/commons/validator/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Data validation and error messages",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "flyingsaucer:core-renderer:${flyingsaucerVersion}",
+            "FlyingSaucer",
+            "FlyingSaucer",
+            "http://code.google.com/p/flying-saucer/",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            ExternalDependency.LGPL_LICENSE_URL,
+            "XHTML/CSS rendering library",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}",
+            "Ehcache",
+            "Terracotta",
+            "http://ehcache.org/documentation/overview.html",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Caching library",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.xmlgraphics:fop:${fopVersion}",
+            "Formatting Objects Processor (FOP)",
+            "Apache",
+            "http://xmlgraphics.apache.org/fop/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Used to export SVG visualizations to image and PDF formats",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.google.guava:guava:${guavaVersion}",
+            "Guava: Google Core Libraries for Java",
+            "guava-libraries",
+            "http://code.google.com/p/guava-libraries/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Collections Library",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.google.gwt:gwt-servlet:${gwtServletVersion}",
+            "Server Support for Google Web Toolkit",
+            "Google",
+            "http://code.google.com/webtoolkit/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Support for rich web apps",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.hamcrest:hamcrest-core:${hamcrestVersion}",
+            "Hamcrest",
+            "Java Hamcrest",
+            "http://hamcrest.org/JavaHamcrest/",
+            "New BSD License",
+            ExternalDependency.BSD_LICENSE_URL,
+            "Library for writing declartive matches for testing",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.httpcomponents:httpclient:${httpclientVersion}",
+            "Apache HTTP Client",
+            "Apache",
+            "http://hc.apache.org/httpcomponents-client-ga",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "HTTP client for requests of remote servers",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
+            "Apache HTTP Core",
+            "Apache",
+            "http://hc.apache.org/httpcomponents-core-ga/index.html",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "HTTP core library, HttpClient dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
+            "Jackson Annotations Library",
+            "Jackson",
+            "https://github.com/FasterXML/jackson",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "JSON de/serialization, reporting API dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
+            "Jackson Core Library",
+            "Jackson",
+            "https://github.com/FasterXML/jackson",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "JSON de/serialization, reporting API dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+            "Jackson Databind Library",
+            "Jackson",
+            "https://github.com/FasterXML/jackson",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "JSON de/serialization, reporting API dependency",
+        )
+    )
+
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}",
+            "Jackson support for org.json",
+            "Jackson",
+            "https://github.com/FasterXML/jackson-datatype-json-org",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Jackson support for org.json data types, to ease migration out of code that uses them",
+        ),
+        {
+            // exclude this because it gets in the way of our own JSON object implementations from server/api
+            exclude group: "org.json", module:"json"
+        }
+    )
+
+// added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
+            "Jackson support for org.json",
+            "Jackson",
+            "https://github.com/FasterXML/jackson-datatype-json-org",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Add-on module to support JSR-310 (Java 8 Date & Time API) data types",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "gov.nist.math:jama:${jamaVersion}",
+            "Java Matrix Package",
+            "MathWorks & NIST",
+            "http://math.nist.gov/javanumerics/jama/",
+            "Public Domain",
+            "https://math.nist.gov/javanumerics/jama/#license",
+            "Linear regressions for hydrophobicity",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.jfree:jfreechart:${jfreechartVersion}",
+            "JFreeChart",
+            "JFreeChart",
+            "http://www.jfree.org/jfreechart/",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            ExternalDependency.LGPL_LICENSE_URL,
+            "Charting",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.jmock:jmock:${jmockVersion}",
+            "jMock",
+            "jMock",
+            "http://www.jmock.org/",
+            "jMock Project License",
+            "http://www.jmock.org/license.html",
+            "jMock mock object testing framework",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.jmock:jmock-legacy:${jmockVersion}",
+            "jMock",
+            "jMock",
+            "http://www.jmock.org/",
+            "jMock Project License",
+            "http://www.jmock.org/license.html",
+            "jMock mock object testing framework",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.sf.jtidy:jtidy:${jtidyVersion}",
+            "Java Tidy",
+            "SourceForge",
+            "http://jtidy.sourceforge.net/",
+            "Custom",
+            "http://www.labkey.org/download/jtidy-LICENSE.txt",
+            "Validating HTML content",
+        )
+    )
+
+// These are required for running unit tests through the server junit controller
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "junit:junit:${junitVersion}",
+            "JUnit",
+            "Junit",
+            "http://www.junit.org",
+            "CPL 1.0",
+            "http://www.opensource.org/licenses/cpl1.0.php",
+            "Unit testing",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.sourceforge.jexcelapi:jxl:${jxlVersion}",
+            "API",
+            "jexcelapi",
+            "http://www.jexcelapi.org/",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            "http://www.opensource.org/licenses/lgpl-license.php",
+            "Java Excel library",
+        ),
+        {
+            // exclude this because it brings older version of log4j
+            exclude group: "log4j", module:"log4j"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
+            "Captcha generator",
+            "kaptcha",
+            "http://code.google.com/p/kaptcha/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "User signup forms",
+        )
+    )
+
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.logging.log4j:log4j-api:${log4j2Version}",
+            "Log4j",
+            "Apache",
+            "https://logging.apache.org/log4j/2.x/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Logging",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.logging.log4j:log4j-core:${log4j2Version}",
+            "Log4j",
+            "Apache",
+            "https://logging.apache.org/log4j/2.x/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Logging",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.pdfbox:pdfbox:${pdfboxVersion}",
+            "Apache PDFBox®",
+            "PDFBox",
+            "https://pdfbox.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Extract text and produce thumbnails from PDFs",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.poi:poi:${poiVersion}",
+            "Apache POI",
+            "Apache",
+            "https://poi.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.poi:poi-ooxml:${poiVersion}",
+            "Apache POI OOXML",
+            "Apache",
+            "https://poi.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "POI support for OOXML formats",
+        ),
+        {
+            // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
+            // dependency here in favor of the explicit dependency with a different version.
+            exclude group: "org.apache.xmlbeans", module: "xmlbeans"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
+            "Polling Watch Service",
+            "imca",
+            "https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html",
+            "BSD 2-Clause license",
+            "https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt",
+            "Provide polling file watcher for cifs file systems",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.postgresql:postgresql:${postgresqlDriverVersion}",
+            "PostgreSQL JDBC Driver",
+            "jdbc.postgresql.org",
+            "http://jdbc.postgresql.org/index.html",
+            ExternalDependency.BSD_LICENSE_NAME,
+            "https://jdbc.postgresql.org/about/license.html",
+            "Connect with PostgreSQL database servers",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.quartz-scheduler:quartz:${quartzVersion}",
+            "quartz",
+            "quartz",
+            "http://quartz-scheduler.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Scheduling",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.rforge:rengine:${rforgeVersion}",
+            "Rengine",
+            "Rserve",
+            "http://www.rforge.net/Rserve",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            "http://www.gnu.org/licenses/lgpl.html",
+            "R client classes",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "net.rforge:rserve:${rforgeVersion}",
+            "Rserve",
+            "Rserve",
+            "http://www.rforge.net/Rserve",
+            ExternalDependency.LGPL_LICENSE_NAME,
+            "http://www.gnu.org/licenses/lgpl.html",
+            "Library to connect to an R Server",
+        )
+    )
+
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -268,540 +854,6 @@ dependencies {
         )
     )
 
-//// APACHE
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}",
-            "Commons Beanutils",
-            "Apache",
-            "http://jakarta.apache.org/commons/beanutils/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Reading/writing beans",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-codec:commons-codec:${commonsCodecVersion}",
-            "Commons Codec",
-            "Apache",
-            "http://jakarta.apache.org/commons/codec/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.commons:commons-collections4:${commonsCollections4Version}",
-            "Commons Collections",
-            "Apache",
-            "https://commons.apache.org/proper/commons-collections/index.html",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Helpful collections",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
-            "Commons Database Connection Pool",
-            "Apache",
-            "http://commons.apache.org/proper/commons-dbcp/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Database connection pooling - Mondrian and TargetedMS dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-io:commons-io:${commonsIoVersion}",
-            "Commons I/O",
-            "Apache",
-            "http://jakarta.apache.org/commons/io/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "I/O utility classes",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.commons:commons-lang3:${commonsLang3Version}",
-            "Commons Lang",
-            "Apache",
-            "http://jakarta.apache.org/commons/lang/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Language helpers",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-pool:commons-pool:${commonsPoolVersion}",
-            "Commons Pool",
-            "Apache",
-            "http://commons.apache.org/pool/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Object pooling - Pipeline & TargetedMS dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-validator:commons-validator:${commonsValidatorVersion}",
-            "Commons Validator",
-            "Apache",
-            "http://jakarta.apache.org/commons/validator/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Data validation and error messages",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.httpcomponents:httpclient:${httpclientVersion}",
-            "Apache HTTP Client",
-            "Apache",
-            "http://hc.apache.org/httpcomponents-client-ga",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "HTTP client for requests of remote servers",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
-            "Apache HTTP Core",
-            "Apache",
-            "http://hc.apache.org/httpcomponents-core-ga/index.html",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "HTTP core library, HttpClient dependency",
-        )
-    )
-
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.poi:poi:${poiVersion}",
-            "Apache POI",
-            "Apache",
-            "https://poi.apache.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)",
-        )
-    )
-
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.pdfbox:pdfbox:${pdfboxVersion}",
-            "Apache PDFBox®",
-            "PDFBox",
-            "https://pdfbox.apache.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Extract text and produce thumbnails from PDFs",
-        )
-    )
-
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}",
-            "Jackson support for org.json",
-            "Jackson",
-            "https://github.com/FasterXML/jackson-datatype-json-org",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Jackson support for org.json data types, to ease migration out of code that uses them",
-        ),
-        {
-            // exclude this because it gets in the way of our own JSON object implementations from server/api
-            exclude group: "org.json", module:"json"
-        }
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.poi:poi-ooxml:${poiVersion}",
-            "Apache POI OOXML",
-            "Apache",
-            "https://poi.apache.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "POI support for OOXML formats",
-        ),
-        {
-            // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
-            // dependency here in favor of the explicit dependency with a different version.
-            exclude group: "org.apache.xmlbeans", module: "xmlbeans"
-        }
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.sourceforge.jexcelapi:jxl:${jxlVersion}",
-            "API",
-            "jexcelapi",
-            "http://www.jexcelapi.org/",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            "http://www.opensource.org/licenses/lgpl-license.php",
-            "Java Excel library",
-        ),
-        {
-            // exclude this because it brings older version of log4j
-            exclude group: "log4j", module:"log4j"
-        }
-    )
-
-//gwt
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.google.gwt:gwt-servlet:${gwtServletVersion}",
-            "Server Support for Google Web Toolkit",
-            "Google",
-            "http://code.google.com/webtoolkit/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Support for rich web apps",
-        )
-    )
-
-//jackson
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
-            "Jackson Annotations Library",
-            "Jackson",
-            "https://github.com/FasterXML/jackson",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON de/serialization, reporting API dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
-            "Jackson Core Library",
-            "Jackson",
-            "https://github.com/FasterXML/jackson",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON de/serialization, reporting API dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
-            "Jackson Databind Library",
-            "Jackson",
-            "https://github.com/FasterXML/jackson",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON de/serialization, reporting API dependency",
-        )
-    )
-
-// added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
-            "Jackson support for org.json",
-            "Jackson",
-            "https://github.com/FasterXML/jackson-datatype-json-org",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Add-on module to support JSR-310 (Java 8 Date & Time API) data types",
-        )
-    )
-
-//charting
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.jfree:jfreechart:${jfreechartVersion}",
-            "JFreeChart",
-            "JFreeChart",
-            "http://www.jfree.org/jfreechart/",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            ExternalDependency.LGPL_LICENSE_URL,
-            "Charting",
-        )
-    )
-
-//caching
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}",
-            "Ehcache",
-            "Terracotta",
-            "http://ehcache.org/documentation/overview.html",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Caching library",
-        )
-    )
-
-//logging
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.logging.log4j:log4j-core:${log4j2Version}",
-            "Log4j",
-            "Apache",
-            "https://logging.apache.org/log4j/2.x/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Logging",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.logging.log4j:log4j-api:${log4j2Version}",
-            "Log4j",
-            "Apache",
-            "https://logging.apache.org/log4j/2.x/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Logging",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "commons-logging:commons-logging:${commonsLoggingVersion}",
-            "Commons Logging",
-            "Apache",
-            "http://jakarta.apache.org/commons/logging/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Bridge API to different logging implementations",
-        )
-    )
-
-//r
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.rforge:rengine:${rforgeVersion}",
-            "Rengine",
-            "Rserve",
-            "http://www.rforge.net/Rserve",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            "http://www.gnu.org/licenses/lgpl.html",
-            "R client classes",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.rforge:rserve:${rforgeVersion}",
-            "Rserve",
-            "Rserve",
-            "http://www.rforge.net/Rserve",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            "http://www.gnu.org/licenses/lgpl.html",
-            "Library to connect to an R Server",
-        )
-    )
-
-//test
-// These are required for running unit tests through the server junit controller
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.jmock:jmock:${jmockVersion}",
-            "jMock",
-            "jMock",
-            "http://www.jmock.org/",
-            "jMock Project License",
-            "http://www.jmock.org/license.html",
-            "jMock mock object testing framework",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.jmock:jmock-legacy:${jmockVersion}",
-            "jMock",
-            "jMock",
-            "http://www.jmock.org/",
-            "jMock Project License",
-            "http://www.jmock.org/license.html",
-            "jMock mock object testing framework",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "junit:junit:${junitVersion}",
-            "JUnit",
-            "Junit",
-            "http://www.junit.org",
-            "CPL 1.0",
-            "http://www.opensource.org/licenses/cpl1.0.php",
-            "Unit testing",
-        )
-    )
-
-//others
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "gov.nist.math:jama:${jamaVersion}",
-            "Java Matrix Package",
-            "MathWorks & NIST",
-            "http://math.nist.gov/javanumerics/jama/",
-            "Public Domain",
-            "https://math.nist.gov/javanumerics/jama/#license",
-            "Linear regressions for hydrophobicity",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.jetbrains:annotations:${annotationsVersion}",
-            "Compiler annotations",
-            "JetBrains",
-            "http://www.jetbrains.com/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Annotations to enable compile-time checking for null",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.xmlgraphics:batik-codec:${batikVersion}",
-            "Apache Batik Codec",
-            "Apache",
-            "http://xmlgraphics.apache.org/batik/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "FOP dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.xmlgraphics:batik-transcoder:${batikVersion}",
-            "Apache Batik Transcoder",
-            "Apache",
-            "http://xmlgraphics.apache.org/batik/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "FOP dependency",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.xmlgraphics:fop:${fopVersion}",
-            "Formatting Objects Processor (FOP)",
-            "Apache",
-            "http://xmlgraphics.apache.org/fop/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Used to export SVG visualizations to image and PDF formats",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "flyingsaucer:core-renderer:${flyingsaucerVersion}",
-            "FlyingSaucer",
-            "FlyingSaucer",
-            "http://code.google.com/p/flying-saucer/",
-            ExternalDependency.LGPL_LICENSE_NAME,
-            ExternalDependency.LGPL_LICENSE_URL,
-            "XHTML/CSS rendering library",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.google.guava:guava:${guavaVersion}",
-            "Guava: Google Core Libraries for Java",
-            "guava-libraries",
-            "http://code.google.com/p/guava-libraries/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Collections Library",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.sf.jtidy:jtidy:${jtidyVersion}",
-            "Java Tidy",
-            "SourceForge",
-            "http://jtidy.sourceforge.net/",
-            "Custom",
-            "http://www.labkey.org/download/jtidy-LICENSE.txt",
-            "Validating HTML content",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.quartz-scheduler:quartz:${quartzVersion}",
-            "quartz",
-            "quartz",
-            "http://quartz-scheduler.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Scheduling",
-        )
-    )
-
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -812,19 +864,6 @@ dependencies {
             ExternalDependency.MIT_LICENSE_NAME,
             "http://www.opensource.org/licenses/mit-license.html",
             "Thumbnail generator",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
-            "XMLBeans",
-            "Apache",
-            "http://xmlbeans.apache.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Reading/writing XML",
         )
     )
 
@@ -844,13 +883,13 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "cglib:cglib-nodep:${cglibNodepVersion}",
-            "Code Generation Library",
-            "SourceForge",
-            "http://sourceforge.net/projects/cglib/",
+            "javax.validation:validation-api:${validationApiVersion}",
+            "Bean Validation API (JSR 303)",
+            "JCP",
+            "http://jcp.org/en/jsr/detail?id=303",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Used by Spring Framework and jMock",
+            "Validation of objects, requirement of GWT",
         )
     )
 
@@ -870,106 +909,13 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
-            "Polling Watch Service",
-            "imca",
-            "https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html",
-            "BSD 2-Clause license",
-            "https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt",
-            "Provide polling file watcher for cifs file systems",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.postgresql:postgresql:${postgresqlDriverVersion}",
-            "PostgreSQL JDBC Driver",
-            "jdbc.postgresql.org",
-            "http://jdbc.postgresql.org/index.html",
-            ExternalDependency.BSD_LICENSE_NAME,
-            "https://jdbc.postgresql.org/about/license.html",
-            "Connect with PostgreSQL database servers",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.hamcrest:hamcrest-core:${hamcrestVersion}",
-            "Hamcrest",
-            "Java Hamcrest",
-            "http://hamcrest.org/JavaHamcrest/",
-            "New BSD License",
-            ExternalDependency.BSD_LICENSE_URL,
-            "Library for writing declartive matches for testing",
-        )
-    )
-
-//javax
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "javax.validation:validation-api:${validationApiVersion}",
-            "Bean Validation API (JSR 303)",
-            "JCP",
-            "http://jcp.org/en/jsr/detail?id=303",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Validation of objects, requirement of GWT",
-        )
-    )
-
-//runtime
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.google.code.kaptcha:kaptcha:${kaptchaVersion}",
-            "Captcha generator",
-            "kaptcha",
-            "http://code.google.com/p/kaptcha/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "User signup forms",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.httpcomponents:httpmime:${httpmimeVersion}",
-            "Apache HTTP Mime",
+            "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
+            "XMLBeans",
             "Apache",
-            "http://hc.apache.org/httpcomponents-client-ga",
+            "http://xmlbeans.apache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "HTTP client for requests of remote servers",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.googlecode.json-simple:json-simple:${jsonSimpleVersion}",
-            "JSON.simple - A Simple Java toolkit for JSON",
-            "JSON.simple",
-            "https://code.google.com/p/json-simple/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "JSON parser for remoteapi",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "net.sf.opencsv:opencsv:${opencsvVersion}",
-            "OpenCSV",
-            "OpenCSV",
-            "http://opencsv.sourceforge.net/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Parsing CSV files",
+            "Reading/writing XML",
         )
     )
 
