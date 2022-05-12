@@ -726,6 +726,7 @@ public class ExpDataIterators
                             try (TabLoader tabLoader = new TabLoader((String) o))
                             {
                                 tabLoader.setDelimiterCharacter(',');
+                                tabLoader.setUnescapeBackslashes(false);
                                 try
                                 {
                                     String[][] values = tabLoader.getFirstNLines(1);
