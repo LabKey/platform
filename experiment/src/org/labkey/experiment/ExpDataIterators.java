@@ -721,24 +721,31 @@ public class ExpDataIterators
                         Collection<String> parentNames;
                         if (o instanceof String)
                         {
-                            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
-                            // using TabLoader instead of just splitting on the comma.
-                            try (TabLoader tabLoader = new TabLoader((String) o))
+                            if (((String) o).trim().isEmpty())
                             {
-                                tabLoader.setDelimiterCharacter(',');
-                                tabLoader.setUnescapeBackslashes(false);
-                                try
+                                parentNames = Arrays.asList(((String) o).trim());
+                            }
+                            else
+                            {
+                                // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+                                // using TabLoader instead of just splitting on the comma.
+                                try (TabLoader tabLoader = new TabLoader((String) o))
                                 {
-                                    String[][] values = tabLoader.getFirstNLines(1);
-                                    if (values.length > 0)
-                                        parentNames = Arrays.asList(values[0]);
-                                    else
+                                    tabLoader.setDelimiterCharacter(',');
+                                    tabLoader.setUnescapeBackslashes(false);
+                                    try
+                                    {
+                                        String[][] values = tabLoader.getFirstNLines(1);
+                                        if (values.length > 0)
+                                            parentNames = Arrays.asList(values[0]);
+                                        else
+                                            parentNames = Collections.emptyList();
+                                    }
+                                    catch (IOException e)
+                                    {
                                         parentNames = Collections.emptyList();
-                                }
-                                catch (IOException e)
-                                {
-                                    parentNames = Collections.emptyList();
-                                    getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
+                                        getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
+                                    }
                                 }
                             }
                         }
