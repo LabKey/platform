@@ -92,7 +92,7 @@ Ext4.onReady(function(){
                 hideLabel: true,
                 boxLabel: parentName,
                 name: "types",
-                itemId: parentName,
+                itemId: parentName.replaceAll(',', ''),
                 inputValue: parentName,
                 checked: checked,
                 objectType: "parent"
@@ -108,7 +108,7 @@ Ext4.onReady(function(){
                         hideLabel: true,
                         boxLabel: childName,
                         name: "types",
-                        itemId: childName,
+                        itemId: childName.replaceAll(',', ''),
                         inputValue: childName,
                         checked: checked,
                         objectType: "child",
@@ -219,6 +219,20 @@ Ext4.onReady(function(){
 
                     exportForm.getForm().submit();
                 }
+            }, {
+                text:'Clear All Objects',
+                handler: function(btn) {
+                    const leftColumnItems = exportForm.items.items[0].items.items;
+                    for (const item of leftColumnItems)
+                        if (item.xtype === 'checkbox')
+                            item.setValue(false);
+                }
+            }, {
+                text:'Reset',
+                handler: function(btn) {
+                    document.getElementById('exportForm').innerHTML = '';
+                    initializeForm(initExportForm);
+                }
             }],
             buttonAlign:'left',
             listeners : {
@@ -233,7 +247,6 @@ Ext4.onReady(function(){
                                     child.setDisabled(!checked);
                                 });
                             });
-
                         });
                     }
                 }
@@ -248,6 +261,11 @@ Ext4.onReady(function(){
                 'NotPHI';
     };
 
+    initializeForm(initExportForm);
+});
+
+function initializeForm(initExportForm)
+{
     LABKEY.Ajax.request({
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
         method: 'POST',
@@ -256,11 +274,11 @@ Ext4.onReady(function(){
         },
         scope: this,
         success: function (response) {
-            var responseText = Ext4.decode(response.responseText);
+            const responseText = Ext4.decode(response.responseText);
             initExportForm(responseText['writers']);
         }
     });
-});
+}
 
 </script>
 
