@@ -103,6 +103,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private boolean _mustCheckPermissions = true;
     private final boolean _canSeeDetails;
     private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
+    private static final String SYSTEM = "System";
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
 
     static
@@ -179,6 +180,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         // expiration date will only show for admins under Site Users, if enabled
         hideExpirationDateColumn();
+        // System column will be shown to all, but only editable by site administrators
+        hideSystemColumn();
 
         // The details action requires admin permission so don't offer the link if they can't see it
         if (getUser().hasRootPermission(UserManagementPermission.class) || getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -239,6 +242,18 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             expirationDateCol.setUserEditable(false);
             expirationDateCol.setShownInInsertView(false);
             expirationDateCol.setShownInUpdateView(false);
+        }
+    }
+
+    private void hideSystemColumn()
+    {
+        var expirationDateCol = getMutableColumn(FieldKey.fromParts(SYSTEM));
+        if (expirationDateCol != null)
+        {
+            boolean siteAdmin = getUser().isInSiteAdminGroup();
+            expirationDateCol.setUserEditable(siteAdmin);
+            expirationDateCol.setShownInInsertView(siteAdmin);
+            expirationDateCol.setShownInUpdateView(siteAdmin);
         }
     }
 
@@ -479,6 +494,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             validatePermissions(user, userToUpdate);
             validateUpdatedUser(userToUpdate, row);
             validateExpirationDate(userToUpdate, user, container, row);
+            validateSystem(user, row);
 
             SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
             validateAvatarFile(avatarFile);
@@ -517,6 +533,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     throw new ValidationException("Invalid value for Expiration Date.");
                 }
             }
+        }
+
+        private void validateSystem(User editingUser, Map<String, Object> row)
+        {
+            if (row.containsKey(SYSTEM) && !editingUser.isInSiteAdminGroup())
+                throw new UnauthorizedException("User does not have permission to edit the System field.");
         }
 
         private void validatePermissions(User editingUser, User userToUpdate)
