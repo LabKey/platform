@@ -158,9 +158,6 @@ dependencies {
     api "javax.servlet:servlet-api:${servletApiVersion}"
     api "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
-    // These are required for running unit tests through the server junit controller
-//    external test
-
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
