@@ -150,7 +150,6 @@ dependencies {
     api "org.apache.tomcat:tomcat-websocket-api:${apacheTomcatVersion}"
     api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
 
-    creditable runtime
     runtimeOnly runtime
 
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
@@ -613,7 +612,6 @@ dependencies {
             "User signup forms",
         )
     )
-
 
     BuildUtils.addExternalDependency(
         project,
