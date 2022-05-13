@@ -505,7 +505,7 @@ public class TabLoader extends DataLoader
             start = end;
         }
 
-        return listParse.toArray(new String[listParse.size()]);
+        return listParse.toArray(new String[0]);
     }
 
     @Override
