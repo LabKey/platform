@@ -85,7 +85,7 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.LimitActiveUserService;
+import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -298,7 +298,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
         ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
-        LimitActiveUserService.setInstance(() -> new LimitActiveUsersSettings().isUserLimitReached());
+        LimitActiveUsersService.setInstance(() -> new LimitActiveUsersSettings().isUserLimitReached());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();

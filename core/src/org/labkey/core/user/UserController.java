@@ -72,6 +72,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresAllOf;
@@ -105,6 +106,8 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1005,7 +1008,7 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
-            getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
+            User userToUpdate = getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
 
             if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
@@ -1027,8 +1030,14 @@ public class UserController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+            if (user.hasSiteAdminPermission() && LimitActiveUsersService.get().isUserLimitReached() && userToUpdate.isSystem())
+                builder.append(HtmlString.unsafe("<font class=\"labkey-error\">Warning: User limit has been reached so the System field can't be cleared.</font><br><br>"));
             if (isOwnRecord)
-                view =  new VBox(new HtmlView("<div>Please enter your contact information.</div></br>"), view);
+                builder.append(HtmlString.unsafe("<div>Please enter your contact information.</div></br>"));
+
+            if (!builder.isEmpty())
+                view = new VBox(new HtmlView(builder), view);
 
             return view;
         }

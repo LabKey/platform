@@ -53,6 +53,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
+import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -250,7 +251,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         var expirationDateCol = getMutableColumn(FieldKey.fromParts(SYSTEM));
         if (expirationDateCol != null)
         {
-            boolean siteAdmin = getUser().isInSiteAdminGroup();
+            boolean siteAdmin = getUser().hasSiteAdminPermission();
             expirationDateCol.setUserEditable(siteAdmin);
             expirationDateCol.setShownInInsertView(siteAdmin);
             expirationDateCol.setShownInUpdateView(siteAdmin);
@@ -494,7 +495,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             validatePermissions(user, userToUpdate);
             validateUpdatedUser(userToUpdate, row);
             validateExpirationDate(userToUpdate, user, container, row);
-            validateSystem(user, row);
+            validateSystem(user, userToUpdate, row);
 
             SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
             validateAvatarFile(avatarFile);
@@ -535,10 +536,16 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             }
         }
 
-        private void validateSystem(User editingUser, Map<String, Object> row)
+        private void validateSystem(User editingUser, User userToUpdate, Map<String, Object> row)
         {
-            if (row.containsKey(SYSTEM) && !editingUser.isInSiteAdminGroup())
-                throw new UnauthorizedException("User does not have permission to edit the System field.");
+            if (row.containsKey(SYSTEM))
+            {
+                if (!editingUser.hasSiteAdminPermission())
+                    throw new UnauthorizedException("User does not have permission to edit the System field.");
+
+                if (userToUpdate.isSystem() && !(boolean) row.get(SYSTEM) && LimitActiveUsersService.get().isUserLimitReached())
+                    throw new UnauthorizedException("User limit has been reached so you can't clear this user's System field.");
+            }
         }
 
         private void validatePermissions(User editingUser, User userToUpdate)

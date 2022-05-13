@@ -906,7 +906,7 @@ public class UserManager
         if (userToAdjust.isActive() == active)
             return;
 
-        if (active && LimitActiveUserService.get().isUserLimitReached())
+        if (active && LimitActiveUsersService.get().isUserLimitReached())
             throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment");
 
         Integer userId = userToAdjust.getUserId();
