@@ -50,8 +50,8 @@
     "testResultsProcessor": "jest-teamcity-reporter"
   },
   "dependencies": {
-    "@labkey/api": "1.12.0",
-    "@labkey/components": "2.164.0",
+    "@labkey/api": "1.12.1",
+    "@labkey/components": "2.171.0",
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {

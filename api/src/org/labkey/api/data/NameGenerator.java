@@ -42,6 +42,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -990,7 +991,16 @@ public class NameGenerator
                     GWTPropertyDescriptor col = domainFields.get(root);
                     if (col != null)
                     {
-                        UserSchema fkSchema = QueryService.get().getUserSchema(user, _container, col.getLookupSchema());
+                        Container lookupContainer = null;
+                        String containerId = StringUtils.trimToNull(col.getLookupContainer());
+                        if (containerId != null)
+                        {
+                            if (GUID.isGUID(containerId))
+                                lookupContainer = ContainerManager.getForId(containerId);
+                            if (null == lookupContainer)
+                                lookupContainer = ContainerManager.getForPath(containerId);
+                        }
+                        UserSchema fkSchema = QueryService.get().getUserSchema(user, lookupContainer == null ? _container : lookupContainer, col.getLookupSchema());
 
                         if (fkSchema != null)
                         {
