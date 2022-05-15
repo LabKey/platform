@@ -394,6 +394,19 @@ public class StringUtilsLabKey
 
     }
 
+    public static String unquoteString(@Nullable String original)
+    {
+        if (original == null)
+            return null;
+
+        if (original.startsWith("\"") && original.endsWith("\""))
+        {
+            String stripped = original.replaceAll("\"\"", "\"");
+            return stripped.substring(1, stripped.length()-1);
+        }
+        return original;
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -619,6 +632,20 @@ public class StringUtilsLabKey
         public void testTruncateTooShort()
         {
             truncate(null, 2);
+        }
+
+        @Test
+        public void testUnquoteString()
+        {
+            assertNull(unquoteString(null));
+            assertEquals("", unquoteString(""));
+            assertEquals("abc", unquoteString("abc"));
+            assertEquals("abc", unquoteString("\"abc\""));
+            assertEquals("ab\"c", unquoteString("ab\"c"));
+            assertEquals("\"abc", unquoteString("\"abc"));
+            assertEquals("abc\"", unquoteString("abc\""));
+            assertEquals("ab\"c", unquoteString("\"ab\"\"c\""));
+            assertEquals("WC-1,3", unquoteString("\"WC-1,3\""));
         }
     }
 }
