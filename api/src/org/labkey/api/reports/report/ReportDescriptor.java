@@ -120,7 +120,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         serializedReportName,
         moduleReportCreatedDate, // creation date of module report, used by cds
         showInDashboard, // show visible reports in the grid, show in my links if this is true or null
-        showInParticipantView // boolean used in participant view for showing the saved charts for a dataset
+        showInParticipantView, // boolean used in participant view for showing the saved charts for a dataset,
+        hideInManageViews // boolean used in to hide the hidden view from Managed Views. By default, hidden views are still visible in manage mode
     }
 
     public ReportDescriptor()

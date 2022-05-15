@@ -62,6 +62,7 @@ public interface DataViewInfo
 
     boolean isVisible();                // specifies whether this view is hidden
     boolean showInDashboard();          // an optional visibility level
+    boolean hideInManageViews();          // hide from Manage Views
     boolean isShared();
     boolean isReadOnly();
     @Nullable
