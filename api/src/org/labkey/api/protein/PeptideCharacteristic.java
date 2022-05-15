@@ -7,6 +7,7 @@ public class PeptideCharacteristic
     private String _intensityColor;
     private Double _confidence;
     private String _confidenceColor;
+    private String _foregroundColor;
     private boolean _isIntensityView;
     private boolean _isConfidenceView;
 
@@ -78,5 +79,15 @@ public class PeptideCharacteristic
     public void setConfidenceColor(String confidenceColor)
     {
         _confidenceColor = confidenceColor;
+    }
+
+    public String getForegroundColor()
+    {
+        return _foregroundColor;
+    }
+
+    public void setForegroundColor(String foregroundColor)
+    {
+        _foregroundColor = foregroundColor;
     }
 }
