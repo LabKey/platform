@@ -551,7 +551,7 @@ public class StudyPublishManager implements StudyPublishService
 
         try
         {
-            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer, null, null);
+            studyPublishProtocol = ensureStudyPublishProtocol(user);
 
             run.setProtocol(studyPublishProtocol);
             ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
@@ -1398,10 +1398,10 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ExpProtocol ensureStudyPublishProtocol(User user, Container container, String name, String lsid) throws ExperimentException
+    public ExpProtocol ensureStudyPublishProtocol(User user) throws ExperimentException
     {
-        String protocolName = null != name ? name : STUDY_PUBLISH_PROTOCOL_NAME;
-        String protocolLsid = null != lsid ? lsid : STUDY_PUBLISH_PROTOCOL_LSID;
+        String protocolName = STUDY_PUBLISH_PROTOCOL_NAME;
+        String protocolLsid = STUDY_PUBLISH_PROTOCOL_LSID;
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolLsid);
 
         if (protocol == null)
