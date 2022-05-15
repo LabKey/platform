@@ -7,6 +7,28 @@ public class PeptideCharacteristic
     private String _intensityColor;
     private Double _confidence;
     private String _confidenceColor;
+    private boolean _isIntensityView;
+    private boolean _isConfidenceView;
+
+    public boolean isConfidenceView()
+    {
+        return _isConfidenceView;
+    }
+
+    public void setConfidenceView(boolean confidenceView)
+    {
+        _isConfidenceView = confidenceView;
+    }
+
+    public boolean isIntensityView()
+    {
+        return _isIntensityView;
+    }
+
+    public void setIntensityView(boolean intensityView)
+    {
+        _isIntensityView = intensityView;
+    }
 
     public String getSequence()
     {
