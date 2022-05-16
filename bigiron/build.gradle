@@ -22,10 +22,27 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "com.oracle.database.jdbc:ojdbc11-production:${oracleJdbcVersion}", // Oracle JDBC Driver and dependencies
+            "Oracle JDBC Driver",
+            "Oracle",
+            "https://www.oracle.com/database/technologies/appdev/jdbc.html",
+            "Oracle Free Use License",
+            "https://www.oracle.com/downloads/licenses/oracle-free-license.html",
+            "Connect with Oracle database servers"
+        ),
+        {
+            // https://stackoverflow.com/questions/44916255/classnotfoundexception-oracle-i18n-util-localemapper-on-tomcat-tld-scanning-ojd
+            exclude group: "com.oracle.database.xml", module: "xmlparserv2" // Conflicts with Xerces
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "mysql:mysql-connector-java:${mysqlDriverVersion}",
             "MySQL JDBC Driver",
             "MySQL",
-            "http://www.mysql.com/downloads/connector/j",
+            "https://dev.mysql.com/downloads/connector/j",
             "GPL v2 with Universal FOSS Exception",
             "https://oss.oracle.com/licenses/universal-foss-exception/",
             "Connect with MySQL database servers"
