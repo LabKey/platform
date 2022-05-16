@@ -75,7 +75,7 @@ user limit properties. For example, the message:<br><br>
 
 will currently result in this displayed text:<br><br>
 
-<code>&nbsp;&nbsp;You can add or reactivate <%=props.get("RemainingUsers")%> more users</code><br><br>
+<code>&nbsp;&nbsp;You can add or reactivate <%=props.get("RemainingUsers")%> more users.</code><br><br>
 
 The supported properties and their current values are listed in the table below.<br><br>
 <table class="labkey-data-region-legacy labkey-show-borders">
