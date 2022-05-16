@@ -608,7 +608,11 @@ public abstract class SqlDialect
      */
     protected abstract @NotNull Pattern getSQLScriptProcPattern();
 
-    public abstract String getMasterDataBaseName();
+    /**
+     * Database that's created by default on this database server. This is the database to which we'll connect if the
+     * specified labkey database doesn't exist and we need to create it.
+     */
+    public abstract String getDefaultDatabaseName();
 
     public abstract String getDefaultDateTimeDataType();
 
