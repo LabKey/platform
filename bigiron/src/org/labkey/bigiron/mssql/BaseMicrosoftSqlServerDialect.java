@@ -491,8 +491,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        // If there's no offset or requesting no rows then we can do use a simple TOP approach for maxRows, which
-        // doesn't require an ORDER BY and allows 0 rows (unlike OFFSET + FETCH)
+        // If there's no offset or requesting no rows then we can use a simple TOP approach for maxRows, which doesn't
+        // require an ORDER BY and allows 0 rows (unlike OFFSET + FETCH)
         if (offset == 0 || maxRows == Table.NO_ROWS)
         {
             SQLFragment sql = LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
