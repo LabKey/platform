@@ -47,6 +47,7 @@ import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
@@ -474,10 +475,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
-            int offset = 6;
+            int index = 6;
             if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
-                offset = 15;
-            frag.insert(offset, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
+                index = 15;
+            frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
         }
         return frag;
     }
@@ -490,27 +491,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS || offset == 0)
+        // If there's no offset or requesting no rows then we can do use a simple TOP approach for maxRows, which
+        // doesn't require an ORDER BY and allows 0 rows (unlike OFFSET + FETCH)
+        if (offset == 0 || maxRows == Table.NO_ROWS)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append(select);
-            sql.append("\n").append(from);
-            if (filter != null) sql.append("\n").append(filter);
-            if (groupBy != null) sql.append("\n").append(groupBy);
-            if (order != null) sql.append("\n").append(order);
+            SQLFragment sql = LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
 
             return limitRows(sql, maxRows);
         }
         else
         {
             if (order == null || order.trim().length() == 0)
-                throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use OFFSET or FETCH");
 
             return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
     }
 
-    // Called only if rowCount and offset are both > 0... and order is non-blank
+    // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
     abstract protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset);
 
     @Override
@@ -983,7 +981,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         return "master";
     }

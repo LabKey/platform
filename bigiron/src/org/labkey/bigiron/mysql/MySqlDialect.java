@@ -23,11 +23,11 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
@@ -190,44 +190,16 @@ public class MySqlDialect extends SimpleSqlDialect
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
-    private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
+    @Override
+    public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        if (rowCount != Table.ALL_ROWS)
-        {
-            frag.append("\nLIMIT ");
-            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
-
-            if (offset > 0)
-            {
-                frag.append(" OFFSET ");
-                frag.append(Long.toString(offset));
-            }
-        }
-        return frag;
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        if (select == null)
-            throw new IllegalArgumentException("select");
-        if (from == null)
-            throw new IllegalArgumentException("from");
-
-        SQLFragment sql = new SQLFragment();
-        sql.append(select);
-        sql.append("\n").append(from);
-        if (filter != null) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-
-        return limitRows(sql, maxRows, offset);
-    }
-
-    @Override
-    public SQLFragment limitRows(SQLFragment frag, int maxRows)
-    {
-        return limitRows(frag, maxRows, 0);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset);
     }
 
     @Override
