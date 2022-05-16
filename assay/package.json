@@ -12,9 +12,9 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.149.5"
+    "@labkey/components": "2.171.1-fb-moment-update.1"
   },
   "devDependencies": {
-    "@labkey/build": "6.0.0"
+    "@labkey/build": "6.1.2-fb-moment-update.0"
   }
 }

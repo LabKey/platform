@@ -55,7 +55,7 @@
     "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
-    "@labkey/build": "6.1.1",
+    "@labkey/build": "6.1.2-fb-moment-update.0",
     "@labkey/eslint-config-react": "0.0.11",
     "@types/enzyme": "3.10.11",
     "@types/enzyme-adapter-react-16": "1.0.6",
