@@ -71,7 +71,7 @@
 The two messages above must be well-formed, properly escaped HTML. The messages support string substitution of specific
 user limit properties. For example, the message:<br><br>
 
-<code>&nbsp;&nbsp;You can add or reactivate \${RemainingUsers} more users</code><br><br>
+<code>&nbsp;&nbsp;You can add or reactivate \${RemainingUsers} more users.</code><br><br>
 
 will currently result in this displayed text:<br><br>
 
