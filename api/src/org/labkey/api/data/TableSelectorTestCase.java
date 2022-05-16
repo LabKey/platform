@@ -371,27 +371,18 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             List<K> sortedList = new ArrayList<>(selector.getCollection(clazz));
             verifyResultSets(selector, count, true);
 
-            // Set a row count, verify the lengths and contents against the expected array & list subsets
+            // Set just a row count, verify the lengths and contents against the expected array & list subsets
             selector.setMaxRows(rowCount);
-            assertEquals(rowCount, (int) selector.getRowCount());
-            K[] rowCountArray = selector.getArray(clazz);
-            assertEquals(rowCount, rowCountArray.length);
-            assertArrayEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
-            List<K> rowCountList = new ArrayList<>(selector.getCollection(clazz));
-            assertEquals(rowCount, rowCountList.size());
-            assertEquals(sortedList.subList(0, rowCount), rowCountList);
-            verifyResultSets(selector, rowCount, false);
+            test(selector, clazz, 0, rowCount, sortedArray, sortedList, false);
 
-            // Set an offset, verify the lengths and contents against the expected array & list subsets
+            // Set just an offset, verify the lengths and contents against the expected array & list subsets
             selector.setOffset(offset);
-            assertEquals(rowCount, (int) selector.getRowCount());
-            K[] offsetArray = selector.getArray(clazz);
-            assertEquals(rowCount, offsetArray.length);
-            assertArrayEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
-            List<K> offsetList = new ArrayList<>(selector.getCollection(clazz));
-            assertEquals(rowCount, offsetList.size());
-            assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
-            verifyResultSets(selector, rowCount, false);
+            selector.setMaxRows(Table.ALL_ROWS);
+            test(selector, clazz, offset, count - offset, sortedArray, sortedList, true);
+
+            // Set an offset and a rowCount, verify the lengths and contents against the expected array & list subsets
+            selector.setMaxRows(rowCount);
+            test(selector, clazz, offset, rowCount, sortedArray, sortedList, false);
 
             // Back to all rows and verify
             selector.setMaxRows(Table.ALL_ROWS);
@@ -401,5 +392,17 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(count, selector.getCollection(clazz).size());
             verifyResultSets(selector, count, true);
         }
+    }
+
+    private <K> void test(TableSelector selector, Class<K> clazz, int offset, int rowCount, K[] sortedArray, List<K> sortedList, boolean expectedComplete) throws SQLException
+    {
+        assertEquals(rowCount, (int) selector.getRowCount());
+        K[] array = selector.getArray(clazz);
+        assertEquals(rowCount, array.length);
+        assertArrayEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), array);
+        List<K> list = new ArrayList<>(selector.getCollection(clazz));
+        assertEquals(rowCount, list.size());
+        assertEquals(sortedList.subList(offset, offset + rowCount), list);
+        verifyResultSets(selector, rowCount, expectedComplete);
     }
 }
