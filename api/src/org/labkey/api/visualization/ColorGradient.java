@@ -4,13 +4,12 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
-* inspired from https://github.com/matthewbeckler/HeatMap/blob/master/Gradient.java
-* */
 public class ColorGradient
 {
 
     /**
+     *  inspired from https://github.com/matthewbeckler/HeatMap/blob/master/Gradient.java
+     *
      * Creates an array of Color objects for use as a gradient, using a linear
      * interpolation between the two specified colors.
      *
