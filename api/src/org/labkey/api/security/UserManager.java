@@ -907,7 +907,7 @@ public class UserManager
             return;
 
         if (active && LimitActiveUsersService.get().isUserLimitReached())
-            throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment");
+            throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment.");
 
         Integer userId = userToAdjust.getUserId();
 
