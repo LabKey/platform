@@ -3102,7 +3102,7 @@ public class UserController extends SpringActionController
             if (form.isUserWarning() && form.getUserWarningLevel() <= 0)
                 errors.reject(ERROR_MSG, "User warning level must be a positive integer.");
             if (form.isUserLimit() && form.getUserLimitLevel() <= 0)
-                errors.reject(ERROR_MSG, "User limit level must be a positive integer");
+                errors.reject(ERROR_MSG, "User limit level must be a positive integer.");
             if (form.isUserWarning() && form.isUserLimit() && form.getUserWarningLevel() > form.getUserLimitLevel())
                 errors.reject(ERROR_MSG, "User limit level must be greater than or equal to user warning level.");
         }
