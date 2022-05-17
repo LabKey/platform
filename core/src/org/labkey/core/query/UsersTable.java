@@ -248,13 +248,13 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private void hideSystemColumn()
     {
-        var expirationDateCol = getMutableColumn(FieldKey.fromParts(SYSTEM));
-        if (expirationDateCol != null)
+        var systemColumn = getMutableColumn(FieldKey.fromParts(SYSTEM));
+        if (systemColumn != null)
         {
             boolean siteAdmin = getUser().hasSiteAdminPermission();
-            expirationDateCol.setUserEditable(siteAdmin);
-            expirationDateCol.setShownInInsertView(siteAdmin);
-            expirationDateCol.setShownInUpdateView(siteAdmin);
+            systemColumn.setUserEditable(siteAdmin);
+            systemColumn.setShownInInsertView(siteAdmin);
+            systemColumn.setShownInUpdateView(siteAdmin);
         }
     }
 

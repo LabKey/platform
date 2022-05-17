@@ -58,7 +58,7 @@
         <tr>
             <td colspan=2>
                 <%= hasAdminOpsPerms ? button("Save").submit(true) : HtmlString.EMPTY_STRING %>
-                <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
+                <%= button(hasAdminOpsPerms ? "Cancel" : "Close").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
             </td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
