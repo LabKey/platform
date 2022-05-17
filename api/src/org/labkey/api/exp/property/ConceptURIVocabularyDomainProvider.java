@@ -38,4 +38,6 @@ public interface ConceptURIVocabularyDomainProvider
     @NotNull Collection<String> getImportTemplateExcludeColumns(@NotNull String propertyColumnName);
 
     @NotNull FieldKey getColumnFieldKey(@NotNull ColumnInfo parent, @NotNull PropertyDescriptor pd);
+
+    void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd, Container container);
 }
