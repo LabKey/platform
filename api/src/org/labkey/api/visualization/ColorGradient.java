@@ -54,7 +54,7 @@ public class ColorGradient
     {
         return (float) (0.2126 * color.getRed() + 0.7152 * color.getGreen() + 0.0722 * color.getBlue());
     }
-    public static String getContrast(Color color)
+    public static String getContrastingForegroundColor(Color color)
     {
         float luminance = calculateLuminance(color);
         return (luminance < 140) ? "#fff" : "#000";
