@@ -456,7 +456,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
