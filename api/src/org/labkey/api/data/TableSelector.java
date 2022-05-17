@@ -402,8 +402,30 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         // TODO: Shouldn't actually need the sub-query in the TableSelector case... just use a "COUNT(*)" ExprColumn directly with the filter + table
         // For now, produce "SELECT 1 FROM ..." in the sub-select and ignore the sort
-        TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
-        return super.getRowCount(sqlFactory) - sqlFactory._scrollOffset;      // Corner case -- asking for rowCount with offset on a dialect that doesn't support offset
+
+        if (_maxRows == Table.NO_ROWS)
+            return 0;
+
+        // Remember the values that were set to restore them later
+        var offset = _offset;
+        var maxRows = _maxRows;
+
+        try
+        {
+            // Optimize by counting all rows and then subtracting any offsets
+            _offset = Table.NO_OFFSET;
+            _maxRows = Table.ALL_ROWS;
+            TableSqlFactory sqlFactory = new RowCountingSqlFactory(_table, _filter);
+            long rowCount = super.getRowCount(sqlFactory) ;
+            long offsetCount = Math.max(0, rowCount - offset - sqlFactory._scrollOffset);
+
+            return maxRows == Table.ALL_ROWS ? offsetCount : Math.min(maxRows, offsetCount);
+        }
+        finally
+        {
+            _offset = offset;
+            _maxRows = maxRows;
+        }
     }
 
     @Override
