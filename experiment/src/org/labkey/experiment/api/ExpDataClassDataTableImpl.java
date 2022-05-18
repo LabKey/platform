@@ -526,6 +526,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                                     .addParameter("name", "${" + columnInfo.getFieldKey() + "}")));
 
                 }
+
+                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                if (fieldVocabularyDomainProvider != null)
+                    fieldVocabularyDomainProvider.third.decorateColumn(columnInfo, pd, _userSchema.getContainer());
             }
 
             @Override

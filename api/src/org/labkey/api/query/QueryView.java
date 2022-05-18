@@ -2451,6 +2451,7 @@ public class QueryView extends WebPartView<Object>
         excelWriter.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
         excelWriter.setRenameColumnMap(config.getRenamedColumns());
         excelWriter.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
+        excelWriter.setAutoSize(true);
 
         return excelWriter;
     }
@@ -2765,6 +2766,7 @@ public class QueryView extends WebPartView<Object>
                 ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
                 if (config.getPrefix() != null)
                     ew.setFilenamePrefix(config.getPrefix());
+                ew.setAutoSize(true);
                 ew.renderSheetAndWrite(config.getResponse());
 
                 if (!config.getTemplateOnly())

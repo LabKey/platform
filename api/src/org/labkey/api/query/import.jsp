@@ -35,10 +35,11 @@
 %>
 <%
     AbstractQueryImportAction.ImportViewBean bean = (AbstractQueryImportAction.ImportViewBean)HttpView.currentModel();
-    final String copyPasteDivId = "copypasteDiv1"; // TESTBUG 45133 + getRequestScopedUID();
-    final String uploadFileDivId = "uploadFileDiv2"; // TESTBUG 45133 + getRequestScopedUID();
-    String tsvId = "tsv3"; // TESTBUG  + getRequestScopedUID();
-    String errorDivId = "errorDiv4"; // TESTBUG + getRequestScopedUID();
+    final String copyPasteDivId = makeId("copyPasteDiv");
+    final String uploadFileDivId = makeId("uploadFileDiv");
+    // Issue: 45133 Many tests depend on the 'tsv3' ID
+    String tsvId = "tsv3"; //makeId("tsv");
+    String errorDivId = makeId("errorDiv");
     String extraFormFields = "";
 
     if (bean.importMessage != null)
@@ -62,7 +63,7 @@
         }
         else
         {
-            %>Choose Template: <select id="importTemplate"><%
+            %><label for="importTemplate">Choose Template</label>: <select id="importTemplate"><%
             for (Pair<String, String> p : bean.urlExcelTemplates)
             {
                 %><option value="<%=h(p.second)%>"><%=h(p.first)%></option><%
@@ -73,7 +74,7 @@
         }
     }%>
 
-<style type="text/css">
+<style>
     .lk-import-expando .labkey-button {
         padding: 0 5px;
     }
@@ -82,10 +83,10 @@
         outline: none;
     }
 </style>
-<div id="<%=text(errorDivId)%>" class="labkey-error">
+<div id="<%=h(errorDivId)%>" class="labkey-error">
 <labkey:errors/>&nbsp;
 </div>
-<div class="panel panel-portal" style="width: 760px;">
+<div class="panel panel-portal" data-panel-name="uploadFilePanel" style="width: 760px;">
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Upload file (.xlsx, .xls, .csv, .txt)</h3>
         <span class="lk-import-expando pull-right">
@@ -94,10 +95,10 @@
         <div class="clearfix"></div>
     </div>
     <div class="panel-body">
-        <div id="<%=text(uploadFileDivId)%>"></div>
+        <div id="<%=h(uploadFileDivId)%>"></div>
     </div>
 </div>
-<div class="panel panel-portal" style="width: 760px;">
+<div class="panel panel-portal" data-panel-name="copyPastePanel" style="width: 760px;">
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
@@ -206,7 +207,7 @@
                 {
                     <%
                     if (bean.acceptZeroResults) {%>
-                    if (rowCount == 0)
+                    if (rowCount === 0)
                         showSuccessMessage("Upload successful, but 0 updates occurred");
                     else {
                         showError();
