@@ -1471,6 +1471,11 @@ public class XarReader extends AbstractXarImporter
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
             m.setCpasType(declaredType);
+            for (ExpSampleType sampleType : _loadedSampleTypes)
+            {
+                if (sampleType.getLSID().equals(declaredType))
+                    m.setMaterialSourceId(sampleType.getRowId());
+            }
 
             if (null != run)
                 m.setRunId(run.getRowId());

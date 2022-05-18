@@ -176,6 +176,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case MaterialSourceId:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "RowId", "Name")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
+                        sampleTypeTable.populate();
+                        return sampleTypeTable;
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return super.getURL(parent, true);
+                    }
+                });
+                return columnInfo;
+            }
             case RootMaterialLSID:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
@@ -492,7 +513,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
-        
+
+        addColumn(Column.MaterialSourceId);
+
         addColumn(Column.SourceProtocolApplication);
 
         addColumn(Column.SourceApplicationInput);
@@ -720,6 +743,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         UserSchema schema = getUserSchema();
         Domain domain = st.getDomain();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
+        ColumnInfo nameColumn = getColumn(Column.Name);
+        ColumnInfo materialSourceIdColumn = getColumn(Column.MaterialSourceId);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
 
@@ -739,7 +764,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
 
-            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey())
+                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey())
+                || materialSourceIdColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
             // TODO this seems bad to me, why isn't this done in ss.getTinfo()
@@ -860,8 +887,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
-                // don't select lsid twice
-                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                // don't select twice
+                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName())
+                    || "name".equalsIgnoreCase(propertyColumn.getColumnName())
+                    || "MaterialSourceId".equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
                 // don't need to generate SQL for columns that aren't selected

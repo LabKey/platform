@@ -97,7 +97,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
+                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
+                new PropertyStorageSpec("materialSourceId", JdbcType.INTEGER)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
