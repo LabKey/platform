@@ -2067,6 +2067,7 @@ public class SecurityApiActions
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> responses = new ArrayList<>();
+            List<String> failures = new ArrayList<>();
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
             Container c = getContainer();
@@ -2090,38 +2091,45 @@ public class SecurityApiActions
                 User user = UserManager.getUser(email);
                 if (null == user)
                 {
-                    // NOTE IAE should not accept formatted HTML
-                    // throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
-                    throw new IllegalArgumentException("Error creating new user account.");
+                    failures.add(null != msg ? msg.toString() : "Error creating new user account: " + email);
                 }
-
-                boolean isNew = !HtmlString.isBlank(msg);
-                HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
-
-                // Allow tests to create users that immediately register as having "logged in"
-                if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
+                else
                 {
-                    user.setLastLogin(new Date());
-                    UserManager.updateLogin(user);
-                    UserManager.clearUserList();
-                }
+                    boolean isNew = !HtmlString.isBlank(msg);
+                    HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
 
-                // if only one user being added, write response properties to the top level as well for backwards compatibility
-                if (validEmails.size() == 1)
-                {
-                    response.put("userId", user.getUserId());
-                    response.put("email", user.getEmail());
-                    response.put("message", htmlMsg);
+                    // Allow tests to create users that immediately register as having "logged in"
+                    if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
+                    {
+                        user.setLastLogin(new Date());
+                        UserManager.updateLogin(user);
+                        UserManager.clearUserList();
+                    }
+
+                    // if only one user being added, write response properties to the top level as well for backwards compatibility
+                    if (validEmails.size() == 1)
+                    {
+                        response.put("userId", user.getUserId());
+                        response.put("email", user.getEmail());
+                        response.put("message", htmlMsg);
+                    }
+                    responses.add(Map.of(
+                            "userId", user.getUserId(),
+                            "email", user.getEmail(),
+                            "message", htmlMsg,
+                            "isNew", isNew
+                    ));
                 }
-                responses.add(Map.of(
-                    "userId", user.getUserId(),
-                    "email", user.getEmail(),
-                    "message", htmlMsg,
-                    "isNew", isNew
-                ));
             }
 
-            response.put("success", true);
+            // if we only have failures and no successfully created users, add them to the errors object
+            if (failures.size() > 0 && responses.size() == 0)
+            {
+                failures.forEach(failure -> errors.reject(ERROR_MSG, failure));
+            }
+
+            if (failures.size() > 0) response.put("errors", failures);
+            response.put("success", failures.size() == 0);
             response.put("users", responses);
             return response;
         }
