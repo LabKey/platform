@@ -83,8 +83,8 @@ class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage
             message ='Successfully ' + (response.activate ? 'reactivated' : 'deactivated') + ' ' + Utils.pluralBasic(response.userIds.length, 'user') + '.';
         }
 
-        if (response.errors?.length > 0) {
-            userCreationError = response.errors.join(' ');
+        if (response.htmlErrors?.length > 0) {
+            userCreationError = response.htmlErrors.join(' ');
         }
 
         this.setState(() => ({ message, userCreationError }));

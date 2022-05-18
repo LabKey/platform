@@ -2067,7 +2067,7 @@ public class SecurityApiActions
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> responses = new ArrayList<>();
-            List<String> failures = new ArrayList<>();
+            List<HtmlString> htmlErrors = new ArrayList<>();
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
             Container c = getContainer();
@@ -2091,7 +2091,7 @@ public class SecurityApiActions
                 User user = UserManager.getUser(email);
                 if (null == user)
                 {
-                    failures.add(null != msg ? msg.toString() : "Error creating new user account: " + email);
+                    htmlErrors.add(null != msg ? msg : HtmlString.of("Error creating new user account: " + email));
                 }
                 else
                 {
@@ -2122,14 +2122,12 @@ public class SecurityApiActions
                 }
             }
 
-            // if we only have failures and no successfully created users, add them to the errors object
-            if (failures.size() > 0 && responses.size() == 0)
-            {
-                failures.forEach(failure -> errors.reject(ERROR_MSG, failure));
-            }
+            // if we only have htmlErrors and no successfully created users, throw (IAE should not accept formatted HTML)
+            if (htmlErrors.size() > 0 && responses.size() == 0)
+                throw new IllegalArgumentException("Error creating new user account.");
 
-            if (failures.size() > 0) response.put("errors", failures);
-            response.put("success", failures.size() == 0);
+            if (htmlErrors.size() > 0) response.put("htmlErrors", htmlErrors);
+            response.put("success", htmlErrors.size() == 0);
             response.put("users", responses);
             return response;
         }
