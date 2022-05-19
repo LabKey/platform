@@ -835,7 +835,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     ts.setValue(new Timestamp(p.second));
                     pm.addBatch();
                 }
-                pm.execute();
+                pm.executeBatch();
             });
         }
         catch (SQLException x)
