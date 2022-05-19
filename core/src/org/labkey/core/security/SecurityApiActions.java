@@ -2120,10 +2120,6 @@ public class SecurityApiActions
                 }
             }
 
-            // if we only have htmlErrors and no successfully created users, throw (IAE should not accept formatted HTML)
-            if (htmlErrors.size() > 0 && responses.size() == 0)
-                throw new IllegalArgumentException("Error creating new user account.");
-
             if (htmlErrors.size() > 0) response.put("htmlErrors", htmlErrors);
             response.put("success", htmlErrors.size() == 0);
             response.put("users", responses);
