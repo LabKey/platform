@@ -544,7 +544,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     throw new UnauthorizedException("User does not have permission to edit the System field.");
 
                 if (userToUpdate.isSystem() && !(boolean) row.get(SYSTEM) && LimitActiveUsersService.get().isUserLimitReached())
-                    throw new UnauthorizedException("User limit has been reached so you can't clear this user's System field.");
+                    throw new UnauthorizedException("User limit has been reached so you can't clear the System field.");
             }
         }
 

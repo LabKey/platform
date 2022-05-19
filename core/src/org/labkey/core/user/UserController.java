@@ -29,6 +29,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -472,6 +473,9 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, false);
+
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getRedirUrl());
             if (null != form.getUserId())
             {
@@ -511,9 +515,18 @@ public class UserController extends SpringActionController
             for (Integer userId : form.getUserId())
             {
                 if (isValidUserToUpdate(userId, curUser))
-                    UserManager.setUserActive(curUser, userId, _active);
+                    try
+                    {
+                        UserManager.setUserActive(curUser, userId, _active);
+                    }
+                    catch (SecurityManager.UserManagementException e)
+                    {
+                        User failedUser = UserManager.getUser(userId);
+                        String displayName = null == failedUser ? "user " + userId : failedUser.getDisplayName(curUser);
+                        errors.reject(ERROR_MSG, "Failed to " + (_active ? "activate" : "deactivate") + " " + displayName + ": " + e.getMessage());
+                    }
             }
-            return true;
+            return !errors.hasErrors();
         }
 
         @Override
@@ -1032,7 +1045,7 @@ public class UserController extends SpringActionController
 
             HtmlStringBuilder builder = HtmlStringBuilder.of();
             if (user.hasSiteAdminPermission() && LimitActiveUsersService.get().isUserLimitReached() && userToUpdate.isSystem())
-                builder.append(HtmlString.unsafe("<font class=\"labkey-error\">Warning: User limit has been reached so the System field can't be cleared.</font><br><br>"));
+                builder.append(HtmlString.unsafe("<strong>Warning:</strong> User limit has been reached so the System field can't be cleared.<br><br>"));
             if (isOwnRecord)
                 builder.append(HtmlString.unsafe("<div>Please enter your contact information.</div></br>"));
 
