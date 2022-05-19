@@ -111,6 +111,8 @@ import java.util.stream.Collectors;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+
+    public static final String EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS = "canCustomizeViewsFromApp";
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
