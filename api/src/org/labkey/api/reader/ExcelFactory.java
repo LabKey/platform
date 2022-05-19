@@ -18,6 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.UnsupportedFileFormatException;
+import org.apache.poi.ooxml.POIXMLException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -262,9 +263,17 @@ public class ExcelFactory
                 }
             }
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalArgumentException | POIXMLException e)
         {
-            throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
+            // Issue 45464 - improve error message for .xlsx variant that's unsupported by POI
+            if (e.getMessage() != null && e.getMessage().contains("57699"))
+            {
+                throw new ExcelFormatException("Unable to open file as an Excel document. \"Strict Open XML Spreadsheet\" versions of .xlsx files are not supported.", e);
+            }
+            else
+            {
+                throw new ExcelFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()), e);
+            }
         }
     }
 
