@@ -29,6 +29,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -1428,7 +1429,7 @@ public class SecurityController extends SpringActionController
                 if (user != null)
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
                 else
-                    form.addMessage(result);
+                    errors.addError(new LabKeyErrorWithHtml("", result));
             }
 
             return false;
