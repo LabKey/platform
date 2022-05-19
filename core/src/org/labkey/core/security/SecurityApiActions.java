@@ -33,6 +33,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.InvalidGroupMembershipException;
@@ -2009,7 +2010,7 @@ public class SecurityApiActions
         }
     }
 
-    public static class CreateNewUserForm
+    public static class CreateNewUsersForm
     {
         private String _email; // supports a semicolon list of email addresses
         private boolean _sendEmail = true;
@@ -2058,10 +2059,11 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
+    @ActionNames("CreateNewUsers, CreateNewUser")
+    public static class CreateNewUsersAction extends MutatingApiAction<CreateNewUsersForm>
     {
         @Override
-        public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
+        public ApiResponse execute(CreateNewUsersForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> responses = new ArrayList<>();
@@ -2249,7 +2251,7 @@ public class SecurityApiActions
                 new RenameGroupAction(),
                 new AddGroupMemberAction(),
                 new RemoveGroupMemberAction(),
-                new CreateNewUserAction()
+                new CreateNewUsersAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)
