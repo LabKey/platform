@@ -22,7 +22,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.oracle.database.jdbc:ojdbc11-production:${oracleJdbcVersion}", // Oracle JDBC Driver and dependencies
+            "com.oracle.database.jdbc:ojdbc11:${oracleJdbcVersion}", // Oracle JDBC Driver and dependencies
             "Oracle JDBC Driver",
             "Oracle",
             "https://www.oracle.com/database/technologies/appdev/jdbc.html",
