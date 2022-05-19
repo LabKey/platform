@@ -1,5 +1,6 @@
 package org.labkey.core.user;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.Container;
@@ -179,6 +180,10 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     private static HtmlString substitute(String message, int activeUsers, int warningLevel, int limitLevel)
     {
+        // Display no warning if message is empty
+        if (StringUtils.isEmpty(message))
+            return null;
+
         Map<String, Integer> map = populatePropertyMap(new HashMap<>(), activeUsers, warningLevel, limitLevel);
 
         return HtmlString.unsafe(StringExpressionFactory.create(message).eval(map));
