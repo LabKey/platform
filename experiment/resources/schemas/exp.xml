@@ -966,6 +966,7 @@
       <column columnName="Name"/>
       <column columnName="Description"/>
       <column columnName="CpasType"/>
+      <column columnName="MaterialSourceId"/>
       <column columnName="SourceApplicationId"/>
       <column columnName="RunId"/>
       <column columnName="Created"/>
