@@ -198,7 +198,7 @@ public class AuthFilter implements Filter
                 user = User.guest;
         }
         else
-            UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
 
         req = AuthenticatedRequest.create(req, user);
 

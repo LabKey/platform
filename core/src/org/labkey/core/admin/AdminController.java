@@ -5137,7 +5137,7 @@ public class AdminController extends SpringActionController
 
             if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
             {
-                container.setFolderType(FolderType.NONE, activeModules, getUser(), errors);
+                container.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                 Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                 container.setDefaultModule(defaultModule);
             }
@@ -5147,7 +5147,7 @@ public class AdminController extends SpringActionController
                 if (container.isContainerTab() && folderType.hasContainerTabs())
                     errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
                 else
-                    container.setFolderType(folderType, activeModules, getUser(), errors);
+                    container.setFolderType(folderType, getUser(), errors, activeModules);
             }
             if (errors.hasErrors())
                 return false;
@@ -7024,7 +7024,7 @@ public class AdminController extends SpringActionController
 
                         newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
                         afterCreateHandler.accept(newContainer);
-                        newContainer.setFolderType(type, getUser());
+                        newContainer.setFolderType(type, getUser(), errors);
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7036,7 +7036,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
+                            newContainer.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             newContainer.setDefaultModule(defaultModule);
                         }
@@ -9785,19 +9785,27 @@ public class AdminController extends SpringActionController
                         target,
                         ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
-            Map<String, Object> result = new LinkedHashMap<>();
-            if (null != report)
+
+            Map<String, Object> params = new LinkedHashMap<>();
+            if (report != null)
             {
-                result.put("report", report.getParams());
+                params.putAll(report.getParams());
+                // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
+                Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
+                if (jsonMetrics instanceof String)
+                {
+                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    params.put(MothershipReport.JSON_METRICS_KEY, o);
+                }
                 if (form.isSubmit())
                 {
                     report.setForwardedFor(form.getForwardedFor());
                     report.run();
                     if (null != report.getContent())
-                        result.put("upgradeMessage", report.getContent());
+                        params.put("upgradeMessage", report.getContent());
                 }
             }
-            return new ObjectMapper().writeValueAsString(result);
+            return new ApiSimpleResponse(params);
         }
     }
 

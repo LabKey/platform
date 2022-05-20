@@ -19,7 +19,6 @@ package org.labkey.mothership;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,10 +28,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -40,7 +37,9 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -48,7 +47,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +70,7 @@ public class MothershipManager
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
 
-    private static final Logger log = LogManager.getLogger(MothershipManager.class);
+    private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
 
     public static MothershipManager get()
     {
@@ -338,19 +336,43 @@ public class MothershipManager
 
             Date now = new Date();
             ServerSession existingSession = getServerSession(session.getServerSessionGUID(), container);
+            if (existingSession != null)
+            {
+                Calendar existingCal = Calendar.getInstance();
+                existingCal.setTime(existingSession.getLastKnownTime());
+                Calendar nowCal = Calendar.getInstance();
+
+                // Check if this session is straddling months. If so, break it into two so that we
+                // retain metrics with month level granularity
+                if (existingCal.get(Calendar.MONTH) != nowCal.get(Calendar.MONTH))
+                {
+                    // Chain the two sessions together
+                    session.setOriginalServerSessionId(existingSession.getServerSessionId());
+
+                    // Update the GUID for the old one as we're capturing in a new record going forward
+                    existingSession.setServerSessionGUID(GUID.makeGUID());
+                    Table.update(null, getTableInfoServerSession(), existingSession, existingSession.getServerSessionId());
+                    existingSession = null;
+                }
+            }
+
             if (existingSession == null)
             {
                 session.setEarliestKnownTime(now);
                 session.setLastKnownTime(now);
                 session.setServerInstallationId(installation.getServerInstallationId());
+                session.setServerIP(installation.getServerIP());
+                session.setServerHostName(hostName);
                 session = Table.insert(null, getTableInfoServerSession(), session);
             }
             else
             {
                 existingSession.setLastKnownTime(now);
+                existingSession.setServerIP(installation.getServerIP());
+                existingSession.setServerHostName(hostName);
                 existingSession.setContainerCount(getBestInteger(existingSession.getContainerCount(), session.getContainerCount()));
                 existingSession.setProjectCount(getBestInteger(existingSession.getProjectCount(), session.getProjectCount()));
-                existingSession.setActiveUserCount(getBestInteger(existingSession.getActiveUserCount(), session.getActiveUserCount()));
+                existingSession.setRecentUserCount(getBestInteger(existingSession.getRecentUserCount(), session.getRecentUserCount()));
                 existingSession.setUserCount(getBestInteger(existingSession.getUserCount(), session.getUserCount()));
                 existingSession.setAdministratorEmail(getBestString(existingSession.getAdministratorEmail(), session.getAdministratorEmail()));
                 existingSession.setEnterprisePipelineEnabled(getBestBoolean(existingSession.isEnterprisePipelineEnabled(), session.isEnterprisePipelineEnabled()));
@@ -419,9 +441,9 @@ public class MothershipManager
         ObjectMapper mapper = new ObjectMapper();
         try
         {
-            Map currentMap = mapper.readValue(currentValue, Map.class);
+            Map<String, Object> currentMap = mapper.readValue(currentValue, Map.class);
             ObjectReader updater = mapper.readerForUpdating(currentMap);
-            Map merged = updater.readValue(newValue);
+            Map<String, Object> merged = updater.readValue(newValue);
             return mapper.writeValueAsString(merged);
         }
         catch (IOException e)
@@ -545,33 +567,6 @@ public class MothershipManager
     {
         bean.setContainer(container.getId());
         Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
-    }
-
-    public Collection<ServerInstallation> getServerInstallationsActiveOn(Calendar cal)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation(), "si");
-        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession(), "ss");
-        sql.append(" WHERE earliestknowntime <= ? AND lastknowntime >= ?)");
-        sql.add(cal.getTime());
-        sql.add(cal.getTime());
-
-        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
-    }
-
-    public Collection<ServerInstallation> getServerInstallationsActiveBefore(Calendar cal)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation(), "si");
-        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession(), "ss");
-        sql.append(" WHERE earliestknowntime <= ?)");
-        sql.add(cal.getTime());
-
-        return new SqlSelector(getSchema(), sql).getCollection(ServerInstallation.class);
     }
 
     public ServerInstallation getServerInstallation(int id, Container c)

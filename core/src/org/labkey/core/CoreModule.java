@@ -61,6 +61,7 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -84,6 +85,8 @@ import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LimitActiveUsersService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
@@ -94,6 +97,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -224,6 +228,7 @@ import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
+import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
@@ -293,6 +298,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
         ExternalToolsViewService.get().registerExternalAccessViewProvider(new ApiKeyViewProvider());
+        LimitActiveUsersService.setInstance(() -> new LimitActiveUsersSettings().isUserLimitReached());
 
         // Register the default DataLoaders during init so they are available to sql upgrade scripts
         DataLoaderServiceImpl dls = new DataLoaderServiceImpl();
@@ -902,6 +908,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // populate folder types from startup properties as appropriate for not bootstrap
         FolderTypeManager.get().populateWithStartupProps();
+        LimitActiveUsersSettings.populateStartupProperties();
 
         AdminController.registerAdminConsoleLinks();
         AdminController.registerManagementTabs();
@@ -992,6 +999,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
                 .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
                 .collect(Collectors.toList()));
+            results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+
+            // Report the total number of login entries in the audit log
+            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
+            TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
+            results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
+            results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
+            results.put("systemUserCount", UserManager.getSystemUserCount());
             return results;
         });
 

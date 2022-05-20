@@ -1721,7 +1721,7 @@ boxPlot.render();
             if (isNaN(calc))
                 return 100;
 
-            return Math.abs(calc);
+            return calc;
         };
 
         var convertToStandardDeviation = function(value, mean, stddev) {
@@ -1729,7 +1729,7 @@ boxPlot.render();
             if (isNaN(calc))
                 return 0;
 
-            return Math.abs(calc);
+            return calc;
         };
 
         var convertValues = function(conversion) {
@@ -1761,12 +1761,15 @@ boxPlot.render();
         };
 
         // Handles Y Axis domain when performing percent or standard deviation conversions
-        var convertYAxisDomain = function (value, stddev, mean) {
+        var convertYAxisDomain = function (value, stddev, mean, include3StdDev) {
             var maxValue, minValue;
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
+            } else if (include3StdDev && stddev) {
+                maxValue = mean + (3.2 * stddev);
+                minValue = mean - (3.2 * stddev);
             }
 
             if (maxValue !== undefined && minValue !== undefined) {
@@ -1885,10 +1888,10 @@ boxPlot.render();
                     }
 
                     if (row[valProp] !== undefined) {
-                        convertYAxisDomain(row[valProp], row[sdProp], row[meanProp]);
+                        convertYAxisDomain(row[valProp], row[sdProp], row[meanProp], !config.properties.combined);
                     }
                     else if (row[valRightProp] !== undefined) {
-                        convertYAxisDomain(row[valRightProp], row[sdProp], row[meanProp]);
+                        convertYAxisDomain(row[valRightProp], row[sdProp], row[meanProp], !config.properties.combined);
                     }
                 }
             }
@@ -2137,13 +2140,13 @@ boxPlot.render();
             config.layers = [];
         }
         else {
-            var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 5, 3);
+            var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 4, 3);
 
             if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
 
                 // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
                 var stdDev3Layer = new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, width: barWidth}),
                     data: meanStdDevData,
                     aes: {
                         error: function(row){return row[config.properties.stdDev] * 3;},
@@ -2151,7 +2154,7 @@ boxPlot.render();
                     }
                 });
                 var stdDev2Layer = new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
                     data: meanStdDevData,
                     aes: {
                         error: function(row){return row[config.properties.stdDev] * 2;},
@@ -2159,7 +2162,7 @@ boxPlot.render();
                     }
                 });
                 var stdDev1Layer = new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                    geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, width: barWidth}),
                     data: meanStdDevData,
                     aes: {
                         error: function(row){return row[config.properties.stdDev];},
@@ -2178,7 +2181,7 @@ boxPlot.render();
             }
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 var range = new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                    geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, width: barWidth}),
                     data: config.data,
                     aes: {
                         upper: function(){return LABKEY.vis.Stat.CUSUM_CONTROL_LIMIT;},
@@ -2194,7 +2197,7 @@ boxPlot.render();
                 }
                 else {
                     var range = new LABKEY.vis.Layer({
-                        geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                        geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, width: barWidth}),
                         data: config.data,
                         aes: {
                             upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},

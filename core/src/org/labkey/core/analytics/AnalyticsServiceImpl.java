@@ -17,6 +17,7 @@ package org.labkey.core.analytics;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -159,6 +160,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         }
     }
 
+    @NotNull
     public TrackingStatus getTrackingStatus()
     {
         String strStatus = getProperty(AnalyticsProperty.trackingStatus);

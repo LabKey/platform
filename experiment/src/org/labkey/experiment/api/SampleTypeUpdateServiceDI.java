@@ -17,19 +17,29 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -39,18 +49,27 @@ import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
@@ -60,6 +79,7 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -69,11 +89,11 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
-import org.labkey.experiment.samples.UploadSamplesHelper;
-import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -82,9 +102,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
@@ -105,7 +127,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SkipDerivation,
         SkipAliquot
     }
-
 
     // SampleType may be null for read or delete. We don't allow insert or update without a sample type.
     final @Nullable ExpSampleTypeImpl _sampleType;
@@ -140,13 +161,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return _schema.getUser();
     }
 
-
     @Override
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
-        // MOVE PrepareDataIteratorBuilder into this file
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in, getContainer());
+        return new PrepareDataIteratorBuilder(_sampleType, (ExpMaterialTableImpl) getQueryTable(), in, getContainer());
     }
 
     @Override
@@ -252,7 +271,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
+        // insertRows with lineage is pretty good at deadlocking against itself, so use retry loop
 
         DbScope scope = getSchema().getDbSchema().getScope();
         List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
@@ -449,7 +468,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return oldRowMap;
     }
 
-
     @Override
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
@@ -509,7 +527,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         return null;
     }
-
 
     IntegerConverter _converter = new IntegerConverter();
 
@@ -699,26 +716,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    /* don't need to implement these since we override insertRows() etc. */
-
-//    @Override
-//    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-//    {
-//        throw new IllegalStateException();
-//    }
-
-//    @Override
-//    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
-//    {
-//        throw new IllegalStateException();
-//    }
-
-//    @Override
-//    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-//    {
-//        throw new IllegalStateException();
-//    }
-
     private void onSamplesChanged()
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
@@ -756,5 +753,482 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
+    }
+
+    /*
+     * This might be generally useful.
+     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
+     * copies data, this is straight pass through.
+     */
+    private static class DropColumnsDataIterator extends WrapperDataIterator
+    {
+        int[] indexMap;
+        int columnCount = 0;
+
+        DropColumnsDataIterator(DataIterator di, Set<String> drop)
+        {
+            super(di);
+            int inputColumnCount = di.getColumnCount();
+            indexMap = new int[inputColumnCount+1];
+            for (int inIndex = 0; inIndex <= inputColumnCount; inIndex++)
+            {
+                String name = di.getColumnInfo(inIndex).getName();
+                if (!drop.contains(name))
+                {
+                    indexMap[++columnCount] = inIndex;
+                }
+            }
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            return columnCount;
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return super.get(indexMap[i]);
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return super.getColumnInfo(indexMap[i]);
+        }
+
+        @Override
+        public Object getConstantValue(int i)
+        {
+            return super.getConstantValue(indexMap[i]);
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            return super.getSupplier(indexMap[i]);
+        }
+    }
+
+    // TODO: validate/compare functionality of CoerceDataIterator and loadRows()
+    private static class PrepareDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private static final int BATCH_SIZE = 100;
+
+        final ExpSampleTypeImpl sampleType;
+        final DataIteratorBuilder builder;
+        final ExpMaterialTableImpl materialTable;
+        final Container container;
+
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable, DataIteratorBuilder in, Container container)
+        {
+            this.sampleType = sampleType;
+            this.builder = in;
+            this.materialTable = materialTable;
+            this.container = container;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
+
+            // drop columns
+            var drop = new CaseInsensitiveHashSet();
+            for (int i = 1; i <= source.getColumnCount(); i++)
+            {
+                String name = source.getColumnInfo(i).getName();
+                if (isReservedHeader(name))
+                {
+                    // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
+                    // Skip over other reserved names 'RowId', 'Run', etc.
+                    if (isCommentHeader(name))
+                        continue;
+                    if (isNameHeader(name))
+                        continue;
+                    if (isDescriptionHeader(name))
+                        continue;
+                    if (ExperimentService.isInputOutputColumn(name))
+                        continue;
+                    if (isAliasHeader(name))
+                        continue;
+                    if (isSampleStateHeader(name))
+                        continue;
+                    drop.add(name);
+                }
+            }
+            if (!drop.isEmpty())
+                source = new DropColumnsDataIterator(source, drop);
+
+            // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
+            // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
+            DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
+
+            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
+            SimpleTranslator addGenId = new SimpleTranslator(c, context);
+            addGenId.setDebugName("add genId");
+            Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
+            materialTable.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> idColNames.add(columnInfo.getName()));
+            addGenId.selectAll(idColNames);
+
+            ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
+            final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
+            addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
+            addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
+            DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
+
+            // Table Counters
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId());
+            dataIterator = dib.getDataIterator(context);
+
+            // sampleset.createSampleNames() + generate lsid
+            // TODO: does not handle insertIgnore
+            DataIterator names = new _GenerateNamesDataIterator(sampleType, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampleType.getContainer()))
+                    .addExtraPropsFn(() -> {
+                        if (container != null)
+                            return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
+                        else
+                            return Collections.emptyMap();
+                    });
+
+            return LoggingDataIterator.wrap(names);
+        }
+
+        private static boolean isReservedHeader(String name)
+        {
+            if (isNameHeader(name) || isDescriptionHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name) || isAliasHeader(name))
+                return true;
+            if (ExperimentService.isInputOutputColumn(name))
+                return true;
+            for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
+            {
+                if (isExpMaterialColumn(column, name))
+                    return true;
+            }
+            return false;
+        }
+
+        private static boolean isExpMaterialColumn(ExpMaterialTable.Column column, String name)
+        {
+            return column.name().equalsIgnoreCase(name);
+        }
+
+        private static boolean isNameHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Name, name);
+        }
+
+        private static boolean isDescriptionHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Description, name);
+        }
+
+        private static boolean isSampleStateHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.SampleState, name);
+        }
+
+        private static boolean isCommentHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Flag, name) || "Comment".equalsIgnoreCase(name);
+        }
+
+        private static boolean isAliasHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Alias, name);
+        }
+    }
+
+    static class _GenerateNamesDataIterator extends SimpleTranslator
+    {
+        final ExpSampleTypeImpl sampleType;
+        final NameGenerator nameGen;
+        final NameGenerator aliquotNameGen;
+        final NameGenerator.State nameState;
+        final Lsid.LsidBuilder lsidBuilder;
+        final Container _container;
+        final int _batchSize;
+        boolean first = true;
+        Map<String, String> importAliasMap = null;
+        boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
+        Set<String> _existingNames = null;
+        List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
+
+        String generatedName = null;
+        String generatedLsid = null;
+
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, MapDataIterator source, DataIteratorContext context, int batchSize)
+        {
+            super(source, context);
+            this.sampleType = sampleType;
+            try
+            {
+                this.importAliasMap = sampleType.getImportAliasMap();
+                _extraPropsFns.add(() -> {
+                    if (this.importAliasMap != null)
+                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, this.importAliasMap);
+                    else
+                        return Collections.emptyMap();
+                });
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
+            nameGen = sampleType.getNameGenerator();
+            aliquotNameGen = sampleType.getAliquotNameGenerator();
+            if (nameGen != null)
+                nameState = nameGen.createState(true);
+            else
+                nameState = null;
+            lsidBuilder = sampleType.generateSampleLSID();
+            _container = sampleType.getContainer();
+            _batchSize = batchSize;
+            CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
+            skip.addAll("name", "lsid", "rootmateriallsid");
+            selectAll(skip);
+
+            addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier)() -> generatedName);
+            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            // Ensure we have a cpasType column and it is of the right value
+            addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+        }
+
+        _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
+        {
+            _allowUserSpecifiedNames = allowUserSpecifiedNames;
+            return this;
+        }
+
+        _GenerateNamesDataIterator addExtraPropsFn(Supplier<Map<String, Object>> extraProps)
+        {
+            _extraPropsFns.add(extraProps);
+            return this;
+        }
+
+        void onFirst()
+        {
+            first = false;
+        }
+
+        @Override
+        protected void processNextInput()
+        {
+            Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
+
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get("AliquotedFrom");
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    aliquotedFrom = (String) aliquotedFromObj;
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
+            try
+            {
+                Object currNameObj = map.get("Name");
+                if (currNameObj != null && !_allowUserSpecifiedNames)
+                {
+                    if (StringUtils.isNotBlank(currNameObj.toString()))
+                    {
+                        if (_context.getInsertOption().equals(QueryUpdateService.InsertOption.MERGE))
+                        {
+                            // don't flag rows that already exist if the option is set to update existing
+                            if (!rowExists(currNameObj.toString()))
+                                addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names (or existing names) are allowed.");
+                        }
+                        else
+                            addRowError("Manual entry of names has been disabled for this folder. Only naming-pattern-generated names are allowed.");
+
+                    }
+                }
+
+                if (nameGen != null)
+                {
+                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
+                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+                }
+                else
+                    addRowError("Error creating naming pattern generator.");
+            }
+
+            catch (NameGenerator.DuplicateNameException dup)
+            {
+                addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
+            }
+            catch (NameGenerator.NameGenerationException e)
+            {
+                // Failed to generate a name due to some part of the expression not in the row
+                if (isAliquot)
+                {
+                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                }
+                else
+                {
+                    if (sampleType.hasNameExpression())
+                        addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampleType.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    else if (sampleType.hasNameAsIdCol())
+                        addRowError("SampleID or Name is required for sample on row " + e.getRowNumber());
+                    else
+                        addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                }
+            }
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            // consider add onFirst() as callback from SimpleTranslator
+            if (first)
+                onFirst();
+
+            // calls processNextInput()
+            return super.next();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            super.close();
+            if (null != nameState)
+                nameState.close();
+        }
+
+        private boolean rowExists(String name)
+        {
+            if (_existingNames == null)
+            {
+                _existingNames = new HashSet<>();
+                SamplesSchema schema = new SamplesSchema(User.getSearchUser(), _container);
+                TableSelector ts = new TableSelector(schema.getTable(sampleType, null), Collections.singleton("Name")).setMaxRows(1_000_000);
+                ts.fillSet(_existingNames);
+            }
+            return _existingNames.contains(name);
+        }
+    }
+
+    static class _SamplesCoerceDataIterator extends SimpleTranslator
+    {
+        private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
+        private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
+
+        private final ExpSampleTypeImpl _sampleType;
+
+        public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
+        {
+            super(source, context);
+            _sampleType = sampleType;
+            setDebugName("Coerce before trigger script - samples");
+            init(materialTable, context.getInsertOption().useImportAliases);
+        }
+
+        void init(TableInfo target, boolean useImportAliases)
+        {
+            Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
+            DataIterator di = getInput();
+            int count = di.getColumnCount();
+
+            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : _sampleType.getDomain().getProperties())
+            {
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
+            }
+
+            int derivationDataColInd = -1;
+            for (int i = 1; i <= count; i++)
+            {
+                ColumnInfo from = di.getColumnInfo(i);
+                if (from != null)
+                {
+                    if ("AliquotedFrom".equalsIgnoreCase(from.getName()))
+                    {
+                        derivationDataColInd = i;
+                        break;
+                    }
+                }
+            }
+
+            for (int i = 1; i <= count; i++)
+            {
+                ColumnInfo from = di.getColumnInfo(i);
+                ColumnInfo to = targetMap.get(from.getName());
+
+                if (null != to)
+                {
+                    String name = to.getName();
+                    boolean isPropertyField = propertyFields.containsKey(name);
+
+                    String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
+                    String ignoredMetaPropValue = String.format(INVALID_NONALIQUOT_PROPERTY, name);
+                    if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
+                    {
+                        if (isPropertyField)
+                        {
+                            ColumnInfo clone = new BaseColumnInfo(to);
+                            addColumn(clone, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                        }
+                        else
+                            addColumn(to, i);
+                    }
+                    else if (to.getFk() instanceof MultiValuedForeignKey)
+                    {
+                        // pass-through multi-value columns -- converting will stringify a collection
+                        if (isPropertyField)
+                        {
+                            var col = new BaseColumnInfo(getInput().getColumnInfo(i));
+                            col.setName(name);
+                            addColumn(col, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                        }
+                        else
+                            addColumn(to.getName(), i);
+                    }
+                    else
+                    {
+                        if (isPropertyField)
+                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
+                        else
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
+                    }
+                }
+                else
+                {
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
+                    {
+                        addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
+                    }
+
+                    addColumn(i);
+                }
+            }
+        }
+
+        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
+        {
+            var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
+            col.setName(name);
+            col.setJdbcType(toType);
+            if (toFk != null)
+                col.setFk(toFk);
+
+            _addConvertColumn(col, fromIndex, derivationDataColInd, isAliquotField);
+        }
+
+        private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
+        {
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
+
+            addColumn(col, c);
+        }
     }
 }

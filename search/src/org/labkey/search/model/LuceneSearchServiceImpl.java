@@ -985,7 +985,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             String contentType = r.getContentType();
-            if (isImage(contentType) || isZip(contentType))
+            if (isImage(contentType) || isZip(contentType) || isWorkingFile(r))
                 return false;
             FileStream fs = r.getFileStream(User.getSearchUser());
             if (null == fs)
@@ -998,6 +998,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     DocumentParser p = detectParser(r, null);
                     return p != null;
                 }
+
                 return true;
             }
             finally
@@ -1011,6 +1012,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    private boolean isWorkingFile(@NotNull WebdavResource r)
+    {
+        // MS Office opens temp/working files with '~', ignore these. Issue #45005
+        return r.getName().startsWith("~") || r.getName().startsWith(".~");
+    }
 
     private boolean isTooBig(FileStream fs, String contentType) throws IOException
     {
@@ -2096,7 +2102,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static class ContainerFieldComparatorSource extends FieldComparatorSource
     {
         @Override
-        public FieldComparator<?> newComparator(String fieldname, int numHits, int sortPos, boolean reversed)
+        public FieldComparator<?> newComparator(String fieldname, int numHits, boolean enabledSkipping, boolean reversed)
         {
             return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
                 @Override
@@ -2133,7 +2139,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             /* pass */
         }
     }
-
 
     // to avoid generating a lot of garbage, try to avoid excessive allocating and freeing a lot of ByteBuffers
     static final ThreadLocal<SoftReference<ByteBuffer>> bufferStash = ThreadLocal.withInitial(() -> new SoftReference<>(null));

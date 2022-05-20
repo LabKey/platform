@@ -58,6 +58,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
@@ -247,6 +248,9 @@ public class PageFlowUtil
                     break;
                 case '>':
                     sb.append("&gt;");
+                    break;
+                case '\\':
+                    sb.append("&#92;");
                     break;
                 case '\n':
                     if (encodeSpace)
@@ -1702,23 +1706,20 @@ public class PageFlowUtil
         }
     }
 
-
-    public static SafeToRender getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    public static SafeToRender getAppIncludes(ViewContext context, @NotNull PageConfig config)
     {
-        return _getStandardIncludes(context, null, resources, false, false);
+        return _getStandardIncludes(context, config, config.getClientDependencies(), false, false);
     }
-
 
     public static SafeToRender getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         return _getStandardIncludes(context, null, resources, true, includePostParameters);
     }
 
-    public static SafeToRender getStandardIncludes(ViewContext context, PageConfig config)
+    public static SafeToRender getStandardIncludes(ViewContext context, @NotNull PageConfig config)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
-
 
     private static SafeToRender _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
             boolean includeDefaultResources, boolean includePostParameters)
@@ -2327,7 +2328,7 @@ public class PageFlowUtil
 
         if (null != container)
         {
-            json.put("container", container.toJSON(user, false));
+            json.put("container", container.toJSON(user, config != null && config.isIncludePermissions()));
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
 
@@ -2352,7 +2353,7 @@ public class PageFlowUtil
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationCountByUser(null, user.getUserId(), true)));
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");

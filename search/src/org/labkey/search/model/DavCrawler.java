@@ -224,14 +224,25 @@ public class DavCrawler implements ShutdownListener
     /**
      * start a background process to watch directories
      * optionally add a path at the same time
+     *
+     * nextCrawl can be used to bump up (or down) the priority of scanning the start directory
      */
-    public void addPathToCrawl(@Nullable Path start, Date nextCrawl)
+    public void addPathToCrawl(@Nullable Path start, @Nullable Date nextCrawl)
     {
         if (null != start)
         {
             _log.debug("START CONTINUOUS " + start.toString());
-            // make sure path exists, don't update if it already exists.
-            _paths.insertPath(start, nextCrawl);
+            // make sure path exists
+            if (null == nextCrawl)
+            {
+                // insert path if it does not exist,
+                _paths.insertPath(start, null);
+            }
+            else
+            {
+                // insert path if it does not exist, and update nextCrawl
+                _paths.updatePath(start, null, nextCrawl, true);
+            }
         }
 
         pingCrawler();

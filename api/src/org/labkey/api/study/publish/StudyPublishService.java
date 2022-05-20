@@ -139,7 +139,7 @@ public interface StudyPublishService
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
 
-    ExpProtocol ensureStudyPublishProtocol(User user, Container container, @Nullable String name, @Nullable String lsid) throws ExperimentException;
+    ExpProtocol ensureStudyPublishProtocol(User user) throws ExperimentException;
 
     /**
      * Returns the set of datasets which have ever had data linked from the provided protocol

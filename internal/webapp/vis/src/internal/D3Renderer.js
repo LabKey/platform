@@ -1922,7 +1922,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     return 'translate(' + glyphX + ',' + y + ')';
                 });
 
-        if (plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
+        if (plot.originalAes && plot.originalAes.legend && plot.originalAes.legend.mouseOverFn) {
             selection.on('mouseover', function (data) {
                 plot.originalAes.legend.mouseOverFn.call(d3.event, data, this);
             });
@@ -2162,10 +2162,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data) {
-        var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
+        var colorAcc, sizeAcc, topFn, bottomFn, verticalFn, selection, newBars;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
-        altColorAcc = geom.altColor ? geom.altColor : colorAcc;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
         topFn = function(d) {
             var x, y, value, error;
@@ -2215,11 +2214,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
         newBars.append('path').attr('class','error-bar-bottom');
-        newBars.append('path').attr('class','error-bar-vert');
 
         selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
         selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-vert').attr('d', verticalFn).attr('stroke', altColorAcc).attr('stroke-width', sizeAcc);
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));

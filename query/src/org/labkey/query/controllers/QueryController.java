@@ -154,6 +154,7 @@ import org.labkey.query.xml.TestCaseType;
 import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataAccessException;
@@ -1672,6 +1673,127 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class ExportQueriesForm extends ExportQueryForm implements CustomApiForm
+    {
+        private String filename;
+        private List<ExportQueryForm> queryForms;
+
+        public void setFilename(String filename)
+        {
+            this.filename = filename;
+        }
+
+        public String getFilename()
+        {
+            return this.filename;
+        }
+
+        public void setQueryForms(List<ExportQueryForm> queryForms)
+        {
+            this.queryForms = queryForms;
+        }
+
+        public List<ExportQueryForm> getQueryForms()
+        {
+            return this.queryForms;
+        }
+
+        /**
+         * Map JSON to Spring PropertyValue objects.
+         * @param props
+         */
+        private MutablePropertyValues getPropertyValues(JSONObject props)
+        {
+            // Collecting mapped properties as a list because adding them to an existing MutablePropertyValues object replaces existing values
+            List<PropertyValue> properties = new ArrayList<>();
+
+            for(Map.Entry<String, Object> entry : props.entrySet())
+            {
+                String key = entry.getKey();
+                if (entry.getValue() instanceof JSONArray)
+                {
+                    // Split arrays into individual pairs to be bound (Issue #45452)
+                    JSONArray val = (JSONArray) entry.getValue();
+                    for(int i=0; i < val.length();i++)
+                    {
+                        properties.add(new PropertyValue(key, val.getString(i)));
+                    }
+                }
+                else
+                {
+                    properties.add(new PropertyValue(key, entry.getValue()));
+                }
+            }
+
+            return new MutablePropertyValues(properties);
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            setFilename(props.get("filename").toString());
+            List<ExportQueryForm> forms = new ArrayList<>();
+
+            JSONArray models = (JSONArray)props.get("queryForms");
+            if (models == null)
+            {
+                QueryController.LOG.error("No models to export; Form's `queryForms` property was null");
+                throw new RuntimeValidationException("No queries to export; Form's `queryForms` property was null");
+            }
+
+            for (JSONObject queryModel : models.toJSONObjectArray())
+            {
+                ExportQueryForm qf = new ExportQueryForm();
+                qf.setViewContext(this.getViewContext());
+
+                qf.bindParameters(getPropertyValues(queryModel));
+                forms.add(qf);
+            }
+
+            setQueryForms(forms);
+        }
+    }
+
+    /**
+     * Export multiple query forms
+     */
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.Export.class)
+    public static class ExportQueriesXLSXAction extends ReadOnlyApiAction<ExportQueriesForm>
+    {
+        @Override
+        public Object execute(ExportQueriesForm form, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setHeader("X-Robots-Tag", "noindex");
+            response.setHeader("Content-Disposition", "attachment");
+
+            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
+            {
+                writer.setFilenamePrefix(form.getFilename());
+                ViewContext viewContext = getViewContext();
+                for(ExportQueryForm qf : form.getQueryForms())
+                {
+                    qf.setViewContext(viewContext);
+                    qf.getSchema();
+
+                    QueryView qv = qf.getQueryView();
+                    qv.exportToExcelSheet(writer,
+                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                                .setExcludeColumns(qf.getExcludeColumns())
+                                .setRenamedColumns(qf.getRenameColumnMap()),
+                            qf.getSheetName()
+                    );
+                }
+
+                writer.getWorkbook().setActiveSheet(0);
+                writer.writeWorkbook(response);
+                return null; //Returning anything here will cause error as excel writer will close the response stream
+            }
+        }
+    }
+
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static class TemplateForm extends ExportQueryForm
     {
@@ -1787,7 +1909,16 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumnMap(), form.getFilenamePrefix());
+            view.exportToExcel( new QueryView.ExcelExportConfig(getViewContext().getResponse(), form.getHeaderType())
+                    .setTemplateOnly(true)
+                    .setInsertColumnsOnly(form.insertColumnsOnly)
+                    .setDocType(fileType)
+                    .setRespectView(respectView)
+                    .setIncludeColumns(form.getIncludeColumns())
+                    .setExcludeColumns(form.getExcludeColumns())
+                    .setRenamedColumns(form.getRenameColumnMap())
+                    .setPrefix(form.getFilenamePrefix())
+            );
         }
     }
 
@@ -1798,6 +1929,17 @@ public class QueryController extends SpringActionController
         protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
         FieldKey[] excludeColumn;
         Map<String, String> renameColumns = null;
+        private String sheetName;
+
+        public void setSheetName(String sheetName)
+        {
+            this.sheetName = sheetName;
+        }
+
+        public String getSheetName()
+        {
+            return this.sheetName;
+        }
 
         public ColumnHeaderType getHeaderType()
         {
@@ -7183,6 +7325,7 @@ public class QueryController extends SpringActionController
                 new ExportScriptAction(),
                 new ExportRowsExcelAction(),
                 new ExportRowsXLSXAction(),
+                new ExportQueriesXLSXAction(),
                 new ExportExcelTemplateAction(),
                 new ExportRowsTsvAction(),
                 controller.new ExcelWebQueryDefinitionAction(),

@@ -835,7 +835,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     ts.setValue(new Timestamp(p.second));
                     pm.addBatch();
                 }
-                pm.execute();
+                pm.executeBatch();
             });
         }
         catch (SQLException x)
@@ -3652,7 +3652,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return null != type ? type.getObject(lsid) : null;
     }
 
-    static final String findTypeSql = "SELECT Type FROM exp.AllLsid WHERE Lsid = ?";
+    static final String findTypeSql = "SELECT DISTINCT Type FROM exp.AllLsid WHERE Lsid = ?";
 
     /**
      * @param lsid Full lsid we're looking for.
@@ -3671,8 +3671,16 @@ public class ExperimentServiceImpl implements ExperimentService
         // AssayRunMaterial, AssayRunTSVData, GeneralAssayProtocol, LuminexAssayProtocol
         // Recipe
         // AssayDomain-SampleWellGroup
-        String typeName = new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getObject(String.class);
-        return LsidType.get(typeName);
+        Set<String> types = new HashSet<>(new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getArrayList(String.class));
+        if (types.size() == 1)
+        {
+            return LsidType.get(types.iterator().next());
+        }
+        if (types.isEmpty())
+        {
+            return null;
+        }
+        throw new IllegalStateException("Found multiple matching LSID types for '" + lsid + "': " + types);
     }
 
     public List<String> createContainerList(@NotNull Container container, @Nullable User user, boolean includeProjectAndShared)
@@ -5638,8 +5646,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (ExpMaterialImpl mat : materials)
         {
             runMaterialMap.put(mat.getRowId(), mat);
-            ExpProtocolApplication sourceApplication = mat.getSourceApplication();
-            Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
+            Integer srcAppId = mat.getDataObject().getSourceApplicationId();
             ExpProtocolApplicationImpl protApp = resolveProtApp(expRun, protStepMap, srcAppId);
             protApp.getOutputMaterials().add(mat);
             mat.markAsPopulated(protApp);

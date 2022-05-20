@@ -1131,7 +1131,7 @@ public class SpecimenController extends SpringActionController
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
 
-            xlWriter.write(getViewContext().getResponse());
+            xlWriter.renderSheetAndWrite(getViewContext().getResponse());
 
             return null;
         }
@@ -5045,7 +5045,7 @@ public class SpecimenController extends SpringActionController
                 {
                     try (ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
                     {
-                        writer.write(getViewContext().getResponse());
+                        writer.renderSheetAndWrite(getViewContext().getResponse());
                     }
                 }
             }
@@ -5198,7 +5198,7 @@ public class SpecimenController extends SpringActionController
                     {
                         try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
                         {
-                            xlsWriter.write(ostream);
+                            xlsWriter.renderSheetAndWrite(ostream);
                             ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }

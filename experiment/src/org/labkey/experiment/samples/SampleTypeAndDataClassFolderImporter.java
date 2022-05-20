@@ -13,6 +13,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExperimentService;
@@ -49,7 +50,9 @@ import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_XML_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_XML_NAME;
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
@@ -90,14 +93,14 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
             for (String file: xarDir.list())
             {
-                if (file.equalsIgnoreCase(XAR_TYPES_NAME))
+                if (file.equalsIgnoreCase(XAR_TYPES_NAME) || file.equalsIgnoreCase(XAR_TYPES_XML_NAME))
                 {
                     if (typesXarFile == null)
                         typesXarFile = xarDirPath.resolve(file);
                     else
                         log.error("More than one types XAR file found in the sample type directory: ", file);
                 }
-                else if (file.equalsIgnoreCase(XAR_RUNS_NAME))
+                else if (file.equalsIgnoreCase(XAR_RUNS_NAME) || file.equalsIgnoreCase(XAR_RUNS_XML_NAME))
                 {
                     if (runsXarFile == null)
                         runsXarFile = xarDirPath.resolve(file);
@@ -143,7 +146,11 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
                     {
-                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
+                        XarSource runsXarSource;
+                        if (runsXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
+                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer());
+                        else
+                            runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
                         try
                         {
                             runsXarSource.init();
@@ -184,7 +191,12 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             job = getDummyPipelineJob(ctx);
         }
 
-        XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
+        XarSource typesXarSource;
+
+        if (typesXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
+            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer());
+        else
+            typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
         try
         {
             typesXarSource.init();

@@ -144,9 +144,14 @@ class UserCache
         return getUserCollections().getActiveUserCount();
     }
 
-    static long getActiveRealUserCount()
+    static int getActiveRealUserCount()
     {
         return getUserCollections().getActiveRealUserCount();
+    }
+
+    static int getSystemUserCount()
+    {
+        return getUserCollections().getSystemUserCount();
     }
 
     /**
@@ -171,15 +176,17 @@ class UserCache
         private final Map<ValidEmail, User> _emailMap;
         private final Map<String, User> _displayNameMap;
         private final List<User> _activeUsers;
-        private final long _realUserCount;
+        private final int _realUserCount;
+        private final int _systemUserCount;
 
-        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, Map<String, User> displayNameMap, List<User> activeUsers)
+        private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, Map<String, User> displayNameMap, List<User> activeUsers, int realUserCount, int systemUserCount)
         {
             _userIdMap = Collections.unmodifiableMap(userIdMap);
             _emailMap = Collections.unmodifiableMap(emailMap);
             _displayNameMap = displayNameMap;
             _activeUsers = Collections.unmodifiableList(activeUsers);
-            _realUserCount = _activeUsers.stream().filter(user -> !user.getEmail().endsWith("@local.test")).count();
+            _realUserCount = realUserCount;
+            _systemUserCount = systemUserCount;
         }
 
         private Map<Integer, User> getUserIdMap()
@@ -208,9 +215,14 @@ class UserCache
         }
 
         // used only by startup to exclude demo users created for eval content etc.
-        private long getActiveRealUserCount()
+        private int getActiveRealUserCount()
         {
             return _realUserCount;
+        }
+
+        private int getSystemUserCount()
+        {
+            return _systemUserCount;
         }
     }
 
@@ -226,6 +238,8 @@ class UserCache
             Map<ValidEmail, User> emailMap = new HashMap<>((int)(1.3 * allUsers.size()));
             Map<String, User> displayNameMap = new HashMap<>((int)(1.3 * allUsers.size()));
             List<User> activeUsers = new LinkedList<>();
+            int realUserCount = 0;
+            int systemUserCount = 0;
 
             // We're using the same User object in multiple lists... UserCache must clone all users it returns to prevent
             // concurrency issues (e.g., a caller might indirectly modify a cached User's group list, leading to stale credentials)
@@ -247,10 +261,16 @@ class UserCache
                 }
 
                 if (user.isActive())
+                {
                     activeUsers.add(user);
+                    if (!user.getEmail().endsWith("@local.test"))
+                        realUserCount++;
+                    if (user.isSystem())
+                        systemUserCount++;
+                }
             }
 
-            return new UserCollections(userIdMap, emailMap, displayNameMap, activeUsers);
+            return new UserCollections(userIdMap, emailMap, displayNameMap, activeUsers, realUserCount, systemUserCount);
         }
     }
 }

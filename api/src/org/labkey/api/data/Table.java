@@ -93,7 +93,7 @@ public class Table
 
     private static final Logger _log = LogHelper.getLogger(Table.class, "SQL generation and execution, some TableInfo-scoped DB operations");
 
-    // Return all rows instead of limiting to the top n
+    // Don't limit the rows returned to a specific count (filters and offsets can still eliminate rows)
     public static final int ALL_ROWS = -1;
     // Return no rows -- useful for query validation or when you need just metadata
     public static final int NO_ROWS = 0;
