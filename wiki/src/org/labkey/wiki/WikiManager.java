@@ -514,7 +514,8 @@ public class WikiManager implements WikiService
         if (null != wiki.getEntityId())
             attachPrefix = WikiController.getDownloadURL(wiki.lookupContainer(), wiki, "").getLocalURIString();
 
-        Map<String, String> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
+        // When rendering wikis, we want aliases to resolve to their titles as well, Issue 45497
+        Map<String, String> nameTitleMap = WikiSelectManager.getNameAndAliasTitleMap(c);
 
         //get formatter specified for this version
         WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments());

@@ -292,41 +292,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return limitRows(frag, maxRows, 0);
-    }
-
-    private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
-    {
-        if (rowCount != Table.ALL_ROWS)
-        {
-            frag.append("\nLIMIT ");
-            frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
-
-            if (offset > 0)
-            {
-                frag.append(" OFFSET ");
-                frag.append(Long.toString(offset));
-            }
-        }
-        return frag;
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        if (select == null)
-            throw new IllegalArgumentException("select");
-        if (from == null)
-            throw new IllegalArgumentException("from");
-
-        SQLFragment sql = new SQLFragment();
-        sql.append(select);
-        sql.append("\n").append(from);
-        if (filter != null) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-
-        return limitRows(sql, maxRows, offset);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset);
     }
 
     @Override
@@ -948,7 +920,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         return "template1";
     }

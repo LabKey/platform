@@ -7,10 +7,10 @@ import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
@@ -47,6 +47,8 @@ public class ParameterMapStatement implements AutoCloseable
     Connection _conn;       // only used for copy()
     SqlDialect _dialect;
     boolean _closed = false;
+
+    int batchCount = 0;
 
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
 
@@ -283,6 +285,7 @@ public class ParameterMapStatement implements AutoCloseable
             _objectId = null;
             _rowId = null;
             _stmt.executeBatch();
+            batchCount = 0;
         }
         catch (SQLException x)
         {
@@ -293,6 +296,14 @@ public class ParameterMapStatement implements AutoCloseable
 
     public int execute()
     {
+        if (batchCount > 0)
+        {
+            // this might be called in background thread so add an ERROR to the log
+            var ex  = new IllegalStateException("Don't call execute() after calling addBatch()");
+            LogHelper.getLogger(ParameterMapStatement.class, "ParameterMapStatement").error("Call executeBatch() instead", ex);
+            throw ex;
+        }
+
         prepareParametersBeforeExecute();
 
         ResultSet rs = null;
@@ -399,6 +410,7 @@ public class ParameterMapStatement implements AutoCloseable
         {
             prepareParametersBeforeExecute();
             _stmt.addBatch();
+            batchCount++;
         }
         catch (SQLException x)
         {

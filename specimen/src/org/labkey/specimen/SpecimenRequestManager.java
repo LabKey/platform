@@ -1056,6 +1056,7 @@ public class SpecimenRequestManager
                 }
             }
 
+            groupedValues = Collections.unmodifiableMap(groupedValues);
             _groupedValuesCache.put(cacheKey, groupedValues);
         }
         catch (SQLException e)

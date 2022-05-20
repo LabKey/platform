@@ -15,8 +15,8 @@
  */
 package org.labkey.core.query;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -53,6 +53,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
+import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -101,8 +102,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     private Set<String> _illegalColumns;
     private boolean _mustCheckPermissions = true;
-    private boolean _canSeeDetails;
+    private final boolean _canSeeDetails;
     private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
+    private static final String SYSTEM = "System";
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
 
     static
@@ -179,6 +181,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         // expiration date will only show for admins under Site Users, if enabled
         hideExpirationDateColumn();
+        // System column will be shown to all, but only editable by site administrators
+        hideSystemColumn();
 
         // The details action requires admin permission so don't offer the link if they can't see it
         if (getUser().hasRootPermission(UserManagementPermission.class) || getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -239,6 +243,18 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             expirationDateCol.setUserEditable(false);
             expirationDateCol.setShownInInsertView(false);
             expirationDateCol.setShownInUpdateView(false);
+        }
+    }
+
+    private void hideSystemColumn()
+    {
+        var systemColumn = getMutableColumn(FieldKey.fromParts(SYSTEM));
+        if (systemColumn != null)
+        {
+            boolean siteAdmin = getUser().hasSiteAdminPermission();
+            systemColumn.setUserEditable(siteAdmin);
+            systemColumn.setShownInInsertView(siteAdmin);
+            systemColumn.setShownInUpdateView(siteAdmin);
         }
     }
 
@@ -479,6 +495,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             validatePermissions(user, userToUpdate);
             validateUpdatedUser(userToUpdate, row);
             validateExpirationDate(userToUpdate, user, container, row);
+            validateSystem(user, userToUpdate, row);
 
             SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
             validateAvatarFile(avatarFile);
@@ -516,6 +533,18 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 {
                     throw new ValidationException("Invalid value for Expiration Date.");
                 }
+            }
+        }
+
+        private void validateSystem(User editingUser, User userToUpdate, Map<String, Object> row)
+        {
+            if (row.containsKey(SYSTEM))
+            {
+                if (!editingUser.hasSiteAdminPermission())
+                    throw new UnauthorizedException("User does not have permission to edit the System field.");
+
+                if (userToUpdate.isSystem() && !(boolean) row.get(SYSTEM) && LimitActiveUsersService.get().isUserLimitReached())
+                    throw new UnauthorizedException("User limit has been reached so you can't clear the System field.");
             }
         }
 

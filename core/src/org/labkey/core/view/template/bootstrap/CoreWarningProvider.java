@@ -37,6 +37,7 @@ import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.user.LimitActiveUsersSettings;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -97,11 +98,19 @@ public class CoreWarningProvider implements WarningProvider
             }
         }
 
+        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), SHOW_ALL_WARNINGS);
+        if (null != warning)
+            warnings.add(warning);
+
         if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
         {
             String message = AppProps.getInstance().getRibbonMessageHtml();
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
+        }
+        else if (SHOW_ALL_WARNINGS)
+        {
+            warnings.add(HtmlString.of("Here is a sample ribbon message."));
         }
     }
 
