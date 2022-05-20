@@ -16,13 +16,16 @@ import {
     SCHEMAS,
     User,
     withPermissionsPage,
+    getUserLimitSettings,
 } from '@labkey/components';
 
 interface State {
-    policy: SecurityPolicy
-    loading: boolean
-    error: string
-    message: string
+    policy: SecurityPolicy;
+    loading: boolean;
+    policyError: string;
+    userCreationError: string;
+    message: string;
+    userLimitSettings: any;
 }
 
 class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage, State> {
@@ -33,25 +36,35 @@ class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage
         this.state = {
             policy: undefined,
             loading: true,
-            error: undefined,
-            message: undefined
+            policyError: undefined,
+            userCreationError: undefined,
+            message: undefined,
+            userLimitSettings: undefined,
         };
     }
 
     componentDidMount() {
         fetchContainerSecurityPolicy(getServerContext().container.id, this.props.principalsById)
             .then((policy) => {
-                this.setState(() => ({loading: false, policy}));
+                this.setState(() => ({ loading: false, policy }));
             })
             .catch((response) => {
-                this.setState(() => ({loading: false, error: response.exception}));
+                this.setState(() => ({ loading: false, policyError: response.exception }));
             });
+
+        this.loadUserLimitSettings();
     }
+
+    loadUserLimitSettings(): void {
+        getUserLimitSettings().then(userLimitSettings => {
+            this.setState(() => ({ userLimitSettings }));
+        });
+    };
 
     onSuccess = (response: any) => {
         queryGridInvalidate(SCHEMAS.CORE_TABLES.USERS);
 
-        let message;
+        let message, userCreationError;
         if (response.users) {
             let countNew = 0;
             response.users.forEach((user) => {
@@ -64,39 +77,47 @@ class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage
             if (response.users.length > countNew) {
                 message = message + ' ' + Utils.pluralBasic(response.users.length - countNew, 'user') + ' already existed.'
             }
-        }
-        else if (response.delete) {
+        } else if (response.delete) {
             message = 'Successfully deleted ' + Utils.pluralBasic(response.userIds.length, 'user') + '.';
-        }
-        else {
-            message = 'Successfully ' + (response.activate ? 'reactivated' : 'deactivated') + ' ' + Utils.pluralBasic(response.userIds.length, 'user') + '.';
+        } else {
+            message ='Successfully ' + (response.activate ? 'reactivated' : 'deactivated') + ' ' + Utils.pluralBasic(response.userIds.length, 'user') + '.';
         }
 
-        this.setState(() => ({message}));
+        if (response.htmlErrors?.length > 0) {
+            userCreationError = response.htmlErrors.join(' ');
+        }
+
+        this.setState(() => ({ message, userCreationError }));
         window.setTimeout(() => {
-            this.setState(() => ({message: undefined}));
+            this.setState(() => ({ message: undefined }));
         }, 5000);
+
+        this.loadUserLimitSettings();
     };
 
     render() {
         const { rolesByUniqueName } = this.props;
-        const { loading, error, message, policy } = this.state;
+        const { loading, policyError, message, userCreationError, policy, userLimitSettings } = this.state;
         const user = new User({
             ...getServerContext().user,
-            permissionsList: getServerContext().user.isRootAdmin ? List.of(PermissionTypes.UserManagement) : List<string>(),
+            permissionsList: getServerContext().user.isRootAdmin
+                ? List.of(PermissionTypes.UserManagement, PermissionTypes.AddUser)
+                : List<string>(),
         });
 
         if (loading) {
-            return <LoadingSpinner/>
-        }
-        else if (error) {
-            return <Alert>{error}</Alert>
+            return <LoadingSpinner />;
+        } else if (policyError) {
+            return <Alert>{policyError}</Alert>;
         }
 
         return (
             <>
-                <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually update users for this server.</Alert>
-                {message && <Alert bsStyle={'success'}>{message}</Alert>}
+                <Alert bsStyle="info">
+                    NOTE: if you have the proper permissions, this will actually update users for this server.
+                </Alert>
+                <Alert bsStyle="success">{message}</Alert>
+                <Alert>{userCreationError}</Alert>
                 <UsersGridPanel
                     user={user}
                     showDetailsPanel={user.isRootAdmin}
@@ -104,11 +125,11 @@ class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage
                     onUsersStateChangeComplete={this.onSuccess}
                     policy={policy}
                     rolesByUniqueName={rolesByUniqueName}
+                    userLimitSettings={userLimitSettings}
                 />
             </>
-        )
+        );
     }
 }
 
 export const UsersGridPanelPage = withPermissionsPage<{}>(UsersGridPanelPageImpl);
-

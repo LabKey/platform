@@ -228,6 +228,9 @@ public class ReportViewProvider implements DataViewProvider
 
                 info.setVisible(!descriptor.isHidden());
 
+                String hideInManageViews = descriptor.getProperty(ReportDescriptor.Prop.hideInManageViews);
+                info.setHideInManageViews(Boolean.valueOf(hideInManageViews));
+
                 // if a report doesn't have the 'showInDashboard' property set then default to true so that
                 // reports that used to be shown are still shown.
                 String showInDashboard = descriptor.getProperty(ReportDescriptor.Prop.showInDashboard);
