@@ -24,33 +24,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.fhcrc.cpas.exp.xml.ContactType;
-import org.fhcrc.cpas.exp.xml.DataBaseType;
-import org.fhcrc.cpas.exp.xml.DataClassType;
-import org.fhcrc.cpas.exp.xml.DataProtocolInputType;
-import org.fhcrc.cpas.exp.xml.DataType;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
-import org.fhcrc.cpas.exp.xml.ExperimentLogEntryType;
-import org.fhcrc.cpas.exp.xml.ExperimentRunType;
-import org.fhcrc.cpas.exp.xml.ExperimentType;
-import org.fhcrc.cpas.exp.xml.ImportAlias;
-import org.fhcrc.cpas.exp.xml.InputOutputRefsType;
-import org.fhcrc.cpas.exp.xml.MaterialBaseType;
-import org.fhcrc.cpas.exp.xml.MaterialProtocolInputType;
-import org.fhcrc.cpas.exp.xml.MaterialType;
-import org.fhcrc.cpas.exp.xml.PropertyCollectionType;
-import org.fhcrc.cpas.exp.xml.PropertyObjectDeclarationType;
-import org.fhcrc.cpas.exp.xml.PropertyObjectType;
-import org.fhcrc.cpas.exp.xml.ProtocolActionSetType;
-import org.fhcrc.cpas.exp.xml.ProtocolActionType;
-import org.fhcrc.cpas.exp.xml.ProtocolApplicationBaseType;
-import org.fhcrc.cpas.exp.xml.ProtocolBaseType;
-import org.fhcrc.cpas.exp.xml.SampleSetType;
-import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
-import org.fhcrc.cpas.exp.xml.SimpleValueCollectionType;
-import org.fhcrc.cpas.exp.xml.SimpleValueType;
+import org.fhcrc.cpas.exp.xml.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
@@ -114,30 +88,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.experiment.api.AliasInsertHelper;
-import org.labkey.experiment.api.Data;
-import org.labkey.experiment.api.DataClass;
-import org.labkey.experiment.api.DataInput;
-import org.labkey.experiment.api.ExpDataClassImpl;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpProtocolApplicationImpl;
-import org.labkey.experiment.api.ExpProtocolImpl;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExpSampleTypeImpl;
-import org.labkey.experiment.api.Experiment;
-import org.labkey.experiment.api.ExperimentRun;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.IdentifiableEntity;
-import org.labkey.experiment.api.Material;
-import org.labkey.experiment.api.MaterialInput;
-import org.labkey.experiment.api.Protocol;
-import org.labkey.experiment.api.ProtocolAction;
-import org.labkey.experiment.api.ProtocolActionPredecessor;
-import org.labkey.experiment.api.ProtocolActionStepDetail;
-import org.labkey.experiment.api.ProtocolApplication;
-import org.labkey.experiment.api.RunItem;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -172,6 +123,7 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
+import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -2093,14 +2045,18 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) || xarProtocol.getLSID().equals(SAMPLE_ALIQUOT_PROTOCOL_LSID))
+            final String xarProtocolLSID = xarProtocol.getLSID();
+            if (xarProtocolLSID.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) ||
+                    xarProtocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) ||
+                    xarProtocolLSID.equals(STUDY_PUBLISH_PROTOCOL_LSID))
             {
-                // create derivation and aliquot protocol using shared folder
-                if (xarProtocol.getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
-                    ExperimentServiceImpl.get().ensureSampleDerivationProtocol(getUser());
-                else
-                    ExperimentServiceImpl.get().ensureSampleAliquotProtocol(getUser());
-
+                // derivation, aliquot, and publish protocols are created in the shared folder
+                switch (xarProtocolLSID)
+                {
+                    case SAMPLE_DERIVATION_PROTOCOL_LSID -> ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+                    case SAMPLE_ALIQUOT_PROTOCOL_LSID -> ExperimentServiceImpl.get().ensureSampleAliquotProtocol(getUser());
+                    case STUDY_PUBLISH_PROTOCOL_LSID -> StudyPublishService.get().ensureStudyPublishProtocol(getUser());
+                }
                 ExpProtocolImpl ensuredExpProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
 
                 if (ensuredExpProtocol == null)

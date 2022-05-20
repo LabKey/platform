@@ -38,6 +38,7 @@
 <%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.GroupExportAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.StandardDeleteGroupAction" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -296,6 +297,17 @@ else
     </div><%
 }
 %><br>
+
+<%
+    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+    if (settings.isUserLimit())
+    {
+%>
+    Number of new users that can be added: <%=settings.getRemainingUserCount()%><br><br>
+<%
+    }
+%>
+
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
     <labkey:autoCompleteTextArea name="names" url="<%=completionUrl%>" rows="8" cols="70"/>

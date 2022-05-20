@@ -35,7 +35,7 @@ import java.util.Objects;
  */
 public class WriteableAppProps extends AppPropsImpl
 {
-    private Container _container;
+    private final Container _container;
 
     public WriteableAppProps(Container c)
     {
