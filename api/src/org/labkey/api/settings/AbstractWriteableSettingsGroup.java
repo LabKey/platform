@@ -37,6 +37,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
     private PropertyMap _properties = null;
     private PropertyMap _oldProps = null;
 
+    /** Human-readable description of these settings that's written to the audit log **/
     protected abstract String getType();
 
     protected void makeWriteable(Container c)

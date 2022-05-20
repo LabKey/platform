@@ -29,9 +29,11 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -71,6 +73,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresAllOf;
@@ -92,6 +95,7 @@ import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -103,6 +107,8 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
@@ -263,6 +269,7 @@ public class UserController extends SpringActionController
     {
         if (null != PropertyService.get())
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()), AdminPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "Limit Active Users", new ActionURL(LimitActiveUsersAction.class, ContainerManager.getRoot()));
     }
 
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord, boolean canManageDetailsUser)
@@ -322,11 +329,20 @@ public class UserController extends SpringActionController
         boolean canAddUser = user.hasRootPermission(AddUserPermission.class) || getContainer().hasPermission(user, AddUserPermission.class);
         boolean canDeleteUser = user.hasRootPermission(DeleteUserPermission.class);
         boolean canUpdateUser = user.hasRootPermission(UpdateUserPermission.class);
+        boolean noMoreUsers = new LimitActiveUsersSettings().isUserLimitReached();
 
         if (canAddUser)
         {
             ActionButton insert = new ActionButton(urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
-            insert.setActionType(ActionButton.Action.LINK);
+            if (noMoreUsers)
+            {
+                insert.setEnabled(false);
+                insert.setTooltip("User limit has been reached");
+            }
+            else
+            {
+                insert.setActionType(ActionButton.Action.LINK);
+            }
             gridButtonBar.add(insert);
         }
 
@@ -340,8 +356,16 @@ public class UserController extends SpringActionController
                 gridButtonBar.add(deactivate);
 
                 ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
-                activate.setRequiresSelection(true);
-                activate.setActionType(ActionButton.Action.POST);
+                if (noMoreUsers)
+                {
+                    activate.setEnabled(false);
+                    activate.setTooltip("User limit has been reached");
+                }
+                else
+                {
+                    activate.setRequiresSelection(true);
+                    activate.setActionType(ActionButton.Action.POST);
+                }
                 gridButtonBar.add(activate);
             }
 
@@ -449,6 +473,9 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
+            if (errors.hasErrors())
+                return new SimpleErrorView(errors, false);
+
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getRedirUrl());
             if (null != form.getUserId())
             {
@@ -488,9 +515,18 @@ public class UserController extends SpringActionController
             for (Integer userId : form.getUserId())
             {
                 if (isValidUserToUpdate(userId, curUser))
-                    UserManager.setUserActive(curUser, userId, _active);
+                    try
+                    {
+                        UserManager.setUserActive(curUser, userId, _active);
+                    }
+                    catch (SecurityManager.UserManagementException e)
+                    {
+                        User failedUser = UserManager.getUser(userId);
+                        String displayName = null == failedUser ? "user " + userId : failedUser.getDisplayName(curUser);
+                        errors.reject(ERROR_MSG, "Failed to " + (_active ? "activate" : "deactivate") + " " + displayName + ": " + e.getMessage());
+                    }
             }
-            return true;
+            return !errors.hasErrors();
         }
 
         @Override
@@ -985,7 +1021,7 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
-            getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
+            User userToUpdate = getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
 
             if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
@@ -1007,8 +1043,14 @@ public class UserController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+            if (user.hasSiteAdminPermission() && LimitActiveUsersService.get().isUserLimitReached() && userToUpdate.isSystem())
+                builder.append(HtmlString.unsafe("<strong>Warning:</strong> User limit has been reached so the System field can't be cleared.<br><br>"));
             if (isOwnRecord)
-                view =  new VBox(new HtmlView("<div>Please enter your contact information.</div></br>"), view);
+                builder.append(HtmlString.unsafe("<div>Please enter your contact information.</div></br>"));
+
+            if (!builder.isEmpty())
+                view = new VBox(new HtmlView(builder), view);
 
             return view;
         }
@@ -1565,7 +1607,7 @@ public class UserController extends SpringActionController
             // for the root container or if the user is site/app admin, use the site users table
             String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
-            // TODO don't hack on the TableInfo, shouldn't the schma check canSeeuserDetails() and has AdminPermission?
+            // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
             TableInfo table = schema.getTable(userTableName, null, true, true);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
@@ -1638,10 +1680,21 @@ public class UserController extends SpringActionController
 
                 if (!isOwnRecord && canManageDetailsUser)
                 {
-                    ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
-                    deactivateUrl.addParameter("userId", _detailsUserId);
-                    deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
-                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
+                    // Can't reactivate any users if user limit has been reached
+                    if (new LimitActiveUsersSettings().isUserLimitReached() && !detailsUser.isActive())
+                    {
+                        ActionButton disabledDeactivate = new ActionButton("Deactivate");
+                        disabledDeactivate.setEnabled(false);
+                        disabledDeactivate.setTooltip("User limit has been reached");
+                        bb.add(disabledDeactivate);
+                    }
+                    else
+                    {
+                        ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
+                        deactivateUrl.addParameter("userId", _detailsUserId);
+                        deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
+                        bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
+                    }
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
                     deleteUrl.addParameter("userId", _detailsUserId);
@@ -2977,6 +3030,140 @@ public class UserController extends SpringActionController
         }
     }
 
+    public static class LimitActiveUsersForm
+    {
+        private boolean _userWarning = false;
+        private int _userWarningLevel = 0;
+        private String _userWarningMessage = "";
+        private boolean _userLimit = false;
+        private int _userLimitLevel = 0;
+        private String _userLimitMessage = "";
+
+        public boolean isUserWarning()
+        {
+            return _userWarning;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarning(boolean userWarning)
+        {
+            _userWarning = userWarning;
+        }
+
+        public int getUserWarningLevel()
+        {
+            return _userWarningLevel;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarningLevel(int userWarningLevel)
+        {
+            _userWarningLevel = userWarningLevel;
+        }
+
+        public String getUserWarningMessage()
+        {
+            return _userWarningMessage;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserWarningMessage(String userWarningMessage)
+        {
+            _userWarningMessage = userWarningMessage;
+        }
+
+        public boolean isUserLimit()
+        {
+            return _userLimit;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimit(boolean userLimit)
+        {
+            _userLimit = userLimit;
+        }
+
+        public int getUserLimitLevel()
+        {
+            return _userLimitLevel;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimitLevel(int userLimitLevel)
+        {
+            _userLimitLevel = userLimitLevel;
+        }
+
+        public String getUserLimitMessage()
+        {
+            return _userLimitMessage;
+        }
+
+        @SuppressWarnings("unused")
+        public void setUserLimitMessage(String userLimitMessage)
+        {
+            _userLimitMessage = userLimitMessage;
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class LimitActiveUsersAction extends FormViewAction<LimitActiveUsersForm>
+    {
+        @Override
+        public void validateCommand(LimitActiveUsersForm form, Errors errors)
+        {
+            if (form.isUserWarning() && form.getUserWarningLevel() <= 0)
+                errors.reject(ERROR_MSG, "User warning level must be a positive integer.");
+            if (form.isUserLimit() && form.getUserLimitLevel() <= 0)
+                errors.reject(ERROR_MSG, "User limit level must be a positive integer.");
+            if (form.isUserWarning() && form.isUserLimit() && form.getUserWarningLevel() > form.getUserLimitLevel())
+                errors.reject(ERROR_MSG, "User limit level must be greater than or equal to user warning level.");
+        }
+
+        @Override
+        public ModelAndView getView(LimitActiveUsersForm form, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/user/limitActiveUsers.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(LimitActiveUsersForm form, BindException errors)
+        {
+            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+            settings.setUserWarning(form.isUserWarning());
+            settings.setUserWarningLevel(form.getUserWarningLevel());
+            settings.setUserWarningMessage(form.getUserWarningMessage());
+            settings.setUserLimitLevel(form.getUserLimitLevel());
+            settings.setUserLimitMessage(form.getUserLimitMessage());
+            settings.setUserLimit(form.isUserLimit());
+            settings.save(getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(LimitActiveUsersForm form)
+        {
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Limit Active Users", getClass(), getContainer());
+        }
+    }
+
+    @RequiresPermission(AddUserPermission.class)
+    public static class GetUserLimitSettingsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            return LimitActiveUsersSettings.getApiResponse(getContainer(), getUser());
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -3016,7 +3203,8 @@ public class UserController extends SpringActionController
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ShowUserPreferencesAction()
+                controller.new ShowUserPreferencesAction(),
+                new LimitActiveUsersAction()
             );
         }
     }
