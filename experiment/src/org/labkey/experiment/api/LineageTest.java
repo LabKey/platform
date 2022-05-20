@@ -374,12 +374,14 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
         assertEquals(1, updatedRows.size());
 
-        // TODO: Is the expected behavior to create a new derivation run from S-2 and leave the existing derivation from S-1 intact?
-        // TODO: Or should the existing derivation run be deleted/updated to match the SampleType derivation behavior?
+        // The merge behavior for exp.data matches samples. An existing derivation run will be updated for the lineage changes
+        // if it has other inputs/outputs, otherwise the existing derivation run (if exists) will be deleted and new
+        // one created for the exp.data lineage update.
+
         // Verify the lineage
         lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
-        assertEquals(2, lineage.getRuns().size());
+        assertEquals(1, lineage.getRuns().size());
         assertEquals(2, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
