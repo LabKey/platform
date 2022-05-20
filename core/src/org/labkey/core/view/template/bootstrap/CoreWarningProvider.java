@@ -191,7 +191,7 @@ public class CoreWarningProvider implements WarningProvider
             if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
                 addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed.  These may include 'examples', 'docs', 'manager', and 'host-manager'.", "configTomcat", "Tomcat Configuration");
         }
-        catch (URISyntaxException | IOException | ClassCastException x)
+        catch (Exception x)
         {
             LogHelper.getLogger(CoreWarningProvider.class,"core warning provider").warn("Exception encountered while verify Tomcat configuration", x);
         }
