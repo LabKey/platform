@@ -193,7 +193,8 @@ public class CoreWarningProvider implements WarningProvider
         }
         catch (Exception x)
         {
-            LogHelper.getLogger(CoreWarningProvider.class,"core warning provider").warn("Exception encountered while verify Tomcat configuration", x);
+            LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
+
         }
     }
 
