@@ -899,7 +899,8 @@ public class ExpDataIterators
                             else
                             {
                                 ExpData data = (ExpData) runItem;
-                                currentDataMap = Collections.singletonMap(data, dataRole(data, _user));
+                                currentDataMap = new HashMap<>();
+                                currentDataMap.put(data, dataRole(data, _user));
                             }
 
                             if (pair.first != null)
