@@ -787,6 +787,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
+    public Lsid.LsidBuilder generateNextDBSeqLSID()
+    {
+        String dbSeqStr = String.valueOf(getSampleLsidDbSeq(1, getContainer()).next());
+        return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + dbSeqStr);
+    }
+
+    public DbSequence getSampleLsidDbSeq(int batchSize, Container container)
+    {
+        return ExperimentServiceImpl.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
+    }
+
+    @Override
     public String toString()
     {
         return "SampleType " + getName() + " in " + getContainer().getPath();

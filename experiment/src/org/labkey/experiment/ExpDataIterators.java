@@ -1644,17 +1644,22 @@ public class ExpDataIterators
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
-            if (isSample || !context.getInsertOption().mergeRows)
-            {
+            if (!context.getInsertOption().mergeRows)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
-                if (isSample)
+
+            if (isSample)
+            {
+                if (context.getInsertOption().mergeRows)
                 {
-                    dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                    dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
-                    dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
+                    keyColumns.add("materialSourceId");
+                    keyColumns.add("name");
                 }
+
+                dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
+                dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
+                dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
             }
-            else
+            else if (context.getInsertOption().mergeRows)
             {
                 keyColumns.add("classid");
                 keyColumns.add("name");

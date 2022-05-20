@@ -125,7 +125,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
+                new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name", "materialSourceId")
         )));
 
         logger = LogManager.getLogger(SampleTypeDomainKind.class);

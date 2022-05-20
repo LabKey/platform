@@ -207,6 +207,11 @@ public interface ExpSampleType extends ExpObject
      */
     Lsid.LsidBuilder generateSampleLSID();
 
+    /**
+     * @return LSID using the next DBSeq of the Sample Type.
+     */
+    Lsid.LsidBuilder generateNextDBSeqLSID();
+
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);

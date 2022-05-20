@@ -1269,14 +1269,18 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
+        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
+        return new Pair<>(lsid, dbSeqStr);
+    }
+
+    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
+    {
         Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
         if (!container.isProject() && container.getProject() != null)
             projectContainer = container.getProject();
 
-        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, 1);
-        String dbSeqStr = String.valueOf(newSequence.next());
-        String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
-        return new Pair<>(lsid, dbSeqStr);
+        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -1284,7 +1288,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateLSID(container, lsidPrefix, GUID.makeGUID());
     }
 
-    private String generateLSID(Container container, String lsidPrefix, String objectName)
+    public String generateLSID(Container container, String lsidPrefix, String objectName)
     {
         return new Lsid(lsidPrefix, "Folder-" + container.getRowId(), objectName).toString();
     }

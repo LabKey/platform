@@ -34,6 +34,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -948,6 +949,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final NameGenerator aliquotNameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
+        final DbSequence _lsidDbSeq;
         final Container _container;
         final int _batchSize;
         boolean first = true;
@@ -957,7 +959,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
         String generatedName = null;
-        String generatedLsid = null;
 
         _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
@@ -990,10 +991,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             skip.addAll("name", "lsid", "rootmateriallsid");
             selectAll(skip);
 
+            _lsidDbSeq = sampleType.getSampleLsidDbSeq(_batchSize, _container);
+
             addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier)() -> generatedName);
-            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
             // Ensure we have a cpasType column and it is of the right value
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+            // Ensure we have a dataClass column and it is of the right value
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
+            ColumnInfo sampleTypeIdCol = sampleType.getTinfo().getColumn("materialSourceId");
+            addColumn(sampleTypeIdCol, new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+
         }
 
         _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
@@ -1056,7 +1064,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (nameGen != null)
                 {
                     generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
-                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
                 }
                 else
                     addRowError("Error creating naming pattern generator.");

@@ -195,6 +195,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         return super.getURL(parent, true);
                     }
                 });
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                columnInfo.setHidden(true);
                 return columnInfo;
             }
             case RootMaterialLSID:
