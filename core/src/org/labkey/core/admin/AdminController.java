@@ -168,6 +168,7 @@ import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
@@ -298,9 +299,9 @@ public class AdminController extends SpringActionController
         FileListAction.class
     );
 
-    private static final Logger LOG = LogManager.getLogger(AdminController.class);
+    private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
     @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger CLIENT_LOG = LogManager.getLogger(LogAction.class);
+    private static final Logger CLIENT_LOG = LogHelper.getLogger(LogAction.class, "Client/browser logging submitted to server");
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
@@ -4441,6 +4442,25 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public enum ExportOption
+    {
+        PipelineRootAsFiles("pipeline root as files"),
+        PipelineRootAsZip("pipeline root as a zip file"),
+        DownloadAsZip("browser download as a zip file");
+
+        private final String _description;
+
+        private ExportOption(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public static class ExportFolderAction extends FolderManagementViewPostAction<ExportFolderForm>
     {
@@ -4477,14 +4497,29 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException();
             }
 
+            ExportOption exportOption = null;
+            if (form.getLocation() >= 0 && form.getLocation() < ExportOption.values().length)
+            {
+                exportOption = ExportOption.values()[form.getLocation()];
+            }
+            if (exportOption == null)
+            {
+                throw new NotFoundException("Invalid export location: " + form.getLocation());
+            }
+
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                 form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-            switch (form.getLocation())
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), "Folder export initiated to " + exportOption.getDescription() + " " + (form.isIncludeSubfolders() ? "including" : "excluding") + " subfolders.");
+            if (container.getProject() != null)
+                event.setProjectId(container.getProject().getId());
+            AuditLogService.get().addEvent(getUser(), event);
+
+            switch (exportOption)
             {
-                case 0 -> {
+                case PipelineRootAsFiles -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4508,7 +4543,7 @@ public class AdminController extends SpringActionController
                         _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
                 }
-                case 1 -> {
+                case PipelineRootAsZip -> {
                     PipeRoot root = PipelineService.get().findPipelineRoot(container);
                     if (root == null || !root.isValid())
                     {
@@ -4519,7 +4554,7 @@ public class AdminController extends SpringActionController
                     exportFolderToFile(exportDir, container, writer, ctx, errors);
                     _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                 }
-                case 2 -> {
+                case DownloadAsZip -> {
                     try
                     {
                         ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
