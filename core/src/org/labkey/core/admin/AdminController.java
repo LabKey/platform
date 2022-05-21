@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
@@ -4444,13 +4443,86 @@ public class AdminController extends SpringActionController
 
     public enum ExportOption
     {
-        PipelineRootAsFiles("pipeline root as files"),
-        PipelineRootAsZip("pipeline root as a zip file"),
-        DownloadAsZip("browser download as a zip file");
+        PipelineRootAsFiles("pipeline root as files")
+                {
+                    @Override
+                    public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+                    {
+                        PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                        if (root == null || !root.isValid())
+                        {
+                            throw new NotFoundException("No valid pipeline root found");
+                        }
+                        else if (root.isCloudRoot())
+                        {
+                            errors.reject(ERROR_MSG, "Cannot export as individual files when root is in the cloud");
+                        }
+                        else
+                        {
+                            File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
+                            try
+                            {
+                                writer.write(container, ctx, new FileSystemFile(exportDir));
+                            }
+                            catch (ContainerException e)
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                            }
+                            return urlProvider(PipelineUrls.class).urlBrowse(container);
+                        }
+                        return null;
+                    }
+                },
+
+        PipelineRootAsZip("pipeline root as a zip file")
+        {
+            @Override
+            public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                if (root == null || !root.isValid())
+                {
+                    throw new NotFoundException("No valid pipeline root found");
+                }
+                Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
+                Files.createDirectories(exportDir);
+                exportFolderToFile(exportDir, container, writer, ctx, errors);
+                return urlProvider(PipelineUrls.class).urlBrowse(container);
+            }
+        },
+        DownloadAsZip("browser download as a zip file")
+                {
+                    @Override
+                    public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+                    {
+                        try
+                        {
+                            // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+                            // Same pattern as ExportListArchiveAction
+                            Path tempDir = FileUtil.getTempDirectory().toPath();
+                            Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
+
+                            // No exceptions, so stream the resulting zip file to the browser and delete it
+                            try (OutputStream os = ZipFile.getOutputStream(response, tempZipFile.getFileName().toString()))
+                            {
+                                Files.copy(tempZipFile, os);
+                            }
+                            finally
+                            {
+                                Files.delete(tempZipFile);
+                            }
+                        }
+                        catch (ContainerException e)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
+                        return null;
+                    }
+                };
 
         private final String _description;
 
-        private ExportOption(String description)
+        ExportOption(String description)
         {
             _description = description;
         }
@@ -4458,6 +4530,24 @@ public class AdminController extends SpringActionController
         public String getDescription()
         {
             return _description;
+        }
+
+        public abstract ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception;
+
+        Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
+        {
+            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+
+            try (ZipFile zip = new ZipFile(exportDir, filename))
+            {
+                writer.write(container, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return exportDir.resolve(filename);
         }
     }
 
@@ -4475,7 +4565,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        protected HttpView getTabView(ExportFolderForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ExportFolderForm form, boolean reshow, BindException errors)
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
@@ -4506,98 +4596,21 @@ public class AdminController extends SpringActionController
             {
                 throw new NotFoundException("Invalid export location: " + form.getLocation());
             }
+            ContainerManager.checkContainerValidity(container);
 
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
-                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
+                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(FolderWriterImpl.LOG));
 
             AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), "Folder export initiated to " + exportOption.getDescription() + " " + (form.isIncludeSubfolders() ? "including" : "excluding") + " subfolders.");
             if (container.getProject() != null)
                 event.setProjectId(container.getProject().getId());
             AuditLogService.get().addEvent(getUser(), event);
 
-            switch (exportOption)
-            {
-                case PipelineRootAsFiles -> {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    else if (root.isCloudRoot())
-                    {
-                        errors.reject(ERROR_MSG, "Cannot export as individual files when root is in the cloud");
-                    }
-                    else
-                    {
-                        File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
-                        try
-                        {
-                            writer.write(container, ctx, new FileSystemFile(exportDir));
-                        }
-                        catch (ContainerException e)
-                        {
-                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                        }
-                        _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                    }
-                }
-                case PipelineRootAsZip -> {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
-                    Files.createDirectories(exportDir);
-                    exportFolderToFile(exportDir, container, writer, ctx, errors);
-                    _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                }
-                case DownloadAsZip -> {
-                    try
-                    {
-                        ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
-
-                        // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
-                        // Same pattern as ExportListArchiveAction
-                        Path tempDir = FileUtil.getTempDirectory().toPath();
-                        Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
-
-                        // No exceptions, so stream the resulting zip file to the browser and delete it
-                        try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
-                        {
-                            Files.copy(tempZipFile, os);
-                        }
-                        finally
-                        {
-                            Files.delete(tempZipFile);
-                        }
-                    }
-                    catch (ContainerException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
+            _successURL = exportOption.initiateExport(container, errors, writer, ctx, getViewContext().getResponse());
 
             return !errors.hasErrors();
-        }
-
-        private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
-        {
-            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
-
-            try (ZipFile zip = new ZipFile(exportDir, filename))
-            {
-                writer.write(container, ctx, zip);
-            }
-            catch (Container.ContainerException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            }
-
-            return exportDir.resolve(filename);
         }
 
         @Override
