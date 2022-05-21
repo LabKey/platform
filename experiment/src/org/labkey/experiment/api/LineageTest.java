@@ -382,7 +382,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getRuns().size());
-        assertEquals(2, lineage.getMaterials().size());
+        assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
     }
