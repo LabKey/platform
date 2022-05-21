@@ -185,6 +185,7 @@
       <column columnName="ExpirationDate">
         <description>The expiration date for the account. If applicable compliance setting is enabled, account will be disabled after this date by nightly maintenance task.</description>
       </column>
+      <column columnName="System"/>
     </columns>
     <titleColumn>DisplayName</titleColumn>
   </table>
@@ -350,6 +351,9 @@
         <formatString>DateTime</formatString>
         <inputLength>23</inputLength>
       </column>
+      <column columnName="System">
+        <description>True if this is a system user, false otherwise. System users not subject to active user limits.</description>
+      </column>
     </columns>
     <tableTitle>Users</tableTitle>
     <pkColumnName>UserId</pkColumnName>
@@ -491,6 +495,7 @@
         <formatString>DateTime</formatString>
         <inputLength>23</inputLength>
       </column>
+      <column columnName="System"/>
     </columns>
     <tableTitle>Active Users</tableTitle>
     <pkColumnName>UserId</pkColumnName>

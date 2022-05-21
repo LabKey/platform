@@ -354,12 +354,12 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Display Message</td>
+    <td class="labkey-form-label">Display message</td>
     <td><input type="checkbox" name="showRibbonMessage" id="showRibbonMessage"<%=checked(appProps.isShowRibbonMessage())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Message HTML</td>
-    <td><textarea id="ribbonMessageHtml" name="ribbonMessageHtml" id="ribbonMessageHtml" cols="60" rows="3"><%=h(appProps.getRibbonMessageHtml())%></textarea></td>
+    <td><textarea name="ribbonMessageHtml" id="ribbonMessageHtml" cols="60" rows="3"><%=h(appProps.getRibbonMessageHtml())%></textarea></td>
 </tr>
 
 <tr>

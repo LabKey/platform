@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * Static methods that return custom {@link Collector}s that can be used to collect elements of a {@link Stream} into a
- * a variety of useful collections.
+ * variety of useful collections.
  */
 public class LabKeyCollectors
 {

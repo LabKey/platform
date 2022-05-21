@@ -64,6 +64,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     {name : 'displayOrder', type: 'int'},
                     {name : 'shared', type: 'boolean'},
                     {name : 'visible', type: 'boolean'},
+                    {name : 'hideInManageViews', type: 'boolean'},
                     {name : 'readOnly', type: 'boolean'},
                     {name : 'defaultIconCls'},
                     {name : 'icon'},

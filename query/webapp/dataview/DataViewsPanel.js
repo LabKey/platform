@@ -406,7 +406,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // Show hidden only in edit mode. Admins see all; authors & editors see only their own.
         if (!rec.data.visible) {
-            if (this.editMode && (createdByMe || LABKEY.user.isAdmin)) {
+            if (this.editMode && !rec.data.hideInManageViews && (createdByMe || LABKEY.user.isAdmin)) {
                 return true;
             }
             return false;

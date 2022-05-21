@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +49,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -57,6 +57,7 @@ import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Result;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
@@ -90,7 +91,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class UserManager
 {
-    private static final Logger LOG = LogManager.getLogger(UserManager.class);
+    private static final Logger LOG = LogHelper.getLogger(UserManager.class, "User management operations");
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.
@@ -307,7 +308,7 @@ public class UserManager
         return users;
     }
 
-    public static void updateActiveUser(User user)
+    public static void updateRecentUser(User user)
     {
         synchronized(RECENT_USERS)
         {
@@ -316,7 +317,7 @@ public class UserManager
     }
 
 
-    private static void removeActiveUser(User user)
+    private static void removeRecentUser(User user)
     {
         synchronized(RECENT_USERS)
         {
@@ -430,7 +431,6 @@ public class UserManager
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
-
         }
 
         @Override
@@ -516,7 +516,6 @@ public class UserManager
         return includeDeactivated ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
     }
 
-
     public static List<Integer> getUserIds()
     {
         return UserCache.getUserIds();
@@ -556,7 +555,6 @@ public class UserManager
         return Result.success(userFolder);
     }
 
-
     public static String sanitizeEmailAddress(String email)
     {
         if (email == null)
@@ -568,7 +566,6 @@ public class UserManager
         }
         return email;
     }
-
 
     public static void addToUserHistory(User principal, String message)
     {
@@ -591,10 +588,9 @@ public class UserManager
         AuditLogService.get().addEvent(user, event);
     }
 
-
-    public static boolean hasNoUsers()
+    public static boolean hasUsers()
     {
-        return 0 == getActiveUserCount();
+        return getActiveUserCount() > 0;
     }
 
     public static boolean hasNoRealUsers()
@@ -614,9 +610,15 @@ public class UserManager
         return UserCache.getActiveUserCount();
     }
 
-    public static long getActiveRealUserCount()
+    public static int getActiveRealUserCount()
     {
         return UserCache.getActiveRealUserCount();
+    }
+
+    /** Active users who are marked as "system" users, i.e., excluded from user limits **/
+    public static int getSystemUserCount()
+    {
+        return UserCache.getSystemUserCount();
     }
 
     public static String validGroupName(String name, @NotNull PrincipalType type)
@@ -695,7 +697,7 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-    public static void requestEmailChange(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws SecurityManager.UserManagementException
+    public static void requestEmailChange(int userId, String currentEmail, String requestedEmail, String verificationToken, User currentUser) throws UserManagementException
     {
         if (SecurityManager.loginExists(currentEmail))
         {
@@ -707,7 +709,7 @@ public class UserManager
                 int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail=?, Verification=?, VerificationTimeout=? WHERE Email=?",
                         requestedEmail, verificationToken, Date.from(timeoutDate), currentEmail);
                 if (1 != rows)
-                    throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
+                    throw new UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
                 addToUserHistory(getUser(userId), currentUser + " requested email address change from " + currentEmail + " to " + requestedEmail +
                         " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
                 transaction.commit();
@@ -716,7 +718,7 @@ public class UserManager
     }
 
     public static void changeEmail(boolean isAdmin, int userId, String oldEmail, String newEmail, String verificationToken, User currentUser)
-            throws SecurityManager.UserManagementException, ValidEmail.InvalidEmailException
+            throws UserManagementException, ValidEmail.InvalidEmailException
     {
         // make sure these emails are valid, and also have been processed (like changing to lowercase)
 
@@ -731,14 +733,14 @@ public class UserManager
                 ValidEmail validUserEmail = new ValidEmail(currentUser.getEmail());
                 if (!SecurityManager.verify(validUserEmail, verificationToken))  // shouldn't happen! should be testing this earlier too
                 {
-                    throw new SecurityManager.UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
+                    throw new UserManagementException(validUserEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + validUserEmail.getEmailAddress());
                 }
             }
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             int rows = executor.execute("UPDATE " + CORE.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", newEmail, userId);
             if (1 != rows)
-                throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
+                throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
 
             executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
             if (isAdmin)
@@ -755,7 +757,7 @@ public class UserManager
             {
                 rows = executor.execute("UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail, userId);
                 if (1 != rows)
-                    throw new SecurityManager.UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
+                    throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
 
             if (SecurityManager.loginExists(newEmail))
@@ -838,13 +840,13 @@ public class UserManager
         }
     }
 
-    public static void deleteUser(int userId) throws SecurityManager.UserManagementException
+    public static void deleteUser(int userId) throws UserManagementException
     {
         User user = getUser(userId);
         if (null == user)
             return;
 
-        removeActiveUser(user);
+        removeRecentUser(user);
 
         List<Throwable> errors = fireDeleteUser(user);
 
@@ -875,7 +877,7 @@ public class UserManager
         catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
-            throw new SecurityManager.UserManagementException(user.getEmail(), e);
+            throw new UserManagementException(user.getEmail(), e);
         }
         finally
         {
@@ -885,17 +887,17 @@ public class UserManager
         //TODO: Delete User files
     }
 
-    public static void setUserActive(User currentUser, int userIdToAdjust, boolean active) throws SecurityManager.UserManagementException
+    public static void setUserActive(User currentUser, int userIdToAdjust, boolean active) throws UserManagementException
     {
         setUserActive(currentUser, getUser(userIdToAdjust), active);
     }
 
-    public static void setUserActive(User currentUser, User userToAdjust, boolean active) throws SecurityManager.UserManagementException
+    public static void setUserActive(User currentUser, User userToAdjust, boolean active) throws UserManagementException
     {
         setUserActive(currentUser, userToAdjust, active, "");
     }
 
-    public static void setUserActive(User currentUser, User userToAdjust, boolean active, String extendedMessage) throws SecurityManager.UserManagementException
+    public static void setUserActive(User currentUser, User userToAdjust, boolean active, String extendedMessage) throws UserManagementException
     {
         if (null == userToAdjust)
             return;
@@ -904,7 +906,8 @@ public class UserManager
         if (userToAdjust.isActive() == active)
             return;
 
-        removeActiveUser(userToAdjust);
+        if (active && LimitActiveUsersService.get().isUserLimitReached())
+            throw new UserManagementException(userToAdjust.getEmail(), "User limit has been reached so no more users can be reactivated on this deployment.");
 
         Integer userId = userToAdjust.getUserId();
 
@@ -918,6 +921,7 @@ public class UserManager
             else
                 throw new RuntimeException(first);
         }
+
         try
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
@@ -928,6 +932,8 @@ public class UserManager
             map.put("Modified", new Timestamp(System.currentTimeMillis()));
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            removeRecentUser(userToAdjust);
+
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled") + " " + extendedMessage
             );
@@ -935,7 +941,7 @@ public class UserManager
         catch(RuntimeSQLException e)
         {
             LOG.error("setUserActive: " + e);
-            throw new SecurityManager.UserManagementException(userToAdjust.getEmail(), e);
+            throw new UserManagementException(userToAdjust.getEmail(), e);
         }
         finally
         {

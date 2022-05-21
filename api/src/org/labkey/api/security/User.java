@@ -82,6 +82,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     private GUID _entityId;
     private ActionURL _avatarUrl;
+    private boolean _system = false;
 
     private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
 
@@ -591,6 +592,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return getAvatarUrl() != null ? getAvatarUrl().toString() : AvatarThumbnailProvider.THUMBNAIL_PATH;
     }
 
+    public boolean isSystem()
+    {
+        return _system;
+    }
+
+    public void setSystem(boolean system)
+    {
+        _system = system;
+    }
+
     public static JSONObject getUserProps(User user)
     {
         return getUserProps(user, user, null, false);
@@ -631,6 +642,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
             props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
             props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
+            props.put("isSystem", user.isSystem());
 
             // PHI level
             /** CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()} */
