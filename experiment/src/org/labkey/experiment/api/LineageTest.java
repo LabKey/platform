@@ -364,26 +364,47 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
 
+        // Use updateRows to create new lineage and derive from "S-2" and numeric sample
+        // This will merge with the previous run
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of(
+                "rowId", bob.getRowId(),
+                "MaterialInputs/MySamples", "S-2, " + numericSampleName
+        ));
+
+        List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
+        assertEquals(1, updatedRows.size());
+
+        // The merge behavior for dataclasses matches samples. An existing derivation run will be updated for the lineage changes
+        // if it has other inputs/outputs that match the update values, otherwise the existing derivation run (if exists)
+        // will be deleted and a new one created for only the lineage in the update command.
+
+        // Verify the lineage
+        lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        Assert.assertTrue(lineage.getDatas().isEmpty());
+        assertEquals(1, lineage.getRuns().size());
+        assertEquals(2, lineage.getMaterials().size());
+        Assert.assertTrue(lineage.getMaterials().contains(s1));
+        Assert.assertTrue(lineage.getMaterials().contains(s2));
+
         // Use updateRows to create new lineage and derive from "S-2"
+        // Since numeric sample is not in this update, it will be removed from the lineage. This will create a new run
+        // with only S-2
         rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of(
                 "rowId", bob.getRowId(),
                 "MaterialInputs/MySamples", "S-2"
         ));
 
-        List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
+        updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
         assertEquals(1, updatedRows.size());
-
-        // The merge behavior for exp.data matches samples. An existing derivation run will be updated for the lineage changes
-        // if it has other inputs/outputs, otherwise the existing derivation run (if exists) will be deleted and new
-        // one created for the exp.data lineage update.
 
         // Verify the lineage
         lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getRuns().size());
         assertEquals(1, lineage.getMaterials().size());
-        Assert.assertTrue(lineage.getMaterials().contains(s1));
+        Assert.assertFalse(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
     }
 
