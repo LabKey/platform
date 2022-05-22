@@ -16,12 +16,12 @@
 
 package org.labkey.api.admin;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -34,7 +34,7 @@ import java.util.Set;
  */
 public class FolderWriterImpl extends BaseFolderWriter
 {
-    private static final Logger LOG = LogManager.getLogger(FolderWriterImpl.class);
+    public static final Logger LOG = LogHelper.getLogger(FolderWriterImpl.class, "Coordinates folder exports");
 
     private final Collection<FolderWriter> _writers;
 
@@ -108,8 +108,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         folderXml.setLabel(c.getName());
 
         folderXml.setType(c.getContainerType().getName());
-        if (c.getTitle() != null)
-            folderXml.setTitle(c.getTitle());
+        folderXml.setTitle(c.getTitle());
         if (c.getDescription() != null)
             folderXml.setDescription(c.getDescription());
 
