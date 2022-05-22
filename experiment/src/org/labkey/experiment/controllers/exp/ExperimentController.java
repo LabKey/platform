@@ -3330,7 +3330,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(UpdatePermission.class)
-    public class GetDataOperationConfirmationData extends ReadOnlyApiAction<DataOperationConfirmationForm>
+    public class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
     {
         @Override
         public void validateForm(DataOperationConfirmationForm form, Errors errors)
