@@ -89,11 +89,12 @@ public enum PostgreSqlVersion
             test(120, POSTGRESQL_12);
             test(130, POSTGRESQL_13);
             test(140, POSTGRESQL_14);
+            test(150, POSTGRESQL_15);
 
             // Future
-            test(150, POSTGRESQL_FUTURE);
             test(160, POSTGRESQL_FUTURE);
             test(170, POSTGRESQL_FUTURE);
+            test(180, POSTGRESQL_FUTURE);
 
             // Bad
             test(83, POSTGRESQL_UNSUPPORTED);
