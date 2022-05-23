@@ -1,4 +1,4 @@
-CREATE TABLE exp.ObjectUsedNames
+CREATE TABLE exp.ObjectLegacyNames
 (
     RowId INT IDENTITY (1, 1) NOT NULL,
     ObjectId INT NOT NULL,
@@ -8,8 +8,8 @@ CREATE TABLE exp.ObjectUsedNames
     Modified DATETIME NULL,
     ModifiedBy INT NULL,
 
-    CONSTRAINT PK_ObjectUsedNames PRIMARY KEY (RowId),
-    CONSTRAINT FK_ObjectUsedNames_ObjectId FOREIGN KEY (ObjectId) REFERENCES exp.Object (ObjectId)
+    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId),
+    CONSTRAINT FK_ObjectLegacyNames_ObjectId FOREIGN KEY (ObjectId) REFERENCES exp.Object (ObjectId)
 );
 GO
 ALTER TABLE exp.Material ADD MaterialSourceId INT NULL;

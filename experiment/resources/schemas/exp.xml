@@ -537,7 +537,7 @@
       <column columnName="MvIndicator"/>
     </columns>
   </table>
-  <table tableName="ObjectUsedNames" tableDbType="TABLE">
+  <table tableName="ObjectLegacyNames" tableDbType="TABLE">
     <columns>
         <column columnName="RowId"/>
         <column columnName="ObjectId"/>
