@@ -17,7 +17,6 @@
 package org.labkey.core.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +34,7 @@ import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
+import org.labkey.api.util.logging.LogHelper;
 import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
@@ -53,7 +53,7 @@ import java.util.Set;
 */
 public class PostgreSqlDialectFactory implements SqlDialectFactory
 {
-    private static final Logger _log = LogManager.getLogger(PostgreSqlDialectFactory.class);
+    private static final Logger _log = LogHelper.getLogger(PostgreSqlDialectFactory.class, "PostgreSQL version warnings");
 
     public PostgreSqlDialectFactory()
     {
@@ -149,7 +149,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 10.0 should result in bad version number exception. Note: versions 9.7, 9.8, and 9.9 never existed.
+            // < 10.0 should result in bad version number exception
             badVersion("PostgreSQL", 0.0, 10.0, null, connectionUrl);
 
             // Test good versions
@@ -158,7 +158,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
             good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
             good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
-            good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
+            good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
+            good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
         }
     }
 
