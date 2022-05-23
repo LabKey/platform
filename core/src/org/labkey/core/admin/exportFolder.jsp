@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExportFolderForm" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -186,9 +187,9 @@ Ext4.onReady(function(){
             hideLabel: true,
             columns: 1,
             items: [
-                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: 0, style:"margin-left: 2px", disabled: isCloudRoot},
-                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: 1, style:"margin-left: 2px"},
-                {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
+                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.PipelineRootAsFiles.ordinal() %>, style:"margin-left: 2px", disabled: isCloudRoot},
+                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.PipelineRootAsZip.ordinal() %>, style:"margin-left: 2px"},
+                {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.DownloadAsZip.ordinal() %>, checked: true, style:"margin-left: 2px"}
             ]
         });
         formItemsCol2.push({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
