@@ -232,7 +232,7 @@ public abstract class StudyManualTest extends StudyTest
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         importDataPage.setText(_tsv + "\n" + errorRow);
-        importDataPage.submitExpectingError(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
+        importDataPage.submitExpectingErrorContaining(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
         assertTextPresent(getConversionErrorMessage("text", "DateField", Timestamp.class));
 
         importDataPage.setText(_tsv).submit();

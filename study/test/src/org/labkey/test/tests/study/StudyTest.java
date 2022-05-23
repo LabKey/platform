@@ -767,7 +767,7 @@ public class StudyTest extends StudyBaseTest
                     "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t5000\tnew text\tTRUE\n" +
                     "999321234\t1\t1/1/2006\t1234_B\t2/1/2006\t5000\tnew text\tTRUE\n";
             importDataPage.setText(_tsv);
-            importDataPage.submitExpectingError("Duplicate dataset row");
+            importDataPage.submitExpectingErrorContaining("Duplicate dataset row");
 
             // Update a row and check the QC flag is defaulted to the study default 'unknown QC'
             {

@@ -329,7 +329,7 @@ public class StudyPHIExportTest extends StudyExportTest
         ImportDataPage importDataPage = new ImportDataPage(getDriver());
         assertTextPresent("Export Participant Transforms");
         importDataPage.setText(BAD_ALTERNATEID_MAPPING);
-        importDataPage.submitExpectingError("Two participants may not share the same Alternate ID.");
+        importDataPage.submitExpectingErrorContaining("Two participants may not share the same Alternate ID.");
 
         importDataPage.setText(ALTERNATEID_MAPPING);
         importDataPage.submit();
@@ -338,15 +338,15 @@ public class StudyPHIExportTest extends StudyExportTest
         clickButton("Import");
         importDataPage = new ImportDataPage(getDriver());
         importDataPage.setText(BAD_ALTERNATEID_MAPPING_2);
-        importDataPage.submitExpectingError("Two participants may not share the same Alternate ID.");
+        importDataPage.submitExpectingErrorContaining("Two participants may not share the same Alternate ID.");
 
         // Test input lacking all columns
         importDataPage.setText(BAD_ALTERNATEID_MAPPING_3);
-        importDataPage.submitExpectingError("Either AlternateId or DateOffset must be specified.");
+        importDataPage.submitExpectingErrorContaining("Either AlternateId or DateOffset must be specified.");
 
         // Test input without header row
         importDataPage.setText(BAD_ALTERNATEID_MAPPING_4);
-        importDataPage.submitExpectingError("The header row must contain ParticipantId and either AlternateId, DateOffset or both.");
+        importDataPage.submitExpectingErrorContaining("The header row must contain ParticipantId and either AlternateId, DateOffset or both.");
 
         // Good input with different column order
         importDataPage.setText(ALTERNATEID_MAPPING_2);
