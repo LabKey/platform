@@ -670,14 +670,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public ExpMaterial getLegacySample(Container c, String name, Date effectiveDate)
+    public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate)
     {
         Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c);
         if (legacyObjectId != null)
             return getSampleByObjectId(c, legacyObjectId);
 
         ExpMaterial material = getSample(c, name);
-        if (material != null && material.getCreated().compareTo(effectiveDate) < 0)
+        if (material != null && material.getCreated().compareTo(effectiveDate) <= 0)
             return material;
 
         return null;

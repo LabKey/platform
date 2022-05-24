@@ -189,6 +189,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData getExpData(ExpDataClass dataClass, int rowId);
 
     /**
+     * Get a Data with name at a specific time.
+     */
+    ExpData getEffectiveData(ExpDataClass dataClass, String name, @NotNull Date effectiveDate);
+
+    /**
      * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
      */
     ExpData createData(Container container, @NotNull DataType type);
@@ -235,6 +240,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass by name within the definition container.
      */
     ExpDataClass getDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName);
+
+    /**
+     * Get a DataClass with name at a specific time.
+     */
+    ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate);
 
     /**
      * Get a DataClass by name within scope -- current, project, and shared.

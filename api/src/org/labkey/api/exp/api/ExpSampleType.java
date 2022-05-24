@@ -54,7 +54,7 @@ public interface ExpSampleType extends ExpObject
     ExpMaterial getSample(Container c, String name);
 
     /** get the sample with name at a specific time */
-    ExpMaterial getLegacySample(Container c, String name, Date effectiveDate);
+    ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate);
 
     @NotNull
     Domain getDomain();

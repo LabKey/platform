@@ -1361,6 +1361,32 @@ public class ExperimentServiceImpl implements ExperimentService
         return getDataClass(c, null, false, dataClassName);
     }
 
+    public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        DataClass dataClas = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+        if (dataClas == null)
+            return null;
+        return new ExpDataClassImpl(dataClas);
+    }
+
+
+    @Override
+    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
+        if (legacyObjectId != null)
+            return getDataClassByObjectId(definitionContainer, legacyObjectId);
+
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, dataClassName);
+        if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
+            return dataClass;
+
+        return null;
+    }
+
     @Override
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull User user, @NotNull String dataClassName)
     {
@@ -1494,6 +1520,31 @@ public class ExperimentServiceImpl implements ExperimentService
         Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
 
         return data == null ? null : new ExpDataImpl(data);
+    }
+
+    public ExpDataImpl getDataByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        Data data = new TableSelector(getTinfoData(), filter, null).getObject(Data.class);
+        if (data == null)
+            return null;
+        return new ExpDataImpl(data);
+    }
+
+    @Override
+    public ExpData getEffectiveData(ExpDataClass dataClass, String name, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
+        if (legacyObjectId != null)
+            return getDataByObjectId(dataClass.getContainer(), legacyObjectId);
+
+        ExpDataImpl data = getExpData(dataClass, name);
+        if (data != null && data.getCreated().compareTo(effectiveDate) <= 0)
+            return data;
+
+        return null;
     }
 
     @Override
