@@ -219,6 +219,11 @@ abstract class OracleDialect extends SimpleSqlDialect
         return ret;
     }
 
+    @Override
+    public boolean supportsOffset()
+    {
+        return true;
+    }
 
     private SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
     {
@@ -276,8 +281,9 @@ abstract class OracleDialect extends SimpleSqlDialect
        Also, someone on the labkey forum suggested: http://stackoverflow.com/questions/241622/paging-with-oracle
 
      */
-    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
+        // DO THIS: SELECT * FROM (SELECT x.*, row_number() OVER (ORDER BY ALTERNATE_TYPE_ID) rn__ FROM (SELECT * FROM granite.alternate_type) x) WHERE rn__ > 4 AND rn__ < 10
         SQLFragment sql = new SQLFragment();
 
         sql.append("SELECT * FROM (\n");
@@ -290,15 +296,15 @@ abstract class OracleDialect extends SimpleSqlDialect
         select.insert(aliasOffset, " x.");
         // The MSSQL Server Dialect uses _RowNum - but starting with _ is not supported in Oracle, so left it as default
         // rownum and to avoid duplicate col's (as rownum is a reserved word, so it should be possible to add to the query)
-        select.append(", rownum ");
+        select.append(", rownum AS rn__ ");
         sql.append(select);
         sql.append(from);
         if (filter != null) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
         if (order != null) sql.append("\n").append(order);
         sql.append("\n)\n");
-        sql.append("WHERE rownum > ").append(offset);
-        sql.append(" AND rownum <= ").append(rowCount + offset);
+        sql.append("WHERE rn__ > ").append(offset);
+        sql.append(" AND rn__ <= ").append(maxRows + offset);
 
         return sql;
     }

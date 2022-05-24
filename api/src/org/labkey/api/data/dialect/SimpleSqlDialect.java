@@ -208,12 +208,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean supportsOffset()
-    {
-        return false;
-    }
-
-    @Override
     public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
     {
         return null;
