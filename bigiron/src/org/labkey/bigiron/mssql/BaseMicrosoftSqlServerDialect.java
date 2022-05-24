@@ -501,8 +501,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         else
         {
-            if (order == null || order.trim().length() == 0)
-                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use OFFSET or FETCH");
+            if (StringUtils.isBlank(order))
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use maxRows and offset");
 
             return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
