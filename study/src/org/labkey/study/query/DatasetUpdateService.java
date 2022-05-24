@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -160,7 +161,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                 {
                     for (int i = 0; i < columns.size(); i++)
                     {
-                        map.put(columns.get(i).getName(), rs.getObject(i + 1));
+                        Object o = rs.getObject(i + 1);
+                        o = ResultSetRowMapFactory.translateResultSetObject(o, false);
+                        map.put(columns.get(i).getName(), o);
                     }
                 }
                 catch (SQLException x)
