@@ -28,9 +28,13 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
@@ -39,8 +43,13 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
+import javax.net.ssl.HttpsURLConnection;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Map;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -163,6 +172,29 @@ public class CoreWarningProvider implements WarningProvider
         {
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
             addStandardWarning(warnings, "The deployed version of Tomcat, " + serverInfo + ", is not supported.", "supported", "Supported Technologies page");
+        }
+
+        try
+        {
+            boolean defaultTomcatWebappFound = false;
+            int code;
+            URLHelper h = new URLHelper(AppProps.getInstance().getBaseServerUrl());
+            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/examples/")).openConnection()).getResponseCode();
+            defaultTomcatWebappFound |=  (code != 404);
+            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/docs/")).openConnection()).getResponseCode();
+            defaultTomcatWebappFound |=  (code != 404);
+            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/manager/html")).openConnection()).getResponseCode();
+            defaultTomcatWebappFound |=  (code != 404);
+            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/host-manager/html")).openConnection()).getResponseCode();
+            defaultTomcatWebappFound |=  (code != 404);
+
+            if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
+                addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed.  These may include 'examples', 'docs', 'manager', and 'host-manager'.", "configTomcat", "Tomcat Configuration");
+        }
+        catch (Exception x)
+        {
+            LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
+
         }
     }
 
