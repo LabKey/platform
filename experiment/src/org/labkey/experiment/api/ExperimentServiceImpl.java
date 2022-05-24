@@ -749,8 +749,6 @@ public class ExperimentServiceImpl implements ExperimentService
         result.setContainer(container);
         result.setLSID(lsid);
         result.setName(name);
-        if (!name.equals(new Lsid(lsid).getObjectId()))
-            throw new IllegalArgumentException("name=" + name + " lsid=" + lsid);
         return result;
     }
 

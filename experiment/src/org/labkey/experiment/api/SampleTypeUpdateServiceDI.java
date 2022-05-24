@@ -298,7 +298,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.derive(user, container, di, true, true);
+        ExpDataIterators.derive(user, container, di, true, _sampleType, true);
 
         if (ret.size() > 0)
         {

@@ -59,6 +59,7 @@ import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
@@ -563,9 +564,9 @@ public class ExpDataIterators
     }
 
     /* setup mini dataiterator pipeline to process lineage */
-    public static void derive(User user, Container container, DataIterator di, boolean isSample, boolean skipAliquot) throws BatchValidationException
+    public static void derive(User user, Container container, DataIterator di, boolean isSample, ExpObject dataType, boolean skipAliquot) throws BatchValidationException
     {
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, skipAliquot);
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(di, container, user, isSample, dataType, skipAliquot);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         DataIterator derive = ddib.getDataIterator(context);
@@ -581,14 +582,16 @@ public class ExpDataIterators
         final User _user;
         final boolean _isSample;
         final boolean _skipAliquot;
+        final ExpObject _currentDataType;
 
-        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample, boolean skipAliquot)
+        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample, ExpObject currentDataType, boolean skipAliquot)
         {
             _pre = pre;
             _container = container;
             _user = user;
             _isSample = isSample;
             _skipAliquot = skipAliquot;
+            _currentDataType = currentDataType;
         }
 
         @Override
@@ -599,7 +602,7 @@ public class ExpDataIterators
             {
                 return pre;
             }
-            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _isSample, _skipAliquot));
+            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _skipAliquot));
         }
     }
 
@@ -614,14 +617,19 @@ public class ExpDataIterators
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
+        final Integer _nameCol;
         final Map<Integer, String> _parentCols;
         final Integer _aliquotParentCol;
+        final Map<String, String> _lsidNames;
         final Map<String, String> _aliquotParents;
         // Map from Data LSID to Set of (parentColName, parentName)
         final Map<String, Set<Pair<String, String>>> _parentNames;
         /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
         final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
         final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
+
+        final ExpSampleType _currentSampleType;
+        final ExpDataClass _currentDataClass;
 
         final Container _container;
         final User _user;
@@ -630,15 +638,27 @@ public class ExpDataIterators
 
         final List<String> _candidateAliquotLsids; // used to check if a lsid is an aliquot, with absent "AliquotedFrom". used for merge only
 
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isSample, boolean skipAliquot)
+        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
         {
             super(di);
             _context = context;
             _isSample = isSample;
+            if (isSample)
+            {
+                _currentSampleType = (ExpSampleType) currentDataType;
+                _currentDataClass = null;
+            }
+            else
+            {
+                _currentSampleType = null;
+                _currentDataClass = (ExpDataClass) currentDataType;
+            }
             _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
+            _nameCol = map.get("name");
+            _lsidNames = new HashMap<>();
             _parentNames = new LinkedHashMap<>();
             _parentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
@@ -681,6 +701,8 @@ public class ExpDataIterators
             if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
+                String name = (String) get(_nameCol);
+                _lsidNames.put(lsid, name);
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
@@ -828,17 +850,41 @@ public class ExpDataIterators
                         String dataType = null;
                         if (_isSample)
                         {
-                            ExpMaterial m = ExperimentService.get().getExpMaterial(lsid);
+                            ExpMaterial m = null;
+                            if (_context.getInsertOption().mergeRows) // column lsid generated from dbseq might not be valid for existing materials, lookup by name instead
+                            {
+                                String sampleName = _lsidNames.get(lsid);
+                                if (!StringUtils.isEmpty(sampleName))
+                                {
+                                    m = _currentSampleType.getSample(_container, sampleName);
+                                }
+                            }
+
+                            if (m == null)
+                                m= ExperimentService.get().getExpMaterial(lsid);
+
                             if (m != null)
                             {
                                 materialCache.put(m.getRowId(), m);
+                                dataType = m.getSampleType().getName();
                             }
                             runItem = m;
-                            dataType = m.getSampleType().getName();
                         }
                         else
                         {
-                            ExpData d = ExperimentService.get().getExpData(lsid);
+                            ExpData d = null;
+                            if (_context.getInsertOption().mergeRows) // column lsid generated from guid might not be valid for existing data, lookup by name instead
+                            {
+                                String dataName = _lsidNames.get(lsid);
+                                if (!StringUtils.isEmpty(dataName))
+                                {
+                                    d = _currentDataClass.getData(_container, dataName);
+                                }
+                            }
+
+                            if (d == null)
+                                d = ExperimentService.get().getExpData(lsid);
+
                             if (d != null)
                             {
                                 dataCache.put(d.getRowId(), d);
@@ -1578,6 +1624,7 @@ public class ExpDataIterators
         private final DataIteratorBuilder _in;
         private final TableInfo _expTable;
         private final TableInfo _propertiesTable;
+        private final ExpObject _dataTypeObject;
         private final Container _container;
         private final User _user;
         private final Set<String> _excludedColumns = new HashSet<>(List.of("generated","runId","sourceapplicationid")); // generated has database DEFAULT 0
@@ -1588,11 +1635,12 @@ public class ExpDataIterators
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, ExpObject typeObject, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
         {
             _in = in;
             _expTable = expTable;
             _propertiesTable = propsTable;
+            _dataTypeObject = typeObject;
             _container = container;
             _user = user;
             _importAliases = importAliases;
@@ -1691,7 +1739,7 @@ public class ExpDataIterators
             }
 
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, false));
+            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, _dataTypeObject, false));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step6 = step5;

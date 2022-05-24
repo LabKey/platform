@@ -1042,7 +1042,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService ss = SearchService.get();
             if (null != ss)
