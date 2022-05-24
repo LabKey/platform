@@ -927,8 +927,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newName = StringUtils.trimToNull(update.getName());
+        String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
-        if (newName != null && !st.getName().equals(newName))
+        if (newName != null && !oldSampleTypeName.equals(newName))
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
@@ -994,6 +995,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             st.save(user);
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
             if (!errors.hasErrors())
             {

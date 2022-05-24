@@ -29,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,9 @@ public interface ExpSampleType extends ExpObject
 
     /** pass in a container to request a sample */
     ExpMaterial getSample(Container c, String name);
+
+    /** get the sample with name at a specific time */
+    ExpMaterial getLegacySample(Container c, String name, Date effectiveDate);
 
     @NotNull
     Domain getDomain();

@@ -541,6 +541,7 @@
     <columns>
         <column columnName="RowId"/>
         <column columnName="ObjectId"/>
+        <column columnName="ObjectType"/>
         <column columnName="Name"/>
         <column columnName="Created"/>
         <column columnName="CreatedBy"/>

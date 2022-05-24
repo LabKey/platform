@@ -108,6 +108,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
@@ -345,6 +346,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
+        String newName = (String) row.get(Name.name());
+        String oldName = (String) oldRow.get(Name.name());
+        boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+        if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
+            throw new ValidationException("User specified sample name not allowed");
+
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
         Set<String> aliquotFields = getAliquotSpecificFields();
@@ -356,7 +363,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // remove aliquotedFrom from row, or error out
         rowCopy.putAll(row);
         String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
-        if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
+        if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
 
         // We need to allow updating from one locked status to another locked status, but without other changes
@@ -410,14 +417,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
         }
 
-        // update comment
         ExpMaterialImpl sample = null;
+        if (hasNameChange)
+        {
+            sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+            ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, user);
+        }
+
+        // update comment
         if (row.containsKey("flag") || row.containsKey("comment"))
         {
             Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
             String flag = Objects.toString(o, null);
 
-            sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+            if (sample == null)
+                sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
             sample.setComment(user, flag);
         }
 

@@ -82,6 +82,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -573,6 +574,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoEdge();
 
+    TableInfo getTinfoObjectLegacyNames();
+
     /**
      * Get all runs associated with these materials, including the source runs and any derived runs
      * @param materials to get runs for
@@ -832,6 +835,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
     void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
+
+    void addObjectLegacyName(int objectId, String objectType, String legacyName, User user);
+
+    /**
+     *
+     * @param name The legacy name of the object
+     * @param dataType: One of "SampleSet", "SampleType", "Material", "Sample", "Data", "DataClass"
+     * @param effectiveDate The effective date that the legacy name was active
+     * @param c
+     * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
+     */
+    Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
 
     class XarExportOptions
     {

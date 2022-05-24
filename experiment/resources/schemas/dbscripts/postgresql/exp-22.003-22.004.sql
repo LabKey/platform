@@ -2,14 +2,14 @@ CREATE TABLE exp.ObjectLegacyNames
 (
     RowId SERIAL NOT NULL,
     ObjectId INT NOT NULL,
+    ObjectType VARCHAR(20) NOT NULL,
     Name VARCHAR(200) NOT NULL,
     Created TIMESTAMP,
     CreatedBy INT,
     Modified TIMESTAMP,
     ModifiedBy INT,
 
-    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId),
-    CONSTRAINT FK_ObjectLegacyNames_ObjectId FOREIGN KEY (ObjectId) REFERENCES exp.Object (ObjectId)
+    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
 );
 
 ALTER TABLE exp.Material ADD COLUMN MaterialSourceId INT NULL;

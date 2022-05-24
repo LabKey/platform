@@ -546,7 +546,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 nameCol.setNullable(false);
             }
-            nameCol.setDisplayColumnFactory(new IdColumnRendererFactory());
         }
         else
         {

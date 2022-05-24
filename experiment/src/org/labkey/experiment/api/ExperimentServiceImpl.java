@@ -1244,7 +1244,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new SampleStatusTable(expSchema, containerFilter);
     }
 
-    private String getNamespacePrefix(Class<? extends ExpObject> clazz)
+    public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)
             return "Data";
@@ -3641,6 +3641,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public TableInfo getTinfoEdge()
     {
         return getExpSchema().getTable("Edge");
+    }
+
+    @Override
+    public TableInfo getTinfoObjectLegacyNames()
+    {
+        return getExpSchema().getTable("ObjectLegacyNames");
     }
 
     /**
@@ -7338,11 +7344,12 @@ public class ExperimentServiceImpl implements ExperimentService
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
+        String oldDataClassName = dataClass.getName();
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
             String newName = StringUtils.trimToNull(options.getName());
-            if (newName != null && !dataClass.getName().equals(newName))
+            if (newName != null && !oldDataClassName.equals(newName))
             {
                 hasNameChange = true;
                 dataClass.setName(newName);
@@ -7372,6 +7379,9 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             dataClass.save(u);
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
+
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
 
             if (!errors.hasErrors())
             {
@@ -7941,6 +7951,58 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders()
     {
         return Collections.unmodifiableList(_runOutputsQueryViews);
+    }
+
+    @Override
+    public void addObjectLegacyName(int objectId, String objectType, String legacyName, User user)
+    {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("ObjectId", objectId);
+        fields.put("ObjectType", objectType);
+        fields.put("Name", legacyName);
+        Table.insert(user, getTinfoObjectLegacyNames(), fields);
+    }
+
+    @Override
+    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c)
+    {
+        TableInfo tableInfo = ExperimentService.get().getTinfoObjectLegacyNames();
+
+        SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM " + tableInfo +
+                "WHERE Name = ? AND ObjectType = ? AND Created <= ? " +
+                "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
+                "ORDER BY CREATED DESC");
+        sql.add(name);
+        sql.add(dataType);
+        sql.add(effectiveDate);
+        sql.add(c);
+
+        Map<String, Object>[] legacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
+
+        if (legacyNames.length >= 1)
+        {
+            Integer objectId = (Integer) legacyNames[0].get("ObjectId");
+            Date nameEndTime = (Date) legacyNames[0].get("Created");
+            SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
+                    "WHERE AND ObjectType = ? AND Created > ? " +
+                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
+                    "ORDER BY CREATED DESC");
+            previousNameSql.add(dataType);
+            sql.add(nameEndTime);
+            sql.add(c);
+
+            Map<String, Object>[] previouslegacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
+            if (previouslegacyNames.length >= 1)
+            {
+                Date previousNameEnd = (Date) previouslegacyNames[0].get("Created");
+                if (previousNameEnd.compareTo(effectiveDate) < 0 )
+                {
+                    return objectId;
+                }
+            }
+        }
+
+        return null;
     }
 
     public static class TestCase extends Assert
