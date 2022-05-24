@@ -27,6 +27,7 @@ import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -99,6 +100,13 @@ public class ProductRegistry
         }
 
         return productIds;
+    }
+
+    @Nullable
+    public ProductMenuProvider getPrimaryProductForContainer(@NotNull Container container)
+    {
+        Set<String> modules = container.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
+        return getRegisteredProducts().stream().filter(product -> modules.contains(product.getModuleName())).findFirst().orElse(null);
     }
 
     @NotNull
@@ -216,6 +224,12 @@ public class ProductRegistry
             public @NotNull String getProductId()
             {
                 return _productId;
+            }
+
+            @Override
+            public @NotNull ActionURL getAppURL(Container container)
+            {
+                return new ActionURL();
             }
 
             @Override
