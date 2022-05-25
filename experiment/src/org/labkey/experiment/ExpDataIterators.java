@@ -476,19 +476,23 @@ public class ExpDataIterators
         private final DataIteratorBuilder _in;
         private final User _user;
         private final boolean _isSample;
+        private final ExpObject _expObject;
+        private final Container _container;
 
-        public FlagDataIteratorBuilder(@NotNull DataIteratorBuilder in, User user, boolean isSample)
+        public FlagDataIteratorBuilder(@NotNull DataIteratorBuilder in, User user, boolean isSample, ExpObject expObject, Container container)
         {
             _in = in;
             _user = user;
             _isSample = isSample;
+            _expObject = expObject;
+            _container = container;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user, _isSample));
+            return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user, _isSample, _expObject, _container));
         }
     }
 
@@ -497,10 +501,14 @@ public class ExpDataIterators
         final DataIteratorContext _context;
         final User _user;
         final Integer _lsidCol;
+        final Integer _nameCol;
         final Integer _flagCol;
         final boolean _isSample;    // as oppsed to DataClass
+        private final ExpSampleType _sampleType;
+        private final ExpDataClass _dataClass;
+        final Container _container;
 
-        protected FlagDataIterator(DataIterator di, DataIteratorContext context, User user, boolean isSample)
+        protected FlagDataIterator(DataIterator di, DataIteratorContext context, User user, boolean isSample, ExpObject expObject, Container container)
         {
             super(di);
             _context = context;
@@ -509,7 +517,19 @@ public class ExpDataIterators
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
+            _nameCol = map.get("name");
             _flagCol = map.containsKey("flag") ? map.get("flag") : map.get("comment");
+            if (isSample)
+            {
+                _sampleType = (ExpSampleType) expObject;
+                _dataClass = null;
+            }
+            else
+            {
+                _sampleType = null;
+                _dataClass = (ExpDataClass) expObject;
+            }
+            _container = container;
         }
 
         private BatchValidationException getErrors()
@@ -531,6 +551,7 @@ public class ExpDataIterators
             if (_lsidCol != null && _flagCol != null)
             {
                 Object lsidValue = get(_lsidCol);
+
                 Object flagValue = get(_flagCol);
 
                 if (lsidValue instanceof String lsid)
@@ -541,13 +562,30 @@ public class ExpDataIterators
                     {
                         if (_isSample)
                         {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
+                            ExpMaterial sample = null;
+                            if (_context.getInsertOption() == QueryUpdateService.InsertOption.MERGE && _nameCol != null)
+                            {
+                                Object nameValue = get(_nameCol);
+                                if (nameValue instanceof String)
+                                    sample = _sampleType.getSample(_container, (String) nameValue);
+                            }
+
+                            if (sample == null)
+                                sample = ExperimentService.get().getExpMaterial(lsid);
                             if (sample != null)
                                 sample.setComment(_user, flag);
                         }
                         else
                         {
-                            ExpData data = ExperimentService.get().getExpData(lsid);
+                            ExpData data = null;
+                            if (_context.getInsertOption() == QueryUpdateService.InsertOption.MERGE && _nameCol != null)
+                            {
+                                Object nameValue = get(_nameCol);
+                                if (nameValue instanceof String)
+                                    data = _dataClass.getData(_container, (String) nameValue);
+                            }
+                            if (data == null)
+                                data = ExperimentService.get().getExpData(lsid);
                             if (data != null)
                                 data.setComment(_user, flag);
                         }
@@ -1737,7 +1775,7 @@ public class ExpDataIterators
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
             {
-                step4 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample));
+                step4 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample, _dataTypeObject, _container));
             }
 
             // Wire up derived parent/child data and materials
