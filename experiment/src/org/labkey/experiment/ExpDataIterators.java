@@ -1717,7 +1717,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging and detailed logging is enabled
-            DataIteratorBuilder step1 = ExistingRecordDataIterator.createBuilder(step0, _expTable, Set.of(ExpDataTable.Column.LSID.toString()), true);
+            DataIteratorBuilder step1 = ExistingRecordDataIterator.createBuilder(step0, _expTable, keyColumns, true);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)

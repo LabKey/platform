@@ -534,27 +534,47 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return result;
     }
 
-    private String getMaterialLsid(Map<String, Object> row)
+    private String getMaterialStringValue(Map<String, Object> row, String columnName)
     {
-        Object o = row.get(ExpMaterialTable.Column.LSID.name());
+        Object o = row.get(columnName);
         if (o instanceof String)
             return (String)o;
 
         return null;
     }
 
+    private String getMaterialLsid(Map<String, Object> row)
+    {
+        return getMaterialStringValue(row, ExpMaterialTable.Column.LSID.name());
+    }
+
+    private String getMaterialName(Map<String, Object> row)
+    {
+        return getMaterialStringValue(row, Name.name());
+    }
+
     IntegerConverter _converter = new IntegerConverter();
 
-    private Integer getMaterialRowId(Map<String, Object> row)
+    private Integer getMaterialIntegerValue(Map<String, Object> row, String columnName)
     {
         if (row != null)
         {
-            Object o = row.get(ExpMaterialTable.Column.RowId.name());
+            Object o = row.get(columnName);
             if (o != null)
                 return (Integer) (_converter.convert(Integer.class, o));
         }
 
         return null;
+    }
+
+    private Integer getMaterialSourceId(Map<String, Object> row)
+    {
+        return getMaterialIntegerValue(row, ExpMaterialTable.Column.MaterialSourceId.name());
+    }
+
+    private Integer getMaterialRowId(Map<String, Object> row)
+    {
+        return getMaterialIntegerValue(row, ExpMaterialTable.Column.RowId.name());
     }
 
     private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container, boolean addInputs)
@@ -642,12 +662,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Map<String, Integer> nameRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Integer sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
 
             Integer rowId = getMaterialRowId(keyMap.getValue());
             String lsid = getMaterialLsid(keyMap.getValue());
+            String name = getMaterialName(keyMap.getValue());
+            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
 
             if (rowId != null)
                 rowIdRowNumMap.put(rowId, rowNum);
@@ -655,6 +679,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 lsidRowNumMap.put(lsid, rowNum);
                 rowNumLsid.put(rowNum, lsid);
+            }
+            else if (name != null && materialSourceId != null)
+            {
+                sampleTypeId = materialSourceId;
+                nameRowNumMap.put(name, rowNum);
             }
             else
                 throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
@@ -685,6 +714,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Integer rowNum = lsidRowNumMap.get(sampleLsid);
 
                 sampleRows.put(rowNum, row);
+            }
+        }
+
+        if (!nameRowNumMap.isEmpty())
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
+
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            for (Map<String, Object> row : rows)
+            {
+                String name = (String) row.get("name");
+                Integer rowNum = nameRowNumMap.get(name);
+                String sampleLsid = (String) row.get("lsid");
+                sampleRows.put(rowNum, row);
+                rowNumLsid.put(rowNum, sampleLsid);
             }
         }
 
