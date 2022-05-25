@@ -3,7 +3,6 @@ package org.labkey.core.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.dialect.PostgreSqlServerType;
 
 import java.util.Arrays;
 import java.util.Comparator;
