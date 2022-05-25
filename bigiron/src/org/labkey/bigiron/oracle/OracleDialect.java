@@ -229,7 +229,17 @@ abstract class OracleDialect extends SimpleSqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return frag;
+        if (maxRows == Table.ALL_ROWS)
+            return frag;
+
+        // Use rownum approach here since row_number() (used in _limitRows() below) requires an explicit ORDER BY
+        // parameter which this method doesn't provide.
+        SQLFragment sql = new SQLFragment("SELECT * FROM (\n");
+        sql.append(frag);
+        sql.append("\n)\n");
+        sql.append("WHERE rownum <= ").append(maxRows);
+
+        return sql;
     }
 
     @Override
@@ -284,8 +294,6 @@ abstract class OracleDialect extends SimpleSqlDialect
 //        SQLFragment sql = new SQLFragment();
 //
 //        sql.append("SELECT * FROM (\n");
-//        // sql.append(select).append(", rownum row_num").append("\n");
-//        //sql.append(select);
 //        int aliasOffset = 7;
 //        if (select.getSQL().length() >= 16 && select.getSQL().substring(0, 16).equalsIgnoreCase("SELECT DISTINCT"))
 //            aliasOffset = 16;
@@ -348,7 +356,7 @@ abstract class OracleDialect extends SimpleSqlDialect
     }
 
 
-    private class OracleColumnMetaDataReader extends ColumnMetaDataReader
+    private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
         private OracleColumnMetaDataReader(ResultSet rsCols)
         {

@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 // Extend this to implement a dialect that will work as an external data source.
 public abstract class SimpleSqlDialect extends SqlDialect
 {
-    // The following methods must be implemented by all dialects.  Standard implementations are provided; override them
+    // The following methods must be implemented by all dialects. Standard implementations are provided; override them
     // if your dialect requires it.
 
     @Override
