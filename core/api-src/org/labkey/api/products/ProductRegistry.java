@@ -103,10 +103,10 @@ public class ProductRegistry
     }
 
     @Nullable
-    public ProductMenuProvider getPrimaryProductForContainer(@NotNull Container container)
+    public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
     {
-        Set<String> modules = container.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
-        return getRegisteredProducts().stream().filter(product -> modules.contains(product.getModuleName())).findFirst().orElse(null);
+        List<String> productIds = getProductIdsForContainer(container);
+        return getRegisteredProducts().stream().filter(product -> productIds.contains(product.getProductId())).findFirst().orElse(null);
     }
 
     @NotNull
