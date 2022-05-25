@@ -78,4 +78,10 @@ public class MockSqlDialect extends SimpleSqlDialect
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
+
+    @Override
+    public boolean supportsOffset()
+    {
+        return false;
+    }
 }
