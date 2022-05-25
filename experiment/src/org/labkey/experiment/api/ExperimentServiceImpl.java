@@ -1960,7 +1960,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!MaterialInput.NAMESPACE.equals(namespace))
             return null;
 
-        String objectId = lsid.getObjectId();
+        String objectId = lsid.getObjectId(); //TODO check
         if (objectId == null || objectId.length() == 0)
             return null;
 

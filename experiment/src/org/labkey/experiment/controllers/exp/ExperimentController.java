@@ -5075,7 +5075,7 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
-            Map<Lsid, Map<DomainProperty, String>> allProperties;
+            Map<String, Map<DomainProperty, String>> allProperties;
             try
             {
                 boolean valid = true;
@@ -5101,10 +5101,9 @@ public class ExperimentController extends SpringActionController
             {
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int i = 0;
-                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
+                for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Lsid lsid = entry.getKey();
-                    String name = lsid.getObjectId();
+                    String name = entry.getKey();
                     assert name != null;
 
                     ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);

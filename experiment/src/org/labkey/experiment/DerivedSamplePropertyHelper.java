@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -56,10 +57,10 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
  * User: jeckels
  * Date: Oct 3, 2007
  */
-public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
+public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 {
     private final List<String> _names;
-    private final Map<Integer, Lsid> _lsids = new HashMap<>();
+    private final Map<Integer, Pair<Lsid, String>> _lsids = new HashMap<>();
     private final ExpSampleTypeImpl _sampleType;
     private final Container _container;
     private final User _user;
@@ -119,12 +120,14 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     }
 
     @Override
-    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected String getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
-        Lsid lsid = _lsids.get(index);
-        if (lsid == null)
+        Pair<Lsid, String> lsidName = _lsids.get(index);
+        Lsid lsid;
+        String name;
+        if (lsidName == null)
         {
-            String name = determineMaterialName(sampleProperties, parentMaterials);
+            name = determineMaterialName(sampleProperties, parentMaterials);
             if (_sampleType == null)
             {
                 XarContext context = new XarContext("DeriveSamples", _container, _user);
@@ -138,25 +141,31 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                     // Shouldn't happen - our template is safe
                     throw new RuntimeException(e);
                 }
+
+                lsidName = new Pair<>(lsid, name);
+
+                if (_lsids.containsValue(lsidName) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
+                {
+                    // Default to not showing on a particular column
+                    String colName = "main";
+                    if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
+                    {
+                        colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
+                    }
+                    throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
+                }
             }
             else
             {
-                lsid = _sampleType.generateNextDBSeqLSID().build();
+                lsidName = new Pair<>(null, name);
             }
 
-            if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
-            {
-                // Default to not showing on a particular column
-                String colName = "main";
-                if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
-                {
-                    colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
-                }
-                throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
-            }
-            _lsids.put(index, lsid);
+            _lsids.put(index, lsidName);
         }
-        return lsid;
+        else
+            name = lsidName.second;
+
+        return name;
     }
 
     public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
