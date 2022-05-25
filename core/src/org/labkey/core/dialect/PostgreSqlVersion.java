@@ -22,7 +22,8 @@ public enum PostgreSqlVersion
     POSTGRESQL_12(120, false, true, PostgreSql_12_Dialect::new),
     POSTGRESQL_13(130, false, true, PostgreSql_13_Dialect::new),
     POSTGRESQL_14(140, false, true, PostgreSql_14_Dialect::new),
-    POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_14_Dialect::new);
+    POSTGRESQL_15(150, false, false, PostgreSql_15_Dialect::new),
+    POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_15_Dialect::new);
 
     private final int _version;
     private final boolean _deprecated;
@@ -88,11 +89,12 @@ public enum PostgreSqlVersion
             test(120, POSTGRESQL_12);
             test(130, POSTGRESQL_13);
             test(140, POSTGRESQL_14);
+            test(150, POSTGRESQL_15);
 
             // Future
-            test(150, POSTGRESQL_FUTURE);
             test(160, POSTGRESQL_FUTURE);
             test(170, POSTGRESQL_FUTURE);
+            test(180, POSTGRESQL_FUTURE);
 
             // Bad
             test(83, POSTGRESQL_UNSUPPORTED);
