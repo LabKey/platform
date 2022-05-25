@@ -6621,6 +6621,12 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
+        @Override
+        public ActionURL getDataClassAttachmentDownloadAction(Container c)
+        {
+            return new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, c);
+        }
+
     }
 
     private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>
