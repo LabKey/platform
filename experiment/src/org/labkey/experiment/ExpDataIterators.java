@@ -701,7 +701,9 @@ public class ExpDataIterators
             if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
-                String name = (String) get(_nameCol);
+                String name = null;
+                if (_nameCol != null)
+                    name = (String) get(_nameCol);
                 _lsidNames.put(lsid, name);
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
