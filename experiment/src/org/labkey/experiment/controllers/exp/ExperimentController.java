@@ -3329,7 +3329,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
     {
         @Override
@@ -3342,14 +3342,14 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(DataOperationConfirmationForm form, BindException errors)
         {
-            List<Integer> deleteRequest = new ArrayList<>(form.getIds(false));
-            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(deleteRequest);
+            Collection<Integer> requestIds = form.getIds(false);
+            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
 
             List<Integer> notPermittedIds = new ArrayList<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
-                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(form.getIds(false));
+                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(requestIds);
 
-            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(deleteRequest, notPermittedIds, allData));
+            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
     }
 

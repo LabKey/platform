@@ -1000,19 +1000,19 @@ public class ExpDataIterators
     private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
     {
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
-        Set<ExpMaterial> previousParents = Collections.emptySet();
-        Set<ExpMaterial> previousChildren = Collections.emptySet();
+        Set<ExpMaterial> previousMaterialParents = Collections.emptySet();
+        Set<ExpMaterial> previousMaterialChildren = Collections.emptySet();
         if (existingSourceApp == null)
-            return Pair.of(previousParents, previousChildren);
+            return Pair.of(previousMaterialParents, previousMaterialChildren);
 
         ExpRun existingDerivationRun = existingSourceApp.getRun();
         if (existingDerivationRun == null)
-            return Pair.of(previousParents, previousChildren);
+            return Pair.of(previousMaterialParents, previousMaterialChildren);
 
         ExpProtocol protocol = existingDerivationRun.getProtocol();
 
         if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
-            return Pair.of(previousParents, previousChildren);;
+            return Pair.of(previousMaterialParents, previousMaterialChildren);;
 
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
@@ -1022,8 +1022,8 @@ public class ExpDataIterators
                             " for run item '" + runItem.getName() + "' since it is not a sample derivation run");
         }
 
-        previousParents = existingDerivationRun.getMaterialInputs().keySet();
-        previousChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
+        previousMaterialParents = existingDerivationRun.getMaterialInputs().keySet();
+        previousMaterialChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
@@ -1058,21 +1058,21 @@ public class ExpDataIterators
             }
             ExpProtocolApplication outputApp = existingDerivationRun.getOutputProtocolApplication();
 
-            if (runItem instanceof ExpMaterial)
+            if (runItem instanceof ExpMaterial material)
             {
                 if (outputApp != null)
-                    outputApp.removeMaterialInput(user, (ExpMaterial)runItem);
-                existingSourceApp.removeMaterialInput(user, (ExpMaterial)runItem);
+                    outputApp.removeMaterialInput(user, material);
+                existingSourceApp.removeMaterialInput(user, material);
             }
-            else if (runItem instanceof ExpData)
+            else if (runItem instanceof ExpData data)
             {
                 if (outputApp != null)
-                    outputApp.removeDataInput(user, (ExpData)runItem);
-                existingSourceApp.removeDataInput(user, (ExpData)runItem);
+                    outputApp.removeDataInput(user, data);
+                existingSourceApp.removeDataInput(user, data);
             }
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
-        return Pair.of(previousParents, previousChildren);
+        return Pair.of(previousMaterialParents, previousMaterialChildren);
     }
 
     /**
@@ -1080,14 +1080,16 @@ public class ExpDataIterators
      * When merge is true, the outputs will be combined with
      * an existing record with the same input parents, if possible.
      */
-    private static void record(boolean merge,
-                              List<UploadSampleRunRecord> runRecords,
-                              Map<ExpMaterial, String> parentMaterialMap,
-                              Map<ExpMaterial, String> childMaterialMap,
-                              Map<ExpData, String> parentDataMap,
-                              Map<ExpData, String> childDataMap,
-                              ExpMaterial aliquotParent,
-                              ExpMaterial aliquotChild)
+    private static void record(
+            boolean merge,
+            @NotNull List<UploadSampleRunRecord> runRecords,
+            @NotNull Map<ExpMaterial, String> parentMaterialMap,
+            @NotNull Map<ExpMaterial, String> childMaterialMap,
+            @NotNull Map<ExpData, String> parentDataMap,
+            @NotNull Map<ExpData, String> childDataMap,
+            @Nullable ExpMaterial aliquotParent,
+            @Nullable ExpMaterial aliquotChild
+    )
     {
         if (merge)
         {
@@ -1099,7 +1101,8 @@ public class ExpDataIterators
             {
                 if (record._aliquotInput != null && record._aliquotInput.equals(aliquotParent))
                 {
-                    record._aliquotOutputs.add(aliquotChild);
+                    if (aliquotChild != null)
+                        record._aliquotOutputs.add(aliquotChild);
                     return;
                 }
                 else if ((!record.getInputMaterialMap().isEmpty() || !record.getInputDataMap().isEmpty()) && record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
