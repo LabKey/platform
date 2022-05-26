@@ -1544,11 +1544,11 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpData getEffectiveData(ExpDataClass dataClass, String name, @NotNull Date effectiveDate)
+    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container)
     {
         Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
         if (legacyObjectId != null)
-            return getDataByObjectId(dataClass.getContainer(), legacyObjectId);
+            return getDataByObjectId(container, legacyObjectId);
 
         ExpDataImpl data = getExpData(dataClass, name);
         if (data != null && data.getCreated().compareTo(effectiveDate) <= 0)
@@ -1972,7 +1972,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!MaterialInput.NAMESPACE.equals(namespace))
             return null;
 
-        String objectId = lsid.getObjectId(); //TODO check
+        String objectId = lsid.getObjectId();
         if (objectId == null || objectId.length() == 0)
             return null;
 
@@ -8037,10 +8037,10 @@ public class ExperimentServiceImpl implements ExperimentService
         TableInfo tableInfo = ExperimentService.get().getTinfoObjectLegacyNames();
 
         // find the last ObjectLegacyNames record with matched name and timestamp
-        SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM " + tableInfo +
-                " WHERE Name = ? AND ObjectType = ? AND Created >= ?" +
-                " AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?)" +
-                " ORDER BY CREATED DESC");
+        SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
+                "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
+                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?) " +
+                "ORDER BY CREATED DESC");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
@@ -8054,7 +8054,6 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             Integer objectId = (Integer) legacyNames[0].get("ObjectId");
             Date nameEndTime = (Date) legacyNames[0].get("Created");
-            // check the previous name and verify effectiveName is in effect
             SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
                     "WHERE ObjectType = ? AND Created < ? " +
                     "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +

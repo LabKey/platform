@@ -191,7 +191,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a Data with name at a specific time.
      */
-    ExpData getEffectiveData(ExpDataClass dataClass, String name, @NotNull Date effectiveDate);
+    ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container);
 
     /**
      * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
