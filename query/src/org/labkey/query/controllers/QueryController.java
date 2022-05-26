@@ -3366,9 +3366,16 @@ public class QueryController extends SpringActionController
             if (getContainerFilter() != null)
             {
                 // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                        ContainerFilter.Type.valueOf(getContainerFilter());
-                result.setContainerFilterName(containerFilterType.name());
+                try
+                {
+                    ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(getContainerFilter());
+                    result.setContainerFilterName(containerFilterType.name());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // Remove bogus value from error message, Issue 45567
+                    throw new IllegalArgumentException("'containerFilter' parameter is not a valid org.labkey.api.data.ContainerFilter.Type enum constant");
+                }
             }
             return result;
         }
