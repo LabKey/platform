@@ -8024,30 +8024,34 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         TableInfo tableInfo = ExperimentService.get().getTinfoObjectLegacyNames();
 
+        // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM " + tableInfo +
-                "WHERE Name = ? AND ObjectType = ? AND Created <= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
-                "ORDER BY CREATED DESC");
+                " WHERE Name = ? AND ObjectType = ? AND Created >= ?" +
+                " AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?)" +
+                " ORDER BY CREATED DESC");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
-        sql.add(c);
+        sql.add(c.getId());
 
         Map<String, Object>[] legacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
 
+        // verify the found ObjectLegacyNames is valid at effectiveDate.
+        // If an even older name exist, the older name ended before effectiveDate
         if (legacyNames.length >= 1)
         {
             Integer objectId = (Integer) legacyNames[0].get("ObjectId");
             Date nameEndTime = (Date) legacyNames[0].get("Created");
+            // check the previous name and verify effectiveName is in effect
             SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
-                    "WHERE AND ObjectType = ? AND Created > ? " +
+                    "WHERE ObjectType = ? AND Created < ? " +
                     "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
                     "ORDER BY CREATED DESC");
             previousNameSql.add(dataType);
-            sql.add(nameEndTime);
-            sql.add(c);
+            previousNameSql.add(nameEndTime);
+            previousNameSql.add(c);
 
-            Map<String, Object>[] previouslegacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
+            Map<String, Object>[] previouslegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
             if (previouslegacyNames.length >= 1)
             {
                 Date previousNameEnd = (Date) previouslegacyNames[0].get("Created");
@@ -8056,6 +8060,8 @@ public class ExperimentServiceImpl implements ExperimentService
                     return objectId;
                 }
             }
+            else
+                return objectId;
         }
 
         return null;
