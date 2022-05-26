@@ -16,7 +16,6 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +33,7 @@ import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.VersionNumber;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -48,7 +48,7 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 {
-    private static final Logger LOG = LogManager.getLogger(MicrosoftSqlServerDialectFactory.class);
+    private static final Logger LOG = LogHelper.getLogger(MicrosoftSqlServerDialectFactory.class, "Warnings about SQL Server versions");
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
     private volatile TableResolver _tableResolver = new StandardTableResolver();
@@ -127,15 +127,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             if (version >= 120)
                 return new MicrosoftSqlServer2014Dialect(_tableResolver);
 
-            if (version >= 110)
-            {
-                if (logWarnings)
-                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
-            }
-
-            // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
+            // Accept 2008, 2008R2, or 2012 as an external/supplemental database, but not as the primary database
             if (!primaryDataSource)
             {
                 if (logWarnings)

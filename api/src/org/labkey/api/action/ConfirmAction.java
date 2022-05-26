@@ -116,7 +116,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     }
 
     /**
-     * View with text and buttons.  Should NOT include &lt;form&gt; 
+     * View with text and buttons. Should NOT include &lt;form&gt;
      */
     public abstract ModelAndView getConfirmView(FORM form, BindException errors) throws Exception;
 

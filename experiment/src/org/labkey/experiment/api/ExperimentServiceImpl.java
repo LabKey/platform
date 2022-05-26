@@ -141,6 +141,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -820,23 +821,34 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         if (null == updates || updates.isEmpty())
             return;
-        try (Connection c = getSchema().getScope().getConnection())
+        DbScope dbscope = getSchema().getScope();
+        try (Connection c = dbscope.getConnection())
         {
             Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
             Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
-            ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
-                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null);
-
-            ListUtils.partition(updates, 1000).forEach(sublist ->
+            try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
+                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null))
             {
-                for (Pair<Integer, Long> p : sublist)
+                ListUtils.partition(updates, 1000).forEach(sublist ->
                 {
-                    rowid.setValue(p.first);
-                    ts.setValue(new Timestamp(p.second));
-                    pm.addBatch();
-                }
-                pm.executeBatch();
-            });
+                    try
+                    {
+                        for (Pair<Integer, Long> p : sublist)
+                        {
+                            rowid.setValue(p.first);
+                            ts.setValue(new Timestamp(p.second));
+                            pm.addBatch();
+                        }
+                        pm.executeBatch();
+                    }
+                    catch (DeadlockLoserDataAccessException dldae)
+                    {
+                        // if we're not in an transaction just keep going...
+                        if (dbscope.isTransactionActive())
+                            throw dldae;
+                    }
+                });
+            }
         }
         catch (SQLException x)
         {
@@ -3887,7 +3899,14 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public List<ExpDataImpl> getAllExpDataByURL(String canonicalURL, @Nullable Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), canonicalURL);
+        String dataFileUrl = canonicalURL;
+
+        // if canonicalURL endsWith "/", try query without trailing "/"
+        // see ExpDataImpl.setDataFileURI
+        if (canonicalURL != null && canonicalURL.endsWith("/"))
+            dataFileUrl = canonicalURL.substring(0, canonicalURL.length() - 1);
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), dataFileUrl);
         if (c != null)
         {
             filter.addCondition(FieldKey.fromParts("Container"), c);
