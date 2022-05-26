@@ -23,6 +23,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -36,8 +37,10 @@ import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -282,5 +285,25 @@ public class MySqlDialect extends SimpleSqlDialect
     public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
     {
         return existsSQL;
+    }
+
+    @Override
+    public boolean canShowExecutionPlan()
+    {
+        return true;
+    }
+
+    @Override
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    {
+        SQLFragment copy = new SQLFragment(sql);
+        copy.insert(0, getExplainPrefix());
+
+        return new SqlSelector(scope, conn, copy).getCollection(String.class);
+    }
+
+    protected String getExplainPrefix()
+    {
+        return "EXPLAIN ";
     }
 }
