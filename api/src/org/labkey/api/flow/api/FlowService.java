@@ -36,6 +36,4 @@ public interface FlowService extends WebdavResourceExpDataProvider
     {
         ServiceRegistry.get().registerService(FlowService.class, impl);
     }
-
-    int getTempTableCount();
 }
