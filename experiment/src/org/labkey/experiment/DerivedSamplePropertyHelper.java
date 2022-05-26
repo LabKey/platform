@@ -57,7 +57,7 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
  * User: jeckels
  * Date: Oct 3, 2007
  */
-public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
+public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
     private final Map<Integer, Pair<Lsid, String>> _lsids = new HashMap<>();
@@ -120,7 +120,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
     }
 
     @Override
-    protected String getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    {
+        return getObjectWithName(index, sampleProperties, parentMaterials).first;
+    }
+
+    @Override
+    protected Pair<Lsid, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
         Pair<Lsid, String> lsidName = _lsids.get(index);
         Lsid lsid;
@@ -141,31 +147,27 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
                     // Shouldn't happen - our template is safe
                     throw new RuntimeException(e);
                 }
-
-                lsidName = new Pair<>(lsid, name);
-
-                if (_lsids.containsValue(lsidName) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
-                {
-                    // Default to not showing on a particular column
-                    String colName = "main";
-                    if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
-                    {
-                        colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
-                    }
-                    throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
-                }
             }
             else
             {
-                lsidName = new Pair<>(null, name);
+                lsid = _sampleType.generateNextDBSeqLSID().build();
             }
 
+            lsidName = new Pair<>(lsid, name);
+
+            if (_lsids.containsValue(lsidName) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
+            {
+                // Default to not showing on a particular column
+                String colName = "main";
+                if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
+                {
+                    colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
+                }
+                throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
+            }
             _lsids.put(index, lsidName);
         }
-        else
-            name = lsidName.second;
-
-        return name;
+        return lsidName;
     }
 
     public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
