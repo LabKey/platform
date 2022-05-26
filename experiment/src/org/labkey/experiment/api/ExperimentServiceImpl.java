@@ -141,6 +141,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -820,23 +821,34 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         if (null == updates || updates.isEmpty())
             return;
-        try (Connection c = getSchema().getScope().getConnection())
+        DbScope dbscope = getSchema().getScope();
+        try (Connection c = dbscope.getConnection())
         {
             Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
             Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
-            ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
-                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null);
-
-            ListUtils.partition(updates, 1000).forEach(sublist ->
+            try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
+                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null))
             {
-                for (Pair<Integer, Long> p : sublist)
+                ListUtils.partition(updates, 1000).forEach(sublist ->
                 {
-                    rowid.setValue(p.first);
-                    ts.setValue(new Timestamp(p.second));
-                    pm.addBatch();
-                }
-                pm.executeBatch();
-            });
+                    try
+                    {
+                        for (Pair<Integer, Long> p : sublist)
+                        {
+                            rowid.setValue(p.first);
+                            ts.setValue(new Timestamp(p.second));
+                            pm.addBatch();
+                        }
+                        pm.executeBatch();
+                    }
+                    catch (DeadlockLoserDataAccessException dldae)
+                    {
+                        // if we're not in an transaction just keep going...
+                        if (dbscope.isTransactionActive())
+                            throw dldae;
+                    }
+                });
+            }
         }
         catch (SQLException x)
         {

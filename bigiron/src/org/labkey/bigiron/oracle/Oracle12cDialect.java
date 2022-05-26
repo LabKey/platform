@@ -15,10 +15,20 @@
  */
 package org.labkey.bigiron.oracle;
 
+import org.labkey.api.data.SQLFragment;
+
 /**
  * Created by Josh on 11/25/2015.
  */
 public class Oracle12cDialect extends Oracle11gR2Dialect
 {
     // Nothing Oracle 12c specific yet, but this is the place to add extra keywords and such
+
+    // TODO: Could implement limitRows() methods via OFFSET / FETCH (see LimitRowsSqlGenerator.limitRows()), but we need
+    // a test instance of Oracle 12c.
+    @Override
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    {
+        return super.limitRows(select, from, filter, order, groupBy, maxRows, offset);
+    }
 }
