@@ -138,6 +138,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
@@ -211,7 +212,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-    private static final Logger _log = LogManager.getLogger(CoreController.class);
+    private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -2041,10 +2042,6 @@ public class CoreController extends SpringActionController
         public Object execute(LoadLibraryForm form, BindException errors)
         {
             String[] requestLibraries = form.getLibrary();
-
-            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
-
-            JSONArray resources;
             JSONObject libraries = new JSONObject();
 
             for (String library : requestLibraries)
@@ -2059,18 +2056,12 @@ public class CoreController extends SpringActionController
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
                         dependencies.addAll(cd.getJsPaths(getContainer()));
-
-                        resources = new JSONArray(dependencies);
+                        libraries.put(library, new JSONArray(dependencies));
                     }
-                    else
-                    {
-                        resources = new JSONArray();
-                    }
-
-                    libraries.put(library, resources);
                 }
             }
 
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("libraries", libraries);
 
             return response;
