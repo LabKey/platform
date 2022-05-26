@@ -1626,6 +1626,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)    // This is called "export" but it doesn't export any data
+    @CSRF(CSRF.Method.ALL)
     public static class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         @Override
