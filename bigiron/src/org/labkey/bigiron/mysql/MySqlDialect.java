@@ -193,13 +193,13 @@ public class MySqlDialect extends SimpleSqlDialect
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0);
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, false);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, false);
     }
 
     @Override
@@ -276,5 +276,11 @@ public class MySqlDialect extends SimpleSqlDialect
     public boolean supportsRoundDouble()
     {
         return true;
+    }
+
+    @Override
+    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    {
+        return existsSQL;
     }
 }
