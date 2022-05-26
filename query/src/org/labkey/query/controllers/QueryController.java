@@ -3374,7 +3374,7 @@ public class QueryController extends SpringActionController
                 catch (IllegalArgumentException e)
                 {
                     // Remove bogus value from error message, Issue 45567
-                    throw new IllegalArgumentException("'containerFilter' parameter is not a valid org.labkey.api.data.ContainerFilter.Type enum constant");
+                    throw new IllegalArgumentException("'containerFilter' parameter is not valid");
                 }
             }
             return result;
