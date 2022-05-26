@@ -8,12 +8,20 @@ import org.labkey.api.data.Table;
  */
 public class LimitRowsSqlGenerator
 {
-    public static SQLFragment limitRows(SQLFragment frag, int rowCount, long offset)
+    public static SQLFragment limitRows(SQLFragment frag, int rowCount, long offset, boolean supportsOffsetWithoutLimit)
     {
         if (rowCount != Table.ALL_ROWS)
         {
             frag.append("\nLIMIT ");
             frag.append(Integer.toString(Table.NO_ROWS == rowCount ? 0 : rowCount));
+        }
+        else if (offset > 0 && !supportsOffsetWithoutLimit)
+        {
+            // This is Table.ALL_ROWS plus an offset on MySQL. MySQL OFFSET requires LIMIT (unlike PostgreSQL, where
+            // LIMIT and OFFSET are independent clauses). MySQL documentation recommends specifying a very large LIMIT
+            // to denote offset + all remaining rows.
+            frag.append("\nLIMIT ?");
+            frag.add(Integer.MAX_VALUE);
         }
 
         if (offset > 0)
@@ -25,11 +33,11 @@ public class LimitRowsSqlGenerator
         return frag;
     }
 
-    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset, boolean supportsOffsetWithoutLimit)
     {
         SQLFragment sql = appendFromFilterOrderAndGroupBy(select, from, filter, order, groupBy);
 
-        return limitRows(sql, maxRows, offset);
+        return limitRows(sql, maxRows, offset, supportsOffsetWithoutLimit);
     }
 
     public static SQLFragment appendFromFilterOrderAndGroupBy(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy)
