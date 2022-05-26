@@ -305,7 +305,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid, name, materialSourceId) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getName(), st.getRowId(), getLSID());
             }
         }
         index(null);
