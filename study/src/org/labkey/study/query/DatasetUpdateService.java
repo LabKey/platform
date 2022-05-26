@@ -148,7 +148,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // Mostly this is harmless, but there is some noise.
         HashSet<String> nameset = new HashSet<>(getQueryTable().getColumnNameSet());
         List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
-        List<ColumnInfo> columns = getQueryTable().getColumns(nameset.toArray(new String[0]));
+        List<ColumnInfo> columns = new ArrayList<>(getQueryTable().getColumns(nameset.toArray(new String[0])));
+
+        // filter out calculated columns which can be expensive to reselect
+        columns.removeIf(ColumnInfo::isCalculated);
 
         // This is a general version of DatasetDefinition.canonicalizeDatasetRow()
         // The caller needs to make sure names are unique.  Not suitable for use w/ lookups etc where there can be name collisions.
