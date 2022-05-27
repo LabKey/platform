@@ -2046,7 +2046,7 @@ public class CoreController extends SpringActionController
 
             for (String library : requestLibraries)
             {
-                if (library.length() > 0)
+                if (!StringUtils.isBlank(library))
                 {
                     ClientDependency cd = ClientDependency.fromPath(library);
 
