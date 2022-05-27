@@ -1266,6 +1266,7 @@ public class ProjectController extends SpringActionController
         public ApiResponse execute(GetWebPartForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
+            _log.info("GetWebPart.api: " + getViewContext().getActionURL() + " from " + request.getHeader("referer"));
             String qs = request.getQueryString();
             String webPartName = request.getParameter(PARAM_WEBPART);
 
