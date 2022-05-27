@@ -1428,7 +1428,6 @@ public class QueryView extends WebPartView<Object>
                 if (null != url)
                 {
                     url.addParameter("scriptType", factory.getScriptType());
-                    url.addParameter(CSRFUtil.csrfName, CSRFUtil.getExpectedToken(getViewContext()));
                     options.put(factory.getMenuText(), url);
                 }
             }
