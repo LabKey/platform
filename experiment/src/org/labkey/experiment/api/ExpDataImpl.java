@@ -101,6 +101,23 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
     private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
+    public enum DataOperations {
+        EditLineage("editing lineage"),
+        Delete("deleting");
+
+        private final String _description; // used as a suffix in messaging users about what is not allowed
+
+        DataOperations(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData") {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
