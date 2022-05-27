@@ -48,7 +48,7 @@ public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDiale
 
         if (maxRows == Table.ALL_ROWS)
         {
-            sql.append(">= ").append(offset + 1);
+            sql.append("> ").append(offset);
         }
         else
         {

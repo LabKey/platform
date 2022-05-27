@@ -237,7 +237,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -3330,30 +3329,46 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(DeletePermission.class)
-    public class GetDataDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
+    @RequiresPermission(ReadPermission.class)
+    public class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
     {
         @Override
-        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
+        public void validateForm(DataOperationConfirmationForm form, Errors errors)
         {
-            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
         }
 
         @Override
-        public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
+        public Object execute(DataOperationConfirmationForm form, BindException errors)
         {
+            Collection<Integer> requestIds = form.getIds(false);
+            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
 
-            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
-            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(deleteRequest);
+            List<Integer> notPermittedIds = new ArrayList<>();
+            if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
+                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(requestIds);
 
-            List<Integer> cannotDelete = ExperimentServiceImpl.get().getDataUsedAsInput(deleteForm.getIds(false));
-
-            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(deleteRequest, cannotDelete, allData));
+            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
     }
 
-    public static class DeleteConfirmationForm extends ViewForm
+    public static class DataOperationConfirmationForm extends OperationConfirmationForm
+    {
+        private ExpDataImpl.DataOperations _dataOperation;
+
+        public ExpDataImpl.DataOperations getDataOperation()
+        {
+            return _dataOperation;
+        }
+
+        public void setDataOperation(ExpDataImpl.DataOperations dataOperation)
+        {
+            _dataOperation = dataOperation;
+        }
+    }
+
+    public static class OperationConfirmationForm extends ViewForm
     {
         private String _dataRegionSelectionKey;
         private Set<Integer> _rowIds;
@@ -3387,10 +3402,10 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    public class GetMaterialOperationConfirmationDataAction extends ReadOnlyApiAction<MaterialOperationConfirmationForm>
     {
         @Override
-        public void validateForm(OperationConfirmationForm form, Errors errors)
+        public void validateForm(MaterialOperationConfirmationForm form, Errors errors)
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
@@ -3399,7 +3414,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(OperationConfirmationForm form, BindException errors)
+        public Object execute(MaterialOperationConfirmationForm form, BindException errors)
         {
             Set<Integer> requestIds = form.getIds(false);
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
@@ -3422,7 +3437,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class OperationConfirmationForm extends DeleteConfirmationForm
+    public static class MaterialOperationConfirmationForm extends OperationConfirmationForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
 
@@ -6604,6 +6619,12 @@ public class ExperimentController extends SpringActionController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
+        }
+
+        @Override
+        public ActionURL getDataClassAttachmentDownloadAction(Container c)
+        {
+            return new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, c);
         }
 
     }
