@@ -52,7 +52,7 @@
   "dependencies": {
     "@labkey/api": "1.12.1",
     "@labkey/components": "2.173.0",
-    "@labkey/themes": "1.2.1"
+    "@labkey/themes": "1.2.2"
   },
   "devDependencies": {
     "@labkey/build": "6.1.3",

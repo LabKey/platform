@@ -935,7 +935,7 @@ public class ExpDataIterators
                             continue;
 
                         Pair<RunInputOutputBean, RunInputOutputBean> pair;
-                        if (_isSample && _context.getInsertOption().mergeRows)
+                        if (_context.getInsertOption().mergeRows)
                         {
                             pair = resolveInputsAndOutputs(
                                     _user, _container, runItem, parentNames, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
@@ -953,9 +953,9 @@ public class ExpDataIterators
                             throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
                         // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
-                        if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())
+                        if (_context.getInsertOption().mergeRows && pair.first.doClear())
                         {
-                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearSampleSourceRun(_user, (ExpMaterial) runItem);
+                            Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
                             String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
                             lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
                             if (!lockCheckMessage.isEmpty())
@@ -967,16 +967,17 @@ public class ExpDataIterators
                             Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
                             Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
                             Map<ExpData, String> currentDataMap = Collections.emptyMap();
+
+                            if (_context.getInsertOption().mergeRows)
+                            {
+                                // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
+                                // Since this entry was (maybe) already in the database, we may need to delete old derivation info
+                                previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                            }
+
                             if (_isSample)
                             {
                                 ExpMaterial sample = (ExpMaterial) runItem;
-
-                                if (_context.getInsertOption().mergeRows)
-                                {
-                                    // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
-                                    // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                                    previousSampleRelatives = clearSampleSourceRun(_user, sample);
-                                }
                                 currentMaterialMap = new HashMap<>();
                                 currentMaterial = sample;
                                 currentMaterialMap.put(sample, sampleRole(sample));
@@ -984,7 +985,8 @@ public class ExpDataIterators
                             else
                             {
                                 ExpData data = (ExpData) runItem;
-                                currentDataMap = Collections.singletonMap(data, dataRole(data, _user));
+                                currentDataMap = new HashMap<>();
+                                currentDataMap.put(data, dataRole(data, _user));
                             }
 
                             if (pair.first != null)
@@ -998,7 +1000,7 @@ public class ExpDataIterators
 
                                 Map<ExpData, String> parentDataMap = pair.first.getDatas();
 
-                                record(_isSample, runRecords,
+                                record(true, runRecords,
                                         parentMaterialMap, currentMaterialMap,
                                         parentDataMap, currentDataMap, pair.first.getAliquotParent(), currentMaterial);
                             }
@@ -1081,58 +1083,82 @@ public class ExpDataIterators
      * otherwise the run will be deleted.
      */
     @NotNull
-    private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
     {
-        ExpProtocolApplication existingSourceApp = material.getSourceApplication();
-        Set<ExpMaterial> previousSampleParents = Collections.emptySet();
-        Set<ExpMaterial> previousSampleChildren = Collections.emptySet();
+        ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
+        Set<ExpMaterial> previousMaterialParents = Collections.emptySet();
+        Set<ExpMaterial> previousMaterialChildren = Collections.emptySet();
         if (existingSourceApp == null)
-            return Pair.of(previousSampleParents, previousSampleChildren);
+            return Pair.of(previousMaterialParents, previousMaterialChildren);
 
         ExpRun existingDerivationRun = existingSourceApp.getRun();
         if (existingDerivationRun == null)
-            return Pair.of(previousSampleParents, previousSampleChildren);
+            return Pair.of(previousMaterialParents, previousMaterialChildren);
 
         ExpProtocol protocol = existingDerivationRun.getProtocol();
 
         if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
-            return Pair.of(previousSampleParents, previousSampleChildren);;
+            return Pair.of(previousMaterialParents, previousMaterialChildren);;
 
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
             throw new ValidationException(
                     "Can't remove source run '" + existingDerivationRun.getName() + "'" +
                             " of protocol '" + protocol.getName() + "'" +
-                            " for sample '" + material.getName() + "' since it is not a sample derivation run");
+                            " for run item '" + runItem.getName() + "' since it is not a sample derivation run");
         }
 
-        previousSampleParents = existingDerivationRun.getMaterialInputs().keySet();
-        previousSampleChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
+        previousMaterialParents = existingDerivationRun.getMaterialInputs().keySet();
+        previousMaterialChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
-        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(material))))
+        if (dataOutputs.isEmpty() && (materialOutputs.isEmpty() || (materialOutputs.size() == 1 && materialOutputs.contains(runItem))))
         {
-            LOG.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
+            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has no other outputs, deleting run");
             // if run has no other outputs, delete the run completely
-            material.setSourceApplication(null);
-            material.save(user);
+            runItem.setSourceApplication(null);
+            try
+            {
+                runItem.save(user);
+            }
+            catch (BatchValidationException e)
+            {
+                throw new ExperimentException(e);
+            }
             existingDerivationRun.delete(user);
         }
         else
         {
-            LOG.debug("Sample '" + material.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
+            LOG.debug("Run item '" + runItem.getName() + "' has existing source derivation run '" + existingDerivationRun.getRowId() + "' -- run has other " + dataOutputs.size() + " data outputs and " + materialOutputs.size() + " material outputs, removing sample from run");
             // if the existing run has other outputs, remove the run as the source application for this sample
             // and remove it as an output from the run
-            material.setSourceApplication(null);
-            material.save(user);
+            runItem.setSourceApplication(null);
+            try
+            {
+                runItem.save(user);
+            }
+            catch (BatchValidationException e)
+            {
+                throw new ExperimentException(e);
+            }
             ExpProtocolApplication outputApp = existingDerivationRun.getOutputProtocolApplication();
-            if (outputApp != null)
-                outputApp.removeMaterialInput(user, material);
-            existingSourceApp.removeMaterialInput(user, material);
+
+            if (runItem instanceof ExpMaterial material)
+            {
+                if (outputApp != null)
+                    outputApp.removeMaterialInput(user, material);
+                existingSourceApp.removeMaterialInput(user, material);
+            }
+            else if (runItem instanceof ExpData data)
+            {
+                if (outputApp != null)
+                    outputApp.removeDataInput(user, data);
+                existingSourceApp.removeDataInput(user, data);
+            }
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
-        return Pair.of(previousSampleParents, previousSampleChildren);
+        return Pair.of(previousMaterialParents, previousMaterialChildren);
     }
 
     /**
@@ -1140,14 +1166,16 @@ public class ExpDataIterators
      * When merge is true, the outputs will be combined with
      * an existing record with the same input parents, if possible.
      */
-    private static void record(boolean merge,
-                              List<UploadSampleRunRecord> runRecords,
-                              Map<ExpMaterial, String> parentMaterialMap,
-                              Map<ExpMaterial, String> childMaterialMap,
-                              Map<ExpData, String> parentDataMap,
-                              Map<ExpData, String> childDataMap,
-                              ExpMaterial aliquotParent,
-                              ExpMaterial aliquotChild)
+    private static void record(
+            boolean merge,
+            @NotNull List<UploadSampleRunRecord> runRecords,
+            @NotNull Map<ExpMaterial, String> parentMaterialMap,
+            @NotNull Map<ExpMaterial, String> childMaterialMap,
+            @NotNull Map<ExpData, String> parentDataMap,
+            @NotNull Map<ExpData, String> childDataMap,
+            @Nullable ExpMaterial aliquotParent,
+            @Nullable ExpMaterial aliquotChild
+    )
     {
         if (merge)
         {
@@ -1159,7 +1187,8 @@ public class ExpDataIterators
             {
                 if (record._aliquotInput != null && record._aliquotInput.equals(aliquotParent))
                 {
-                    record._aliquotOutputs.add(aliquotChild);
+                    if (aliquotChild != null)
+                        record._aliquotOutputs.add(aliquotChild);
                     return;
                 }
                 else if ((!record.getInputMaterialMap().isEmpty() || !record.getInputDataMap().isEmpty()) && record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
