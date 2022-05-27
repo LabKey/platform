@@ -34,9 +34,11 @@ LABKEY.Utils = new function(impl, $) {
         formElement.id = formId;
         formElement.method = 'POST';
 
-        Object.keys(formProps).forEach(function(prop) {
-            formElement[prop] = formProps[prop];
-        });
+        if (formProps) {
+            Object.keys(formProps).forEach(function(prop) {
+                formElement[prop] = formProps[prop];
+            });
+        }
 
         Object.keys(formData).forEach(function(name) {
             const value = formData[name];
