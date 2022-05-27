@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -1381,16 +1382,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
-        SimpleTranslator t;
-        if (in instanceof SimpleTranslator)
-            t = (SimpleTranslator)in;
-        else
-        {
-            t = new SimpleTranslator(in, context);
-            t.selectAll();
-        }
-        t.addBuiltInColumns(context, c, user, target, false);
-        t.addDbSequenceColumns(c, target);
+        CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
+        SimpleTranslator t = new SimpleTranslator(in, context);
+
+        Set<String> added = t.addBuiltInColumns(context, c, user, target, false);
+        skipColumns.addAll(added);
+        added = t.addDbSequenceColumns(c, target);
+        skipColumns.addAll(added);
+
+        t.selectAll(skipColumns);
+
         return t;
     }
 
@@ -1429,15 +1430,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         });
     }
 
-    public void addDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
+    public Set<String> addDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
     {
+        final var added = new HashSet<String>();
         target
             .getColumns()
             .stream()
             .filter(columnInfo -> columnInfo.hasDbSequence() && !columnInfo.isUniqueIdField())
             .forEach(columnInfo -> {
                 addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100, null);
+                added.add(columnInfo.getName());
             });
+        return added;
     }
 
     /**
@@ -1445,10 +1449,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * so matching columns in the input are ignored.
      * @param allowPassThrough indicates that columns in the input iterator should not be ignored
      */
-    public void addBuiltInColumns(DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
+    public Set<String> addBuiltInColumns(DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target, boolean allowPassThrough)
     {
         final String containerId = null == c ? null : c.getId();
         final Integer userId = null == user ? 0 : user.getUserId();
+        var added = new HashSet<String>();
 
         Supplier userCallable = new ConstantColumn(userId);
         Supplier tsCallable = new TimestampColumn();
@@ -1463,12 +1468,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
         Supplier containerCallable = containerFieldKeyName != null && outputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, outputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
-        addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
-        addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context);
+        // note index can be 0, but that is fine
+        int index = addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
+        added.add(getColumnInfo(index).getName());
+        index = addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
+        added.add(getColumnInfo(index).getName());
+        index = addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);
+        added.add(getColumnInfo(index).getName());
+        index = addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context);
+        added.add(getColumnInfo(index).getName());
+        index = addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context);
+        added.add(getColumnInfo(index).getName());
+        index = addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context);
+        added.add(getColumnInfo(index).getName());
+        return added;
     }
 
     private int addBuiltinColumn(SpecialColumn e, boolean allowPassThrough, TableInfo target, Map<String,Integer> inputCols, Map<String,Integer> outputCols, Supplier c, DataIteratorContext context)
