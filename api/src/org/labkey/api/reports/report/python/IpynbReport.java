@@ -1,0 +1,481 @@
+package org.labkey.api.reports.report.python;
+
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.xmlbeans.impl.common.IOUtil;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.docker.DockerService;
+import org.labkey.api.reports.report.DockerScriptReport;
+import org.labkey.api.reports.report.ScriptEngineReport;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.view.ConsoleOutput;
+import org.labkey.api.reports.report.r.view.IpynbOutput;
+import org.labkey.api.security.SessionApiKeyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
+import org.springframework.validation.BindException;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class IpynbReport extends DockerScriptReport
+{
+    public static final String REPORT_TYPE = "ReportService.ipynbReport";
+    public static final String ERROR_OUTPUT = "errors.txt";
+
+
+    public IpynbReport()
+    {
+        this(REPORT_TYPE, IpynbReportDescriptor.DESCRIPTOR_TYPE);
+    }
+
+
+    IpynbReport(String reportType, String defaultDescriptorType)
+    {
+        super(reportType, defaultDescriptorType);
+    }
+
+    @Override
+    public Pair<String, String> startExternalEditor(ViewContext context, String script, BindException errors)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void saveFromExternalEditor(ContainerUser context, String script)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getType()
+    {
+        return IpynbReport.REPORT_TYPE;
+    }
+
+    @Override
+    public String getTypeDescription()
+    {
+        return "Jupyter Notebook (.ipynb) report";
+    }
+
+    @Override
+    public HttpView<?> renderReport(ViewContext context) throws Exception
+    {
+        String apikey = SessionApiKeyManager.get().getApiKey(context.getRequest(), "ipynb report");
+        File scriptFile = null;
+        File outputFile = null;
+        int exitCode = 0;
+        File workingDirectory = getReportDir(context.getContainer().getId());
+
+        assert workingDirectory.isAbsolute();
+        if (!workingDirectory.isDirectory())
+            throw new IOException("Could not create working directory");
+
+        if (getDescriptor() instanceof ModuleIpynbReportDescriptor desc)
+        {
+            String name = desc.getResourceName();
+            String script = desc.getProperty(ScriptReportDescriptor.Prop.script);
+            scriptFile = new File(workingDirectory,name + ".ipynb");
+            IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
+
+            // GLOBAL PYTHON
+            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
+            // VENV PYTHON
+            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/home/matthew/lk/develop/venv/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
+            //  DOCKER NBCONVERT
+
+            Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
+            System.err.println("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
+
+            //ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
+            ExecuteStrategy ex = new DockerRunTarStdinStdout();
+            //ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
+            exitCode = ex.execute(context.getUser(), context.getContainer(), apikey, workingDirectory, scriptFile);
+            outputFile = ex.getOutputDocument();
+
+            Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
+            System.err.println("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
+        }
+        try
+        {
+            List<ParamReplacement> outputs = new ArrayList<>();
+            boolean hasDocument = true;
+
+            if (null != outputFile && outputFile.isFile() && 0 < outputFile.length())
+            {
+                outputs.add(new IpynbOutput(outputFile));
+            }
+            else
+            {
+                hasDocument = false;
+                // if there is console.out or errors.txt file render them
+                File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
+                if (console.isFile() && console.length() > 0)
+                    outputs.add(new ConsoleOutput(console));
+                File error = new File(workingDirectory, ERROR_OUTPUT);
+                if (error.isFile() && error.length() > 0)
+                    outputs.add(new ConsoleOutput(error));
+            }
+
+            VBox vbox = new VBox();
+            if (!hasDocument || exitCode != 0)
+                vbox.addView(new HtmlView(HtmlString.of("No document was generated." + (exitCode==0 ? "" : "  Process exited with non-zero code: " + exitCode + "."))));
+            for (var output : outputs)
+                vbox.addView(output.getView(context));
+            return vbox;
+        }
+        catch (Exception x)
+        {
+            x.printStackTrace();
+            throw x;
+        }
+        finally
+        {
+//            if (null != scriptFile && scriptFile.isFile())
+//            {
+//                //noinspection ResultOfMethodCallIgnored
+//                scriptFile.delete();
+//            }
+        }
+    }
+
+
+    @Override
+    public ScriptReportDescriptor getDescriptor()
+    {
+        return super.getDescriptor();
+    }
+
+
+    /**
+     *  ExecuteStrategy is only concerned with invoking the external process.
+     *  It should not care about report artifacts/outputs, except for copying them into the working directory.
+     */
+
+    private interface ExecuteStrategy
+    {
+        IpynbReport getReport();
+        int execute(User user, Container container, String apiKey, File working, File ipynb) throws IOException;
+
+        // document could be .html .ipynb or .md
+        @Nullable File getOutputDocument();
+    }
+
+
+//    final StringBuilder stdout = new StringBuilder();
+//    final StringBuilder stderr = new StringBuilder();
+//   new Thread(() -> Readers.getReader(process.getInputStream()).lines().forEach(stdout::append)).start();
+//   new Thread(() -> Readers.getReader(process.getErrorStream()).lines().forEach(stderr::append)).start();
+//
+
+    // process that writes the computed ipynb file to stdout
+    class ExecIpynbStdout implements ExecuteStrategy
+    {
+        final String[] shellCommand;
+        File outputDocument;
+
+        @Override
+        public IpynbReport getReport()
+        {
+            return IpynbReport.this;
+        }
+
+        ExecIpynbStdout(String[] shellCommand)
+        {
+            this.shellCommand = shellCommand;
+        }
+
+        @Override
+        public int execute(User user, Container container, String apiKey, File working, File ipynb) throws IOException
+        {
+            String name = FileUtil.getBaseName(ipynb);
+            String outputName = name + ".nbconvert.ipynb";
+            String ext = FileUtil.getExtension(ipynb);
+            if ("ipynb".equalsIgnoreCase(ext))
+                outputName = name + ".nbconvert." + ext;
+            outputDocument = new File(working, outputName);
+
+            String[] command = shellCommand.clone();
+            boolean foundSubst = false;
+            for (int i = 0; i < command.length; i++)
+            {
+                if ("{}".equals(command[i]))
+                {
+                    command[i] = ipynb.getAbsolutePath();
+                    foundSubst = true;
+                }
+            }
+
+            try
+            {
+                ProcessBuilder pb = new ProcessBuilder(command);
+                pb.directory(working);
+                pb.redirectOutput(outputDocument);
+                pb.redirectError(new File(working, ERROR_OUTPUT));
+                if (!foundSubst)
+                    pb.redirectInput(ipynb);
+                final Process process = pb.start();
+                return process.waitFor();
+            }
+            catch (InterruptedException iex)
+            {
+                throw new IOException(iex);
+            }
+        }
+
+
+        @Override
+        public File getOutputDocument()
+        {
+            if (outputDocument.isFile())
+                return outputDocument;
+            return null;
+        }
+    }
+
+
+    // UNDONE
+    DockerService.ImageConfig getImageConfig(Container c)
+    {
+        return DockerService.get().getImageConfigBuilder("labkey/nbconvert").build();
+    }
+
+
+    class DockerRunIpynbStdinStdout implements ExecuteStrategy
+    {
+        File inputScript;
+        File outputDocument;
+
+        @Override
+        public IpynbReport getReport()
+        {
+            return IpynbReport.this;
+        }
+
+        DockerRunIpynbStdinStdout()
+        {
+        }
+
+        @Override
+        public int execute(User user, Container c, String apiKey, File working, File ipynb) throws IOException
+        {
+            String name = FileUtil.getBaseName(ipynb);
+            String outputName = name + ".nbconvert.ipynb";
+            String ext = FileUtil.getExtension(ipynb);
+            if ("ipynb".equalsIgnoreCase(ext))
+                outputName = name + ".nbconvert." + ext;
+            outputDocument = new File(working, outputName);
+            inputScript = ipynb;
+
+            DockerService.ImageConfig image = getImageConfig(c);
+
+            final PipedInputStream in = new PipedInputStream();
+            var out = new ByteArrayOutputStream();
+            var err = new ByteArrayOutputStream();
+
+            // DockerService.run() blocks until process completion, so input stream had to be written on a different threads
+            final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
+            Thread t = new Thread(() -> {
+                try (PipedOutputStream pipeOutput = new PipedOutputStream();
+                    var fis = new FileInputStream(ipynb))
+                {
+                    pipeOutput.connect(in);
+                    IOUtils.copy(fis, pipeOutput);
+                }
+                catch (IOException ex)
+                {
+                    bgException[0] = new DbScope.RetryPassthroughException(ex);
+                }
+            });
+            t.start();
+
+            String tempDir = "/tmp/" + GUID.makeGUID();
+            var environment = Map.of(
+                    "TEMP_DIRECTORY", tempDir,
+                    "APIKEY", apiKey);
+            DockerService.get().run(image, "ipynb", environment, in, out, err);
+            t.interrupt();
+            try
+            {
+                t.join(1000);
+            }
+            catch (InterruptedException x)
+            {
+                // pass
+            }
+            if (null != bgException[0])
+            {
+                bgException[0].rethrow(IOException.class);
+                bgException[0].throwRuntimeException();
+            }
+            try (FileOutputStream fos = new FileOutputStream(outputDocument))
+            {
+                out.writeTo(fos);
+            }
+            return 0;
+        }
+
+
+        @Override
+        public File getOutputDocument()
+        {
+            if (null != outputDocument && outputDocument.isFile())
+                return outputDocument;
+// TODO UNDONE TODO
+            if (null != inputScript && inputScript.isFile())
+                return inputScript;
+            return null;
+        }
+    }
+
+
+    class DockerRunTarStdinStdout implements ExecuteStrategy
+    {
+        File inputScript;
+        File outputDocument;
+
+        @Override
+        public IpynbReport getReport()
+        {
+            return IpynbReport.this;
+        }
+
+        DockerRunTarStdinStdout()
+        {
+        }
+
+        @Override
+        public int execute(User user, Container c, String apiKey, File working, File ipynb) throws IOException
+        {
+            inputScript = ipynb;
+
+            File[] listFiles = working.listFiles();
+            List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
+            DockerService.ImageConfig image = getImageConfig(c);
+
+            final PipedInputStream in = new PipedInputStream();
+            // TODO would be nice to have a binary/OutputStream version of FileUtil.TempTextFileWrapper()
+            var out = new ByteArrayOutputStream();
+            var err = new ByteArrayOutputStream();
+
+            // DockerService.run() blocks until process completion, so input stream had to be written on a different threads
+            final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
+            Thread t = new Thread(() -> {
+                try
+                (
+                    PipedOutputStream pipeOutput = new PipedOutputStream();
+                    TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput)
+                )
+                {
+                    pipeOutput.connect(in);
+                    for (var file : files)
+                    {
+                        ArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
+                        tar.putArchiveEntry(entry);
+                        IOUtils.copy(new FileInputStream(file), tar);
+                        tar.closeArchiveEntry();
+                    }
+                }
+                catch (IOException ex)
+                {
+                    bgException[0] = new DbScope.RetryPassthroughException(ex);
+                }
+            });
+            t.start();
+
+            String tempDir = "/tmp/" + GUID.makeGUID();
+            var environment = Map.of(
+                    "TEMP_DIRECTORY", tempDir,
+                    "APIKEY", apiKey);
+            DockerService.get().run(image, "ipynb", environment, in, out, err);
+            t.interrupt();
+            try
+            {
+                t.join(1000);
+            }
+            catch (InterruptedException x)
+            {
+                // pass
+            }
+            if (null != bgException[0])
+            {
+                bgException[0].rethrow(IOException.class);
+                bgException[0].throwRuntimeException();
+            }
+
+            // delete scriupt to avoid returning unprocessed ipynb in case of error
+            ipynb.delete();
+            extractTar(new ByteArrayInputStream(out.toByteArray()), working);
+
+            return 0;
+        }
+
+        private static void extractTar(InputStream in, File targetDirectory) throws IOException
+        {
+            try (TarArchiveInputStream tar = new TarArchiveInputStream(in))
+            {
+                TarArchiveEntry entry;
+                while ((entry = (TarArchiveEntry) tar.getNextEntry()) != null)
+                {
+                    File path = new File(targetDirectory, entry.getName());
+                    if (entry.isDirectory())
+                    {
+                        path.mkdirs();
+                    }
+                    else
+                    {
+                        try (FileOutputStream os = new FileOutputStream(path))
+                        {
+                             IOUtils.copy(tar, os);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public File getOutputDocument()
+        {
+            if (null != outputDocument && outputDocument.isFile())
+                return outputDocument;
+            if (null != inputScript && inputScript.isFile())
+                return inputScript;
+            return null;
+        }
+    }
+}

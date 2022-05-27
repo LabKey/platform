@@ -57,6 +57,8 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.python.IpynbReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -189,11 +191,14 @@ public class QueryModule extends DefaultModule
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
 
+
+        ReportService.get().registerDescriptor(new IpynbReportDescriptor());
         ReportService.get().registerDescriptor(new ReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
         ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
+        ReportService.get().registerReport(new IpynbReport());
         ReportService.get().registerReport(new QueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());

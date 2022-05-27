@@ -92,6 +92,7 @@ import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -622,7 +623,6 @@ public class ReportsController extends SpringActionController
                 }
                 catch(Exception e)
                 {
-
                     String message = ReportUtil.makeExceptionString(e, "%s: %s");
                     scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, e.getClass().getName(), message));
                 }
@@ -1235,11 +1235,11 @@ public class ReportsController extends SpringActionController
     {
         if (report != null)
         {
-            if (report.getDescriptor().isNew())
+            if (report.getDescriptor().isNew() && report instanceof ScriptEngineReport scriptEngineReport)
             {
                 try
                 {
-                    ScriptEngine engine = report.getScriptEngine(context.getContainer());
+                    ScriptEngine engine = scriptEngineReport.getScriptEngine(context.getContainer());
 
                     if (engine != null)
                     {

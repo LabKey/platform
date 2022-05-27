@@ -71,6 +71,7 @@
     var R_ENGINE_NAME = 'R Scripting Engine';
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
     var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
+    var DOCKER_REPORT_NAME = 'Docker Report';
     var defaultR, countR = 0;
 
     var DockerImageFields = {
@@ -84,6 +85,21 @@
         extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;USERID=1000,USER=rstudio&apos;, which will be converted to &apos;-e USERID=1000 -e USER=rstudio&apos; for docker run command. ' +
                     'A special variable &apos;DETACH=TRUE&apos; will force container to run in detached mode, with &apos;--detach&apos;'}
     };
+
+
+    var DockerReportFields = {
+        imageName: {label: 'Docker Image Name', defaultVal: 'labkey/ipynb', description: "Enter the Docker image name to execute your script."},
+        extensions: {label: 'Script extension', defaultVal: 'ipynb', description: "The file extension associated with this script engine. Don't use for R reports, use &apos;New R Docker Engine&apos; instead."},
+        executionOptions: {label: "Execute options", defaultVal: ''}
+        // mount: {label: 'Home Directory', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
+        // hostReadOnlyMount: {label: 'Mount (ro): host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
+        // containerReadOnlyMount: {label: 'Mount (ro): container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
+        // hostReadWriteMount: {label: 'Mount (rw): host directory', description: "Additional mount: host directory (read and write). Optional read/write mount point"},
+        // containerReadWriteMount: {label: 'Mount (rw): container directory', description: "Additional mount: container directory (read and write). Optional read/write mount point"},
+        // appArmorProfile: {label: 'AppArmor Profile', description: ''},
+        extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;OPTION1=1000,OPTION2=red&apos;, which will be converted to &apos;-e OPTION1=1000 -e OPTION2=red&apos; for docker run command.'}
+    };
+
 
     function renderNameColumn(value, p, record)
     {
@@ -293,6 +309,37 @@
             }
         });
     <% } %>
+
+        var DockerReportItem = new Ext4.menu.Item({
+            id: 'add_DockerReportImage',
+            text:'New Docker Report Image',
+            listeners:{
+                click:function(button, event) {
+                    var record = {
+                        name: R_DOCKER_ENGINE_NAME,
+                        extensions: R_EXTENSIONS,
+                        external: true,
+                        outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                        enabled: true,
+                        'default': !defaultR,
+                        docker: true,
+                        sandboxed: true,
+                        remote: true,
+                        languageName:'R',
+                        type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
+                    };
+                    if (countR > 0 && !defaultR) {
+                        Ext4.Msg.confirm('Site default missing', "None of the existing Docker engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional R engines.  Continue?", function (btn, text) {
+                            if (btn == 'yes')
+                                editRecord(button, grid, record);
+                        });
+                    }
+                    else
+                        editRecord(button, grid, record);
+
+                }
+            }
+        });
 
     <% if (isRDockerAvailable) { %>
         var rDockerEngineItem = new Ext4.menu.Item({

@@ -18,6 +18,7 @@ package org.labkey.api.docker;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Builder;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -29,6 +30,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -256,7 +258,7 @@ public interface DockerService
         return null;
     }
 
-    interface ImageConfigBuilder
+    interface ImageConfigBuilder extends Builder<ImageConfig>
     {
         ImageConfigBuilder inspectImage();
 
@@ -315,7 +317,7 @@ public interface DockerService
             return new ContainerUsage(null, true, true, true, false);
         }
     }
-    
+
     enum ContainerStatus
     {
         NOTSTARTED,         // e.g. does not exist, not started yet
@@ -339,12 +341,14 @@ public interface DockerService
         }
     }
 
+
     enum ContainerAction
     {
         START, STOP, DELETE
     }
 
-    public class DockerContainer
+
+    class DockerContainer
     {
         public final String containerName;
         public final String containerId;
@@ -449,6 +453,8 @@ public interface DockerService
     List<String> listVolumes();
 
     DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage) throws IOException;
+
+    void run(ImageConfig image, String prefix, Map<String, String> envAdditional, InputStream stdin, OutputStream stdout, OutputStream stderr);
 
     boolean pingContainer(String host, int port);
 

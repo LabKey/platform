@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 LabKey Corporation
+ * Copyright (c) 2008-2016 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,50 +13,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.reports.report;
+package org.labkey.api.reports.report.python;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
+import org.labkey.api.reports.report.ModuleReportIdentifier;
+import org.labkey.api.reports.report.ModuleReportResource;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.query.xml.ReportDescriptorType;
 
 /**
- * User: davebradlee
- * Date: 8/21/12
- * Time: 11:16 AM
+ * Represents an .ipynb report defined within a module.
  */
-public class ModuleQueryReportDescriptor extends QueryReportDescriptor implements ModuleReportDescriptor
+public class ModuleIpynbReportDescriptor extends IpynbReportDescriptor implements ModuleReportDescriptor
 {
-    public static final String TYPE = "moduleQueryReportDescriptor";
-    public static final String FILE_EXTENSION = ".xml";
+    public static final String TYPE = "moduleIpymbReportDescriptor";
+    public static final String FILE_EXTENSION = ".ipynb";
 
     private final Module _module;
     private final Path _reportPath;
-    private final ModuleQueryReportResource _resource;
 
-    public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
+    protected final ModuleReportResource _resource;
+
+    public ModuleIpynbReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         super(TYPE);
         _module = module;
         _reportPath = reportPath;
 
-        String name = sourceFile.getName().substring(0, sourceFile.getName().length() - FILE_EXTENSION.length());
-
         setReportKey(reportKey);
-        setReportName(name);
-        setReportType(getDefaultReportType(reportKey));
-        _resource = new ModuleQueryReportResource(this, sourceFile);
+        setReportName(makeReportName(sourceFile));
+
+        _resource = getModuleReportResource(sourceFile);
         loadMetaData();
+        _resource.loadScript();
+    }
+
+
+    public ModuleReportResource getModuleReportResource(Resource sourceFile)
+    {
+        return new ModuleReportResource(this, sourceFile);
     }
 
     public String getDefaultReportType(String reportKey)
     {
-        return QueryReport.TYPE;
+        return IpynbReport.REPORT_TYPE;
     }
 
-    protected void loadMetaData()
+    public static boolean accept(String name)
     {
-        _resource.loadMetaData();
+        return name.toLowerCase().endsWith(FILE_EXTENSION);
+    }
+
+    public String makeReportName(Resource sourceFile)
+    {
+        String name = sourceFile.getName();
+        return name.substring(0, name.length() - FILE_EXTENSION.length());
+    }
+
+    @Nullable
+    protected ReportDescriptorType loadMetaData()
+    {
+        return _resource.loadMetaData();
     }
 
     @Override
@@ -102,5 +125,11 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
     public boolean isModuleBased()
     {
         return true;
+    }
+
+    @Override
+    public Resource getMetaDataFile()
+    {
+        return _resource.getMetaDataFile();
     }
 }
