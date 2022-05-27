@@ -1466,21 +1466,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         boolean allowTargetContainers = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
 
+        // consider these columns 'handled' whether we allow it to 'pass-through' or not, so always add the names to Set added
+
+        // We never pass through container as-is, wrap with class ContainerColumn() if it is present in the input
         String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
-        Supplier containerCallable = containerFieldKeyName != null && outputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, outputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
-        // note index can be 0, but that is fine
-        int index = addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
-        added.add(getColumnInfo(index).getName());
-        index = addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        added.add(getColumnInfo(index).getName());
-        index = addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        added.add(getColumnInfo(index).getName());
-        index = addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        added.add(getColumnInfo(index).getName());
-        index = addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        added.add(getColumnInfo(index).getName());
-        index = addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context);
-        added.add(getColumnInfo(index).getName());
+        Supplier containerCallable = containerFieldKeyName != null && inputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, inputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
+        addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
+        added.add(SpecialColumn.Container.name());
+        addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
+        added.add(SpecialColumn.CreatedBy.name());
+        addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);
+        added.add(SpecialColumn.ModifiedBy.name());
+        addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context);
+        added.add(SpecialColumn.Created.name());
+        addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context);
+        added.add(SpecialColumn.Modified.name());
+        addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context);
+        added.add(SpecialColumn.EntityId.name());
         return added;
     }
 
