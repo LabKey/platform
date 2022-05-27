@@ -21,35 +21,40 @@ LABKEY.Utils = new function(impl, $) {
 
     // Insert a hidden html FORM into to page, put the form values into it, and submit it - the server's response will
     // make the browser pop up a dialog
-    var formSubmit = function(url, formData)
+    var formSubmit = function(url, formData, formProps)
     {
         if (!formData)
             formData = {};
         if (!formData['X-LABKEY-CSRF'])
             formData['X-LABKEY-CSRF'] = LABKEY.CSRF;
 
-        var formId = LABKEY.Utils.generateUUID();
+        const formId = LABKEY.Utils.generateUUID();
+        const formElement = document.createElement('form');
+        formElement.action = url;
+        formElement.id = formId;
+        formElement.method = 'POST';
 
-        var html = [];
-        html.push('<f');   // avoid form tag, it causes skipfish false positive
-        html.push('orm method="POST" id="' + formId + '"action="' + url + '">');
-        for (var name in formData)
-        {
-            if (!formData.hasOwnProperty(name))
-                continue;
+        Object.keys(formProps).forEach(function(prop) {
+            formElement[prop] = formProps[prop];
+        });
 
-            var value = formData[name];
-            if (value === undefined)
-                continue;
+        Object.keys(formData).forEach(function(name) {
+            const value = formData[name];
 
-            html.push( '<input type="hidden"' +
-                    ' name="' + LABKEY.Utils.encodeHtml(name) + '"' +
-                    ' value="' + LABKEY.Utils.encodeHtml(value) + '" />');
-        }
-        html.push("</form>");
+            if (value === undefined) {
+                return;
+            }
 
-        $('body').append(html.join(''));
-        $('form#' + formId).submit();
+            const inputElement = document.createElement('input');
+            inputElement.type = 'hidden';
+            inputElement.name = LABKEY.Utils.encodeHtml(name);
+            inputElement.value = LABKEY.Utils.encodeHtml(value);
+
+            formElement.appendChild(inputElement);
+        });
+
+        document.body.appendChild(formElement);
+        formElement.submit();
     };
 
     var displayModalAlert = function(title, msg) {
@@ -260,9 +265,10 @@ LABKEY.Utils = new function(impl, $) {
      * @name postToAction
      * @param {String} href containing action and parameters to be POSTed.
      * @param {Object} formData values to include on the hidden form
+     * @param {Object} formProps properties to put on the hidden form
      */
-    impl.postToAction = function (href, formData) {
-        formSubmit(href, formData);
+    impl.postToAction = function (href, formData, formProps) {
+        formSubmit(href, formData, formProps);
     };
 
     /**
@@ -274,10 +280,11 @@ LABKEY.Utils = new function(impl, $) {
      * @param {String} message confirmation message to display.
      * @param {String} href containing action and parameters to be POSTed.
      * @param {Object} formData values to include on the hidden form
+     * @param {Object} formProps properties to put on the hidden form
      */
-    impl.confirmAndPost = function (message, href, formData) {
+    impl.confirmAndPost = function (message, href, formData, formProps) {
         if (confirm(message))
-            formSubmit(href, formData);
+            formSubmit(href, formData, formProps);
 
         return false;
     };
@@ -876,6 +883,21 @@ LABKEY.Utils = new function(impl, $) {
                 list[i]['on' + eventName] = handler;
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
+    };
+
+    /**
+     * Given a radio button, determine which one in the group is selected and return its value
+     * @param radioButton one of the radio buttons in the group
+     */
+    impl.getRadioFieldValue = function(radioButton) {
+        if (radioButton.form && radioButton.name) {
+            const radioElements = radioButton.form.elements[radioButton.name];
+            for (let i = 0; i < radioElements.length; i++) {
+                if (radioElements[i].checked) {
+                    return radioElements[i].value;
+                }
+            }
+        }
     };
 
     return impl;
