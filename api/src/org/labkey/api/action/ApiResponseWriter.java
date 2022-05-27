@@ -502,10 +502,14 @@ public abstract class ApiResponseWriter implements AutoCloseable
             String severity = ValidationException.SEVERITY.ERROR.toString();
             String help = null;
 
-            if (error instanceof FieldError)
+            if (error instanceof FieldError fe)
             {
-                FieldError ferror = (FieldError) error;
-                key = ferror.getField();
+                key = fe.getField();
+
+                // Strip off nested exception details from field error messages in JSON responses, Issue 45567
+                int idx = msg.indexOf("; nested exception");
+                if (idx != -1)
+                    msg = msg.substring(0, idx);
             }
 
             if (error instanceof SimpleValidationError.FieldWarning)
