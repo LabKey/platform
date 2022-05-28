@@ -3431,9 +3431,22 @@ public class QueryController extends SpringActionController
             QueryService service = QueryService.get();
 
             if (null == getViewContext().getRequest().getParameter(QueryParam.maxRows.toString()))
+            {
                 settings.setMaxRows(DEFAULT_API_MAX_ROWS);
+            }
             else
-                settings.setMaxRows(Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString())));
+            {
+                try
+                {
+                    int maxRows = Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString()));
+                    settings.setMaxRows(maxRows);
+                }
+                catch (NumberFormatException e)
+                {
+                    // Standard exception message, Issue 45567
+                    QuerySettings.throwParameterParseException(QueryParam.maxRows);
+                }
+            }
 
             List<FieldKey> fieldKeys = settings.getFieldKeys();
             if (null == fieldKeys || fieldKeys.size() != 1)
