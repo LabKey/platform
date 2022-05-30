@@ -131,6 +131,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         Pair<Lsid, String> lsidName = _lsids.get(index);
         Lsid lsid;
         String name;
+        boolean isDuplicate;
         if (lsidName == null)
         {
             name = determineMaterialName(sampleProperties, parentMaterials);
@@ -141,6 +142,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                 {
                     String lsidStr = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
                     lsid = Lsid.parse(lsidStr);
+                    isDuplicate = ExperimentService.get().getExpMaterial(lsid.toString()) != null;
                 }
                 catch (XarFormatException e)
                 {
@@ -151,11 +153,12 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             else
             {
                 lsid = _sampleType.generateNextDBSeqLSID().build();
+                isDuplicate = _sampleType.getSample(_container, name) != null;
             }
 
             lsidName = new Pair<>(lsid, name);
 
-            if (_lsids.containsValue(lsidName) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
+            if (isDuplicate || _lsids.containsValue(lsidName))
             {
                 // Default to not showing on a particular column
                 String colName = "main";

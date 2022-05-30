@@ -350,7 +350,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
-            throw new ValidationException("User specified sample name not allowed");
+            throw new ValidationException("User-specified sample name not allowed");
 
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);

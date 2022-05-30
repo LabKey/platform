@@ -890,9 +890,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
                 // don't select twice
-                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName())
-                    || "name".equalsIgnoreCase(propertyColumn.getColumnName())
-                    || "MaterialSourceId".equalsIgnoreCase(propertyColumn.getColumnName()))
+                if (Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                    || Column.MaterialSourceId.name().equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
                 // don't need to generate SQL for columns that aren't selected

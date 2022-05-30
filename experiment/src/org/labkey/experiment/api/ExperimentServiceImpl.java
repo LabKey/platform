@@ -1376,10 +1376,10 @@ public class ExperimentServiceImpl implements ExperimentService
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
 
-        DataClass dataClas = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClas == null)
+        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+        if (dataClass == null)
             return null;
-        return new ExpDataClassImpl(dataClas);
+        return new ExpDataClassImpl(dataClass);
     }
 
 
@@ -8062,10 +8062,10 @@ public class ExperimentServiceImpl implements ExperimentService
             previousNameSql.add(nameEndTime);
             previousNameSql.add(c);
 
-            Map<String, Object>[] previouslegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
-            if (previouslegacyNames.length >= 1)
+            Map<String, Object>[] previousLegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
+            if (previousLegacyNames.length >= 1)
             {
-                Date previousNameEnd = (Date) previouslegacyNames[0].get("Created");
+                Date previousNameEnd = (Date) previousLegacyNames[0].get("Created");
                 if (previousNameEnd.compareTo(effectiveDate) < 0 )
                 {
                     return objectId;
