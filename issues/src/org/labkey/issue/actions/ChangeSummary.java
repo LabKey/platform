@@ -340,7 +340,7 @@ public class ChangeSummary
         // Skip the email if no comment and no public fields have changed, #17304
         String fieldChanges = getTextChanges();
 
-        if (fieldChanges.isEmpty() && StringUtils.isEmpty(comment))
+        if (fieldChanges.isEmpty() && StringUtils.isEmpty(comment) && attachments.isEmpty())
             return;
 
         final Set<User> allAddresses = getUsersToEmail(container, user, _issue, _prevIssue, _action);
