@@ -36,4 +36,10 @@ public class MySql80Dialect extends MySql57Dialect
 
         return words;
     }
+
+    // MySQL 8.0 introduced EXPLAIN ANALYZE
+    protected String getExplainPrefix()
+    {
+        return "EXPLAIN ANALYZE ";
+    }
 }
