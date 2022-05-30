@@ -189,7 +189,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
     private void changeTimepointType(String type)
     {
         clickTab("Manage");
-        waitAndClick(Locator.linkContainingText("Change Study Properties"));
+        waitAndClick(Locator.linkContainingText("Study Properties"));
         waitForElement(Locator.id(type));
         checkRadioButton(Locator.id(type));
         clickAndWait(Ext4Helper.Locators.ext4Button("Submit"));
