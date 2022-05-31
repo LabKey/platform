@@ -2432,6 +2432,15 @@ public class ExperimentController extends SpringActionController
                     response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
+
+                    JSONObject qInfo = rootObject.getJSONObject("queryinfo");
+                    if (qInfo != null)
+                    {
+                        QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
+                                qInfo.getString("query"), getViewContext().getActionURL(),
+                                "Exported editable grid to excel file: " + filename, null);
+                        incrementEditableGridExportMetric();
+                    }
                 }
             }
             catch (JSONException | ClassCastException e)
@@ -2440,6 +2449,15 @@ public class ExperimentController extends SpringActionController
                 ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, false, false);
             }
         }
+    }
+
+    public final static String EDITABLE_GRID_EXPORT_METRIC = "editableGridExport";
+    private void incrementEditableGridExportMetric()
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(ContainerManager.getRoot(), "metrics", true);
+        int count = Integer.valueOf(props.getOrDefault(EDITABLE_GRID_EXPORT_METRIC, "0")) + 1;
+        props.put(EDITABLE_GRID_EXPORT_METRIC, Integer.toString(count));
+        props.save();
     }
 
 
@@ -2484,25 +2502,35 @@ public class ExperimentController extends SpringActionController
                 response.setContentType(delimType.contentType);
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
-                CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar);
-                for (int i = 0; i < rowsArray.length(); i++)
+                try (CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar))
                 {
-                    Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
-                    ArrayIterator it = new ArrayIterator(oa);
-                    List<String> list = new ArrayList<>();
-
-                    while (it.hasNext())
+                    for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        Object o = it.next();
-                        if (o != null)
-                            list.add(o.toString());
-                        else
-                            list.add("");
-                    }
+                        Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
+                        ArrayIterator it = new ArrayIterator(oa);
+                        List<String> list = new ArrayList<>();
 
-                    writer.writeNext(list.toArray(new String[list.size()]));
+                        while (it.hasNext())
+                        {
+                            Object o = it.next();
+                            if (o != null)
+                                list.add(o.toString());
+                            else
+                                list.add("");
+                        }
+
+                        writer.writeNext(list.toArray(new String[list.size()]));
+                    }
                 }
-                writer.close();
+
+                JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                if (qInfo != null)
+                {
+                    QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"), qInfo.getString("query"),
+                            getViewContext().getActionURL(), "Exported editable grid to delimited file: " + filename, rowsArray.length());
+                    incrementEditableGridExportMetric();
+                }
+
             }
             catch (JSONException e)
             {
