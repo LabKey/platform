@@ -106,7 +106,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "LABKEY.Filter.create(" +PageFlowUtil.jsString(name) + ", "
+        return "LABKEY.Filter.create(" + PageFlowUtil.jsString(name) + ", "
                 + PageFlowUtil.jsString(value) + ", LABKEY.Filter.Types." + operator.getScriptName() + ")";
     }
 

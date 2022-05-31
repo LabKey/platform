@@ -118,4 +118,6 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table) { return null; }
 
+    default ActionURL getDataClassAttachmentDownloadAction(Container c) { return null; }
+
 }

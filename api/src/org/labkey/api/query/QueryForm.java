@@ -83,7 +83,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         init();
         if (_schema == null)
         {
-            throw new NotFoundException("Could not find schema: " + getSchemaName());
+            throw new NotFoundException("The specified schema does not exist");
         }
 
         if (StringUtils.isEmpty(getQueryName()))
@@ -98,7 +98,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         // Don't treat a query with errors as if it doesn't exist at all
         if (_queryView.getTable() == null && _queryView.getParseErrors().isEmpty())
         {
-            throw new NotFoundException("Query '" + getQueryName() + "' in schema '" + getSchemaName() + "' doesn't exist.");
+            throw new NotFoundException("The specified query does not exist in schema '" + getSchemaName() + "'");
         }
 
         return _queryView;

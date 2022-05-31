@@ -1418,7 +1418,7 @@ public class ProjectController extends SpringActionController
     /**
      * Returns all containers visible to the current user
      *
-     * This API should perhaps be broken up to reflect it's different uses
+     * This API should perhaps be broken up to reflect its different uses
      *
      * ONE) single container (with or without TREE of children)
      * TWO) list of containers (with or without TREE of children)

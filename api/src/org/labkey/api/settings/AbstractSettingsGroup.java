@@ -33,6 +33,7 @@ public abstract class AbstractSettingsGroup
 {
     public static final User SITE_CONFIG_USER = new User("site settings", -1); // Historically, site settings have used user id -1
 
+    /** Unique internal name used to persist this group via Property Manager **/
     protected abstract String getGroupName();
 
     protected User getPropertyConfigUser()
