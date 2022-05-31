@@ -1466,23 +1466,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         boolean allowTargetContainers = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
 
-        // consider these columns 'handled' whether we allow it to 'pass-through' or not, so always add the names to Set added
-
         // We never pass through container as-is, wrap with class ContainerColumn() if it is present in the input
         String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
-        Supplier containerCallable = containerFieldKeyName != null && inputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, inputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
-        addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
-        added.add(SpecialColumn.Container.name());
-        addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        added.add(SpecialColumn.CreatedBy.name());
-        addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);
-        added.add(SpecialColumn.ModifiedBy.name());
-        addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        added.add(SpecialColumn.Created.name());
-        addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context);
-        added.add(SpecialColumn.Modified.name());
-        addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context);
-        added.add(SpecialColumn.EntityId.name());
+        Supplier<?> containerCallable = containerFieldKeyName != null && inputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, inputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
+        if (0 != addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable))
+            added.add(SpecialColumn.Container.name());
+        if (0 != addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context))
+            added.add(SpecialColumn.CreatedBy.name());
+        if (0 != addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context))
+            added.add(SpecialColumn.ModifiedBy.name());
+        if (0 != addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable, context))
+            added.add(SpecialColumn.Created.name());
+        if (0 != addBuiltinColumn(SpecialColumn.Modified,   allowPassThrough, target, inputCols, outputCols, tsCallable, context))
+            added.add(SpecialColumn.Modified.name());
+        if (0 != addBuiltinColumn(SpecialColumn.EntityId,   allowPassThrough, target, inputCols, outputCols, guidCallable, context))
+            added.add(SpecialColumn.EntityId.name());
         return added;
     }
 
@@ -1494,23 +1492,28 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     private int addBuiltinColumn(SpecialColumn e, boolean allowPassThrough, TableInfo target, Map<String,Integer> inputCols, Map<String,Integer> outputCols, Supplier c)
     {
         String name = e.name();
-        ColumnInfo col = target.getColumn(name);
-        if (null==col)
-            return 0;
-        if (col.getJdbcType() != e.type && col.getJdbcType().getJavaClass() != e.type.getJavaClass())
-            return 0;
-
         Integer indexOut = outputCols.get(name);
         Integer indexIn = inputCols.get(name);
+        ColumnInfo col = target.getColumn(name);
+
+        if (null != col)
+        {
+            // ignore special column behavior if name is found in the target, but does not look as expected
+            // This is probably too flexible.  We probably just shouldn't allow this anywhere.
+            if (col.getJdbcType() != e.type && col.getJdbcType().getJavaClass() != e.type.getJavaClass())
+                return 0;
+        }
 
         // not selected already
         if (null == indexOut)
         {
             if (allowPassThrough && null != indexIn)
+            {
                 return addColumn(name, indexIn);
+            }
             else
             {
-                _outputColumns.add(new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.add(new Pair<>(new BaseColumnInfo(name, e.type), c));
                 return _outputColumns.size()-1;
             }
         }
@@ -1518,7 +1521,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
         {
             if (!allowPassThrough)
-                _outputColumns.set(indexOut, new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.set(indexOut, new Pair<>(new BaseColumnInfo(name, e.type), c));
             return indexOut;
         }
     }
