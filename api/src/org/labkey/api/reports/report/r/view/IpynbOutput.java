@@ -35,6 +35,7 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * Handle rendering Ipynb directly.  It may be better to use nbconvert to render .html or .md for us.  But here's an attempt
@@ -219,9 +220,10 @@ public class IpynbOutput extends HtmlOutput
                         return;
                     }
                 }
-                if (null != data.get("text/plain"))
+                if (null != data.get("text/plain") || null != data.get("text"))
                 {
-                    String plain = StringUtils.join(((JSONArray) data.get("text/plain")).toArray(), "");
+                    var textArray = (JSONArray)Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
+                    String plain = StringUtils.join((textArray).toArray(), "");
                     sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-text\">"));
                     sb.append(HtmlString.unsafe("<pre>\n")).append(HtmlString.of(plain, false)).append(HtmlString.unsafe("</pre></div></div>"));
                     return;

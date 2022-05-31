@@ -32,8 +32,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -122,9 +120,9 @@ public class IpynbReport extends DockerScriptReport
             Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
             System.err.println("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
 
-            //ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
-            ExecuteStrategy ex = new DockerRunTarStdinStdout();
-            //ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
+            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
+            // ExecuteStrategy ex = new DockerRunTarStdinStdout();
+            ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
             exitCode = ex.execute(context.getUser(), context.getContainer(), apikey, workingDirectory, scriptFile);
             outputFile = ex.getOutputDocument();
 
@@ -272,7 +270,7 @@ public class IpynbReport extends DockerScriptReport
     // UNDONE
     DockerService.ImageConfig getImageConfig(Container c)
     {
-        return DockerService.get().getImageConfigBuilder("labkey/nbconvert").build();
+        return DockerService.get().getImageConfigBuilder("labkey/echo").build();
     }
 
 
