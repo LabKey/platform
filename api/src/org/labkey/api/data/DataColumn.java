@@ -95,7 +95,13 @@ public class DataColumn extends DisplayColumn
             _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
-        _width = _displayColumn.getWidth();
+        // Issue 45559 - use the width set on the bound column when configured. If not set, use the display column's
+        // width (in non-lookup cases they will be the same)
+        _width = _boundColumn.getWidth();
+        if ("".equals(_width))
+        {
+            _width = _displayColumn.getWidth();
+        }
         StringExpression url = withLookups ?
                 _boundColumn.getEffectiveURL() :
                 _boundColumn.getURL();
