@@ -559,6 +559,9 @@ public class NameGenerator
         Stream<String> values;
         if (value instanceof String)
         {
+            if (StringUtils.isEmpty(((String) value).trim()))
+                return Stream.empty();
+
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
             try (TabLoader tabLoader = new TabLoader((String) value))
