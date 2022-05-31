@@ -27,6 +27,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -609,6 +610,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
+                results.put("editableGridExports", PropertyManager.getProperty(PropertyManager.SHARED_USER, ContainerManager.getRoot(), "metrics", ExperimentController.EDITABLE_GRID_EXPORT_METRIC));
                 return results;
             });
         }
