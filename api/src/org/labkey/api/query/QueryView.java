@@ -48,6 +48,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.reports.CrosstabReport;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -111,6 +112,8 @@ import java.util.stream.Collectors;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+
+    public static final String EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS = "canCustomizeViewsFromApp";
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
