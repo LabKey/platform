@@ -9,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;
@@ -132,23 +133,20 @@ public class IpynbReport extends DockerScriptReport
         try
         {
             List<ParamReplacement> outputs = new ArrayList<>();
-            boolean hasDocument = true;
+            boolean hasDocument = false;
 
             if (null != outputFile && outputFile.isFile() && 0 < outputFile.length())
             {
                 outputs.add(new IpynbOutput(outputFile));
+                hasDocument = true;
             }
-            else
-            {
-                hasDocument = false;
-                // if there is console.out or errors.txt file render them
-                File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
-                if (console.isFile() && console.length() > 0)
-                    outputs.add(new ConsoleOutput(console));
-                File error = new File(workingDirectory, ERROR_OUTPUT);
-                if (error.isFile() && error.length() > 0)
-                    outputs.add(new ConsoleOutput(error));
-            }
+            // if there is console.out or errors.txt file render them
+            File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
+            if (console.isFile() && console.length() > 0)
+                outputs.add(new ConsoleOutput(console));
+            File error = new File(workingDirectory, ERROR_OUTPUT);
+            if (error.isFile() && error.length() > 0)
+                outputs.add(new ConsoleOutput(error));
 
             VBox vbox = new VBox();
             if (!hasDocument || exitCode != 0)
@@ -382,6 +380,10 @@ public class IpynbReport extends DockerScriptReport
         {
             inputScript = ipynb;
 
+            final JSONObject reportConfig = new JSONObject(Map.of("script_name", ipynb.getName()));
+            // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
+            FileUtils.write(new File(working,"report_config.json"), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
+
             File[] listFiles = working.listFiles();
             List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
             DockerService.ImageConfig image = getImageConfig(c);
@@ -436,8 +438,9 @@ public class IpynbReport extends DockerScriptReport
                 bgException[0].throwRuntimeException();
             }
 
-            // delete scriupt to avoid returning unprocessed ipynb in case of error
+            // delete script to avoid returning unprocessed ipynb in case of error
             ipynb.delete();
+            // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
             extractTar(new ByteArrayInputStream(out.toByteArray()), working);
 
             return 0;
