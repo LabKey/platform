@@ -462,7 +462,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     // Other code paths should call this to ensure consistent and properly sanitized error messages.
     public void ensureSchemaExists() throws NotFoundException
     {
-        ensureSchemaNotNull(_schema);
+        ensureSchemaNotNull(getSchema());
     }
 
     public static void ensureSchemaNotNull(QuerySchema schema)
