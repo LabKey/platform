@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -147,7 +148,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // Mostly this is harmless, but there is some noise.
         HashSet<String> nameset = new HashSet<>(getQueryTable().getColumnNameSet());
         List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
-        List<ColumnInfo> columns = getQueryTable().getColumns(nameset.toArray(new String[0]));
+        List<ColumnInfo> columns = new ArrayList<>(getQueryTable().getColumns(nameset.toArray(new String[0])));
+
+        // filter out calculated columns which can be expensive to reselect
+        columns.removeIf(ColumnInfo::isCalculated);
 
         // This is a general version of DatasetDefinition.canonicalizeDatasetRow()
         // The caller needs to make sure names are unique.  Not suitable for use w/ lookups etc where there can be name collisions.
@@ -160,7 +164,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                 {
                     for (int i = 0; i < columns.size(); i++)
                     {
-                        map.put(columns.get(i).getName(), rs.getObject(i + 1));
+                        Object o = rs.getObject(i + 1);
+                        o = ResultSetRowMapFactory.translateResultSetObject(o, false);
+                        map.put(columns.get(i).getName(), o);
                     }
                 }
                 catch (SQLException x)

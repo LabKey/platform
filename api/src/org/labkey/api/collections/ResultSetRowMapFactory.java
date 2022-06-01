@@ -110,22 +110,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         {
             Object o = rs.getObject(i);
 
-            if (o instanceof Clob)
-            {
-                o = ConvertHelper.convertClobToString((Clob)o);
-            }
-            // BigDecimal objects are rare, and almost always are converted immediately
-            // to doubles for ease of use in Java code; we can take care of this centrally here.
-            else if (o instanceof BigDecimal && _convertBigDecimalToDouble)
-            {
-                BigDecimal dec = (BigDecimal) o;
-                o = dec.doubleValue();
-            }
-            else if (o instanceof Double)
-            { 
-                double value = ((Number) o).doubleValue();
-                o = ResultSetUtil.mapDatabaseDoubleToJavaDouble(value);
-            }
+            o = translateResultSetObject(o, _convertBigDecimalToDouble);
 
             if (i == _list.size())
                 _list.add(o);
@@ -134,5 +119,25 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         }
 
         return map;
+    }
+
+    public static Object translateResultSetObject(Object o, boolean convertBigDecimalToDouble) throws SQLException
+    {
+        if (o instanceof Clob)
+        {
+            o = ConvertHelper.convertClobToString((Clob) o);
+        }
+        // BigDecimal objects are rare, and almost always are converted immediately
+        // to doubles for ease of use in Java code; we can take care of this centrally here.
+        else if (o instanceof BigDecimal dec && convertBigDecimalToDouble)
+        {
+            o = dec.doubleValue();
+        }
+        else if (o instanceof Double)
+        {
+            double value = ((Number) o).doubleValue();
+            o = ResultSetUtil.mapDatabaseDoubleToJavaDouble(value);
+        }
+        return o;
     }
 }

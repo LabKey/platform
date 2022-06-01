@@ -105,14 +105,14 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
         if (!(querySchema instanceof UserSchema))
             // Don't echo the provided schema name. See #44528.
-            throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'!");
+            throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
         UserSchema schema = (UserSchema)querySchema;
 
         QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
         QueryDefinition queryDef = settings.getQueryDef(schema);
         if (null == queryDef)
             // Don't echo the provided query name, but schema name is legit since it was found. See #44528.
-            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'!");
+            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
 
         boolean isUserDefined = queryDef.isUserDefined();
 
@@ -127,7 +127,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("canEdit", canEdit);
         resp.put("canDelete", queryDef.canDelete(user));
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
-        // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+        // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between capability and the permission check?
         resp.put("isMetadataOverrideable", queryDef.isMetadataEditable() && queryDef.canEditMetadata(user));
 
         if (isUserDefined)
@@ -157,7 +157,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         }
 
         if (null == tinfo)
-            throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
+            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
 
@@ -167,10 +167,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
             if (names.contains(form.getQueryName()))
             {
-                resp.put("warning", "This query has the same name as a built-in table.  This may cause unexpected behavior.");
+                resp.put("warning", "This query has the same name as a built-in table. This may cause unexpected behavior.");
             }
         }
-
 
         ActionURL auditHistoryUrl = QueryService.get().getAuditHistoryURL(user, container, tinfo);
         if (auditHistoryUrl != null)
@@ -238,9 +237,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 Map<FieldKey,ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singletonList(fk));
                 ColumnInfo cinfo = colMap.get(fk);
                 if (null == cinfo)
-                    throw new IllegalArgumentException("Could not find the column '" + form.getFk() + "' starting from the query " + form.getSchemaName() + "." + form.getQueryName() + "!");
+                    throw new IllegalArgumentException("Could not find the column '" + form.getFk() + "' starting from the query " + form.getSchemaName() + "." + form.getQueryName() + "");
                 if (null == cinfo.getFk() || null == cinfo.getFkTableInfo())
-                    throw new IllegalArgumentException("The column '" + form.getFk() + "' is not a foreign key!");
+                    throw new IllegalArgumentException("The column '" + form.getFk() + "' is not a foreign key");
                 tinfo = cinfo.getFkTableInfo();
             }
 
