@@ -25,6 +25,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -76,7 +77,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -252,7 +252,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly)
     {
-        Map<String, CustomView> ret = new LinkedHashMap<>();
+        Map<String, CustomView> ret = new CaseInsensitiveLinkedHashMap<>();
 
         if (includeHidden)
         {

@@ -2154,7 +2154,7 @@ public class QueryController extends SpringActionController
 
     // Uck. Supports the old and new view designer.
     protected Map<String, Object> saveCustomView(Container container, QueryDefinition queryDef,
-                                                 String regionName, String viewName,
+                                                 String regionName, String viewName, boolean replaceExisting,
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
                                                  boolean hidden, JSONObject jsonView,
@@ -2175,6 +2175,9 @@ public class QueryController extends SpringActionController
             view = queryDef.getSharedCustomView(name);
         else
             view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
+
+        if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
+            errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" already exists. ");
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
@@ -2240,7 +2243,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, hidden, jsonView, srcURL, errors);
+                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, srcURL, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2373,6 +2376,7 @@ public class QueryController extends SpringActionController
                 String viewName = jsonView.getString("name");
 
                 boolean shared = jsonView.optBoolean("shared", false);
+                boolean replace = jsonView.optBoolean("replace", true); // "replace" was the default before the flag is introduced
                 boolean inherit = jsonView.optBoolean("inherit", false);
                 boolean session = jsonView.optBoolean("session", false);
                 boolean hidden = jsonView.optBoolean("hidden", false);
@@ -2396,7 +2400,7 @@ public class QueryController extends SpringActionController
                 }
 
                 Map<String, Object> savedView = saveCustomView(
-                        container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
+                        container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName, replace,
                         shared, inherit, session, true, hidden, jsonView, null, errors);
 
                 if (savedView != null)
