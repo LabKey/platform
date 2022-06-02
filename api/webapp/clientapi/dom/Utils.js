@@ -49,8 +49,8 @@ LABKEY.Utils = new function(impl, $) {
 
             const inputElement = document.createElement('input');
             inputElement.type = 'hidden';
-            inputElement.name = LABKEY.Utils.encodeHtml(name);
-            inputElement.value = LABKEY.Utils.encodeHtml(value);
+            inputElement.name = name;
+            inputElement.value = value;
 
             formElement.appendChild(inputElement);
         });
