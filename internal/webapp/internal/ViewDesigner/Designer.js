@@ -16,7 +16,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     bodyStyle: 'background-color: transparent;',
 
     statics: {
-        RESERVED_VIEW_NAMES : ['Default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
+        RESERVED_VIEW_NAMES : ['default', '~~details~~', '~~insert~~', '~~update~~'],
         saveCustomizeViewPrompt: function(config) {
             var success = config.success,
                     scope = config.scope,
@@ -133,7 +133,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                                 return "Blank grid view name is not allowed.";
                             else if (trimmedValue.length > 50)
                                 return "The grid view name must be less than 50 characters long.";
-                            else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue) > -1) {
+                            else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue.toLowerCase()) > -1) {
                                 return "The grid view name '" + value + "' is not allowed.";
                             }
                             return true;
