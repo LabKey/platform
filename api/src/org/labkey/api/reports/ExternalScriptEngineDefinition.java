@@ -29,6 +29,7 @@ public interface ExternalScriptEngineDefinition
         R,
         Perl,
         External,
+        Docker,
     }
 
     Integer getRowId();
