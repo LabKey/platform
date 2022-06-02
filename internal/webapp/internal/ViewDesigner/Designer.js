@@ -248,7 +248,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                                 o.inherit = containerFilterable && win.down('#inheritField').getValue();
                             }
 
-                            if (o.name && viewName && o.name.toLowerCase() !== viewName.toLowerCase())
+                            if (o.name && o.name.toLowerCase() !== viewName?.toLowerCase())
                                 o.replace = false;
                         }
 
