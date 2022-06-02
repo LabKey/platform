@@ -1767,6 +1767,10 @@ boxPlot.render();
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
+            } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
+                        && config.properties.valueConversion === 'standardDeviation') {
+                maxValue = 3.2;
+                minValue = -3.2;
             } else if (include3StdDev && stddev) {
                 maxValue = mean + (3.2 * stddev);
                 minValue = mean - (3.2 * stddev);

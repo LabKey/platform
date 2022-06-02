@@ -88,6 +88,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
@@ -1081,7 +1082,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         @Override
         protected void processNextInput()
         {
-            Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
+            Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
             Object aliquotedFromObj = map.get("AliquotedFrom");
@@ -1089,7 +1090,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (aliquotedFromObj instanceof String)
                 {
-                    aliquotedFrom = (String) aliquotedFromObj;
+                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
+                    map.put("AliquotedFrom", aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)
                 {
