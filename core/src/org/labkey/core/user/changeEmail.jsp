@@ -24,6 +24,9 @@
 <%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
 <%@ page import="org.labkey.core.user.UserController.DetailsAction" %>
 <%@ page import="org.labkey.core.user.UserController.UserForm" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String errors = formatMissedErrorsStr("form");
@@ -60,7 +63,7 @@
     }
     else if (form.getIsPasswordPrompt())
     {
-        String resetPasswordLink = "<a href=" + h(urlFor(ResetPasswordAction.class)) + ">forgot password</a>";
+        HtmlString resetPasswordLink = DOM.createHtml(DOM.A(DOM.at(DOM.Attribute.href, urlFor(ResetPasswordAction.class)), "forgot password"));
 %>
         <p>For security purposes, please enter your password.</p>
         <labkey:form action="<%=urlFor(ChangeEmailAction.class)%>" method="POST" layout="horizontal">
