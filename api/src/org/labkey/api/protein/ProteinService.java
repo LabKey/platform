@@ -75,7 +75,7 @@ public interface ProteinService
     List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
 
     /** @param aaRowWidth the number of amino acids to display in a single row */
-    WebPartView<?> getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures);
+    WebPartView<?> getProteinCoverageView(int seqId, List<PeptideCharacteristic> peptideCharacteristics, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures);
 
     /** @return a web part with all of the annotations and identifiers we know for a given protein */
     WebPartView<?> getAnnotationsView(int seqId, Map<String, Collection<HtmlString>> extraAnnotations);
