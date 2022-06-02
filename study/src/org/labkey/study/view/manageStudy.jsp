@@ -172,7 +172,8 @@
                             {
                                 ActionURL editDefinition = new ActionURL(EditStudyDefinitionAction.class, p)
                                     .addReturnURL(getActionURL());
-                                %><%=link("Define Custom Properties", editDefinition).usePost()%><%
+                                %><%=link("Define Custom Study Properties", editDefinition).usePost()%><%
+
                             }
                             else
                             {
