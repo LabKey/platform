@@ -164,7 +164,8 @@
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Custom Study Properties</td>
-                        <td class="lk-study-prop-desc">All studies in this project has <%=numProperties%> custom <%=h(propString)%></td>
+                        <td class="lk-study-prop-desc">All studies in this project have <%=numProperties%> custom <%=h(propString)%></td>
+
                         <td><%
                             Container p = c.getProject();
                             if (p.hasPermission(user, AdminPermission.class))
