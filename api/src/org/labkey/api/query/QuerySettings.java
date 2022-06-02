@@ -60,7 +60,7 @@ public class QuerySettings
 {
     public static final String URL_PARAMETER_PREFIX = "param.";
 
-    // Don't echo the user-provided value. See #44528.
+    // Don't echo the user-provided value. See Issue 44528 and Issue 45567
     private static final String parseError = "Could not parse parameter '%s'";
 
     private String _schemaName;
@@ -180,7 +180,7 @@ public class QuerySettings
             }
             catch (IllegalArgumentException ex)
             {
-                throw new BadRequestException(String.format(parseError, QueryParam.showRows.name()), ex);
+                throwParameterParseException(QueryParam.showRows);
             }
         }
     }
@@ -242,7 +242,7 @@ public class QuerySettings
             }
             catch (ConversionException e)
             {
-                throw new BadRequestException(String.format(parseError, "ignoreFilter"), e);
+                throwParameterParseException(QueryParam.ignoreFilter);
             }
 
             String reportId = _getParameter(param(QueryParam.reportId));
@@ -250,7 +250,7 @@ public class QuerySettings
             {
                 var identifier = ReportService.get().getReportIdentifier(reportId, null, null);
                 if (null == identifier)
-                    throw new NotFoundException("Could not find report for reportId: " + reportId);
+                    throw new NotFoundException("Could not find report for the specified reportId");
                 setReportId(identifier);
             }
         }
@@ -269,7 +269,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "offset"), nfe);
+                    throwParameterParseException(QueryParam.offset);
                 }
             }
 
@@ -289,7 +289,7 @@ public class QuerySettings
                 }
                 catch (NumberFormatException nfe)
                 {
-                    throw new BadRequestException(String.format(parseError, "maxRows"), nfe);
+                    throwParameterParseException(QueryParam.maxRows);
                 }
             }
         }
@@ -299,7 +299,7 @@ public class QuerySettings
         {
             // fail fast
             if (null == ContainerFilter.getType(containerFilterNameParam))
-                throw new BadRequestException(String.format(parseError, "containerFilterName"));
+                throwParameterParseException(QueryParam.containerFilterName);
 
             setContainerFilterName(containerFilterNameParam);
         }
@@ -327,7 +327,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(String.format(parseError, ActionURL.Param.returnUrl), use);
+                throwParameterParseException(ActionURL.Param.returnUrl);
             }
         }
 
@@ -360,7 +360,7 @@ public class QuerySettings
             }
             catch (ConversionException e)
             {
-                throw new BadRequestException(String.format(parseError, "allowHeaderLock"), e);
+                throwParameterParseException(QueryParam.allowHeaderLock);
             }
         }
     }
@@ -815,5 +815,12 @@ public class QuerySettings
     public void setShowReports(boolean showReports)
     {
         _showReports = showReports;
+    }
+
+    // Always throws BadRequestException with our standard message. Use this for convenience and consistency. Also
+    // helps address Issue 45567.
+    public static void throwParameterParseException(Enum parameterEnum)
+    {
+        throw new BadRequestException(String.format(parseError, parameterEnum.name()));
     }
 }
