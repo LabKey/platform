@@ -14,6 +14,6 @@ public class IpynbReportDescriptor extends ScriptReportDescriptor
     public IpynbReportDescriptor(String type)
     {
         super(type);
-        setReportType(IpynbReport.REPORT_TYPE);
+        setReportType(IpynbReport.TYPE);
     }
 }

@@ -57,7 +57,6 @@ public class IpynbOutput extends HtmlOutput
         addFile(output);
     }
 
-
     @Override
     public ScriptOutput renderAsScriptOutput(File file) throws Exception
     {

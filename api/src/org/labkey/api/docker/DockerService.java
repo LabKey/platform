@@ -94,6 +94,10 @@ public interface DockerService
         return -1;
     }
 
+    default void deleteDockerImage(User user, Integer imageId)
+    {
+    }
+
     enum DockerConfigKey
     {
         imageName("IMAGE_NAME"),

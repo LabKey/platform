@@ -44,7 +44,7 @@ public class RScriptEngine extends ExternalScriptEngine
     // script engine properties that report can request
     public static final String PROP_REMOTE = "remote";
 
-    public static final String DOCKER_R_IMAGE_TYPE = "docker R";
+    public static final String DOCKER_IMAGE_TYPE = "docker";
 
     private RReportDescriptor.KnitrFormat _knitrFormat;
 

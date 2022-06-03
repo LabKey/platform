@@ -23,7 +23,6 @@ import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportResource;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
@@ -62,7 +61,7 @@ public class ModuleIpynbReportDescriptor extends IpynbReportDescriptor implement
 
     public String getDefaultReportType(String reportKey)
     {
-        return IpynbReport.REPORT_TYPE;
+        return IpynbReport.TYPE;
     }
 
     public static boolean accept(String name)

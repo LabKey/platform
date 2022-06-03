@@ -60,6 +60,10 @@
     .readonlyField {
         opacity: 0.7;
     }
+
+    label[data-qtip] {
+        cursor: help;
+    }
 </style>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -257,16 +261,18 @@
                 return false;
             }
 
-            params.push("rowId=" + record.rowId);
-            params.push("extensions=" + record.extensions);
-
             Ext4.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected configuration: " + record.name + "?", function(btn, text) {
                 if (btn == 'yes')
                 {
                     Ext4.Ajax.request({
 
-                        url: LABKEY.ActionURL.buildURL("core", "scriptEnginesDelete") + '?' + params.join('&'),
+                        url: LABKEY.ActionURL.buildURL("core", "scriptEnginesDelete"),
                         method: "POST",
+                        jsonData : {
+                            "rowId" : record.rowId,
+                            "extensions" : record.extensions,
+                            "type" : record.type
+                        },
                         success: function(){grid.store.load();},
                         failure: function(){Ext4.Msg.alert("Delete Engine Configuration", "Deletion Failed");}
                     });
@@ -872,11 +878,13 @@
                         click: function (button) {
                             var record = {
                                 name: DOCKER_REPORT_NAME,
-                                languageName: 'NA',
+                                languageName: 'Python',
+                                extensions: 'ipynb',
                                 external: true,
                                 enabled: true,
                                 docker: true,
                                 remote: true,
+                                sandboxed: true,
                                 type: <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>
                             };
                             editRecord(button, grid, record);

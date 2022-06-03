@@ -191,7 +191,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().addUIProvider(new ReportUIProvider());
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
-
+        ReportService.get().addGlobalItemFilterType(IpynbReport.TYPE);
 
         ReportService.get().registerDescriptor(new IpynbReportDescriptor());
         ReportService.get().registerDescriptor(new ReportDescriptor());

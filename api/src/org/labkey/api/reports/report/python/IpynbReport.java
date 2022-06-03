@@ -13,6 +13,9 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;
+import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.DockerScriptReport;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -30,9 +33,9 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 
+import javax.script.ScriptEngine;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -53,15 +56,15 @@ import java.util.Set;
 
 public class IpynbReport extends DockerScriptReport
 {
-    public static final String REPORT_TYPE = "ReportService.ipynbReport";
+    public static final String TYPE = "ReportService.ipynbReport";
     public static final String ERROR_OUTPUT = "errors.txt";
-
+    public static final String LABEL = "Jupyter Notebook";
+    public static final String EXTENSION = "ipynb";
 
     public IpynbReport()
     {
-        this(REPORT_TYPE, IpynbReportDescriptor.DESCRIPTOR_TYPE);
+        this(TYPE, IpynbReportDescriptor.DESCRIPTOR_TYPE);
     }
-
 
     IpynbReport(String reportType, String defaultDescriptorType)
     {
@@ -75,15 +78,9 @@ public class IpynbReport extends DockerScriptReport
     }
 
     @Override
-    public void saveFromExternalEditor(ContainerUser context, String script)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String getType()
     {
-        return IpynbReport.REPORT_TYPE;
+        return IpynbReport.TYPE;
     }
 
     @Override
@@ -92,44 +89,50 @@ public class IpynbReport extends DockerScriptReport
         return "Jupyter Notebook (.ipynb) report";
     }
 
+    public static boolean isEnabled()
+    {
+        if (DockerService.get() != null)
+        {
+            return LabKeyScriptEngineManager.get().getEngineDefinitions(ExternalScriptEngineDefinition.Type.Docker).stream()
+                    .anyMatch(def -> Arrays.asList(def.getExtensions()).contains(EXTENSION));
+        }
+        return false;
+    }
+
     @Override
     public HttpView<?> renderReport(ViewContext context) throws Exception
     {
         String apikey = SessionApiKeyManager.get().getApiKey(context.getRequest(), "ipynb report");
-        File scriptFile = null;
-        File outputFile = null;
-        int exitCode = 0;
         File workingDirectory = getReportDir(context.getContainer().getId());
 
         assert workingDirectory.isAbsolute();
         if (!workingDirectory.isDirectory())
             throw new IOException("Could not create working directory");
 
-        if (getDescriptor() instanceof ModuleIpynbReportDescriptor desc)
-        {
-            String name = desc.getResourceName();
-            String script = desc.getProperty(ScriptReportDescriptor.Prop.script);
-            scriptFile = new File(workingDirectory,name + ".ipynb");
-            IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
+        // write the script out to the working directory
+        var descriptor = getDescriptor();
+        String script = descriptor.getProperty(ScriptReportDescriptor.Prop.script);
+        File scriptFile = new File(workingDirectory,descriptor.getReportName() + ".ipynb");
+        IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
-            // GLOBAL PYTHON
-            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
-            // VENV PYTHON
-            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/home/matthew/lk/develop/venv/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
-            //  DOCKER NBCONVERT
+        // GLOBAL PYTHON
+        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
+        // VENV PYTHON
+        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/home/matthew/lk/develop/venv/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
+        //  DOCKER NBCONVERT
 
-            Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-            System.err.println("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
+        Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
+        System.err.println("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
 
-            // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
-            // ExecuteStrategy ex = new DockerRunTarStdinStdout();
-            ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
-            exitCode = ex.execute(context.getUser(), context.getContainer(), apikey, workingDirectory, scriptFile);
-            outputFile = ex.getOutputDocument();
+        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
+        // ExecuteStrategy ex = new DockerRunTarStdinStdout();
+        ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
+        int exitCode = ex.execute(context.getUser(), context.getContainer(), apikey, workingDirectory, scriptFile);
+        File outputFile = ex.getOutputDocument();
 
-            Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-            System.err.println("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
-        }
+        Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
+        System.err.println("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
+
         try
         {
             List<ParamReplacement> outputs = new ArrayList<>();
@@ -169,14 +172,6 @@ public class IpynbReport extends DockerScriptReport
 //            }
         }
     }
-
-
-    @Override
-    public ScriptReportDescriptor getDescriptor()
-    {
-        return super.getDescriptor();
-    }
-
 
     /**
      *  ExecuteStrategy is only concerned with invoking the external process.
@@ -264,11 +259,22 @@ public class IpynbReport extends DockerScriptReport
         }
     }
 
-
-    // UNDONE
     DockerService.ImageConfig getImageConfig(Container c)
     {
-        return DockerService.get().getImageConfigBuilder("labkey/echo").build();
+        // apply configuration options from the configured docker engine
+        ScriptEngine eng = LabKeyScriptEngineManager.get().getEngineByExtension(c, EXTENSION);
+        if (eng instanceof ExternalScriptEngine engine)
+        {
+            // this is a little strange, DockerImage and ImageConfig classes overlap quite a bit, I'm not sure
+            // why they aren't more interchangeable.
+            DockerService.DockerImage image = DockerService.get().getDockerImage(engine.getEngineDefinition().getDockerImageRowId());
+            // todo : are there other configuration options we need to propagate
+            return DockerService.get().getImageConfigBuilder(image.getImageName()).build();
+        }
+        else
+        {
+            throw new IllegalStateException("No script engine configured for  " + LABEL + " reports");
+        }
     }
 
 
