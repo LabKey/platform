@@ -66,7 +66,7 @@ public abstract class StudyManualTest extends StudyTest
         }
 
         // change study label
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), getStudyLabel());
         clickButton("Submit");

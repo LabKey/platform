@@ -168,7 +168,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         final String subjectIdDataset = "SubjectIdTest";
 
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
         String subjectName = getFormElement(Locator.name("SubjectColumnName"));
         clickButton("Cancel");
@@ -187,7 +187,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         designerPage.clickSave();
 
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("SubjectColumnName"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("SubjectColumnName"), mySubjectId);
         click(findButton("Submit"));
