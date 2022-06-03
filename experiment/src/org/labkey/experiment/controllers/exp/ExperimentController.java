@@ -142,6 +142,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.ClientSideMetricService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -2438,8 +2439,9 @@ public class ExperimentController extends SpringActionController
                     {
                         QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
                                 qInfo.getString("query"), getViewContext().getActionURL(),
-                                "Exported editable grid to excel file: " + filename, null);
-                        incrementEditableGridExportMetric();
+                                rootObject.getString("auditMessage") + filename,
+                                null);
+                        ClientSideMetricService.get().increment( "ConvertTable","asExcel");
                     }
                 }
             }
@@ -2452,14 +2454,6 @@ public class ExperimentController extends SpringActionController
     }
 
     public final static String EDITABLE_GRID_EXPORT_METRIC = "editableGridExport";
-    private void incrementEditableGridExportMetric()
-    {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(ContainerManager.getRoot(), "metrics", true);
-        int count = Integer.valueOf(props.getOrDefault(EDITABLE_GRID_EXPORT_METRIC, "0")) + 1;
-        props.put(EDITABLE_GRID_EXPORT_METRIC, Integer.toString(count));
-        props.save();
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
@@ -2527,10 +2521,11 @@ public class ExperimentController extends SpringActionController
                 if (qInfo != null)
                 {
                     QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"), qInfo.getString("query"),
-                            getViewContext().getActionURL(), "Exported editable grid to delimited file: " + filename, rowsArray.length());
-                    incrementEditableGridExportMetric();
+                            getViewContext().getActionURL(),
+                            rootObject.getString("auditMessage") + filename,
+                            rowsArray.length());
+                    ClientSideMetricService.get().increment( "ConvertTable","asDelimited");
                 }
-
             }
             catch (JSONException e)
             {
