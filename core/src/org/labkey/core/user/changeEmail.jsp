@@ -63,7 +63,7 @@
     }
     else if (form.getIsPasswordPrompt())
     {
-        HtmlString resetPasswordLink = DOM.createHtml(DOM.A(DOM.at(DOM.Attribute.href, urlFor(ResetPasswordAction.class)), "forgot password"));
+        HtmlString resetPasswordLink = link("forgot password", urlFor(ResetPasswordAction.class)).getHtmlString();
 %>
         <p>For security purposes, please enter your password.</p>
         <labkey:form action="<%=urlFor(ChangeEmailAction.class)%>" method="POST" layout="horizontal">
