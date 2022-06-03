@@ -20,6 +20,8 @@
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.DOM" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -276,7 +278,8 @@
         </div>
         <br>
         <h2>Context Content</h2>
-        <% String helpText = "Go to home: <a href=" + ActionURL.getBaseServerURL() + ">Server Home</a>";%>
+        <% HtmlString helpText = DOM.createHtml(DOM.createHtmlFragment("Go to home: ", DOM.A(DOM.at(DOM.Attribute.href, ActionURL.getBaseServerURL()), "Server Home"))); %>
+
         <labkey:form action="some-action" layout="horizontal">
             <labkey:input name="name" label="Rich Content" placeholder="URL of page" contextContent="<%= helpText %>" id="exampleRichContext"/>
         </labkey:form>
