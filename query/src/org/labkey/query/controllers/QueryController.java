@@ -803,21 +803,13 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors)
         {
-            if (form.getSchema() == null)
-            {
-                if (form.getSchemaName().isEmpty())
-                {
-                    throw new NotFoundException("Schema name not specified");
-                }
-                else
-                {
-                    throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-                }
-            }
+            form.ensureSchemaExists();
+
             if (!form.getSchema().canCreate())
             {
                 throw new UnauthorizedException();
             }
+
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
             setHelpTopic("sqlTutorial");
@@ -827,14 +819,13 @@ public class QueryController extends SpringActionController
         @Override
         public boolean handlePost(NewQueryForm form, BindException errors)
         {
-            if (form.getSchema() == null)
-            {
-                throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-            }
+            form.ensureSchemaExists();
+
             if (!form.getSchema().canCreate())
             {
                 throw new UnauthorizedException();
             }
+
             try
             {
                 if (form.ff_baseTableName == null || "".equals(form.ff_baseTableName))
@@ -3248,10 +3239,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ExecuteSqlForm form, BindException errors)
         {
-            if (form.getSchema() == null)
-            {
-                throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-            }
+            form.ensureSchemaExists();
 
             String schemaName = StringUtils.trimToNull(form.getQuerySettings().getSchemaName());
             if (null == schemaName)
@@ -6009,10 +5997,8 @@ public class QueryController extends SpringActionController
                 else
                     schema = DefaultSchema.get(user, container);
 
-                if (schema == null)
-                {
-                    throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-                }
+                // Ensure consistent exception as other query actions
+                QueryForm.ensureSchemaNotNull(schema);
 
                 // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
                 JSONObject ret = new JSONObject();
