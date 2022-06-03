@@ -41,6 +41,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -53,6 +54,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -557,7 +559,25 @@ public class NameGenerator
         Stream<String> values;
         if (value instanceof String)
         {
-            values = Arrays.stream(((String)value).split(","));
+            if (StringUtils.isEmpty(((String) value).trim()))
+                return Stream.empty();
+
+            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+            // using TabLoader instead of just splitting on the comma.
+            try (TabLoader tabLoader = new TabLoader((String) value))
+            {
+                tabLoader.setDelimiterCharacter(',');
+                tabLoader.setUnescapeBackslashes(false);
+                try
+                {
+                    String[][] parsedValues = tabLoader.getFirstNLines(1);
+                    values = Arrays.stream(parsedValues[0]);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                }
+            }
         }
         else if (value instanceof Collection)
         {
@@ -1369,7 +1389,6 @@ public class NameGenerator
         {
             if (!_exprHasLineageLookup || StringUtils.isEmpty(parentTypeName) || StringUtils.isEmpty(parentName))
                 return;
-
 
             boolean hasTypeLookup = false;
             if (_expLineageLookupFields.containsKey(INPUT_PARENT))

@@ -226,8 +226,9 @@ public class VaccineProtocolTest extends BaseWebDriverTest
                 .clickSave()
                 .clickViewData()
                 .getDataRegion()
-                .clickImportBulkData();
-        _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
+                .clickImportBulkData()
+                .setText("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye")
+                .submit();
 
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.addColumn("Day");
@@ -246,8 +247,9 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         assertTextPresent("Day 16");
         navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Subjects"));
-        DataRegionTable.findDataRegion(this).clickImportBulkData();
-        _listHelper.submitTsvData("participantid\tDate\tCohort\tStartDate\nPnew\t11/7/2007\tPlacebo\t11/7/2007");
+        DataRegionTable.DataRegion(getDriver()).find().clickImportBulkData()
+                .setText("participantid\tDate\tCohort\tStartDate\nPnew\t11/7/2007\tPlacebo\t11/7/2007")
+                .submit();
         navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         //Make sure our guy picked up the his personal start date
