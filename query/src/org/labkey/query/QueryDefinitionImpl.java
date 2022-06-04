@@ -252,6 +252,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly)
     {
+        return getCustomViews(owner, request, includeHidden, sharedOnly, false);
+    }
+
+    @Override
+    public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly, boolean excludeSessionView)
+    {
         Map<String, CustomView> ret = new CaseInsensitiveLinkedHashMap<>();
 
         if (includeHidden)
@@ -279,7 +285,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         ret.putAll(map);
 
         // Session views have highest precedence.
-        if (owner != null && request != null)
+        if (owner != null && request != null && !excludeSessionView)
         {
             for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
             {

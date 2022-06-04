@@ -6257,6 +6257,7 @@ public class QueryController extends SpringActionController
         private String _queryName;
         private String _viewName;
         private boolean _metadata;
+        private boolean _excludeSessionView;
 
         public String getSchemaName()
         {
@@ -6297,6 +6298,16 @@ public class QueryController extends SpringActionController
         {
             _metadata = metadata;
         }
+
+        public boolean isExcludeSessionView()
+        {
+            return _excludeSessionView;
+        }
+
+        public void setExcludeSessionView(boolean excludeSessionView)
+        {
+            _excludeSessionView = excludeSessionView;
+        }
     }
 
 
@@ -6329,7 +6340,7 @@ public class QueryController extends SpringActionController
                         + form.getSchemaName() + "' schema in the container '"
                         + getContainer().getPath() + "'!");
 
-            Map<String, CustomView> views = querydef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
+            Map<String, CustomView> views = querydef.getCustomViews(getUser(), getViewContext().getRequest(), true, false, form.isExcludeSessionView());
             if (null == views)
                 views = Collections.emptyMap();
 
