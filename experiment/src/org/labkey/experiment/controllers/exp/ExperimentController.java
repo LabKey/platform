@@ -2453,8 +2453,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public final static String EDITABLE_GRID_EXPORT_METRIC = "editableGridExport";
-
     @RequiresPermission(ReadPermission.class)
     public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
     {

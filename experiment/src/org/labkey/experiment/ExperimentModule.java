@@ -610,7 +610,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
-                results.put("editableGridExports", PropertyManager.getProperty(PropertyManager.SHARED_USER, ContainerManager.getRoot(), "metrics", ExperimentController.EDITABLE_GRID_EXPORT_METRIC));
                 return results;
             });
         }
