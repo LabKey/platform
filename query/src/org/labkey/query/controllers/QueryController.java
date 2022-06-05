@@ -5442,6 +5442,12 @@ public class QueryController extends SpringActionController
                     existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
                 }
 
+                // save a new private view if shared is false but existing view is shared
+                if (existingView != null && !form.isShared() && existingView.getOwner() == null)
+                {
+                    existingView = null;
+                }
+
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
                     User owner = form.isShared() ? null : getUser();
