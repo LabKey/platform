@@ -709,8 +709,8 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             PasswordRule passwordRule = DbLoginManager.getPasswordRule();
 
-            response.put("full", passwordRule.getFullRuleHTML());
-            response.put("summary", passwordRule.getSummaryRuleHTML());
+            response.put("full", passwordRule.getFullRuleHTML().toString());
+            response.put("summary", passwordRule.getSummaryRuleHTML().toString());
             return response;
         }
     }
