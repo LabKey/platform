@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "setup": "npm ci",
+    "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
     "clean": "rimraf resources/web/pipeline/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen",
     "lint": "eslint",
