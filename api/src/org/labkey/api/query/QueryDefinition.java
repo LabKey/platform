@@ -86,7 +86,10 @@ public interface QueryDefinition
      * @param request If not null, include custom views saved in session state.
      * @param includeHidden If true, include hidden custom views.
      * @param sharedOnly If true, return only shared custom views.
+     * @param excludeSessionView If true, return only non session custom views.
      */
+    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly, boolean excludeSessionView);
+
     Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly);
 
     CustomView createCustomView();
