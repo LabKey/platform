@@ -129,7 +129,6 @@
         };
 
         var getEngineSpecificItems = function(record) {
-
             var items = [];
             if (record.extensions === R_EXTENSIONS) {
                 var isCurrentDefault = record.default && record.rowId;
@@ -163,10 +162,17 @@
                 });
 
                 if (!record.docker) {
-                    items = items.concat(getNonSandboxRSpecificFields(record.pandocEnabled));
+                    items.push({
+                        fieldLabel: 'Use pandoc & rmarkdown',
+                        name: 'pandocEnabled',
+                        id: 'editEngine_pandocEnabled',
+                        labelAttrTpl: " data-qtitle='Enable rmarkdown v2' data-qtip='Select this option if you have rmarkdown and pandoc installed. Please see knitr help documentation on labkey.org for more information.'",
+                        xtype: 'checkbox',
+                        checked: record.pandocEnabled
+                    });
                 }
             }
-            else if (record.name === DOCKER_REPORT_NAME && record.docker) {
+            else if (record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%> && record.docker) {
                 items = getDockerConfigItems(items, record, DockerReportFields);
             }
             return items;
@@ -174,6 +180,7 @@
 
         // adds docker engine specific config form items
         var getDockerConfigItems = function(items, record, imageFields) {
+            var isDockerReport = record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>;
             items = items.concat([{
                 name: 'docker',
                 xtype: 'hidden',
@@ -195,10 +202,13 @@
             var configuredHtml = '<span style="color:green;" class="fa fa-check-circle"></span>';
             var notConfiguredHtml = '<span style="color:red;" class="fa fa-times-circle"></span>\<a href="admin-customizeSite.view">site settings</a>';
 
+            if (!isDockerReport)
+                items = items.concat([{
+                    xtype: 'box',
+                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
+                }]);
+
             items = items.concat([{
-                xtype: 'box',
-                html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
-            },{
                 xtype: 'box',
                 html: dockerConditionHtmlTpl.replace('?LABEL?', 'Docker').replace('?CONTENT?', '<a href="docker-configure.view">docker</a>')
             }]);
@@ -224,17 +234,6 @@
             });
 
             return items.concat(imageConfigFields);
-        };
-
-        var getNonSandboxRSpecificFields = function(enabled) {
-            return [{
-                fieldLabel: 'Use pandoc & rmarkdown',
-                name: 'pandocEnabled',
-                id: 'editEngine_pandocEnabled',
-                labelAttrTpl: " data-qtitle='Enable rmarkdown v2' data-qtip='Select this option if you have rmarkdown and pandoc installed. Please see knitr help documentation on labkey.org for more information.'",
-                xtype: 'checkbox',
-                checked: enabled
-            }];
         };
 
         var deleteSelected = function(grid) {
@@ -293,277 +292,10 @@
         };
 
         var editRecord= function(button, grid, record) {
-            let itemPath = {
-                fieldLabel: 'Program Path',
-                name: 'exePath',
-                id: 'editEngine_exePath',
-                labelAttrTpl: " data-qtitle='Program Path' data-qtip='Specify the absolute path to the program including the program itself'",
-                allowBlank: false,
-                value: record.exePath,
-                disabled: !record.external,
-                width: 275
-            };
-
-            let itemMachine = {
-                fieldLabel: 'Machine Name',
-                name: 'machine',
-                id: 'editEngine_machine',
-                labelAttrTpl: " data-qtitle='Machine Name' data-qtip='Specify the machine name or IP address that Rserve is running on'",
-                allowBlank: false,
-                value: record.machine,
-                disabled: !record.external,
-                width: 275
-            };
-
-            let itemCmd = {
-                fieldLabel: 'Program Command',
-                name: 'exeCommand',
-                id: 'editEngine_exeCommand',
-                labelAttrTpl: " data-qtitle='Program Command' data-qtip='The command used when the program is invoked'",
-                disabled: !record.external,
-                value: record.exeCommand,
-                width: 275
-            };
-
-            let itemPort = {
-                fieldLabel: 'Port',
-                name: 'port',
-                id: 'editEngine_port',
-                labelAttrTpl: " data-qtitle='Port' data-qtip='The port used to connect to Rserve'",
-                disabled: !record.external,
-                value: record.port,
-                width: 275
-            };
-
-            let pathMapStore = new Ext4.data.JsonStore({
-                fields: [
-                    {
-                        name: 'localURI',
-                        allowBlank: false
-                    },
-                    {
-                        name: 'remoteURI',
-                        allowBlank: false
-                    }
-                ],
-                idProperty: 'localURI',
-                root: 'paths'
-            });
-
-            if (record.pathMap)
-            {
-                pathMapStore.loadData(record.pathMap.paths);
-            }
-
-            let fieldDisplayRenderer = function(val){
-                return Ext4.util.Format.htmlEncode(val);
-            };
-
-            let itemPathGridInput = new Ext4.grid.Panel({
-                xtype: 'grid',
-                name: 'pathMap',
-                id: 'editEngine_pathMap',
-                disabled: !record.external,
-                stripeRows: true,
-                autoEncode: true,
-                enableColumnHide: false,
-                store: pathMapStore,
-                plugins: [
-                    Ext4.create('Ext.grid.plugin.CellEditing', {
-                        clicksToEdit: 1
-                    })
-                ],
-                columns: [
-                    {id: 'localURI', header: 'Local', dataIndex: 'localURI', editable: true, editor: 'textfield', width: 200, renderer: fieldDisplayRenderer},
-                    {id: 'remoteURI', header: 'Remote', dataIndex: 'remoteURI', editable: true, editor: 'textfield', width: 200, renderer: fieldDisplayRenderer}
-                ],
-                tbar: [
-                    {
-                        text: 'Add',
-                        handler: function ()
-                        {
-                            var data = {'localURI': '', 'remoteURI': ''};
-                            pathMapStore.add(data);
-                        }
-                    },
-                    {
-                        text: 'Remove',
-                        handler: function (btn, evt)
-                        {
-                            var record = itemPathGridInput.getSelectionModel().getSelection();
-                            pathMapStore.remove(record);
-                        }
-                    }
-                ],
-                width: 430,
-                height: 160,
-                viewConfig: {forceFit: true}
-            });
-
-            let itemPathGrid = new Ext4.form.FieldContainer({
-                fieldLabel: 'Path Mapping',
-                id: 'editEngine_pathMapContainer',
-                labelAttrTpl: " data-qtitle='Local to Remote Path Mapping' data-qtip='Add or remove local to remote path mappings'",
-                items: [itemPathGridInput]
-            });
-
-            let itemChangePassword = {
-                xtype       : 'checkbox',
-                fieldLabel  : 'Change Password',
-                id          : 'editEngine_changePassword',
-                name        : 'changePassword',
-                uncheckedValue : 'false',
-                listeners : {
-                    scope: this,
-                    'change': function (cb, value){
-                        cb.up('panel').down('textfield[name=user]').setDisabled(!value);
-                        cb.up('panel').down('textfield[name=password]').setDisabled(!value);
-                    }
-                }
-            };
-
-            let itemUser = {
-                fieldLabel: 'Remote User',
-                name: 'user',
-                id: 'editEngine_user',
-                labelAttrTpl: " data-qtitle='Remote User' data-qtip='The user for the remote service login'",
-                disabled: true,
-                value: record.user,
-                width: 275
-            };
-
-            let itemPassword = {
-                fieldLabel: 'Remote Password',
-                name: 'password',
-                id: 'editEngine_password',
-                labelAttrTpl: " data-qtitle='Remote Password' data-qtip='The password for the remote service login account'",
-                inputType: 'password',
-                disabled: true,
-                width: 275
-            };
-
-            let itemName = {
-                fieldLabel: "Name",
-                name: 'name',
-                id: 'editEngine_name',
-                allowBlank: false,
-                readOnly: !record.external,
-                value: record.name
-            };
-
-            let itemLanguageName = {
-                fieldLabel: 'Language',
-                name: 'languageName',
-                id: 'editEngine_languageName',
-                allowBlank: false,
-                readOnly: !record.external || record.docker,
-                value: record.languageName
-            };
-
-            let itemLanguageVersion = {
-                fieldLabel: 'Language Version',
-                name: 'languageVersion',
-                id: 'editEngine_languageVersion',
-                readOnly: !record.external,
-                value: record.languageVersion
-            };
-
-            let itemExtensions = {
-                fieldLabel: 'File Extensions',
-                name: 'extensions',
-                id: 'editEngine_extensions',
-                allowBlank: false,
-                labelAttrTpl: " data-qtitle='File Extensions' data-qtip='The list of file extensions (separated by commas) that this engine is associated with'",
-                readOnly: !record.external || (record.docker && record.type !== <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>),
-                value: record.extensions
-            };
-
-            let itemOutputFileName = {
-                fieldLabel: 'Output File Name',
-                name: 'outputFileName',
-                id: 'editEngine_outputFileName',
-                value: record.outputFileName,
-                labelAttrTpl: " data-qtitle='Output File Name' data-qtip='If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.'",
-                disabled: !record.external,
-                readOnly:  record.docker
-            };
-
-            let itemEnabled = {
-                fieldLabel: 'Enabled',
-                name: 'enabled',
-                id: 'editEngine_enabled',
-                labelAttrTpl: " data-qtitle='Enable Engine' data-qtip='If a script engine is disabled, it cannot be used to run reports and scripts'",
-                xtype: 'checkbox',
-                checked: record.enabled
-            };
-
-            let itemExternal = {
-                name: 'external',
-                xtype: 'hidden',
-                value: record.external
-            };
-
-            let itemKey = {
-                name: 'rowId',
-                xtype: 'hidden',
-                value: record.rowId
-            };
-
-            let itemType = {
-                name: 'type',
-                xtype: 'hidden',
-                value: record.type
-            };
-
-            let itemRemote = {
-                name: 'remote',
-                xtype: 'hidden',
-                value: record.remote
-            };
-
-            // common items for both local and remote
-            let panelItems = [
-                itemName,
-                itemLanguageName
-            ];
-            panelItems.push(itemLanguageVersion);
-
-            panelItems.push(itemExtensions);
-
-            if (!record.docker) {
-                if (record.remote) {
-                    panelItems.push(itemMachine);
-                    panelItems.push(itemPort);
-                    panelItems.push(itemPathGrid);
-                    panelItems.push(itemChangePassword);
-                    panelItems.push(itemUser);
-                    panelItems.push(itemPassword);
-                }
-                else {
-                    panelItems.push(itemPath);
-                }
-                panelItems.push(itemCmd);
-            }
-
-            // common items for both local and remote
-            panelItems.push(itemOutputFileName);
-
-            //add engine specific fields
-            let engineItems = getEngineSpecificItems(record);
-            if (engineItems && engineItems.length > 0) {
-                panelItems = panelItems.concat(engineItems);
-            }
-
-            panelItems.push(itemEnabled);
-            panelItems.push(itemExternal);
-            panelItems.push(itemKey);
-            panelItems.push(itemType);
-            panelItems.push(itemRemote);
-
             let formPanel = new Ext4.form.Panel({
                 bodyStyle:'padding:5px 5px 0',
                 defaultType: 'textfield',
-                items: panelItems
+                items: getFieldsForRecord(record)
             });
 
             let win = new Ext4.Window({
@@ -592,7 +324,264 @@
             win.show(button);
         };
 
-        var saveDisabled = function (record) {
+        // returns the form fields for the configuration dialog
+        var getAllFields = function(record) {
+            let pathMapStore = new Ext4.data.JsonStore({
+                fields: [{
+                        name: 'localURI',
+                        allowBlank: false
+                    },{
+                        name: 'remoteURI',
+                        allowBlank: false
+                    }
+                ],
+                idProperty: 'localURI',
+                root: 'paths'
+            });
+
+            if (record.pathMap)
+                pathMapStore.loadData(record.pathMap.paths);
+
+            // standard fiels at the top of the form
+            var fields = [{
+                fieldLabel: "Name",
+                name: 'name',
+                id: 'editEngine_name',
+                allowBlank: false,
+                value: record.name
+            },{
+                fieldLabel: 'Language',
+                name: 'languageName',
+                id: 'editEngine_languageName',
+                allowBlank: false,
+                value: record.languageName
+            },{
+                fieldLabel: 'Language Version',
+                name: 'languageVersion',
+                id: 'editEngine_languageVersion',
+                value: record.languageVersion
+            },{
+                fieldLabel: 'File Extensions',
+                name: 'extensions',
+                id: 'editEngine_extensions',
+                allowBlank: false,
+                labelAttrTpl: " data-qtitle='File Extensions' data-qtip='The list of file extensions (separated by commas) that this engine is associated with'",
+                value: record.extensions
+            },{
+                fieldLabel: 'Machine Name',
+                name: 'machine',
+                id: 'editEngine_machine',
+                labelAttrTpl: " data-qtitle='Machine Name' data-qtip='Specify the machine name or IP address that Rserve is running on'",
+                allowBlank: false,
+                value: record.machine,
+                width: 275
+            },{
+                fieldLabel: 'Port',
+                name: 'port',
+                id: 'editEngine_port',
+                labelAttrTpl: " data-qtitle='Port' data-qtip='The port used to connect to Rserve'",
+                value: record.port,
+                width: 275
+            },{
+                fieldLabel: 'Path Mapping',
+                name: 'pathgrid',
+                xtype: 'fieldcontainer',
+                id: 'editEngine_pathMapContainer',
+                labelAttrTpl: " data-qtitle='Local to Remote Path Mapping' data-qtip='Add or remove local to remote path mappings'",
+                items: [{
+                    xtype: 'gridpanel',
+                    name: 'pathMap',
+                    id: 'editEngine_pathMap',
+                    disabled: !record.external,
+                    stripeRows: true,
+                    autoEncode: true,
+                    enableColumnHide: false,
+                    store: pathMapStore,
+                    plugins: [
+                        Ext4.create('Ext.grid.plugin.CellEditing', {
+                            clicksToEdit: 1
+                        })
+                    ],
+                    columns: [{
+                            id: 'localURI',
+                            header: 'Local',
+                            dataIndex: 'localURI',
+                            editable: true,
+                            editor: 'textfield',
+                            width: 200,
+                            renderer: 'htmlEncode'
+                        },{
+                            id: 'remoteURI',
+                            header: 'Remote',
+                            dataIndex: 'remoteURI',
+                            editable: true,
+                            editor: 'textfield',
+                            width: 200,
+                            renderer: 'htmlEncode'
+                        }
+                    ],
+                    tbar: [{
+                            text: 'Add',
+                            handler: function () {
+                                var data = {'localURI': '', 'remoteURI': ''};
+                                pathMapStore.add(data);
+                            }
+                        },{
+                            text: 'Remove',
+                            handler: function (btn, evt, a, b) {
+                                var grid = Ext4.getCmp('editEngine_pathMap');
+                                if (grid) {
+                                    var record = grid.getSelectionModel().getSelection();
+                                    pathMapStore.remove(record);
+                                }
+                            }
+                        }
+                    ],
+                    width: 430,
+                    height: 160,
+                    viewConfig: {forceFit: true}
+                }]
+            },{
+                xtype: 'checkbox',
+                fieldLabel: 'Change Password',
+                id: 'editEngine_changePassword',
+                name: 'changePassword',
+                uncheckedValue: 'false',
+                listeners: {
+                    scope: this,
+                    'change': function (cb, value) {
+                        cb.up('panel').down('textfield[name=user]').setDisabled(!value);
+                        cb.up('panel').down('textfield[name=password]').setDisabled(!value);
+                    }
+                }
+            },{
+                fieldLabel: 'Remote User',
+                name: 'user',
+                id: 'editEngine_user',
+                labelAttrTpl: " data-qtitle='Remote User' data-qtip='The user for the remote service login'",
+                disabled: true,
+                value: record.user,
+                width: 275
+            },{
+                fieldLabel: 'Remote Password',
+                name: 'password',
+                id: 'editEngine_password',
+                labelAttrTpl: " data-qtitle='Remote Password' data-qtip='The password for the remote service login account'",
+                inputType: 'password',
+                disabled: true,
+                width: 275
+            },{
+                fieldLabel: 'Program Path',
+                name: 'exePath',
+                id: 'editEngine_exePath',
+                labelAttrTpl: " data-qtitle='Program Path' data-qtip='Specify the absolute path to the program including the program itself'",
+                allowBlank: false,
+                value: record.exePath,
+                disabled: !record.external,
+                width: 275
+            },{
+                fieldLabel: 'Program Command',
+                name: 'exeCommand',
+                id: 'editEngine_exeCommand',
+                labelAttrTpl: " data-qtitle='Program Command' data-qtip='The command used when the program is invoked'",
+                disabled: !record.external,
+                value: record.exeCommand,
+                width: 275
+            },{
+                fieldLabel: 'Output File Name',
+                name: 'outputFileName',
+                id: 'editEngine_outputFileName',
+                value: record.outputFileName,
+                labelAttrTpl: " data-qtitle='Output File Name' data-qtip='If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.'",
+                disabled: !record.external,
+                readOnly: record.docker
+            }];
+
+            // engine specific fields
+            fields = fields.concat(getEngineSpecificItems(record));
+
+            // standard fields at the bottom of the form
+            fields = fields.concat([{
+                fieldLabel: 'Enabled',
+                name: 'enabled',
+                id: 'editEngine_enabled',
+                labelAttrTpl: " data-qtitle='Enable Engine' data-qtip='If a script engine is disabled, it cannot be used to run reports and scripts'",
+                xtype: 'checkbox',
+                checked: record.enabled
+            },{
+                name: 'external',
+                xtype: 'hidden',
+                value: record.external
+            },{
+                name: 'rowId',
+                xtype: 'hidden',
+                value: record.rowId
+            },{
+                name: 'type',
+                xtype: 'hidden',
+                value: record.type
+            },{
+                name: 'remote',
+                xtype: 'hidden',
+                value: record.remote
+            }]);
+
+            return fields;
+        };
+
+        var getFieldsForRecord = function(record) {
+            var isDockerReport = record.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>;
+            var items = [];
+
+            Ext4.each(getAllFields(record), function(rec){
+                switch (rec.name) {
+                    case 'machine':
+                    case 'port':
+                    case 'pathgrid':
+                    case 'changePassword':
+                    case 'user':
+                    case 'password':
+                        if (!record.docker && record.remote)
+                            items.push(rec);
+                        break;
+                    case 'exePath':
+                        if (!record.docker && !record.remote)
+                            items.push(rec);
+                        break;
+                    case 'exeCommand':
+                        if (!record.docker)
+                            items.push(rec);
+                        break;
+                    default:
+                        items.push(rec);
+                        break;
+                }
+            });
+
+            // do any configuration on the fields, enabled, disabled, editable etc.
+            Ext4.each(items, function(item){
+                switch (item.name) {
+                    case 'name':
+                    case 'languageVersion':
+                    case 'machine':
+                    case 'port':
+                        item.readOnly = !record.external;
+                        break;
+                    case 'languageName':
+                    case 'extensions':
+                        if (!isDockerReport)
+                            item.readOnly = (!record.external || record.docker);
+                        break;
+                    case 'outputFileName':
+                        item.hidden = isDockerReport;
+                        break;
+                }
+            });
+
+            return items;
+        };
+
+        var saveDisabled = function(record) {
             if (record.docker) {
                 if (record.type !== <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
                     return <%=(!baseServerUrlSet)%>
