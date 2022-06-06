@@ -5338,6 +5338,8 @@ public class QueryController extends SpringActionController
         private String newName;
         private boolean inherit;
         private boolean shared;
+        private boolean hidden;
+        private boolean replace;
         private String containerPath;
 
         public String getNewName()
@@ -5379,6 +5381,27 @@ public class QueryController extends SpringActionController
         {
             this.containerPath = containerPath;
         }
+
+        public boolean isHidden()
+        {
+            return hidden;
+        }
+
+        public void setHidden(boolean hidden)
+        {
+            this.hidden = hidden;
+        }
+
+        public boolean isReplace()
+        {
+            return replace;
+        }
+
+        public void setReplace(boolean replace)
+        {
+            this.replace = replace;
+        }
+
     }
 
     // Moves a session view into the database.
@@ -5448,6 +5471,9 @@ public class QueryController extends SpringActionController
                     existingView = null;
                 }
 
+                if (existingView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
+                    throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" already exists. ");
+
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
                     User owner = form.isShared() ? null : getUser();
@@ -5457,7 +5483,7 @@ public class QueryController extends SpringActionController
                     viewCopy.setCanInherit(form.isInherit());
                     viewCopy.setFilterAndSort(view.getFilterAndSort());
                     viewCopy.setColumnProperties(view.getColumnProperties());
-                    viewCopy.setIsHidden(view.isHidden());
+                    viewCopy.setIsHidden(form.isHidden());
                     if (form.isInherit())
                         viewCopy.setContainer(container);
 
@@ -5476,6 +5502,7 @@ public class QueryController extends SpringActionController
                     existingView.setCanInherit(form.isInherit());
                     if (form.isInherit())
                         ((CustomViewImpl)existingView).setContainer(container);
+                    existingView.setIsHidden(form.isHidden());
 
                     existingView.save(getUser(), getViewContext().getRequest());
                 }
