@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.14.1-fb-smSaveGridViews.4",
-    "@labkey/components": "2.179.0-fb-smSaveGridViews.7",
+    "@labkey/components": "2.179.0-fb-smSaveGridViews.8",
     "@labkey/themes": "1.2.2"
   },
   "devDependencies": {
