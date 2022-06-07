@@ -58,7 +58,7 @@ public class IpynbReport extends DockerScriptReport
 {
     public static final String TYPE = "ReportService.ipynbReport";
     public static final String ERROR_OUTPUT = "errors.txt";
-    public static final String LABEL = "Jupyter Notebook";
+    public static final String LABEL = "Jupyter Report";
     public static final String EXTENSION = "ipynb";
 
     public IpynbReport()
@@ -86,7 +86,7 @@ public class IpynbReport extends DockerScriptReport
     @Override
     public String getTypeDescription()
     {
-        return "Jupyter Notebook (.ipynb) report";
+        return "Jupyter Report (.ipynb)";
     }
 
     public static boolean isEnabled()
@@ -97,6 +97,13 @@ public class IpynbReport extends DockerScriptReport
                     .anyMatch(def -> Arrays.asList(def.getExtensions()).contains(EXTENSION));
         }
         return false;
+    }
+
+    @Nullable
+    @Override
+    public String getEditAreaSyntax()
+    {
+        return "application/ld+json";
     }
 
     @Override
@@ -401,9 +408,8 @@ public class IpynbReport extends DockerScriptReport
 
             // DockerService.run() blocks until process completion, so input stream had to be written on a different threads
             final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
-            Thread t = new Thread(() -> {
-                try
-                (
+            final Thread t = new Thread(() -> {
+                try (
                     PipedOutputStream pipeOutput = new PipedOutputStream();
                     TarArchiveOutputStream tar = new TarArchiveOutputStream(pipeOutput)
                 )

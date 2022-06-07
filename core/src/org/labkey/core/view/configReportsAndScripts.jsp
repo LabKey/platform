@@ -75,7 +75,7 @@
         var R_ENGINE_NAME = 'R Scripting Engine';
         var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
         var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
-        var DOCKER_REPORT_NAME = 'Docker Report';
+        var DOCKER_REPORT_NAME = 'Docker Report Engine';
         var defaultR, countR = 0;
         let grid;
         let remoteEnabled = <%=isRemoteEnabled%>;
@@ -705,9 +705,11 @@
                 listeners: {
                     load: function (store, records, options) {
                         var perlMenuItem = Ext4.getCmp('add_perlEngine');
+                        var dockerMenuItem = Ext4.getCmp('add_DockerReportImage');
                         defaultR = null;
                         countR = 0;
                         perlMenuItem.enable();
+                        dockerMenuItem.enable();
 
                         Ext4.each(records, function (rec) {
                             if (rec.data) {
@@ -720,6 +722,8 @@
 
                                 if (rec.data.extensions === PERL_EXTENSIONS)
                                     perlMenuItem.disable();
+                                else if (rec.data.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
+                                    dockerMenuItem.disable();
                             }
                         });
                     }
@@ -862,7 +866,7 @@
             if (dockerServiceEnabled) {
                 items.push({
                     id: 'add_DockerReportImage',
-                    text: 'New Docker Report Image',
+                    text: 'New Docker Report Engine',
                     listeners: {
                         click: function (button) {
                             var record = {
