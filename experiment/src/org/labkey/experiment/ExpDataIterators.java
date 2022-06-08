@@ -1292,6 +1292,9 @@ public class ExpDataIterators
                     {
                         if (isAliquot)
                         {
+                            if (namePart.equals(dataType) && entityName.equals(aliquotedFrom))
+                                continue;
+
                             String message = "Sample derivation parent input is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
