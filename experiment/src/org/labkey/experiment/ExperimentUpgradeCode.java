@@ -270,7 +270,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     /**
      * Called from exp-22.003-20.004.sql
      */
-    public static void addProvisionedSampleNameTypeId(ModuleContext context)
+    public static void addProvisionedSampleName(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
@@ -281,13 +281,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
             new TableSelector(sampleTypeTable, null, null).stream(MaterialSource.class)
                     .map(ExpSampleTypeImpl::new)
-                    .forEach(ExperimentUpgradeCode::setSampleNameTypeId);
+                    .forEach(ExperimentUpgradeCode::setSampleName);
 
             tx.commit();
         }
     }
 
-    private static void setSampleNameTypeId(ExpSampleTypeImpl st)
+    private static void setSampleName(ExpSampleTypeImpl st)
     {
         Domain domain = st.getDomain();
         SampleTypeDomainKind kind = null;
@@ -324,38 +324,30 @@ public class ExperimentUpgradeCode implements UpgradeCode
             LOG.info("Added 'name' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
         }
 
-        ColumnInfo typeIdCol = provisionedTable.getColumn("materialSourceId"); // use materialSourceId instead of SampleTypeId to avoid possibility of naming conflict with existing properties
-        if (typeIdCol == null)
-        {
-            PropertyStorageSpec typeIdProp = kind.getBaseProperties(domain).stream().filter(p -> "materialSourceId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
-            StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(typeIdProp), true);
-            LOG.info("Added 'materialSourceId' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
-        }
-
-        fillSampleNameTypeId(st, domain, scope);
+        fillSampleName(st, domain, scope);
 
         //addIndex
-        Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name", "materialSourceId"))));
+        Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name"))));
         StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
-        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added unique constraint on 'name' and 'materialSourceId'");
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added unique constraint on 'name'");
     }
 
-    // populate name and materialSourceId value on provisioned sample tables
-    private static void fillSampleNameTypeId(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    // populate name on provisioned sample tables
+    private static void fillSampleName(ExpSampleTypeImpl st, Domain domain, DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
                 .append("UPDATE expsampleset.").append(tableName).append("\n")
-                .append("SET name = i.name, materialSourceId = i.materialSourceId\n")
+                .append("SET name = i.name\n")
                 .append("FROM (\n")
-                .append("  SELECT m.lsid, m.name, m.materialSourceId\n")
+                .append("  SELECT m.lsid, m.name\n")
                 .append("  FROM exp.material m\n")
                 .append("  WHERE m.cpasType = ?\n").add(domain.getTypeURI())
                 .append(") AS i\n")
                 .append("WHERE i.lsid = ").append(tableName).append(".lsid");
 
         int count = new SqlExecutor(scope).execute(update);
-        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' and 'materialSourceId' column, count=" + count);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
     }
 
 }

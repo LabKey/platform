@@ -746,7 +746,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         Domain domain = st.getDomain();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
         ColumnInfo nameColumn = getColumn(Column.Name);
-        ColumnInfo materialSourceIdColumn = getColumn(Column.MaterialSourceId);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
 
@@ -767,8 +766,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 continue;
 
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey())
-                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey())
-                || materialSourceIdColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
             // TODO this seems bad to me, why isn't this done in ss.getTinfo()
@@ -891,8 +889,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 // don't select twice
                 if (Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName())
-                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName())
-                    || Column.MaterialSourceId.name().equalsIgnoreCase(propertyColumn.getColumnName()))
+                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
                 // don't need to generate SQL for columns that aren't selected

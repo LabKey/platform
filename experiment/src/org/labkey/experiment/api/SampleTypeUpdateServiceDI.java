@@ -1057,8 +1057,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
             // Ensure we have a cpasType column and it is of the right value
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
-            ColumnInfo sampleTypeIdCol = sampleType.getTinfo().getColumn("materialSourceId");
-            addColumn(sampleTypeIdCol, new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+            addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
 
         }
 

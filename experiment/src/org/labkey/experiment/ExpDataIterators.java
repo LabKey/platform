@@ -1761,6 +1761,7 @@ public class ExpDataIterators
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
+            CaseInsensitiveHashSet propertyKeyColumns = new CaseInsensitiveHashSet();
             if (!context.getInsertOption().mergeRows)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
@@ -1770,6 +1771,7 @@ public class ExpDataIterators
                 {
                     keyColumns.add("materialSourceId");
                     keyColumns.add("name");
+                    propertyKeyColumns.add("name");
                 }
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
@@ -1796,7 +1798,7 @@ public class ExpDataIterators
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
-                    .setKeyColumns(keyColumns)
+                    .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));

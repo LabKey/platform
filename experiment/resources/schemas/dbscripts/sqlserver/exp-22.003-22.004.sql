@@ -18,4 +18,6 @@ UPDATE exp.Material SET MaterialSourceId = (
     SELECT distinct rowId FROM exp.materialSource WHERE materialSource.lsid = Material.cpastype
 ) WHERE Material.cpastype <> 'Material';
 GO
-EXEC core.executeJavaUpgradeCode 'addProvisionedSampleNameTypeId';
+CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
+GO
+EXEC core.executeJavaUpgradeCode 'addProvisionedSampleName';
