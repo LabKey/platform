@@ -7,28 +7,33 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;
+import org.labkey.api.query.JavaScriptExportScriptFactory;
+import org.labkey.api.query.JavaScriptExportScriptModel;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.DockerScriptReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
-import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -56,6 +61,8 @@ import java.util.Set;
 
 public class IpynbReport extends DockerScriptReport
 {
+    static final Logger LOG = LogHelper.getLogger(IpynbReport.class, "Ipynb Report");
+
     public static final String TYPE = "ReportService.ipynbReport";
     public static final String ERROR_OUTPUT = "errors.txt";
     public static final String LABEL = "Jupyter Report";
@@ -122,23 +129,18 @@ public class IpynbReport extends DockerScriptReport
         File scriptFile = new File(workingDirectory,descriptor.getReportName() + ".ipynb");
         IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
-        // GLOBAL PYTHON
-        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
-        // VENV PYTHON
-        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/home/matthew/lk/develop/venv/bin/python3", "-m", "nbconvert", "-y","--ClearOutputPreprocessor.enabled=True", "--execute",  "--allow-errors", "{}", "--to", "notebook", "--stdout"});
-        //  DOCKER NBCONVERT
-
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        System.err.println("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
+        LOG.trace("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
 
         // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
         // ExecuteStrategy ex = new DockerRunTarStdinStdout();
         ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
-        int exitCode = ex.execute(context.getUser(), context.getContainer(), apikey, workingDirectory, scriptFile);
+        int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
         File outputFile = ex.getOutputDocument();
 
         Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        System.err.println("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
+        LOG.trace("wd:    " + workingDirectory.getPath());
+        LOG.trace("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
 
         try
         {
@@ -170,15 +172,28 @@ public class IpynbReport extends DockerScriptReport
             x.printStackTrace();
             throw x;
         }
-        finally
-        {
-//            if (null != scriptFile && scriptFile.isFile())
-//            {
-//                //noinspection ResultOfMethodCallIgnored
-//                scriptFile.delete();
-//            }
-        }
     }
+
+
+    JSONObject createReportConfig(ViewContext context, File ipynb)
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        JSONObject sourceQuery = null;
+        QueryView queryView = createQueryView(context, descriptor);
+        if (null != queryView)
+        {
+            // TODO validateQueryView(queryView);
+            JavaScriptExportScriptModel model = new JavaScriptExportScriptFactory().getModel(queryView);
+            sourceQuery = model.getJSON(17.1);
+        }
+        final JSONObject reportConfig = new JSONObject();
+        reportConfig.put("scriptName", ipynb.getName());
+        if (sourceQuery != null)
+            reportConfig.put("sourceQuery", sourceQuery);
+        reportConfig.put("version", 1.0);
+        return reportConfig;
+    }
+
 
     /**
      *  ExecuteStrategy is only concerned with invoking the external process.
@@ -188,7 +203,7 @@ public class IpynbReport extends DockerScriptReport
     private interface ExecuteStrategy
     {
         IpynbReport getReport();
-        int execute(User user, Container container, String apiKey, File working, File ipynb) throws IOException;
+        int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException;
 
         // document could be .html .ipynb or .md
         @Nullable File getOutputDocument();
@@ -219,7 +234,7 @@ public class IpynbReport extends DockerScriptReport
         }
 
         @Override
-        public int execute(User user, Container container, String apiKey, File working, File ipynb) throws IOException
+        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
         {
             String name = FileUtil.getBaseName(ipynb);
             String outputName = name + ".nbconvert.ipynb";
@@ -301,7 +316,7 @@ public class IpynbReport extends DockerScriptReport
         }
 
         @Override
-        public int execute(User user, Container c, String apiKey, File working, File ipynb) throws IOException
+        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
         {
             String name = FileUtil.getBaseName(ipynb);
             String outputName = name + ".nbconvert.ipynb";
@@ -311,7 +326,7 @@ public class IpynbReport extends DockerScriptReport
             outputDocument = new File(working, outputName);
             inputScript = ipynb;
 
-            DockerService.ImageConfig image = getImageConfig(c);
+            DockerService.ImageConfig image = getImageConfig(context.getContainer());
 
             final PipedInputStream in = new PipedInputStream();
             var out = new ByteArrayOutputStream();
@@ -389,17 +404,17 @@ public class IpynbReport extends DockerScriptReport
         }
 
         @Override
-        public int execute(User user, Container c, String apiKey, File working, File ipynb) throws IOException
+        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
         {
             inputScript = ipynb;
 
-            final JSONObject reportConfig = new JSONObject(Map.of("script_name", ipynb.getName()));
+            JSONObject reportConfig = createReportConfig(context, ipynb);
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
             FileUtils.write(new File(working,"report_config.json"), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
             File[] listFiles = working.listFiles();
             List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
-            DockerService.ImageConfig image = getImageConfig(c);
+            DockerService.ImageConfig image = getImageConfig(context.getContainer());
 
             final PipedInputStream in = new PipedInputStream();
             // TODO would be nice to have a binary/OutputStream version of FileUtil.TempTextFileWrapper()

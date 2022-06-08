@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /*
@@ -57,7 +58,92 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
-    public String getJSONFilters()
+
+    /**
+     * This is very close to getStandardJavaScriptParameters(), however,
+     * getStandardJavaScriptParameters() may inject JavaScript _code_ e.g. Filter constructors etc.
+     *
+     * This method returns a pure JSON representation of the view.
+     *
+     * @return
+     * 
+     * 
+{
+  "columns": [
+    ["X"],
+    [
+      "CreatedBy",
+      "DisplayName"
+    ],
+    [
+      "ModifiedBy",
+      "DisplayName"
+    ],
+    ["Modified"],
+    ["Created"],
+    [
+      "container",
+      "DisplayName"
+    ]
+  ],
+  "requiredVersion": 17.1,
+  "queryName": "asdf",
+  "sort": "-X,container/DisplayName",
+  "schemaName": "lists",
+  "filterArray": [
+    {
+      "fieldKey": [
+        "ModifiedBy",
+        "DisplayName"
+      ],
+      "type": "CONTAINS",
+      "value": "mat"
+    },
+    {
+      "fieldKey": [
+        "ModifiedBy",
+        "DisplayName"
+      ],
+      "type": "CONTAINS",
+      "value": "thew"
+    }
+  ]
+}
+     */
+    public JSONObject getJSON(double requiredVersion)
+    {
+        var config = new JSONObject();
+        config.put("requiredVersion", requiredVersion);
+        config.put("schemaName", getSchemaName());
+        config.put("queryName", getQueryName());
+        if (null != getViewName())
+            config.put("viewName", getViewName());
+        if (hasContainerFilter())
+            config.put("containerFilter", getContainerFilterTypeName());
+
+        // list of fieldkeys represented as String[]
+        // e.g. "columns": [ ["X"], [ "CreatedBy", "DisplayName" ] ]
+        var columnArray = getJSONColumns();
+        if (columnArray != null && columnArray.length() > 0)
+            config.put("columns", columnArray);
+
+        // TODO, why does filterArray go in transforms[]????
+        var filterArray = getJSONFilters();
+        if (filterArray != null && filterArray.length() > 0)
+            config.put("filterArray", filterArray);
+
+        // sort in URL format e.g. "sort": "-X,container/DisplayName"
+        if (hasSort())
+            config.put("sort", getSort());
+
+        if (hasQueryParameters())
+            config.put("parameters", getQueryParameters());
+
+        return config;
+    }
+
+
+    public JSONArray getJSONFilters()
     {
         // Returns filters in a JSON format for use with the GetData API.
         // Most of this code was taken from ExportScriptModel.getFilterExpressions()
@@ -84,10 +170,11 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
             filters.put(filterObj);
         }
 
-        return filters.toString();
+        return filters;
     }
 
-    public String getJSONColumns()
+
+    public JSONArray getJSONColumns()
     {
         // Returns columns in a JSON format for use with the GetData API.
         JSONArray jsonCols = new JSONArray();
@@ -100,7 +187,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
             }
         }
 
-        return jsonCols.toString();
+        return jsonCols;
     }
 
     @Override
@@ -188,6 +275,10 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         sb.append("}").append("\n");
         sb.append("\n");
         sb.append("</script>");
+
+
+        sb.append("\n\n------\n\n");
+        sb.append(getJSON(17.1).toString(2));
 
         return sb.toString();
     }

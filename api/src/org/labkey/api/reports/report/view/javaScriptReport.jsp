@@ -36,8 +36,8 @@
                 if (bean.useGetDataApi)
                 {
             %>
-            var filterArray = <%=text(bean.model.getJSONFilters())%>;
-            var columnArray = <%=text(bean.model.getJSONColumns())%>;
+            var filterArray = <%= bean.model.getJSONFilters() %>;
+            var columnArray = <%= bean.model.getJSONColumns() %>;
 
             var getDataConfig = {
                 source: {
