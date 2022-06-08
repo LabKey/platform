@@ -626,7 +626,7 @@ public class QueryServiceImpl implements QueryService
         if (schema != null)
             ret.addParameter(QueryParam.schemaName.toString(), schema);
         if (query != null)
-            ret.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, query);
+            ret.addParameter(QueryParam.queryName, query);
         return ret;
     }
 
