@@ -348,7 +348,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException("lsid required to update row");
 
         String newName = (String) row.get(Name.name());
-        String oldName = (String) oldRow.get(Name.name());
+        if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
+            throw new ValidationException("Sample name cannot be blank");
+
+       String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
             throw new ValidationException("User-specified sample name not allowed");
