@@ -311,6 +311,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
                             LABKEY.codemirror.RegisterEditorInstance('script-report-editor', this.codeMirror);
                         }
+
+                        // for new reports give the option of a report specific initialization behavior
+                        if (!this.reportConfig.reportId)
+                            this.onNewReport();
+
                     }, scope : this}
                 }
             }]
@@ -706,6 +711,44 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
         // clean up the dom
         document.body.removeChild(element);
+    },
+
+    onNewReport : function() {
+        if (this.reportConfig.jupyterOptions) {
+            let win = new Ext4.Window({
+                title: 'Jupyter Report',
+                border: false,
+                width : 400,
+                closeAction:'destroy',
+                modal: true,
+                items: [{
+                    xtype : 'label',
+                    margin: 8,
+                    html : 'Would you like to initialize this Jupyter Report (ipynb) from a file, or start with a blank report? Click on the ' +
+                            'import button to load from a file.'
+                }],
+                resizable: false,
+                buttons: [{
+                    xtype: 'filefield',
+                    buttonOnly: true,
+                    buttonText: 'Import',
+                    listeners: {
+                        change: function (cmp) {
+                            var file = cmp.fileInputEl.dom.files[0];
+                            if (file)
+                                this.importFileIntoEditor(file);
+                            win.close();
+                        },
+                        scope: this
+                    }
+                },{
+                    text: 'Cancel',
+                    handler: function(){win.close()}
+                }]
+            });
+
+            win.show();
+        }
     },
 
     showSaveReportPrompt : function(saveUrl, title, isSaveAs, initExternalWindow) {
