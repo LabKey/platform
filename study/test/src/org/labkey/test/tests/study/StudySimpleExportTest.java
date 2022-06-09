@@ -536,10 +536,10 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Study Properties");
+        createSubfolderAndImportStudyFromPipeline("Study Properties Folder");
 
         log("Study Properties: verify imported settings");
-        clickFolder("Study Properties");
+        clickFolder("Study Properties Folder");
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
