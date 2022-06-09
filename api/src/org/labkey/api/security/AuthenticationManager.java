@@ -18,7 +18,6 @@ package org.labkey.api.security;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,6 +84,7 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -124,7 +124,7 @@ public class AuthenticationManager
 {
     public static final String ALL_DOMAINS = "*";
 
-    private static final Logger _log = LogManager.getLogger(AuthenticationManager.class);
+    private static final Logger _log = LogHelper.getLogger(AuthenticationManager.class, "Authentication warnings and configuration problems");
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
 
@@ -157,11 +157,6 @@ public class AuthenticationManager
         public String getHeight()
         {
             return _height;
-        }
-
-        public String getOldPrefix()
-        {
-            return _fileName + "_";
         }
 
         public static @NotNull AuthLogoType getForFilename(String fileName)
@@ -1024,9 +1019,13 @@ public class AuthenticationManager
         }
         catch (SecurityManager.UserManagementException e)
         {
-            // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
-            ExceptionUtil.logExceptionToMothership(request, e);
+            // "User limit" exception is expected. Log other exceptions.
+            if (!e.getMessage().startsWith("User limit has been reached"))
+            {
+                // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
+                ExceptionUtil.logExceptionToMothership(request, e);
+            }
 
             return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationError);
         }
