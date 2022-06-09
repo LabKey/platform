@@ -1,10 +1,17 @@
 package org.labkey.api.reports.report;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.JavaScriptExportScriptFactory;
+import org.labkey.api.query.JavaScriptExportScriptModel;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptException;
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -29,5 +36,34 @@ abstract public class DockerScriptReport extends ScriptProcessReport
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         return "I'm abstract";
+    }
+
+    protected JSONObject createReportConfig(ViewContext context, File ipynb, boolean includeApiKey)
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        JSONObject sourceQuery = null;
+        QueryView queryView = createQueryView(context, descriptor);
+        if (null != queryView)
+        {
+            // TODO validateQueryView(queryView);
+            JavaScriptExportScriptModel model = new JavaScriptExportScriptFactory().getModel(queryView);
+            sourceQuery = model.getJSON(17.1);
+
+            // getModel() returns "exploded" fieldkeys.  It's more useful here to use FieldKey.toString()
+            JSONArray columnsFK = (JSONArray)sourceQuery.get("columns");
+            if (null != columnsFK)
+            {
+                JSONArray columnsStr = new JSONArray();
+                for (int i=0 ; i<columnsFK.length() ; i++)
+                    columnsStr.put(FieldKey.fromParts( ((Collection<String>)columnsFK.get(i)).toArray(new String[0]) ));
+                sourceQuery.put("columns",columnsStr);
+            }
+        }
+        final JSONObject reportConfig = new JSONObject();
+        reportConfig.put("scriptName", ipynb.getName());
+        if (sourceQuery != null)
+            reportConfig.put("sourceQuery", sourceQuery);
+        reportConfig.put("version", 1.0);
+        return reportConfig;
     }
 }

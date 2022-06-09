@@ -14,14 +14,10 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.docker.DockerService;
-import org.labkey.api.query.JavaScriptExportScriptFactory;
-import org.labkey.api.query.JavaScriptExportScriptModel;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.DockerScriptReport;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -175,23 +171,9 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
-    JSONObject createReportConfig(ViewContext context, File ipynb)
+    protected JSONObject createReportConfig(ViewContext context, File scriptFile, boolean includeApiKey)
     {
-        ReportDescriptor descriptor = getDescriptor();
-        JSONObject sourceQuery = null;
-        QueryView queryView = createQueryView(context, descriptor);
-        if (null != queryView)
-        {
-            // TODO validateQueryView(queryView);
-            JavaScriptExportScriptModel model = new JavaScriptExportScriptFactory().getModel(queryView);
-            sourceQuery = model.getJSON(17.1);
-        }
-        final JSONObject reportConfig = new JSONObject();
-        reportConfig.put("scriptName", ipynb.getName());
-        if (sourceQuery != null)
-            reportConfig.put("sourceQuery", sourceQuery);
-        reportConfig.put("version", 1.0);
-        return reportConfig;
+        return super.createReportConfig(context, scriptFile, includeApiKey);
     }
 
 
@@ -408,7 +390,7 @@ public class IpynbReport extends DockerScriptReport
         {
             inputScript = ipynb;
 
-            JSONObject reportConfig = createReportConfig(context, ipynb);
+            JSONObject reportConfig = createReportConfig(context, ipynb, false);
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
             FileUtils.write(new File(working,"report_config.json"), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
