@@ -334,6 +334,32 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
     }
 
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        MaterialSource materialSource = new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
+        if (materialSource == null)
+            return null;
+        return new ExpSampleTypeImpl(materialSource);
+    }
+
+    @Override
+    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer);
+        if (legacyObjectId != null)
+            return getSampleTypeByObjectId(definitionContainer, legacyObjectId);
+
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName);
+        if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
+            return sampleType;
+
+        return null;
+
+    }
+
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
@@ -927,8 +953,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newName = StringUtils.trimToNull(update.getName());
+        String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
-        if (newName != null && !st.getName().equals(newName))
+        if (newName != null && !oldSampleTypeName.equals(newName))
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
@@ -994,6 +1021,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             st.save(user);
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
             if (!errors.hasErrors())
             {

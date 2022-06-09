@@ -176,6 +176,30 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case MaterialSourceId:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "RowId", "Name")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
+                        sampleTypeTable.populate();
+                        return sampleTypeTable;
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return super.getURL(parent, true);
+                    }
+                });
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                columnInfo.setHidden(true);
+                return columnInfo;
+            }
             case RootMaterialLSID:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
@@ -492,7 +516,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
-        
+
+        addColumn(Column.MaterialSourceId);
+
         addColumn(Column.SourceProtocolApplication);
 
         addColumn(Column.SourceApplicationInput);
@@ -520,7 +546,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 nameCol.setNullable(false);
             }
-            nameCol.setDisplayColumnFactory(new IdColumnRendererFactory());
         }
         else
         {
@@ -720,6 +745,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         UserSchema schema = getUserSchema();
         Domain domain = st.getDomain();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
+        ColumnInfo nameColumn = getColumn(Column.Name);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
 
@@ -739,7 +765,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
 
-            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey())
+                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
             // TODO this seems bad to me, why isn't this done in ss.getTinfo()
@@ -860,8 +887,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
-                // don't select lsid twice
-                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                // don't select twice
+                if (Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
                 // don't need to generate SQL for columns that aren't selected
@@ -1011,7 +1039,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService ss = SearchService.get();
             if (null != ss)

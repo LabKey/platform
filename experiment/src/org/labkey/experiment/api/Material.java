@@ -29,6 +29,7 @@ import org.labkey.api.view.ActionURL;
  */
 public class Material extends RunItem
 {
+    private Integer materialSourceId;
     private String rootMaterialLSID;
     private String aliquotedFromLSID;
     private Integer sampleState;
@@ -42,6 +43,16 @@ public class Material extends RunItem
     public Material()
     {
         setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
+    }
+
+    public Integer getMaterialSourceId()
+    {
+        return this.materialSourceId;
+    }
+
+    public void setMaterialSourceId(Integer materialSourceId)
+    {
+        this.materialSourceId = materialSourceId;
     }
 
     public String getRootMaterialLSID()

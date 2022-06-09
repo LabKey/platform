@@ -106,12 +106,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // Create some samples
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+                st.generateSampleLSID().setObjectId("S-1").toString(), "S-1"); // don't use generateNextDBSeqLSID in unit tests
         s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2"); // don't use generateNextDBSeqLSID in unit tests
         s2.setCpasType(st.getLSID());
         s2.save(user);
 
@@ -317,12 +317,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 "MySamples", null, sampleProps, Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
-                st.generateSampleLSID().setObjectId(numericSampleName).toString(), numericSampleName);
+                st.generateSampleLSID().setObjectId(numericSampleName).toString(), numericSampleName); // don't use generateNextDBSeqLSID in unit tests
         s1.setCpasType(st.getLSID());
         s1.save(user);
 
         final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
-                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+                st.generateSampleLSID().setObjectId("S-2").toString(), "S-2"); // don't use generateNextDBSeqLSID in unit tests
         s2.setCpasType(st.getLSID());
         s2.save(user);
 
