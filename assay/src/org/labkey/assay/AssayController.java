@@ -1291,6 +1291,12 @@ public class AssayController extends SpringActionController
         {
             return provider.getPlateMetadataTemplateURL(container);
         }
+
+        @Override
+        public ActionURL getUploadXARURL(Container container)
+        {
+            return new ActionURL(ChooseAssayTypeAction.class, container).addParameter("tab", "import");
+        }
     }
 
     @RequiresPermission(DesignAssayPermission.class)

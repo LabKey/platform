@@ -6590,12 +6590,6 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getUploadXARURL(Container container)
-        {
-            return new ActionURL("assay", "chooseAssayType", container).addParameter("tab", "import");
-        }
-
-        @Override
         public ActionURL getRepairTypeURL(Container container)
         {
             return new ActionURL(TypesController.RepairAction.class, container);

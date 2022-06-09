@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
@@ -25,6 +25,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -121,9 +122,10 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            if (AssayService.get() != null)
+            AssayUrls assayUrls = PageFlowUtil.urlProvider(AssayUrls.class);
+            if (assayUrls != null)
             {
-                ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getUploadXARURL(getViewContext().getContainer()), "Upload XAR");
+                ActionButton addXarFile = new ActionButton(assayUrls.getUploadXARURL(getViewContext().getContainer()), "Upload XAR");
                 addXarFile.setActionType(ActionButton.Action.LINK);
                 addXarFile.setDisplayPermission(InsertPermission.class);
                 bb.add(addXarFile);
