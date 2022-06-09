@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
@@ -120,10 +121,13 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getUploadXARURL(getViewContext().getContainer()), "Upload XAR");
-            addXarFile.setActionType(ActionButton.Action.LINK);
-            addXarFile.setDisplayPermission(InsertPermission.class);
-            bb.add(addXarFile);
+            if (AssayService.get() != null)
+            {
+                ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getUploadXARURL(getViewContext().getContainer()), "Upload XAR");
+                addXarFile.setActionType(ActionButton.Action.LINK);
+                addXarFile.setDisplayPermission(InsertPermission.class);
+                bb.add(addXarFile);
+            }
 
             ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), false), "Create Run Group");
             createExperiment.setActionType(ActionButton.Action.LINK);
