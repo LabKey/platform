@@ -60,6 +60,11 @@ abstract public class DockerScriptReport extends ScriptProcessReport
                 sourceQuery.put("columns",columnsStr);
             }
         }
+
+        // TODO : handle "inputParameters" e.g. ReportsControl.ExecuteAction
+        var pairs = context.getActionURL().getParameters();
+        var parameters= pairs.stream().map(p -> new Object[] {p.first, p.second}).toArray();
+
         final JSONObject reportConfig = new JSONObject();
         reportConfig.put("scriptName", ipynb.getName());
         if (sourceQuery != null)
@@ -67,6 +72,7 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         reportConfig.put("baseUrl", AppProps.getInstance().getBaseServerUrl());
         reportConfig.put("contextPath", AppProps.getInstance().getContextPath());
         reportConfig.put("containerPath", context.getContainer().getPath());
+        reportConfig.put("parameters", parameters);
         reportConfig.put("version", 1.0);
         return reportConfig;
     }
