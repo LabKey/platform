@@ -36,6 +36,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
@@ -44,6 +45,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyType;
@@ -1889,136 +1891,152 @@ d,seven,twelve,day,month,date,duration,guid
 
     static List<SqlTest> postgresOnlyFunctions()
     {
-        return List.of(
-            new SqlTest("SELECT stddev_samp(d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT var_samp(d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT bool_and((d < 0)), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT bool_or((d < 0)), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT every((d > 0)), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT bit_or(seven), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT bit_and(seven), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT mode(seven), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT covar_pop(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT covar_samp(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_avgx(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_avgy(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_count(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_intercept(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_r2(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
-            new SqlTest("SELECT 'similar' WHERE similar_to('abc','abc')", 1, 1),
-            new SqlTest("SELECT 'similar' WHERE similar_to('abc','a')", 1, 0),
-            new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
-            new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
-            new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
+        int majorVersion = ((PostgreSql91Dialect)CoreSchema.getInstance().getSqlDialect()).getMajorVersion();
 
-            // parse_json, parse_jsonb, and json_op
-            new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
-            new SqlTest("SELECT json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a')", 1, 1),
-            // Postgres 9.6 doesn't support direct JSONB and JSON to INTEGER casting, so use VARCHAR for our simple purposes
-            new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
+        List<SqlTest> result = new ArrayList<>(
+            List.of(
+                new SqlTest("SELECT stddev_samp(d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT var_samp(d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT bool_and((d < 0)), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT bool_or((d < 0)), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT every((d > 0)), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT bit_or(seven), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT bit_and(seven), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT mode(seven), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT covar_pop(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT covar_samp(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_avgx(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_avgy(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_count(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_intercept(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_r2(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
+                new SqlTest("SELECT 'similar' WHERE similar_to('abc','abc')", 1, 1),
+                new SqlTest("SELECT 'similar' WHERE similar_to('abc','a')", 1, 0),
+                new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
+                new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
+                new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
 
-            // to_json and to_jsonb
-            new SqlTest("SELECT f FROM (SELECT CAST(to_json(CAST('{\"a\":1, \"b\":null}' AS VARCHAR)) AS VARCHAR) AS f) X WHERE f = '\"{\\\"a\\\":1, \\\"b\\\":null}\"'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(to_jsonb(CAST('{\"a\":1, \"b\":null}' AS VARCHAR)) AS VARCHAR) AS f) X WHERE f = '\"{\\\"a\\\":1, \\\"b\\\":null}\"'", 1, 1),
+                // parse_json, parse_jsonb, and json_op
+                new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
+                new SqlTest("SELECT json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a')", 1, 1),
+                // Postgres 9.6 doesn't support direct JSONB and JSON to INTEGER casting, so use VARCHAR for our simple purposes
+                new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f != '1'", 1, 0),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_op(parse_json('{\"a\":1, \"b\":null}'), '->', 'a') AS VARCHAR) AS f) X WHERE f = '1'", 1, 1),
 
-            // array_to_json
-            new SqlTest("SELECT f FROM (SELECT CAST(array_to_json(string_to_array('xx~^~yy~^~zz', '~^~', 'yy')) AS VARCHAR) AS f) X WHERE f = '[\"xx\",null,\"zz\"]'", 1, 1),
+                // to_json and to_jsonb
+                new SqlTest("SELECT f FROM (SELECT CAST(to_json(CAST('{\"a\":1, \"b\":null}' AS VARCHAR)) AS VARCHAR) AS f) X WHERE f = '\"{\\\"a\\\":1, \\\"b\\\":null}\"'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(to_jsonb(CAST('{\"a\":1, \"b\":null}' AS VARCHAR)) AS VARCHAR) AS f) X WHERE f = '\"{\\\"a\\\":1, \\\"b\\\":null}\"'", 1, 1),
 
-            // row_to_json
-            new SqlTest("SELECT f FROM (SELECT CAST(row_to_json(row(1,'foo')) AS VARCHAR) AS f) X WHERE f = '{\"f1\":1,\"f2\":\"foo\"}'", 1, 1),
+                // array_to_json
+                new SqlTest("SELECT f FROM (SELECT CAST(array_to_json(string_to_array('xx~^~yy~^~zz', '~^~', 'yy')) AS VARCHAR) AS f) X WHERE f = '[\"xx\",null,\"zz\"]'", 1, 1),
 
-            // json_build_array and jsonb_build_array
-            new SqlTest("SELECT f FROM (SELECT CAST(json_build_array(1, 2, 'foo', 4, 5) AS VARCHAR) AS f) X WHERE f = '[1, 2, \"foo\", 4, 5]'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_build_array(1, 2, 'foo', 4, 5) AS VARCHAR) AS f) X WHERE f = '[1, 2, \"foo\", 4, 5]'", 1, 1),
+                // row_to_json
+                new SqlTest("SELECT f FROM (SELECT CAST(row_to_json(row(1,'foo')) AS VARCHAR) AS f) X WHERE f = '{\"f1\":1,\"f2\":\"foo\"}'", 1, 1),
 
-            // json_build_object and jsonb_build_object
-            new SqlTest("SELECT f FROM (SELECT CAST(json_build_object('foo', 1, 2, row(3,'bar')) AS VARCHAR) AS f) X WHERE f = '{\"foo\" : 1, \"2\" : {\"f1\":3,\"f2\":\"bar\"}}'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_build_object('foo', 1, 2, row(3,'bar')) AS VARCHAR) AS f) X WHERE f = '{\"2\": {\"f1\": 3, \"f2\": \"bar\"}, \"foo\": 1}'", 1, 1),
+                // json_build_array and jsonb_build_array
+                new SqlTest("SELECT f FROM (SELECT CAST(json_build_array(1, 2, 'foo', 4, 5) AS VARCHAR) AS f) X WHERE f = '[1, 2, \"foo\", 4, 5]'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_build_array(1, 2, 'foo', 4, 5) AS VARCHAR) AS f) X WHERE f = '[1, 2, \"foo\", 4, 5]'", 1, 1),
 
-            // json_object and jsonb_object
-            new SqlTest("SELECT f FROM (SELECT CAST(json_object('{a, 1, b, \"def\", c, 3.5}') AS VARCHAR) AS f) X WHERE f = '{\"a\" : \"1\", \"b\" : \"def\", \"c\" : \"3.5\"}'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_object('{a, 1, b, \"def\", c, 3.5}') AS VARCHAR) AS f) X WHERE f = '{\"a\": \"1\", \"b\": \"def\", \"c\": \"3.5\"}'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_object('{a,b}', '{1,2}') AS VARCHAR) AS f) X WHERE f = '{\"a\" : \"1\", \"b\" : \"2\"}'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_object('{a,b}', '{1,2}') AS VARCHAR) AS f) X WHERE f = '{\"a\": \"1\", \"b\": \"2\"}'", 1, 1),
+                // json_build_object and jsonb_build_object
+                new SqlTest("SELECT f FROM (SELECT CAST(json_build_object('foo', 1, 2, row(3,'bar')) AS VARCHAR) AS f) X WHERE f = '{\"foo\" : 1, \"2\" : {\"f1\":3,\"f2\":\"bar\"}}'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_build_object('foo', 1, 2, row(3,'bar')) AS VARCHAR) AS f) X WHERE f = '{\"2\": {\"f1\": 3, \"f2\": \"bar\"}, \"foo\": 1}'", 1, 1),
 
-            // json_array_length and jsonb_array_length
-            new SqlTest("SELECT f FROM (SELECT json_array_length(json_build_array(1, 2, 'foo', 4, 5)) AS f) X WHERE f = 5", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT jsonb_array_length(jsonb_build_array(1, 2, 'foo', 4, 5)) AS f) X WHERE f = 5", 1, 1),
+                // json_object and jsonb_object
+                new SqlTest("SELECT f FROM (SELECT CAST(json_object('{a, 1, b, \"def\", c, 3.5}') AS VARCHAR) AS f) X WHERE f = '{\"a\" : \"1\", \"b\" : \"def\", \"c\" : \"3.5\"}'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_object('{a, 1, b, \"def\", c, 3.5}') AS VARCHAR) AS f) X WHERE f = '{\"a\": \"1\", \"b\": \"def\", \"c\": \"3.5\"}'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_object('{a,b}', '{1,2}') AS VARCHAR) AS f) X WHERE f = '{\"a\" : \"1\", \"b\" : \"2\"}'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_object('{a,b}', '{1,2}') AS VARCHAR) AS f) X WHERE f = '{\"a\": \"1\", \"b\": \"2\"}'", 1, 1),
 
-            // json_each and jsonb_each, json_each_text and jsonb_each_text
-            new SqlTest("SELECT json_each(parse_json('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
-            new SqlTest("SELECT jsonb_each(parse_jsonb('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
-            new SqlTest("SELECT json_each_text(parse_json('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
-            new SqlTest("SELECT jsonb_each_text(parse_jsonb('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
+                // json_array_length and jsonb_array_length
+                new SqlTest("SELECT f FROM (SELECT json_array_length(json_build_array(1, 2, 'foo', 4, 5)) AS f) X WHERE f = 5", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT jsonb_array_length(jsonb_build_array(1, 2, 'foo', 4, 5)) AS f) X WHERE f = 5", 1, 1),
 
-            // json_extract_path and jsonb_extract_path, json_extract_path_text and jsonb_extract_path_text
-            new SqlTest("SELECT f FROM (SELECT CAST(json_extract_path('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = '\"foo\"'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_extract_path('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = '\"foo\"'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_extract_path_text('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = 'foo'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_extract_path_text('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = 'foo'", 1, 1),
+                // json_each and jsonb_each, json_each_text and jsonb_each_text
+                new SqlTest("SELECT json_each(parse_json('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
+                new SqlTest("SELECT jsonb_each(parse_jsonb('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
+                new SqlTest("SELECT json_each_text(parse_json('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
+                new SqlTest("SELECT jsonb_each_text(parse_jsonb('{\"a\":\"foo\", \"b\":\"bar\"}'))", 1, 2),
 
-            // json_object_keys and jsonb_object_keys
-            new SqlTest("SELECT f FROM (SELECT json_object_keys('{\"f1\":\"abc\",\"f2\":{\"f3\":\"a\", \"f4\":\"b\"}}') AS f) X WHERE f IN ('f1', 'f2')", 1, 2),
-            new SqlTest("SELECT f FROM (SELECT jsonb_object_keys('{\"f1\":\"abc\",\"f2\":{\"f3\":\"a\", \"f4\":\"b\"}}') AS f) X WHERE f IN ('f1', 'f2')", 1, 2),
+                // json_extract_path and jsonb_extract_path, json_extract_path_text and jsonb_extract_path_text
+                new SqlTest("SELECT f FROM (SELECT CAST(json_extract_path('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = '\"foo\"'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_extract_path('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = '\"foo\"'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_extract_path_text('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = 'foo'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_extract_path_text('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4', 'f6') AS VARCHAR) AS f) X WHERE f = 'foo'", 1, 1),
 
-            // json_array_elements and jsonb_array_elements, json_array_elements_text and jsonb_array_elements_text
-            new SqlTest("SELECT f FROM (SELECT CAST(json_array_elements('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2,false]')", 1, 3),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_array_elements('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2, false]')", 1, 3),
-            new SqlTest("SELECT f FROM (SELECT CAST(json_array_elements_text('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2,false]')", 1, 3),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_array_elements_text('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2, false]')", 1, 3),
+                // json_object_keys and jsonb_object_keys
+                new SqlTest("SELECT f FROM (SELECT json_object_keys('{\"f1\":\"abc\",\"f2\":{\"f3\":\"a\", \"f4\":\"b\"}}') AS f) X WHERE f IN ('f1', 'f2')", 1, 2),
+                new SqlTest("SELECT f FROM (SELECT jsonb_object_keys('{\"f1\":\"abc\",\"f2\":{\"f3\":\"a\", \"f4\":\"b\"}}') AS f) X WHERE f IN ('f1', 'f2')", 1, 2),
 
-            // json_typeof and jsonb_typeof
-            new SqlTest("SELECT f FROM (SELECT json_typeof('-123.4') AS f) X WHERE f IN ('number')", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT jsonb_typeof('-123.4') AS f) X WHERE f IN ('number')", 1, 1),
+                // json_array_elements and jsonb_array_elements, json_array_elements_text and jsonb_array_elements_text
+                new SqlTest("SELECT f FROM (SELECT CAST(json_array_elements('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2,false]')", 1, 3),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_array_elements('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2, false]')", 1, 3),
+                new SqlTest("SELECT f FROM (SELECT CAST(json_array_elements_text('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2,false]')", 1, 3),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_array_elements_text('[1,true, [2,false]]') AS VARCHAR) AS f) X WHERE f IN ('1', 'true', '[2, false]')", 1, 3),
 
-            // json_strip_nulls and jsonb_strip_nulls
-            new SqlTest("SELECT f FROM (SELECT CAST(json_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]') AS VARCHAR) AS f) X WHERE f IN ('[{\"f1\":1},2,null,3]')", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]') AS VARCHAR) AS f) X WHERE f IN ('[{\"f1\": 1}, 2, null, 3]')", 1, 1),
+                // json_typeof and jsonb_typeof
+                new SqlTest("SELECT f FROM (SELECT json_typeof('-123.4') AS f) X WHERE f IN ('number')", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT jsonb_typeof('-123.4') AS f) X WHERE f IN ('number')", 1, 1),
 
-            // jsonb_pretty
-            new SqlTest("SELECT f FROM (SELECT jsonb_pretty('[{\"f1\":1,\"f2\":null}, 2]') AS f) X WHERE f LIKE '%        \"f2\": null%'", 1, 1),
+                // json_strip_nulls and jsonb_strip_nulls
+                new SqlTest("SELECT f FROM (SELECT CAST(json_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]') AS VARCHAR) AS f) X WHERE f IN ('[{\"f1\":1},2,null,3]')", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_strip_nulls('[{\"f1\":1, \"f2\":null}, 2, null, 3]') AS VARCHAR) AS f) X WHERE f IN ('[{\"f1\": 1}, 2, null, 3]')", 1, 1),
 
-            // jsonb_set and jsonb_set_lax
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', '[2,3,4]', false) AS VARCHAR) AS f) X WHERE f = '[{\"f1\": [2, 3, 4], \"f2\": null}, 2, null, 3]'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', '[2,3,4]') AS VARCHAR) AS f) X WHERE f = '[{\"f1\": [2, 3, 4], \"f2\": null}, 2, null, 3]'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set_lax('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', null) AS VARCHAR) AS f) X WHERE f = '[{\"f1\": null, \"f2\": null}, 2, null, 3]'", 1, 1),
+                // jsonb_pretty
+                new SqlTest("SELECT f FROM (SELECT jsonb_pretty('[{\"f1\":1,\"f2\":null}, 2]') AS f) X WHERE f LIKE '%        \"f2\": null%'", 1, 1),
 
-            // jsonb_insert
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"') AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, \"new_value\", 1, 2]}'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1),
+                // jsonb_set
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', '[2,3,4]', false) AS VARCHAR) AS f) X WHERE f = '[{\"f1\": [2, 3, 4], \"f2\": null}, 2, null, 3]'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', '[2,3,4]') AS VARCHAR) AS f) X WHERE f = '[{\"f1\": [2, 3, 4], \"f2\": null}, 2, null, 3]'", 1, 1),
 
-            // jsonb_path_exists
-            new SqlTest("SELECT f FROM (SELECT jsonb_path_exists('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS f) X WHERE f = true", 1, 1),
+                // jsonb_insert
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"') AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, \"new_value\", 1, 2]}'", 1, 1),
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1)
+            ));
 
-            // jsonb_path_match
-            new SqlTest("SELECT f FROM (SELECT jsonb_path_match('{\"a\":[1,2,3,4,5]}', 'exists($.a[*] ? (@ >= $min && @ <= $max))', '{\"min\":2, \"max\":4}') AS f) X WHERE f = true", 1, 1),
+        if (majorVersion >= 12)
+        {
+            result.addAll(Arrays.asList(
+                    // jsonb_path_exists
+                    new SqlTest("SELECT f FROM (SELECT jsonb_path_exists('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS f) X WHERE f = true", 1, 1),
 
-            // jsonb_path_query
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f IN ('2', '3', '4')", 1, 3),
+                    // jsonb_path_match
+                    new SqlTest("SELECT f FROM (SELECT jsonb_path_match('{\"a\":[1,2,3,4,5]}', 'exists($.a[*] ? (@ >= $min && @ <= $max))', '{\"min\":2, \"max\":4}') AS f) X WHERE f = true", 1, 1),
 
-            // jsonb_path_query_array
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_array('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f = '[2, 3, 4]'", 1, 1),
+                    // jsonb_path_query
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f IN ('2', '3', '4')", 1, 3),
 
-            // jsonb_path_query_first
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_first('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f = '2'", 1, 1),
+                    // jsonb_path_query_array
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_array('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f = '[2, 3, 4]'", 1, 1),
 
-            // jsonb_path_exists_tz, jsonb_path_match_tz, jsonb_path_query_tz, jsonb_path_query_array_tz, jsonb_path_query_first_tz
-            new SqlTest("SELECT f FROM (SELECT jsonb_path_exists_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2015-08-02\".datetime())') AS f) X WHERE f = false", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT jsonb_path_match_tz('[\"2015-08-01 12:00:00 -05\"]', 'exists($[*] ? (@.datetime() > \"2015-08-02\".datetime()))') AS f) X WHERE f = false", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X", 1, 0),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_array_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X WHERE f = '[]'", 1, 1),
-            new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_first_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X WHERE f IS NULL", 1, 1)
-        );
+                    // jsonb_path_query_first
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_first('{\"a\":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{\"min\":2, \"max\":4}') AS VARCHAR) AS f) X WHERE f = '2'", 1, 1)
+            ));
+        }
+
+        if (majorVersion >= 13)
+        {
+            result.addAll(Arrays.asList(
+                    // jsonb_set_lax
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_set_lax('[{\"f1\":1,\"f2\":null},2,null,3]', '{0,f1}', null) AS VARCHAR) AS f) X WHERE f = '[{\"f1\": null, \"f2\": null}, 2, null, 3]'", 1, 1),
+
+                    // jsonb_path_exists_tz, jsonb_path_match_tz, jsonb_path_query_tz, jsonb_path_query_array_tz, jsonb_path_query_first_tz
+                    new SqlTest("SELECT f FROM (SELECT jsonb_path_exists_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2015-08-02\".datetime())') AS f) X WHERE f = false", 1, 1),
+                    new SqlTest("SELECT f FROM (SELECT jsonb_path_match_tz('[\"2015-08-01 12:00:00 -05\"]', 'exists($[*] ? (@.datetime() > \"2015-08-02\".datetime()))') AS f) X WHERE f = false", 1, 1),
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X", 1, 0),
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_array_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X WHERE f = '[]'", 1, 1),
+                    new SqlTest("SELECT f FROM (SELECT CAST(jsonb_path_query_first_tz('[\"2015-08-01 12:00:00 -05\"]', '$[*] ? (@.datetime() < \"2016-08-02\".datetime())') AS VARCHAR) AS f) X WHERE f IS NULL", 1, 1)
+            ));
+        }
+        return result;
     }
 
 

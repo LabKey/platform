@@ -82,6 +82,9 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private HtmlString _adminWarning = null;
 
+    // Default to 9 and let newer versions be refreshed later
+    private int _majorVersion = 9;
+
     protected InClauseGenerator _inClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
@@ -253,6 +256,15 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
     }
 
+    public int getMajorVersion()
+    {
+        return _majorVersion;
+    }
+
+    public void setMajorVersion(int majorVersion)
+    {
+        _majorVersion = majorVersion;
+    }
 
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
