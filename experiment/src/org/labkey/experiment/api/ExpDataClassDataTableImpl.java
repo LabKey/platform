@@ -34,6 +34,7 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -43,6 +44,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
@@ -261,7 +263,26 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataClass:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                c.setFk(new QueryForeignKey(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"))
+                {
+                    @Override
+                    protected ContainerFilter getLookupContainerFilter()
+                    {
+                        // Issue 45664: Data Class metadata not available in query when querying cross-folder
+                        // Same as CurrentPlusProjectAndShared except it includes the DataClass' container as well.
+                        Set<Container> containers = new HashSet<>();
+                        containers.add(_dataClass.getContainer());
+                        containers.add(getContainer());
+                        if (getContainer().getProject() != null)
+                            containers.add(getContainer().getProject());
+                        containers.add(ContainerManager.getSharedContainer());
+                        ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
+
+                        if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
+                            cf = new UnionContainerFilter(_containerFilter, cf);
+                        return cf;
+                    }
+                });
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
