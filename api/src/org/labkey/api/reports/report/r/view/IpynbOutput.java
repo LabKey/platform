@@ -16,10 +16,12 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.python.IpynbReport;
@@ -36,6 +38,8 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Handle rendering Ipynb directly.  It may be better to use nbconvert to render .html or .md for us.  But here's an attempt
@@ -121,6 +125,26 @@ public class IpynbOutput extends HtmlOutput
         }
 
 
+        Pattern ansiColor = Pattern.compile("\u001B\\[[;0-9]+m");
+
+        String stripAnsiColors(String s)
+        {
+            if (!s.contains("\u001B["))
+                return s;
+            StringBuilder sb = new StringBuilder();
+            int sub = 0;
+            Matcher m = ansiColor.matcher(s);
+            while (m.find())
+            {
+
+                sb.append(s, sub, m.start());
+                sub = m.end();
+            }
+            sb.append(s, sub, s.length());
+            return(sb.toString());
+        }
+
+
         @Override
         protected String renderInternalAsString(File file) throws Exception
         {
@@ -199,65 +223,82 @@ public class IpynbOutput extends HtmlOutput
         }
 
 
+        /* see https://ipython.org/ipython-doc/3/notebook/nbformat.html */
         private void renderOutput(HtmlStringBuilder sb, JSONObject output)
         {
             JSONObject data = output;
-            if (null != output.get("data"))
-                data = (JSONObject) output.get("data");
-            if (null != data)
+
+            // TODO collapsed sections
+            boolean collapsed = false;
+            if (null != output.get("collapsed"))
+                collapsed = (Boolean)JdbcType.BOOLEAN.convert(output.get("collapsed"));
+
+            switch ((String)output.get("output_type"))
             {
-                String imagePng = StringUtils.defaultString((String) data.get("image/png"), (String) data.get("png"));
-                if (null != imagePng)
+                case "error":
                 {
-                    // let's validate that this at least might be base64
-                    if (StringUtils.containsNone(imagePng, "<&-\"'%\\"))
+                    sb.append(HtmlString.unsafe("<div class=\"ipynb-error\"><div class=\"ipynb-text\">"));
+                    sb.append(HtmlString.unsafe("<pre>\n"));
+                    sb.append(HtmlString.unsafe("<b>")).append((String)output.get("ename")).append(": ").append((String)output.get("evalue")).append(HtmlString.unsafe("</b><br>"));
+                    JSONArray traceback = (JSONArray)output.get("traceback");
+                    if (null != traceback)
                     {
-                        sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-image\">"));
-                        sb.append(HtmlString.unsafe("<img src=\"data:image/png;base64,"));
-                        sb.append(HtmlString.unsafe(imagePng));
-                        sb.append(HtmlString.unsafe("\"></div></div>"));
-                        return;
+                        for (int i=0 ; i<traceback.length() ; i++)
+                        {
+                            String line = ((String) traceback.get(i));
+                            String clean = stripAnsiColors(line);
+                            sb.append("    ").append(clean).append("\n") ;
+                        }
                     }
-                }
-                if (null != data.get("text/plain") || null != data.get("text"))
-                {
-                    var textArray = (JSONArray) Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
-                    String plain = StringUtils.join((textArray).toArray(), "");
-                    sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-text\">"));
-                    sb.append(HtmlString.unsafe("<pre>\n")).append(HtmlString.of(plain, false)).append(HtmlString.unsafe("</pre></div></div>"));
+                    sb.append(HtmlString.unsafe("</pre></div></div>"));
                     return;
                 }
-            }
-            if ("error".equals(output.get("output_type")))
-            {
-                sb.append(HtmlString.unsafe("<div class=\"ipynb-error\"><div class=\"ipynb-text\">"));
-                sb.append(HtmlString.unsafe("<h3>")).append((String)output.get("ename")).append(": ").append((String)output.get("evalue")).append(HtmlString.unsafe("</h3>"));
-                JSONArray traceback = (JSONArray)output.get("traceback");
-                sb.append(HtmlString.unsafe("<pre>\n"));
-                if (null != traceback)
+                /* ERROR
                 {
-                    // TODO strip (or translate) ansi colors
-                    for (int i=0 ; i<traceback.length() ; i++)
-                        sb.append("    ").append(((String)traceback.get(i))).append("\n");
+                  "ename": "KeyError",
+                  "output_type": "error",
+                  "evalue": "'domain'",
+                  "traceback": [
+                    "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+                    "\u001b[0;31mKeyError\u001b[0m Traceback (most recent call last)",
+                    "Input \u001b[0;32mIn [1]\u001b[0m, in \u001b[0;36m<cell line: 3>\u001b[0;34m()\u001b[0m\n\u001b[1;32m 1\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01mReportConfig\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m ReportConfig\n\u001b[0;32m----> 3\u001b[0m report \u001b[38;5;241m=\u001b[39m \u001b[43mReportConfig\u001b[49m\u001b[43m(\u001b[49m\u001b[43mconfig_file\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mreport_config.json\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m)\u001b[49m\n\u001b[1;32m 6\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01mIPython\u001b[39;00m\u001b[38;5;21;01m.\u001b[39;00m\u001b[38;5;21;01mdisplay\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m display\n\u001b[1;32m 8\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01msympy\u001b[39;00m\u001b[38;5;21;01m.\u001b[39;00m\u001b[38;5;21;01minteractive\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m printing\n",
+                    "File \u001b[0;32m/tmp/tmp.g3BnHdQFtN/ReportConfig.py:75\u001b[0m, in \u001b[0;36mReportConfig.__init__\u001b[0;34m(self, config, config_file)\u001b[0m\n\u001b[1;32m 72\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig\u001b[38;5;241m.\u001b[39mget(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m) \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m 73\u001b[0m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;241m=\u001b[39m url\u001b[38;5;241m.\u001b[39mpath\n\u001b[0;32m---> 75\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mconfig\u001b[49m\u001b[43m[\u001b[49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mdomain\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m]\u001b[49m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontainerPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124museSsl\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m 76\u001b[0m \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mCould not construct LabKey server URL\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m 78\u001b[0m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mapi \u001b[38;5;241m=\u001b[39m APIWrapper(\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mdomain\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontainerPath\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124museSsl\u001b[39m\u001b[38;5;124m'\u001b[39m],\n\u001b[1;32m 79\u001b[0m api_key\u001b[38;5;241m=\u001b[39m\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mapi_key)\n",
+                    "\u001b[0;31mKeyError\u001b[0m: 'domain'"
+                  ]
                 }
-                sb.append(HtmlString.unsafe("</pre></div></div>"));
-                return;
-            }
-
-            /* ERROR
-            {
-  "ename": "KeyError",
-  "output_type": "error",
-  "evalue": "'domain'",
-  "traceback": [
-    "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
-    "\u001b[0;31mKeyError\u001b[0m Traceback (most recent call last)",
-    "Input \u001b[0;32mIn [1]\u001b[0m, in \u001b[0;36m<cell line: 3>\u001b[0;34m()\u001b[0m\n\u001b[1;32m 1\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01mReportConfig\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m ReportConfig\n\u001b[0;32m----> 3\u001b[0m report \u001b[38;5;241m=\u001b[39m \u001b[43mReportConfig\u001b[49m\u001b[43m(\u001b[49m\u001b[43mconfig_file\u001b[49m\u001b[38;5;241;43m=\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mreport_config.json\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m)\u001b[49m\n\u001b[1;32m 6\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01mIPython\u001b[39;00m\u001b[38;5;21;01m.\u001b[39;00m\u001b[38;5;21;01mdisplay\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m display\n\u001b[1;32m 8\u001b[0m \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01msympy\u001b[39;00m\u001b[38;5;21;01m.\u001b[39;00m\u001b[38;5;21;01minteractive\u001b[39;00m \u001b[38;5;28;01mimport\u001b[39;00m printing\n",
-    "File \u001b[0;32m/tmp/tmp.g3BnHdQFtN/ReportConfig.py:75\u001b[0m, in \u001b[0;36mReportConfig.__init__\u001b[0;34m(self, config, config_file)\u001b[0m\n\u001b[1;32m 72\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig\u001b[38;5;241m.\u001b[39mget(\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m) \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m 73\u001b[0m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;241m=\u001b[39m url\u001b[38;5;241m.\u001b[39mpath\n\u001b[0;32m---> 75\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mconfig\u001b[49m\u001b[43m[\u001b[49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mdomain\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m]\u001b[49m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontainerPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m \u001b[38;5;129;01mor\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124museSsl\u001b[39m\u001b[38;5;124m'\u001b[39m] \u001b[38;5;129;01mis\u001b[39;00m \u001b[38;5;28;01mNone\u001b[39;00m:\n\u001b[1;32m 76\u001b[0m \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mCould not construct LabKey server URL\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m 78\u001b[0m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mapi \u001b[38;5;241m=\u001b[39m APIWrapper(\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mdomain\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontainerPath\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcontextPath\u001b[39m\u001b[38;5;124m'\u001b[39m], \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mconfig[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124museSsl\u001b[39m\u001b[38;5;124m'\u001b[39m],\n\u001b[1;32m 79\u001b[0m api_key\u001b[38;5;241m=\u001b[39m\u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mapi_key)\n",
-    "\u001b[0;31mKeyError\u001b[0m: 'domain'"
-  ]
-}
-             */
+                */
+                case "display_data":
+                case "execute_result":
+                case "raw":
+                case "stream":
+                    if (null != output.get("data"))
+                        data = (JSONObject) output.get("data");
+                    if (null != data)
+                    {
+                        String imagePng = StringUtils.defaultString((String) data.get("image/png"), (String) data.get("png"));
+                        if (null != imagePng)
+                        {
+                            // let's validate that this at least might be base64
+                            if (StringUtils.containsNone(imagePng, "<&-\"'%\\"))
+                            {
+                                sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-image\">"));
+                                sb.append(HtmlString.unsafe("<img src=\"data:image/png;base64,"));
+                                sb.append(HtmlString.unsafe(imagePng));
+                                sb.append(HtmlString.unsafe("\"></div></div>"));
+                                return;
+                            }
+                        }
+                        if (null != data.get("text/plain") || null != data.get("text"))
+                        {
+                            var textArray = (JSONArray) Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
+                            String plain = StringUtils.join((textArray).toArray(), "");
+                            sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-text\">"));
+                            sb.append(HtmlString.unsafe("<pre>\n")).append(HtmlString.of(plain, false)).append(HtmlString.unsafe("</pre></div></div>"));
+                            return;
+                        }
+                    }
+                    break;
+            } // switch
 
             sb.append(output.toString());
         }
