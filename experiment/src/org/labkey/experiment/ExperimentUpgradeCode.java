@@ -15,23 +15,32 @@
  */
 package org.labkey.experiment;
 
+import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -41,13 +50,18 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolApplication;
+import org.labkey.experiment.api.SampleTypeDomainKind;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.labkey.api.files.FileContentService.UPLOADED_FILE_NAMESPACE_PREFIX;
 
@@ -252,4 +266,88 @@ public class ExperimentUpgradeCode implements UpgradeCode
             tx.commit();
         }
     }
+
+    /**
+     * Called from exp-22.003-20.004.sql
+     */
+    public static void addProvisionedSampleName(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            // get all SampleTypes across all containers
+            TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
+            new TableSelector(sampleTypeTable, null, null).stream(MaterialSource.class)
+                    .map(ExpSampleTypeImpl::new)
+                    .forEach(ExperimentUpgradeCode::setSampleName);
+
+            tx.commit();
+        }
+    }
+
+    private static void setSampleName(ExpSampleTypeImpl st)
+    {
+        Domain domain = st.getDomain();
+        SampleTypeDomainKind kind = null;
+        try
+        {
+            kind = (SampleTypeDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        DbSchema schema = kind.getSchema();
+        DbScope scope = kind.getSchema().getScope();
+
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain && null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
+        {
+            LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
+            return;
+        }
+
+        ColumnInfo nameCol = provisionedTable.getColumn("name");
+        if (nameCol == null)
+        {
+            PropertyStorageSpec nameProp = kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
+            StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(nameProp), true);
+            LOG.info("Added 'name' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
+        }
+
+        fillSampleName(st, domain, scope);
+
+        //addIndex
+        Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name"))));
+        StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added unique constraint on 'name'");
+    }
+
+    // populate name on provisioned sample tables
+    private static void fillSampleName(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    {
+        String tableName = domain.getStorageTableName();
+        SQLFragment update = new SQLFragment()
+                .append("UPDATE expsampleset.").append(tableName).append("\n")
+                .append("SET name = i.name\n")
+                .append("FROM (\n")
+                .append("  SELECT m.lsid, m.name\n")
+                .append("  FROM exp.material m\n")
+                .append("  WHERE m.cpasType = ?\n").add(domain.getTypeURI())
+                .append(") AS i\n")
+                .append("WHERE i.lsid = ").append(tableName).append(".lsid");
+
+        int count = new SqlExecutor(scope).execute(update);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
+    }
+
 }

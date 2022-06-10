@@ -136,6 +136,9 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
+    /** Get the sample type with name at a specific time */
+    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectDate);
+
     /**
      * Return the sample type for this LSID, optionally pass Container hint for performance
      */

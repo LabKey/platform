@@ -126,6 +126,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 
 /**
  * User: kevink
@@ -720,7 +721,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
         SearchService ss = SearchService.get();
         if (null != ss)
         {
@@ -940,6 +941,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (lsid == null)
                 throw new ValidationException("lsid required to update row");
 
+            String newName = (String) row.get(Name.name());
+            String oldName = (String) oldRow.get(Name.name());
+            boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
             Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
@@ -977,14 +982,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
             }
 
-            // update comment
             ExpDataImpl data = null;
+            if (hasNameChange)
+            {
+                data = ExperimentServiceImpl.get().getExpData(lsid);
+                ExperimentService.get().addObjectLegacyName(data.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpData.class), oldName, user);
+            }
+
+            // update comment
             if (row.containsKey("flag") || row.containsKey("comment"))
             {
                 Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
                 String flag = Objects.toString(o, null);
 
-                data = ExperimentServiceImpl.get().getExpData(lsid);
+                if (data == null)
+                    data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.setComment(user, flag);
             }
 
@@ -1017,7 +1029,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false, true);
+            ExpDataIterators.derive(user, container, di, false, _dataClass, true);
 
             return ret;
         }

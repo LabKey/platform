@@ -5090,7 +5090,7 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
-            Map<Lsid, Map<DomainProperty, String>> allProperties;
+            Map<Pair<Lsid, String>, Map<DomainProperty, String>> allProperties;
             try
             {
                 boolean valid = true;
@@ -5116,13 +5116,13 @@ public class ExperimentController extends SpringActionController
             {
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int i = 0;
-                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
+                for (Map.Entry<Pair<Lsid, String>, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Lsid lsid = entry.getKey();
-                    String name = lsid.getObjectId();
+                    Lsid lsid = entry.getKey().first;
+                    String name = entry.getKey().second;
                     assert name != null;
 
-                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
+                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), lsid.toString(), name);
                     if (sampleType != null)
                     {
                         outputMaterial.setCpasType(sampleType.getLSID());
@@ -6587,12 +6587,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getShowRunGraphURL(ExpRun run)
         {
             return ExperimentController.getRunGraphURL(run.getContainer(), run.getRowId());
-        }
-
-        @Override
-        public ActionURL getUploadXARURL(Container container)
-        {
-            return new ActionURL("assay", "chooseAssayType", container).addParameter("tab", "import");
         }
 
         @Override

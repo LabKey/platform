@@ -102,7 +102,8 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if (("Sample".equals(prefix) || "Material".equals(prefix)))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
+                String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Data".equals(prefix))
             {
@@ -116,7 +117,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 String xarFileId = "";
                 if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
                 {
-                    xarFileId = ".${XarJobId}"; // DBSeq in lsid might collide in target folder, add XarJobId to guarantee uniqueness
+                    xarFileId = ".${XarJobId}"; // DBSeq lsid might collide in target folder, add XarJobId to guarantee uniqueness
                 }
 
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + xarFileId, lsid.getObjectId(), lsid.getVersion());
@@ -146,7 +147,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Sample".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Material".equals(prefix))
             {
@@ -156,7 +157,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else if ("Data".equals(prefix))
@@ -167,7 +168,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else
