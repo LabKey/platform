@@ -1440,8 +1440,9 @@ public abstract class Method
         postgresMethods.put("to_date",new PassthroughMethod("to_date",JdbcType.DATE,2,2));
         postgresMethods.put("to_timestamp",new PassthroughMethod("to_timestamp",JdbcType.TIMESTAMP,2,2));
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
-        postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,2));
+        postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,3));
         postgresMethods.put("unnest",new PassthroughMethod("unnest",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("row",new PassthroughMethod("row",JdbcType.VARCHAR,1, Integer.MAX_VALUE));
 
         addPostgresJsonMethods();
     }
@@ -1502,23 +1503,47 @@ public abstract class Method
         addJsonPassthroughMethod("object", JdbcType.OTHER, 1, 2);
 
         addJsonPassthroughMethod("array_length", JdbcType.INTEGER, 1, 1);
-        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("extract_path", JdbcType.OTHER, 2, Integer.MAX_VALUE);
         addJsonPassthroughMethod("extract_path_text", JdbcType.VARCHAR, 2, Integer.MAX_VALUE);
         addJsonPassthroughMethod("object_keys", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
-        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
         addJsonPassthroughMethod("array_elements", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("array_elements_text", JdbcType.VARCHAR, 1, 1);
         addJsonPassthroughMethod("typeof", JdbcType.VARCHAR, 1, 1);
-        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
-        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
 
+        // Not fully supported because they can't be used in the FROM clause of a query, and they produce more than
+        // one column as an output, but leaving because they work in other contexts
+        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
+
+
+        // Not supported because they require an AS clause that LabKey SQL doesn't handle
+        // Example: select * from json_to_record('{"a":1,"b":[1,2,3],"c":[1,2,3],"e":"bar","r": {"a": 123, "b": "a b c"}}') as x(a int, b text, c int[], d text, r myrowtype)
+//        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
+//        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
+
+        // Not supported because they require a first argument (base/type) that LabKey SQL doesn't handle
+        // Example: select * from json_populate_record(null::myrowtype, '{"a": 1, "b": ["2", "a b"], "c": {"d": 4, "e": "a b c"}, "x": "foo"}')
+//        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
+//        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
+
+
         postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
-        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_set_lax", new PassthroughMethod("jsonb_set_lax", JdbcType.OTHER, 3, 5));
+        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_insert", JdbcType.OTHER, 3, 4));
         postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
+
+        // New in Postgres 12, 13, and 14
+        postgresMethods.put("jsonb_path_exists", new PassthroughMethod("jsonb_path_exists", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_match", new PassthroughMethod("jsonb_path_match", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query", new PassthroughMethod("jsonb_path_query", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_array", new PassthroughMethod("jsonb_path_query_array", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_first", new PassthroughMethod("jsonb_path_query_first", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_exists_tz", new PassthroughMethod("jsonb_path_exists_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_match_tz", new PassthroughMethod("jsonb_path_match_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_tz", new PassthroughMethod("jsonb_path_query_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_array_tz", new PassthroughMethod("jsonb_path_query_array_tz", JdbcType.VARCHAR, 2, 4));
+        postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
     }
 
     private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
