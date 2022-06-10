@@ -644,9 +644,9 @@ public class ExpDataIterators
         }
     }
 
-    static boolean hasAliquots(List<String> lsids)
+    static boolean hasAliquots(List<String> names)
     {
-        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN);
+        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Name"), names, IN);
         f.addCondition(FieldKey.fromParts("AliquotedFromLSID"), null, CompareType.NONBLANK);
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
@@ -674,7 +674,7 @@ public class ExpDataIterators
         final boolean _isSample;
         final boolean _skipAliquot; // skip aliquot validation, used for update/updates cases
 
-        final List<String> _candidateAliquotLsids; // used to check if a lsid is an aliquot, with absent "AliquotedFrom". used for merge only
+        final List<String> _candidateAliquotNames; // used to check if a name is an aliquot, with absent "AliquotedFrom". used for merge only
 
         protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
         {
@@ -700,7 +700,7 @@ public class ExpDataIterators
             _parentNames = new LinkedHashMap<>();
             _parentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
-            _candidateAliquotLsids = new ArrayList<>();
+            _candidateAliquotNames = new ArrayList<>();
             _container = container;
             _user = user;
 
@@ -767,11 +767,11 @@ public class ExpDataIterators
                     }
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
-                        _candidateAliquotLsids.add(lsid);
+                        _candidateAliquotNames.add(name);
                 }
                 else if (!_skipAliquot && _context.getInsertOption().mergeRows)
                 {
-                    _candidateAliquotLsids.add(lsid);
+                    _candidateAliquotNames.add(name);
                 }
 
                 Set<Pair<String, String>> allParts = new HashSet<>();
@@ -862,9 +862,9 @@ public class ExpDataIterators
 
                     if (_isSample && _context.getInsertOption().mergeRows)
                     {
-                        if (!_candidateAliquotLsids.isEmpty())
+                        if (!_candidateAliquotNames.isEmpty())
                         {
-                            if (hasAliquots(_candidateAliquotLsids))
+                            if (hasAliquots(_candidateAliquotNames))
                             {
                                 // AliquotedFrom is used to determine if aliquot/meta field value should be retained or discarded
                                 // In the case of merge, one can argue AliquotedFrom can be queried for existing data, instead of making it a required field.
