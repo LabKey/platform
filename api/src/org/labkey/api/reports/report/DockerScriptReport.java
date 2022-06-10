@@ -7,6 +7,7 @@ import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptException;
@@ -63,6 +64,8 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         reportConfig.put("scriptName", ipynb.getName());
         if (sourceQuery != null)
             reportConfig.put("sourceQuery", sourceQuery);
+        reportConfig.put("baseUrl", AppProps.getInstance().getBaseServerUrl());
+        reportConfig.put("contextPath", AppProps.getInstance().getContextPath());
         reportConfig.put("version", 1.0);
         return reportConfig;
     }

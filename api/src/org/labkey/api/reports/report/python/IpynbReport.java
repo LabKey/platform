@@ -128,9 +128,7 @@ public class IpynbReport extends DockerScriptReport
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
         LOG.trace("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
 
-        // ExecuteStrategy ex = new IpynbReport.ExecIpynbStdout(new String[]{"/usr/bin/docker", "run", "--rm", "-i" ,"nbconvert"});
-        // ExecuteStrategy ex = new DockerRunTarStdinStdout();
-        ExecuteStrategy ex = new DockerRunIpynbStdinStdout();
+        ExecuteStrategy ex = new DockerRunTarStdinStdout();
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
         File outputFile = ex.getOutputDocument();
 
