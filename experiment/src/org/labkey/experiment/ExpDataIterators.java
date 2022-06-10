@@ -644,9 +644,10 @@ public class ExpDataIterators
         }
     }
 
-    static boolean hasAliquots(List<String> names)
+    static boolean hasAliquots(int sampleTypeRowId, List<String> names)
     {
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Name"), names, IN);
+        f.addCondition(FieldKey.fromParts("MaterialSourceId"), sampleTypeRowId);
         f.addCondition(FieldKey.fromParts("AliquotedFromLSID"), null, CompareType.NONBLANK);
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
@@ -864,7 +865,7 @@ public class ExpDataIterators
                     {
                         if (!_candidateAliquotNames.isEmpty())
                         {
-                            if (hasAliquots(_candidateAliquotNames))
+                            if (hasAliquots(_currentSampleType.getRowId(), _candidateAliquotNames))
                             {
                                 // AliquotedFrom is used to determine if aliquot/meta field value should be retained or discarded
                                 // In the case of merge, one can argue AliquotedFrom can be queried for existing data, instead of making it a required field.
