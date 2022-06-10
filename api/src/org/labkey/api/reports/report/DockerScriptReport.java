@@ -66,6 +66,7 @@ abstract public class DockerScriptReport extends ScriptProcessReport
             reportConfig.put("sourceQuery", sourceQuery);
         reportConfig.put("baseUrl", AppProps.getInstance().getBaseServerUrl());
         reportConfig.put("contextPath", AppProps.getInstance().getContextPath());
+        reportConfig.put("containerPath", context.getContainer().getPath());
         reportConfig.put("version", 1.0);
         return reportConfig;
     }
