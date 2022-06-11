@@ -103,6 +103,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
         PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
         dialect.setServerType(serverType);
+        dialect.setMajorVersion(versionNumber.getMajor());
 
         if (logWarnings)
         {
