@@ -1250,6 +1250,12 @@ public class AssayController extends SpringActionController
         }
 
         @Override
+        public ActionURL getImportAssayDesignURL(Container container)
+        {
+            return getChooseAssayTypeURL(container).addParameter("tab", "import");
+        }
+
+        @Override
         public ActionURL getShowSelectedDataURL(Container container, ExpProtocol protocol)
         {
             return getProtocolURL(container, protocol, ShowSelectedDataAction.class);

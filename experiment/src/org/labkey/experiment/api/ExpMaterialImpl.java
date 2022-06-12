@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -46,6 +47,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -107,24 +109,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void setName(String name)
     {
-        if (null != getLSID() && !name.equals(new Lsid(getLSID()).getObjectId()))
-            throw new IllegalStateException("name="+name + " lsid="+getLSID());
         super.setName(name);
     }
 
     @Override
     public void setLSID(String lsid)
     {
-        if (null != getName() && !getName().equals(new Lsid(lsid).getObjectId()))
-            throw new IllegalStateException("name="+getName() + " lsid="+lsid);
         super.setLSID(lsid);
     }
 
     @Override
     public void setLSID(Lsid lsid)
     {
-        if (null != getName() && !getName().equals(lsid.getObjectId()))
-            throw new IllegalStateException("name=" + getName() + " lsid=" + lsid);
         super.setLSID(lsid);
     }
 
@@ -309,7 +305,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid, name) SELECT ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getName(), getLSID());
             }
         }
         index(null);
@@ -648,7 +644,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 converted.put(dp.getName(), value);
                 values.remove(key);
             }
-            Table.update(user, st.getTinfo(), converted, getLSID());
+            TableInfo tableInfo = st.getTinfo();
+            ColumnInfo lsidCol = tableInfo.getColumn(ExpMaterialTable.Column.LSID.name());
+            Table.update(user, st.getTinfo(), converted, lsidCol, getLSID(), null, Level.WARN);
         }
         for (var entry : values.entrySet())
         {

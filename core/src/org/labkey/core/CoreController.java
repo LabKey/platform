@@ -2838,9 +2838,7 @@ public class CoreController extends SpringActionController
                 int v = (int) (Math.random() * verbs.length);
                 log.info(" that " + verbs[v] + " ");
             }
-
         }
-
 
         @Override
         protected ModelAndView handleGet()

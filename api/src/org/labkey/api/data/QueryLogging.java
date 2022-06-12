@@ -38,7 +38,7 @@ public class QueryLogging
     private final boolean _readOnly;
     private final boolean _metadataQuery;
     private final String _debugName;
-    private boolean _shouldAudit = false;
+    private boolean _shouldAudit = false; // _shouldAudit is an editable field regardless of _readOnly
     private SelectQueryAuditProvider _selectQueryAuditProvider = null;
     private RuntimeException _exceptionToThrowIfLoggingIsEnabled = null;
 
@@ -132,21 +132,20 @@ public class QueryLogging
         _queryId = queryId;
     }
 
-    private static final QueryLogging EMPTY_QUERY_LOGGING = new QueryLogging(false, false, "EMPTY_QUERY_LOGGING");
-    private static final QueryLogging NO_VALIDATION_NEEDED_QUERY_LOGGING = new QueryLogging(true, false, "NO_VALIDATION_NEEDED_QUERY_LOGGING");
-    private static final QueryLogging METADATA_QUERY_LOGGING = new QueryLogging(false, true, "METADATA_QUERY_LOGGING");
-
     public static QueryLogging emptyQueryLogging()
     {
-        return EMPTY_QUERY_LOGGING;
+        return new QueryLogging(false, false, "EMPTY_QUERY_LOGGING");
     }
 
     public static QueryLogging noValidationNeededQueryLogging()
     {
-        return NO_VALIDATION_NEEDED_QUERY_LOGGING;
+        return new QueryLogging(true, false, "NO_VALIDATION_NEEDED_QUERY_LOGGING");
     }
 
-    public static QueryLogging metadataQueryLogging() { return METADATA_QUERY_LOGGING; }
+    public static QueryLogging metadataQueryLogging()
+    {
+        return new QueryLogging(false, true, "METADATA_QUERY_LOGGING");
+    }
 
     @NotNull
     public SelectQueryAuditEvent getSelectQueryAuditEvent()
@@ -170,9 +169,7 @@ public class QueryLogging
 
     public void setShouldAudit(boolean shouldAudit)
     {
-        // Commented out until Issue 42791 is resolved
-//        if (_readOnly)
-//            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
+        // _shouldAudit is editable regardless of _partialReadOnly
         _shouldAudit = shouldAudit;
     }
 
