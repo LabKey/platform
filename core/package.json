@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.14.2",
-    "@labkey/components": "2.179.5-fb-savedViewSortsFilters.3",
+    "@labkey/components": "2.178.0",
     "@labkey/themes": "1.2.2"
   },
   "devDependencies": {
