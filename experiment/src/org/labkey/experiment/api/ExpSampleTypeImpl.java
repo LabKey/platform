@@ -394,8 +394,28 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getCategory();
     }
 
+    @NotNull
+    private NameGenerator createNameGenerator(@NotNull String expr, Container dataContainer)
+    {
+        Map<String, String> importAliasMap = null;
+        try
+        {
+            importAliasMap = getImportAliasMap();
+        }
+        catch (IOException e)
+        {
+            // do nothing
+        }
+
+        Container sampleTypeContainer = getContainer();
+        TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), sampleTypeContainer, SamplesSchema.SCHEMA_NAME).getTable(getName());
+
+        Container nameGenContainer = dataContainer != null ? dataContainer : sampleTypeContainer;
+        return new NameGenerator(expr, parentTable, true, importAliasMap, nameGenContainer, getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+    }
+
     @Nullable
-    public NameGenerator getNameGenerator()
+    public NameGenerator getNameGenerator(Container dataContainer)
     {
         if (_nameGen == null)
         {
@@ -420,58 +440,26 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 s = expr.toString();
             }
-            else
-            {
-                // CONSIDER: Create a default expression as a fallback? ${RowId}
-            }
 
             if (s != null)
-            {
-                TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-                Map<String, String> importAliasMap = null;
-                try
-                {
-                    importAliasMap = getImportAliasMap();
-                }
-                catch (IOException e)
-                {
-                    // do nothing
-                }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
-            }
+                _nameGen = createNameGenerator(s, dataContainer);
         }
 
         return _nameGen;
     }
 
     @NotNull
-    public NameGenerator getAliquotNameGenerator()
+    public NameGenerator getAliquotNameGenerator(Container dataContainer)
     {
         if (_aliquotNameGen == null)
         {
             String s;
-
             if (_object.getAliquotNameExpression() != null)
-            {
                 s = _object.getAliquotNameExpression();
-            }
             else
-            {
                 s = ALIQUOT_NAME_EXPRESSION;
-            }
 
-            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
-            Map<String, String> importAliasMap = null;
-            try
-            {
-                importAliasMap = getImportAliasMap();
-            }
-            catch (IOException e)
-            {
-                // do nothing
-            }
-
-            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
+            _aliquotNameGen = createNameGenerator(s, dataContainer);
         }
 
         return _aliquotNameGen;
@@ -503,7 +491,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
         else
         {
-            nameGen = getNameGenerator();
+            nameGen = getNameGenerator(getContainer());
             if (nameGen == null)
                 throw new ExperimentException("Error creating name expression generator");
         }
@@ -543,7 +531,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                                    @Nullable Container container)
             throws ExperimentException
     {
-        NameGenerator nameGen = getNameGenerator();
+        NameGenerator nameGen = getNameGenerator(container);
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
