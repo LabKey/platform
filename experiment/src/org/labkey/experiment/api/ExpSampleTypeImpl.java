@@ -40,6 +40,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.ProtocolImplementation;
@@ -74,6 +75,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -656,6 +658,31 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return new ExpMaterialImpl(material);
     }
 
+    public ExpMaterialImpl getSampleByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
+        if (material == null)
+            return null;
+        return new ExpMaterialImpl(material);
+    }
+
+    @Override
+    public ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), effectiveDate, c);
+        if (legacyObjectId != null)
+            return getSampleByObjectId(c, legacyObjectId);
+
+        ExpMaterial material = getSample(c, name);
+        if (material != null && material.getCreated().compareTo(effectiveDate) <= 0)
+            return material;
+
+        return null;
+    }
+
     @Override
     @NotNull
     public Domain getDomain()
@@ -784,6 +811,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public Lsid.LsidBuilder generateSampleLSID()
     {
         return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + MATERIAL_LSID_SUFFIX);
+    }
+
+    @Override
+    public Lsid.LsidBuilder generateNextDBSeqLSID()
+    {
+        String dbSeqStr = String.valueOf(getSampleLsidDbSeq(1, getContainer()).next());
+        return new Lsid.LsidBuilder(this.getDataObject().getMaterialLSIDPrefix() + dbSeqStr);
+    }
+
+    public DbSequence getSampleLsidDbSeq(int batchSize, Container container)
+    {
+        return ExperimentServiceImpl.getLsidPrefixDbSeq(container, "SampleType-" + getRowId(), batchSize);
     }
 
     @Override

@@ -591,9 +591,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         String materialLsid;
         if (sampleType != null)
         {
-            Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(sampleType.getMaterialLSIDPrefix() + "test");
-            lsid.setObjectId(materialName);
-            materialLsid = lsid.toString();
+            ExpMaterial other = sampleType.getSample(viewContext.getContainer(), materialName);
+            if (other != null)
+                throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
+
+            materialLsid = sampleType.generateNextDBSeqLSID().toString();
         }
         else
         {
@@ -601,6 +603,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             try
             {
                 materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, ExpMaterial.DEFAULT_CPAS_TYPE);
+
+                ExpMaterial other = ExperimentService.get().getExpMaterial(materialLsid);
+                if (other != null)
+                    throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
             }
             catch (XarFormatException e)
             {
@@ -608,10 +614,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 throw new RuntimeException(e);
             }
         }
-
-        ExpMaterial other = ExperimentService.get().getExpMaterial(materialLsid);
-        if (other != null)
-            throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
 
         material = ExperimentService.get().createExpMaterial(viewContext.getContainer(), materialLsid, materialName);
         if (sampleType != null)

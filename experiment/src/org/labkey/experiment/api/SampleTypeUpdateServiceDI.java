@@ -34,6 +34,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
@@ -108,6 +109,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
@@ -210,7 +212,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
             if (InventoryService.get() != null)
-                dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
+                dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
 
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
@@ -297,7 +299,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.derive(user, container, di, true, true);
+        ExpDataIterators.derive(user, container, di, true, _sampleType, true);
 
         if (ret.size() > 0)
         {
@@ -345,6 +347,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
+        String newName = (String) row.get(Name.name());
+        if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
+            throw new ValidationException("Sample name cannot be blank");
+
+       String oldName = (String) oldRow.get(Name.name());
+        boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+        if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
+            throw new ValidationException("User-specified sample name not allowed");
+
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
         Set<String> aliquotFields = getAliquotSpecificFields();
@@ -356,7 +367,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // remove aliquotedFrom from row, or error out
         rowCopy.putAll(row);
         String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
-        if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
+        if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
 
         // We need to allow updating from one locked status to another locked status, but without other changes
@@ -410,14 +421,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
         }
 
-        // update comment
         ExpMaterialImpl sample = null;
+        if (hasNameChange)
+        {
+            sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+            ExperimentService.get().addObjectLegacyName(sample.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpMaterial.class), oldName, user);
+        }
+
+        // update comment
         if (row.containsKey("flag") || row.containsKey("comment"))
         {
             Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
             String flag = Objects.toString(o, null);
 
-            sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
+            if (sample == null)
+                sample = ExperimentServiceImpl.get().getExpMaterial(lsid);
             sample.setComment(user, flag);
         }
 
@@ -520,27 +538,47 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return result;
     }
 
-    private String getMaterialLsid(Map<String, Object> row)
+    private String getMaterialStringValue(Map<String, Object> row, String columnName)
     {
-        Object o = row.get(ExpMaterialTable.Column.LSID.name());
+        Object o = row.get(columnName);
         if (o instanceof String)
             return (String)o;
 
         return null;
     }
 
+    private String getMaterialLsid(Map<String, Object> row)
+    {
+        return getMaterialStringValue(row, ExpMaterialTable.Column.LSID.name());
+    }
+
+    private String getMaterialName(Map<String, Object> row)
+    {
+        return getMaterialStringValue(row, Name.name());
+    }
+
     IntegerConverter _converter = new IntegerConverter();
 
-    private Integer getMaterialRowId(Map<String, Object> row)
+    private Integer getMaterialIntegerValue(Map<String, Object> row, String columnName)
     {
         if (row != null)
         {
-            Object o = row.get(ExpMaterialTable.Column.RowId.name());
+            Object o = row.get(columnName);
             if (o != null)
                 return (Integer) (_converter.convert(Integer.class, o));
         }
 
         return null;
+    }
+
+    private Integer getMaterialSourceId(Map<String, Object> row)
+    {
+        return getMaterialIntegerValue(row, ExpMaterialTable.Column.MaterialSourceId.name());
+    }
+
+    private Integer getMaterialRowId(Map<String, Object> row)
+    {
+        return getMaterialIntegerValue(row, ExpMaterialTable.Column.RowId.name());
     }
 
     private Map<String, Object> getMaterialMap(Integer rowId, String lsid, User user, Container container, boolean addInputs)
@@ -628,12 +666,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Map<String, Integer> nameRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Integer sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
 
             Integer rowId = getMaterialRowId(keyMap.getValue());
             String lsid = getMaterialLsid(keyMap.getValue());
+            String name = getMaterialName(keyMap.getValue());
+            Integer materialSourceId = getMaterialSourceId(keyMap.getValue());
 
             if (rowId != null)
                 rowIdRowNumMap.put(rowId, rowNum);
@@ -641,6 +683,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 lsidRowNumMap.put(lsid, rowNum);
                 rowNumLsid.put(rowNum, lsid);
+            }
+            else if (name != null && materialSourceId != null)
+            {
+                sampleTypeId = materialSourceId;
+                nameRowNumMap.put(name, rowNum);
             }
             else
                 throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
@@ -671,6 +718,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Integer rowNum = lsidRowNumMap.get(sampleLsid);
 
                 sampleRows.put(rowNum, row);
+            }
+        }
+
+        if (!nameRowNumMap.isEmpty())
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
+
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            for (Map<String, Object> row : rows)
+            {
+                String name = (String) row.get("name");
+                Integer rowNum = nameRowNumMap.get(name);
+                String sampleLsid = (String) row.get("lsid");
+                sampleRows.put(rowNum, row);
+                rowNumLsid.put(rowNum, sampleLsid);
             }
         }
 
@@ -949,6 +1012,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final NameGenerator aliquotNameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
+        final DbSequence _lsidDbSeq;
         final Container _container;
         final int _batchSize;
         boolean first = true;
@@ -958,7 +1022,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
 
         String generatedName = null;
-        String generatedLsid = null;
 
         _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
@@ -991,10 +1054,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             skip.addAll("name", "lsid", "rootmateriallsid");
             selectAll(skip);
 
+            _lsidDbSeq = sampleType.getSampleLsidDbSeq(_batchSize, _container);
+
             addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Supplier)() -> generatedName);
-            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            addColumn(new BaseColumnInfo("lsid", JdbcType.VARCHAR), (Supplier)() -> lsidBuilder.setObjectId(String.valueOf(_lsidDbSeq.next())).toString());
             // Ensure we have a cpasType column and it is of the right value
             addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
+            addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+
         }
 
         _GenerateNamesDataIterator setAllowUserSpecifiedNames(boolean allowUserSpecifiedNames)
@@ -1060,7 +1127,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (nameGen != null)
                 {
                     generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
-                    generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
                 }
                 else
                     addRowError("Error creating naming pattern generator.");

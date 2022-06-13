@@ -750,8 +750,6 @@ public class ExperimentServiceImpl implements ExperimentService
         result.setContainer(container);
         result.setLSID(lsid);
         result.setName(name);
-        if (!name.equals(new Lsid(lsid).getObjectId()))
-            throw new IllegalArgumentException("name=" + name + " lsid=" + lsid);
         return result;
     }
 
@@ -1256,7 +1254,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new SampleStatusTable(expSchema, containerFilter);
     }
 
-    private String getNamespacePrefix(Class<? extends ExpObject> clazz)
+    public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)
             return "Data";
@@ -1281,14 +1279,18 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Pair<String, String> generateLSIDWithDBSeq(Container container, String lsidPrefix)
     {
+        String dbSeqStr = String.valueOf(getLsidPrefixDbSeq(container, lsidPrefix, 1).next());
+        String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
+        return new Pair<>(lsid, dbSeqStr);
+    }
+
+    public static DbSequence getLsidPrefixDbSeq(Container container, String lsidPrefix, int batchSize)
+    {
         Container projectContainer = container; // use DBSeq at project level to avoid duplicate lsid for types in child folder
         if (!container.isProject() && container.getProject() != null)
             projectContainer = container.getProject();
 
-        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, 1);
-        String dbSeqStr = String.valueOf(newSequence.next());
-        String lsid = generateLSID(container, lsidPrefix, dbSeqStr);
-        return new Pair<>(lsid, dbSeqStr);
+        return DbSequenceManager.getPreallocatingSequence(projectContainer, LSID_COUNTER_DB_SEQUENCE_PREFIX + lsidPrefix, 0, batchSize);
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -1296,7 +1298,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateLSID(container, lsidPrefix, GUID.makeGUID());
     }
 
-    private String generateLSID(Container container, String lsidPrefix, String objectName)
+    public String generateLSID(Container container, String lsidPrefix, String objectName)
     {
         return new Lsid(lsidPrefix, "Folder-" + container.getRowId(), objectName).toString();
     }
@@ -1367,6 +1369,32 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataClassImpl getDataClass(@NotNull Container c, @NotNull String dataClassName)
     {
         return getDataClass(c, null, false, dataClassName);
+    }
+
+    public ExpDataClassImpl getDataClassByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+        if (dataClass == null)
+            return null;
+        return new ExpDataClassImpl(dataClass);
+    }
+
+
+    @Override
+    public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
+        if (legacyObjectId != null)
+            return getDataClassByObjectId(definitionContainer, legacyObjectId);
+
+        ExpDataClassImpl dataClass = getDataClass(definitionContainer, dataClassName);
+        if (dataClass != null && dataClass.getCreated().compareTo(effectiveDate) <= 0)
+            return dataClass;
+
+        return null;
     }
 
     @Override
@@ -1502,6 +1530,31 @@ public class ExperimentServiceImpl implements ExperimentService
         Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
 
         return data == null ? null : new ExpDataImpl(data);
+    }
+
+    public ExpDataImpl getDataByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        Data data = new TableSelector(getTinfoData(), filter, null).getObject(Data.class);
+        if (data == null)
+            return null;
+        return new ExpDataImpl(data);
+    }
+
+    @Override
+    public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
+        if (legacyObjectId != null)
+            return getDataByObjectId(container, legacyObjectId);
+
+        ExpDataImpl data = getExpData(dataClass, name);
+        if (data != null && data.getCreated().compareTo(effectiveDate) <= 0)
+            return data;
+
+        return null;
     }
 
     @Override
@@ -3649,6 +3702,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public TableInfo getTinfoEdge()
     {
         return getExpSchema().getTable("Edge");
+    }
+
+    @Override
+    public TableInfo getTinfoObjectLegacyNames()
+    {
+        return getExpSchema().getTable("ObjectLegacyNames");
     }
 
     /**
@@ -7353,11 +7412,12 @@ public class ExperimentServiceImpl implements ExperimentService
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
+        String oldDataClassName = dataClass.getName();
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
             String newName = StringUtils.trimToNull(options.getName());
-            if (newName != null && !dataClass.getName().equals(newName))
+            if (newName != null && !oldDataClassName.equals(newName))
             {
                 hasNameChange = true;
                 dataClass.setName(newName);
@@ -7387,6 +7447,9 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             dataClass.save(u);
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
+
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
 
             if (!errors.hasErrors())
             {
@@ -7956,6 +8019,63 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders()
     {
         return Collections.unmodifiableList(_runOutputsQueryViews);
+    }
+
+    @Override
+    public void addObjectLegacyName(int objectId, String objectType, String legacyName, User user)
+    {
+        Map<String, Object> fields = new HashMap<>();
+        fields.put("ObjectId", objectId);
+        fields.put("ObjectType", objectType);
+        fields.put("Name", legacyName);
+        Table.insert(user, getTinfoObjectLegacyNames(), fields);
+    }
+
+    @Override
+    public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c)
+    {
+        TableInfo tableInfo = ExperimentService.get().getTinfoObjectLegacyNames();
+
+        // find the last ObjectLegacyNames record with matched name and timestamp
+        SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
+                "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
+                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container = ?) " +
+                "ORDER BY CREATED DESC");
+        sql.add(name);
+        sql.add(dataType);
+        sql.add(effectiveDate);
+        sql.add(c.getId());
+
+        Map<String, Object>[] legacyNames = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
+
+        // verify the found ObjectLegacyNames is valid at effectiveDate.
+        // If an even older name exist, the older name ended before effectiveDate
+        if (legacyNames.length >= 1)
+        {
+            Integer objectId = (Integer) legacyNames[0].get("ObjectId");
+            Date nameEndTime = (Date) legacyNames[0].get("Created");
+            SQLFragment previousNameSql = new SQLFragment("SELECT Created FROM exp.ObjectLegacyNames " +
+                    "WHERE ObjectType = ? AND Created < ? " +
+                    "AND ObjectId IN (SELECT ObjectId FROM exp.Data WHERE Container = ?) " +
+                    "ORDER BY CREATED DESC");
+            previousNameSql.add(dataType);
+            previousNameSql.add(nameEndTime);
+            previousNameSql.add(c);
+
+            Map<String, Object>[] previousLegacyNames = new SqlSelector(tableInfo.getSchema(), previousNameSql).getMapArray();
+            if (previousLegacyNames.length >= 1)
+            {
+                Date previousNameEnd = (Date) previousLegacyNames[0].get("Created");
+                if (previousNameEnd.compareTo(effectiveDate) < 0 )
+                {
+                    return objectId;
+                }
+            }
+            else
+                return objectId;
+        }
+
+        return null;
     }
 
     public static class TestCase extends Assert
