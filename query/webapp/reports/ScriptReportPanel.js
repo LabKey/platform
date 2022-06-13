@@ -724,14 +724,13 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 items: [{
                     xtype : 'label',
                     margin: 8,
-                    html : 'Would you like to initialize this Jupyter Report (ipynb) from a file, or start with a blank report? Click on the ' +
-                            'import button to load from a file.'
+                    html : 'Would you like to initialize this Jupyter Report (ipynb) from a file (recommended), or start with a blank report?'
                 }],
                 resizable: false,
                 buttons: [{
                     xtype: 'filefield',
                     buttonOnly: true,
-                    buttonText: 'Import',
+                    buttonText: 'Import from File',
                     listeners: {
                         change: function (cmp) {
                             var file = cmp.fileInputEl.dom.files[0];
@@ -742,7 +741,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         scope: this
                     }
                 },{
-                    text: 'Cancel',
+                    text: 'Start with blank Report',
                     handler: function(){win.close()}
                 }]
             });
