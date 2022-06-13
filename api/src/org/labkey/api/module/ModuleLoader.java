@@ -28,6 +28,7 @@ import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -58,6 +59,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
@@ -112,6 +115,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -121,6 +125,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -199,6 +204,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
     private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+    private final Set<StartupPropertyHandler> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing(StartupPropertyHandler::getScope));
 
     private List<Module> _modules;
     private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
@@ -927,19 +933,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // filter by startup properties if specified
         LinkedList<String> includeList = new LinkedList<>();
         LinkedList<String> excludeList = new LinkedList<>();
-        for (ConfigProperty prop : getConfigProperties("ModuleLoader"))
-        {
-            if (prop.getName().equals("include"))
-                Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(includeList::add);
-            if (prop.getName().equals("exclude"))
-                Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(excludeList::add);
-        }
+
+        handleStartupProperties(new StartupPropertyHandler("ModuleLoader", ModuleLoaderStartupProperties.values()) {
+            @Override
+            public void handle(Map<StartupProperty, ConfigProperty> map)
+            {
+                ConfigProperty include = map.get(ModuleLoaderStartupProperties.include);
+                if (null != include)
+                    Arrays.stream(StringUtils.split(include.getValue(), ","))
+                        .map(StringUtils::trimToNull)
+                        .filter(Objects::nonNull)
+                        .forEach(includeList::add);
+
+                ConfigProperty exclude = map.get(ModuleLoaderStartupProperties.exclude);
+                if (null != exclude)
+                    Arrays.stream(StringUtils.split(exclude.getValue(), ","))
+                        .map(StringUtils::trimToNull)
+                        .filter(Objects::nonNull)
+                        .forEach(excludeList::add);
+            }
+        });
 
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
@@ -2092,7 +2105,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
-        //NOTE: jasper encodes underscores and dashes in JSPs, so decode this here
+        //NOTE: jasper encodes underscores and dashes in JSPs, so decode them here
         path = path.replaceAll("_005f", "_");
         path = path.replaceAll("_002d", "-");
 
@@ -2162,11 +2175,30 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return unknownContexts;
     }
 
+    public void handleStartupProperties(StartupPropertyHandler handler)
+    {
+        assert _startupPropertyHandlers.add(handler) : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
+        Map<String, StartupProperty> props = handler.getProperties();
+        Map<StartupProperty, ConfigProperty> map = new LinkedHashMap<>();
+        getConfigProperties(handler.getScope()).stream().forEach(cp->{
+            StartupProperty sp = props.get(cp.getName());
+            if (null != sp)
+                map.put(sp, cp);
+            else
+                _log.warn("Unknown startup property: " + cp.getScope() + "." + cp.getName());
+        });
+        handler.handle(map);
+    }
+
+    public Set<StartupPropertyHandler> getStartupPropertyHandlers()
+    {
+        return _startupPropertyHandlers;
+    }
+
     /**
-     * Returns the config properties for the specified scope. If no scope is
-     * specified then all properties are returned. If the server is bootstrapping then
-     * properties with both the bootstrap and startup modifiers are returned otherwise only
-     * startup properties are returned.
+     * Returns the config properties for the specified scope. If no scope is specified then all properties are returned.
+     * If the server is bootstrapping then properties with both the bootstrap and startup modifiers are returned
+     * otherwise only startup properties are returned.
      */
     @NotNull
     public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
@@ -2227,8 +2259,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             if (propFiles != null)
             {
                 List<File> sortedPropFiles = Arrays.stream(propFiles)
-                        .sorted(Comparator.comparing(File::getName).reversed())
-                        .collect(Collectors.toList());
+                    .sorted(Comparator.comparing(File::getName).reversed())
+                    .toList();
 
                 for (File propFile : sortedPropFiles)
                 {
@@ -2265,7 +2297,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
+            _log.debug("propsDir non-existent or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix
