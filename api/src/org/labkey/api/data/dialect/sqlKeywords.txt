@@ -942,6 +942,9 @@ securityaudit
 select
 selective
 self
+semantickeyphrasetable
+semanticsimilaritydetailstable
+semanticsimilaritytable
 sensitive
 separator
 sequence
@@ -1114,6 +1117,7 @@ trim_array
 true
 truncate
 trusted
+try_convert
 tsequal
 type
 types
@@ -1201,6 +1205,7 @@ width_bucket
 window
 with
 within
+within group
 without
 work
 wrapper

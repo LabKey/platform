@@ -58,6 +58,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -162,10 +164,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, " +
             "print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, " +
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
+            "semantickeyphrasetable, semanticsimilaritydetailstable, semanticsimilaritytable, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
-            "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext"
+            "top, tran, transaction, trigger, truncate, try_convert, tsequal, union, unique, unpivot, update, updatetext, " +
+            "use, user, values, varying, view, waitfor, when, where, while, with, within group, writetext"
         ));
+    }
+
+    static
+    {
+        // The Microsoft JDBC driver does a lackluster job of translating errors to the appropriate SQLState. Do our
+        // own translation for the ones we care about. See issue 37040
+        CustomSQLExceptionTranslatorRegistry.getInstance().registerTranslator("Microsoft SQL Server", (task, sql, ex) -> {
+            if (ex.getErrorCode() == 8134)
+            {
+                return new DataIntegrityViolationException(ex.getMessage(), ex);
+            }
+            return null;
+        });
     }
 
     @Override
@@ -767,7 +783,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState()) || "S0001".equals(e.getSQLState());
+        return "S1000".equals(e.getSQLState()) // jTDS driver
+                || ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
