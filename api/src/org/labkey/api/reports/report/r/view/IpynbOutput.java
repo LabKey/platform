@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +38,8 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -169,8 +172,17 @@ public class IpynbOutput extends HtmlOutput
                 JSONObject cell = (JSONObject)arr.get(cellindex);
                 String cell_type = String.valueOf(cell.get("cell_type"));
                 int execution_count = -1;
-                if (null != cell.get("execution_count"))
-                    execution_count = ((Number)cell.get("execution_count")).intValue();
+                try
+                {
+                    if (null != cell.get("execution_count"))
+                        execution_count = ((Integer) JdbcType.INTEGER.convert(cell.get("execution_count")));
+                    else if (null != cell.get("prompt_number"))
+                        execution_count = ((Integer) JdbcType.INTEGER.convert(cell.get("prompt_number")));
+                }
+                catch (ConversionException x)
+                {
+                    // pass
+                }
 
                 sb.append(HtmlString.unsafe("<div class='ipynb-cell'>"));
                 sb.append(HtmlString.unsafe("<div class='ipynb-cell-index'>"));
@@ -188,7 +200,7 @@ public class IpynbOutput extends HtmlOutput
                     case "code":
                         renderCodeCell(sb, cell);
                         break;
-                    case "header":
+                    case "header": // old format
                         renderHeaderCell(sb, cell);
                         break;
                 }
@@ -224,8 +236,10 @@ public class IpynbOutput extends HtmlOutput
 
 
         /* see https://ipython.org/ipython-doc/3/notebook/nbformat.html */
-        private void renderOutput(HtmlStringBuilder sb, JSONObject output)
+        /* TODO it would be nice if Outputs implemented Renderable to avoid putting this all into HtmlStringBuilder */
+        private void renderOutput(HtmlStringBuilder sbOutput, JSONObject output)
         {
+            HtmlStringBuilder sb = HtmlStringBuilder.of();
             JSONObject data = output;
 
             // TODO collapsed sections
@@ -236,6 +250,7 @@ public class IpynbOutput extends HtmlOutput
             switch ((String)output.get("output_type"))
             {
                 case "error":
+                case "pyerr": // old format
                 {
                     sb.append(HtmlString.unsafe("<div class=\"ipynb-error\"><div class=\"ipynb-text\">"));
                     sb.append(HtmlString.unsafe("<pre>\n"));
@@ -251,6 +266,7 @@ public class IpynbOutput extends HtmlOutput
                         }
                     }
                     sb.append(HtmlString.unsafe("</pre></div></div>"));
+                    sbOutput.append(sb);
                     return;
                 }
                 /* ERROR
@@ -269,6 +285,7 @@ public class IpynbOutput extends HtmlOutput
                 */
                 case "display_data":
                 case "execute_result":
+                case "pyout": // old format
                 case "raw":
                 case "stream":
                     if (null != output.get("data"))
@@ -285,22 +302,36 @@ public class IpynbOutput extends HtmlOutput
                                 sb.append(HtmlString.unsafe("<img src=\"data:image/png;base64,"));
                                 sb.append(HtmlString.unsafe(imagePng));
                                 sb.append(HtmlString.unsafe("\"></div></div>"));
+                                sbOutput.append(sb);
                                 return;
                             }
+                        }
+                        if (null != data.get("image/svg+xml"))
+                        {
+                            var textArray = (JSONArray)data.get("image/svg+xml");
+                            sb.append(HtmlString.unsafe("<div class=\"ipynb-svg\">"));
+                            for (int i=0 ; i<textArray.length() ; i++)
+                                sb.append((String)textArray.get(i));
+                            sb.append(HtmlString.unsafe("</div>"));
+                            sbOutput.append(sb);
+                            return;
                         }
                         if (null != data.get("text/plain") || null != data.get("text"))
                         {
                             var textArray = (JSONArray) Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
-                            String plain = StringUtils.join((textArray).toArray(), "");
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"ipynb-text\">"));
-                            sb.append(HtmlString.unsafe("<pre>\n")).append(HtmlString.of(plain, false)).append(HtmlString.unsafe("</pre></div></div>"));
+                            sb.append(HtmlString.unsafe("<pre>\n"));
+                            for (int i=0 ; i<textArray.length() ; i++)
+                                sb.append((String)textArray.get(i));
+                            sb.append(HtmlString.unsafe("</pre></div></div>"));
+                            sbOutput.append(sb);
                             return;
                         }
                     }
                     break;
             } // switch
 
-            sb.append(output.toString());
+            sbOutput.append(output.toString());
         }
 
 
@@ -331,23 +362,19 @@ public class IpynbOutput extends HtmlOutput
             if (null != source)
             {
                 sb.append(HtmlString.unsafe("<div class=\"ipynb-markdown\">"));
-                if (source.startsWith("<h2>") && source.endsWith("</h2>")) // BUG
-                {
-                    sb.append(HtmlString.unsafe("<h2>"));
-                    sb.append(HtmlString.unsafe(MarkdownService.get().toHtml(source.substring(4,source.length()-5))));
-                    sb.append(HtmlString.unsafe("</h2>"));
-                }
-                else
-                {
-                    sb.append(HtmlString.unsafe(MarkdownService.get().toHtml(source)));
-                }
+                sb.append(HtmlString.unsafe(MarkdownService.get().toHtml(source, Map.of(MarkdownService.Options.html,true))));
                 sb.append(HtmlString.unsafe("</div>"));
             }
         }
 
+
         private void renderHeaderCell(HtmlStringBuilder sb, JSONObject cell)
         {
-            sb.append(HtmlString.unsafe("<h3>HEADER</h3>"));
+            int level = 1;
+            if (null != cell.get("level"))
+                level = Integer.parseInt((String)cell.get("level"));
+            String header = getSource(cell);
+            sb.append("<h" + level + ">").append(header).append("</h" + level + ">\n");
         }
 
 
