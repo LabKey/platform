@@ -22,7 +22,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre17", // MS SQLServer JDBC Driver
+            "com.microsoft.sqlserver:mssql-jdbc:${microsoftJdbcVersion}", // MS SQLServer JDBC Driver
             "Microsoft JDBC Driver for SQL Server",
             "Microsoft",
             "https://github.com/Microsoft/mssql-jdbc",
