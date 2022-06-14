@@ -767,7 +767,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState());
+        return "S1000".equals(e.getSQLState()) || "S0001".equals(e.getSQLState());
     }
 
     @Override
