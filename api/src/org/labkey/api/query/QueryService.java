@@ -69,7 +69,7 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
-    String PRODUCT_PROJECTS_ENABLED = "isSubfolderDataEnabled";
+    String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
