@@ -340,13 +340,15 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
         var exportRows = [LABKEY.query.browser.view.Validate.EXPORT_HEADER];
         this.validationResult.sort((row1, row2) => {
             // first sort by error type: error, then warning, then info
-            if (row1[1] === 'ERROR' && row2[1] !== 'ERROR')
+            const type1 = row1[1];
+            const type2 = row2[1];
+            if (type1 === 'ERROR' && type2 !== 'ERROR')
                 return -1;
-            if (row2[1] === 'ERROR' && row1[1] !== 'ERROR')
+            if (type2 === 'ERROR' && type1 !== 'ERROR')
                 return 1;
-            if (row1[1] === 'WARNING' && row2[1] !== 'WARNING')
+            if (type1 === 'WARNING' && type2 !== 'WARNING')
                 return -1;
-            if (row2[1] === 'WARNING' && row1[1] !== 'WARNING')
+            if (type2 === 'WARNING' && type1 !== 'WARNING')
                 return 1;
 
             // then sort by query
@@ -354,11 +356,12 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
 
         });
 
-        this.validationResult.forEach(result => {
+        Ext4.Array.forEach(this.validationResult, function(result) {
             exportRows.push(result);
-        })
+        });
+
         var exportData = {
-            fileName: 'ValidateQueries' + '.xlsx',
+            fileName: 'ValidateQueries.xlsx',
             sheets: [{ name: 'result', data: exportRows }],
         };
 
