@@ -1162,7 +1162,6 @@ public class NameGenerator
         return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
     }
 
-
     public class State implements AutoCloseable
     {
         private final boolean _incrementSampleCounts;
@@ -1186,7 +1185,6 @@ public class NameGenerator
             _user = User.getSearchUser();
             _lookupCache = new HashMap<>();
         }
-
 
         @Override
         public void close()
@@ -1347,9 +1345,11 @@ public class NameGenerator
                                             Map<String, ArrayList<Object>> inputLookupValues)
         {
             String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
+            String inputCol = inputType + "/" + parentTypeName;
+
             List<String> fieldNames = new ArrayList<>();
-            if (_expLineageLookupFields.containsKey(inputType + "/" + parentTypeName))
-                fieldNames.addAll(_expLineageLookupFields.get(inputType + "/" + parentTypeName));
+            if (_expLineageLookupFields.containsKey(inputCol))
+                fieldNames.addAll(_expLineageLookupFields.get(inputCol));
             if (_expLineageLookupFields.containsKey(inputType))
                 fieldNames.addAll(_expLineageLookupFields.get(inputType));
             if (_expLineageLookupFields.containsKey(INPUT_PARENT))
@@ -1361,37 +1361,24 @@ public class NameGenerator
                 if (lookupValue == null)
                     continue;
 
-                // add to Input/lookupfield
+                // add to Input/<LookupField>
                 inputLookupValues.computeIfAbsent(INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
 
-                // add to importAlias/lookupfield
+                // add to importAlias/<LookupField>
                 if (parentImportAliases != null)
                 {
-                    String inputCol = (isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT) + "/" + parentTypeName;
                     parentImportAliases
                             .entrySet()
                             .stream()
-                            .filter(entry -> entry.getValue().equalsIgnoreCase(inputCol))
+                            .filter(entry -> inputCol.equalsIgnoreCase(entry.getValue()))
                             .forEach(entry -> inputLookupValues.computeIfAbsent(entry.getKey() + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue));
                 }
 
-                if (isMaterialParent)
-                {
-                    // add to MaterialInputs/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                    // add to MaterialInputs/SampleType/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-
-                }
-                else
-                {
-                    // add to DataInputs/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpData.DATA_INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                    // add to DataInputs/DataClass/lookupfield
-                    inputLookupValues.computeIfAbsent(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                }
+                // add to <Type>Inputs/<LookupField>
+                inputLookupValues.computeIfAbsent(inputType + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                // add to <Type>Inputs/<TypeName>/<LookupField>
+                inputLookupValues.computeIfAbsent(inputCol + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
             }
-
         }
 
         private void addLineageLookupContext(String parentTypeName,
