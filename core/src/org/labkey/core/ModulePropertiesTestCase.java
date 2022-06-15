@@ -42,7 +42,6 @@ import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -224,5 +223,4 @@ public class ModulePropertiesTestCase extends Assert
         // set these test startup test properties to be used by the entire server
         ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
     }
-
 }

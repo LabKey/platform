@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -26,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -312,16 +313,34 @@ public class FolderTypeManager
         }
     }
 
+    public enum FolderTypeStartupProperties implements StartupProperty
+    {
+        disabledTypes
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Comma-separated list of folder types to disable on this server";
+            }
+        };
+    }
+
+    private static final String SCOPE_FOLDER_TYPES = "FolderTypes";
+
     public void populateWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
-        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_FOLDER_TYPES)
-            .forEach(prop -> {
-                // only apply disabledTypes prop at bootstrap
-                if ("disabledTypes".equalsIgnoreCase(prop.getName()) && prop.getModifier() == bootstrap && isBootstrap)
-                    populateDisabledFolderTypesWithStartupProps(prop.getValue());
-            });
+        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(SCOPE_FOLDER_TYPES, FolderTypeStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<FolderTypeStartupProperties, ConfigProperty> properties)
+            {
+                properties.forEach((sp, cp)->{
+                    // apply disabledTypes prop only at bootstrap
+                    if (cp.getModifier() == bootstrap)
+                        populateDisabledFolderTypesWithStartupProps(cp.getValue());
+                });
+            }
+        });
     }
 
     private void populateDisabledFolderTypesWithStartupProps(String value)

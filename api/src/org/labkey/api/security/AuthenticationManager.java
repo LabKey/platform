@@ -72,6 +72,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -199,15 +202,14 @@ public class AuthenticationManager
         getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes, default domain)
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
-            .forEach(cp-> {
-                switch(cp.getName())
-                {
-                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
-                    case DEFAULT_DOMAIN -> setDefaultDomain(null, cp.getValue());
-                    default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
-                }
-            });
+        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(AUTHENTICATION_CATEGORY, AuthenticationSettings.class)
+        {
+            @Override
+            public void handle(Map<AuthenticationSettings, ConfigProperty> properties)
+            {
+                properties.forEach((sp, cp) -> sp.save(cp));
+            }
+        });
     }
 
     public enum Priority { High, Low }
@@ -605,6 +607,39 @@ public class AuthenticationManager
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+
+    public enum AuthenticationSettings implements StartupProperty
+    {
+        SelfRegistration("Allow self sign up"),
+        SelfServiceEmailChanges("Allow users to edit their own email addresses"),
+        AutoCreateAccounts("Auto-create authenticated users"),
+        DefaultDomain("System default domain")
+        {
+            @Override
+            public void save(ConfigProperty entry)
+            {
+                setDefaultDomain(null, entry.getValue());
+            }
+        };
+
+        private final String _description;
+
+        AuthenticationSettings(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void save(ConfigProperty entry)
+        {
+            saveAuthSetting(null, name(), Boolean.parseBoolean(entry.getValue()));
+        }
+    }
 
     /**
      * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.

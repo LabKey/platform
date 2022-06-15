@@ -28,7 +28,6 @@ import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -121,7 +120,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -204,7 +202,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
     private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
-    private final Set<StartupPropertyHandler> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing(StartupPropertyHandler::getScope));
+    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing(StartupPropertyHandler::getScope, String.CASE_INSENSITIVE_ORDER));
 
     private List<Module> _modules;
     private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
@@ -448,7 +446,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
-        // load startup configuration information from properties, side-effect may set newinstall=true
+        // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
@@ -931,28 +929,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         // filter by startup properties if specified
-        LinkedList<String> includeList = new LinkedList<>();
-        LinkedList<String> excludeList = new LinkedList<>();
-
-        handleStartupProperties(new StartupPropertyHandler("ModuleLoader", ModuleLoaderStartupProperties.values()) {
-            @Override
-            public void handle(Map<StartupProperty, ConfigProperty> map)
-            {
-                ConfigProperty include = map.get(ModuleLoaderStartupProperties.include);
-                if (null != include)
-                    Arrays.stream(StringUtils.split(include.getValue(), ","))
-                        .map(StringUtils::trimToNull)
-                        .filter(Objects::nonNull)
-                        .forEach(includeList::add);
-
-                ConfigProperty exclude = map.get(ModuleLoaderStartupProperties.exclude);
-                if (null != exclude)
-                    Arrays.stream(StringUtils.split(exclude.getValue(), ","))
-                        .map(StringUtils::trimToNull)
-                        .filter(Objects::nonNull)
-                        .forEach(excludeList::add);
-            }
-        });
+        ModuleLoaderStartupProperties.populate();
+        LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
+        LinkedList<String> excludeList = ModuleLoaderStartupProperties.exclude.getList();
 
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
@@ -2177,6 +2156,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public void handleStartupProperties(StartupPropertyHandler handler)
     {
+        assert !isStartupComplete() : "All startup properties must be handled during startup";
         assert _startupPropertyHandlers.add(handler) : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
         Map<String, StartupProperty> props = handler.getProperties();
         Map<StartupProperty, ConfigProperty> map = new LinkedHashMap<>();
@@ -2190,7 +2170,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         handler.handle(map);
     }
 
-    public Set<StartupPropertyHandler> getStartupPropertyHandlers()
+    public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()
     {
         return _startupPropertyHandlers;
     }

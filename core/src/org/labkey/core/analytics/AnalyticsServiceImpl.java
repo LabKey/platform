@@ -16,7 +16,6 @@
 package org.labkey.core.analytics;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
@@ -28,6 +27,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -106,11 +108,24 @@ public class AnalyticsServiceImpl implements AnalyticsService
         public abstract String getRawScript();
     }
 
-    public enum AnalyticsProperty
+    public enum AnalyticsProperty implements StartupProperty
     {
-        trackingStatus,
-        accountId,
-        trackingScript,
+        trackingStatus("Analytics tracking status. Valid values: [disabled, enabled, enabledFullURL, script]"),
+        accountId("Account ID"),
+        trackingScript("Custom analytics script");
+
+        private final String _description;
+
+        AnalyticsProperty(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
     }
 
     private String getProperty(AnalyticsProperty property)
@@ -255,18 +270,14 @@ public class AnalyticsServiceImpl implements AnalyticsService
     static public void populateSettingsWithStartupProps()
     {
         PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
-        ModuleLoader.getInstance().getConfigProperties(PROP_CATEGORY)
-                .forEach(prop ->{
-                    try
-                    {
-                        AnalyticsProperty analyticsProperty = AnalyticsProperty.valueOf(prop.getName());
-                        properties.put(analyticsProperty.toString(), prop.getValue());
-                    }
-                    catch (IllegalArgumentException ex)
-                    {
-                        LogManager.getLogger(AnalyticsServiceImpl.class).warn("error handling startup property", ex);
-                    }
-                });
+        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(PROP_CATEGORY, AnalyticsProperty.class)
+        {
+            @Override
+            public void handle(Map<AnalyticsProperty, ConfigProperty> startupProperties)
+            {
+                startupProperties.forEach((ap, cp)->properties.put(ap.toString(), cp.getValue()));
+            }
+        });
         properties.save();
     }
 }

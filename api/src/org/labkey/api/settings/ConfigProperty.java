@@ -33,7 +33,6 @@ public class ConfigProperty
     public static final String SCOPE_USER_ROLES = "UserRoles";
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
-    public static final String SCOPE_FOLDER_TYPES = "FolderTypes";
     public static final String SCOPE_EXPERIMENTAL_FEATURE = AppProps.EXPERIMENTAL_FEATURE;
 
     private final String _name;
