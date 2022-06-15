@@ -583,6 +583,11 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return getObjectProperties(getDataClass());
     }
 
+    public Map<String, ObjectProperty> getObjectProperties(@Nullable User user)
+    {
+        return getObjectProperties(getDataClass(user));
+    }
+
     private Map<String, ObjectProperty> getObjectProperties(ExpDataClassImpl dataClass)
     {
         HashMap<String,ObjectProperty> ret = new HashMap<>(super.getObjectProperties());
