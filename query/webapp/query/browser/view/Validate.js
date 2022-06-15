@@ -354,7 +354,9 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
 
         });
 
-        exportRows.push(...this.validationResult);
+        this.validationResult.forEach(result => {
+            exportRows.push(result);
+        })
         var exportData = {
             fileName: 'ValidateQueries' + '.xlsx',
             sheets: [{ name: 'result', data: exportRows }],
