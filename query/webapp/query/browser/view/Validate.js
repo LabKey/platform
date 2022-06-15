@@ -337,7 +337,7 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
     },
 
     exportToXls : function() {
-        const exportRows = [LABKEY.query.browser.view.Validate.EXPORT_HEADER];
+        var exportRows = [LABKEY.query.browser.view.Validate.EXPORT_HEADER];
         this.validationResult.sort((row1, row2) => {
             // first sort by error type: error, then warning, then info
             if (row1[1] === 'ERROR' && row2[1] !== 'ERROR')
@@ -355,7 +355,7 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
         });
 
         exportRows.push(...this.validationResult);
-        const exportData = {
+        var exportData = {
             fileName: 'ValidateQueries' + '.xlsx',
             sheets: [{ name: 'result', data: exportRows }],
         };
