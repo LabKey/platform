@@ -8,6 +8,10 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
 
     bodyStyle: 'padding: 5px;',
 
+    statics: {
+        EXPORT_HEADER : ['Container Path', 'Type', 'Query', 'Discrepancy']
+    },
+
     constructor : function(config) {
         this.callParent([config]);
         this.addEvents('queryclick', 'startvalidation', 'stopvalidation');
@@ -32,7 +36,8 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
             border: false,
             items: [
                 this.getStartButton(),
-                this.getStopButton()
+                this.getStopButton(),
+                this.getExportButton()
             ]
         },{
             xtype: 'panel',
@@ -142,6 +147,8 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
             }
         }];
 
+        this.validationResult = [];
+
         this.callParent();
     },
 
@@ -184,10 +191,16 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
 
             Ext4.each(messages, function(msg) {
                 var cls = 'lk-vq-error-message';
-                if (msg.match(/^INFO:/))
+                var type = 'ERROR';
+                if (msg.match(/^INFO:/)) {
+                    type = 'INFO';
                     cls = 'lk-vq-info-message';
-                if (msg.match(/^WARNING:/))
+                }
+
+                if (msg.match(/^WARNING:/)) {
+                    type = 'WARNING';
                     cls = 'lk-vq-warn-message';
+                }
 
                 if (cls === 'lk-vq-error-message') {
                     hasErrors = true;
@@ -200,6 +213,7 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
                     cls: cls,
                     html: Ext4.htmlEncode(msg)
                 });
+                this.validationResult.push([this.currentContainer, type, schemaName + "." + queryName, msg]);
             }, this);
 
             if (!hasErrors) {
@@ -213,6 +227,8 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
                 cls: 'lk-vq-error-message',
                 html: Ext4.htmlEncode(errorInfo.exception)
             });
+
+            this.validationResult.push([this.currentContainer, 'ERROR', schemaName + "." + queryName, errorInfo.exception]);
         }
 
         errors.add(config);
@@ -292,6 +308,66 @@ Ext4.define('LABKEY.query.browser.view.Validate', {
 
         return this.stopButton;
     },
+
+    getExportButton : function() {
+        if (!this.exportButton) {
+            this.exportButton = Ext4.create('Ext.button.Button', {
+                text: 'Export',
+                cls: 'lk-sb-button',
+                disabled: true,
+                handler: this.exportToXls,
+                listeners: {
+                    afterrender: {
+                        fn: function(btn) {
+                            this.on('startvalidation', function() {
+                                    btn.setDisabled(true);
+                                    this.validationResult = [];
+                                }, this);
+                            this.on('stopvalidation', function() { btn.setDisabled(false); }, this);
+                        },
+                        scope: this,
+                        single: true
+                    }
+                },
+                scope: this
+            });
+        }
+
+        return this.exportButton;
+    },
+
+    exportToXls : function() {
+        var exportRows = [LABKEY.query.browser.view.Validate.EXPORT_HEADER];
+        this.validationResult.sort(function(row1, row2) {
+            // first sort by error type: error, then warning, then info
+            const type1 = row1[1];
+            const type2 = row2[1];
+            if (type1 === 'ERROR' && type2 !== 'ERROR')
+                return -1;
+            if (type2 === 'ERROR' && type1 !== 'ERROR')
+                return 1;
+            if (type1 === 'WARNING' && type2 !== 'WARNING')
+                return -1;
+            if (type2 === 'WARNING' && type1 !== 'WARNING')
+                return 1;
+
+            // then sort by query
+            return row1[2].localeCompare(row2[2]);
+
+        });
+
+        Ext4.Array.forEach(this.validationResult, function(result) {
+            exportRows.push(result);
+        });
+
+        var exportData = {
+            fileName: 'ValidateQueries.xlsx',
+            sheets: [{ name: 'result', data: exportRows }],
+        };
+
+        LABKEY.Utils.convertToExcel(exportData);
+    },
+
 
     getCurrentQueryLabel : function() {
         return Ext4.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext4.htmlEncode(this.queries[this.curQueryIdx].name);
