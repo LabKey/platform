@@ -988,11 +988,17 @@ public class FileContentServiceImpl implements FileContentService
     {
         if (options != null)
         {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
-
-            root.setProperties(options.serialize());
-            FileRootManager.get().saveFileRoot(null, root);
+            setAdminOptions(c, options.serialize());
         }
+    }
+
+    @Override
+    public void setAdminOptions(Container c, String properties)
+    {
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+
+        root.setProperties(properties);
+        FileRootManager.get().saveFileRoot(null, root);
     }
 
     public static final String NAMESPACE_PREFIX = "FileProperties";

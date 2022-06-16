@@ -44,6 +44,8 @@ import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
+import org.labkey.api.files.FileBrowserConfigImporter;
+import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -932,6 +934,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
             fsr.addFactories(new DataStateWriter.Factory(), new DataStateImporter.Factory());
+            fsr.addFactories(new FileBrowserConfigWriter.Factory(), new FileBrowserConfigImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 

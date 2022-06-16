@@ -202,6 +202,8 @@ public interface FileContentService
 
     void setAdminOptions(Container c, FilesAdminOptions options);
 
+    void setAdminOptions(Container c, String properties);
+
     /**
      * Returns the default file root of the specified container.  This will default to a path
      * relative to the first parent container with an override
