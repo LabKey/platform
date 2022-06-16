@@ -12,8 +12,6 @@ import {
     SecurityPolicy,
     UsersGridPanel,
     fetchContainerSecurityPolicy,
-    queryGridInvalidate,
-    SCHEMAS,
     User,
     withPermissionsPage,
     getUserLimitSettings,
@@ -62,8 +60,6 @@ class UsersGridPanelPageImpl extends React.PureComponent<InjectedPermissionsPage
     };
 
     onSuccess = (response: any) => {
-        queryGridInvalidate(SCHEMAS.CORE_TABLES.USERS);
-
         let message, userCreationError;
         if (response.users) {
             let countNew = 0;
