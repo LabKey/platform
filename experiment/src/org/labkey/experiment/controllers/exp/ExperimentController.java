@@ -7318,7 +7318,7 @@ public class ExperimentController extends SpringActionController
 
                 ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                 if (sampleType != null)
-                    sampleType.ensureMinGenId(form.getGenId(), getContainer());
+                    sampleType.ensureMinGenId(form.getGenId());
                 else
                 {
                     resp.put("success", false);

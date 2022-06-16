@@ -553,11 +553,20 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
     }
 
+    private Container getGenIdSequenceContainer()
+    {
+        // use DBSeq at project level to avoid duplicate genId for samples in child folders
+        Container container = getContainer();
+        if (container.isProject() || container.getProject() == null)
+            return container;
+        return container.getProject();
+    }
+
     // The DbSequence used to generate the ${genId} column values
     public DbSequence genIdSequence()
     {
         long minGenId = getMinGenId();
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getGenIdSequenceContainer(), SEQUENCE_PREFIX, getRowId(), 100);
         if (minGenId > 1)
             seq.ensureMinimum(minGenId - 1);
         return seq;
@@ -566,28 +575,28 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public long getCurrentGenId()
     {
-        Integer seqRowId = DbSequenceManager.getRowId(getContainer(), SEQUENCE_PREFIX, getRowId());
+        Container container = getGenIdSequenceContainer();
+        Integer seqRowId = DbSequenceManager.getRowId(container, SEQUENCE_PREFIX, getRowId());
         if (null == seqRowId)
             return 0;
 
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
         return seq.current();
     }
 
     @Override
-    public void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException
+    public void ensureMinGenId(long newSeqValue) throws ExperimentException
     {
-        DbSequence seq = DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 0);
+        Container container = getGenIdSequenceContainer();
+        DbSequence seq = DbSequenceManager.getPreallocatingSequence(container, SEQUENCE_PREFIX, getRowId(), 0);
         long current = seq.current();
         if (newSeqValue < current)
         {
-            if (!hasSamples(container))
-            {
-                seq.setSequenceValue(newSeqValue);
-                DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
-            }
-            else
+            if (hasSamples())
                 throw new ExperimentException("Unable to set genId to " + newSeqValue + " due to conflict with existing samples.");
+
+            seq.setSequenceValue(newSeqValue);
+            DbSequenceManager.invalidatePreallocatingSequence(container, SEQUENCE_PREFIX, getRowId());
         }
         else
         {
@@ -596,11 +605,10 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
     }
 
-    private boolean hasSamples(Container container)
+    private boolean hasSamples()
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
-        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("CpasType"), filter, null).exists();
     }
 
     @Override
@@ -646,7 +654,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return new ExpMaterialImpl(material);
     }
 
-    public ExpMaterialImpl getSampleByObjectId(Container c, Integer objectId)
+    private ExpMaterialImpl getSampleByObjectId(Container c, Integer objectId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
@@ -857,7 +865,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
 
-        // Name is identifier with highest weight
+        // Name is identifier with the highest weight
         identifiersHi.add(getName());
 
         if (isMedia())
