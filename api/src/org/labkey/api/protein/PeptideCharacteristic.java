@@ -4,6 +4,7 @@ public class PeptideCharacteristic
 {
     private String _sequence;
     private Double _intensity;
+    private int _intensityRank;
     private String _intensityColor;
     private Double _confidence;
     private String _confidenceColor;
@@ -28,6 +29,16 @@ public class PeptideCharacteristic
     public void setIntensity(Double intensity)
     {
         _intensity = intensity;
+    }
+
+    public int getIntensityRank()
+    {
+        return _intensityRank;
+    }
+
+    public void setIntensityRank(int intensityRank)
+    {
+        _intensityRank = intensityRank;
     }
 
     public String getIntensityColor()
