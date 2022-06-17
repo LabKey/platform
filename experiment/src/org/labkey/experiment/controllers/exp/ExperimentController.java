@@ -2434,9 +2434,9 @@ public class ExperimentController extends SpringActionController
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
-                    if (rootObject.has("queryinfo"))
+                    JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                    if (qInfo != null)
                     {
-                        JSONObject qInfo = rootObject.getJSONObject("queryinfo");
                         QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
                                 qInfo.getString("query"), getViewContext().getActionURL(),
                                 rootObject.getString("auditMessage") + filename,
