@@ -124,6 +124,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.ClientSideMetricService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -161,7 +162,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -2752,7 +2752,7 @@ public class CoreController extends SpringActionController
             String metricName = form.getMetricName();
             response.put("featureArea", featureArea);
             response.put("metricName", metricName);
-            response.put("count", ClientSideMetricManager.get().increment(featureArea, metricName));
+            response.put("count", ClientSideMetricService.get().increment(featureArea, metricName));
             return response;
         }
     }
