@@ -76,7 +76,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
         _sampleType = sampleType;
         if (_sampleType != null)
-            _nameGenerator = _sampleType.getNameGenerator();
+            _nameGenerator = _sampleType.getNameGenerator(c);
         else
             _nameGenerator = null;
 
