@@ -1561,14 +1561,16 @@ public abstract class SqlDialect
 
     /**
      * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
+     *
      * @param procSchema
      * @param procName
-     * @param paramCount The total number of parameters to include in the invocation string
-     * @param hasReturn  true if the procedure has a return code/status, false if not
+     * @param paramCount   The total number of parameters to include in the invocation string
+     * @param hasReturn    true if the procedure has a return code/status, false if not
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
+     * @param procScope
      * @return
      */
-    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult);
+    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register

@@ -1946,7 +1946,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    if (scope.getDriverName().contains("jTDS"))
+                    if (isJTDS(scope))
                     {
                         parameters.put("return_status", new MetadataParameterInfo(traitMap));
                     }
@@ -1969,11 +1969,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
+            if (!isJTDS(procScope))
+            {
+                sb.append("{");
+            }
             sb.append("? = ");
             paramCount--;
         }
@@ -1984,6 +1988,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
+        if (hasReturn || assignResult && !isJTDS(procScope))
+        {
+            sb.append("}");
+        }
 
         return sb.toString();
     }
@@ -1991,6 +1999,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
+        int index = 1;
+        boolean jTDS = isJTDS(scope);
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
@@ -1999,10 +2009,34 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
-                stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+            {
+                if (jTDS)
+                {
+                    stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+                }
+                else
+                {
+                    stmt.setObject(index, paramInfo.getParamValue(), datatype);
+                }
+            }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
-                stmt.registerOutParameter(paramName, datatype);
+            {
+                if (jTDS)
+                {
+                    stmt.registerOutParameter(paramName, datatype);
+                }
+                else
+                {
+                    stmt.registerOutParameter(index, datatype);
+                }
+            }
+            index++;
         }
+    }
+
+    private boolean isJTDS(DbScope scope)
+    {
+        return scope.getDriverName().contains("jTDS");
     }
 
     @Override
