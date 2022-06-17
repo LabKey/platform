@@ -46,7 +46,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -649,8 +648,6 @@ public class StatementUtils
         List<ColumnInfo> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
 
-        Date now = new Date();
-
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
             col = table.getColumn("Owner");
@@ -671,7 +668,7 @@ public class StatementUtils
             if (null != col)
             {
                 cols.add(col);
-                values.add(new SQLFragment("?", now));   // Instead of {fn now()} -- see #27534
+                values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
                 done.add("Created");
             }
         }
@@ -688,7 +685,7 @@ public class StatementUtils
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(colModified);
-            values.add(new SQLFragment("?", now));   // Instead of {fn now()} -- see #27534
+            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
@@ -1157,8 +1154,6 @@ public class StatementUtils
         }
         if (value instanceof SimpleTranslator.NowTimestamp)
         {
-            f.append("?");
-            f.add(new Date());
             f.append("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
             return;
         }
