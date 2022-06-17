@@ -57,8 +57,10 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
@@ -205,7 +207,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing(StartupPropertyHandler::getScope, String.CASE_INSENSITIVE_ORDER));
 
     private List<Module> _modules;
-    private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
+    private MultiValuedMap<String, StartupPropertyEntry> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
     {
@@ -2154,20 +2156,39 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return unknownContexts;
     }
 
-    public void handleStartupProperties(StartupPropertyHandler handler)
+    public void handleStartupProperties(StandardStartupPropertyHandler handler)
+    {
+        startupPropertyChecks(handler);
+        Map<String, StartupProperty> props = handler.getProperties();
+        Map<StartupProperty, StartupPropertyEntry> map = new LinkedHashMap<>();
+        getConfigProperties(handler.getScope()).stream().forEach(cp -> {
+            StartupProperty sp = props.get(cp.getName());
+            if (null != sp)
+            {
+                cp.setStartupProperty(sp);
+                map.put(sp, cp);
+            }
+            else
+            {
+                _log.warn("Unknown startup property: " + cp.getScope() + "." + cp.getName());
+            }
+        });
+        handler.handle(map);
+    }
+
+    public void handleStartupProperties(LenientStartupPropertyHandler handler)
+    {
+        startupPropertyChecks(handler);
+        StartupProperty sp = handler.getProperty();
+        handler.handle(getConfigProperties(handler.getScope()).stream()
+            .peek(cp -> cp.setStartupProperty(sp))
+            .toList());
+    }
+
+    private void startupPropertyChecks(StartupPropertyHandler handler)
     {
         assert !isStartupComplete() : "All startup properties must be handled during startup";
         assert _startupPropertyHandlers.add(handler) : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
-        Map<String, StartupProperty> props = handler.getProperties();
-        Map<StartupProperty, ConfigProperty> map = new LinkedHashMap<>();
-        getConfigProperties(handler.getScope()).stream().forEach(cp->{
-            StartupProperty sp = props.get(cp.getName());
-            if (null != sp)
-                map.put(sp, cp);
-            else
-                _log.warn("Unknown startup property: " + cp.getScope() + "." + cp.getName());
-        });
-        handler.handle(map);
     }
 
     public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()
@@ -2181,9 +2202,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
      * otherwise only startup properties are returned.
      */
     @NotNull
-    public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
+    public Collection<StartupPropertyEntry> getConfigProperties(@Nullable String scope)
     {
-        Collection<ConfigProperty> props = Collections.emptyList();
+        Collection<StartupPropertyEntry> props = Collections.emptyList();
         if (!_configPropertyMap.isEmpty())
         {
             if (scope != null)
@@ -2197,14 +2218,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter out bootstrap scoped properties in the non-bootstrap startup case
         return props.stream()
-            .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
+            .filter(prop -> prop.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
             .collect(Collectors.toList());
     }
 
     /**
      * Sets the entire config properties MultiValueMap.
      */
-    public void setConfigProperties(@Nullable MultiValuedMap<String, ConfigProperty> configProperties)
+    public void setConfigProperties(@Nullable MultiValuedMap<String, StartupPropertyEntry> configProperties)
     {
         _configPropertyMap = configProperties;
     }
@@ -2257,7 +2278,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                             {
                                 _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
 
-                                ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
+                                StartupPropertyEntry config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
                                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                                     _configPropertyMap.removeMapping(config.getScope(), config);
                                 _configPropertyMap.put(config.getScope(), config);
@@ -2286,9 +2307,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
             String name = String.valueOf(entry.getKey());
             String value = String.valueOf(entry.getValue());
 
-            if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            if (name != null && name.startsWith(StartupPropertyEntry.SYS_PROP_PREFIX) && value != null)
             {
-                ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
+                StartupPropertyEntry config = createConfigProperty(name.substring(StartupPropertyEntry.SYS_PROP_PREFIX.length()), value);
                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                     _configPropertyMap.removeMapping(config.getScope(), config);
                 _configPropertyMap.put(config.getScope(), config);
@@ -2302,7 +2323,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
      * siteSettings.baseServerUrl;bootstrap defines a property named : baseServerUrl in the siteSettings scope and
      * having the bootstrap modifier.
      */
-    private ConfigProperty createConfigProperty(String key, String value)
+    private StartupPropertyEntry createConfigProperty(String key, String value)
     {
         String name;
         String scope = null;
@@ -2324,7 +2345,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         else
             name = key;
 
-        return new ConfigProperty(name, value, modifier, scope);
+        return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
     private class SchemaDetails

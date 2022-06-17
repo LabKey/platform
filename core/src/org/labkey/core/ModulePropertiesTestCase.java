@@ -32,8 +32,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
@@ -210,15 +210,15 @@ public class ModulePropertiesTestCase extends Assert
     private void prepareTestStartupProperties()
     {
         // prepare a multimap of config properties to test with that has properties assigned for several scopes
-        MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+        MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
         // prepare test Look And Feel properties
-        ConfigProperty testLookAndFeelProp1 =  new ConfigProperty("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        testConfigPropertyMap.put(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
+        StartupPropertyEntry testLookAndFeelProp1 =  new StartupPropertyEntry("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
 
         // prepare test Site Settings properties
-        ConfigProperty testSiteSettingsProp1 =  new ConfigProperty("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", ConfigProperty.SCOPE_SITE_SETTINGS);
-        testConfigPropertyMap.put(ConfigProperty.SCOPE_SITE_SETTINGS, testSiteSettingsProp1);
+        StartupPropertyEntry testSiteSettingsProp1 =  new StartupPropertyEntry("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", StartupPropertyEntry.SCOPE_SITE_SETTINGS);
+        testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SITE_SETTINGS, testSiteSettingsProp1);
 
         // set these test startup test properties to be used by the entire server
         ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);

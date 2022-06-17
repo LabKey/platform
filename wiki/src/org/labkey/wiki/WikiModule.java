@@ -31,7 +31,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
@@ -128,10 +128,10 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         String propName = "homeProjectInitWebparts";
         if (ModuleLoader.getInstance().isNewInstall())
         {
-            Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+            Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
             startupProps.forEach(prop ->
             {
-                if (propName.equalsIgnoreCase(prop.getName()) && prop.getModifier() == ConfigProperty.modifier.bootstrap)
+                if (propName.equalsIgnoreCase(prop.getName()) && prop.getModifier() == StartupPropertyEntry.modifier.bootstrap)
                 {
                     for (String webpartName : StringUtils.split(prop.getValue(), ';'))
                     {

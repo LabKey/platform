@@ -71,7 +71,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
@@ -1215,7 +1215,7 @@ public class FileContentServiceImpl implements FileContentService
         // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
         startupProps.stream()
                 .filter( prop -> prop.getName().equals("siteRootFile"))
                 .forEach(prop -> {
@@ -1804,11 +1804,11 @@ public class FileContentServiceImpl implements FileContentService
         private void prepareTestStartupProperties(File testSiteRootFile)
         {
             // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+            MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test Site Root Settings properties
-            ConfigProperty testSiteRootSettingsProp1 =  new ConfigProperty("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS, testSiteRootSettingsProp1);
+            StartupPropertyEntry testSiteRootSettingsProp1 =  new StartupPropertyEntry("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
+            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS, testSiteRootSettingsProp1);
 
             // set these test startup test properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);

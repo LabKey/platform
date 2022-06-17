@@ -27,9 +27,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -270,10 +270,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
     static public void populateSettingsWithStartupProps()
     {
         PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
-        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(PROP_CATEGORY, AnalyticsProperty.class)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(PROP_CATEGORY, AnalyticsProperty.class)
         {
             @Override
-            public void handle(Map<AnalyticsProperty, ConfigProperty> startupProperties)
+            public void handle(Map<AnalyticsProperty, StartupPropertyEntry> startupProperties)
             {
                 startupProperties.forEach((ap, cp)->properties.put(ap.toString(), cp.getValue()));
             }

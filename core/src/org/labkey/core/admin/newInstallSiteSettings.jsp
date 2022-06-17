@@ -18,7 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.settings.ConfigProperty" %>
+<%@ page import="org.labkey.api.settings.StartupPropertyEntry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm" %>
@@ -28,7 +28,7 @@
 <%
     NewInstallSiteSettingsForm bean = ((JspView<NewInstallSiteSettingsForm>) HttpView.currentView()).getModelBean();
 
-    Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
+    Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
     boolean isStartupPropSet = startupProps.stream().anyMatch( prop -> prop.getName().equals("siteRootFile") && !StringUtils.isBlank(prop.getValue()) );
     boolean isAppFileSystemSet = null != AppProps.getInstance().getFileSystemRoot() && AppProps.getInstance().getFileSystemRoot().isDirectory();
 %>

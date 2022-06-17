@@ -30,7 +30,7 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -157,7 +157,7 @@ public interface AuthenticationProvider
     {
         return categories.stream()
             .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
-            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+            .collect(Collectors.toMap(StartupPropertyEntry::getName, StartupPropertyEntry::getValue));
     }
 
     interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>

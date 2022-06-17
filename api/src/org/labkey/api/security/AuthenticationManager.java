@@ -72,9 +72,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -202,10 +202,10 @@ public class AuthenticationManager
         getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes, default domain)
-        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(AUTHENTICATION_CATEGORY, AuthenticationSettings.class)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(AUTHENTICATION_CATEGORY, AuthenticationSettings.class)
         {
             @Override
-            public void handle(Map<AuthenticationSettings, ConfigProperty> properties)
+            public void handle(Map<AuthenticationSettings, StartupPropertyEntry> properties)
             {
                 properties.forEach((sp, cp) -> sp.save(cp));
             }
@@ -616,7 +616,7 @@ public class AuthenticationManager
         DefaultDomain("System default domain")
         {
             @Override
-            public void save(ConfigProperty entry)
+            public void save(StartupPropertyEntry entry)
             {
                 setDefaultDomain(null, entry.getValue());
             }
@@ -635,7 +635,7 @@ public class AuthenticationManager
             return _description;
         }
 
-        public void save(ConfigProperty entry)
+        public void save(StartupPropertyEntry entry)
         {
             saveAuthSetting(null, name(), Boolean.parseBoolean(entry.getValue()));
         }

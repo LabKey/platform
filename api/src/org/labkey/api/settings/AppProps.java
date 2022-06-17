@@ -39,6 +39,8 @@ public interface AppProps
 {
     AppProps _instance = new AppPropsImpl();
 
+    String SCOPE_SITE_SETTINGS = "SiteSettings";
+
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
     String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";

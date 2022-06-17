@@ -10,7 +10,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -146,7 +146,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     public static void populateStartupProperties()
     {
-        Collection<ConfigProperty> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
+        Collection<StartupPropertyEntry> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
         if (!userLimitsProperties.isEmpty())
         {
             LimitActiveUsersSettings settings = new LimitActiveUsersSettings();

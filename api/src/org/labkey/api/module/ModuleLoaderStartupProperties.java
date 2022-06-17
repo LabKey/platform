@@ -1,9 +1,9 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -38,9 +38,9 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
 
     static void populate()
     {
-        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>("ModuleLoader", ModuleLoaderStartupProperties.class) {
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>("ModuleLoader", ModuleLoaderStartupProperties.class) {
             @Override
-            public void handle(Map<ModuleLoaderStartupProperties, ConfigProperty> map)
+            public void handle(Map<ModuleLoaderStartupProperties, StartupPropertyEntry> map)
             {
                 map.forEach((sp, cp)-> Arrays.stream(StringUtils.split(cp.getValue(), ","))
                     .map(StringUtils::trimToNull)

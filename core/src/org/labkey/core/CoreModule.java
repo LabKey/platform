@@ -105,7 +105,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -114,6 +113,7 @@ import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -454,11 +454,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (users.isEmpty())
             return;
 
-        Collection<ConfigProperty> properties = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        Collection<StartupPropertyEntry> properties = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_SETTINGS);
         String fromEmail = null;
         String subject = null;
         String body = null;
-        for (ConfigProperty prop : properties)
+        for (StartupPropertyEntry prop : properties)
         {
             if (prop.getName().equalsIgnoreCase("siteAvailableEmailMessage"))
                 body = StringUtils.trimToNull(prop.getValue());
@@ -1268,11 +1268,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateLookAndFeelWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
         User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
         boolean incrementRevision = false;
 
-        for (ConfigProperty prop : startupProps)
+        for (StartupPropertyEntry prop : startupProps)
         {
             SiteResourceHandler handler = getResourceHandler(prop.getName());
             if (handler != null)
@@ -1289,10 +1289,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_SETTINGS);
         User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
 
-        for (ConfigProperty prop : startupProps)
+        for (StartupPropertyEntry prop : startupProps)
         {
             if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
             {
@@ -1325,7 +1325,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return LookAndFeelPropertiesManager.get().getResourceHandler(name);
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)

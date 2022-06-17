@@ -24,9 +24,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
-import org.labkey.api.settings.StartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
+import static org.labkey.api.settings.StartupPropertyEntry.modifier.bootstrap;
 
 /**
  * Manager to registering and tracking the various {@link FolderType} implementations provided by modules.
@@ -329,10 +329,10 @@ public class FolderTypeManager
 
     public void populateWithStartupProps()
     {
-        ModuleLoader.getInstance().handleStartupProperties(new StartupPropertyHandler<>(SCOPE_FOLDER_TYPES, FolderTypeStartupProperties.class)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_FOLDER_TYPES, FolderTypeStartupProperties.class)
         {
             @Override
-            public void handle(Map<FolderTypeStartupProperties, ConfigProperty> properties)
+            public void handle(Map<FolderTypeStartupProperties, StartupPropertyEntry> properties)
             {
                 properties.forEach((sp, cp)->{
                     // apply disabledTypes prop only at bootstrap
