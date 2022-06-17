@@ -468,7 +468,6 @@ public class IpynbReport extends DockerScriptReport
                     "APIKEY", apiKey);
             try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
             {
-                t.interrupt();
                 try
                 {
                     t.join(1000);
