@@ -66,6 +66,7 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -869,7 +870,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         if (JdbcType.TIMESTAMP == getJdbcType())
         {
-            return new SQLFragment("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
+//            return new SQLFragment("CURRENT_TIMESTAMP");   // Instead of {fn now()} -- see #27534
+            return new SQLFragment("?", new Date());   // Instead of {fn now()} -- see #27534
         }
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
