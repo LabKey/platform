@@ -32,6 +32,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -107,6 +108,35 @@ public class IpynbReport extends DockerScriptReport
     public String getEditAreaSyntax()
     {
         return "application/ld+json";
+    }
+
+    @Override
+    public String getDefaultScript()
+    {
+        return "{\n" +
+                "  \"cells\": [\n" +
+                "    {\n" +
+                "      \"cell_type\": \"code\",\n" +
+                "      \"source\": \"from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n\\nprint(get_report_data())\\nprint(get_report_parameters())\",\n" +
+                "      \"metadata\": {},\n" +
+                "      \"execution_count\": null,\n" +
+                "      \"outputs\": []\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+    }
+
+    @Override
+    public @Nullable String getDesignerHelpHtml()
+    {
+        try
+        {
+            return new JspTemplate("/org/labkey/api/reports/report/view/ipynbReportHelp.jsp").render();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
