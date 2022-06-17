@@ -29,6 +29,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -342,7 +343,7 @@ public class IpynbReport extends DockerScriptReport
             var out = new ByteArrayOutputStream();
             var err = new ByteArrayOutputStream();
 
-            // DockerService.run() blocks until process completion, so input stream had to be written on a different threads
+            // DockerService.run() blocks until process completion, so input stream has to be written on a different threads
             final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
             Thread t = new Thread(() -> {
                 try (PipedOutputStream pipeOutput = new PipedOutputStream();
@@ -362,26 +363,32 @@ public class IpynbReport extends DockerScriptReport
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
                     "APIKEY", apiKey);
-            DockerService.get().run(image, "ipynb", environment, in, out, err);
-            t.interrupt();
-            try
+            try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
             {
-                t.join(1000);
+                t.interrupt();
+                try
+                {
+                    t.join(1000);
+                }
+                catch (InterruptedException x)
+                {
+                    // pass
+                }
+                if (null != bgException[0])
+                {
+                    bgException[0].rethrow(IOException.class);
+                    bgException[0].throwRuntimeException();
+                }
+                try (FileOutputStream fos = new FileOutputStream(outputDocument))
+                {
+                    out.writeTo(fos);
+                }
+                return 0;
             }
-            catch (InterruptedException x)
+            catch (Exception x)
             {
-                // pass
+                throw UnexpectedException.wrap(x);
             }
-            if (null != bgException[0])
-            {
-                bgException[0].rethrow(IOException.class);
-                bgException[0].throwRuntimeException();
-            }
-            try (FileOutputStream fos = new FileOutputStream(outputDocument))
-            {
-                out.writeTo(fos);
-            }
-            return 0;
         }
 
 
@@ -431,7 +438,7 @@ public class IpynbReport extends DockerScriptReport
             var out = new ByteArrayOutputStream();
             var err = new ByteArrayOutputStream();
 
-            // DockerService.run() blocks until process completion, so input stream had to be written on a different threads
+            // DockerService.run() blocks until process completion, so input stream has to be written on a different threads
             final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
             final Thread t = new Thread(() -> {
                 try (
@@ -459,28 +466,34 @@ public class IpynbReport extends DockerScriptReport
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
                     "APIKEY", apiKey);
-            DockerService.get().run(image, "ipynb", environment, in, out, err);
-            t.interrupt();
-            try
+            try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
             {
-                t.join(1000);
-            }
-            catch (InterruptedException x)
-            {
-                // pass
-            }
-            if (null != bgException[0])
-            {
-                bgException[0].rethrow(IOException.class);
-                bgException[0].throwRuntimeException();
-            }
+                t.interrupt();
+                try
+                {
+                    t.join(1000);
+                }
+                catch (InterruptedException x)
+                {
+                    // pass
+                }
+                if (null != bgException[0])
+                {
+                    bgException[0].rethrow(IOException.class);
+                    bgException[0].throwRuntimeException();
+                }
 
-            // delete script to avoid returning unprocessed ipynb in case of error
-            ipynb.delete();
-            // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
-            extractTar(new ByteArrayInputStream(out.toByteArray()), working);
+                // delete script to avoid returning unprocessed ipynb in case of error
+                ipynb.delete();
+                // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
+                extractTar(new ByteArrayInputStream(out.toByteArray()), working);
 
-            return 0;
+                return 0;
+            }
+            catch (Exception x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
         }
 
         private static void extractTar(InputStream in, File targetDirectory) throws IOException
