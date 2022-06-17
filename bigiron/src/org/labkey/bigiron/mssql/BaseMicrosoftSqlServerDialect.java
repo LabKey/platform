@@ -1946,7 +1946,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    if (scope.getDriverName().contains("jTDS"))
+                    {
+                        parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    }
+                    else
+                    {
+                        parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
+                    }
                 }
                 else
                 {
