@@ -48,7 +48,6 @@ import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -70,7 +69,7 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
-    String EXPERIMENTAL_SUBFOLDER_DATA_ENABLED = "isSubfolderDataEnabled";
+    String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -616,8 +615,24 @@ public interface QueryService
         return col;
     }
 
-    default boolean isProductSubfolderDataEnabled()
+    default boolean isProductProjectsEnabled(Container container)
     {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SUBFOLDER_DATA_ENABLED);
+        if (container == null || container.isRoot() || container.isWorkbook())
+            return false;
+
+        Container project;
+        if (container.isProject())
+            project = container;
+        else
+            project = container.getProject();
+
+        if (project == null)
+            return false;
+
+        // It is less than ideal to reference the folder type but for the time being
+        // this is how we recognize the appropriate container context.
+        // 1. The provided container is a LKB top-level LKB folder.
+        // 2. The provided container's top-level parent is a LKB folder.
+        return "Biologics".equals(project.getFolderType().getName());
     }
 }

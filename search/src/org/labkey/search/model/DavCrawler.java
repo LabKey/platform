@@ -566,8 +566,6 @@ public class DavCrawler implements ShutdownListener
             return null;
         if (crawlQueue.isEmpty())
         {
-            _log.debug("findSomeWork()");
-
             Map<Path,Pair<Date,Date>> map = _paths.getPaths(100);
 
             for (Map.Entry<Path,Pair<Date,Date>> e : map.entrySet())
@@ -576,12 +574,25 @@ public class DavCrawler implements ShutdownListener
                 Date lastCrawl = e.getValue().first;
                 Date nextCrawl = e.getValue().second;
 
-                _log.debug("add to queue: " + path.toString());
                 if (!Path.rootPath.equals(path))
+                {
+                    _log.debug("findSomeWork():    adding path to in memory queue: " + path.toString() + " (lastCrawl=" + lastCrawl + ", nextCrawl=" + nextCrawl);
                     crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
+                }
             }
         }
-        return crawlQueue.isEmpty() ? null : crawlQueue.removeFirst();
+
+        if (crawlQueue.isEmpty())
+        {
+            _log.trace("findSomeWork(): no work found");
+            return null;
+        }
+        else
+        {
+            var path = crawlQueue.removeFirst();
+            _log.debug("findSomeWork(): now crawling " + path._directory);
+            return path;
+        }
     }
 
 
