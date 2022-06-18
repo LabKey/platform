@@ -673,8 +673,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (_log.isDebugEnabled())
             {
-                String dump = dump(r, doc);
-                _log.debug("indexing " + dump);
+                if (_log.isTraceEnabled())
+                    _log.trace("indexing " + dump(r, doc));
+                else
+                    _log.debug("indexing docid: " + r.getDocumentId());
             }
 
             return index(r.getDocumentId(), r, doc);

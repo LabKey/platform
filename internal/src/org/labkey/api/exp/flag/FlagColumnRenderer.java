@@ -47,6 +47,7 @@ public class FlagColumnRenderer extends DataColumn
         {
             setInputType(displayField.getInputType());
         }
+        setWidth(null);
     }
 
 

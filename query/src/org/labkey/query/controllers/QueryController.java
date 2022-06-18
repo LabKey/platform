@@ -2428,6 +2428,102 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class RenameQueryViewForm extends QueryForm
+    {
+        private String newName;
+
+        public String getNewName()
+        {
+            return newName;
+        }
+
+        public void setNewName(String newName)
+        {
+            this.newName = newName;
+        }
+
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class RenameQueryViewAction extends MutatingApiAction<RenameQueryViewForm>
+    {
+        @Override
+        public ApiResponse execute(RenameQueryViewForm form, BindException errors)
+        {
+            CustomView view = form.getCustomView();
+            if (view == null)
+            {
+                throw new NotFoundException();
+            }
+
+            Container container = getContainer();
+            User user = getUser();
+
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
+            if (schemaName == null || queryName == null)
+                throw new NotFoundException("schemaName and queryName are required");
+
+            UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
+            if (schema == null)
+                throw new NotFoundException("schema not found");
+
+            QueryDefinition queryDef = QueryService.get().getQueryDef(user, container, schemaName, queryName);
+            if (queryDef == null)
+                queryDef = schema.getQueryDefForTable(queryName);
+            if (queryDef == null)
+                throw new NotFoundException("query not found");
+
+            renameCustomView(container, queryDef, view, form.getNewName(), errors);
+
+            if (errors.hasErrors())
+                return null;
+            else
+                return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    protected void renameCustomView(Container container, QueryDefinition queryDef, CustomView fromView, String newViewName, BindException errors)
+    {
+        if (newViewName != null && RESERVED_VIEW_NAMES.contains(newViewName.toLowerCase()))
+            errors.reject(ERROR_MSG, "The grid view name '" + newViewName + "' is not allowed.");
+
+        String newName = StringUtils.trimToNull(newViewName);
+        if (StringUtils.isEmpty(newName))
+            errors.reject(ERROR_MSG, "View name cannot be blank.");
+
+        if (errors.hasErrors())
+            return;
+
+        User owner = getUser();
+        boolean canSaveForAllUsers = container.hasPermission(getUser(), EditSharedViewPermission.class);
+
+        if (!fromView.canEdit(container, errors))
+            return;
+
+        if (fromView.isSession())
+        {
+            errors.reject(ERROR_MSG, "Cannot rename a session view.");
+            return;
+        }
+
+        CustomView duplicateView = queryDef.getCustomView(owner, getViewContext().getRequest(), newName);
+        if (duplicateView == null && canSaveForAllUsers)
+            duplicateView = queryDef.getSharedCustomView(newName);
+        if (duplicateView != null)
+        {
+            // only allow duplicate view name if creating a new private view to shadow an existing shared view
+            if (!(!fromView.isShared() && duplicateView.isShared()))
+            {
+                errors.reject(ERROR_MSG, "Another saved view by the name \"" + newName + "\" already exists. ");
+                return;
+            }
+        }
+
+        fromView.setName(newViewName);
+        fromView.save(getUser(), getViewContext().getRequest());
+    }
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Configure.class)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
