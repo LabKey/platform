@@ -178,7 +178,7 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
         WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
         startupProps
-                .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
+            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
         writeable.save();
     }
 

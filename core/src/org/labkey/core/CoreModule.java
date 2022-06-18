@@ -265,6 +265,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
@@ -1291,33 +1293,33 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(AppProps.SCOPE_SITE_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        Map<StashedStartupProperties, StartupPropertyEntry> props = AppProps.getInstance().getStashedProperties();
 
-        for (StartupPropertyEntry prop : startupProps)
+        StartupPropertyEntry folderTypeEntry = props.get(homeProjectFolderType);
+        if (null != folderTypeEntry)
         {
-            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeEntry.getValue());
+            if (folderType != null)
+                // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+                ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
+            else
+                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+        }
+
+        StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
+        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        {
+            // reset the home project permissions to remove the default assignments given at server install
+            MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
+            SecurityPolicyManager.savePolicy(homePolicy);
+            // remove the guest role assignment from the support subfolder
+            Group guests = SecurityManager.getGroup(Group.groupGuests);
+            if (null != guests)
             {
-                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
-                if (folderType != null)
-                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
-                else
-                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
-            }
-            else if ("homeProjectResetPermissions".equalsIgnoreCase(prop.getName()) && Boolean.valueOf(prop.getValue()))
-            {
-                // reset the home project permissions to remove the default assignments given at server install
-                MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
-                SecurityPolicyManager.savePolicy(homePolicy);
-                // remove the guest role assignment from the support subfolder
-                Group guests = SecurityManager.getGroup(Group.groupGuests);
-                if (null != guests)
-                {
-                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
-                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                        supportPolicy.removeRoleAssignment(guests, assignedRole);
-                    SecurityPolicyManager.savePolicy(supportPolicy);
-                }
+                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                    supportPolicy.removeRoleAssignment(guests, assignedRole);
+                SecurityPolicyManager.savePolicy(supportPolicy);
             }
         }
     }

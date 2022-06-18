@@ -2169,6 +2169,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
             else
             {
+                // Can't actually validate here since this method can be invoked multiple times with the same scope
+                // TODO: Track the matched properties and validate after startup is complete
                 _log.warn("Unknown startup property: " + cp.getScope() + "." + cp.getName());
             }
         });
