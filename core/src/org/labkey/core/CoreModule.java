@@ -114,6 +114,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.settings.StashedStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -263,6 +264,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 
 /**
  * User: migra
@@ -454,20 +459,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (users.isEmpty())
             return;
 
-        Collection<StartupPropertyEntry> properties = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_SETTINGS);
-        String fromEmail = null;
-        String subject = null;
-        String body = null;
-        for (StartupPropertyEntry prop : properties)
-        {
-            if (prop.getName().equalsIgnoreCase("siteAvailableEmailMessage"))
-                body = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailSubject"))
-                subject = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailFrom"))
-                fromEmail = StringUtils.trimToNull(prop.getValue());
+        Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedProperties();
+        String fromEmail = getValue(map, siteAvailableEmailFrom);
+        String subject = getValue(map, siteAvailableEmailSubject);;
+        String body = getValue(map, siteAvailableEmailMessage);;
 
-        }
         if (fromEmail == null || subject == null || body == null)
             return;
 
@@ -483,6 +479,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
         // for hosted sites.  Another option is to use the guest user here, but that's strange.
         svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
+    }
+
+    private @Nullable String getValue(Map<StashedStartupProperties, StartupPropertyEntry> map, StashedStartupProperties prop)
+    {
+        StartupPropertyEntry entry = map.get(prop);
+        return null != entry ? StringUtils.trimToNull(entry.getValue()) : null;
     }
 
     @NotNull
@@ -1289,7 +1291,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(AppProps.SCOPE_SITE_SETTINGS);
         User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
 
         for (StartupPropertyEntry prop : startupProps)

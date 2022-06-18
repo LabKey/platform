@@ -47,7 +47,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +67,9 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private volatile String _projectRoot = null;
     private volatile String _enlistmentId = null;
 
-    // Site settings constants defined here in same order as on the site settings page
+    private static Map<StashedStartupProperties, StartupPropertyEntry> _stashedProperties = Map.of();
+
+    // Site settings constants are defined here in the same order as on the site settings page
     public enum SiteSettingsProperties implements StartupProperty
     {
         defaultDomain("Default email domain for authentication purposes. DO NOT USE... use Authentication.DefaultDomain instead.")
@@ -254,11 +255,95 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             {
                 writeable.setXFrameOptions(value);
             }
+        },
+        navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setNavAccessOpen(Boolean.parseBoolean(value));
+            }
         };
 
         private final String _description;
 
         SiteSettingsProperties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public abstract void setValue(WriteableAppProps writeable, String value);
+    }
+
+    // Additional properties that are stored in the "SiteSettings" scope but not exposed on the site settings page
+    public enum RandomStartupProperties implements StartupProperty
+    {
+        BLASTBaseURL("BLAST server URL")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.storeStringValue(BLAST_SERVER_BASE_URL_PROP, value);
+            }
+        },
+        externalRedirectHostURLs("Allowed external redirect hosts")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, EXTERNAL_REDIRECT_HOST_DELIMITER)));
+            }
+        },
+        fileUploadDisabled("Disable file upload")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setFileUploadDisabled(Boolean.parseBoolean(value));
+            }
+        },
+        mailRecorderEnabled("Record email messages sent")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
+            }
+        },
+        userFileRoot("Enable personal folders for users")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUserFilesRoot(value);
+            }
+        },
+        webfilesEnabled("Alternative webfiles root")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
+            }
+        },
+        webRoot("Site-level file root")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setFileSystemRoot(value);
+            }
+        };
+
+        private final String _description;
+
+        RandomStartupProperties(String description)
         {
             _description = description;
         }
@@ -807,40 +892,43 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
-        // for a list of recognized site setting properties refer to: AppPropsImpl.java
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(SCOPE_SITE_SETTINGS);
-        if (startupProps.isEmpty())
-            return;
+        // for a list of recognized site setting properties see the Available Site Settings action
         WriteableAppProps writeable = AppProps.getWriteableInstance();
-        for (StartupPropertyEntry prop : startupProps)
-        {
-            LOG.debug("Setting site settings config property '" + prop.getName() + "' to '" + prop.getValue() + "'");
-            switch (prop.getName())
-            {
-                case BLAST_SERVER_BASE_URL_PROP -> writeable.setBLASTServerBaseURL(prop.getValue());
-                case MAIL_RECORDER_ENABLED -> writeable.setMailRecorderEnabled(Boolean.parseBoolean(prop.getValue()));
-                case WEB_ROOT -> writeable.setFileSystemRoot(prop.getValue());
-                case USER_FILE_ROOT -> writeable.setUserFilesRoot(prop.getValue());
-                case WEBFILES_ROOT_ENABLED -> writeable.setWebfilesEnabled(Boolean.parseBoolean(prop.getValue()));
-                case FILE_UPLOAD_DISABLED -> writeable.setFileUploadDisabled(Boolean.parseBoolean(prop.getValue()));
-                case NAV_ACCESS_OPEN -> writeable.setNavAccessOpen(Boolean.parseBoolean(prop.getValue()));
-                case EXTERNAL_REDIRECT_HOSTS -> writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(prop.getValue(), EXTERNAL_REDIRECT_HOST_DELIMITER)));
 
-                default -> LOG.debug("Property '" + prop.getName() + "' does not map to an AppProp entry");
-            }
-        }
         ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, SiteSettingsProperties.class)
         {
             @Override
             public void handle(Map<SiteSettingsProperties, StartupPropertyEntry> properties)
             {
                 properties.forEach((ssp, cp) -> {
-                    LOG.info("Setting site settings config property '" + ssp.name() + "' to '" + cp.getValue() + "'");
+                    LOG.info("Setting site settings startup property '" + ssp.name() + "' to '" + cp.getValue() + "'");
                     ssp.setValue(writeable, cp.getValue());
                 });
             }
         });
+
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, RandomStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<RandomStartupProperties, StartupPropertyEntry> properties)
+            {
+                properties.forEach((rsp, cp) -> {
+                    LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
+                    rsp.setValue(writeable, cp.getValue());
+                });
+            }
+        });
+
         writeable.save(null);
+
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<StashedStartupProperties, StartupPropertyEntry> properties)
+            {
+                _stashedProperties = properties;
+            }
+        });
     }
 
     @Override
@@ -865,5 +953,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));
         }
         return new ArrayList<>();
+    }
+
+    @Override
+    public Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties()
+    {
+        return _stashedProperties;
     }
 }

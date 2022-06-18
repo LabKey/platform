@@ -204,7 +204,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
     private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
-    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing(StartupPropertyHandler::getScope, String.CASE_INSENSITIVE_ORDER));
+    // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
+    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(sph->sph.getStartupPropertyClassName()));
 
     private List<Module> _modules;
     private MultiValuedMap<String, StartupPropertyEntry> _configPropertyMap = new HashSetValuedHashMap<>();
@@ -1579,8 +1580,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
-
-
         clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
@@ -2156,13 +2155,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return unknownContexts;
     }
 
-    public void handleStartupProperties(StandardStartupPropertyHandler handler)
+    public <T extends Enum<T> & StartupProperty> void handleStartupProperties(StandardStartupPropertyHandler<T> handler)
     {
         startupPropertyChecks(handler);
-        Map<String, StartupProperty> props = handler.getProperties();
-        Map<StartupProperty, StartupPropertyEntry> map = new LinkedHashMap<>();
-        getConfigProperties(handler.getScope()).stream().forEach(cp -> {
-            StartupProperty sp = props.get(cp.getName());
+        Map<String, T> props = handler.getProperties();
+        Map<T, StartupPropertyEntry> map = new LinkedHashMap<>();
+        getConfigProperties(handler.getScope()).forEach(cp -> {
+            T sp = props.get(cp.getName());
             if (null != sp)
             {
                 cp.setStartupProperty(sp);
@@ -2176,7 +2175,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         handler.handle(map);
     }
 
-    public void handleStartupProperties(LenientStartupPropertyHandler handler)
+    public <T extends StartupProperty> void handleStartupProperties(LenientStartupPropertyHandler<T> handler)
     {
         startupPropertyChecks(handler);
         StartupProperty sp = handler.getProperty();
@@ -2185,10 +2184,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .toList());
     }
 
-    private void startupPropertyChecks(StartupPropertyHandler handler)
+    private void startupPropertyChecks(StartupPropertyHandler<?> handler)
     {
         assert !isStartupComplete() : "All startup properties must be handled during startup";
-        assert _startupPropertyHandlers.add(handler) : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
+        boolean notExists = _startupPropertyHandlers.add(handler);
+        assert notExists : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
     }
 
     public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()

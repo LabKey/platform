@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Handles a startup property scope that, unlike a StartupStartupPropertyHandler with fixed property names, has ad hoc
  * property names, such as an email address or a group name. A single StartupProperty is provided in the constructor
- * only for documentation purposes.
+ * for documentation purposes.
  */
 public abstract class LenientStartupPropertyHandler<T extends StartupProperty> extends StartupPropertyHandler<T>
 {
@@ -14,7 +14,7 @@ public abstract class LenientStartupPropertyHandler<T extends StartupProperty> e
 
     public LenientStartupPropertyHandler(String scope, T property)
     {
-        super(scope);
+        super(scope, property.getClass().getName());
         _property = property;
     }
 

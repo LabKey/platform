@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Stores basic site-wide configuration.
@@ -240,4 +241,6 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
+
+    Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties();
 }
