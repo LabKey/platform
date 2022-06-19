@@ -2179,9 +2179,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public <T extends StartupProperty> void handleStartupProperties(LenientStartupPropertyHandler<T> handler)
     {
-        startupPropertyChecks(handler);
+        if (handler.performChecks())
+            startupPropertyChecks(handler);
         StartupProperty sp = handler.getProperty();
-        handler.handle(getConfigProperties(handler.getScope()).stream()
+        handler.handle(handler.getStartupProperties().stream()
             .peek(cp -> cp.setStartupProperty(sp))
             .toList());
     }
@@ -2227,6 +2228,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /**
      * Sets the entire config properties MultiValueMap.
      */
+    @Deprecated // Override StartupPropertyHandler.getStartupProperties() instead
     public void setConfigProperties(@Nullable MultiValuedMap<String, StartupPropertyEntry> configProperties)
     {
         _configPropertyMap = configProperties;

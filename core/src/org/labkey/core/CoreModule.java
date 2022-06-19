@@ -465,8 +465,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedProperties();
         String fromEmail = getValue(map, siteAvailableEmailFrom);
-        String subject = getValue(map, siteAvailableEmailSubject);;
-        String body = getValue(map, siteAvailableEmailMessage);;
+        String subject = getValue(map, siteAvailableEmailSubject);
+        String body = getValue(map, siteAvailableEmailMessage);
 
         if (fromEmail == null || subject == null || body == null)
             return;
@@ -888,9 +888,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
-        SecurityManager.populateGroupRolesWithStartupProps();
-        SecurityManager.populateUserRolesWithStartupProps();
-        SecurityManager.populateUserGroupsWithStartupProps();
+        SecurityManager.populateStartupProperties();
         // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
         ContextListener.addStartupListener(new StartupListener()
         {

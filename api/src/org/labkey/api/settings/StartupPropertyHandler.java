@@ -1,5 +1,8 @@
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.module.ModuleLoader;
+
 import java.util.Collection;
 
 public abstract class StartupPropertyHandler<T extends StartupProperty>
@@ -21,6 +24,19 @@ public abstract class StartupPropertyHandler<T extends StartupProperty>
     public String getStartupPropertyClassName()
     {
         return _startupPropertyClassName;
+    }
+
+    // Startup properties come from the global properties files in most cases. Tests can override to provide test properties.
+    @NotNull
+    public Collection<StartupPropertyEntry> getStartupProperties()
+    {
+        return ModuleLoader.getInstance().getConfigProperties(getScope());
+    }
+
+    // Tests can override to avoid standard checks
+    public boolean performChecks()
+    {
+        return true;
     }
 
     public abstract Collection<T> getDocumentationProperties();
