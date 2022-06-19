@@ -31,10 +31,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.StartupPropertyEntry;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
@@ -152,32 +150,6 @@ public class ModulePropertiesTestCase extends Assert
         writeablelookAndFeelProps.save();
     }
 
-    /**
-     * Test that the Site Settings can be configured from startup properties
-     */
-    @Test
-    public void testStartupPropertiesForSiteSettings()
-    {
-        // ensure that the site wide ModuleLoader had test startup property values in the _configPropertyMap
-        prepareTestStartupProperties();
-
-        // save the original Site Settings server settings so that we can restore them when this test is done
-        AppProps siteSettingsProps = AppProps.getInstance();
-        int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
-
-        // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
-        WriteableAppProps.populateSiteSettingsWithStartupProps();
-
-        // now check that the expected changes occurred to the Site Settings settings on the server
-        int newMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
-        assertEquals("The expected change in Site Settings was not found", SITESETTINGS_MAX_BLOB_SIZE, Integer.toString(newMaxBlobSize));
-
-        // restore the Look And Feel server settings to how they were originally
-        WriteableAppProps writeableSiteSettingsProps = AppProps.getWriteableInstance();
-        writeableSiteSettingsProps.setMaxBLOBSize(originalMaxBlobSize);
-        writeableSiteSettingsProps.save(_user);
-    }
-
     private class TestModule extends CodeOnlyModule
     {
         @Override
@@ -215,10 +187,6 @@ public class ModulePropertiesTestCase extends Assert
         // prepare test Look And Feel properties
         StartupPropertyEntry testLookAndFeelProp1 = new StartupPropertyEntry("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
         testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
-
-        // prepare test Site Settings properties
-        StartupPropertyEntry testSiteSettingsProp1 = new StartupPropertyEntry("maxBLOBSize", SITESETTINGS_MAX_BLOB_SIZE, "startup", AppProps.SCOPE_SITE_SETTINGS);
-        testConfigPropertyMap.put(AppProps.SCOPE_SITE_SETTINGS, testSiteSettingsProp1);
 
         // set these test startup test properties to be used by the entire server
         ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);

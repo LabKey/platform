@@ -93,7 +93,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.ContainerUser;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -142,6 +141,7 @@ public class ApiModule extends CodeOnlyModule
         return Set.of(
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
+//            AppPropsImpl.TestCase.class,
             ArrayListMap.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
@@ -215,9 +215,7 @@ public class ApiModule extends CodeOnlyModule
     @Override
     public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
-        list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
-        return list;
+        return List.of(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
     }
 
     @Override

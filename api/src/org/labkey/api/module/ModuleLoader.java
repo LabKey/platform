@@ -2157,10 +2157,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public <T extends Enum<T> & StartupProperty> void handleStartupProperties(StandardStartupPropertyHandler<T> handler)
     {
-        startupPropertyChecks(handler);
+        if (handler.performChecks())
+            startupPropertyChecks(handler);
         Map<String, T> props = handler.getProperties();
         Map<T, StartupPropertyEntry> map = new LinkedHashMap<>();
-        getConfigProperties(handler.getScope()).forEach(cp -> {
+        handler.getStartupProperties().forEach(cp -> {
             T sp = props.get(cp.getName());
             if (null != sp)
             {

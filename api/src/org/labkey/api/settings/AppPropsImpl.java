@@ -21,6 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
@@ -37,6 +39,7 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
@@ -47,6 +50,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -888,38 +892,52 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return trimToNull(s);
     }
 
-    public static void populateSiteSettingsWithStartupProps()
+    public static class SiteSettingsPropertyHandler extends StandardStartupPropertyHandler<SiteSettingsProperties>
     {
-        // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
-        // for a list of recognized site setting properties see the Available Site Settings action
-        WriteableAppProps writeable = AppProps.getWriteableInstance();
-
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, SiteSettingsProperties.class)
+        public SiteSettingsPropertyHandler()
         {
-            @Override
-            public void handle(Map<SiteSettingsProperties, StartupPropertyEntry> properties)
+            super(SCOPE_SITE_SETTINGS, SiteSettingsProperties.class);
+        }
+
+        @Override
+        public void handle(Map<SiteSettingsProperties, StartupPropertyEntry> properties)
+        {
+            if (!properties.isEmpty())
             {
+                WriteableAppProps writeable = AppProps.getWriteableInstance();
                 properties.forEach((ssp, cp) -> {
                     LOG.info("Setting site settings startup property '" + ssp.name() + "' to '" + cp.getValue() + "'");
                     ssp.setValue(writeable, cp.getValue());
                 });
+                writeable.save(null);
             }
-        });
+        }
+    }
+
+    public static void populateSiteSettingsWithStartupProps()
+    {
+        // populate site settings with values from startup configuration
+        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
+        // for a list of recognized site setting properties see the "Available Site Settings" action
+
+        ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler());
 
         ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, RandomStartupProperties.class)
         {
             @Override
             public void handle(Map<RandomStartupProperties, StartupPropertyEntry> properties)
             {
-                properties.forEach((rsp, cp) -> {
-                    LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
-                    rsp.setValue(writeable, cp.getValue());
-                });
+                if (!properties.isEmpty())
+                {
+                    WriteableAppProps writeable = AppProps.getWriteableInstance();
+                    properties.forEach((rsp, cp) -> {
+                        LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
+                        rsp.setValue(writeable, cp.getValue());
+                    });
+                    writeable.save(null);
+                }
             }
         });
-
-        writeable.save(null);
 
         ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
         {
@@ -959,5 +977,38 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties()
     {
         return _stashedProperties;
+    }
+
+    public static class TestCase extends Assert
+    {
+        /**
+         * Test that the Site Settings can be configured from startup properties
+         */
+        @Test
+        public void testStartupPropertiesForSiteSettings()
+        {
+            final String TEST_MAX_BLOB_SIZE = "12345";
+
+            // save the original Site Settings server settings so that we can restore them when this test is done
+            AppProps siteSettingsProps = AppProps.getInstance();
+            int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
+
+            ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                {
+                    return List.of(new StartupPropertyEntry("maxBLOBSize", TEST_MAX_BLOB_SIZE, "startup", SCOPE_SITE_SETTINGS));
+                }
+            });
+
+            // now check that the expected changes occurred to the Site Settings on the server
+            int newMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
+            assertEquals("The expected change in Site Settings was not found", TEST_MAX_BLOB_SIZE, Integer.toString(newMaxBlobSize));
+
+            // restore the Look And Feel server settings to how they were originally
+            WriteableAppProps writeableSiteSettingsProps = AppProps.getWriteableInstance();
+            writeableSiteSettingsProps.setMaxBLOBSize(originalMaxBlobSize);
+            writeableSiteSettingsProps.save(TestContext.get().getUser());
+        }
     }
 }

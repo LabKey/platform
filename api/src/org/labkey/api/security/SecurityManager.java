@@ -17,8 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
