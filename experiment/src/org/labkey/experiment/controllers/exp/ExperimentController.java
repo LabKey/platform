@@ -6876,18 +6876,19 @@ public class ExperimentController extends SpringActionController
             boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
 
             TableInfo tableInfo = tableForm.getTable();
-            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            Map<String, Boolean> scopedFields = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : tableInfo.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
+                if (!ExpSchema.DerivationDataScopeType.All.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                    scopedFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             for (var column : tableInfo.getColumns())
             {
                 String columnName = column.getName();
-                if (propertyFields.containsKey(columnName))
+                if (scopedFields.containsKey(columnName))
                 {
-                    boolean isAliquotField = propertyFields.get(columnName);
+                    boolean isAliquotField = scopedFields.get(columnName);
                     boolean show = (isAliquot && isAliquotField) || (!isAliquot && !isAliquotField);
                     ((BaseColumnInfo)column).setUserEditable(show);
                     ((BaseColumnInfo)column).setHidden(!show);

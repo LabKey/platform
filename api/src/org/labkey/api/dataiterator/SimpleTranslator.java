@@ -481,7 +481,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
     // For fields that use "Derivation Data Scope", such as sample type property fields,
-    // which can be either aliquot-specific or sample metadata, use a custom get to discard/retain field values based on field property.
+    // which can be either aliquot-specific (ChildOnly) or sample metadata (ParentOnly), use a custom get to discard/retain field values based on field property.
     protected class DerivationScopedColumn implements Supplier
     {
         final int derivationDataColInd;

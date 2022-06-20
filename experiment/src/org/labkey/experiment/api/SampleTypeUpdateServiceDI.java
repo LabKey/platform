@@ -331,7 +331,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> !ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                .filter(dp -> StringUtils.isEmpty(dp.getDerivationDataScope())
+                            || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
@@ -1211,10 +1212,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DataIterator di = getInput();
             int count = di.getColumnCount();
 
-            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            Map<String, Boolean> scopedFields = new CaseInsensitiveHashMap<>(); // fields that are either aliquot-specific, or parent meta
             for (DomainProperty dp : _sampleType.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
+                if (!ExpSchema.DerivationDataScopeType.All.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                    scopedFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             int derivationDataColInd = -1;
@@ -1239,16 +1241,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (null != to)
                 {
                     String name = to.getName();
-                    boolean isPropertyField = propertyFields.containsKey(name);
+                    boolean isScopedField = scopedFields.containsKey(name);
 
                     String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
                     String ignoredMetaPropValue = String.format(INVALID_NONALIQUOT_PROPERTY, name);
                     if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
                     {
-                        if (isPropertyField)
+                        if (isScopedField)
                         {
                             ColumnInfo clone = new BaseColumnInfo(to);
-                            addColumn(clone, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(clone, new DerivationScopedColumn(i, derivationDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
                         }
                         else
                             addColumn(to, i);
@@ -1256,19 +1258,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     else if (to.getFk() instanceof MultiValuedForeignKey)
                     {
                         // pass-through multi-value columns -- converting will stringify a collection
-                        if (isPropertyField)
+                        if (isScopedField)
                         {
                             var col = new BaseColumnInfo(getInput().getColumnInfo(i));
                             col.setName(name);
-                            addColumn(col, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(col, new DerivationScopedColumn(i, derivationDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
                         }
                         else
                             addColumn(to.getName(), i);
                     }
                     else
                     {
-                        if (isPropertyField)
-                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
+                        if (isScopedField)
+                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, scopedFields.get(name));
                         else
                             addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
                     }

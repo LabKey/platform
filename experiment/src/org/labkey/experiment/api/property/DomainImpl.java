@@ -1043,6 +1043,8 @@ public class DomainImpl implements Domain
                 str.append("ExcludedFromShifting: ").append(renderOldVsNew(renderBool(pdOld.isExcludeFromShifting()), renderBool(prop.isExcludeFromShifting()))).append("; ");
             if (pdOld.isScannable() != prop.isScannable())
                 str.append("Scannable: ").append(renderOldVsNew(renderBool(pdOld.isScannable()), renderBool(prop.isScannable()))).append("; ");
+            if (!StringUtils.equals(pdOld.getDerivationDataScope(), prop.getDerivationDataScope()))
+                str.append("DerivationDataScope: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDerivationDataScope()), renderCheckingBlank(prop.getDerivationDataScope()))).append("; ");
             return str.toString();
         }
 
