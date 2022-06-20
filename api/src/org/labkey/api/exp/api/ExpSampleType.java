@@ -234,5 +234,5 @@ public interface ExpSampleType extends ExpObject
 
     long getCurrentGenId();
 
-    void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException;
+    void ensureMinGenId(long newSeqValue) throws ExperimentException;
 }

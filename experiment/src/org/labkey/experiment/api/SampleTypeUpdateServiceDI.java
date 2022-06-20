@@ -633,7 +633,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             parentByType.computeIfAbsent(type, k -> new ArrayList<>());
-            parentByType.get(type).add(parent.getName());
+            String parentName = parent.getName();
+            if (parentName.contains(","))
+                parentName = "\"" + parentName + "\"";
+            parentByType.get(type).add(parentName);
         }
 
         for (String type : parentByType.keySet())
@@ -948,7 +951,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleType, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
+            DataIterator names = new _GenerateNamesDataIterator(sampleType, container, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
                     .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampleType.getContainer()))
                     .addExtraPropsFn(() -> {
                         if (container != null)
@@ -1023,7 +1026,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         String generatedName = null;
 
-        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, MapDataIterator source, DataIteratorContext context, int batchSize)
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampleType, Container dataContainer, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
             super(source, context);
             this.sampleType = sampleType;
@@ -1041,8 +1044,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // do nothing
             }
-            nameGen = sampleType.getNameGenerator();
-            aliquotNameGen = sampleType.getAliquotNameGenerator();
+            nameGen = sampleType.getNameGenerator(dataContainer);
+            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer);
             if (nameGen != null)
                 nameState = nameGen.createState(true);
             else
