@@ -1596,11 +1596,17 @@ public abstract class SqlDialect
     /**
      * Convert parameter names between dialect specific conventions (for example, SQL Server parameters have a "@" prefix), and plain
      * alphanumeric text.
-     * @param name
      * @param dialectSpecific true to convert to dialect specific convention, false to convert to plain alphanumeric text
-     * @return
      */
     public abstract String translateParameterName(String name, boolean dialectSpecific);
+
+    /**
+     * Optionally transform a PreparedStatement parameter before it gets passed to the JDBC driver's implementation
+     */
+    public Object translateJdbcParameterValue(DbScope scope, Object value)
+    {
+        return value;
+    }
 
 
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
