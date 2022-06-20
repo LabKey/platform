@@ -84,6 +84,7 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -141,7 +142,7 @@ public class ApiModule extends CodeOnlyModule
         return Set.of(
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
-//            AppPropsImpl.TestCase.class,
+            AppPropsTestCase.class,
             ArrayListMap.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,

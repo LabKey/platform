@@ -21,8 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
@@ -39,7 +37,6 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
@@ -50,7 +47,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +141,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             @Override
             public void setValue(WriteableAppProps writeable, String value)
             {
-
+                writeable.setMemoryUsageDumpInterval(Integer.parseInt(value));
             }
         },
         maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
@@ -153,7 +149,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             @Override
             public void setValue(WriteableAppProps writeable, String value)
             {
-
+                writeable.setMaxBLOBSize(Integer.parseInt(value));
             }
         },
         ext3Required("Require ExtJS v3.4.1 be loaded on each page (DEPRECATED)")
@@ -977,38 +973,5 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties()
     {
         return _stashedProperties;
-    }
-
-    public static class TestCase extends Assert
-    {
-        /**
-         * Test that the Site Settings can be configured from startup properties
-         */
-        @Test
-        public void testStartupPropertiesForSiteSettings()
-        {
-            final String TEST_MAX_BLOB_SIZE = "12345";
-
-            // save the original Site Settings server settings so that we can restore them when this test is done
-            AppProps siteSettingsProps = AppProps.getInstance();
-            int originalMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
-
-            ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler(){
-                @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
-                {
-                    return List.of(new StartupPropertyEntry("maxBLOBSize", TEST_MAX_BLOB_SIZE, "startup", SCOPE_SITE_SETTINGS));
-                }
-            });
-
-            // now check that the expected changes occurred to the Site Settings on the server
-            int newMaxBlobSize = siteSettingsProps.getMaxBLOBSize();
-            assertEquals("The expected change in Site Settings was not found", TEST_MAX_BLOB_SIZE, Integer.toString(newMaxBlobSize));
-
-            // restore the Look And Feel server settings to how they were originally
-            WriteableAppProps writeableSiteSettingsProps = AppProps.getWriteableInstance();
-            writeableSiteSettingsProps.setMaxBLOBSize(originalMaxBlobSize);
-            writeableSiteSettingsProps.save(TestContext.get().getUser());
-        }
     }
 }

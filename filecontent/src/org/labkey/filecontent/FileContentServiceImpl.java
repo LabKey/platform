@@ -1212,16 +1212,16 @@ public class FileContentServiceImpl implements FileContentService
 
     public static void populateSiteRootFileWithStartupProps()
     {
-        // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
+        // populate the site root file settings with values read from startup properties
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
         Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
         startupProps.stream()
-                .filter( prop -> prop.getName().equals("siteRootFile"))
-                .forEach(prop -> {
-                    File fileRoot = new File(prop.getValue());
-                    FileContentService.get().setSiteDefaultRoot(fileRoot, null);
-                });
+            .filter( prop -> prop.getName().equals("siteRootFile"))
+            .forEach(prop -> {
+                File fileRoot = new File(prop.getValue());
+                FileContentService.get().setSiteDefaultRoot(fileRoot, null);
+            });
     }
 
     public ContainerListener getContainerListener()

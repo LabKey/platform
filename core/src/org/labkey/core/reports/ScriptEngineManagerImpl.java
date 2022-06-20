@@ -631,7 +631,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // ScriptEngineManagerImpl.TestCase tests bootstrap property setting, so we need a way to force this into new install mode
     public void populateScriptEngineDefinitionsWithStartupProps(Boolean startupModeForTest)
     {
-        // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
+        // populate script engine definition with values from startup configuration
         // expects startup properties formatted like:
         //        ScriptEngineDefinition.{name}.external;bootstrap=True
         //        ScriptEngineDefinition.{name}.name;bootstrap=R Scripting Engine
