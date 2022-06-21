@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -37,6 +38,7 @@ import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -991,8 +993,29 @@ public class QueryManager
                 Map<String, Object> statsMap = bag.uniqueSet().stream()
                         .collect(Collectors.toMap(Function.identity(), bag::getCount));
 
-                return Collections.singletonMap("externalDatasources", statsMap);
+                return Map.of("externalDatasources", statsMap,
+                        "customViewCounts",
+                        Map.of(
+                                "DataClasses", getCustomViewCounts("exp.data"),
+                                "SampleTypes", getCustomViewCounts("samples"),
+                                "Assays", getCustomViewCounts("assay"),
+                                "Inventory", getCustomViewCounts("inventory")
+                        )
+                );
             });
         }
+    }
+
+    private static Map<String, Object> getCustomViewCounts(String schema)
+    {
+        String schemaClause = schema.equalsIgnoreCase("assay") ? "C.schema LIKE 'assay.%'" : "C.schema = '" + schema + "'";
+        return Map.of(
+                "defaultOverrides", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                "inheritable", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags = 1").getObject(Long.class), // inheritable, not hidden, not snapshot
+                "namedViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class)// possibly inheritable, no hidden, not snapshot
+        );
     }
 }
