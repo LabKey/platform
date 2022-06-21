@@ -51,6 +51,8 @@ import static org.labkey.api.settings.LookAndFeelProperties.THEME_NAME_PROP;
 // Handles all the properties that can be set at the project or site level
 public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelProperties
 {
+    public static final String SCOPE_LOOK_AND_FEEL_SETTINGS = "LookAndFeelSettings";
+
     private final boolean isRoot;
 
     WriteableLookAndFeelProperties(Container c)
@@ -175,7 +177,7 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         // populate look and feel settings with values read from startup properties
         // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
         // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(SCOPE_LOOK_AND_FEEL_SETTINGS);
         WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
         startupProps
             .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));

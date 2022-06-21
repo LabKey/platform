@@ -28,11 +28,6 @@ public class StartupPropertyEntry
     public static final String DEFAULT_SCOPE = "none";
     public static final String SYS_PROP_PREFIX = "labkey.prop.";
 
-    // TODO: Move the constants defined below to the handlers that use them
-    public static final String SCOPE_LOOK_AND_FEEL_SETTINGS = "LookAndFeelSettings";
-    public static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
-    public static final String SCOPE_EXPERIMENTAL_FEATURE = AppProps.EXPERIMENTAL_FEATURE;
-
     // TODO: Make final and @NotNull, once all startup property handling has been migrated
     private @Nullable StartupProperty _startupProperty;
     private final String _name;

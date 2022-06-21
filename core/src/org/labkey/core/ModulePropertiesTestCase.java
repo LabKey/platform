@@ -185,8 +185,8 @@ public class ModulePropertiesTestCase extends Assert
         MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
         // prepare test Look And Feel properties
-        StartupPropertyEntry testLookAndFeelProp1 = new StartupPropertyEntry("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
+        StartupPropertyEntry testLookAndFeelProp1 = new StartupPropertyEntry("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        testConfigPropertyMap.put(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
 
         // set these test startup test properties to be used by the entire server
         ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);

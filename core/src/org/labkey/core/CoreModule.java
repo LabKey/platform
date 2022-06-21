@@ -1274,7 +1274,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
      */
     private void populateLookAndFeelWithStartupProps()
     {
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS);
         User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
         boolean incrementRevision = false;
 

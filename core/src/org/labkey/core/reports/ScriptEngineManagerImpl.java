@@ -90,6 +90,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
     private static final String ALL_ENGINES = "ALL";
+    private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
 
     // cache engine definitions by:
     // - "ALL" -> all engines
@@ -640,7 +641,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         //        ScriptEngineDefinition.{name}.exePath;bootstrap=/usr/bin/R
         //
 
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
+        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(SCOPE_SCRIPT_ENGINE_DEFINITION);
         Map<String, Map<String, String>> enginePropertyMap = new HashMap<>();
 
         for (StartupPropertyEntry prop: startupProps)
@@ -713,16 +714,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test Script Engine Definition properties - requires multiple lines in the property file for each script engine being setup
-            StartupPropertyEntry scriptEngineDefinition1 = new StartupPropertyEntry("Rtest.external", "True", "bootstrap", StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition1);
-            StartupPropertyEntry scriptEngineDefinition2 = new StartupPropertyEntry("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition2);
-            StartupPropertyEntry scriptEngineDefinition3 = new StartupPropertyEntry("Rtest.extensions", "Rtest,rtest", "bootstrap", StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition3);
-            StartupPropertyEntry scriptEngineDefinition4 = new StartupPropertyEntry("Rtest.languageName", "Rtest", "bootstrap", StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition4);
-            StartupPropertyEntry scriptEngineDefinition5 = new StartupPropertyEntry("Rtest.exePath", ".", "bootstrap", StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition5);
+            StartupPropertyEntry scriptEngineDefinition1 = new StartupPropertyEntry("Rtest.external", "True", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition1);
+            StartupPropertyEntry scriptEngineDefinition2 = new StartupPropertyEntry("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition2);
+            StartupPropertyEntry scriptEngineDefinition3 = new StartupPropertyEntry("Rtest.extensions", "Rtest,rtest", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition3);
+            StartupPropertyEntry scriptEngineDefinition4 = new StartupPropertyEntry("Rtest.languageName", "Rtest", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition4);
+            StartupPropertyEntry scriptEngineDefinition5 = new StartupPropertyEntry("Rtest.exePath", ".", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION);
+            testConfigPropertyMap.put(SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition5);
 
             // set these test startup test properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
