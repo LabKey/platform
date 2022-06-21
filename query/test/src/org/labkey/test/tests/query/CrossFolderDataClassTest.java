@@ -1,28 +1,24 @@
 package org.labkey.test.tests.query;
 
 import org.junit.BeforeClass;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.experiment.DataClassDefinition;
-import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.TestUser;
 import org.labkey.test.util.exp.DataClassAPIHelper;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
 /**
  * use this test as a place to put cross-folder dataclass testing
  */
-@Category({})
+@Category({Daily.class})
 public class CrossFolderDataClassTest extends BaseWebDriverTest
 {
     private static final String SUBFOLDER_A = "subA";
@@ -50,7 +46,7 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
     }
 
     /**
-     * Issue 45644 addresses the problem where DataClass metadata wasn't available in query when querying cross-folder
+     * Issue 45664: addresses the problem where DataClass metadata wasn't available in query when querying cross-folder
      */
     @Test
     public void testIssue454644() throws Exception
@@ -71,7 +67,6 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
 
         // now view the dataclass from a subfolder, expanding its view to include all folders and to show rowId and DataClass/Name
         var subfolderQueryPage = ExecuteQueryPage.beginAt(this, SUBFOLDER_A_PATH, "exp.data", dataClass);
-        subfolderQueryPage.getDataRegion().setContainerFilter(DataRegionTable.ContainerFilterType.ALL_FOLDERS);
 
         var customizeView = subfolderQueryPage.getDataRegion().openCustomizeGrid();
         customizeView.showHiddenItems();
@@ -79,27 +74,29 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
         customizeView.addColumn("DataClass/Name");
         customizeView.saveDefaultView();
 
-        // gather the inserted and shown data for comparison
-        var insertedRows = insertResponse.getRows();
+        // now insert a record into the dataclass, in the subfolder
+        subfolderQueryPage.getDataRegion().clickInsertNewRow()
+                .setField("Name", "Jeff")
+                .setField("intColumn", "5")
+                .setField("decimalColumn", "6.7")
+                .setField("stringColumn", "hey")
+                .submit();
+
+        // gather the data from the view; should only see Jeff
         var shownData = subfolderQueryPage.getDataRegion().getTableData();
 
-        // make sure they all got there
-        assertEquals("Expect inserted records to equal shown records",
-                insertedRows.size(), shownData.size());
-        assertEquals("Also expect all intended records to have been created",
-                numberOfTestRecords, shownData.size());
+        // verify expected container filtering; just the 1 record in the current container should be visible
+        assertEquals("Expect grid to only show records in the current container",
+                1, shownData.size());
 
-        // ensure the records match, also ensure they show the expected rowId and DataClass/Name values
-        for (int i=0; i < insertedRows.size(); i++)
-        {
-            Map insertedMap = insertedRows.get(i);
-            Map shownMap = shownData.stream().filter(a-> a.get("name").equals(insertedMap.get("name"))).collect(Collectors.toList()).get(0);
-
-            assertEquals("Expect metadata rowId to be shown in modified subfolder view",
-                    insertedMap.get("rowid").toString(), shownMap.get("RowId"));
-            assertEquals("Expect metadata DataClass/Name to be shown in modified subfolder view",
-                    dataClass, shownMap.get("DataClass/Name"));
-        }
+        // ensure the record shows the expected rowId and DataClass/Name values
+        var newRecord = shownData.get(0);
+        assertEquals("Expect Jeff to be the name value",
+                "Jeff", newRecord.get("Name"));
+        assertNotNull("Expect metadata rowId to be shown in subfolder view",
+                newRecord.get("rowid"));
+        assertEquals("Expect metadata DataClass/Name to be shown in modified subfolder view",
+                dataClass, newRecord.get("DataClass/Name"));
     }
 
     @Override
