@@ -7,6 +7,7 @@ public class PeptideCharacteristic
     private int _intensityRank;
     private String _intensityColor;
     private Double _confidence;
+    private int _confidenceRank;
     private String _confidenceColor;
     private String _color;
     private String _foregroundColor;
@@ -59,6 +60,16 @@ public class PeptideCharacteristic
     public void setConfidence(Double confidence)
     {
         _confidence = confidence;
+    }
+
+    public int getConfidenceRank()
+    {
+        return _confidenceRank;
+    }
+
+    public void setConfidenceRank(int confidenceRank)
+    {
+        _confidenceRank = confidenceRank;
     }
 
     public String getConfidenceColor()
