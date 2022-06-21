@@ -727,13 +727,7 @@ public class Query
     // Query._depth handles most recursion, but there can be unexpected recursion caused by LinkedSchema for instance, or
     // other paths that cause a query to be compiled during resolveTable().  The thread local value makes sure this case
     // is handled as well.
-    ThreadLocal<AtomicInteger> resolveDepth = new ThreadLocal<>(){
-        @Override
-        protected AtomicInteger initialValue()
-        {
-            return new AtomicInteger(0);
-        }
-    };
+    static final ThreadLocal<AtomicInteger> resolveDepth = ThreadLocal.withInitial(() -> new AtomicInteger(0));
 
     static final int MAX_TABLES_IN_QUERY = 200;
     static final int MAX_RESOLVE_DEPTH = 20;
