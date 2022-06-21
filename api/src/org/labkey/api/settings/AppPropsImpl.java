@@ -972,7 +972,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        String urls =  lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
+        String urls = lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
         if (StringUtils.isNotBlank(urls))
         {
             return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));

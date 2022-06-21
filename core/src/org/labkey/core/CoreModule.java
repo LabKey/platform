@@ -112,7 +112,9 @@ import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureSer
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.StashedStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -268,8 +270,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
-import static org.labkey.api.settings.StashedStartupProperties.homeProjectInitWebparts;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
@@ -886,7 +888,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        populateLookAndFeelWithStartupProps();
+        populateLookAndFeelResourcesWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -1270,24 +1272,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     /**
-     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     * Handles startup props for LookAndFeelSettings resources
      */
-    private void populateLookAndFeelWithStartupProps()
+    private void populateLookAndFeelResourcesWithStartupProps()
     {
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
-        boolean incrementRevision = false;
-
-        for (StartupPropertyEntry prop : startupProps)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, ResourceType.class)
         {
-            SiteResourceHandler handler = getResourceHandler(prop.getName());
-            if (handler != null)
-                incrementRevision = setSiteResource(handler, prop, user);
-        }
+            @Override
+            public void handle(Map<ResourceType, StartupPropertyEntry> map)
+            {
+                boolean incrementRevision = false;
 
-        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
-        if (incrementRevision)
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                for (Map.Entry<ResourceType, StartupPropertyEntry> entry : map.entrySet())
+                {
+                    SiteResourceHandler handler = getResourceHandler(entry.getKey());
+                    if (handler != null)
+                        incrementRevision = setSiteResource(handler, entry.getValue(), User.guest);
+                }
+
+                // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+                if (incrementRevision)
+                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            }
+        });
     }
 
     /**
@@ -1325,7 +1332,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
-        StartupPropertyEntry webparts = props.get(homeProjectInitWebparts);
+        StartupPropertyEntry webparts = props.get(homeProjectWebparts);
         if (null != webparts)
         {
             // Clear existing webparts added by core and wiki modules
@@ -1341,9 +1348,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
-    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull ResourceType type)
     {
-        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
+        return LookAndFeelPropertiesManager.get().getResourceHandler(type);
     }
 
     private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
