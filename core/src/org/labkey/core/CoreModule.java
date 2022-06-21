@@ -142,6 +142,7 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
@@ -267,6 +268,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectInitWebparts;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
@@ -889,7 +891,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
         SecurityManager.populateStartupProperties();
-        // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
+        // This method depends on resources (FolderType) from other modules, so invoke after startup
         ContextListener.addStartupListener(new StartupListener()
         {
             @Override
@@ -1289,7 +1291,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     /**
-     * This method will handle those startup props for settings to apply at the site level.
+     * This method handles the home project settings
      */
     private void populateSiteSettingsWithStartupProps()
     {
@@ -1320,6 +1322,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
                     supportPolicy.removeRoleAssignment(guests, assignedRole);
                 SecurityPolicyManager.savePolicy(supportPolicy);
+            }
+        }
+
+        StartupPropertyEntry webparts = props.get(homeProjectInitWebparts);
+        if (null != webparts)
+        {
+            // Clear existing webparts added by core and wiki modules
+            Container homeContainer = ContainerManager.getHomeContainer();
+            Portal.saveParts(homeContainer, Collections.emptyList());
+
+            for (String webpartName : StringUtils.split(webparts.getValue(), ';'))
+            {
+                WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
+                if (webPartFactory != null)
+                    addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
             }
         }
     }

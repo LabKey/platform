@@ -15,21 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.settings.StartupPropertyEntry" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm" %>
-<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     NewInstallSiteSettingsForm bean = ((JspView<NewInstallSiteSettingsForm>) HttpView.currentView()).getModelBean();
 
-    Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
-    boolean isStartupPropSet = startupProps.stream().anyMatch( prop -> prop.getName().equals("siteRootFile") && !StringUtils.isBlank(prop.getValue()) );
+    boolean isStartupPropSet = FileContentService.get().isFileRootSetViaStartupProperty();
     boolean isAppFileSystemSet = null != AppProps.getInstance().getFileSystemRoot() && AppProps.getInstance().getFileSystemRoot().isDirectory();
 %>
 

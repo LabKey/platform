@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.AuthenticationManager;
@@ -332,12 +333,22 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
             }
         },
-        webRoot("Site-level file root")
+        webRoot("Site-level file root") // TODO: Reconcile with SiteRootStartupProperties.siteRootFile
         {
             @Override
             public void setValue(WriteableAppProps writeable, String value)
             {
-                writeable.setFileSystemRoot(value);
+                FileContentService fcs = FileContentService.get();
+                if (null != fcs)
+                {
+                    File fileRoot = new File(value);
+                    fcs.setSiteDefaultRoot(fileRoot, null);
+                    fcs.setFileRootSetViaStartupProperty(true);
+                }
+                else
+                {
+                    LOG.warn("FileContentService is not available! Site-level file root can't be set.");
+                }
             }
         };
 

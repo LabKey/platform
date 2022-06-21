@@ -16,8 +16,6 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -71,6 +69,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
@@ -116,12 +116,15 @@ public class FileContentServiceImpl implements FileContentService
 {
     private static final Logger _log = LogManager.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
+    private static final String SCOPE_SITE_ROOT_SETTINGS = "SiteRootSettings";
     private static final FileContentServiceImpl INSTANCE = new FileContentServiceImpl();
 
     private final ContainerListener _containerListener = new FileContentServiceContainerListener();
     private final List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
 
     private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
+
+    private volatile boolean _fileRootSetViaStartupProperty = false;
 
     enum Props
     {
@@ -1210,18 +1213,55 @@ public class FileContentServiceImpl implements FileContentService
         return frag;
     }
 
+    public enum SiteRootStartupProperties implements StartupProperty
+    {
+        siteRootFile  // TODO: Reconcile with SiteSettingsProperties.webRoot
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Site-level file root";
+            }
+        }
+    }
+
+    public static class SiteRootStartupPropertyHandler extends StandardStartupPropertyHandler<SiteRootStartupProperties>
+    {
+        public SiteRootStartupPropertyHandler()
+        {
+            super(SCOPE_SITE_ROOT_SETTINGS, SiteRootStartupProperties.class);
+        }
+
+        @Override
+        public void handle(Map<SiteRootStartupProperties, StartupPropertyEntry> map)
+        {
+            StartupPropertyEntry entry = map.get(SiteRootStartupProperties.siteRootFile);
+            if (null != entry)
+            {
+                File fileRoot = new File(entry.getValue());
+                FileContentService.get().setSiteDefaultRoot(fileRoot, null);
+                FileContentService.get().setFileRootSetViaStartupProperty(true);
+            }
+        }
+    }
+
+    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty)
+    {
+        _fileRootSetViaStartupProperty = fileRootSetViaStartupProperty;
+    }
+
+    @Override
+    public boolean isFileRootSetViaStartupProperty()
+    {
+        return _fileRootSetViaStartupProperty;
+    }
+
     public static void populateSiteRootFileWithStartupProps()
     {
         // populate the site root file settings with values read from startup properties
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
-        startupProps.stream()
-            .filter( prop -> prop.getName().equals("siteRootFile"))
-            .forEach(prop -> {
-                File fileRoot = new File(prop.getValue());
-                FileContentService.get().setSiteDefaultRoot(fileRoot, null);
-            });
+        ModuleLoader.getInstance().handleStartupProperties(new SiteRootStartupPropertyHandler());
     }
 
     public ContainerListener getContainerListener()
@@ -1786,11 +1826,19 @@ public class FileContentServiceImpl implements FileContentService
             File testSiteRootFile = new File(originalSiteRootFilePath, "testSiteRootFile");
             testSiteRootFile.createNewFile();
 
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties(testSiteRootFile);
+            ModuleLoader.getInstance().handleStartupProperties(new SiteRootStartupPropertyHandler(){
+                @Override
+                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                {
+                    return List.of(new StartupPropertyEntry("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", SCOPE_SITE_ROOT_SETTINGS));
+                }
 
-            // call the method that makes use of the test startup properties to change the Site Root File settings on the server
-            populateSiteRootFileWithStartupProps();
+                @Override
+                public boolean performChecks()
+                {
+                    return false;
+                }
+            });
 
             // now check that the expected changes occurred to the Site Root File settings on the server
             File newSiteRootFile = FileContentService.get().getSiteDefaultRoot();
@@ -1799,19 +1847,6 @@ public class FileContentServiceImpl implements FileContentService
             // restore the Site Root File server settings to how they were originally
             FileContentService.get().setSiteDefaultRoot(originalSiteRootFile, null);
             testSiteRootFile.delete();
-        }
-
-        private void prepareTestStartupProperties(File testSiteRootFile)
-        {
-            // prepare a multimap of config properties to test with that has properties assigned for several scopes and populate with sample properties from several scopes
-            MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-            // prepare test Site Root Settings properties
-            StartupPropertyEntry testSiteRootSettingsProp1 =  new StartupPropertyEntry("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS);
-            testConfigPropertyMap.put(StartupPropertyEntry.SCOPE_SITE_ROOT_SETTINGS, testSiteRootSettingsProp1);
-
-            // set these test startup test properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
 
         @After

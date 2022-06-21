@@ -30,7 +30,6 @@ public class StartupPropertyEntry
 
     // TODO: Move the constants defined below to the handlers that use them
     public static final String SCOPE_LOOK_AND_FEEL_SETTINGS = "LookAndFeelSettings";
-    public static final String SCOPE_SITE_ROOT_SETTINGS = "SiteRootSettings";
     public static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
     public static final String SCOPE_EXPERIMENTAL_FEATURE = AppProps.EXPERIMENTAL_FEATURE;
 
