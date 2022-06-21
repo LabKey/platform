@@ -331,6 +331,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
+                .filter(dp -> !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(dp.getName())
+                                && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(dp.getName()))
                 .filter(dp -> StringUtils.isEmpty(dp.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
@@ -745,11 +747,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
+        Set<String> parentOnlyFields = getSampleMetaFields();
+
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
+
+            if (!StringUtils.isEmpty((String) sampleRow.get("AliquotedFromLSID")))
+            {
+                for (String parentOnlyField : parentOnlyFields)
+                    sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
+            }
 
             if (!parents.containsKey(lsidKey))
                 continue;
