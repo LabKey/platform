@@ -142,6 +142,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.ClientSideMetricService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -2432,6 +2433,16 @@ public class ExperimentController extends SpringActionController
                     response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
+
+                    JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                    if (qInfo != null)
+                    {
+                        QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
+                                qInfo.getString("query"), getViewContext().getActionURL(),
+                                rootObject.getString("auditMessage") + filename,
+                                null);
+                        ClientSideMetricService.get().increment( "ConvertTable","asExcel");
+                    }
                 }
             }
             catch (JSONException | ClassCastException e)
@@ -2441,7 +2452,6 @@ public class ExperimentController extends SpringActionController
             }
         }
     }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
@@ -2484,25 +2494,36 @@ public class ExperimentController extends SpringActionController
                 response.setContentType(delimType.contentType);
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
-                CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar);
-                for (int i = 0; i < rowsArray.length(); i++)
+                try (CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar))
                 {
-                    Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
-                    ArrayIterator it = new ArrayIterator(oa);
-                    List<String> list = new ArrayList<>();
-
-                    while (it.hasNext())
+                    for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        Object o = it.next();
-                        if (o != null)
-                            list.add(o.toString());
-                        else
-                            list.add("");
-                    }
+                        Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
+                        ArrayIterator it = new ArrayIterator(oa);
+                        List<String> list = new ArrayList<>();
 
-                    writer.writeNext(list.toArray(new String[list.size()]));
+                        while (it.hasNext())
+                        {
+                            Object o = it.next();
+                            if (o != null)
+                                list.add(o.toString());
+                            else
+                                list.add("");
+                        }
+
+                        writer.writeNext(list.toArray(new String[list.size()]));
+                    }
                 }
-                writer.close();
+
+                JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
+                if (qInfo != null)
+                {
+                    QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"), qInfo.getString("query"),
+                            getViewContext().getActionURL(),
+                            rootObject.getString("auditMessage") + filename,
+                            rowsArray.length());
+                    ClientSideMetricService.get().increment( "ConvertTable","asDelimited");
+                }
             }
             catch (JSONException e)
             {
@@ -5090,7 +5111,7 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
 
-            Map<Lsid, Map<DomainProperty, String>> allProperties;
+            Map<Pair<Lsid, String>, Map<DomainProperty, String>> allProperties;
             try
             {
                 boolean valid = true;
@@ -5116,13 +5137,13 @@ public class ExperimentController extends SpringActionController
             {
                 Map<ExpMaterial, String> outputMaterials = new HashMap<>();
                 int i = 0;
-                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
+                for (Map.Entry<Pair<Lsid, String>, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Lsid lsid = entry.getKey();
-                    String name = lsid.getObjectId();
+                    Lsid lsid = entry.getKey().first;
+                    String name = entry.getKey().second;
                     assert name != null;
 
-                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
+                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), lsid.toString(), name);
                     if (sampleType != null)
                     {
                         outputMaterial.setCpasType(sampleType.getLSID());
@@ -6590,12 +6611,6 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getUploadXARURL(Container container)
-        {
-            return new ActionURL("assay", "chooseAssayType", container).addParameter("tab", "import");
-        }
-
-        @Override
         public ActionURL getRepairTypeURL(Container container)
         {
             return new ActionURL(TypesController.RepairAction.class, container);
@@ -7303,7 +7318,7 @@ public class ExperimentController extends SpringActionController
 
                 ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                 if (sampleType != null)
-                    sampleType.ensureMinGenId(form.getGenId(), getContainer());
+                    sampleType.ensureMinGenId(form.getGenId());
                 else
                 {
                     resp.put("success", false);

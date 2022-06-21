@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "setup": "npm ci",
+    "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
     "clean": "rimraf resources/web/pipeline/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen",
     "lint": "eslint",
@@ -14,10 +14,10 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "2.172.0"
+    "@labkey/components": "2.179.1"
   },
   "devDependencies": {
     "@labkey/build": "6.1.3",
-    "@labkey/eslint-config-react": "0.0.11"
+    "@labkey/eslint-config-react": "0.0.12"
   }
 }

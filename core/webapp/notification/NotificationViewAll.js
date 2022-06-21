@@ -192,7 +192,7 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                                 if (notificationRec.get('ReadOn') == null)
                                 {
                                     notificationRec.set('ReadOn', new Date());
-                                    if (Ext4.isDefined(LABKEY.notifications))
+                                    if (Ext4.isDefined(LABKEY.notifications) && LABKEY.notifications[rowId])
                                         LABKEY.notifications[rowId].ReadOn = new Date();
                                 }
                             });

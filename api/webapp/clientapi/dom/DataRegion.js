@@ -2817,6 +2817,7 @@ if (!LABKEY.DataRegions) {
         var viewConfig = $.extend({}, customView, {
             shared: false,
             inherit: false,
+            hidden: false,
             session: true
         });
 
@@ -3333,6 +3334,66 @@ if (!LABKEY.DataRegions) {
         });
     };
 
+    var _saveSessionView = function(o, region, win) {
+        var timerId = setTimeout(function() {
+            timerId = 0;
+            Ext4.Msg.progress("Saving...", "Saving custom view...");
+        }, 500);
+
+        var jsonData = {
+            schemaName: region.schemaName,
+            "query.queryName": region.queryName,
+            "query.viewName": region.viewName,
+            newName: o.name,
+            inherit: o.inherit,
+            shared: o.shared,
+            hidden: o.hidden,
+            replace: o.replace,
+        };
+
+        if (o.inherit) {
+            jsonData.containerPath = o.containerPath;
+        }
+
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
+            method: 'POST',
+            jsonData: jsonData,
+            callback: function() {
+                if (timerId > 0)
+                    clearTimeout(timerId);
+                win.close();
+            },
+            success: function() {
+                region.showSuccessMessage.call(region);
+                region.changeView.call(region, {type: 'view', viewName: o.name});
+            },
+            failure: function(resp) {
+                var json = resp.responseText ? Ext4.decode(resp.responseText) : resp;
+                if (json.exception && json.exception.indexOf('A saved view by the name') === 0) {
+
+                    Ext4.Msg.show({
+                        title : "Duplicate View Name",
+                        msg : json.exception + " Would you like to replace it?",
+                        cls : 'data-window',
+                        icon : Ext4.Msg.QUESTION,
+                        buttons : Ext4.Msg.YESNO,
+                        fn : function(btn) {
+                            if (btn === 'yes') {
+                                o.replace = true;
+                                _saveSessionView(o, region, win);
+                            }
+                        },
+                        scope : this
+                    });
+                }
+                else
+                    Ext4.Msg.alert('Error saving view', json.exception || json.statusText || Ext4.decode(json.responseText).exception);
+            },
+            scope: region
+        });
+    };
+
     var _saveSessionShowPrompt = function(region, queryDetails) {
         LABKEY.DataRegion.loadViewDesigner(function() {
             var config = Ext4.applyIf({
@@ -3341,42 +3402,7 @@ if (!LABKEY.DataRegions) {
                 canEditSharedViews: queryDetails.canEditSharedViews,
                 canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
                 success: function (win, o) {
-                    var timerId = setTimeout(function() {
-                        timerId = 0;
-                        Ext4.Msg.progress("Saving...", "Saving custom view...");
-                    }, 500);
-
-                    var jsonData = {
-                        schemaName: region.schemaName,
-                        "query.queryName": region.queryName,
-                        "query.viewName": region.viewName,
-                        newName: o.name,
-                        inherit: o.inherit,
-                        shared: o.shared
-                    };
-
-                    if (o.inherit) {
-                        jsonData.containerPath = o.containerPath;
-                    }
-
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
-                        method: 'POST',
-                        jsonData: jsonData,
-                        callback: function() {
-                            if (timerId > 0)
-                                clearTimeout(timerId);
-                            win.close();
-                        },
-                        success: function() {
-                            region.showSuccessMessage.call(region);
-                            region.changeView.call(region, {type: 'view', viewName: o.name});
-                        },
-                        failure: function(json) {
-                            Ext4.Msg.alert('Error saving view', json.exception || json.statusText || Ext4.decode(json.responseText).exception);
-                        },
-                        scope: region
-                    });
+                    _saveSessionView(o, region, win);
                 },
                 scope: region
             }, region.view);

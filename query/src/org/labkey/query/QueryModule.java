@@ -70,6 +70,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -219,8 +220,8 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, "Subfolder data in LabKey Products",
-                "View and interact with data from subfolders of a Product Project.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS, "Customizing Grid view in LabKey Products",
+                "Customize grid views from within Biologics and Sample Manager applications.", false);
     }
 
 
@@ -390,7 +391,8 @@ public class QueryModule extends DefaultModule
         JSONObject json = super.getPageContextJson(context);
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
-        json.put(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, QueryService.get().isProductSubfolderDataEnabled());
+        json.put(QueryServiceImpl.PRODUCT_PROJECTS_ENABLED, QueryService.get().isProductProjectsEnabled(context.getContainer()));
+        json.put(QueryView.EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS, ExperimentalFeatureService.get().isFeatureEnabled(QueryView.EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS));
 
         return json;
     }

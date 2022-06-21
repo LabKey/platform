@@ -34,6 +34,7 @@ import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -43,6 +44,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
@@ -126,6 +128,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 
 /**
  * User: kevink
@@ -261,7 +264,26 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataClass:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                c.setFk(new QueryForeignKey(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"))
+                {
+                    @Override
+                    protected ContainerFilter getLookupContainerFilter()
+                    {
+                        // Issue 45664: Data Class metadata not available in query when querying cross-folder
+                        // Same as CurrentPlusProjectAndShared except it includes the DataClass' container as well.
+                        Set<Container> containers = new HashSet<>();
+                        containers.add(_dataClass.getContainer());
+                        containers.add(getContainer());
+                        if (getContainer().getProject() != null)
+                            containers.add(getContainer().getProject());
+                        containers.add(ContainerManager.getSharedContainer());
+                        ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
+
+                        if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
+                            cf = new UnionContainerFilter(_containerFilter, cf);
+                        return cf;
+                    }
+                });
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
@@ -720,7 +742,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
         SearchService ss = SearchService.get();
         if (null != ss)
         {
@@ -940,6 +962,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (lsid == null)
                 throw new ValidationException("lsid required to update row");
 
+            String newName = (String) row.get(Name.name());
+            String oldName = (String) oldRow.get(Name.name());
+            boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
             Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
@@ -977,14 +1003,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
             }
 
-            // update comment
             ExpDataImpl data = null;
+            if (hasNameChange)
+            {
+                data = ExperimentServiceImpl.get().getExpData(lsid);
+                ExperimentService.get().addObjectLegacyName(data.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpData.class), oldName, user);
+            }
+
+            // update comment
             if (row.containsKey("flag") || row.containsKey("comment"))
             {
                 Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
                 String flag = Objects.toString(o, null);
 
-                data = ExperimentServiceImpl.get().getExpData(lsid);
+                if (data == null)
+                    data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.setComment(user, flag);
             }
 
@@ -1017,7 +1050,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false, true);
+            ExpDataIterators.derive(user, container, di, false, _dataClass, true);
 
             return ret;
         }

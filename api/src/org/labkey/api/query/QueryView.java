@@ -48,7 +48,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.reports.CrosstabReport;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -66,7 +65,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTrailConfig;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -112,6 +110,8 @@ import java.util.stream.Collectors;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+
+    public static final String EXPERIMENTAL_CUSTOMIZE_VIEWS_IN_APPS = "canCustomizeViewsFromApp";
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
@@ -165,12 +165,9 @@ public class QueryView extends WebPartView<Object>
 
     static public QueryView create(QueryForm form, BindException errors)
     {
-        UserSchema s = form.getSchema();
-        if (s == null)
-        {
-            throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-        }
-        return create(form.getViewContext(), s, form.getQuerySettings(), errors);
+        form.ensureSchemaExists();
+
+        return create(form.getViewContext(), form.getSchema(), form.getQuerySettings(), errors);
     }
 
     private QueryDefinition _queryDef;

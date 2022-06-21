@@ -110,8 +110,6 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getShowRunGraphURL(ExpRun run) { return null; }
 
-    default ActionURL getUploadXARURL(Container container) { return null; }
-
     default ActionURL getRepairTypeURL(Container container) { return null; }
 
     default ActionURL getUpdateMaterialQueryRowAction(Container c, TableInfo table) { return null; }
