@@ -1015,7 +1015,10 @@ public class QueryManager
                 "inheritable", new SqlSelector(CoreSchema.getInstance().getSchema(),
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags = 1").getObject(Long.class), // inheritable, not hidden, not snapshot
                 "namedViews", new SqlSelector(CoreSchema.getInstance().getSchema(),
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class)// possibly inheritable, no hidden, not snapshot
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                "shared", new SqlSelector(CoreSchema.getInstance().getSchema(),
+                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
+
         );
     }
 }
