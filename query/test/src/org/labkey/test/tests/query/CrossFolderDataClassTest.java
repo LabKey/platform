@@ -4,6 +4,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
+import org.labkey.test.Locator;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.params.FieldDefinition;
@@ -13,7 +14,11 @@ import org.labkey.test.util.exp.DataClassAPIHelper;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 
 /**
  * use this test as a place to put cross-folder dataclass testing
@@ -52,7 +57,6 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
     public void testIssue454644() throws Exception
     {
         String dataClass = "TopFolderDataClass";
-        int numberOfTestRecords = 3;
         var fields = Arrays.asList(
                 new FieldDefinition("intColumn", FieldDefinition.ColumnType.Integer),
                 new FieldDefinition("decimalColumn", FieldDefinition.ColumnType.Decimal),
@@ -62,8 +66,8 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
         // make a dataclass in the top folder, give it some data
         DataClassDefinition testType = new DataClassDefinition(dataClass).setFields(fields);
         var dGen = DataClassAPIHelper.createEmptyDataClass(getProjectName(), testType);
-        dGen.generateRows(numberOfTestRecords);
-        var insertResponse = dGen.insertRows();
+        dGen.generateRows(3);
+        dGen.insertRows();
 
         // now view the dataclass from a subfolder, expanding its view to include all folders and to show rowId and DataClass/Name
         var subfolderQueryPage = ExecuteQueryPage.beginAt(this, SUBFOLDER_A_PATH, "exp.data", dataClass);
@@ -97,6 +101,11 @@ public class CrossFolderDataClassTest extends BaseWebDriverTest
                 newRecord.get("rowid"));
         assertEquals("Expect metadata DataClass/Name to be shown in modified subfolder view",
                 dataClass, newRecord.get("DataClass/Name"));
+
+        // ensure the 'name' is linked up and navigates to experiment-showData.view
+        clickAndWait(Locator.linkWithText("Jeff"));
+        assertThat("name link should click through to showdata page",
+                getURL().toString().toLowerCase(), containsString("experiment-showdata.view"));
     }
 
     @Override
