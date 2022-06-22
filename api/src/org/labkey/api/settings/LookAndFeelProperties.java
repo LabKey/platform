@@ -47,20 +47,44 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         folderDisplayMode("Show project and folder navigation. Valid values: [ALWAYS, ADMIN]"),
         applicationMenuDisplayMode("Show application selection menu. Valid values: [ALWAYS, ADMIN]"),
         helpMenuEnabled("Show LabKey Help menu item"),
-        dicussionEnabled("Enable object-level discussions"), // TODO: Add alias with correct spelling?
+        discussionEnabled("Enable object-level discussions"),
         logoHref("Logo link (specifies page to which header logo links)"),
         reportAProblemPath("Support link (specifies page where users can request support)"),
         supportEmail("Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)"),
+
         systemEmailAddress("System email address (from address for system notification emails)"),
         companyName("Organization name (appears in notification emails sent by system)"),
 
-        // TODO: display formats
+        defaultDateFormat("Default display format for dates"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultDateFormat(value); // Override to validate and use legacy property name
+            }
+        },
+        defaultDateTimeFormat("Default display format for date-times"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultDateTimeFormat(value); // Override to validate and use legacy property name
+            }
+        },
+        defaultNumberFormat("Default display format for numbers"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultNumberFormat(value); // Override to validate and use legacy property name
+            }
+        },
 
         dateParsingMode("Date parsing mode. Valid values: [US, NON_US]"),
+        extraDateParsingPattern("Additional parsing pattern for dates"),
+        extraDateTimeParsingPattern("Additional parsing pattern for date-times"),
 
-        // TODO: date parsing patterns, restrict charting
+        restrictedColumnsEnabled("Restrict charting columns by measure and dimension flags"),
 
         customLogin("Alternative login page"),
+
         customWelcome("Alternative site welcome page");
 
         private final String _description;
@@ -183,7 +207,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public boolean isDiscussionEnabled()
     {
-        return lookupBooleanValue(DISCUSSION_ENABLED_PROP, true);
+        // Support properties saved with old, misspelled name
+        return lookupBooleanValue(Properties.discussionEnabled.name(), lookupBooleanValue("dicussionEnabled", true));
     }
 
     public String getUnsubstitutedLogoHref()

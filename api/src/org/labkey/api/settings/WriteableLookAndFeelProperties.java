@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.LookAndFeelProperties.Properties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ActionURL;
 
@@ -31,7 +32,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.COMPANY_NAME_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_LOGIN_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_WELCOME_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.DATE_PARSING_MODE;
-import static org.labkey.api.settings.LookAndFeelProperties.DISCUSSION_ENABLED_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.FOLDER_DISPLAY_MODE;
 import static org.labkey.api.settings.LookAndFeelProperties.HELP_MENU_ENABLED_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.LOGO_HREF_PROP;
@@ -98,7 +98,7 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
 
     public void setDiscussionEnabled(boolean enabled)
     {
-        storeBooleanValue(DISCUSSION_ENABLED_PROP, enabled);
+        storeBooleanValue(Properties.discussionEnabled.name(), enabled);
     }
 
     public void setSupportEmail(@Nullable String email)
@@ -177,10 +177,10 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         // populate look and feel settings with values read from startup properties
         // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
         // for a list of recognized look and feel setting properties refer to the LookAndFeelProperties.Properties enum
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_LOOK_AND_FEEL_SETTINGS, LookAndFeelProperties.Properties.class)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_LOOK_AND_FEEL_SETTINGS, Properties.class)
         {
             @Override
-            public void handle(Map<LookAndFeelProperties.Properties, StartupPropertyEntry> map)
+            public void handle(Map<Properties, StartupPropertyEntry> map)
             {
                 if (!map.isEmpty())
                 {

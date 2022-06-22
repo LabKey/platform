@@ -174,6 +174,9 @@
     <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
 </tr>
 <tr>
+    <td>&nbsp;</td>
+</tr>
+<tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
