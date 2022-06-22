@@ -35,6 +35,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -567,7 +568,9 @@ public class StatusController extends SpringActionController
                         fileShow = null;
                     }
 
-                    if (NetworkDrive.exists(fileShow))
+                    // Ensure that the requested file is under the root for this container
+                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                    if (root != null && root.isUnderRoot(fileShow) && NetworkDrive.exists(fileShow))
                     {
                         boolean visible = isVisibleFile(fileName, basename);
 

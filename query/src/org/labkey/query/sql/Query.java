@@ -112,6 +112,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -723,9 +724,17 @@ public class Query
 	}
 
 
+    // Query._depth handles most recursion, but there can be unexpected recursion caused by LinkedSchema for instance, or
+    // other paths that cause a query to be compiled during resolveTable().  The thread local value makes sure this case
+    // is handled as well.
+    static private final ThreadLocal<AtomicInteger> resolveDepth = ThreadLocal.withInitial(() -> new AtomicInteger(0));
+
+    static final int MAX_TABLES_IN_QUERY = 200;
+    static final int MAX_RESOLVE_DEPTH = 20;
 
     int _countResolvedTables = 0;
     int _depth = 1;
+
 
     private int getTotalCountResolved()
     {
@@ -745,6 +754,12 @@ public class Query
 
         try
         {
+            if (resolveDepth.get().incrementAndGet() > MAX_RESOLVE_DEPTH)
+            {
+                parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
+                return null;
+            }
+
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT, cfType);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
@@ -757,6 +772,10 @@ public class Query
         {
             _parseErrors.add(qnfe);
             return null;
+        }
+        finally
+        {
+            resolveDepth.get().decrementAndGet();
         }
 
         QueryDefinition def = queryDefOUT[0];
@@ -837,7 +856,7 @@ public class Query
         boolean trackDependency = true;
 
         ++_countResolvedTables;
-        if (getTotalCountResolved() > 200 || _depth > 20)
+        if (getTotalCountResolved() > MAX_TABLES_IN_QUERY || _depth > MAX_RESOLVE_DEPTH)
         {
             // recursive query?
             parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
