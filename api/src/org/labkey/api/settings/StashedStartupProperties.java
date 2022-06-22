@@ -4,7 +4,7 @@ public enum StashedStartupProperties implements StartupProperty
 {
     homeProjectFolderType("Home project folder type"),
     homeProjectResetPermissions("Reset the home project permissions to remove default assignments given at server install"),
-    homeProjectWebparts("Home project webparts"),
+    homeProjectWebparts("Semicolon-delimited list of webpart names to add to the home project"),
     siteAvailableEmailFrom("Site available from address"),
     siteAvailableEmailMessage("Site available message"),
     siteAvailableEmailSubject("Site available subject");

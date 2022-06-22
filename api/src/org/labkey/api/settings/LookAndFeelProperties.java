@@ -38,6 +38,38 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
     private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
 
+    // Defined in the same order they appear on the Site-level Look and Feel Settings page
+    enum Properties implements StartupProperty
+    {
+        systemDescription("System description (used in emails)"),
+        systemShortName("Header short name (appears in every page header and in emails)"),
+        themeName("Server color schema"),
+        folderDisplayMode("Show project and folder navigation. Valid values: [ALWAYS, ADMIN]"),
+        applicationMenuDisplayMode("Show application selection menu. Valid values: [ALWAYS, ADMIN]"),
+        helpMenuEnabled("Show LabKey Help menu item"),
+        dicussionEnabled("Enable object-level discussions"),
+
+        ;
+
+        private final String _description;
+
+        Properties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void save(WriteableLookAndFeelProperties writeable, String value)
+        {
+            writeable.storeStringValue(name(), value);
+        }
+    }
+
     protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
     protected static final String THEME_NAME_PROP = "themeName";

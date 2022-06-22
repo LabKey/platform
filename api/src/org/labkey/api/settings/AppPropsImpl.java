@@ -317,23 +317,9 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
             }
         },
-        userFileRoot("Enable personal folders for users")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setUserFilesRoot(value);
-            }
-        },
-        webfilesEnabled("Alternative webfiles root")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
-            }
-        },
-        webRoot("Site-level file root") // TODO: Reconcile with SiteRootStartupProperties.siteRootFile
+        // TODO: Search for usages of SiteSettings.webRoot, the former name of this property
+        // TODO: Remove SiteRootStartupProperties.siteRootFile in favor of this property
+        siteFileRoot("Site-level file root")
         {
             @Override
             public void setValue(WriteableAppProps writeable, String value)
@@ -349,6 +335,22 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 {
                     LOG.warn("FileContentService is not available! Site-level file root can't be set.");
                 }
+            }
+        },
+        userFileRoot("Enable personal folders for users")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUserFilesRoot(value);
+            }
+        },
+        webfilesEnabled("Alternative webfiles root")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
             }
         };
 

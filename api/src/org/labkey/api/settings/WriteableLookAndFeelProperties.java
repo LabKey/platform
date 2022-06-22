@@ -24,7 +24,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collection;
+import java.util.Map;
 
 import static org.labkey.api.settings.LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE;
 import static org.labkey.api.settings.LookAndFeelProperties.COMPANY_NAME_PROP;
@@ -176,12 +176,26 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     {
         // populate look and feel settings with values read from startup properties
         // expects startup properties formatted like: LookAndFeelSettings.systemDescription;startup=Test Server Description
-        // for a list of recognized look and feel setting properties refer to: LookAndFeelProperties.java
-        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(SCOPE_LOOK_AND_FEEL_SETTINGS);
-        WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-        startupProps
-            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
-        writeable.save();
+        // for a list of recognized look and feel setting properties refer to the LookAndFeelProperties.Properties enum
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_LOOK_AND_FEEL_SETTINGS, LookAndFeelProperties.Properties.class)
+        {
+            @Override
+            public void handle(Map<LookAndFeelProperties.Properties, StartupPropertyEntry> map)
+            {
+                if (!map.isEmpty())
+                {
+                    WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                    map.forEach((prop, entry) -> prop.save(writeable, entry.getValue()));
+                    writeable.save();
+                }
+            }
+        });
+
+//        Collection<StartupPropertyEntry> startupProps = ModuleLoader.getInstance().getConfigProperties(SCOPE_LOOK_AND_FEEL_SETTINGS);
+//        WriteableLookAndFeelProperties writeable = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+//        startupProps
+//            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
+//        writeable.save();
     }
 
     @Override

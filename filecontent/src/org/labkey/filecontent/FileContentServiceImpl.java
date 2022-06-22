@@ -1213,18 +1213,21 @@ public class FileContentServiceImpl implements FileContentService
         return frag;
     }
 
+    // TODO: Delete this in favor of SiteSettings.siteFileRoot
+    @Deprecated
     public enum SiteRootStartupProperties implements StartupProperty
     {
-        siteRootFile  // TODO: Reconcile with SiteSettingsProperties.webRoot
+        siteRootFile
         {
             @Override
             public String getDescription()
             {
-                return "Site-level file root";
+                return "Site-level file root. DO NOT USE... use SiteSettings.siteFileRoot instead.";
             }
         }
     }
 
+    // TODO: Delete this in favor of SiteSettingsProperties.webRoot
     public static class SiteRootStartupPropertyHandler extends StandardStartupPropertyHandler<SiteRootStartupProperties>
     {
         public SiteRootStartupPropertyHandler()
@@ -1238,6 +1241,7 @@ public class FileContentServiceImpl implements FileContentService
             StartupPropertyEntry entry = map.get(SiteRootStartupProperties.siteRootFile);
             if (null != entry)
             {
+                _log.warn("Support for SiteRootSettings.siteRootFile will be removed soon; use SiteSettings.siteFileRoot instead.");
                 File fileRoot = new File(entry.getValue());
                 FileContentService.get().setSiteDefaultRoot(fileRoot, null);
                 FileContentService.get().setFileRootSetViaStartupProperty(true);
