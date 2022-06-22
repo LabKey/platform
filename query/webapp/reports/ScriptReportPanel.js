@@ -759,7 +759,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             var file = cmp.fileInputEl.dom.files[0];
                             if (file)
                                 this.importFileIntoEditor(file);
-                            win.close();
+
+                            new Ext4.util.DelayedTask(function(){
+                                win.close();
+                            }).delay(100);
                         },
                         scope: this
                     }
