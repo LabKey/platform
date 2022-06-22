@@ -53,6 +53,11 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     /** Consider using getTableWithFactory(String, ContainerFilter.Factory) instead */
     TableInfo getTable(String name, @Nullable ContainerFilter cf);
 
+    default TableInfo getTableForInsert(String name)
+    {
+        return getTable(name, QueryService.get().getProductProjectsInsertContainerFilter(getContainer(), getUser()));
+    }
+
     @NotNull
     default TableInfo getTableOrThrow(String name)
     {

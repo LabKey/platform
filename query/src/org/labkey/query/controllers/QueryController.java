@@ -4306,17 +4306,6 @@ public class QueryController extends SpringActionController
             return getRequestedApiVersion() >= 13.2;
         }
 
-        @Nullable
-        private ContainerFilter getInsertContainerFilter(Container container, User user)
-        {
-            // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
-            if (QueryService.get().isProductProjectsEnabled(container))
-                return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
-
-            // Return null here so resolved TableInfo falls back to its own default ContainerFilter
-            return null;
-        }
-
         @NotNull
         protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
         {
@@ -4327,7 +4316,7 @@ public class QueryController extends SpringActionController
             if (null == schema)
                 throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
 
-            TableInfo table = schema.getTable(queryName, getInsertContainerFilter(container, user));
+            TableInfo table = schema.getTableForInsert(queryName);
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
             return table;

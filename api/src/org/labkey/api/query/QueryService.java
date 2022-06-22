@@ -615,24 +615,15 @@ public interface QueryService
         return col;
     }
 
-    default boolean isProductProjectsEnabled(Container container)
-    {
-        if (container == null || container.isRoot() || container.isWorkbook())
-            return false;
+    /**
+     * Resolves the ContainerFilter to be used during insert/update of data in product projects.
+     * Defaults to null if product projects are not enabled in container scope.
+     */
+    @Nullable
+    ContainerFilter getProductProjectsInsertContainerFilter(Container container, User user);
 
-        Container project;
-        if (container.isProject())
-            project = container;
-        else
-            project = container.getProject();
-
-        if (project == null)
-            return false;
-
-        // It is less than ideal to reference the folder type but for the time being
-        // this is how we recognize the appropriate container context.
-        // 1. The provided container is a LKB top-level LKB folder.
-        // 2. The provided container's top-level parent is a LKB folder.
-        return "Biologics".equals(project.getFolderType().getName());
-    }
+    /**
+     * Resolves if the product projects feature is enabled in the supplied container scope.
+     */
+    boolean isProductProjectsEnabled(Container container);
 }

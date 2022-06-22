@@ -3951,6 +3951,12 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
+            if (query.getContainerFilter() == null)
+            {
+                ContainerFilter cf = QueryService.get().getProductProjectsInsertContainerFilter(getContainer(), getUser());
+                if (cf != null)
+                    query.setContainerFilter(cf);
+            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
