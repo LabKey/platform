@@ -167,7 +167,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "semantickeyphrasetable, semanticsimilaritydetailstable, semanticsimilaritytable, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
             "top, tran, transaction, trigger, truncate, try_convert, tsequal, union, unique, unpivot, update, updatetext, " +
-            "use, user, values, varying, view, waitfor, when, where, while, with, within group, writetext"
+            "use, user, values, varying, view, waitfor, when, where, while, with, within, writetext"
         ));
     }
 

@@ -1205,7 +1205,6 @@ width_bucket
 window
 with
 within
-within group
 without
 work
 wrapper

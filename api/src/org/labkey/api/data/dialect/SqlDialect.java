@@ -53,6 +53,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -444,7 +445,12 @@ public abstract class SqlDialect
         Set<String> keywordSet = new CaseInsensitiveHashSet();
         keywordSet.addAll(KeywordCandidates.get().getSql2003Keywords());
         String keywords = executor.getConnection().getMetaData().getSQLKeywords();
-        keywordSet.addAll(new CsvSet(keywords));
+
+        // Microsoft JDBC driver reports "within group" as a single keyword, so split it out
+        for (String metadataKeyword : new CsvSet(keywords))
+        {
+            keywordSet.addAll(Arrays.asList(metadataKeyword.split(" ")));
+        }
 
         return keywordSet;
     }
