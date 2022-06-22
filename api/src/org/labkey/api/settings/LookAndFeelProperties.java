@@ -47,9 +47,21 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         folderDisplayMode("Show project and folder navigation. Valid values: [ALWAYS, ADMIN]"),
         applicationMenuDisplayMode("Show application selection menu. Valid values: [ALWAYS, ADMIN]"),
         helpMenuEnabled("Show LabKey Help menu item"),
-        dicussionEnabled("Enable object-level discussions"),
+        dicussionEnabled("Enable object-level discussions"), // TODO: Add alias with correct spelling?
+        logoHref("Logo link (specifies page to which header logo links)"),
+        reportAProblemPath("Support link (specifies page where users can request support)"),
+        supportEmail("Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)"),
+        systemEmailAddress("System email address (from address for system notification emails)"),
+        companyName("Organization name (appears in notification emails sent by system)"),
 
-        ;
+        // TODO: display formats
+
+        dateParsingMode("Date parsing mode. Valid values: [US, NON_US]"),
+
+        // TODO: date parsing patterns, restrict charting
+
+        customLogin("Alternative login page"),
+        customWelcome("Alternative site welcome page");
 
         private final String _description;
 
@@ -205,7 +217,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return systemEmailAddress;
     }
 
-    /** Let callers peek if there's an address configured without logging a error */
+    /** Let callers peek if there's an address configured without logging an error */
     public boolean hasSystemEmailAddress()
     {
         return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, null) != null;
@@ -213,7 +225,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getUnsubstitutedReportAProblemPath()
     {
-        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
+        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/project-begin.view");
     }
 
     public String getSupportEmail()
