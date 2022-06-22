@@ -713,7 +713,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     },
 
     importFileIntoEditor : function(file) {
-        const reader = new FileReader();
+        var reader = new FileReader();
         reader.addEventListener('load', (event) => {
             this.codeMirror.setValue(reader.result);
         });
@@ -738,7 +738,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     onNewReport : function() {
         if (this.reportConfig.jupyterOptions) {
-            let win = new Ext4.Window({
+            var win = new Ext4.Window({
                 title: 'Jupyter Report',
                 border: false,
                 width : 400,
