@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.15.0",
-    "@labkey/components": "2.188.0-fb-addToDisplayViewChanges.1",
+    "@labkey/components": "2.188.0-fb-addToDisplayViewChanges.2",
     "@labkey/themes": "1.2.3"
   },
   "devDependencies": {
