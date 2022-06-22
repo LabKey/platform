@@ -71,13 +71,11 @@ dependencies {
         )
     )
 
-//    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-management_1.0_spec', version: geronimoJ2eeManagement10SpecVersion
     // the jug jar offers a version with LGPL licence as well as version with Apache Software Licence, distinguished by the classifier (lgpl vs asl)
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
             "org.safehaus.jug:jug:${jugVersion}:asl",
-//            "jug-2.0.0-asl.jar",
             "Jug",
             "Safehaus",
             "http://jug.safehaus.org/",
