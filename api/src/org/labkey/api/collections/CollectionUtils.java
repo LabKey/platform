@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -89,6 +90,9 @@ public class CollectionUtils
     public static @Nullable String getModifiableCollectionMapOrArrayType(@Nullable Object value)
     {
         if (null == value || value instanceof Unmodifiable)
+            return null;
+
+        if (value instanceof CacheManager.Sealable sealable && sealable.isSealed())
             return null;
 
         if (value instanceof PropertyManager.PropertyMap)
