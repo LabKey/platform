@@ -761,15 +761,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            Object transformedValue = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-            if (transformedValue != x)
-            {
-                setObject(parameterName, transformedValue);
-            }
-            else
-            {
-                ((CallableStatement)_stmt).setTimestamp(parameterName, x);
-            }
+             ((CallableStatement)_stmt).setTimestamp(parameterName, x);
         }
         catch (SQLException e)
         {
@@ -895,15 +887,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            Object transformedValue = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-            if (transformedValue != x)
-            {
-                setObject(parameterName, transformedValue);
-            }
-            else
-            {
-                ((CallableStatement)_stmt).setTimestamp(parameterName, x, cal);
-            }
+             ((CallableStatement)_stmt).setTimestamp(parameterName, x, cal);
         }
         catch (SQLException e)
         {
@@ -1506,16 +1490,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            Object transformedValue = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-            if (transformedValue != x)
-            {
-                setObject(parameterIndex, transformedValue);
-            }
-            else
-            {
-                ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x);
-                _set(parameterIndex, x);
-            }
+            ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x);
+            _set(parameterIndex, x);
         }
         catch (SQLException e)
         {
@@ -1590,8 +1566,6 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            x = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-
             ((PreparedStatement)_stmt).setObject(parameterIndex, x, targetSqlType, scale);
             _set(parameterIndex, x);
         }
@@ -1607,8 +1581,6 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            x = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-
             ((PreparedStatement)_stmt).setObject(parameterIndex, x, targetSqlType);
             _set(parameterIndex, x);
         }
@@ -1624,8 +1596,6 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            x = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-
             ((PreparedStatement)_stmt).setObject(parameterIndex, x);
             _set(parameterIndex, x);
         }
@@ -1799,16 +1769,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         try
         {
-            Object transformedValue = _conn.getScope().getSqlDialect().translateJdbcParameterValue(_conn.getScope(), x);
-            if (transformedValue != x)
-            {
-                setObject(parameterIndex, transformedValue);
-            }
-            else
-            {
-                ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x, cal);
-                _set(parameterIndex, x);
-            }
+            ((PreparedStatement)_stmt).setTimestamp(parameterIndex, x, cal);
+            _set(parameterIndex, x);
         }
         catch (SQLException e)
         {

@@ -1585,11 +1585,7 @@ public abstract class SqlDialect
 
     /**
      * Read the values of each INPUT/OUTPUT or OUTPUT parameter, and write them into the parameters map.
-     * @param scope
-     * @param stmt
-     * @param parameters
      * @return The return code/status from the procedure, if any. Return -1 if procedure does not have a return code.
-     * @throws SQLException
      */
     public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException;
 
@@ -1599,15 +1595,6 @@ public abstract class SqlDialect
      * @param dialectSpecific true to convert to dialect specific convention, false to convert to plain alphanumeric text
      */
     public abstract String translateParameterName(String name, boolean dialectSpecific);
-
-    /**
-     * Optionally transform a PreparedStatement parameter before it gets passed to the JDBC driver's implementation
-     */
-    public Object translateJdbcParameterValue(DbScope scope, Object value)
-    {
-        return value;
-    }
-
 
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {

@@ -2034,7 +2034,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
-    private boolean isJTDS(DbScope scope)
+    protected boolean isJTDS(DbScope scope)
     {
         return scope.getDriverName().contains("jTDS");
     }
