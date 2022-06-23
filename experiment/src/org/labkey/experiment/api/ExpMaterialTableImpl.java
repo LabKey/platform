@@ -379,7 +379,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return ret;
             }
             case RecomputeRollup:
-                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+                ret.setHidden(true);
+                return ret;
+            }
             case AliquotCount:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
