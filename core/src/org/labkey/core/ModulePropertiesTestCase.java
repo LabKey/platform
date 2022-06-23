@@ -15,8 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,12 +26,8 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.StartupPropertyEntry;
-import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.WebPartFactory;
@@ -58,9 +52,6 @@ public class ModulePropertiesTestCase extends Assert
     String PROP2 = "TestPropContainer";
     String PROJECT_NAME = "__ModulePropsTestProject";
     String FOLDER_NAME = "subfolder";
-
-    String LOOKANDFEEL_SYSTEM_DESCRIPTION = "Test System Description";
-    String SITESETTINGS_MAX_BLOB_SIZE = "12345";
 
     @Before
     public void setUp()
@@ -124,32 +115,6 @@ public class ModulePropertiesTestCase extends Assert
         ContainerManager.deleteAll(_project, _user);
     }
 
-    /**
-     * Test that the Look And Feel settings can be configured from startup properties
-     */
-    @Test
-    public void testStartupPropertiesForLookAndFeel()
-    {
-        // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-        prepareTestStartupProperties();
-
-        // save the original Look And Feel server settings so that we can restore them when this test is done
-        LookAndFeelProperties lookAndFeelProps = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
-        String originalSystemDescription = lookAndFeelProps.getDescription();
-
-        // call the method that makes use of the test startup properties to change the Look And Feel settings on the server
-        WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
-
-        // now check that the expected changes occurred to the Look And Feel settings on the server
-        String newSystemDescription = lookAndFeelProps.getDescription();
-        assertEquals("The expected change in Look And Feel settings was not found", LOOKANDFEEL_SYSTEM_DESCRIPTION, newSystemDescription);
-
-        // restore the Look And Feel server settings to how they were originally
-        WriteableLookAndFeelProperties writeablelookAndFeelProps = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-        writeablelookAndFeelProps.setSystemDescription(originalSystemDescription);
-        writeablelookAndFeelProps.save();
-    }
-
     private class TestModule extends CodeOnlyModule
     {
         @Override
@@ -177,18 +142,5 @@ public class ModulePropertiesTestCase extends Assert
         {
             return Collections.emptyList();
         }
-    }
-
-    private void prepareTestStartupProperties()
-    {
-        // prepare a multimap of config properties to test with that has properties assigned for several scopes
-        MultiValuedMap<String, StartupPropertyEntry> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-        // prepare test Look And Feel properties
-        StartupPropertyEntry testLookAndFeelProp1 = new StartupPropertyEntry("systemDescription", LOOKANDFEEL_SYSTEM_DESCRIPTION, "startup", WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        testConfigPropertyMap.put(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, testLookAndFeelProp1);
-
-        // set these test startup test properties to be used by the entire server
-        ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
     }
 }
