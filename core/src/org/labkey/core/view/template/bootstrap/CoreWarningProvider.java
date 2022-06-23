@@ -209,7 +209,7 @@ public class CoreWarningProvider implements WarningProvider
         {
             boolean defaultTomcatWebappFound = false;
             Set<String> deployedWebapps = collectAllDeployedApps();
-            deployedWebapps.remove(AppProps.getInstance().getContextPath());
+            deployedWebapps.remove(StringUtils.strip(AppProps.getInstance().getContextPath(),"/"));
             defaultTomcatWebappFound |= deployedWebapps.contains("docs");
             defaultTomcatWebappFound |= deployedWebapps.contains("HOST_MANAGER_");
             defaultTomcatWebappFound |= deployedWebapps.contains("EXAMPLES_");
