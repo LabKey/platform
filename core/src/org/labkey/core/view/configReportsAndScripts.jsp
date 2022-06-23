@@ -709,7 +709,8 @@
                         defaultR = null;
                         countR = 0;
                         perlMenuItem.enable();
-                        dockerMenuItem.enable();
+                        if (dockerMenuItem)
+                            dockerMenuItem.enable();
 
                         Ext4.each(records, function (rec) {
                             if (rec.data) {
@@ -722,7 +723,7 @@
 
                                 if (rec.data.extensions === PERL_EXTENSIONS)
                                     perlMenuItem.disable();
-                                else if (rec.data.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
+                                else if (dockerMenuItem && rec.data.type === <%=q(ExternalScriptEngineDefinition.Type.Docker.name())%>)
                                     dockerMenuItem.disable();
                             }
                         });
