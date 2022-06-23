@@ -1268,6 +1268,7 @@ public class QueryServiceImpl implements QueryService
         ret.put("deletable", view.isDeletable());
         ret.put("revertable", view.isRevertable());
         ret.put("hidden", view.isHidden());
+        ret.put("saved", view.getEntityId() != null);
         // XXX: This is a query property and not a custom view property!
         ret.put("savable", !view.getQueryDefinition().isTemporary());
         // module custom views have no container
