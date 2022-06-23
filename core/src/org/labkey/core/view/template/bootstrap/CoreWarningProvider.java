@@ -43,6 +43,9 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
+import javax.management.MBeanServerFactory;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -50,8 +53,11 @@ import java.lang.management.MemoryMXBean;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 public class CoreWarningProvider implements WarningProvider
@@ -166,6 +172,31 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
+    private Set<String> collectAllDeployedApps()
+    {
+        var result = new HashSet<String>();
+        try
+        {
+            var servers = MBeanServerFactory.findMBeanServer(null);
+            for (var server : servers)
+            {
+                for (var domain : server.getDomains())
+                {
+                    if (!domain.equals("Catalina"))
+                        continue;
+                    final var instances = server.queryNames(new ObjectName("Catalina:j2eeType=WebModule,*"), null);
+                    for (ObjectName each : instances)
+                        result.add(substringAfterLast(each.getKeyProperty("name"), '/'));
+                }
+            }
+        }
+        catch (MalformedObjectNameException x)
+        {
+            // pass
+        }
+        return result;
+    }
+
     private void getTomcatWarnings(Warnings warnings)
     {
         if (SHOW_ALL_WARNINGS || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
@@ -177,16 +208,12 @@ public class CoreWarningProvider implements WarningProvider
         try
         {
             boolean defaultTomcatWebappFound = false;
-            int code;
-            URLHelper h = new URLHelper(AppProps.getInstance().getBaseServerUrl());
-            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/examples/")).openConnection()).getResponseCode();
-            defaultTomcatWebappFound |=  (code != 404);
-            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/docs/")).openConnection()).getResponseCode();
-            defaultTomcatWebappFound |=  (code != 404);
-            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/manager/html")).openConnection()).getResponseCode();
-            defaultTomcatWebappFound |=  (code != 404);
-            code = ((java.net.HttpURLConnection) (new URL(h.getScheme(), h.getHost(), h.getPort(), "/host-manager/html")).openConnection()).getResponseCode();
-            defaultTomcatWebappFound |=  (code != 404);
+            Set<String> deployedWebapps = collectAllDeployedApps();
+            deployedWebapps.remove(AppProps.getInstance().getContextPath());
+            defaultTomcatWebappFound |= deployedWebapps.contains("docs");
+            defaultTomcatWebappFound |= deployedWebapps.contains("HOST_MANAGER_");
+            defaultTomcatWebappFound |= deployedWebapps.contains("EXAMPLES_");
+            defaultTomcatWebappFound |= deployedWebapps.contains("MANAGER_");
 
             if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
                 addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed.  These may include 'examples', 'docs', 'manager', and 'host-manager'.", "configTomcat", "Tomcat Configuration");
@@ -194,7 +221,6 @@ public class CoreWarningProvider implements WarningProvider
         catch (Exception x)
         {
             LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
-
         }
     }
 
