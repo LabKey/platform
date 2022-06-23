@@ -332,9 +332,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
                 .filter(dp -> !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(dp.getName())
-                                && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(dp.getName()))
-                .filter(dp -> StringUtils.isEmpty(dp.getDerivationDataScope())
-                            || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                                && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(dp.getName())
+                                && (StringUtils.isEmpty(dp.getDerivationDataScope())
+                                    || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope())))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
@@ -755,7 +755,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
 
-            if (!StringUtils.isEmpty((String) sampleRow.get("AliquotedFromLSID")))
+            if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
             {
                 for (String parentOnlyField : parentOnlyFields)
                     sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
@@ -1289,7 +1289,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     if (derivationDataColInd == i && _context.getInsertOption().mergeRows && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                     {
-                        addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
+                        addColumn(AliquotedFromLSID.name(), i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
                     }
 
                     addColumn(i);
