@@ -61,6 +61,10 @@ public class MutatingSqlDetector
                     String word = firstWord.toString();
                     Boolean mutatingWord = WORD_MUTATING_MAP.get(word);
 
+                    // Special case for stored procedure with return value
+                    if (mutatingWord == null && sql.startsWith("? = CALL"))
+                        mutatingWord = Boolean.TRUE;
+
                     if (null == mutatingWord)
                         LOG.warn("Unrecognized keyword: " + word + " for SQL: " + sql);
 
@@ -102,6 +106,7 @@ public class MutatingSqlDetector
     {
         WORD_MUTATING_MAP.putAll(Map.of(
             "ALTER", true,
+            "CALL", true,
             "CLUSTER", true,
             "CREATE", true,
             "DELETE", true,

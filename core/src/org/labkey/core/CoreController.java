@@ -16,6 +16,7 @@
 
 package org.labkey.core;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
@@ -436,23 +437,30 @@ public class CoreController extends SpringActionController
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
 
-                Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
-                SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                try
                 {
-                    if (results.getSize() != 1 || !results.next())
-                        throw new NotFoundException("Row not found for primary key");
+                    Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
+                    SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
+                    try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                    {
+                        if (results.getSize() != 1 || !results.next())
+                            throw new NotFoundException("Row not found for primary key");
 
-                    String filename = results.getString(col.getFieldKey());
-                    if (filename == null)
-                        throw new NotFoundException();
+                        String filename = results.getString(col.getFieldKey());
+                        if (filename == null)
+                            throw new NotFoundException();
 
-                    file = new File(filename);
+                        file = new File(filename);
+                    }
+                }
+                catch (ConversionException e)
+                {
+                    throw new NotFoundException("Invalid value specified for PK, could not convert to " + pkCol.getJavaClass());
                 }
             }
             else
             {
-                throw new IllegalArgumentException("objectURI or schemaName, queryName, and pk required.");
+                throw new NotFoundException("objectURI or schemaName, queryName, and pk required.");
             }
 
             // For security reasons, make sure the user hasn't tried to download a file that's not under
