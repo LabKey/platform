@@ -440,7 +440,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            final ContainerFilter cf = QueryService.get().getProductProjectsInsertContainerFilter(container, user);
+            final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
             Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);

@@ -616,11 +616,11 @@ public interface QueryService
     }
 
     /**
-     * Resolves the ContainerFilter to be used during insert/update of data in product projects.
+     * Resolves the ContainerFilter to be used for lookups during insert/update of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.
      */
     @Nullable
-    ContainerFilter getProductProjectsInsertContainerFilter(Container container, User user);
+    ContainerFilter getContainerFilterForLookups(Container container, User user);
 
     /**
      * Resolves if the product projects feature is enabled in the supplied container scope.

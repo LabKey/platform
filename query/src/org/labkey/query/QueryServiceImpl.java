@@ -3041,7 +3041,7 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     @Nullable
-    public ContainerFilter getProductProjectsInsertContainerFilter(Container container, User user)
+    public ContainerFilter getContainerFilterForLookups(Container container, User user)
     {
         // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
         if (QueryService.get().isProductProjectsEnabled(container))

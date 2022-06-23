@@ -3953,7 +3953,7 @@ public class ExperimentController extends SpringActionController
             QueryDefinition query = form.getQueryDef();
             if (query.getContainerFilter() == null)
             {
-                ContainerFilter cf = QueryService.get().getProductProjectsInsertContainerFilter(getContainer(), getUser());
+                ContainerFilter cf = QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
                 if (cf != null)
                     query.setContainerFilter(cf);
             }

@@ -55,7 +55,7 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
 
     default TableInfo getTableForInsert(String name)
     {
-        return getTable(name, QueryService.get().getProductProjectsInsertContainerFilter(getContainer(), getUser()));
+        return getTable(name, QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
     }
 
     @NotNull

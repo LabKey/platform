@@ -715,7 +715,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public TableInfo getTableForInsert(User user, Container c)
     {
-        return getTable(user, c, QueryService.get().getProductProjectsInsertContainerFilter(c, user));
+        return getTable(user, c, QueryService.get().getContainerFilterForLookups(c, user));
     }
 
     public ActionURL urlImport(Container c)
