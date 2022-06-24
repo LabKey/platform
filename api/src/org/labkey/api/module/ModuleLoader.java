@@ -206,9 +206,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(sph->sph.getStartupPropertyClassName()));
+    private final MultiValuedMap<String, StartupPropertyEntry> _configPropertyMap = new HashSetValuedHashMap<>();
 
     private List<Module> _modules;
-    private MultiValuedMap<String, StartupPropertyEntry> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
     {
@@ -2224,15 +2224,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return props.stream()
             .filter(prop -> prop.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
             .collect(Collectors.toList());
-    }
-
-    /**
-     * Sets the entire config properties MultiValueMap.
-     */
-    @Deprecated // Override StartupPropertyHandler.getStartupProperties() instead
-    public void setConfigProperties(@Nullable MultiValuedMap<String, StartupPropertyEntry> configProperties)
-    {
-        _configPropertyMap = configProperties;
     }
 
     /**
