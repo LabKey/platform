@@ -911,7 +911,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-        // populate script engine definitions values read from startup properties as appropriate for not bootstrap
+        // populate script engine definitions values read from startup properties
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();
 
