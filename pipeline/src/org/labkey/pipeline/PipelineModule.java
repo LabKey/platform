@@ -110,7 +110,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 22.000;
+        return 22.001;
     }
 
     @Override
@@ -220,13 +220,30 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                     jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
             result.put("jobCounts", jobCounts);
 
-            Map<String, Long> triggerCounts = new HashMap<>();
-            SQLFragment triggerSQL = new SQLFragment("SELECT COUNT(*) AS TriggerCount, COALESCE(Type, 'Unknown') AS Type, Enabled FROM ");
-            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "sf");
-            triggerSQL.append(" GROUP BY Type, Enabled");
+            Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
+            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ? THEN 1 ELSE 0 END) AS Enabled, ");
+            triggerSQL.append("SUM(CASE WHEN Enabled != ? THEN 1 ELSE 0 END) AS Disabled, ");
+            triggerSQL.append("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
+            triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
+            triggerSQL.append(" LEFT OUTER JOIN \n");
+            triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
+            triggerSQL.append(" ON tc.PipelineId = sf.TaskPipelineId\n");
+            triggerSQL.append(" GROUP BY PipelineId");
+            triggerSQL.add(true);
+            triggerSQL.add(true);
 
-            new SqlSelector(PipelineSchema.getInstance().getSchema(), triggerSQL).forEach(rs ->
-                    triggerCounts.put(rs.getString("Type") + "_" + rs.getBoolean("Enabled"), rs.getLong("TriggerCount")));
+            new SqlSelector(PipelineSchema.getInstance().getSchema(), triggerSQL).forEach((rs) ->
+                {
+                    String pipelineId = rs.getString("PipelineId");
+                    if (pipelineId.contains(":"))
+                    {
+                        pipelineId = pipelineId.split(":")[1];
+                    }
+                    Map<String, Long> m = triggerCounts.computeIfAbsent(pipelineId, x -> new HashMap<>());
+                    m.put("Enabled", rs.getLong("Enabled"));
+                    m.put("Disabled", rs.getLong("Disabled"));
+                    m.put("Jobs", rs.getLong("Jobs"));
+                });
             result.put("triggerCounts", triggerCounts);
 
             return result;
