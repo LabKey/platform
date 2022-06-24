@@ -147,7 +147,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     col.setFieldKey(new FieldKey(null, domainProperty.getName()));
                     PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
                     FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
-                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey);
+                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, pd, schema.getContainer(), _userSchema.getSchemaPath(), getPublicName(), pkFieldKey, cf);
 
                     ExpSampleType st = DefaultAssayRunCreator.getLookupSampleType(domainProperty, getContainer(), getUserSchema().getUser());
                     if (st != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
