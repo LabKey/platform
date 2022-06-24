@@ -713,6 +713,11 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    public TableInfo getTableForInsert(User user, Container c)
+    {
+        return getTable(user, c, QueryService.get().getContainerFilterForLookups(c, user));
+    }
+
     public ActionURL urlImport(Container c)
     {
         return urlForName(ListController.UploadListItemsAction.class, c);

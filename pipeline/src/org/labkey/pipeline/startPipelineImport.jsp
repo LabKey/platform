@@ -94,6 +94,11 @@ Ext4.onReady(function()
                 isCloudRoot: <%=bean.isCloudRoot()%>,   // Remove as part of Issue #43835
                 showFailForUndefinedVisits: <%=timepointType == null || timepointType == TimepointType.VISIT%>
             });
+        },
+        failure: function(response)
+        {
+            alert('Failed to get folder import info. Folder XML file may be invalid.');
+
         }
     });
 });

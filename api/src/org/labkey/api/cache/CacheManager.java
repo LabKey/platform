@@ -182,4 +182,11 @@ public class CacheManager
             LOG.warn(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
         }
     }
+
+
+    /* This interface allows a Collection to declare it self immutable when being added to a cache */
+    public interface Sealable
+    {
+        boolean isSealed();
+    }
 }

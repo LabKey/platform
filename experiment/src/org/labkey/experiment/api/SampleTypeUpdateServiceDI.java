@@ -633,7 +633,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             parentByType.computeIfAbsent(type, k -> new ArrayList<>());
-            parentByType.get(type).add(parent.getName());
+            String parentName = parent.getName();
+            if (parentName.contains(","))
+                parentName = "\"" + parentName + "\"";
+            parentByType.get(type).add(parentName);
         }
 
         for (String type : parentByType.keySet())

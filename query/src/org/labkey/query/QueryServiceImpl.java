@@ -1268,6 +1268,7 @@ public class QueryServiceImpl implements QueryService
         ret.put("deletable", view.isDeletable());
         ret.put("revertable", view.isRevertable());
         ret.put("hidden", view.isHidden());
+        ret.put("saved", view.getEntityId() != null);
         // XXX: This is a query property and not a custom view property!
         ret.put("savable", !view.getQueryDefinition().isTemporary());
         // module custom views have no container
@@ -3038,6 +3039,37 @@ public class QueryServiceImpl implements QueryService
         return columnTransformerMap.get(conceptURI);
     }
 
+    @Override
+    @Nullable
+    public ContainerFilter getContainerFilterForLookups(Container container, User user)
+    {
+        // Issue 45740: When inserting into a product project ensure the correct ContainerFilter scope
+        if (QueryService.get().isProductProjectsEnabled(container))
+            return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+        return null;
+    }
+
+    @Override
+    public boolean isProductProjectsEnabled(Container container)
+    {
+        if (container == null || container.isRoot() || container.isWorkbook())
+            return false;
+
+        Container project;
+        if (container.isProject())
+            project = container;
+        else
+            project = container.getProject();
+
+        if (project == null)
+            return false;
+
+        // It is less than ideal to reference the folder type but for the time being
+        // this is how we recognize the appropriate container context.
+        // 1. The provided container is a LKB top-level LKB folder.
+        // 2. The provided container's top-level parent is a LKB folder.
+        return "Biologics".equals(project.getFolderType().getName());
+    }
 
     public static class TestCase extends Assert
     {
