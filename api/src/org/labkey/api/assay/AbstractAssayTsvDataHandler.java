@@ -55,6 +55,7 @@ import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -288,9 +289,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Map<ExpRun, List<ExpData>> grouping = new HashMap<>();
         for (ExpData d : data)
         {
-            String protocolLsid;
-            Container runContainer;
-
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
             if (sourceApplication != null)
             {
@@ -442,9 +440,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
+            final ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
+            final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(cf);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, protocol, provider, dataTable, dataDomain, rawData, settings, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -702,11 +701,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, ExpProtocol protocol, AssayProvider provider, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container,
+                                               User user,
+                                               TableInfo dataTable,
+                                               Domain dataDomain,
+                                               List<Map<String, Object>> rawData,
+                                               DataLoaderSettings settings,
+                                               ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
-        final ProvenanceService pvs = ProvenanceService.get();
 
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
@@ -930,9 +934,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     valueMissing = true;
                 }
-                else if (o instanceof MvFieldWrapper)
+                else if (o instanceof MvFieldWrapper mvWrapper)
                 {
-                    MvFieldWrapper mvWrapper = (MvFieldWrapper)o;
                     if (mvWrapper.isEmpty())
                         valueMissing = true;
                     else
@@ -1073,9 +1076,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (null != provenanceInputs)
             {
-                if (provenanceInputs instanceof JSONArray)
+                if (provenanceInputs instanceof JSONArray inputJSONArr)
                 {
-                    JSONArray inputJSONArr = (JSONArray) provenanceInputs;
                     Object[] inputArr = inputJSONArr.toArray();
                     for (Object lsid: inputArr)
                     {

@@ -21,12 +21,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
@@ -430,7 +432,7 @@ public class Parameter implements AutoCloseable
             return ((Enum)value).name();
         else if (value instanceof Class)
             return (((Class) value).getName());
-        else if (value instanceof Lsid)
+        else if (value instanceof Lsid || value instanceof JSONObject || value instanceof File)
             return value.toString();
 
         return value;

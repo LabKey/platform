@@ -702,7 +702,7 @@ public class ListController extends SpringActionController
         {
             _list = form.getList();
             _insertOption = form.getInsertOption();
-            setTarget(_list.getTable(getUser(), getContainer()));
+            setTarget(_list.getTableForInsert(getUser(), getContainer()));
         }
 
         @Override

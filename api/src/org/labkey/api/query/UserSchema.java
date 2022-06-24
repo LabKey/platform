@@ -187,7 +187,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean skipSuggestedColumns)
     {
         TableInfo table = null;
-        String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
+        String cacheKey = cacheKey(name, cf, includeExtraMetadata, forWrite);
 
         // NOTE: _getTableOrQuery() does not cache TableInfo for QueryDefinition, so check here before calling
         if (null != cacheKey)
@@ -197,17 +197,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         ArrayList<QueryException> errors = new ArrayList<>();
         Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
-        if (o instanceof TableInfo)
+        if (o instanceof TableInfo ti)
         {
-            table = (TableInfo)o;
+            table = ti;
         }
-        else if (o instanceof QueryDefinition)
+        else if (o instanceof QueryDefinition qd)
         {
-            table = ((QueryDefinition)o).getTable(this, errors, true, skipSuggestedColumns);
+            table = qd.getTable(this, errors, true, skipSuggestedColumns);
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
             {
-                if (ex instanceof QueryParseException && ((QueryParseException)ex).isWarning())
+                if (ex instanceof QueryParseException qpe && qpe.isWarning())
                     continue;
                 throw ex;
             }
@@ -225,9 +225,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         assert null==cacheKey || table.isLocked();
         return table;
     }
-
-
-
 
     private boolean validateTableInfo(TableInfo t)
     {
@@ -326,14 +323,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         table.overlayMetadata(name, this, errors);
     }
-
-    @Override
-    @Nullable
-    public final TableInfo getTable(String name)
-    {
-        return getTable(name, null, true, false);
-    }
-
 
     @Deprecated // TODO ContainerFilter - remove. Schemas that still override or call this method have not been converted yet.
     public final @Nullable TableInfo createTable(String name)

@@ -1551,7 +1551,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement

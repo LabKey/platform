@@ -4316,7 +4316,7 @@ public class QueryController extends SpringActionController
             if (null == schema)
                 throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
 
-            TableInfo table = schema.getTable(queryName, null);
+            TableInfo table = schema.getTableForInsert(queryName);
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
             return table;
