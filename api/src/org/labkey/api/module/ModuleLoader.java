@@ -2206,6 +2206,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
      * otherwise only startup properties are returned.
      */
     @NotNull
+    @Deprecated // Use a StartupPropertyHandler instead
     public Collection<StartupPropertyEntry> getConfigProperties(@Nullable String scope)
     {
         Collection<StartupPropertyEntry> props = Collections.emptyList();
