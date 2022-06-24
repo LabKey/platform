@@ -117,7 +117,7 @@
                 <labkey:checkbox name="ff_trackingStatus" checked="<%= settingsForm.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.script)%>" value="<%= AnalyticsServiceImpl.TrackingStatus.script.toString() %>" id="customScript" />
             </td>
             <td style="padding-left: 1em;">
-                <strong><label for="customScript">Custom JavaScript Analytics></label></strong>
+                <strong><label for="customScript">Custom JavaScript Analytics</label></strong>
                 <p>
                     Add <label for="ff_trackingScript">custom analytics script</label> to the <code>&lt;head&gt;</code> of every page.  Include required <code>&lt;script&gt;</code> tags.
                 </p>
