@@ -145,7 +145,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return Math.max(getUserLimitLevel() - getActiveUserCount(), 0);
     }
 
-    enum StartupProperties implements StartupProperty
+    private enum StartupProperties implements StartupProperty
     {
         userWarning("Enable user warning"),
         userWarningLevel("Warning level user count"),
