@@ -3143,7 +3143,7 @@ public class ExperimentServiceImpl implements ExperimentService
             });
         }
 
-        private void sync_inner(@Nullable Map<String, Integer> cpasTypeToObjectId)
+        private void syncInner(@Nullable Map<String, Integer> cpasTypeToObjectId)
         {
             assert getExpSchema().getScope().isTransactionActive();
 
