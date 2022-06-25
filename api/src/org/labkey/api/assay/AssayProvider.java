@@ -291,7 +291,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /**
      * @return a short description of this assay type - what kinds of data it can be used to analyze, etc.
-     * HTML is allowed, so the string will not be HTML encoded at render time
      */
     String getDescription();
 

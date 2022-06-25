@@ -31,6 +31,8 @@ public interface ConceptURIVocabularyDomainProvider
 
     @Nullable String getDomainName(@NotNull String sourceFieldName, @NotNull ExpObject expObject);
 
+    @Nullable String getDomainLabel(@NotNull String sourceFieldName);
+
     @NotNull DataIteratorBuilder getDataIteratorBuilder(@NotNull DataIteratorBuilder data, @NotNull ExpDataClass expDataClass, @NotNull AttachmentParentFactory attachmentParentFactory, Container container, User user);
 
     @NotNull Map<String, Object> getUpdateRowProperties(User user, Container c, @NotNull Map<String, Object> rowStripped, Map<String, Object> oldRow, @NotNull AttachmentParentFactory attachmentParentFactory, @NotNull String sourceFieldName, @NotNull String propertyColumnName, boolean hasMultipleSourceFields);

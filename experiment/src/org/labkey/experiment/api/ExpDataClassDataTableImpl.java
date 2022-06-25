@@ -139,7 +139,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
-    private Map<String/*domain name*/, Tuple3<String/*column that has attached vocabulary*/, String/*vocabulary property column field key*/, ConceptURIVocabularyDomainProvider>> _vocabularyDomainProviders;
+    private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
@@ -315,6 +315,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataFileUrl:
                 var dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
                 dataFileUrl.setUserEditable(false);
+                dataFileUrl.setHidden(true);
                 DetailsURL url = new DetailsURL(new ActionURL(ExperimentController.ShowFileAction.class, getContainer()), Collections.singletonMap("rowId", "rowId"));
                 dataFileUrl.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(url, getContainer(), FieldKey.fromParts("RowId")));
 
@@ -489,7 +490,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addExpObjectMethod();
     }
 
-    private Map<String, Tuple3<String, String, ConceptURIVocabularyDomainProvider>> getVocabularyDomainProviders()
+    private Map<String, DataClassVocabularyProviderProperties> getVocabularyDomainProviders()
     {
         if (_vocabularyDomainProviders != null)
             return _vocabularyDomainProviders;
@@ -515,7 +516,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                         continue;
 
                     String propertyColumnName = getVocabularyDomainColumnName(domain);
-                    _vocabularyDomainProviders.put(domainName, new Tuple3<>(col.getName(), propertyColumnName, conceptURIVocabularyDomainProvider));
+                    _vocabularyDomainProviders.put(domainName, new DataClassVocabularyProviderProperties(col.getName(), col.getLabel(), propertyColumnName, conceptURIVocabularyDomainProvider));
 
                 }
             }
@@ -549,17 +550,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 }
 
-                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
                 if (fieldVocabularyDomainProvider != null)
-                    fieldVocabularyDomainProvider.third.decorateColumn(columnInfo, pd, _userSchema.getContainer());
+                    fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().decorateColumn(columnInfo, pd, _userSchema.getContainer());
             }
 
             @Override
             protected @NotNull FieldKey decideColumnName(@NotNull ColumnInfo parent, @NotNull String displayField, @NotNull PropertyDescriptor pd)
             {
-                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
                 if (fieldVocabularyDomainProvider != null)
-                    return fieldVocabularyDomainProvider.third.getColumnFieldKey(parent, pd);
+                    return fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getColumnFieldKey(parent, pd);
 
                 return super.decideColumnName(parent, displayField, pd);
           }
@@ -584,10 +585,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             col.setLabel(domain.getName());
             col.setDescription("Properties from " + domain.getLabel(getContainer()));
 
-            Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+            DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
             if (fieldVocabularyDomainProvider != null)
             {
-                List<FieldKey> fieldKeys = fieldVocabularyDomainProvider.third.addLookupColumns(_dataClass, this, col, fieldVocabularyDomainProvider.first);
+                col.setLabel(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getDomainLabel(fieldVocabularyDomainProvider.sourceColumnLabel()));
+                List<FieldKey> fieldKeys = fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().addLookupColumns(_dataClass, this, col, fieldVocabularyDomainProvider.sourceColumnName());
                 if (fieldKeys != null)
                     domainFields.addAll(fieldKeys);
             }
@@ -657,10 +659,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         Set<String> excludeColumns = new HashSet<>();
         for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
         {
-            Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
+            DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
             if (fieldVocabularyDomainProvider != null)
             {
-                excludeColumns.addAll(fieldVocabularyDomainProvider.third.getImportTemplateExcludeColumns(fieldVocabularyDomainProvider.second));
+                excludeColumns.addAll(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getImportTemplateExcludeColumns(fieldVocabularyDomainProvider.vocabularyDomainName()));
             }
         }
 
@@ -987,9 +989,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
             {
-                Tuple3<String, String, ConceptURIVocabularyDomainProvider> fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
                 if (fieldVocabularyDomainProvider != null)
-                    rowStripped.putAll(fieldVocabularyDomainProvider.third.getUpdateRowProperties(user, c, rowStripped, oldRow, getAttachmentParentFactory(), fieldVocabularyDomainProvider.first, fieldVocabularyDomainProvider.second, getVocabularyDomainProviders().size() > 1));
+                    rowStripped.putAll(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getUpdateRowProperties(user, c, rowStripped, oldRow, getAttachmentParentFactory(), fieldVocabularyDomainProvider.sourceColumnName(), fieldVocabularyDomainProvider.vocabularyDomainName(), getVocabularyDomainProviders().size() > 1));
             }
 
             // update exp.data
