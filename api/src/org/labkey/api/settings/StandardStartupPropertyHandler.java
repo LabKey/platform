@@ -20,7 +20,9 @@ public abstract class StandardStartupPropertyHandler<T extends Enum<T> & Startup
     public StandardStartupPropertyHandler(String scope, Class<T> type)
     {
         super(scope, type.getName());
-        _properties = Arrays.stream(type.getEnumConstants()).collect(LabKeyCollectors.toLinkedMap(Enum::name, sp->sp));
+        _properties = Arrays.stream(type.getEnumConstants())
+            .filter(sp -> null != sp.getPropertyName())
+            .collect(LabKeyCollectors.toLinkedMap(StartupProperty::getPropertyName, sp->sp));
     }
 
     public Map<String, T> getProperties()
@@ -31,7 +33,7 @@ public abstract class StandardStartupPropertyHandler<T extends Enum<T> & Startup
     @Override
     public Collection<T> getDocumentationProperties()
     {
-        return _properties.values();
+        return getProperties().values();
     }
 
     public abstract void handle(Map<T, StartupPropertyEntry> properties);
