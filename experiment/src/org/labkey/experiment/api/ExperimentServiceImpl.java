@@ -3138,7 +3138,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             DbScope expScope = getExpSchema().getScope();
             expScope.executeWithRetry((DbScope.RetryFn<Void>) tx -> {
-                sync_inner(cpasTypeToObjectId);
+                syncInner(cpasTypeToObjectId);
                 return null;
             });
         }
