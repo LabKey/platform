@@ -627,7 +627,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     private static class ScriptEngineStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<unique name>.<property name>";
         }

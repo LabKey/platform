@@ -2874,7 +2874,7 @@ public class SecurityManager
     private static final class UserGroupsStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<user email address>";
         }
@@ -2949,7 +2949,7 @@ public class SecurityManager
     private static final class GroupRolesStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<group name>";
         }
@@ -3013,7 +3013,7 @@ public class SecurityManager
     private static final class UserRolesStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<user email address>";
         }

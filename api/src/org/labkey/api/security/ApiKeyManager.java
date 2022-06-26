@@ -152,7 +152,7 @@ public class ApiKeyManager
     private static final class ApiKeyStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<user email address>";
         }

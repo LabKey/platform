@@ -92,7 +92,7 @@ public class MailHelper
     private static class SmtpStartupProperty implements StartupProperty
     {
         @Override
-        public String name()
+        public String getPropertyName()
         {
             return "<JavaMail SMTP setting>";
         }
