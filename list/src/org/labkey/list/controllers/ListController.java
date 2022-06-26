@@ -46,6 +46,7 @@ import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.SQLFragment;
@@ -221,6 +222,9 @@ public class ListController extends SpringActionController
                     .append("' OR CreatedBy = ").append(getUser().getUserId());
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
+
+            if (null == StringUtils.trimToNull(settings.getContainerFilterName()))
+                settings.setContainerFilterName(ContainerFilter.Type.CurrentPlusProjectAndShared.name());
 
             return schema.createView(getViewContext(), settings, errors);
         }
