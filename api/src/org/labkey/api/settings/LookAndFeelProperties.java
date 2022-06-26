@@ -27,6 +27,8 @@ import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 
+import java.util.Arrays;
+
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
  * or scoped to a specific project.
@@ -44,8 +46,8 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         systemDescription("System description (used in emails)"),
         systemShortName("Header short name (appears in every page header and in emails)"),
         themeName("Server color schema"),
-        folderDisplayMode("Show project and folder navigation. Valid values: [ALWAYS, ADMIN]"),
-        applicationMenuDisplayMode("Show application selection menu. Valid values: [ALWAYS, ADMIN]"),
+        folderDisplayMode("Show project and folder navigation. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
+        applicationMenuDisplayMode("Show application selection menu. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         helpMenuEnabled("Show LabKey Help menu item"),
         discussionEnabled("Enable object-level discussions"),
         logoHref("Logo link (specifies page to which header logo links)"),
@@ -77,7 +79,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
             }
         },
 
-        dateParsingMode("Date parsing mode. Valid values: [US, NON_US]"),
+        dateParsingMode("Date parsing mode. Valid values: " + Arrays.toString(DateParsingMode.values())),
         extraDateParsingPattern("Additional parsing pattern for dates"),
         extraDateTimeParsingPattern("Additional parsing pattern for date-times"),
 

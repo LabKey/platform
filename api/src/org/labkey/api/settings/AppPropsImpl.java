@@ -113,7 +113,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setUseContainerRelativeURL(Boolean.parseBoolean(value));
             }
         },
-        usageReportingLevel("Check for updates and report usage statistics to the LabKey team. Valid values: [NONE, ON]")
+        usageReportingLevel("Check for updates and report usage statistics to the LabKey team. Valid values: " + Arrays.toString(UsageReportingLevel.values()))
         {
             @Override
             public void setValue(WriteableAppProps writeable, String value)
@@ -121,7 +121,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setUsageReportingLevel(UsageReportingLevel.valueOf(value));
             }
         },
-        exceptionReportingLevel("Report exceptions to the LabKey team. Valid values: [NONE, LOW, MEDIUM, HIGH]")
+        exceptionReportingLevel("Report exceptions to the LabKey team. Valid values: " + Arrays.toString(ExceptionReportingLevel.values()))
         {
             @Override
             public void setValue(WriteableAppProps writeable, String value)

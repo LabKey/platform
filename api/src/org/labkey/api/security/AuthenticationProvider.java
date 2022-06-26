@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
@@ -30,6 +28,8 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -111,6 +112,7 @@ public interface AuthenticationProvider
     }
 
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
+    @Deprecated // Use the method below instead
     default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
     {
         Map<String, String> map = getPropertyMap(categories);
@@ -139,17 +141,40 @@ public interface AuthenticationProvider
         }
     }
 
-    // Helper that retrieves all the configuration properties in the specified category and saves them into a property map with the same name
-    default void saveStartupProperties(String category)
+    // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
+    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
     {
-        Map<String, String> map = getPropertyMap(Collections.singleton(category));
+        Map<String, String> map = new HashMap<>();
+        categories.forEach(category-> ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
+        {
+            @Override
+            public void handle(Map<T, StartupPropertyEntry> properties)
+            {
+                properties.forEach((key, value)->map.put(key.getPropertyName(), value.getValue()));
+            }
+        }));
 
         if (!map.isEmpty())
         {
-            PropertyMap propertyMap = PropertyManager.getWritableProperties(category, true);
-            propertyMap.clear();
-            propertyMap.putAll(map);
-            propertyMap.save();
+            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
+            FORM form = factory.fromMap(map);
+
+            // If description is provided in the startup properties file and an existing configuration for this provider
+            // matches that description then update the existing configuration. If not, create a new configuration. #39474
+            if (form.getDescription() != null)
+            {
+                AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                    .filter(ac -> ac.getDescription().equals(form.getDescription()))
+                    .map(AuthenticationConfiguration::getRowId)
+                    .findFirst()
+                    .ifPresent(form::setRowId);
+            }
+            else
+            {
+                form.setDescription(form.getProvider() + " Configuration");
+            }
+
+            SaveConfigurationAction.saveForm(form, null);
         }
     }
 

@@ -36,6 +36,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -110,7 +111,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public enum AnalyticsProperty implements StartupProperty
     {
-        trackingStatus("Analytics tracking status. Valid values: [disabled, enabled, enabledFullURL, script]"),
+        trackingStatus("Analytics tracking status. Valid values: " + Arrays.toString(TrackingStatus.values())),
         accountId("Account ID"),
         trackingScript("Custom analytics script");
 
