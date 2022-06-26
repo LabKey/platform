@@ -2434,7 +2434,7 @@ public class ExperimentController extends SpringActionController
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
-                    JSONObject qInfo = rootObject.getJSONObject("queryinfo");
+                    JSONObject qInfo = rootObject.has("queryinfo") ? rootObject.getJSONObject("queryinfo") : null;
                     if (qInfo != null)
                     {
                         QueryService.get().addAuditEvent(getUser(), getContainer(), qInfo.getString("schema"),
@@ -3951,6 +3951,12 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
+            if (query.getContainerFilter() == null)
+            {
+                ContainerFilter cf = QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
+                if (cf != null)
+                    query.setContainerFilter(cf);
+            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())

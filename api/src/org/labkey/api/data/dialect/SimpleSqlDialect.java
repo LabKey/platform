@@ -524,7 +524,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         throw new UnsupportedOperationException();
     }

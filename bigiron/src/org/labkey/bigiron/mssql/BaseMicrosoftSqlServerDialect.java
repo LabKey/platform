@@ -58,6 +58,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -162,10 +164,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, " +
             "print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, " +
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
+            "semantickeyphrasetable, semanticsimilaritydetailstable, semanticsimilaritytable, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
-            "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext"
+            "top, tran, transaction, trigger, truncate, try_convert, tsequal, union, unique, unpivot, update, updatetext, " +
+            "use, user, values, varying, view, waitfor, when, where, while, with, within, writetext"
         ));
+    }
+
+    static
+    {
+        // The Microsoft JDBC driver does a lackluster job of translating errors to the appropriate SQLState. Do our
+        // own translation for the ones we care about. See issue 37040
+        CustomSQLExceptionTranslatorRegistry.getInstance().registerTranslator("Microsoft SQL Server", (task, sql, ex) -> {
+            if (ex.getErrorCode() == 8134)
+            {
+                return new DataIntegrityViolationException(ex.getMessage(), ex);
+            }
+            return null;
+        });
     }
 
     @Override
@@ -767,7 +783,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState());
+        return "S1000".equals(e.getSQLState()) // jTDS driver
+                || ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
@@ -1929,7 +1946,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    if (isJTDS(scope))
+                    {
+                        parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    }
+                    else
+                    {
+                        parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
+                    }
                 }
                 else
                 {
@@ -1945,11 +1969,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
+            if (!isJTDS(procScope))
+            {
+                sb.append("{");
+            }
             sb.append("? = ");
             paramCount--;
         }
@@ -1960,6 +1988,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
+        if (hasReturn || assignResult && !isJTDS(procScope))
+        {
+            sb.append("}");
+        }
 
         return sb.toString();
     }
@@ -1967,6 +1999,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
+        int index = 1;
+        boolean jTDS = isJTDS(scope);
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
@@ -1975,10 +2009,34 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
-                stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+            {
+                if (jTDS)
+                {
+                    stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+                }
+                else
+                {
+                    stmt.setObject(index, paramInfo.getParamValue(), datatype);
+                }
+            }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
-                stmt.registerOutParameter(paramName, datatype);
+            {
+                if (jTDS)
+                {
+                    stmt.registerOutParameter(paramName, datatype);
+                }
+                else
+                {
+                    stmt.registerOutParameter(index, datatype);
+                }
+            }
+            index++;
         }
+    }
+
+    protected boolean isJTDS(DbScope scope)
+    {
+        return scope.getDriverName().contains("jTDS");
     }
 
     @Override
