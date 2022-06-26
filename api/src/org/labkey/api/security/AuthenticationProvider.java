@@ -105,7 +105,7 @@ public interface AuthenticationProvider
     }
 
     /**
-     * Override to retrieve and save startup properties intended for this provider. Invoked after new install only.
+     * Override to retrieve and save startup properties intended for this provider. Invoked after every server startup.
      */
     default void handleStartupProperties()
     {
@@ -144,6 +144,9 @@ public interface AuthenticationProvider
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
     default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
     {
+        assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("Description") || c.name().equals("Enabled")).count() == 2 :
+            type.getName() + " does not define required Description and Enabled constants!";
+
         Map<String, String> map = new HashMap<>();
         categories.forEach(category-> ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
         {
@@ -195,8 +198,17 @@ public interface AuthenticationProvider
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
-    interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface SSOAuthenticationProvider<SSO extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<SSO>, AuthenticationConfigurationFactory<SSO>
     {
+        @Override
+        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+        {
+            // SSO authentication provider StartupProperty enums must define AutoRedirect constant
+            assert Arrays.stream(type.getEnumConstants()).anyMatch(c -> c.name().equals("AutoRedirect")) :
+                type.getName() + " does not define required AutoRedirect constant!";
+
+            PrimaryAuthenticationProvider.super.saveStartupProperties(categories, formClass, configurationClass, type);
+        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
