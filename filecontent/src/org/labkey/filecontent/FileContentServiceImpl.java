@@ -1832,7 +1832,7 @@ public class FileContentServiceImpl implements FileContentService
 
             ModuleLoader.getInstance().handleStartupProperties(new SiteRootStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(new StartupPropertyEntry("siteRootFile", testSiteRootFile.getAbsolutePath(), "startup", SCOPE_SITE_ROOT_SETTINGS));
                 }

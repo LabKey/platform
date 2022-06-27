@@ -718,7 +718,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             ModuleLoader.getInstance().handleStartupProperties(new ScriptEngineStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(
                         new StartupPropertyEntry("Rtest.external", "True", "bootstrap", SCOPE_SCRIPT_ENGINE_DEFINITION),

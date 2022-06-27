@@ -27,7 +27,7 @@ public class AppPropsTestCase extends Assert
         ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler()
         {
             @Override
-            public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+            public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
             {
                 return List.of(new StartupPropertyEntry("maxBLOBSize", TEST_MAX_BLOB_SIZE, "startup", AppProps.SCOPE_SITE_SETTINGS));
             }

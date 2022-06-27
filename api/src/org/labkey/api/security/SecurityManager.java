@@ -3653,7 +3653,7 @@ public class SecurityManager
             // Use test startup properties to add a new user with specified role
             ModuleLoader.getInstance().handleStartupProperties(new UserRolesStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(new StartupPropertyEntry(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", SCOPE_USER_ROLES));
                 }
@@ -3693,7 +3693,7 @@ public class SecurityManager
             // Use test startup properties to add a new group with specified role
             ModuleLoader.getInstance().handleStartupProperties(new GroupRolesStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(new StartupPropertyEntry(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", SCOPE_GROUP_ROLES));
                 }
@@ -3732,7 +3732,7 @@ public class SecurityManager
             // Use test startup properties to add a user to the specified group
             ModuleLoader.getInstance().handleStartupProperties(new UserGroupsStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(new StartupPropertyEntry(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", SCOPE_USER_GROUPS));
                 }

@@ -74,6 +74,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
@@ -1791,7 +1792,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    // Did this server start up with no modules installed?  If so, it's a new install. This lets us tailor the
+    // Did this server start up with no modules installed? If so, it's a new install. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
@@ -2161,18 +2162,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
             startupPropertyChecks(handler);
         Map<String, T> props = handler.getProperties();
         Map<T, StartupPropertyEntry> map = new LinkedHashMap<>();
-        handler.getStartupProperties().forEach(cp -> {
-            T sp = props.get(cp.getName());
+        handler.getStartupPropertyEntries().forEach(entry -> {
+            T sp = props.get(entry.getName());
             if (null != sp)
             {
-                cp.setStartupProperty(sp);
-                map.put(sp, cp);
-            }
-            else
-            {
-                // Can't actually validate here since this method can be invoked multiple times with the same scope
-                // TODO: Track the matched properties and validate after startup is complete
-                _log.warn("Unknown startup property: " + cp.getScope() + "." + cp.getName());
+                entry.setStartupProperty(sp);
+                map.put(sp, entry);
             }
         });
         handler.handle(map);
@@ -2183,8 +2178,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (handler.performChecks())
             startupPropertyChecks(handler);
         StartupProperty sp = handler.getProperty();
-        handler.handle(handler.getStartupProperties().stream()
-            .peek(cp -> cp.setStartupProperty(sp))
+        handler.handle(handler.getStartupPropertyEntries().stream()
+            .peek(entry -> entry.setStartupProperty(sp))
             .toList());
     }
 
@@ -2193,6 +2188,24 @@ public class ModuleLoader implements Filter, MemTrackerListener
         assert !isStartupComplete() : "All startup properties must be handled during startup";
         boolean notExists = _startupPropertyHandlers.add(handler);
         assert notExists : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
+    }
+
+    public static class StartupPropertyStartupListener implements StartupListener
+    {
+        @Override
+        public String getName()
+        {
+            return "Startup Property Validation";
+        }
+
+        @Override
+        public void moduleStartupComplete(ServletContext servletContext)
+        {
+            ModuleLoader.getInstance().getStartupPropertyEntries(null)
+                .stream()
+                .filter(entry -> null == entry.getStartupProperty())
+                .forEach(entry -> _log.error("Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue()));
+        }
     }
 
     public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()
@@ -2204,6 +2217,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
      * Returns the startup property entries for the specified scope. If no scope is specified then all properties are
      * returned. If the server is bootstrapping then properties with both the bootstrap and startup modifiers are
      * returned otherwise only startup properties are returned.
+     *
+     * Do not call this directly! Use a StartupPropertyHandler instead.
      */
     @NotNull
     public Collection<StartupPropertyEntry> getStartupPropertyEntries(@Nullable String scope)
@@ -2220,7 +2235,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 props = _configPropertyMap.values();
         }
 
-        return props;
+        // We filter here because loadStartupProps() gets called very early, before _newInstall is set
+        return props.stream()
+            .filter(prop -> prop.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
+            .collect(Collectors.toList());
     }
 
     /**
@@ -2241,7 +2259,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
-                    throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.getAbsolutePath());
             }
             else
             {
@@ -2307,12 +2325,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private void addStartupPropertyEntry(String scope, String value)
     {
         StartupPropertyEntry entry = createConfigProperty(scope, value);
-        if (entry.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
-        {
-            if (_configPropertyMap.containsMapping(entry.getScope(), entry))
-                _configPropertyMap.removeMapping(entry.getScope(), entry);
-            _configPropertyMap.put(entry.getScope(), entry);
-        }
+        if (_configPropertyMap.containsMapping(entry.getScope(), entry))
+            _configPropertyMap.removeMapping(entry.getScope(), entry);
+        _configPropertyMap.put(entry.getScope(), entry);
     }
 
     /**

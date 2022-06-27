@@ -28,7 +28,7 @@ public abstract class StartupPropertyHandler<T extends StartupProperty>
 
     // Startup properties come from the global properties files in most cases. Tests can override to provide test properties.
     @NotNull
-    public Collection<StartupPropertyEntry> getStartupProperties()
+    public Collection<StartupPropertyEntry> getStartupPropertyEntries()
     {
         return ModuleLoader.getInstance().getStartupPropertyEntries(getScope());
     }

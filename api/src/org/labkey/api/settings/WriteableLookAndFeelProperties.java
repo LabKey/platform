@@ -228,7 +228,7 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
             // Handle the test properties to change the Look And Feel settings on the server
             ModuleLoader.getInstance().handleStartupProperties(new LookAndFeelStartupPropertyHandler(){
                 @Override
-                public @NotNull Collection<StartupPropertyEntry> getStartupProperties()
+                public @NotNull Collection<StartupPropertyEntry> getStartupPropertyEntries()
                 {
                     return List.of(new StartupPropertyEntry("systemDescription", TEST_SYSTEM_DESCRIPTION, "startup", SCOPE_LOOK_AND_FEEL_SETTINGS));
                 }
