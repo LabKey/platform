@@ -2201,13 +2201,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     /**
-     * Returns the config properties for the specified scope. If no scope is specified then all properties are returned.
-     * If the server is bootstrapping then properties with both the bootstrap and startup modifiers are returned
-     * otherwise only startup properties are returned.
+     * Returns the startup property entries for the specified scope. If no scope is specified then all properties are
+     * returned. If the server is bootstrapping then properties with both the bootstrap and startup modifiers are
+     * returned otherwise only startup properties are returned.
      */
     @NotNull
-    @Deprecated // Use a StartupPropertyHandler instead
-    public Collection<StartupPropertyEntry> getConfigProperties(@Nullable String scope)
+    public Collection<StartupPropertyEntry> getStartupPropertyEntries(@Nullable String scope)
     {
         Collection<StartupPropertyEntry> props = Collections.emptyList();
         if (!_configPropertyMap.isEmpty())
@@ -2221,10 +2220,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 props = _configPropertyMap.values();
         }
 
-        // filter out bootstrap scoped properties in the non-bootstrap startup case
-        return props.stream()
-            .filter(prop -> prop.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
-            .collect(Collectors.toList());
+        return props;
     }
 
     /**
@@ -2275,10 +2271,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                             {
                                 _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
 
-                                StartupPropertyEntry config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
-                                if (_configPropertyMap.containsMapping(config.getScope(), config))
-                                    _configPropertyMap.removeMapping(config.getScope(), config);
-                                _configPropertyMap.put(config.getScope(), config);
+                                addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
                             }
                         }
                     }
@@ -2306,19 +2299,27 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
             if (name != null && name.startsWith(StartupPropertyEntry.SYS_PROP_PREFIX) && value != null)
             {
-                StartupPropertyEntry config = createConfigProperty(name.substring(StartupPropertyEntry.SYS_PROP_PREFIX.length()), value);
-                if (_configPropertyMap.containsMapping(config.getScope(), config))
-                    _configPropertyMap.removeMapping(config.getScope(), config);
-                _configPropertyMap.put(config.getScope(), config);
+                addStartupPropertyEntry(name.substring(StartupPropertyEntry.SYS_PROP_PREFIX.length()), value);
             }
         }
     }
 
+    private void addStartupPropertyEntry(String scope, String value)
+    {
+        StartupPropertyEntry entry = createConfigProperty(scope, value);
+        if (entry.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
+        {
+            if (_configPropertyMap.containsMapping(entry.getScope(), entry))
+                _configPropertyMap.removeMapping(entry.getScope(), entry);
+            _configPropertyMap.put(entry.getScope(), entry);
+        }
+    }
+
     /**
-     * Parse the config property name and construct a ConfigProperty object. A config property
+     * Parse the startup property line and construct a StartupPropertyEntry object. A startup property
      * can have an optional dot delimited scope and an optional semicolon delimited modifier, for example:
-     * siteSettings.baseServerUrl;bootstrap defines a property named : baseServerUrl in the siteSettings scope and
-     * having the bootstrap modifier.
+     * siteSettings.baseServerUrl;bootstrap defines a property named "baseServerUrl" in the "siteSettings"
+     * scope having the bootstrap modifier.
      */
     private StartupPropertyEntry createConfigProperty(String key, String value)
     {
@@ -2345,7 +2346,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private class SchemaDetails
+    private static class SchemaDetails
     {
         private final Module _module;
         private final DbSchemaType _type;

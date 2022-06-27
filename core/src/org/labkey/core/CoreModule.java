@@ -1374,7 +1374,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             public String getDescription()
             {
-                return "Semicolon-delimited list of webpart names to add to the home project. DO NOT USE... use SiteSettings.homeProjectWebparts instead.";
+                return "Semicolon-separated list of webpart names to add to the home project. DO NOT USE... use SiteSettings.homeProjectWebparts instead.";
             }
         }
     }

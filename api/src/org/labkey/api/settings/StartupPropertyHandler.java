@@ -30,7 +30,7 @@ public abstract class StartupPropertyHandler<T extends StartupProperty>
     @NotNull
     public Collection<StartupPropertyEntry> getStartupProperties()
     {
-        return ModuleLoader.getInstance().getConfigProperties(getScope());
+        return ModuleLoader.getInstance().getStartupPropertyEntries(getScope());
     }
 
     // Tests can override to avoid standard checks

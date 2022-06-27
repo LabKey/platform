@@ -209,7 +209,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setAllowSessionKeys(Boolean.parseBoolean(value));
             }
         },
-        pipelineToolsDirectory("A ';' separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)")
+        pipelineToolsDirectory("Semicolon-separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)")
         {
             @Override
             public void setValue(WriteableAppProps writeable, String value)
