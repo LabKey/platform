@@ -97,7 +97,7 @@ Ext4.onReady(function()
         },
         failure: function(response)
         {
-            alert('Failed to get folder import info. Folder XML file may be invalid.');
+            Ext4.Msg.alert('Failed to get folder import info. Folder XML file may be invalid.');
 
         }
     });
