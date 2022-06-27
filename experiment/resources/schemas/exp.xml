@@ -216,7 +216,7 @@
           </column>
           <column columnName="Container" />
           <column columnName="Name" >
-              <url>/list/grid.view?listId=${ListId}</url>
+              <url>/list/grid.view?name=${Name}</url>
           </column>
           <column columnName="DomainId" />
           <column columnName="KeyName" />

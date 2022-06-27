@@ -158,7 +158,11 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
             }
         });
 
-        setDefaultVisibleColumns(Arrays.asList(FieldKey.fromParts("Name"), FieldKey.fromParts("Description"), FieldKey.fromParts("Container")));
+        setDefaultVisibleColumns(Arrays.asList(
+            FieldKey.fromParts("Name"),
+            FieldKey.fromParts("Description"),
+            FieldKey.fromParts("Container")
+        ));
     }
 
     @Override
