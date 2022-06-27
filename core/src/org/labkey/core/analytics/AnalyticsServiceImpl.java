@@ -68,7 +68,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                         return "";
                     }
                 },
-        /** Use GA with URL sanitization */
+        /** Use old GA with URL sanitization */
         enabled(true)
                 {
                     @Override
@@ -77,7 +77,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                         return TRACKING_SCRIPT_TEMPLATE_ASYNC;
                     }
                 },
-        /** Use GA without replacing container paths */
+        /** Use old GA without replacing container paths */
         enabledFullURL(true)
                 {
                     @Override
@@ -86,6 +86,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                         return TRACKING_SCRIPT_TEMPLATE_ASYNC;
                     }
                 },
+        /** Use GA4 with the full URL */
         ga4FullUrl(true)
                 {
                     @Override
@@ -221,7 +222,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         Container container = context.getContainer();
 
         // Adding a null check for container as on rendering the error page, container can be null for a not found page
-        if (getTrackingStatus().contains(TrackingStatus.enabledFullURL) && null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
+        if (getTrackingStatus().contains(TrackingStatus.enabled) && null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
         {
             actionUrl.deleteParameters();
             actionUrl.setExtraPath(container.getId());
