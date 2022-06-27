@@ -1247,6 +1247,8 @@ Ext4.define('File.panel.Browser', {
             }
         }
 
+        items.push(this.getFileDeleteProgressWindow())
+
         return items;
     },
 
@@ -2848,6 +2850,76 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
+    getFileDeleteProgressWindow : function() {
+        if (this.fileDeleteProgressWindow)
+            return this.fileDeleteProgressWindow;
+
+        this.deleteProgressBar = Ext4.create('Ext.ProgressBar', {
+            width: 500,
+            height: 25,
+            border: false,
+            autoRender : true,
+            style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
+        });
+
+        var progressBarContainer = Ext4.create('Ext.container.Container', {
+            width: 500,
+            margin: 4,
+            items: [this.deleteProgressBar]
+        });
+
+        this.statusText = Ext4.create('Ext.form.Label', {
+            text: '',
+            style: 'display: inline-block ;text-align: center',
+            width: 500,
+            margin: 4,
+            border: false
+        });
+
+        this.fileDeleteProgressWindow = Ext4.create('Ext.window.Window', {
+            title: 'Delete Progress',
+            layout: 'vbox',
+            bodyPadding: 5,
+            closable: false,
+            border: false,
+            items: [this.statusText, progressBarContainer]
+        });
+
+        return this.fileDeleteProgressWindow;
+    },
+
+    showDeleteProgressWindow : function()
+    {
+        if (this.getFileDeleteProgressWindow())
+        {
+            this.getFileDeleteProgressWindow().show();
+            this.getFileDeleteProgressWindow().center();
+        }
+        if (this.deleteProgressBar)
+            this.deleteProgressBar.setVisible(true);
+    },
+
+    hideDeleteProgressWindow : function()
+    {
+        if (this.fileDeleteProgressWindow)
+        {
+            this.fileDeleteProgressWindow.hide();
+            this.fileDeleteProgressWindow.center();
+        }
+        if (this.deleteProgressBar)
+            this.deleteProgressBar.reset(true);
+        if (this.statusText)
+            this.statusText.setText('');
+    },
+
+    onDeleteProgress : function(progress) {
+        if (progress == 100) {
+            this.hideDeleteProgressWindow();
+        } else {
+            this.deleteProgressBar.updateProgress(progress/100);
+        }
+    },
+
     onDelete : function() {
 
         var recs = this.getGridSelection();
@@ -2864,11 +2936,26 @@ Ext4.define('File.panel.Browser', {
                 icon : Ext4.Msg.QUESTION,
                 fn : function(btn) {
                     if (btn === 'yes') {
+                        this.showDeleteProgressWindow();
+                        this.statusText.setText('Deleteing ' + recs[0].data.name + ' ...');
+                        if (recs.length === 1 && recs[0].data.collection) {
+                            // delete a potentially large directory
+                            this.deleteProgressBar.wait({
+                                interval: 500,
+                                increment: 15,
+                                text: 'Deleting...',
+                                scope: this
+                            });
+                        }
+
                         for (var i = 0; i < recs.length; i++) {
                             this.fileSystem.deletePath({
                                 path : recs[i].data.href,
                                 success : function(path) {
                                     deleted++;
+                                    this.statusText.setText('Deleted ' + path + ' successfully.');
+                                    if ( (deleted * 20) % recs.length === 0)
+                                        this.onDeleteProgress(deleted/recs.length * 100);
                                     if (deleted === recs.length) {
                                         this.afterFileSystemChange();
                                     }
@@ -2885,6 +2972,7 @@ Ext4.define('File.panel.Browser', {
                                     else {
                                         message = 'Failed to delete.';
                                     }
+                                    this.hideDeleteProgressWindow();
                                     this.showErrorMsg('Error', message);
                                 },
                                 scope : this
