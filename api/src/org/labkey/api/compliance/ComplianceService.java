@@ -18,6 +18,7 @@ package org.labkey.api.compliance;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Created by davebradlee on 7/27/17.
@@ -86,6 +88,13 @@ public interface ComplianceService
      * @throws org.labkey.api.view.UnauthorizedException if the user doesn't have sufficient permissions.
      */
     void setFolderSettings(@NotNull Container container, @NotNull User user, @NotNull ComplianceFolderSettings settings);
+
+    /**
+     * Register a supplier for an attachment parent for attachment types that should use an attachment parent that differs
+     * from the default one provided (for example: saving the attachment to the file system instead of the DB).
+     * The attachment type will need to be specified on the SignedSnapshot.
+     */
+    void registerAttachmentParentSupplier(AttachmentType type, Function<SignedSnapshot, AttachmentParent> supplier);
 
     /**
      * CRD operations for signed snapshots
@@ -157,6 +166,11 @@ public interface ComplianceService
         public Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException
         {
             return null;
+        }
+
+        @Override
+        public void registerAttachmentParentSupplier(AttachmentType type, Function<SignedSnapshot, AttachmentParent> supplier)
+        {
         }
 
         @Override

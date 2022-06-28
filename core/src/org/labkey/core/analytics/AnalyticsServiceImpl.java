@@ -34,11 +34,16 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class AnalyticsServiceImpl implements AnalyticsService
 {
+    private static final String SEPARATOR = ",";
+
     static public AnalyticsServiceImpl get()
     {
         return (AnalyticsServiceImpl) AnalyticsService.get();
@@ -63,7 +68,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                         return "";
                     }
                 },
-        /** Use GA with URL sanitization */
+        /** Use old GA with URL sanitization */
         enabled(true)
                 {
                     @Override
@@ -72,13 +77,22 @@ public class AnalyticsServiceImpl implements AnalyticsService
                         return TRACKING_SCRIPT_TEMPLATE_ASYNC;
                     }
                 },
-        /** Use GA without replacing container paths */
+        /** Use old GA without replacing container paths */
         enabledFullURL(true)
                 {
                     @Override
                     public String getRawScript()
                     {
                         return TRACKING_SCRIPT_TEMPLATE_ASYNC;
+                    }
+                },
+        /** Use GA4 with the full URL */
+        ga4FullUrl(true)
+                {
+                    @Override
+                    public String getRawScript()
+                    {
+                        return GA4_TRACKING_SCRIPT_TEMPLATE;
                     }
                 },
         /** Custom tracking script */
@@ -110,6 +124,8 @@ public class AnalyticsServiceImpl implements AnalyticsService
     {
         trackingStatus,
         accountId,
+        // For GA 4
+        measurementId,
         trackingScript,
     }
 
@@ -119,10 +135,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
         return properties.get(property.toString());
     }
 
-    public void setSettings(TrackingStatus trackingStatus, String accountId, String script, User user)
+    public void setSettings(Set<TrackingStatus> trackingStatus, String accountId, String measurementId, String script, User user)
     {
         AnalyticsSettingsGroup g = new AnalyticsSettingsGroup();
-        g.store(trackingStatus, accountId, script, user);
+        g.store(trackingStatus, accountId, measurementId, script, user);
     }
 
     /** Issue 36870 - an admittedly clunky way to hook into audit behavior */
@@ -146,13 +162,15 @@ public class AnalyticsServiceImpl implements AnalyticsService
             return PropertyManager.SHARED_USER;
         }
 
-        public void store(TrackingStatus trackingStatus, String accountId, String script, User user)
+        public void store(Set<TrackingStatus> trackingStatus, String accountId, String measurementId, String script, User user)
         {
             Container c = ContainerManager.getRoot();
             makeWriteable(c);
 
-            storeStringValue(AnalyticsProperty.trackingStatus.toString(), trackingStatus.toString());
+            String statusString = StringUtils.trimToNull(StringUtils.join(trackingStatus.toArray(), SEPARATOR));
+            storeStringValue(AnalyticsProperty.trackingStatus.toString(), statusString);
             storeStringValue(AnalyticsProperty.accountId.toString(), StringUtils.trimToNull(accountId));
+            storeStringValue(AnalyticsProperty.measurementId.toString(), StringUtils.trimToNull(measurementId));
             storeStringValue(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
 
             save();
@@ -161,27 +179,36 @@ public class AnalyticsServiceImpl implements AnalyticsService
     }
 
     @NotNull
-    public TrackingStatus getTrackingStatus()
+    public Set<TrackingStatus> getTrackingStatus()
     {
-        String strStatus = getProperty(AnalyticsProperty.trackingStatus);
-        if (strStatus == null)
+        String allStatuses = getProperty(AnalyticsProperty.trackingStatus);
+        if (allStatuses == null)
         {
-            return TrackingStatus.disabled;
+            return Collections.emptySet();
         }
-        try
+
+        Set<TrackingStatus> result = new HashSet<>();
+
+        for (String status : allStatuses.split(SEPARATOR))
         {
-            return TrackingStatus.valueOf(strStatus);
+            try
+            {
+                result.add(TrackingStatus.valueOf(status));
+            }
+            catch (IllegalArgumentException ignored) {}
         }
-        catch (IllegalArgumentException iae)
-        {
-            return TrackingStatus.disabled;
-        }
+        return result;
     }
 
     public String getAccountId()
     {
         String accountId = getProperty(AnalyticsProperty.accountId);
         return Objects.requireNonNullElse(accountId, DEFAULT_ACCOUNT_ID);
+    }
+
+    public String getMeasurementId()
+    {
+        return getProperty(AnalyticsProperty.measurementId);
     }
 
     /**
@@ -195,7 +222,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         Container container = context.getContainer();
 
         // Adding a null check for container as on rendering the error page, container can be null for a not found page
-        if (getTrackingStatus() != TrackingStatus.enabledFullURL && null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
+        if (getTrackingStatus().contains(TrackingStatus.enabled) && null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
         {
             actionUrl.deleteParameters();
             actionUrl.setExtraPath(container.getId());
@@ -214,15 +241,29 @@ public class AnalyticsServiceImpl implements AnalyticsService
      * <p>For an explanation of what settings are available on the pageTracker object, see
      * <a href="http://code.google.com/apis/analytics/docs/gaJSApi.html">Google Analytics Tracking API</a>
      */
-    // new style (async)
     static final private String TRACKING_SCRIPT_TEMPLATE_ASYNC =
-        "<script type=\"text/javascript\">\n"+
-        "var _gaq = _gaq || [];\n" +
-        "_gaq.push(['_setAccount', ${ACCOUNT_ID:jsString}]);\n" +
-        "_gaq.push(['_setDetectTitle', false]);\n" +
-        "_gaq.push(['_trackPageview', ${PAGE_URL:jsString}]);\n" +
-        "</script>\n"+
-        "<script async=\"async\" type=\"text/javascript\" src=\"${GA_JS:htmlEncode}\"></script>\n";
+            """
+                    <script type="text/javascript">
+                    var _gaq = _gaq || [];
+                    _gaq.push(['_setAccount', ${ACCOUNT_ID:jsString}]);
+                    _gaq.push(['_setDetectTitle', false]);
+                    _gaq.push(['_trackPageview', ${PAGE_URL:jsString}]);
+                    </script>
+                    <script async="async" type="text/javascript" src="${GA_JS:htmlEncode}"></script>
+                    """;
+
+    static final private String GA4_TRACKING_SCRIPT_TEMPLATE =
+            """
+                    <!-- Global site tag (gtag.js) - Google Analytics -->
+                    <script async src="${GA4_JS:htmlEncode}"></script>
+                    <script>
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag(){dataLayer.push(arguments);}
+                      gtag('js', new Date());
+                    
+                      gtag('config', ${MEASUREMENT_ID:jsString});
+                    </script>
+                    """;
 
 
     public String getSavedScript()
@@ -234,7 +275,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
     @Override
     public String getTrackingScript(ViewContext context)
     {
-        if (!getTrackingStatus().showTrackingScript())
+        if (getTrackingStatus().isEmpty())
             return "";
 
         ActionURL url = context.getActionURL();
@@ -244,12 +285,20 @@ public class AnalyticsServiceImpl implements AnalyticsService
         boolean isSecure = context.getActionURL().getScheme().startsWith("https");
         String gaJS = (isSecure ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
 
-        StringExpression se = StringExpressionFactory.create(getTrackingStatus().getRawScript());
-        return se.eval(PageFlowUtil.map(
-                "ACCOUNT_ID", getAccountId(),
-                "PAGE_URL", getSanitizedUrl(context),
-                "GA_JS", gaJS
-                ));
+        String ga4JS = "https://www.googletagmanager.com/gtag/js?id=" + getMeasurementId();
+
+        StringBuilder sb = new StringBuilder();
+        for (TrackingStatus trackingStatus : getTrackingStatus())
+        {
+            StringExpression se = StringExpressionFactory.create(trackingStatus.getRawScript());
+            sb.append(se.eval(PageFlowUtil.map(
+                    "ACCOUNT_ID", getAccountId(),
+                    "PAGE_URL", getSanitizedUrl(context),
+                    "GA_JS", gaJS,
+                    "GA4_JS", ga4JS,
+                    "MEASUREMENT_ID", getMeasurementId())));
+        }
+        return sb.toString();
     }
 
     static public void populateSettingsWithStartupProps()
