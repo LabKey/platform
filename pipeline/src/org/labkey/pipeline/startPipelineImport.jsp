@@ -97,8 +97,7 @@ Ext4.onReady(function()
         },
         failure: function(response)
         {
-            alert('Failed to get folder import info. Folder XML file may be invalid.');
-
+            LABKEY.Utils.alert('Error', 'Failed to get folder import info. Folder XML file may be invalid.');
         }
     });
 });
