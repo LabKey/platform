@@ -7,6 +7,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ILineageDisplayColumn;
@@ -49,21 +50,20 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     private ColumnInfo innerBoundColumn;
     private DisplayColumn innerDisplayColumn;
 
-    public static DisplayColumn create(QuerySchema schema, ColumnInfo objectid, FieldKey boundFieldKey)
+    public static DisplayColumn create(QuerySchema schema, ColumnInfo objectid, FieldKey boundFieldKey, @Nullable ContainerFilter cf)
     {
-        return new LineageDisplayColumn(schema, objectid, boundFieldKey);
+        return new LineageDisplayColumn(schema, objectid, boundFieldKey, cf);
     }
 
     // TODO what to do with Level columns (like All, First, etc)
-    private LineageDisplayColumn(QuerySchema schema, ColumnInfo objectId, FieldKey boundFieldKey)
+    private LineageDisplayColumn(QuerySchema schema, ColumnInfo objectId, FieldKey boundFieldKey, @Nullable ContainerFilter cf)
     {
         super(objectId, false);
         this.boundFieldKey = boundFieldKey;
 
         /* SET UP DataRegion */
 
-        // TODO ContainerFilter
-        TableInfo seedTable = new SeedTable((UserSchema) schema);
+        TableInfo seedTable = new SeedTable((UserSchema) schema, cf);
         ColumnInfo bound = null;
         for (String part : boundFieldKey.getParts())
         {
@@ -270,7 +270,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         final SQLFragment sqlf;
         final List<QueryService.ParameterDecl> parameters = Collections.singletonList(new QueryService.ParameterDeclaration(OBJECTID_PARAMETER, JdbcType.INTEGER));
 
-        SeedTable(UserSchema schema)
+        SeedTable(UserSchema schema, @Nullable ContainerFilter cf)
         {
             super(schema.getDbSchema(), "seed");
             SqlDialect d = schema.getDbSchema().getScope().getSqlDialect();
@@ -280,10 +280,10 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
             var objectidCol = new BaseColumnInfo("objectid", this, JdbcType.INTEGER);
             addColumn(objectidCol);
             var inputs = new AliasedColumn(this, "Inputs", objectidCol);
-            inputs.setFk(LineageForeignKey.createWithMultiValuedColumn(schema, sqlf, true));
+            inputs.setFk(LineageForeignKey.createWithMultiValuedColumn(schema, sqlf, true, cf));
             addColumn(inputs);
             var outputs = new AliasedColumn(this, "Outputs", objectidCol);
-            outputs.setFk(LineageForeignKey.createWithMultiValuedColumn(schema, sqlf, false));
+            outputs.setFk(LineageForeignKey.createWithMultiValuedColumn(schema, sqlf, false, cf));
             addColumn(outputs);
         }
 
