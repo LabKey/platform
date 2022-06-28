@@ -17,7 +17,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Comma-separated list of modules to enable during this server session";
+            return "Comma-separated list of modules to enable during this server session. Note: Respected only when the \"startup\" modifier is specified.";
         }
     },
     exclude
@@ -25,7 +25,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Comma-separated list of modules to disable during this server session";
+            return "Comma-separated list of modules to disable during this server session. Note: Respected only when the \"startup\" modifier is specified.";
         }
     };
 
