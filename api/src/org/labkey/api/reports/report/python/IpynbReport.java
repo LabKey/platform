@@ -149,6 +149,7 @@ public class IpynbReport extends DockerScriptReport
         assert workingDirectory.isAbsolute();
         if (!workingDirectory.isDirectory())
             throw new IOException("Could not create working directory");
+        FileUtils.cleanDirectory(workingDirectory);
 
         // write the script out to the working directory
         var descriptor = getDescriptor();
