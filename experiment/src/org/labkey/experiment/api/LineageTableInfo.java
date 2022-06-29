@@ -22,6 +22,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -42,6 +43,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 
 /**
@@ -62,9 +64,17 @@ public class LineageTableInfo extends VirtualTable
     private @Nullable
     final String _runProtocolLsid;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType, @Nullable String runProtocolLsid)
+    public LineageTableInfo(String name,
+                            @NotNull UserSchema schema,
+                            @NotNull SQLFragment objectids,
+                            boolean parents,
+                            @Nullable Integer depth,
+                            @Nullable String expType,
+                            @Nullable String cpasType,
+                            @Nullable String runProtocolLsid,
+                            @Nullable ContainerFilter cf)
     {
-        super(schema.getDbSchema(), name, schema);
+        super(schema.getDbSchema(), name, schema, cf);
         _objectids = objectids;
         _parents = parents;
 
@@ -133,12 +143,15 @@ public class LineageTableInfo extends VirtualTable
             public TableInfo getLookupTableInfo()
             {
                 if (null == _table)
-                    _table = getUserSchema().getCachedLookupTableInfo( this.getClass().getName()+"/NodesTable", () ->
+                {
+                    Path cacheKey = new Path(getClass().getName(), "NodesTable");
+                    _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                     {
                         var t = new NodesTableInfo(_userSchema);
                         t.setLocked(true);
                         return t;
                     });
+                }
                 return _table;
             }
         };
@@ -149,11 +162,11 @@ public class LineageTableInfo extends VirtualTable
         switch (expType)
         {
             case "Data":
-                return QueryForeignKey.from(getUserSchema(), null).schema("exp").to("Data", "LSID", "Name").build();
+                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Data", "LSID", "Name").build();
             case "Material":
-                return QueryForeignKey.from(getUserSchema(), null).schema("exp").to("Materials", "LSID", "Name").build();
+                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Materials", "LSID", "Name").build();
             case "ExperimentRun":
-                return QueryForeignKey.from(getUserSchema(), null).schema("exp").to("Runs", "LSID", "Name").build();
+                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Runs", "LSID", "Name").build();
             default:
                 return null;
         }
@@ -165,7 +178,7 @@ public class LineageTableInfo extends VirtualTable
         ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
         if (st != null)
         {
-            return new LookupForeignKey("lsid", "Name")
+            return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
             {
                 TableInfo _table = null;
 
@@ -173,11 +186,14 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + st.getRowId() + "/" + st.getName(), () ->
+                    {
+                        Path cacheKey = new Path(getClass().getName(), "Samples", String.valueOf(st.getRowId()), st.getName());
+                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                         {
                             SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
-                            return samplesSchema.getTable(st, null);
+                            return samplesSchema.getTable(st, getLookupContainerFilter());
                         });
+                    }
                     return _table;
                 }
 
@@ -188,7 +204,6 @@ public class LineageTableInfo extends VirtualTable
                 }
             };
         }
-
 
         // TODO: check in scope and has permission
         ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(cpasType);
@@ -202,11 +217,14 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass/" + dc.getRowId() + "/" + dc.getName(), () ->
+                    {
+                        Path cacheKey = new Path(getClass().getName(), "DataClass", String.valueOf(dc.getRowId()), dc.getName());
+                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                         {
                             DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
                             return dcus.getTable(dc.getName(), getLookupContainerFilter());
                         });
+                    }
                     return _table;
                 }
 
@@ -231,7 +249,9 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs/" + protocol.getRowId() + "/" + protocol.getName(), () ->
+                    {
+                        Path cacheKey = new Path(getClass().getName(), "Runs", String.valueOf(protocol.getRowId()), protocol.getName());
+                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                         {
                             if (provider != null)
                             {
@@ -248,6 +268,7 @@ public class LineageTableInfo extends VirtualTable
                             ret.setLocked(true);
                             return ret;
                         });
+                    }
                     return _table;
                 }
 
