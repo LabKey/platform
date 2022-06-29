@@ -1008,7 +1008,9 @@ public class QueryManager
 
     private static Map<String, Object> getCustomViewCounts(String schema)
     {
-        String schemaClause = schema.equalsIgnoreCase("assay") ? "C.schema LIKE 'assay.%'" : "C.schema = '" + schema + "'";
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        String schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
+        String schemaClause = schema.equalsIgnoreCase("assay") ? "C." + schemaField + " LIKE 'assay.%'" : "C." + schemaField + " = '" + schema + "'";
         return Map.of(
                 "defaultOverrides", new SqlSelector(CoreSchema.getInstance().getSchema(),
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
@@ -1018,7 +1020,6 @@ public class QueryManager
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(CoreSchema.getInstance().getSchema(),
                         "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class)
-
         );
     }
 }

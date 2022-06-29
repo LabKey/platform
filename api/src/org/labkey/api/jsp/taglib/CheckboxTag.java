@@ -27,6 +27,9 @@ public class CheckboxTag extends SimpleTagBase
     protected String _name;
     protected String _value;
     protected Boolean _checked;
+    protected Boolean _disabled;
+    protected String _onChange;
+
 
     @Override
     public void doTag() throws IOException
@@ -40,6 +43,12 @@ public class CheckboxTag extends SimpleTagBase
 
         if (_checked != null && _checked)
             checkbox.checked(true);
+
+        if (_disabled != null && _disabled)
+            checkbox.disabled(true);
+
+        if (_onChange != null)
+            checkbox.onChange(_onChange);
 
         getOut().print(checkbox);
 
@@ -68,5 +77,15 @@ public class CheckboxTag extends SimpleTagBase
     public void setChecked(Boolean checked)
     {
         _checked = checked;
+    }
+
+    public void setDisabled(Boolean disabled)
+    {
+        _disabled = disabled;
+    }
+
+    public void setOnChange(String onChange)
+    {
+        _onChange = onChange;
     }
 }

@@ -58,7 +58,6 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
@@ -362,7 +361,12 @@ public class PageFlowUtil
     {
         if (value == null)
             return "null";
-        String ret = PageFlowUtil.filter("\"" + PageFlowUtil.groovyString(value.toString()) + "\"");
+        String s = value.toString();
+        //replace single backslash
+        s = s.replaceAll("\\\\", "\\\\\\\\");
+        //replace double quote
+        s = s.replaceAll("\"", "\\\\\"");
+        String ret = PageFlowUtil.filter("\"" + s + "\"");
         ret = ret.replace("&#039;", "\\&#039;");
         return ret;
     }
@@ -443,16 +447,6 @@ public class PageFlowUtil
         }
         js.append("'");
         return js.toString();
-    }
-
-    //used to output strings from Java in Groovy script.
-    private static String groovyString(String s)
-    {
-        //replace single backslash
-        s = s.replaceAll("\\\\", "\\\\\\\\");
-        //replace double quote
-        s = s.replaceAll("\"", "\\\\\"");
-        return s;
     }
 
     private static final List<Pair<String, String>> _emptyPairList = Collections.emptyList();

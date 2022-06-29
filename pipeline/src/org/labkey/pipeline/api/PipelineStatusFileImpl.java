@@ -21,6 +21,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
@@ -30,6 +31,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author B. MacLean
@@ -57,6 +59,8 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     private boolean _hadError;
     private String _activeHostName;
 
+    private String _taskPipelineId;
+
     private static final int MAX_STATUS_LENGTH = 100;
     private static final int MAX_INFO_LEN = 1024;
     private static final int MAX_FILEPATH_LENGTH = 1024;
@@ -77,12 +81,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         PipelineStatusFileImpl that = (PipelineStatusFileImpl) o;
 
         if (_rowId != that._rowId) return false;
-        if (_activeTaskId != null ? !_activeTaskId.equals(that._activeTaskId) : that._activeTaskId != null)
+        if (!Objects.equals(_taskPipelineId, that._taskPipelineId))
+        if (!Objects.equals(_activeTaskId, that._activeTaskId))
             return false;
-        if (_filePath != null ? !_filePath.equals(that._filePath) : that._filePath != null) return false;
-        if (_job != null ? !_job.equals(that._job) : that._job != null) return false;
-        if (_jobParent != null ? !_jobParent.equals(that._jobParent) : that._jobParent != null) return false;
-        return !(_provider != null ? !_provider.equals(that._provider) : that._provider != null);
+        if (!Objects.equals(_filePath, that._filePath)) return false;
+        if (!Objects.equals(_job, that._job)) return false;
+        if (!Objects.equals(_jobParent, that._jobParent)) return false;
+        return Objects.equals(_provider, that._provider);
     }
 
     @Override
@@ -92,7 +97,9 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         result = 31 * result + (_job != null ? _job.hashCode() : 0);
         result = 31 * result + (_jobParent != null ? _jobParent.hashCode() : 0);
         result = 31 * result + (_activeTaskId != null ? _activeTaskId.hashCode() : 0);
+        result = 31 * result + (_taskPipelineId != null ? _taskPipelineId.hashCode() : 0);
         result = 31 * result + (_provider != null ? _provider.hashCode() : 0);
+        result = 31 * result + (_filePath != null ? _filePath.hashCode() : 0);
         result = 31 * result + (_filePath != null ? _filePath.hashCode() : 0);
         return result;
     }
@@ -109,6 +116,11 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         setFilePath(FileUtil.getUnencodedAbsolutePath(job.getContainer(), job.getLogFilePath()));
         setStatus(status);
         setInfo(info);
+        TaskPipeline<?> taskPipeline = job.getTaskPipeline();
+        if (taskPipeline != null && taskPipeline.getId() != null)
+        {
+            setTaskPipelineId(taskPipeline.getId().toString());
+        }
 
         if (PipelineJob.TaskStatus.complete.matches(status))
         {
@@ -327,6 +339,16 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public void setActiveTaskId(String activeTaskId)
     {
         _activeTaskId = activeTaskId;
+    }
+
+    public String getTaskPipelineId()
+    {
+        return _taskPipelineId;
+    }
+
+    public void setTaskPipelineId(String taskPipelineId)
+    {
+        _taskPipelineId = taskPipelineId;
     }
 
     @Override
