@@ -17,7 +17,6 @@ package org.labkey.api.module;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +25,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
@@ -207,7 +207,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(sph->sph.getStartupPropertyClassName()));
-    private final MultiValuedMap<String, StartupPropertyEntry> _configPropertyMap = new HashSetValuedHashMap<>();
+    private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
 
     private List<Module> _modules;
 
@@ -2224,15 +2224,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public Collection<StartupPropertyEntry> getStartupPropertyEntries(@Nullable String scope)
     {
         Collection<StartupPropertyEntry> props = Collections.emptyList();
-        if (!_configPropertyMap.isEmpty())
+        if (!_startupPropertyMap.isEmpty())
         {
             if (scope != null)
             {
-                if (_configPropertyMap.containsKey(scope))
-                    props = _configPropertyMap.get(scope);
+                if (_startupPropertyMap.containsKey(scope))
+                    props = _startupPropertyMap.get(scope);
             }
             else
-                props = _configPropertyMap.values();
+                props = _startupPropertyMap.values();
         }
 
         // We filter here because loadStartupProps() gets called very early, before _newInstall is set
@@ -2325,9 +2325,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private void addStartupPropertyEntry(String scope, String value)
     {
         StartupPropertyEntry entry = createConfigProperty(scope, value);
-        if (_configPropertyMap.containsMapping(entry.getScope(), entry))
-            _configPropertyMap.removeMapping(entry.getScope(), entry);
-        _configPropertyMap.put(entry.getScope(), entry);
+        if (_startupPropertyMap.containsMapping(entry.getScope(), entry))
+            _startupPropertyMap.removeMapping(entry.getScope(), entry);
+        _startupPropertyMap.put(entry.getScope(), entry);
     }
 
     /**
