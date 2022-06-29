@@ -39,7 +39,7 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         return "I'm abstract";
     }
 
-    protected JSONObject createReportConfig(ViewContext context, File ipynb, boolean includeApiKey)
+    protected JSONObject createReportConfig(ViewContext context, File ipynb)
     {
         ReportDescriptor descriptor = getDescriptor();
         JSONObject sourceQuery = null;

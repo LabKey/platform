@@ -178,7 +178,7 @@ public class IpynbReport extends DockerScriptReport
                 outputs.add(new IpynbOutput(outputFile));
                 hasDocument = true;
             }
-            // if there is console.out or errors.txt file render them
+            // if there is console.txt or errors.txt file render them
             File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
             if (console.isFile() && console.length() > 0)
                 outputs.add(new ConsoleOutput(console));
@@ -201,9 +201,10 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
-    protected JSONObject createReportConfig(ViewContext context, File scriptFile, boolean includeApiKey)
+    @Override
+    protected JSONObject createReportConfig(ViewContext context, File scriptFile)
     {
-        return super.createReportConfig(context, scriptFile, includeApiKey);
+        return super.createReportConfig(context, scriptFile);
     }
 
 
@@ -363,7 +364,7 @@ public class IpynbReport extends DockerScriptReport
             String tempDir = "/tmp/" + GUID.makeGUID();
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
-                    "APIKEY", apiKey);
+                    "LABKEY_API_KEY", apiKey);
             try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
             {
                 t.interrupt();
@@ -384,7 +385,7 @@ public class IpynbReport extends DockerScriptReport
                 {
                     out.writeTo(fos);
                 }
-                return 0;
+                return run.getExitCode();
             }
             catch (Exception x)
             {
@@ -426,7 +427,7 @@ public class IpynbReport extends DockerScriptReport
         {
             inputScript = ipynb;
 
-            JSONObject reportConfig = createReportConfig(context, ipynb, false);
+            JSONObject reportConfig = createReportConfig(context, ipynb);
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
             FileUtils.write(new File(working,"report_config.json"), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
@@ -466,7 +467,7 @@ public class IpynbReport extends DockerScriptReport
             String tempDir = "/tmp/" + GUID.makeGUID();
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
-                    "APIKEY", apiKey);
+                    "LABKEY_API_KEY", apiKey);
             try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
             {
                 try
@@ -488,7 +489,7 @@ public class IpynbReport extends DockerScriptReport
                 // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
                 extractTar(new ByteArrayInputStream(out.toByteArray()), working);
 
-                return 0;
+                return run.getExitCode();
             }
             catch (Exception x)
             {
