@@ -114,17 +114,21 @@ public class IpynbReport extends DockerScriptReport
     @Override
     public String getDefaultScript()
     {
-        return "{\n" +
-                "  \"cells\": [\n" +
-                "    {\n" +
-                "      \"cell_type\": \"code\",\n" +
-                "      \"source\": \"from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n\\nprint(get_report_data())\\nprint(get_report_parameters())\",\n" +
-                "      \"metadata\": {},\n" +
-                "      \"execution_count\": null,\n" +
-                "      \"outputs\": []\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+        return """
+                {
+                  "cells": [
+                    {
+                      "cell_type": "code",
+                      "source": "from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n\\nprint(get_report_data())\\nprint(get_report_parameters())",
+                      "metadata": {},
+                      "execution_count": null,
+                      "outputs": []
+                    }
+                  ],
+                  "metadata": {},
+                  "nbformat": 4,
+                  "nbformat_minor": 5
+                }""";
     }
 
     @Override
