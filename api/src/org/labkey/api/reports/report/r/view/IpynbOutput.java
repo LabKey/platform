@@ -17,10 +17,10 @@
 package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
@@ -38,7 +38,6 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -152,7 +151,15 @@ public class IpynbOutput extends HtmlOutput
         protected String renderInternalAsString(File file) throws Exception
         {
             String result = super.renderInternalAsString(file);
-            JSONObject obj = new JSONObject(result);
+            JSONObject obj;
+            try
+            {
+                obj = new JSONObject(result);
+            }
+            catch (JSONException ex)
+            {
+                return null;
+            }
             HtmlStringBuilder sb = HtmlStringBuilder.of();
             sb.append(HtmlString.unsafe("<div class=labkey-wiki>"));
 
