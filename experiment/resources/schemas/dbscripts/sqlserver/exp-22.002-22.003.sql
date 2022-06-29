@@ -1,1 +1,0 @@
-ALTER TABLE exp.materialsource ADD CONSTRAINT UQ_MaterialSource_Container_Name UNIQUE (Container, Name);
