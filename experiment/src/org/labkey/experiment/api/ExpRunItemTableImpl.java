@@ -133,9 +133,9 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     {
         var ret = table.wrapColumn(alias, table.getRealTable().getColumn("objectid"));
         if (asMultiValued) // use MultiValueForeignKey
-            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(),new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs));
+            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(), new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs, table.getContainerFilter()));
         else // use LineageDisplayColumn
-            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs));
+            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs, table.getContainerFilter()));
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);
