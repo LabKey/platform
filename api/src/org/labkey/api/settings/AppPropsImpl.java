@@ -387,7 +387,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
     static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
-    static final String WEB_ROOT = "webRoot";
+    static final String SITE_FILE_ROOT = "siteFileRoot";
     static final String USER_FILE_ROOT = "userFileRoot";
     static final String WEBFILES_ROOT_ENABLED = "webfilesEnabled";
     static final String FILE_UPLOAD_DISABLED = "fileUploadDisabled";
@@ -767,10 +767,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Nullable
     public File getFileSystemRoot()
     {
-        String webRoot = lookupStringValue(WEB_ROOT, "");
-        if (!StringUtils.isEmpty(webRoot))
+        String siteFileRoot = lookupStringValue(SITE_FILE_ROOT, null);
+        // Fall back to "webRoot", the old property name
+        if (null == siteFileRoot)
+            siteFileRoot = lookupStringValue("webRoot", "");
+        if (!StringUtils.isEmpty(siteFileRoot))
         {
-            return new File(webRoot);
+            return new File(siteFileRoot);
         }
         return null;
     }

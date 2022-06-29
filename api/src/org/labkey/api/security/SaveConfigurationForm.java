@@ -1,6 +1,5 @@
 package org.labkey.api.security;
 
-import com.google.gwt.thirdparty.guava.common.base.Objects;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,7 +78,7 @@ public abstract class SaveConfigurationForm
     public final @Nullable String getProperties()
     {
         Map<String, Object> map = getPropertyMap();
-        assert Objects.equal(getDomain(), map.get("domain")) : "Inconsistency between getDomain() and map.get(\"domain\")";
+        assert map.containsKey("domain") ? map.get("domain").equals(getDomain()) : (map.containsKey("Domain") ? map.get("Domain").equals(getDomain()) : null == getDomain()) : "Inconsistency between getDomain() and map.get(\"domain\")";
         return map.isEmpty() ? null : new JSONObject(map).toString();
     }
 

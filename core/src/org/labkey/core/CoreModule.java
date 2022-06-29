@@ -1288,7 +1288,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     SiteResourceHandler handler = getResourceHandler(entry.getKey());
                     if (handler != null)
-                        incrementRevision = setSiteResource(handler, entry.getValue(), User.guest);
+                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
                 }
 
                 // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
