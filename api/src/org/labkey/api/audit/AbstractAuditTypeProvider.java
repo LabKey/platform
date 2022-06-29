@@ -36,6 +36,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -65,6 +66,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.AUDIT_RECORD_DATA_MAP_CONCEPT_URI;
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.NEW_RECORD_PROP_NAME;
+import static org.labkey.api.audit.query.AbstractAuditDomainKind.OLD_RECORD_PROP_NAME;
+
 /**
  * User: klum
  * Date: 7/11/13
@@ -86,9 +91,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_TRANSACTION_ID = "TransactionID";
     public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
-    public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
-    public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
     public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
 
     final AbstractAuditDomainKind domainKind;
@@ -349,6 +352,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             var added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
             added.setLabel(OLD_RECORD_PROP_CAPTION);
+            added.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
             oldCol.setHidden(true);
         }
 
@@ -357,6 +361,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             var added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
             added.setDisplayColumnFactory(DataMapColumn::new);
             added.setLabel(NEW_RECORD_PROP_CAPTION);
+            added.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
             newCol.setHidden(true);
         }
 
