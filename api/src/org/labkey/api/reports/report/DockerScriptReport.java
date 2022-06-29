@@ -76,4 +76,10 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         reportConfig.put("version", 1.0);
         return reportConfig;
     }
+
+    @Override
+    public boolean supportsPipeline()
+    {
+        return false;
+    }
 }
