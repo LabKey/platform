@@ -1904,7 +1904,16 @@ d,seven,twelve,day,month,date,duration,guid
         new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
+        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1),
+
+        new MethodSqlTest("SELECT is_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_distinct_from(1,1)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,1)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,2)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,2)", JdbcType.BOOLEAN, false)
     };
 
 
