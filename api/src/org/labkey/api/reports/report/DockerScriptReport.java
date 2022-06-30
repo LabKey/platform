@@ -69,7 +69,12 @@ abstract public class DockerScriptReport extends ScriptProcessReport
         reportConfig.put("scriptName", ipynb.getName());
         if (sourceQuery != null)
             reportConfig.put("sourceQuery", sourceQuery);
-        reportConfig.put("baseUrl", AppProps.getInstance().getBaseServerUrl());
+        String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+        if (AppProps.getInstance().isDevMode())
+        {
+            baseServerUrl = baseServerUrl.replace("localhost", "host.docker.internal");
+        }
+        reportConfig.put("baseUrl", baseServerUrl);
         reportConfig.put("contextPath", AppProps.getInstance().getContextPath());
         reportConfig.put("containerPath", context.getContainer().getPath());
         reportConfig.put("parameters", parameters);
