@@ -317,7 +317,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
             }
         },
-        // TODO: Search for usages of SiteSettings.webRoot, the former name of this property
         // TODO: Remove SiteRootStartupProperties.siteRootFile in favor of this property
         siteFileRoot("Site-level file root")
         {
