@@ -117,6 +117,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                 }
             }
         };
+        appendValueMapColumns(table);
 
         // Render a details URL only for rows that have a listItemEntityId
         DetailsURL url = DetailsURL.fromString("list/listItemDetails.view?listId=${listId}&entityId=${listItemEntityId}&rowId=${rowId}", null, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
