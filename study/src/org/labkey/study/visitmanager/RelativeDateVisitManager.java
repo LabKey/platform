@@ -261,11 +261,16 @@ public class RelativeDateVisitManager extends VisitManager
 
         Study study = getStudy();
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
+        // NOTE: visitStudy may not equals this.getStudy() in the case of a database study where the visits may be shared
         var visitStudyVisitManager= StudyManager.getInstance().getVisitManager(visitStudy);
 
-        // Joining from ParticipantVisit to Visit using a BETWEEN is very expensive
-        // So expensive that we're going to do the join in memory instead
+        // Joining from ParticipantVisit to Visit using a BETWEEN is very expensive.
+        // So expensive that we're going to do the join in memory instead.
         // https://www.labkey.org/home/Developer/issues/issues-update.view?issueId=45404
+        //
+        // Alternatives to in-memory join a) precompute and maintain a table with this mapping
+        // b) do the JOIN on the server but use a (SELECT DISTINCT sequencenum FROM participantvisit) CTE instead of directly
+        // joining all rows in ParticipantVisit to Visit.
         StringBuilder mapDayToRowId = new StringBuilder();
         String daySql = "SELECT DISTINCT Day FROM " + tableParticipantVisit + " WHERE Container=?";
         new SqlSelector(schema, daySql, visitStudy.getContainer()).forEach(Integer.class, day -> {
