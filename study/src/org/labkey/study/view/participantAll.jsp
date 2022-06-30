@@ -242,7 +242,7 @@
 
     .labkey-data-region tr td:first-child
     {
-        width: 300px
+        width: 300px;
     }
 </style>
 
