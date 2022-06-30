@@ -28,7 +28,8 @@ public class StartupPropertyEntry
     public static final String DEFAULT_SCOPE = "none";
     public static final String SYS_PROP_PREFIX = "labkey.prop.";
 
-    // TODO: Make final and @NotNull, once all startup property handling has been migrated
+    // Note: This is only used to mark property entries that have been passed to a handler, for validation purposes.
+    // It could be replaced with a simple boolean.
     private @Nullable StartupProperty _startupProperty;
     private final String _name;
     private final String _value;
