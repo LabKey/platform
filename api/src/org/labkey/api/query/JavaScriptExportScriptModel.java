@@ -24,7 +24,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /*
@@ -165,7 +164,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
             var value = param == null ? null : param.getValue();
 
             filterObj.put("value", value);
-            filterObj.put("type", operator.getScriptName());
+            filterObj.put("type", operator.getPreferredUrlKey());
             filterObj.put("fieldKey", fieldKey);
             filters.put(filterObj);
         }
