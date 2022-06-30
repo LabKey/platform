@@ -114,7 +114,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
     public static final String APPLICATION_MENU_DISPLAY_MODE = "applicationMenuDisplayMode";
     protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
-    protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
     protected static final String LOGO_HREF_PROP = "logoHref";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
@@ -209,8 +208,9 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public boolean isDiscussionEnabled()
     {
-        // Support properties saved with old, misspelled name
-        return lookupBooleanValue(Properties.discussionEnabled.name(), lookupBooleanValue("dicussionEnabled", true));
+        // Prefer correctly spelled property name, but fall-back to the old, misspelled one
+        String enabled = lookupStringValue(Properties.discussionEnabled.name(), null);
+        return enabled != null ? "TRUE".equalsIgnoreCase(enabled) : lookupBooleanValue("dicussionEnabled", true);
     }
 
     public String getUnsubstitutedLogoHref()
