@@ -59,6 +59,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
+
 public abstract class Method
 {
     private final static HashMap<String, Method> labkeyMethod = new HashMap<>();
@@ -457,12 +460,6 @@ public abstract class Method
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
                     }
-
-                    @Override
-                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
-                    {
-                        return super.getSQL(dialect, arguments);
-                    }
                 };
             }
         });
@@ -480,12 +477,6 @@ public abstract class Method
                         String token = ret.addCommonTableExpression("__test_three__", "_three", cte);
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
-                    }
-
-                    @Override
-                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
-                    {
-                        return super.getSQL(dialect, arguments);
                     }
                 };
             }
@@ -505,12 +496,6 @@ public abstract class Method
                         String token = ret.addCommonTableExpression(GUID.makeGUID(), "_times", cte);
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
-                    }
-
-                    @Override
-                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
-                    {
-                        return super.getSQL(dialect, arguments);
                     }
                 };
             }
@@ -1622,6 +1607,45 @@ public abstract class Method
         postgresMethods.put("jsonb_path_query_tz", new PassthroughMethod("jsonb_path_query_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_array_tz", new PassthroughMethod("jsonb_path_query_array_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
+
+        // "is distinct from" and "is not distinct from" operators in method form
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS);
+            }
+        });
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS_NOT);
+            }
+        });
+    }
+
+    private static class IsDistinctFromMethodInfo extends AbstractMethodInfo
+    {
+        final int token;
+
+        IsDistinctFromMethodInfo(int token)
+        {
+            super(JdbcType.BOOLEAN);
+            this.token = token;
+        }
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append(" ((").append(arguments[0]).append(")");
+            if (token == IS)
+                ret.append(" IS DISTINCT FROM ");
+            else
+                ret.append(" IS NOT DISTINCT FROM ");
+            ret.append("(").append(arguments[1]).append(")) ");
+            return ret;
+        }
     }
 
     private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
