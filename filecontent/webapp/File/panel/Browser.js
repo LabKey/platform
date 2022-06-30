@@ -2937,7 +2937,7 @@ Ext4.define('File.panel.Browser', {
                 fn : function(btn) {
                     if (btn === 'yes') {
                         this.showDeleteProgressWindow();
-                        this.statusText.setText('Deleteing ' + recs[0].data.name + ' ...');
+                        this.statusText.setText('Deleting ' + recs[0].data.name + ' ...');
                         if (recs.length === 1 && recs[0].data.collection) {
                             // delete a potentially large directory
                             this.deleteProgressBar.wait({
