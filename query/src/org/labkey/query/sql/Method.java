@@ -44,6 +44,8 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -437,6 +439,82 @@ public abstract class Method
         // ========== Methods above this line have been documented ==========
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
+
+
+        // ========== Don't document these ==========
+        labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment("SELECT 2 as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression("__test__two__", "_two", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
+                    {
+                        return super.getSQL(dialect, arguments);
+                    }
+                };
+            }
+        });
+        labkeyMethod.put("__cte_three__", new Method(JdbcType.INTEGER, 0, 0) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment("SELECT 3 as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression("__test_three__", "_three", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
+                    {
+                        return super.getSQL(dialect, arguments);
+                    }
+                };
+            }
+        });
+        labkeyMethod.put("__cte_times__", new Method(JdbcType.INTEGER, 2, 2) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.INTEGER)
+                {
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment cte = new SQLFragment();
+                        cte.append("SELECT (").append(arguments[0]).append(")*(").append(arguments[1]).append(") as x");
+                        SQLFragment ret = new SQLFragment();
+                        String token = ret.addCommonTableExpression(GUID.makeGUID(), "_times", cte);
+                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        return ret;
+                    }
+
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, List<Pair<SQLFragment, Boolean>> arguments)
+                    {
+                        return super.getSQL(dialect, arguments);
+                    }
+                };
+            }
+        });
     }
 
 
