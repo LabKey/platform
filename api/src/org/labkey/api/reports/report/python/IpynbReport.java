@@ -125,7 +125,7 @@ public class IpynbReport extends DockerScriptReport
                         "from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n",
                         "print(get_report_parameters())\\n",
                         "print(get_report_data())"
-                      ]
+                      ],
                       "metadata": {},
                       "execution_count": null,
                       "outputs": []
