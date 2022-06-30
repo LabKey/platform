@@ -40,6 +40,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
@@ -72,8 +73,8 @@ import java.util.function.Function;
 public interface SearchService
 {
     // create logger for package which can be set via logger-manage.view
-    Logger _packageLogger = LogManager.getLogger(SearchService.class.getPackage().getName());
-    Logger _log = LogManager.getLogger(SearchService.class);
+    Logger _packageLogger = LogHelper.getLogger(SearchService.class.getPackage(), "Full text search module rollup");
+    Logger _log = LogHelper.getLogger(SearchService.class, "Full text search service");
 
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
 
