@@ -20,13 +20,11 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.DockerScriptReport;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -50,12 +48,16 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.StringReader;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.cl;
 
 public class IpynbReport extends DockerScriptReport
 {
@@ -119,7 +121,11 @@ public class IpynbReport extends DockerScriptReport
                   "cells": [
                     {
                       "cell_type": "code",
-                      "source": "from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n\\nprint(get_report_data())\\nprint(get_report_parameters())",
+                      "source": [
+                        "from ReportConfig import get_report_api_wrapper, get_report_data, get_report_parameters\\n",
+                        "print(get_report_parameters())\\n",
+                        "print(get_report_data())"
+                      ]
                       "metadata": {},
                       "execution_count": null,
                       "outputs": []
@@ -136,7 +142,7 @@ public class IpynbReport extends DockerScriptReport
     {
         try
         {
-            return new JspTemplate("/org/labkey/api/reports/report/view/ipynbReportHelp.jsp").render();
+            return new JspTemplate<>("/org/labkey/api/reports/report/view/ipynbReportHelp.jsp").render();
         }
         catch (Exception e)
         {
@@ -147,6 +153,8 @@ public class IpynbReport extends DockerScriptReport
     @Override
     public HttpView<?> renderReport(ViewContext context) throws Exception
     {
+        if (context.getRequest() == null)
+            throw new IllegalStateException("Invalid report context");
         String apikey = SessionApiKeyManager.get().getApiKey(context.getRequest(), "ipynb report");
         File workingDirectory = getReportDir(context.getContainer().getId());
 
@@ -158,7 +166,7 @@ public class IpynbReport extends DockerScriptReport
         // write the script out to the working directory
         var descriptor = getDescriptor();
         String script = descriptor.getProperty(ScriptReportDescriptor.Prop.script);
-        File scriptFile = new File(workingDirectory,descriptor.getReportName() + ".ipynb");
+        File scriptFile = new File(workingDirectory,FileUtil.makeLegalName(descriptor.getReportName()) + ".ipynb");
         IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
@@ -174,27 +182,34 @@ public class IpynbReport extends DockerScriptReport
 
         try
         {
-            List<ParamReplacement> outputs = new ArrayList<>();
-            boolean hasDocument = false;
+            VBox vbox = new VBox();
 
-            if (null != outputFile && outputFile.isFile() && 0 < outputFile.length())
+            if (exitCode != 0)
             {
-                outputs.add(new IpynbOutput(outputFile));
-                hasDocument = true;
+                vbox.addView(new HtmlView(DIV(cl("labkey-error"), "Process exited with non-zero code: " + exitCode + ".")));
             }
+            else if (outputFile == null)
+            {
+                vbox.addView(new HtmlView(DIV(cl("labkey-error"), "No document was generated.")));
+            }
+            else
+            {
+                BasicFileAttributes outputFileAttributes = Files.readAttributes(outputFile.toPath(), BasicFileAttributes.class);
+                if (outputFileAttributes.isRegularFile() && 0 < outputFileAttributes.size())
+                {
+                    vbox.addView(new IpynbOutput(outputFile).getView(context));
+                }
+            }
+
             // if there is console.txt or errors.txt file render them
             File console = new File(workingDirectory, ScriptEngineReport.CONSOLE_OUTPUT);
             if (console.isFile() && console.length() > 0)
-                outputs.add(new ConsoleOutput(console));
+                vbox.addView(new ConsoleOutput(console).getView(context));
+
             File error = new File(workingDirectory, ERROR_OUTPUT);
             if (error.isFile() && error.length() > 0)
-                outputs.add(new ConsoleOutput(error));
+                vbox.addView(new ConsoleOutput(error).getView(context));
 
-            VBox vbox = new VBox();
-            if (!hasDocument || exitCode != 0)
-                vbox.addView(new HtmlView(HtmlString.of("No document was generated." + (exitCode==0 ? "" : "  Process exited with non-zero code: " + exitCode + "."))));
-            for (var output : outputs)
-                vbox.addView(output.getView(context));
             return vbox;
         }
         catch (Exception x)
@@ -489,7 +504,7 @@ public class IpynbReport extends DockerScriptReport
                 }
 
                 // delete script to avoid returning unprocessed ipynb in case of error
-                ipynb.delete();
+                FileUtils.delete(ipynb);
                 // TODO use PipedOutputStream to save to disk as we go instead of using ByteArrayOutputStream
                 extractTar(new ByteArrayInputStream(out.toByteArray()), working);
 
@@ -511,7 +526,7 @@ public class IpynbReport extends DockerScriptReport
                     File path = new File(targetDirectory, entry.getName());
                     if (entry.isDirectory())
                     {
-                        path.mkdirs();
+                        FileUtils.forceMkdir(path);
                     }
                     else
                     {
