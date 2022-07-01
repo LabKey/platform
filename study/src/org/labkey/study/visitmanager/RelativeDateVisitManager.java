@@ -47,7 +47,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -273,11 +273,14 @@ public class RelativeDateVisitManager extends VisitManager
         // joining all rows in ParticipantVisit to Visit.
         StringBuilder mapDayToRowId = new StringBuilder();
         String daySql = "SELECT DISTINCT Day FROM " + tableParticipantVisit + " WHERE Container=?";
-        new SqlSelector(schema, daySql, visitStudy.getContainer()).forEach(Integer.class, day -> {
-            var visit = visitStudyVisitManager.findVisitBySequence(new BigDecimal(day));
-            if (null != visit)
-                mapDayToRowId.append("(").append(day).append(",").append(visit.getRowId()).append("),\n");
-        });
+        new SqlSelector(schema, daySql, visitStudy.getContainer()).stream(Integer.class)
+                .filter(Objects::nonNull)
+                .forEach(day ->
+                {
+                    var visit = visitStudyVisitManager.findVisitBySequence(new BigDecimal(day));
+                    if (null != visit)
+                        mapDayToRowId.append("(").append(day).append(",").append(visit.getRowId()).append("),\n");
+                });
         mapDayToRowId.append("(").append(NullColumnInfo.nullValue("INTEGER")).append(",-1)");
 
         String sqlUpdateVisitRowId =
