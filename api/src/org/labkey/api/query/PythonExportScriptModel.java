@@ -105,7 +105,7 @@ public class PythonExportScriptModel extends ExportScriptModel
         try
         {
             URL baseUrl = new URL(getBaseUrl());
-            sb.append("api = labkey.api_wrapper.APIWrapper(");
+            sb.append("api = APIWrapper(");
             sb.append(PageFlowUtil.jsString(baseUrl.getAuthority())).append(", ");
             sb.append(PageFlowUtil.jsString(getFolderPath().substring(1))).append(", ");
 
@@ -170,7 +170,8 @@ public class PythonExportScriptModel extends ExportScriptModel
         StringBuilder sb = new StringBuilder();
 
         sb.append("# This script targets the Python client API version 2.0.0 and later").append("\n");
-        sb.append("import labkey").append("\n\n");
+        sb.append("import labkey").append("\n"); // for filters
+        sb.append("from labkey.api_wrapper import APIWrapper").append("\n\n");
 
         //Generate server context object
         sb.append(getPythonApiWrapper()).append("\n");
