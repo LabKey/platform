@@ -58,6 +58,7 @@ public class StartupPropertyEntry
 
     public void setStartupProperty(StartupProperty startupProperty)
     {
+        assert _startupProperty == null;
         _startupProperty = startupProperty;
     }
 

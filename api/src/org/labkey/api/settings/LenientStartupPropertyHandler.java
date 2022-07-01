@@ -1,7 +1,7 @@
 package org.labkey.api.settings;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Handles a startup property scope that, unlike a StartupStartupPropertyHandler with fixed property names, has ad hoc
@@ -12,21 +12,15 @@ public abstract class LenientStartupPropertyHandler<T extends StartupProperty> e
 {
     private final T _property;
 
-    public LenientStartupPropertyHandler(String scope, T property)
+    protected LenientStartupPropertyHandler(String scope, T property)
     {
-        super(scope, property.getClass().getName());
+        super(scope, property.getClass().getName(), Map.of(scope, property));
         _property = property;
     }
 
     public T getProperty()
     {
         return _property;
-    }
-
-    @Override
-    public Collection<T> getDocumentationProperties()
-    {
-        return List.of(_property);
     }
 
     // A collection of entries is passed instead of a map because there are likely multiple entries that all correspond

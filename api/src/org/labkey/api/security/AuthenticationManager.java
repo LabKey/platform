@@ -207,7 +207,7 @@ public class AuthenticationManager
             @Override
             public void handle(Map<AuthenticationSettings, StartupPropertyEntry> properties)
             {
-                properties.forEach((sp, cp) -> sp.save(cp));
+                properties.forEach(AuthenticationSettings::save);
             }
         });
     }

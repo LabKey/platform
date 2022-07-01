@@ -4,7 +4,7 @@ import javax.annotation.Nullable;
 
 public interface StartupProperty
 {
-    // As a convenience for enum implementations, getStartupPropertyName() simply returns Enum.name()
+    // As a convenience for enum implementations, where getPropertyName() simply returns Enum.name()
     default String name()
     {
         throw new IllegalStateException("Must override getStartupProp()");

@@ -2201,10 +2201,20 @@ public class ModuleLoader implements Filter, MemTrackerListener
         @Override
         public void moduleStartupComplete(ServletContext servletContext)
         {
+            // Log error for any unknown startup properties (admin error)
             ModuleLoader.getInstance().getStartupPropertyEntries(null)
                 .stream()
                 .filter(entry -> null == entry.getStartupProperty())
                 .forEach(entry -> _log.error("Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue()));
+
+            // Enumerate all StartupPropertyHandlers and verify that every supplied StartupProperty maps to a single
+            // source. If not, there's a coding error.
+            Map<StartupProperty, String> propertyScopeMap = new HashMap<>();
+            ModuleLoader.getInstance().getStartupPropertyHandlers()
+                .forEach(handler -> handler.getProperties().values().forEach(sp -> {
+                    String previousScope = propertyScopeMap.put(sp, handler.getScope());
+                    assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (" + sp + "\")!";
+                }));
         }
     }
 
@@ -2243,7 +2253,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     /**
      * Loads startup/bootstrap properties from configuration files.
-     * Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using">Documentation Page</a>
      */
     private void loadStartupProps()
     {

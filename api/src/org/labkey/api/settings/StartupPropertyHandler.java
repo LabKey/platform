@@ -4,16 +4,19 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 
 import java.util.Collection;
+import java.util.Map;
 
 public abstract class StartupPropertyHandler<T extends StartupProperty>
 {
     private final String _scope;
     private final String _startupPropertyClassName;
+    private final Map<String, T> _properties;
 
-    public StartupPropertyHandler(String scope, String startupPropertyClassName)
+    protected StartupPropertyHandler(String scope, String startupPropertyClassName, Map<String, T> properties)
     {
         _scope = scope;
         _startupPropertyClassName = startupPropertyClassName;
+        _properties = properties;
     }
 
     public String getScope()
@@ -39,5 +42,14 @@ public abstract class StartupPropertyHandler<T extends StartupProperty>
         return true;
     }
 
-    public abstract Collection<T> getDocumentationProperties();
+
+    public Map<String, T> getProperties()
+    {
+        return _properties;
+    }
+
+    public Collection<T> getDocumentationProperties()
+    {
+        return getProperties().values();
+    }
 }
