@@ -458,7 +458,7 @@ public interface DockerService
 
     DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage) throws IOException;
 
-    RunResult run(ImageConfig image, String prefix, Map<String, String> envAdditional, InputStream stdin, OutputStream stdout, OutputStream stderr);
+    RunResult run(ImageConfig image, String prefix, Map<String, String> labels, Map<String, String> envAdditional, InputStream stdin, OutputStream stdout, OutputStream stderr);
 
     boolean pingContainer(String host, int port);
 

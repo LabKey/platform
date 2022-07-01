@@ -188,7 +188,7 @@ public class IpynbReport extends DockerScriptReport
             {
                 vbox.addView(new HtmlView(DIV(cl("labkey-error"), "Process exited with non-zero code: " + exitCode + ".")));
             }
-            else if (outputFile == null)
+            if (outputFile == null)
             {
                 vbox.addView(new HtmlView(DIV(cl("labkey-error"), "No document was generated.")));
             }
@@ -380,11 +380,16 @@ public class IpynbReport extends DockerScriptReport
             });
             t.start();
 
+            var labels = Map.of(
+                    "labkey:configuration", "docker report (.ipynb)",
+                    "labkey:userid", String.valueOf(context.getUser().getUserId()),
+                    "labkey:isReport", "true"
+            );
             String tempDir = "/tmp/" + GUID.makeGUID();
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
                     "LABKEY_API_KEY", apiKey);
-            try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
+            try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
             {
                 t.interrupt();
                 try
@@ -483,11 +488,16 @@ public class IpynbReport extends DockerScriptReport
             });
             t.start();
 
+            var labels = Map.of(
+                    "labkey:configuration", "docker report (.ipynb)",
+                    "labkey:userid", String.valueOf(context.getUser().getUserId()),
+                    "labkey:isReport", "true"
+            );
             String tempDir = "/tmp/" + GUID.makeGUID();
             var environment = Map.of(
                     "TEMP_DIRECTORY", tempDir,
                     "LABKEY_API_KEY", apiKey);
-            try (var run = DockerService.get().run(image, "ipynb", environment, in, out, err))
+            try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
             {
                 try
                 {
