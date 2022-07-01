@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -46,6 +47,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -256,22 +258,42 @@ public class RelativeDateVisitManager extends VisitManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
-
-        String sqlUpdateVisitRowId = "UPDATE " + tableParticipantVisit + "\n" +
-                "SET VisitRowId = COALESCE(\n" +
-                " (\n" +
-                " SELECT v.RowId\n" +
-                " FROM " + tableVisit + " v\n" +
-                " WHERE ParticipantVisit.Day BETWEEN v.SequenceNumMin AND v.SequenceNumMax AND\n" +
-                "   v.Container = ?\n" +
-                " ),-1)\n";
-        sqlUpdateVisitRowId += "WHERE Container = ?";
 
         Study study = getStudy();
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
-        Container c = visitStudy.getContainer();
-        new SqlExecutor(schema).execute(sqlUpdateVisitRowId, c, study.getContainer());
+        // NOTE: visitStudy may not equals this.getStudy() in the case of a database study where the visits may be shared
+        var visitStudyVisitManager= StudyManager.getInstance().getVisitManager(visitStudy);
+
+        // Joining from ParticipantVisit to Visit using a BETWEEN is very expensive.
+        // So expensive that we're going to do the join in memory instead.
+        // https://www.labkey.org/home/Developer/issues/issues-update.view?issueId=45404
+        //
+        // Alternatives to in-memory join a) precompute and maintain a table with this mapping
+        // b) do the JOIN on the server but use a (SELECT DISTINCT sequencenum FROM participantvisit) CTE instead of directly
+        // joining all rows in ParticipantVisit to Visit.
+        StringBuilder mapDayToRowId = new StringBuilder();
+        String daySql = "SELECT DISTINCT Day FROM " + tableParticipantVisit + " WHERE Container=?";
+        new SqlSelector(schema, daySql, visitStudy.getContainer()).stream(Integer.class)
+                .filter(Objects::nonNull)
+                .forEach(day ->
+                {
+                    var visit = visitStudyVisitManager.findVisitBySequence(new BigDecimal(day));
+                    if (null != visit)
+                        mapDayToRowId.append("(").append(day).append(",").append(visit.getRowId()).append("),\n");
+                });
+        mapDayToRowId.append("(").append(NullColumnInfo.nullValue("INTEGER")).append(",-1)");
+
+        String sqlUpdateVisitRowId =
+                "WITH mapDayToRowId AS (SELECT * FROM (VALUES " + mapDayToRowId + ") AS _values_(Day, RowId))\n" +
+                "UPDATE " + tableParticipantVisit + "\n" +
+                "SET VisitRowId = COALESCE(\n" +
+                " (\n" +
+                " SELECT mapDayToRowId.RowId\n" +
+                " FROM mapDayToRowId\n" +
+                " WHERE ParticipantVisit.Day = mapDayToRowId.Day\n" +
+                " ),-1)\n" +
+                "WHERE Container = ?";
+        new SqlExecutor(schema).execute(sqlUpdateVisitRowId, study.getContainer());
     }
 
 

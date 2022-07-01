@@ -438,7 +438,7 @@ tableAnnotations
     ;
 
 
-// Usually a simple dotted identifer 'path' such as "core.users"
+// Usually a simple dotted identifier 'path' such as "core.users"
 // however we support an 'escape' syntax as well such as "Folder.{moduleProperty('ehr','sharedFolder')}.specieslookup"
 tableSpecification
     :  ( { weakKeywords(); } tableSpecificationPart DOT^ )* identifier

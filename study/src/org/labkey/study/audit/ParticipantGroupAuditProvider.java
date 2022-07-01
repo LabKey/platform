@@ -176,8 +176,8 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
             fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(PARTICIPANT_CATEGORY_ID_COLUMN_NAME, PropertyType.INTEGER, PARTICIPANT_CATEGORY_ID_COLUMN_NAME, null, true));
             fields.add(createPropertyDescriptor(PARTICIPANT_GROUP_ID_COLUMN_NAME, PropertyType.STRING, PARTICIPANT_GROUP_ID_COLUMN_NAME, null, false));
-            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));
-            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
         }
 
         @Override
