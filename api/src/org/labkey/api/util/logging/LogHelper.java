@@ -23,6 +23,13 @@ public class LogHelper
         return LogManager.getLogger(c);
     }
 
+    public static Logger getLogger(Package p, String note)
+    {
+        LOGGER_NOTES.put(p.getName(), note);
+        //noinspection SSBasedInspection
+        return LogManager.getLogger(p.getName());
+    }
+
     public static String getNote(String className)
     {
         return LOGGER_NOTES.get(className);

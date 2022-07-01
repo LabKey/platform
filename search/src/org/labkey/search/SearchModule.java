@@ -16,19 +16,25 @@
 
 package org.labkey.search;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -54,9 +60,6 @@ import java.util.Set;
 
 public class SearchModule extends DefaultModule
 {
-    // package logger for use with logger-manage.view
-    static final Logger _logPackage = LogManager.getLogger(SearchModule.class.getPackage().getName());
-
     @Override
     public String getName()
     {
@@ -116,7 +119,7 @@ public class SearchModule extends DefaultModule
             }
 
             @Override
-            public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+            public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
             {
                 return null;
             }
@@ -135,17 +138,29 @@ public class SearchModule extends DefaultModule
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             CacheManager.addListener(() -> {
-                LogManager.getLogger(SearchService.class).info("Purging SearchService queues");
+                SearchService._log.info("Purging SearchService queues");
                 ss.purgeQueues();
             });
         }
 
         AuditLogService.get().registerAuditType(new SearchAuditProvider());
 
-        // add a container listener so we'll know when containers are deleted
+        // add a container listener, so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
 
         FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), () ->
+        {
+
+            // Report the total number of search entries in the audit log
+            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
+            TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING);
+
+            long count = new TableSelector(auditTable).getRowCount();
+            return Collections.singletonMap("fullTextSearches", count);
+        });
     }
 
 
