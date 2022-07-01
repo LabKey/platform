@@ -2207,15 +2207,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .filter(entry -> null == entry.getStartupProperty())
                 .forEach(entry -> _log.error("Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue()));
 
-            // Enumerate all StartupPropertyHandlers and verify that every supplied StartupProperty maps to a single
-            // source. If not, there's a coding error.
-            Map<StartupProperty, String> propertyScopeMap = new HashMap<>();
-            ModuleLoader.getInstance().getStartupPropertyHandlers()
-                .forEach(handler -> handler.getProperties().values().forEach(sp -> {
-                    String previousScope = propertyScopeMap.put(sp, handler.getScope());
-                    assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (" + sp + "\")!";
-                }));
-        }
+            // Failing this check indicates a coding issue, so execute it only when assertions are on
+            assert checkPropertyScopeMapping();
+         }
+    }
+
+    private static boolean checkPropertyScopeMapping()
+    {
+        // Enumerate all StartupPropertyHandlers and verify that every supplied StartupProperty maps to a single
+        // source. If not, there's a coding error.
+        Map<StartupProperty, String> propertyScopeMap = new HashMap<>();
+        ModuleLoader.getInstance().getStartupPropertyHandlers()
+            .forEach(handler -> handler.getProperties().values().forEach(sp -> {
+                String previousScope = propertyScopeMap.put(sp, handler.getScope());
+                assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (" + sp + "\")!";
+            }));
+
+        return true;
     }
 
     public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()
