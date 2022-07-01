@@ -80,7 +80,7 @@
         let grid;
         let remoteEnabled = <%=isRemoteEnabled%>;
         let dockerServiceEnabled = <%=isDockerServiceEnabled%>;
-        let rDockerEnabled = true;//<%=isRDockerAvailable%>;
+        let rDockerEnabled = <%=isRDockerAvailable%>;
 
         var DockerImageFields = {
             imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey.", allowBlank: false},
@@ -95,16 +95,9 @@
         };
 
         var DockerReportFields = {
-            imageName: {label: 'Docker Image Name', defaultVal: 'labkey/ipynb', description: "Enter the Docker image name to execute your script.", allowBlank: false},
+            imageName: {label: 'Docker Image Name', defaultVal: 'labkey/nbconvert', description: "Enter the Docker image name to execute your script.", allowBlank: false},
             extensions: {label: 'Script extension', defaultVal: 'ipynb', description: "The file extension associated with this script engine. Don't use for R reports, use &apos;New R Docker Engine&apos; instead."},
-            executionOptions: {label: "Execute options", defaultVal: ''},
-            // mount: {label: 'Home Directory', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
-            // hostReadOnlyMount: {label: 'Mount (ro): host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
-            // containerReadOnlyMount: {label: 'Mount (ro): container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
-            // hostReadWriteMount: {label: 'Mount (rw): host directory', description: "Additional mount: host directory (read and write). Optional read/write mount point"},
-            // containerReadWriteMount: {label: 'Mount (rw): container directory', description: "Additional mount: container directory (read and write). Optional read/write mount point"},
-            // appArmorProfile: {label: 'AppArmor Profile', description: ''},
-            extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;OPTION1=1000,OPTION2=red&apos;, which will be converted to &apos;-e OPTION1=1000 -e OPTION2=red&apos; for docker run command.'}
+            executionOptions: {label: "Execute options", defaultVal: ''}
         };
 
         var renderNameColumn = function(value, p, record) {
