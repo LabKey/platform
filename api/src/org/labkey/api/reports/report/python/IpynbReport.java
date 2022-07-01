@@ -64,6 +64,7 @@ public class IpynbReport extends DockerScriptReport
     static final Logger LOG = LogHelper.getLogger(IpynbReport.class, "Ipynb Report");
 
     public static final String TYPE = "ReportService.ipynbReport";
+    public static final String CONFIG_FILE = "report_config.json";
     public static final String ERROR_OUTPUT = "errors.txt";
     public static final String LABEL = "Jupyter Report";
     public static final String EXTENSION = "ipynb";
@@ -332,103 +333,6 @@ public class IpynbReport extends DockerScriptReport
     }
 
 
-    class DockerRunIpynbStdinStdout implements ExecuteStrategy
-    {
-        File inputScript;
-        File outputDocument;
-
-        @Override
-        public IpynbReport getReport()
-        {
-            return IpynbReport.this;
-        }
-
-        DockerRunIpynbStdinStdout()
-        {
-        }
-
-        @Override
-        public int execute(ViewContext context, String apiKey, File working, File ipynb) throws IOException
-        {
-            String name = FileUtil.getBaseName(ipynb);
-            String outputName = name + ".nbconvert.ipynb";
-            String ext = FileUtil.getExtension(ipynb);
-            if ("ipynb".equalsIgnoreCase(ext))
-                outputName = name + ".nbconvert." + ext;
-            outputDocument = new File(working, outputName);
-            inputScript = ipynb;
-
-            DockerService.ImageConfig image = getImageConfig(context.getContainer());
-
-            final PipedInputStream in = new PipedInputStream();
-            var out = new ByteArrayOutputStream();
-            var err = new ByteArrayOutputStream();
-
-            // DockerService.run() blocks until process completion, so input stream has to be written on a different threads
-            final DbScope.RetryPassthroughException[] bgException = new DbScope.RetryPassthroughException[1];
-            Thread t = new Thread(() -> {
-                try (PipedOutputStream pipeOutput = new PipedOutputStream();
-                    var fis = new FileInputStream(ipynb))
-                {
-                    pipeOutput.connect(in);
-                    IOUtils.copy(fis, pipeOutput);
-                }
-                catch (IOException ex)
-                {
-                    bgException[0] = new DbScope.RetryPassthroughException(ex);
-                }
-            });
-            t.start();
-
-            var labels = Map.of(
-                    "labkey:configuration", "docker report (.ipynb)",
-                    "labkey:userid", String.valueOf(context.getUser().getUserId()),
-                    "labkey:isReport", "true"
-            );
-            var environment = Map.of(
-                    "LABKEY_API_KEY", apiKey);
-            try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
-            {
-                t.interrupt();
-                try
-                {
-                    t.join(1000);
-                }
-                catch (InterruptedException x)
-                {
-                    // pass
-                }
-                if (null != bgException[0])
-                {
-                    bgException[0].rethrow(IOException.class);
-                    bgException[0].throwRuntimeException();
-                }
-                try (FileOutputStream fos = new FileOutputStream(outputDocument))
-                {
-                    out.writeTo(fos);
-                }
-                return run.getExitCode();
-            }
-            catch (Exception x)
-            {
-                throw UnexpectedException.wrap(x);
-            }
-        }
-
-
-        @Override
-        public File getOutputDocument()
-        {
-            if (null != outputDocument && outputDocument.isFile())
-                return outputDocument;
-// TODO UNDONE TODO
-            if (null != inputScript && inputScript.isFile())
-                return inputScript;
-            return null;
-        }
-    }
-
-
     class DockerRunTarStdinStdout implements ExecuteStrategy
     {
         File inputScript;
@@ -451,7 +355,7 @@ public class IpynbReport extends DockerScriptReport
 
             JSONObject reportConfig = createReportConfig(context, ipynb);
             // I tried "putting" a fake tar entry, but TarArchiveOutputStream seems to actually want the file to exist
-            FileUtils.write(new File(working,"report_config.json"), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
+            FileUtils.write(new File(working,CONFIG_FILE), reportConfig.toString(), StringUtilsLabKey.DEFAULT_CHARSET);
 
             File[] listFiles = working.listFiles();
             List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
@@ -491,9 +395,8 @@ public class IpynbReport extends DockerScriptReport
                     "labkey:userid", String.valueOf(context.getUser().getUserId()),
                     "labkey:isReport", "true"
             );
-            String tempDir = "/tmp/" + GUID.makeGUID();
             var environment = Map.of(
-                    "TEMP_DIRECTORY", tempDir,
+                    "REPORT_CONFIG", CONFIG_FILE,
                     "LABKEY_API_KEY", apiKey);
             try (var run = DockerService.get().run(image, "ipynb", labels, environment, in, out, err))
             {
