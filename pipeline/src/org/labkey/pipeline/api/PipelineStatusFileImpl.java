@@ -32,13 +32,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author B. MacLean
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
-    private static HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
+    private static final HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
             PipelineJob.TaskStatus.complete.toString(),
             PipelineJob.TaskStatus.error.toString(),
             PipelineJob.TaskStatus.cancelled.toString()
@@ -81,7 +82,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         PipelineStatusFileImpl that = (PipelineStatusFileImpl) o;
 
         if (_rowId != that._rowId) return false;
-        if (!Objects.equals(_taskPipelineId, that._taskPipelineId))
+        if (!Objects.equals(_taskPipelineId, that._taskPipelineId)) return false;
         if (!Objects.equals(_activeTaskId, that._activeTaskId))
             return false;
         if (!Objects.equals(_filePath, that._filePath)) return false;
@@ -207,7 +208,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             _jobStore = null;
             _activeTaskId = null;
         }
-        // Otherwise preseve what is currently in the database.
+        // Otherwise, preserve what is currently in the database.
         else
         {
             if (_jobStore == null || _jobStore.length() == 0)
@@ -216,12 +217,42 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
                 _activeTaskId = curSF._activeTaskId;
         }
 
-        // We only care about the hostName for RUNNING tasks so they can be requeued properly on remote server restart.
+        // We only care about the hostName for RUNNING tasks so that they can be requeued properly
+        // on remote server restart.
         if (!isActive())
         {
             _activeHostName = null;
         }
     }
+
+    public Set<PipelineStatusManager.StatusFileField> diff(PipelineStatusFileImpl oldSF)
+    {
+        Set<PipelineStatusManager.StatusFileField> changedFields = new HashSet<>();
+        addIfChanged(PipelineStatusManager.StatusFileField.job, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.jobParent, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.jobStore, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.activeTaskId, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.provider, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.status, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.info, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.dataUrl, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.description, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.filePath, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.email, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.hadError, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.activeHostName, oldSF, changedFields);
+        addIfChanged(PipelineStatusManager.StatusFileField.taskPipelineId, oldSF, changedFields);
+        return changedFields;
+    }
+
+    private void addIfChanged(PipelineStatusManager.StatusFileField field, PipelineStatusFileImpl oldSF, Set<PipelineStatusManager.StatusFileField> changedFields)
+    {
+        if (!Objects.equals(field.getValue(oldSF), field.getValue(this)))
+        {
+            changedFields.add(field);
+        }
+    }
+
 
     @Override
     public boolean isActive()

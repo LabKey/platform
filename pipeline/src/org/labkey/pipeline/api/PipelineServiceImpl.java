@@ -457,7 +457,7 @@ public class PipelineServiceImpl implements PipelineService
                 if (sf != null)
                 {
                     sf.setActiveHostName(null);  //indicates previous task was complete
-                    PipelineStatusManager.updateStatusFile(sf);
+                    PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.activeHostName);
                 }
 
                 EPipelineQueueImpl.dispatchJob(job);
@@ -477,7 +477,7 @@ public class PipelineServiceImpl implements PipelineService
         {
             //Use the absolute Path helper to strip user element
             sf.setFilePath(FileUtil.getAbsolutePath(otherFile));
-            PipelineStatusManager.updateStatusFile(sf);
+            PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.filePath);
         }
     }
 

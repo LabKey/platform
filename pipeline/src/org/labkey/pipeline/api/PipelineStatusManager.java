@@ -19,6 +19,7 @@ package org.labkey.pipeline.api;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -58,8 +59,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -205,7 +208,8 @@ public class PipelineStatusManager
                 cancelled = true;
             }
             sfSet.beforeUpdate(user, sfExist);
-            updateStatusFile(sfSet);
+            Set<StatusFileField> changedFields = sfSet.diff(sfExist);
+            updateStatusFile(sfSet, changedFields.toArray(new StatusFileField[0]));
             if (cancelled)
             {
                 // Signal to the caller that the job shouldn't move on to its next state
@@ -255,12 +259,123 @@ public class PipelineStatusManager
         return !job.isAutoRetry();
     }
 
+    public enum StatusFileField
+    {
+        activeHostName
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf) { return sf.getActiveHostName(); }
+                },
+        status
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf) { return sf.getStatus(); }
+                },
+        filePath
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf) { return sf.getFilePath(); }
+                },
+        job
+            {
+                @Override
+                public Object getValue(PipelineStatusFileImpl sf)
+                {
+                    return sf.getJob();
+                }
+            },
+        jobParent
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getJobParentId();
+                    }
+                },
+        jobStore
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getJobStore();
+                    }
+                },
+        activeTaskId
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getActiveTaskId();
+                    }
+                },
+        provider
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getProvider();
+                    }
+                },
+        info
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getInfo();
+                    }
+                },
+        dataUrl
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getDataUrl();
+                    }
+                },
+        description
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getDescription();
+                    }
+                },
+        email
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getEmail();
+                    }
+                },
+        hadError
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.isHadError();
+                    }
+                },
+        taskPipelineId
+                {
+                    @Override
+                    public Object getValue(PipelineStatusFileImpl sf)
+                    {
+                        return sf.getTaskPipelineId();
+                    }
+                };
+
+        public abstract Object getValue(PipelineStatusFileImpl sf);
+    }
+
+
+
     /**
      * Update status on a status file read from the database.
      *
      * @param sf the modified status
      */
-    public static void updateStatusFile(PipelineStatusFileImpl sf)
+    public static void updateStatusFile(PipelineStatusFileImpl sf, StatusFileField ... fields)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
@@ -281,7 +396,19 @@ public class PipelineStatusManager
                 }
             }
 
-            Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
+            if (fields != null && fields.length > 0)
+            {
+                Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
+                for (StatusFileField field : fields)
+                {
+                    newRow.put(field.name(), field.getValue(sf));
+                }
+                Table.update(null, _schema.getTableInfoStatusFiles(), newRow, sf.getRowId());
+            }
+            else
+            {
+                Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
+            }
 
             transaction.commit();
         }
