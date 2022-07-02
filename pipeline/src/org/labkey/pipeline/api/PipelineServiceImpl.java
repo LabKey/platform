@@ -631,7 +631,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public PipelineStatusFile getStatusFile(String jobGuid)
+    public PipelineStatusFileImpl getStatusFile(String jobGuid)
     {
         return PipelineStatusManager.getJobStatusFile(jobGuid);
     }
@@ -811,15 +811,12 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public Integer getJobId(User u, Container c, String jobGUID)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("job"), jobGUID);
-        Collection<Map<String, Object>> selectResults = new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null).getMapCollection();
-        Integer rowId = null;
-
-        for (Map<String, Object> m : selectResults)
+        PipelineStatusFileImpl statusFile = getStatusFile(jobGUID);
+        if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
         {
-            rowId = (Integer)m.get("RowId");
+            return null;
         }
-        return rowId;
+        return statusFile.getRowId();
     }
 
     @Override
