@@ -259,6 +259,8 @@ public class PipelineStatusManager
         return !job.isAutoRetry();
     }
 
+    /** The individual fields that might have changed on the record. Determine by comparing two different
+     * PipelineStatusFile objects via the diff() method */
     public enum StatusFileField
     {
         activeHostName
@@ -374,6 +376,7 @@ public class PipelineStatusManager
      * Update status on a status file read from the database.
      *
      * @param sf the modified status
+     * @param fields optional - the fields/columns that have been changed, allowing for a more targeted UPDATE statement
      */
     public static void updateStatusFile(PipelineStatusFileImpl sf, StatusFileField ... fields)
     {
@@ -398,6 +401,10 @@ public class PipelineStatusManager
 
             if (fields != null && fields.length > 0)
             {
+                // Copy into a map that only updates the specified fields
+                // This is helpful because SQL Server is prone to deadlocking when there are concurrent update and read
+                // operations around unique indices, even though the updates are almost always setting an indexed value
+                // to its current value
                 Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
                 for (StatusFileField field : fields)
                 {
