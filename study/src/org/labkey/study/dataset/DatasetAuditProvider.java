@@ -258,8 +258,8 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             fields.add(createPropertyDescriptor(COLUMN_NAME_DATASET_ID, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_HAS_DETAILS, PropertyType.BOOLEAN));
             fields.add(createPropertyDescriptor(COLUMN_NAME_LSID, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
-            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);
         }
 
