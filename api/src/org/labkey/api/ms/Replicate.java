@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class Replicate
 {
-    private long _id;
-    private String _name;
+    private long id;
+    private String name;
 }
