@@ -28,7 +28,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -39,12 +38,6 @@ import java.util.Set;
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
-    private static final HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
-            PipelineJob.TaskStatus.complete.toString(),
-            PipelineJob.TaskStatus.error.toString(),
-            PipelineJob.TaskStatus.cancelled.toString()
-    ));
-
     protected int _rowId;
     protected String _job;
     protected String _jobParent;
@@ -273,19 +266,6 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return (isActive() && !PipelineJob.TaskStatus.cancelling.matches(_status)) ||
                 PipelineJob.TaskStatus.waitingForFiles.matches(_status) ||
                 PipelineJob.TaskStatus.splitWaiting.matches(_status);
-    }
-
-    // We can retry if the job is in ERROR or CANCELLED and we still have the serialized job info
-    public boolean isRetryable()
-    {
-        return (PipelineJob.TaskStatus.error.matches(_status) ||
-                PipelineJob.TaskStatus.cancelled.matches(_status)) &&
-                getJobStore() != null;
-    }
-
-    public boolean isEmailStatus()
-    {
-        return _jobParent == null && _emailStatuses.contains(_status);
     }
 
     @Override
