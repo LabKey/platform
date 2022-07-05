@@ -29,6 +29,14 @@
     boolean useCustomView = bean.isUseCustomView();
     String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
+
+<style type="text/css">
+    .labkey-data-region tr td:first-child
+    {
+        width: 300px;
+    }
+</style>
+
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     window.onbeforeunload = LABKEY.beforeunload();
 
