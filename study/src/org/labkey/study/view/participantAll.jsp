@@ -239,6 +239,11 @@
     .labkey-ptid-remove, .labkey-ptid-add {
         cursor: pointer;
     }
+
+    .labkey-data-region tr td:first-child
+    {
+        width: 300px;
+    }
 </style>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
