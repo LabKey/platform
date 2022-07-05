@@ -1904,7 +1904,16 @@ d,seven,twelve,day,month,date,duration,guid
         new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize),
 
         // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
-        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
+        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1),
+
+        new MethodSqlTest("SELECT is_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(NULL,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,NULL)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,NULL)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_distinct_from(1,1)", JdbcType.BOOLEAN, false),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,1)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_distinct_from(1,2)", JdbcType.BOOLEAN, true),
+        new MethodSqlTest("SELECT is_not_distinct_from(1,2)", JdbcType.BOOLEAN, false)
     };
 
 
@@ -2018,7 +2027,10 @@ d,seven,twelve,day,month,date,duration,guid
 
                 // jsonb_insert
                 new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"') AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, \"new_value\", 1, 2]}'", 1, 1),
-                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1)
+                new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1),
+
+                // TEST CTE handling with undocumented test-only methods
+                new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1)
             ));
 
         if (majorVersion >= 12)
