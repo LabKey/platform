@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -26,6 +25,7 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
@@ -59,7 +59,7 @@ public class SchemaColumnMetaData
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _uniqueIndices;
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
 
-    private static final Logger _log = LogManager.getLogger(SchemaColumnMetaData.class);
+    private static final Logger _log = LogHelper.getLogger(SchemaColumnMetaData.class, "Extracts column metadata through JDBC and schema-scoped XML overrides");
 
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {
@@ -168,9 +168,32 @@ public class SchemaColumnMetaData
 
     private void loadFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        loadColumnsFromMetaData(ti);
-        loadPkColumns(ti);
-        loadIndices(ti);
+        try
+        {
+            // With the Microsoft JDBC driver we're seeing more deadlocks loading schema metadata so try multiple
+            // times when possible
+            ti.getSchema().getScope().executeWithRetry(tx ->
+            {
+                try
+                {
+                    loadColumnsFromMetaData(ti);
+                    loadPkColumns(ti);
+                    loadIndices(ti);
+                    return null;
+                }
+                catch (SQLException e)
+                {
+                    // Transform to a RuntimeSQLException to get out of the RetryFn
+                    throw new RuntimeSQLException(e);
+                }
+            });
+        }
+        catch (RuntimeSQLException e)
+        {
+            // And then unwrap it to avoid changing the signature of loadFromMetaData()
+            throw e.getSQLException();
+        }
+
     }
 
     private void loadPkColumns(SchemaTableInfo ti) throws SQLException
@@ -212,7 +235,7 @@ public class SchemaColumnMetaData
                     else
                     {
                         // Logging to help track down #33924
-                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Can't resolve PK column name \"" + colName + "\" in table \"" + ti.getSelectName() + "\" in schema \"" + schemaName + "\" in a " + scope.getDatabaseProductName() + " database. Valid names in _colMap: " + _colMap.keySet().toString()));
+                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Can't resolve PK column name \"" + colName + "\" in table \"" + ti.getSelectName() + "\" in schema \"" + schemaName + "\" in a " + scope.getDatabaseProductName() + " database. Valid names in _colMap: " + _colMap.keySet()));
                     }
                 }
             }
