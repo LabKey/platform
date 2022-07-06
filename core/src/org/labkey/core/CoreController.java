@@ -2442,10 +2442,17 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            svc.deleteDefinition(getUser(), def);
-
-            return new ApiSimpleResponse("success", true);
+            ExternalScriptEngineDefinition savedDef = svc.getEngineDefinition(def.getRowId(), def.getType());
+            if (savedDef != null)
+            {
+                svc.deleteDefinition(getUser(), savedDef);
+                response.put("success", true);
+            }
+            else
+                response.put("success", false);
+            return response;
         }
     }
 

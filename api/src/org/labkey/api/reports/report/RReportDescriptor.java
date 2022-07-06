@@ -16,6 +16,8 @@
 
 package org.labkey.api.reports.report;
 
+import org.labkey.api.reports.report.ScriptReportDescriptor;
+
 /**
  * User: Karl Lum
  * Date: Jul 12, 2007
@@ -44,6 +46,11 @@ public class RReportDescriptor extends ScriptReportDescriptor
 
     public RReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
+    }
+
+    public RReportDescriptor(String type)
+    {
+        super(type);
     }
 }

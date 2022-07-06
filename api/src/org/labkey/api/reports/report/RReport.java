@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
-import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -31,7 +30,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -47,9 +45,7 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -73,7 +69,6 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,6 +92,11 @@ public class RReport extends ExternalScriptEngineReport
     private RReportDescriptor.KnitrFormat _knitrFormat = null;
 
     private boolean _useDefaultOutputOptions = true;
+
+    public RReport()
+    {
+        super();
+    }
 
     @Override
     public String getType()

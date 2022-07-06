@@ -31,12 +31,12 @@ import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.python.IpynbReport;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
@@ -66,6 +66,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
         _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
         _typeToIconMap.put(QueryReport.TYPE, "/reports/grid.gif");
+        _typeToIconMap.put(IpynbReport.TYPE, "/reports/grid.gif");
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(RReport.TYPE, "/reports/r_logo.svg");
@@ -74,6 +75,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
         _typeToIconClsMap.put(QueryReport.TYPE, "fa fa-table");
         _typeToIconClsMap.put(QuerySnapshotService.TYPE, "fa fa-camera");
+        _typeToIconClsMap.put(IpynbReport.TYPE, "fa fa-solid fa-book");
     }
 
     /**
@@ -84,7 +86,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<>();
 
-        if (RReport.isEnabled())
+        if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
         {
             ScriptReportBean bean = new ScriptReportBean();
             bean.setReportType(RReport.TYPE);
@@ -118,6 +120,20 @@ public class ReportUIProvider extends DefaultReportUIProvider
         queryDesigner.setId("create_query_report");
         queryDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(queryDesigner);
+
+        if (ReportUtil.canCreateScript(context, IpynbReport.EXTENSION) && IpynbReport.isEnabled())
+        {
+            ScriptReportBean bean = new ScriptReportBean();
+            bean.setReportType(IpynbReport.TYPE);
+            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+            DesignerInfoImpl di = new DesignerInfoImpl(IpynbReport.TYPE, IpynbReport.LABEL, null, ReportUtil.getScriptReportDesignerURL(context, bean),
+                    _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(IpynbReport.TYPE));
+            di.setId("create_ipynbReport");
+            di.setDisabled(!ReportUtil.canCreateScript(context, "ipynb"));
+
+            designers.add(di);
+        }
 
         return designers;
     }
@@ -186,6 +202,15 @@ public class ReportUIProvider extends DefaultReportUIProvider
                     ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(JavaScriptReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(JavaScriptReport.TYPE)));
         }
 
+        if (ReportUtil.canCreateScript(context, IpynbReport.EXTENSION) && IpynbReport.isEnabled())
+        {
+            ScriptReportBean bean = new ScriptReportBean(settings);
+            bean.setReportType(IpynbReport.TYPE);
+            bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+            designers.add(new DesignerInfoImpl(IpynbReport.TYPE, IpynbReport.LABEL, null, ReportUtil.getScriptReportDesignerURL(context, bean),
+                    _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(IpynbReport.TYPE)));
+        }
         return designers;
     }
 

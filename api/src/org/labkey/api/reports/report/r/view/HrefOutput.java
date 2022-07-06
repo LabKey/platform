@@ -44,7 +44,7 @@ public class HrefOutput extends ImageOutput
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         return null;
     }
