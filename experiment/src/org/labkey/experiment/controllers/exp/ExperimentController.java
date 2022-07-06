@@ -142,7 +142,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.usageMetrics.ClientSideMetricService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -2441,7 +2441,7 @@ public class ExperimentController extends SpringActionController
                                 qInfo.getString("query"), getViewContext().getActionURL(),
                                 rootObject.getString("auditMessage") + filename,
                                 null);
-                        ClientSideMetricService.get().increment( "ConvertTable","asExcel");
+                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "ConvertTable", "asExcel");
                     }
                 }
             }
@@ -2522,7 +2522,7 @@ public class ExperimentController extends SpringActionController
                             getViewContext().getActionURL(),
                             rootObject.getString("auditMessage") + filename,
                             rowsArray.length());
-                    ClientSideMetricService.get().increment( "ConvertTable","asDelimited");
+                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "ConvertTable", "asDelimited");
                 }
             }
             catch (JSONException e)

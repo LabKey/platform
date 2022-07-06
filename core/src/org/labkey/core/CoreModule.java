@@ -121,7 +121,7 @@ import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.usageMetrics.ClientSideMetricService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
@@ -198,7 +198,7 @@ import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.metrics.ClientSideMetricServiceImpl;
+import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
@@ -333,6 +333,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
 
+        WarningService.setInstance(new WarningServiceImpl());
+
         ViewService.setInstance(ViewServiceImpl.getInstance());
         ExperimentalFeatureService.setInstance(new ExperimentalFeatureServiceImpl());
         ThumbnailService.setInstance(new ThumbnailServiceImpl());
@@ -342,9 +344,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsProviderRegistry.setInstance(new AnalyticsProviderRegistryImpl());
         SummaryStatisticRegistry.setInstance(new SummaryStatisticRegistryImpl());
         UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
-        ClientSideMetricService.setInstance(new ClientSideMetricServiceImpl());
+        SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
-        WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
@@ -1013,7 +1014,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             return results;
         });
 
-        ClientSideMetricService.get().registerUsageMetrics(getName());
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
