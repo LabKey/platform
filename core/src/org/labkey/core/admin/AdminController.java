@@ -10385,7 +10385,7 @@ public class AdminController extends SpringActionController
 
             for (ResourceType type : ResourceType.values())
             {
-                MultipartFile file = fileMap.get(type.getFieldName());
+                MultipartFile file = fileMap.get(type.name());
 
                 if (file != null && !file.isEmpty())
                 {

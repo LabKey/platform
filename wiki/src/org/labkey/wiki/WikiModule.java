@@ -15,7 +15,6 @@
  */
 package org.labkey.wiki;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,10 +30,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -48,7 +45,6 @@ import org.labkey.wiki.query.WikiSchema;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -103,9 +99,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         ContainerManager.addContainerListener(new WikiContainerListener());
 //        WebdavService.get().addProvider(new WikiWebdavProvider());
 
-        // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
-        // wiki module, so no dice.
-        populateHomeProjectWebpartsWithStartupProps();
         if (ModuleLoader.getInstance().isNewInstall())
             bootstrap(moduleContext);
 
@@ -122,28 +115,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         WikiController.registerAdminConsoleLinks();
     }
 
-    // TODO should this move to CoreModule.populateLookAndFeelWithStartupProps()?
-    private void populateHomeProjectWebpartsWithStartupProps()
-    {
-        String propName = "homeProjectInitWebparts";
-        if (ModuleLoader.getInstance().isNewInstall())
-        {
-            Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
-            startupProps.forEach(prop ->
-            {
-                if (propName.equalsIgnoreCase(prop.getName()) && prop.getModifier() == ConfigProperty.modifier.bootstrap)
-                {
-                    for (String webpartName : StringUtils.split(prop.getValue(), ';'))
-                    {
-                        WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
-                        if (webPartFactory != null)
-                            Portal.registerHomeProjectInitWebpart(webPartFactory);
-                    }
-                }
-            });
-        }
-    }
-
     private void bootstrap(ModuleContext moduleContext)
     {
         Container supportContainer = ContainerManager.getDefaultSupportContainer();
@@ -151,30 +122,15 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         Container sharedContainer = ContainerManager.getSharedContainer();
         String defaultPageName = "default";
 
-        if (moduleContext.isNewInstall())
-        {
-            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt");
-            loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt");
-            loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt");
-        }
+        loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt");
+        loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt");
+        loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt");
 
         addWebPart(supportContainer, defaultPageName);
         addWebPart(sharedContainer, defaultPageName);
 
-        // if any modules have registered webparts to show on the home page, use those
-        // otherwise, just add the default wiki webpart
-        if (!Portal.getHomeProjectInitWebparts().isEmpty())
-        {
-            // Clear existing webpart(s) first -- Core module added the Projects webpart
-            Portal.saveParts(homeContainer, Collections.emptyList());
-            for (WebPartFactory webPartFactory : Portal.getHomeProjectInitWebparts())
-                addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
-        }
-        else
-        {
-            // Note: Core module already added the Projects webpart. Now add a wiki webpart with the default content.
-            addWebPart(homeContainer, defaultPageName);
-        }
+        // Add a wiki webpart with the default content.
+        addWebPart(homeContainer, defaultPageName);
     }
 
     private void addWebPart(@Nullable Container c, String wikiName)

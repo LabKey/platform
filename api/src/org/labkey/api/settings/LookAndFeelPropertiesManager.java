@@ -16,11 +16,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class LookAndFeelPropertiesManager
@@ -36,9 +36,9 @@ public class LookAndFeelPropertiesManager
     }
 
     // TODO: Merge with TemplateResourceHandler?
-    public enum ResourceType
+    public enum ResourceType implements StartupProperty, SafeToRenderEnum
     {
-        HEADER_LOGO
+        logoImage
         {
             @Override
             public String getShortLabel()
@@ -47,21 +47,21 @@ public class LookAndFeelPropertiesManager
             }
 
             @Override
+            public String getDescription()
+            {
+                return "Logo that appears in the header of every page when the page width is 768px or greater";
+            }
+
+            @Override
             public HtmlString getHelpPopup()
             {
-                return HtmlString.unsafe(PageFlowUtil.helpPopup("Header Logo", "Appears in the header on every page when the page width is greater than 767px.<br><br>Recommend size: 100px x 30px", true, 300));
+                return HtmlString.unsafe(PageFlowUtil.helpPopup("Header Logo", "Appears in the header on every page when the page width is 768px or greater.<br><br>Recommend size: 100px x 30px", true, 300));
             }
 
             @Override
             public LinkBuilder getViewLink(Container c)
             {
                 return PageFlowUtil.link("view logo").href(TemplateResourceHandler.LOGO.getURL(c));
-            }
-
-            @Override
-            public String getFieldName()
-            {
-                return "logoImage";
             }
 
             @Override
@@ -101,12 +101,18 @@ public class LookAndFeelPropertiesManager
                 AttachmentCache.clearLogoCache();
             }
         },
-        MOBILE_LOGO
+        logoMobileImage
         {
             @Override
             public String getShortLabel()
             {
                 return "Responsive logo";
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Logo that appears in the header of every page when the page width is less than 768px";
             }
 
             @Override
@@ -119,12 +125,6 @@ public class LookAndFeelPropertiesManager
             public LinkBuilder getViewLink(Container c)
             {
                 return PageFlowUtil.link("view logo").href(TemplateResourceHandler.LOGO_MOBILE.getURL(c));
-            }
-
-            @Override
-            public String getFieldName()
-            {
-                return "logoMobileImage";
             }
 
             @Override
@@ -164,12 +164,18 @@ public class LookAndFeelPropertiesManager
                 AttachmentCache.clearLogoMobileCache();
             }
         },
-        FAVICON
+        iconImage
         {
             @Override
             public String getShortLabel()
             {
                 return "Favicon";
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Favorite icon displayed in browser tabs, favorites, and bookmarks. .ico files only.";
             }
 
             @Override
@@ -188,12 +194,6 @@ public class LookAndFeelPropertiesManager
             protected String getAttachmentName()
             {
                 return AttachmentCache.FAVICON_FILE_NAME;
-            }
-
-            @Override
-            public String getFieldName()
-            {
-                return "iconImage";
             }
 
             @Override
@@ -231,12 +231,18 @@ public class LookAndFeelPropertiesManager
                 AttachmentCache.clearFavIconCache();
             }
         },
-        STYLESHEET
+        customStylesheet
         {
             @Override
             public String getShortLabel()
             {
                 return "Stylesheet";
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Custom stylesheet. .css file only.";
             }
 
             @Override
@@ -261,12 +267,6 @@ public class LookAndFeelPropertiesManager
             protected String getAttachmentName()
             {
                 return AttachmentCache.STYLESHEET_FILE_NAME;
-            }
-
-            @Override
-            public String getFieldName()
-            {
-                return "customStylesheet";
             }
 
             @Override
@@ -326,9 +326,6 @@ public class LookAndFeelPropertiesManager
             return "Currently using the default " + getShortLabel().toLowerCase();
         }
 
-        // Name associated with this type in a form
-        public abstract String getFieldName();
-
         public abstract void delete(Container c, User user);
         public abstract String getFileName(Resource resource) throws ServletException;
         public abstract void save(MultipartFile file, Container c, User user) throws ServletException, IOException;
@@ -383,13 +380,8 @@ public class LookAndFeelPropertiesManager
         }
     }
 
-    public @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    public @Nullable SiteResourceHandler getResourceHandler(@NotNull ResourceType type)
     {
-        ResourceType type = Arrays.stream(ResourceType.values()).filter(t->t.getFieldName().equals(name)).findFirst().orElse(null);
-
-        if (null == type)
-            return null;
-
         return (resource, c, user) -> {
             AttachmentFile attachmentFile = new InputStreamAttachmentFile(resource.getInputStream(), type.getFileName(resource));
             type.save(attachmentFile, c, user);
