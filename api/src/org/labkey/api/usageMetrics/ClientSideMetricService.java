@@ -13,7 +13,7 @@ public interface ClientSideMetricService
         ServiceRegistry.get().registerService(ClientSideMetricService.class, impl);
     }
 
-    int increment(String featureArea, String metricName);
+    long increment(String featureArea, String metricName);
 
     void registerUsageMetrics(String moduleName);
 }
