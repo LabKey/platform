@@ -28,11 +28,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -46,13 +43,8 @@ import org.labkey.core.user.LimitActiveUsersSettings;
 import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.net.ssl.HttpsURLConnection;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -117,9 +109,9 @@ public class CoreWarningProvider implements WarningProvider
         if (null != warning)
             warnings.add(warning);
 
-        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessage()))
         {
-            String message = AppProps.getInstance().getRibbonMessageHtml();
+            String message = AppProps.getInstance().getRibbonMessage();
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
         }

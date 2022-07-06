@@ -103,6 +103,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
+
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
  * resource types within LabKey Server.
@@ -316,7 +318,7 @@ public class ApiModule extends CodeOnlyModule
             json.put("compliance", complianceSettings);
 
         LookAndFeelProperties properties = LookAndFeelProperties.getInstance(context.getContainer());
-        json.put(LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE, properties.getApplicationMenuDisplayMode());
+        json.put(applicationMenuDisplayMode.name(), properties.getApplicationMenuDisplayMode());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;

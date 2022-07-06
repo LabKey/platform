@@ -649,8 +649,8 @@ public class ExceptionUtil
                 // mostly to make security scanners happy
                 if (ModuleLoader.getInstance().isStartupComplete())
                 {
-                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
+                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
+                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
                     response.setHeader("X-Content-Type-Options", "nosniff");
                 }
             }

@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
  * Date: Jul 3, 2007
  * Time: 12:49:57 PM
  */
-public enum FolderDisplayMode
+public enum FolderDisplayMode implements SafeToRenderEnum
 {
     ALWAYS("Always"),
     ADMIN("Only for Administrators");
@@ -42,7 +42,7 @@ public enum FolderDisplayMode
 
     /**
      * Will return FolderDisplayMode.ALWAYS for any non legal enum value.
-     * @param str String value of the the enumeration
+     * @param str String value of the enumeration
      * @return FolderDisplayMode
      */
     public static FolderDisplayMode fromString(String str)

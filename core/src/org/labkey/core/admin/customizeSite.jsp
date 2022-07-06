@@ -30,6 +30,7 @@
 <%@ page import="java.util.Objects" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
+<%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -131,7 +132,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td class="labkey-form-label" valign="top">Primary site administrator</td>
     <td>
-        <select name="administratorContactEmail" id="administratorContactEmail">
+        <select name="<%=administratorContactEmail%>" id="<%=administratorContactEmail%>">
             <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds(Group.groupAdministrators, false);
                 String selectedAdminEmail = appProps.getAdministratorContactEmail(false);
                 for (Pair<Integer,String> member : members) { %>
@@ -151,11 +152,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
-    <td><input type="text" name="baseServerUrl" id="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
+    <td><input type="text" name="<%=baseServerURL%>" id="<%=baseServerURL%>" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Use "path first" urls (/home/project-begin.view)</td>
-    <td><labkey:checkbox id="useContainerRelativeURL" name="useContainerRelativeURL" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
+    <td><labkey:checkbox id="<%=useContainerRelativeURL.name()%>" name="<%=useContainerRelativeURL.name()%>" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -177,7 +178,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label>
-                        <input type="radio" name="usageReportingLevel" id="usageReportingLevel1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
+                        <input type="radio" name="<%=usageReportingLevel%>" id="<%=usageReportingLevel%>1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
                         <strong>OFF</strong> - Do not check for updates or report any usage data.
                     </label>
                 </td>
@@ -185,7 +186,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label>
-                        <input type="radio" name="usageReportingLevel" id="usageReportingLevel2" onchange="enableUsageTest();"
+                        <input type="radio" name="<%=usageReportingLevel%>" id="<%=usageReportingLevel%>2" onchange="enableUsageTest();"
                                value="<%=UsageReportingLevel.ON%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>>
                         <strong>ON</strong> - Check for updates and report system information, usage data, and organization details.
                     </label>
@@ -212,7 +213,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel1" value="<%=NONE%>"<%=checked(appProps.getExceptionReportingLevel() == NONE)%>>
+                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>1" value="<%=NONE%>"<%=checked(appProps.getExceptionReportingLevel() == NONE)%>>
                         <strong>OFF</strong> - Do not report exceptions.
                     </label>
                 </td>
@@ -220,7 +221,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel2" value="<%=LOW%>"<%=checked(appProps.getExceptionReportingLevel() == LOW)%>>
+                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>2" value="<%=LOW%>"<%=checked(appProps.getExceptionReportingLevel() == LOW)%>>
                         <strong>ON, low</strong> - Include anonymous system and exception information.
                     </label>
                 </td>
@@ -228,7 +229,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel3" value="<%=MEDIUM%>"<%=checked(appProps.getExceptionReportingLevel() == MEDIUM)%>>
+                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>3" value="<%=MEDIUM%>"<%=checked(appProps.getExceptionReportingLevel() == MEDIUM)%>>
                         <strong>ON, medium</strong> - Include anonymous system and exception information, as well as the URL that triggered the exception.
                     </label>
                 </td>
@@ -236,7 +237,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel4" value="<%=HIGH%>"<%=checked(appProps.getExceptionReportingLevel() == HIGH)%>>
+                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>4" value="<%=HIGH%>"<%=checked(appProps.getExceptionReportingLevel() == HIGH)%>>
                         <strong>ON, high</strong> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary.
                     </label>
                 </td>
@@ -254,7 +255,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
     <td>
         <label for="selfReportExceptions">
-            <input type="checkbox" name="selfReportExceptions" id="selfReportExceptions"<%=checked(appProps.isSelfReportExceptions())%>/> Self-reporting is always at the "high" level described above
+            <input type="checkbox" name="<%=selfReportExceptions%>" id="<%=selfReportExceptions%>"<%=checked(appProps.isSelfReportExceptions())%>/> Self-reporting is always at the "high" level described above
         </label>
     </td>
 </tr>
@@ -269,19 +270,19 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
-    <td><input type="text" name="memoryUsageDumpInterval" id="memoryUsageDumpInterval" size="4" value="<%=appProps.getMemoryUsageDumpInterval()%>"></td>
+    <td><input type="text" name="<%=memoryUsageDumpInterval%>" id="<%=memoryUsageDumpInterval%>" size="4" value="<%=appProps.getMemoryUsageDumpInterval()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Maximum file size, in bytes, to allow in database BLOBs</td>
-    <td><input type="text" name="maxBLOBSize" id="maxBLOBSize" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
+    <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>
-    <td><input type="checkbox" name="ext3Required" id="ext3Required"<%=checked(appProps.isExt3Required())%>></td>
+    <td><input type="checkbox" name="<%=ext3Required%>" id="<%=ext3Required%>"<%=checked(appProps.isExt3Required())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.x based Client API be loaded on each page</td>
-    <td><input type="checkbox" name="ext3APIRequired" id="ext3APIRequired"<%=checked(appProps.isExt3APIRequired())%>></td>
+    <td><input type="checkbox" name="<%=ext3APIRequired%>" id="<%=ext3APIRequired%>"<%=checked(appProps.isExt3APIRequired())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -293,11 +294,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
-    <td><input type="checkbox" name="sslRequired" id="sslRequired"<%=checked(appProps.isSSLRequired())%>></td>
+    <td><input type="checkbox" name="<%=sslRequired%>" id="<%=sslRequired%>"<%=checked(appProps.isSSLRequired())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
-    <td><input type="text" name="sslPort" id="sslPort" value="<%=appProps.getSSLPort()%>" size="6"></td>
+    <td><input type="text" name="<%=sslPort%>" id="<%=sslPort%>" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
 
 <tr>
@@ -309,14 +310,14 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Let users create API keys</td>
-    <td><labkey:checkbox id="allowApiKeys" name="allowApiKeys" checked="<%=AppProps.getInstance().isAllowApiKeys()%>" value="true"/></td>
+    <td><labkey:checkbox id="<%=allowApiKeys.name()%>" name="<%=allowApiKeys.name()%>" checked="<%=AppProps.getInstance().isAllowApiKeys()%>" value="true"/></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Expire API keys</td>
 <%
     final int currentExpiration = AppProps.getInstance().getApiKeyExpirationSeconds();
 %>
-    <td><select name="apiKeyExpirationSeconds" id="apiKeyExpirationSeconds">
+    <td><select name="<%=apiKeyExpirationSeconds%>" id="<%=apiKeyExpirationSeconds%>">
         <option value=-1 <%=selectedEq(-1, currentExpiration)%>>Never</option>
 <%
     if (AppProps.getInstance().isDevMode())
@@ -331,7 +332,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label">Let users create session keys</td>
-    <td><labkey:checkbox id="allowSessionKeys" name="allowSessionKeys" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
+    <td><labkey:checkbox id="<%=allowSessionKeys.name()%>" name="<%=allowSessionKeys.name()%>" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 
 <tr>
@@ -343,7 +344,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Pipeline tools<%= helpPopup("Pipeline Tools", "A '" + File.pathSeparator + "' separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)") %></td>
-    <td><input type="text" name="pipelineToolsDirectory" id="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
+    <td><input type="text" name="<%=pipelineToolsDirectory%>" id="<%=pipelineToolsDirectory%>" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -355,11 +356,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Display message</td>
-    <td><input type="checkbox" name="showRibbonMessage" id="showRibbonMessage"<%=checked(appProps.isShowRibbonMessage())%>></td>
+    <td><input type="checkbox" name="<%=showRibbonMessage%>" id="<%=showRibbonMessage%>"<%=checked(appProps.isShowRibbonMessage())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Message HTML</td>
-    <td><textarea name="ribbonMessageHtml" id="ribbonMessageHtml" cols="60" rows="3"><%=h(appProps.getRibbonMessageHtml())%></textarea></td>
+    <td><textarea name="<%=ribbonMessage%>" id="<%=ribbonMessage%>" cols="60" rows="3"><%=h(appProps.getRibbonMessage())%></textarea></td>
 </tr>
 
 <tr>
@@ -371,11 +372,11 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
-    <td><input type="checkbox" name="adminOnlyMode" id="adminOnlyMode"<%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
+    <td><input type="checkbox" name="<%=adminOnlyMode%>" id="<%=adminOnlyMode%>"<%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>
-    <td><textarea id="adminOnlyMessage" name="adminOnlyMessage" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
+    <td><textarea id="adminOnlyMessage" name="<%=adminOnlyMessage%>" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
 </tr>
 
 <tr>
@@ -387,8 +388,8 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">X-Frame-Options</td>
-    <td><select name="XFrameOptions" id="XFrameOptions">
-        <% String option = appProps.getXFrameOptions(); %>
+    <td><select name="<%=XFrameOption%>" id="<%=XFrameOption%>">
+        <% String option = appProps.getXFrameOption(); %>
         <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
         <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
         <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
@@ -405,7 +406,7 @@ Click the Save button at any time to accept the current settings and continue.</
         Always include inaccessible parent folders in project menu when child folder is accessible<%=helpPopup("Project menu access",
             "Unchecking this will only allow users to see folders in the project menu where they have permissions to see the root project and all parent folders.")%>
     </td>
-    <td><input type="checkbox" name="navAccessOpen" id="navAccessOpen"<%=checked(appProps.isNavigationAccessOpen())%>></td>
+    <td><input type="checkbox" name="<%=navAccessOpen%>" id="<%=navAccessOpen%>"<%=checked(appProps.isNavigationAccessOpen())%>></td>
 </tr>
 <tr><td>&nbsp;</td></tr>
 <tr><td>&nbsp;</td></tr>
