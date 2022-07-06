@@ -1522,7 +1522,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 if (!user.isSearchUser())
                 {
-                    Query securityFilter = new SecurityQuery(user, scope.getRoot(current), current, scope.isRecursive(), iTimer);
+                    Query securityFilter = new SecurityQuery(user, scope, current, iTimer);
                     queryBuilder.add(securityFilter, BooleanClause.Occur.FILTER);
                 }
 
