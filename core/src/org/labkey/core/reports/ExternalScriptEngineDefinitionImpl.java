@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.labkey.api.reports.RScriptEngine.DOCKER_R_IMAGE_TYPE;
+import static org.labkey.api.reports.RScriptEngine.DOCKER_IMAGE_TYPE;
 import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
@@ -554,7 +554,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             }
             else
             {
-                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker R - " + getName(), DOCKER_R_IMAGE_TYPE, "", null));
+                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker - " + getName(), DOCKER_IMAGE_TYPE, "", null));
             }
         }
     }

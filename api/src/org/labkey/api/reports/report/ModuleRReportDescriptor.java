@@ -46,12 +46,12 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
 
     public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
+        super(TYPE);
         _module = module;
         _reportPath = reportPath;
 
         setReportKey(reportKey);
         setReportName(makeReportName(sourceFile));
-        setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
 
         _resource = getModuleReportResource(sourceFile);
@@ -96,12 +96,12 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
 
         if (lname.endsWith(KNITR_MD_EXTENSION))
         {
-            setProperty(Prop.knitrFormat, KnitrFormat.Markdown.name());
+            setProperty(ScriptReportDescriptor.Prop.knitrFormat, KnitrFormat.Markdown.name());
             ext = KNITR_MD_EXTENSION;
         }
         else if (lname.endsWith(KNITR_HTML_EXTENSION))
         {
-            setProperty(Prop.knitrFormat, KnitrFormat.Html.name());
+            setProperty(ScriptReportDescriptor.Prop.knitrFormat, KnitrFormat.Html.name());
             ext = KNITR_HTML_EXTENSION;
         }
 
@@ -162,6 +162,6 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
     @Override
     public Resource getMetaDataFile()
     {
-        return _resource._metaDataFile;
+        return _resource.getMetaDataFile();
     }
 }

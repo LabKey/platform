@@ -76,7 +76,7 @@ public class ModuleRReportResource extends ModuleReportDependenciesResource
     }
 
     @Override
-    protected ReportDescriptorType loadMetaData()
+    public ReportDescriptorType loadMetaData()
     {
         ReportDescriptorType d = super.loadMetaData();
 

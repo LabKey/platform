@@ -126,7 +126,12 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public ReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        this(TYPE);
+    }
+
+    public ReportDescriptor(String descriptorType)
+    {
+        setDescriptorType(descriptorType);
 
         // set the report version to the one that is stored in the query module
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
@@ -245,7 +250,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return null;
     }
 
-    public void setDescriptorType(String type)
+    private void setDescriptorType(String type)
     {
         setProperty(Prop.descriptorType, type);
     }

@@ -38,6 +38,13 @@ public class ConsoleOutput extends AbstractParamReplacement
         super(ID);
     }
 
+    /* create an output for a known file */
+    public ConsoleOutput(File output)
+    {
+        super(ID);
+        addFile(output);
+    }
+
     @Override
     protected File getSubstitution(File directory) throws Exception
     {
@@ -52,7 +59,7 @@ public class ConsoleOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         ROutputView view = new TextOutput.TextOutputView(this);
         view.setLabel("Console output");

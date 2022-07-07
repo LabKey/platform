@@ -55,7 +55,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     
     public GenericChartReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
     }
 
     @Override

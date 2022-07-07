@@ -54,7 +54,7 @@ public class JsonOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         return new JsonOutputView(this);
     }
