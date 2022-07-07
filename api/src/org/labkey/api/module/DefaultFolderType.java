@@ -237,7 +237,7 @@ public class DefaultFolderType implements FolderType
             if (null != portalPage)
             {
                 // Mark any actual permanent parts not permanent, since we're switching to another folder type
-                List<WebPart> parts = Portal.getParts(c, portalPage.getPageId());
+                List<WebPart> parts = Portal.getEditableParts(c, portalPage.getPageId());
                 boolean saveRequired = false;
 
                 for (WebPart part : parts)

@@ -151,7 +151,7 @@ public class WriteableAppProps extends AppPropsImpl
 
     public void setFileSystemRoot(String root)
     {
-        storeStringValue(WEB_ROOT, root);
+        storeStringValue(SITE_FILE_ROOT, root);
     }
 
     public void setUserFilesRoot(String root)

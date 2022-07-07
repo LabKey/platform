@@ -10,11 +10,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -144,16 +145,45 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return Math.max(getUserLimitLevel() - getActiveUserCount(), 0);
     }
 
+    private enum StartupProperties implements StartupProperty
+    {
+        userWarning("Enable user warning"),
+        userWarningLevel("Warning level user count"),
+        userWarningMessage("Warning level message"),
+        userLimit("Enable user limit"),
+        userLimitLevel("User limit"),
+        userLimitMessage("User limit message");
+
+        private final String _description;
+
+        StartupProperties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
     public static void populateStartupProperties()
     {
-        Collection<ConfigProperty> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
-        if (!userLimitsProperties.isEmpty())
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>("UserLimits", StartupProperties.class)
         {
-            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
-            userLimitsProperties
-                .forEach(prop -> settings.storeStringValue(prop.getName(), prop.getValue()));
-            settings.save(null);
-        }
+            @Override
+            public void handle(Map<StartupProperties, StartupPropertyEntry> properties)
+            {
+                if (!properties.isEmpty())
+                {
+                    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+                    properties
+                        .forEach((prop, entry) -> settings.storeStringValue(prop.name(), entry.getValue()));
+                    settings.save(null);
+                }
+            }
+        });
     }
 
     public static @Nullable HtmlString getWarningMessage(Container c, User user, boolean showAllWarnings)

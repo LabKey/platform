@@ -57,6 +57,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -84,7 +85,9 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -134,6 +137,8 @@ public class ApiModule extends CodeOnlyModule
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
+        MailHelper.init();
+        ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 
     @Override
@@ -228,6 +233,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CachingTestCase.class,
@@ -281,7 +287,8 @@ public class ApiModule extends CodeOnlyModule
             TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
-            WorkbookContainerType.TestCase.class
+            WorkbookContainerType.TestCase.class,
+            WriteableLookAndFeelProperties.TestCase.class
         );
     }
 
