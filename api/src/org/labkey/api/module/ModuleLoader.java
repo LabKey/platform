@@ -284,7 +284,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        //load module instances using Spring
+        // Populate early so module include/exclude properties are available for loadModules()... and not reloaded when
+        // creating and loading modules using the module editor.
+        ModuleLoaderStartupProperties.populate();
+        // Load module instances using Spring
         List<Module> moduleList = loadModules(explodedModuleDirs);
 
         //sort the modules by dependencies
@@ -932,8 +935,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
 
-        // filter by startup properties if specified
-        ModuleLoaderStartupProperties.populate();
+        // filter by startup properties if they were specified
         LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
         LinkedList<String> excludeList = ModuleLoaderStartupProperties.exclude.getList();
 

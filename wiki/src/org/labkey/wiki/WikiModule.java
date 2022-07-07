@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -99,7 +98,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         ContainerManager.addContainerListener(new WikiContainerListener());
 //        WebdavService.get().addProvider(new WikiWebdavProvider());
 
-        if (ModuleLoader.getInstance().isNewInstall())
+        // Don't check ModuleLoader.isNewInstall() here to support trial AMIs, where _newInstall may be true even though
+        // scripts and bootstrap() have already run
+        if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
 
         SearchService ss = SearchService.get();
