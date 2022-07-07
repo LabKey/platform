@@ -344,7 +344,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsProviderRegistry.setInstance(new AnalyticsProviderRegistryImpl());
         SummaryStatisticRegistry.setInstance(new SummaryStatisticRegistryImpl());
         UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
-        SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
@@ -823,6 +822,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
+
+        SimpleMetricsService.setInstance(new SimpleMetricsServiceImpl());
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {

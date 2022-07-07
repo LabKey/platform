@@ -6,7 +6,13 @@ public interface SimpleMetricsService
 {
     static SimpleMetricsService get()
     {
-        return ServiceRegistry.get().getService(SimpleMetricsService.class);
+        SimpleMetricsService result = ServiceRegistry.get().getService(SimpleMetricsService.class);
+        if (result == null)
+        {
+            // Return a no-op implementation if the real service hasn't been registered yet
+            result = (moduleName, featureArea, metricName) -> 0;
+        }
+        return result;
     }
     static void setInstance(SimpleMetricsService impl)
     {
