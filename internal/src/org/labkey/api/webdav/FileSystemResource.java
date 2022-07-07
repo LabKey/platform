@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
@@ -29,8 +30,13 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
@@ -75,6 +81,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +97,8 @@ import java.util.stream.Collectors;
 public class FileSystemResource extends AbstractWebdavResource
 {
     private static final Logger _log = LogManager.getLogger(FileSystemResource.class);
-    public static final String URL_COL_PREFIX = "_labkeyurl_";
+
+    public static final String DISPLAY_VALUE_SUFFIX = "_displayValue";
 
     protected List<FileInfo> _files;
     String _name = null;
@@ -665,25 +673,25 @@ public class FileSystemResource extends AbstractWebdavResource
             _customProperties = new HashMap<>();
             FileContentService svc = FileContentService.get();
             ExpData data = svc.getDataObject(this, getContainer());
+            Domain fileDomain = PropertyService.get().getDomain(getContainer() ,svc.getDomainURI(getContainer()));
 
-            if (null != data)
+            if (null != data && fileDomain != null && !fileDomain.getProperties().isEmpty())
             {
                 Set<String> customPropertyNames = new CaseInsensitiveHashSet();
-                for (ObjectProperty prop : data.getObjectProperties().values())
+                for (DomainProperty prop : fileDomain.getProperties())
                 {
-                    customPropertyNames.add(prop.getName() + "_displayvalue");                    
+                    // Look for up to three variants of each property: the formatted value, the display for a lookup, and the rendered URL
+                    customPropertyNames.add(prop.getName() + DISPLAY_VALUE_SUFFIX);
                     customPropertyNames.add(prop.getName());
-                    customPropertyNames.add(URL_COL_PREFIX + prop.getName());
+                    customPropertyNames.add(ApiQueryResponse.URL_COL_PREFIX + prop.getName());
                 }
-
-                TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(user, getContainer()), ExpSchema.TableType.Data.toString(), null);
-                QueryUpdateService qus = ti.getUpdateService();
 
                 try
                 {
-                    File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
-                    String url = canonicalFile.toPath().toUri().toString();
-                    Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), url);
+                    TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(user, getContainer()), ExpSchema.TableType.Data.toString(), null);
+                    // FileQueryUpdateService is responsible for resolving lookups and formatting values
+                    QueryUpdateService qus = Objects.requireNonNull(ti.getUpdateService(), "exp.data table should have a QueryUpdateService");
+                    Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.RowId.name(), data.getRowId());
                     List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
 
                     assert(rows.size() <= 1);
@@ -704,22 +712,15 @@ public class FileSystemResource extends AbstractWebdavResource
                         }
                     }
                 }
-                catch (SQLException x)
+                catch (Exception re)
                 {
-                    throw new RuntimeSQLException(x);
+                    throw UnexpectedException.wrap(re);
                 }
-                catch (RuntimeException re)
-                {
-                    throw re;
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
+                boolean b = false;
             }
         }
 
-        return _customProperties;
+        return Collections.unmodifiableMap(_customProperties);
     }
 
     @Override
