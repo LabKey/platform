@@ -98,8 +98,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         ContainerManager.addContainerListener(new WikiContainerListener());
 //        WebdavService.get().addProvider(new WikiWebdavProvider());
 
-        // Don't check ModuleLoader.isNewInstall() here to support blue-green scenario, where _newInstall may be true
-        // even though scripts and bootstrap() have already run
+        // Don't check ModuleLoader.isNewInstall() here to support trial AMIs, where _newInstall may be true even though
+        // scripts and bootstrap() have already run
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
 
