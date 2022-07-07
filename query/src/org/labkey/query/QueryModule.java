@@ -110,6 +110,7 @@ import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
+import org.labkey.query.reports.ReportViewProvider;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
@@ -216,6 +217,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new URLExportScriptFactory());
         QueryView.register(new PythonExportScriptFactory());
         QueryView.register(new SasExportScriptFactory());
+
+        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());

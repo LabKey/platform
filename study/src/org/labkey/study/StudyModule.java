@@ -174,7 +174,6 @@ import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
-import org.labkey.study.reports.ReportViewProvider;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
@@ -292,7 +291,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
 
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
-        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
