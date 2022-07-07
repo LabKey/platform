@@ -17,13 +17,14 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.AuthenticationManager;
@@ -47,9 +48,9 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -67,8 +68,308 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private volatile String _projectRoot = null;
     private volatile String _enlistmentId = null;
 
+    private static Map<StashedStartupProperties, StartupPropertyEntry> _stashedProperties = Map.of();
+
+    // Site settings constants are defined here in the same order as on the site settings page
+    public enum SiteSettingsProperties implements StartupProperty
+    {
+        defaultDomain("Default email domain for authentication purposes. DO NOT USE... use Authentication.DefaultDomain instead.")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                AuthenticationManager.setDefaultDomain(UserManager.getGuestUser(), value);
+                LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
+            }
+        },
+        administratorContactEmail("Primary site administrator")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setAdministratorContactEmail(value);
+            }
+        },
+        baseServerURL("Base server URL (used to create links in emails sent by the system)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                try
+                {
+                    writeable.setBaseServerUrl(value);
+                }
+                catch (URISyntaxException e)
+                {
+                    throw new IllegalArgumentException("Invalid URI for property " + name() + ": " + value, e);
+                }
+            }
+        },
+        useContainerRelativeURL("Use \"path first\" urls (/home/project-begin.view)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUseContainerRelativeURL(Boolean.parseBoolean(value));
+            }
+        },
+        usageReportingLevel("Check for updates and report usage statistics to the LabKey team. Valid values: " + Arrays.toString(UsageReportingLevel.values()))
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUsageReportingLevel(UsageReportingLevel.valueOf(value));
+            }
+        },
+        exceptionReportingLevel("Report exceptions to the LabKey team. Valid values: " + Arrays.toString(ExceptionReportingLevel.values()))
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setExceptionReportingLevel(ExceptionReportingLevel.valueOf(value));
+            }
+        },
+        selfReportExceptions("Report exceptions to the local server")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setSelfReportExceptions(Boolean.parseBoolean(value));
+            }
+        },
+        memoryUsageDumpInterval("Log memory usage frequency in minutes, for debugging. Set to 0 to disable.")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setMemoryUsageDumpInterval(Integer.parseInt(value));
+            }
+        },
+        maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setMaxBLOBSize(Integer.parseInt(value));
+            }
+        },
+        ext3Required("Require ExtJS v3.4.1 be loaded on each page (DEPRECATED)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setExt3Required(Boolean.parseBoolean(value));
+            }
+        },
+        ext3APIRequired("Require ExtJS v3.x based Client API be loaded on each page (DEPRECATED)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setExt3APIRequired(Boolean.parseBoolean(value));
+            }
+        },
+        sslRequired("Require SSL connections (users must connect via SSL)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setSSLRequired(Boolean.parseBoolean(value));
+            }
+        },
+        sslPort("SSL port number (specified in server config file)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setSSLPort(Integer.parseInt(value));
+            }
+        },
+        allowApiKeys("Let users create API keys")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setAllowApiKeys(Boolean.parseBoolean(value));
+            }
+        },
+        apiKeyExpirationSeconds("API key expiration in seconds. -1 represents no expiration.")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setApiKeyExpirationSeconds(Integer.parseInt(value));
+            }
+        },
+        allowSessionKeys("Let users create session keys, which are associated with the user's currents server session")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setAllowSessionKeys(Boolean.parseBoolean(value));
+            }
+        },
+        pipelineToolsDirectory("Semicolon-separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setPipelineToolsDir(value);
+            }
+        },
+        showRibbonMessage("Display ribbon bar message")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setShowRibbonMessage(Boolean.parseBoolean(value));
+            }
+        },
+        ribbonMessage("Ribbon bar message HTML")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setRibbonMessageHtml(value);
+            }
+        },
+        adminOnlyMode("Admin only mode (only site admins may log in)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUserRequestedAdminOnlyMode(Boolean.parseBoolean(value));
+            }
+        },
+        adminOnlyMessage("Message to users when site is in admin-only mode (Wiki formatting allowed)")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setAdminOnlyMessage(value);
+            }
+        },
+        XFrameOption("Controls whether or not a browser may render a server page in a <frame> , <iframe> or <object>. Valid values: [SAMEORIGIN, ALLOW]")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setXFrameOptions(value);
+            }
+        },
+        navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setNavAccessOpen(Boolean.parseBoolean(value));
+            }
+        };
+
+        private final String _description;
+
+        SiteSettingsProperties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public abstract void setValue(WriteableAppProps writeable, String value);
+    }
+
+    // Additional properties that are stored in the "SiteSettings" scope but not exposed on the site settings page
+    public enum RandomStartupProperties implements StartupProperty
+    {
+        BLASTBaseURL("BLAST server URL")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.storeStringValue(BLAST_SERVER_BASE_URL_PROP, value);
+            }
+        },
+        externalRedirectHostURLs("Allowed external redirect hosts")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, EXTERNAL_REDIRECT_HOST_DELIMITER)));
+            }
+        },
+        fileUploadDisabled("Disable file upload")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setFileUploadDisabled(Boolean.parseBoolean(value));
+            }
+        },
+        mailRecorderEnabled("Record email messages sent")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
+            }
+        },
+        // TODO: Remove SiteRootStartupProperties.siteRootFile in favor of this property
+        siteFileRoot("Site-level file root")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                FileContentService fcs = FileContentService.get();
+                if (null != fcs)
+                {
+                    File fileRoot = new File(value);
+                    fcs.setSiteDefaultRoot(fileRoot, null);
+                    fcs.setFileRootSetViaStartupProperty(true);
+                }
+                else
+                {
+                    LOG.warn("FileContentService is not available! Site-level file root can't be set.");
+                }
+            }
+        },
+        userFileRoot("Enable personal folders for users")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setUserFilesRoot(value);
+            }
+        },
+        webfilesEnabled("Alternative webfiles root")
+        {
+            @Override
+            public void setValue(WriteableAppProps writeable, String value)
+            {
+                writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
+            }
+        };
+
+        private final String _description;
+
+        RandomStartupProperties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public abstract void setValue(WriteableAppProps writeable, String value);
+    }
+
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
     static final String BASE_SERVER_URL_PROP = "baseServerURL";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";
@@ -85,7 +386,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
     static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
-    static final String WEB_ROOT = "webRoot";
+    static final String SITE_FILE_ROOT = "siteFileRoot";
     static final String USER_FILE_ROOT = "userFileRoot";
     static final String WEBFILES_ROOT_ENABLED = "webfilesEnabled";
     static final String FILE_UPLOAD_DISABLED = "fileUploadDisabled";
@@ -465,10 +766,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Nullable
     public File getFileSystemRoot()
     {
-        String webRoot = lookupStringValue(WEB_ROOT, "");
-        if (!StringUtils.isEmpty(webRoot))
+        String siteFileRoot = lookupStringValue(SITE_FILE_ROOT, null);
+        // Fall back to "webRoot", the old property name
+        if (null == siteFileRoot)
+            siteFileRoot = lookupStringValue("webRoot", "");
+        if (!StringUtils.isEmpty(siteFileRoot))
         {
-            return new File(webRoot);
+            return new File(siteFileRoot);
         }
         return null;
     }
@@ -599,65 +903,61 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return trimToNull(s);
     }
 
-    public static void populateSiteSettingsWithStartupProps()
+    public static class SiteSettingsPropertyHandler extends StandardStartupPropertyHandler<SiteSettingsProperties>
     {
-        // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
-        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
-        // for a list of recognized site setting properties refer to: AppPropsImpl.java
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
-        if (startupProps.isEmpty())
-            return;
-        WriteableAppProps writeable = AppProps.getWriteableInstance();
-        for (ConfigProperty prop : startupProps)
+        public SiteSettingsPropertyHandler()
         {
-            try
-            {
-                LOG.debug("Setting site settings config property '" + prop.getName() + "' to '" + prop.getValue() + "'");
-                switch (prop.getName())
-                {
-                    case DEFAULT_DOMAIN_PROP -> {
-                        AuthenticationManager.setDefaultDomain(UserManager.getGuestUser(), prop.getValue());
-                        LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
-                    }
-                    case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());
-                    case PIPELINE_TOOLS_DIR_PROP -> writeable.setPipelineToolsDir(prop.getValue());
-                    case SSL_REQUIRED -> writeable.setSSLRequired(Boolean.parseBoolean(prop.getValue()));
-                    case SSL_PORT -> writeable.setSSLPort(Integer.parseInt(prop.getValue()));
-                    case USER_REQUESTED_ADMIN_ONLY_MODE -> writeable.setUserRequestedAdminOnlyMode(Boolean.parseBoolean(prop.getValue()));
-                    case ADMIN_ONLY_MESSAGE -> writeable.setAdminOnlyMessage(prop.getValue());
-                    case SHOW_RIBBON_MESSAGE -> writeable.setShowRibbonMessage(Boolean.parseBoolean(prop.getValue()));
-                    case RIBBON_MESSAGE -> writeable.setRibbonMessageHtml(prop.getValue());
-                    case EXCEPTION_REPORTING_LEVEL -> writeable.setExceptionReportingLevel(ExceptionReportingLevel.valueOf(prop.getValue()));
-                    case USAGE_REPORTING_LEVEL -> writeable.setUsageReportingLevel(UsageReportingLevel.valueOf(prop.getValue()));
-                    case ADMINISTRATOR_CONTACT_EMAIL -> writeable.setAdministratorContactEmail(prop.getValue());
-                    case BLAST_SERVER_BASE_URL_PROP -> writeable.setBLASTServerBaseURL(prop.getValue());
-                    case MEMORY_USAGE_DUMP_INTERVAL -> writeable.setMemoryUsageDumpInterval(Integer.parseInt(prop.getValue()));
-                    case MAIL_RECORDER_ENABLED -> writeable.setMailRecorderEnabled(Boolean.parseBoolean(prop.getValue()));
-                    case WEB_ROOT -> writeable.setFileSystemRoot(prop.getValue());
-                    case USER_FILE_ROOT -> writeable.setUserFilesRoot(prop.getValue());
-                    case WEBFILES_ROOT_ENABLED -> writeable.setWebfilesEnabled(Boolean.parseBoolean(prop.getValue()));
-                    case FILE_UPLOAD_DISABLED -> writeable.setFileUploadDisabled(Boolean.parseBoolean(prop.getValue()));
-                    case MAX_BLOB_SIZE -> writeable.setMaxBLOBSize(Integer.parseInt(prop.getValue()));
-                    case EXT3_REQUIRED -> writeable.setExt3Required(Boolean.parseBoolean(prop.getValue()));
-                    case EXT3API_REQUIRED -> writeable.setExt3APIRequired(Boolean.parseBoolean(prop.getValue()));
-                    case NAV_ACCESS_OPEN -> writeable.setNavAccessOpen(Boolean.parseBoolean(prop.getValue()));
-                    case SELF_REPORT_EXCEPTIONS -> writeable.setSelfReportExceptions(Boolean.parseBoolean(prop.getValue()));
-                    case USE_CONTAINER_RELATIVE_URL -> writeable.setUseContainerRelativeURL(Boolean.parseBoolean(prop.getValue()));
-                    case ALLOW_API_KEYS -> writeable.setAllowApiKeys(Boolean.parseBoolean(prop.getValue()));
-                    case API_KEY_EXPIRATION_SECONDS -> writeable.setApiKeyExpirationSeconds(Integer.parseInt(prop.getValue()));
-                    case ALLOW_SESSION_KEYS -> writeable.setAllowSessionKeys(Boolean.parseBoolean(prop.getValue()));
-                    case X_FRAME_OPTIONS -> writeable.setXFrameOptions(prop.getValue());
-                    case EXTERNAL_REDIRECT_HOSTS -> writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(prop.getValue(), EXTERNAL_REDIRECT_HOST_DELIMITER)));
+            super(SCOPE_SITE_SETTINGS, SiteSettingsProperties.class);
+        }
 
-                    default -> LOG.debug("Property '" + prop.getName() + "' does not map to an AppProp entry");
-                }
-            }
-            catch (URISyntaxException e)
+        @Override
+        public void handle(Map<SiteSettingsProperties, StartupPropertyEntry> properties)
+        {
+            if (!properties.isEmpty())
             {
-                throw new IllegalArgumentException("Invalid URI for property " + prop.getName() + ": " + prop.getValue(), e);
+                WriteableAppProps writeable = AppProps.getWriteableInstance();
+                properties.forEach((ssp, cp) -> {
+                    LOG.info("Setting site settings startup property '" + ssp.name() + "' to '" + cp.getValue() + "'");
+                    ssp.setValue(writeable, cp.getValue());
+                });
+                writeable.save(null);
             }
         }
-        writeable.save(null);
+    }
+
+    public static void populateSiteSettingsWithStartupProps()
+    {
+        // populate site settings with values from startup configuration
+        // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
+        // for a list of recognized site setting properties see the "Available Site Settings" action
+
+        ModuleLoader.getInstance().handleStartupProperties(new SiteSettingsPropertyHandler());
+
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, RandomStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<RandomStartupProperties, StartupPropertyEntry> properties)
+            {
+                if (!properties.isEmpty())
+                {
+                    WriteableAppProps writeable = AppProps.getWriteableInstance();
+                    properties.forEach((rsp, cp) -> {
+                        LOG.info("Setting additional site-level startup property '" + rsp.name() + "' to '" + cp.getValue() + "'");
+                        rsp.setValue(writeable, cp.getValue());
+                    });
+                    writeable.save(null);
+                }
+            }
+        });
+
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(SCOPE_SITE_SETTINGS, StashedStartupProperties.class)
+        {
+            @Override
+            public void handle(Map<StashedStartupProperties, StartupPropertyEntry> properties)
+            {
+                _stashedProperties = properties;
+            }
+        });
     }
 
     @Override
@@ -676,11 +976,17 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        String urls =  lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
+        String urls = lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
         if (StringUtils.isNotBlank(urls))
         {
             return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));
         }
         return new ArrayList<>();
+    }
+
+    @Override
+    public Map<StashedStartupProperties, StartupPropertyEntry> getStashedProperties()
+    {
+        return _stashedProperties;
     }
 }

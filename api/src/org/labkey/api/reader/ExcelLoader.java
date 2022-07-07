@@ -906,16 +906,21 @@ public class ExcelLoader extends DataLoader
             {
                 // Get the cell reference
                 String r = attributes.getValue("r");
-                int firstDigit = -1;
-                for (int c = 0; c < r.length(); ++c)
+                if (r != null)
                 {
-                    if (Character.isDigit(r.charAt(c)))
+                    int firstDigit = -1;
+                    for (int c = 0; c < r.length(); ++c)
                     {
-                        firstDigit = c;
-                        break;
+                        if (Character.isDigit(r.charAt(c)))
+                        {
+                            firstDigit = c;
+                            break;
+                        }
                     }
+                    thisColumn = nameToColumn(r.substring(0, firstDigit));
                 }
-                thisColumn = nameToColumn(r.substring(0, firstDigit));
+                else
+                    thisColumn = -1;
 
                 // Set up defaults.
                 this.nextDataType = xssfDataType.NUMBER;
@@ -1037,6 +1042,11 @@ public class ExcelLoader extends DataLoader
                         thisValue = "(TODO: Unexpected type: " + nextDataType + ")";
                         break;
                 }
+
+                // Issue 45764: if we couldn't get the column index from the attributes in startElement, use
+                // the next value based on the current row ArrayList
+                if (thisColumn == -1)
+                    thisColumn = currentRow.size();
 
                 while (currentRow.size() <= thisColumn)
                     currentRow.add(null);

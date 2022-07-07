@@ -123,6 +123,10 @@ public interface FileContentService
 
     void setSiteDefaultRoot(File root, User user);
 
+    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
+
+    boolean isFileRootSetViaStartupProperty();
+
     @NotNull
     File getUserFilesRoot();
 

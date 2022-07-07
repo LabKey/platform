@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
@@ -30,13 +28,14 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -104,60 +103,50 @@ public interface AuthenticationProvider
     }
 
     /**
-     * Override to retrieve and save startup properties intended for this provider. Invoked after new install only.
+     * Override to retrieve and save startup properties intended for this provider. Invoked after every server startup.
      */
     default void handleStartupProperties()
     {
     }
 
-    // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
+    // Retrieves all the startup properties in the specified categories, populates them into a form, and saves the form
+    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
     {
-        Map<String, String> map = getPropertyMap(categories);
+        assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("Description") || c.name().equals("Enabled")).count() == 2 :
+            type.getName() + " does not define required Description and Enabled constants!";
 
-        if (!map.isEmpty())
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
         {
-            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
-            FORM form = factory.fromMap(map);
-
-            // If description is provided in the startup properties file and an existing configuration for this provider
-            // matches that description then update the existing configuration. If not, create a new configuration. #39474
-            if (form.getDescription() != null)
+            @Override
+            public void handle(Map<T, StartupPropertyEntry> properties)
             {
-                AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
-                    .filter(ac -> ac.getDescription().equals(form.getDescription()))
-                    .map(AuthenticationConfiguration::getRowId)
-                    .findFirst()
-                    .ifPresent(form::setRowId);
+                if (!properties.isEmpty())
+                {
+                    Map<String, String> map = properties.entrySet().stream()
+                        .collect(Collectors.toMap(e-> e.getKey().getPropertyName(), e->e.getValue().getValue()));
+
+                    ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
+                    FORM form = factory.fromMap(map);
+
+                    // If description is provided in the startup properties file and an existing configuration for this provider
+                    // matches that description then update the existing configuration. If not, create a new configuration. #39474
+                    if (form.getDescription() != null)
+                    {
+                        AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                            .filter(ac -> ac.getDescription().equals(form.getDescription()))
+                            .map(AuthenticationConfiguration::getRowId)
+                            .findFirst()
+                            .ifPresent(form::setRowId);
+                    }
+                    else
+                    {
+                        form.setDescription(form.getProvider() + " Configuration");
+                    }
+
+                    SaveConfigurationAction.saveForm(form, null);
+                }
             }
-            else
-            {
-                form.setDescription(form.getProvider() + " Configuration");
-            }
-
-            SaveConfigurationAction.saveForm(form, null);
-        }
-    }
-
-    // Helper that retrieves all the configuration properties in the specified category and saves them into a property map with the same name
-    default void saveStartupProperties(String category)
-    {
-        Map<String, String> map = getPropertyMap(Collections.singleton(category));
-
-        if (!map.isEmpty())
-        {
-            PropertyMap propertyMap = PropertyManager.getWritableProperties(category, true);
-            propertyMap.clear();
-            propertyMap.putAll(map);
-            propertyMap.save();
-        }
-    }
-
-    private Map<String, String> getPropertyMap(Collection<String> categories)
-    {
-        return categories.stream()
-            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
-            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+        });
     }
 
     interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
@@ -170,8 +159,17 @@ public interface AuthenticationProvider
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
-    interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface SSOAuthenticationProvider<SSO extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<SSO>, AuthenticationConfigurationFactory<SSO>
     {
+        @Override
+        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+        {
+            // SSO authentication provider StartupProperty enums must define AutoRedirect constant
+            assert Arrays.stream(type.getEnumConstants()).anyMatch(c -> c.name().equals("AutoRedirect")) :
+                type.getName() + " does not define required AutoRedirect constant!";
+
+            PrimaryAuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
+        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
