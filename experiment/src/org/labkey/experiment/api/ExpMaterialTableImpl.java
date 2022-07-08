@@ -900,7 +900,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(propertyColumn.getFieldKey()) || propertyColumn.isMvIndicatorColumn())
                 {
                     sql.append(comma);
-                    if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
+                    boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
+                            || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
+                    if (!rootField
                             || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
                             || propertyColumn.isUniqueIdField())
                     {

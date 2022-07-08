@@ -27,6 +27,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -71,12 +74,83 @@ import java.util.StringTokenizer;
 public class MailHelper
 {
     private static Logger _log = LogManager.getLogger(MailHelper.class);
+    private static Session DEFAULT_SESSION;
     private static Session _session = null;
     public static final String MESSAGE_AUDIT_EVENT = "MessageAuditEvent";
 
     static
     {
+        DEFAULT_SESSION = initDefaultSession();
         setSession(null);
+    }
+
+    public static void init()
+    {
+        // Invoked just to initialize DEFAULT_SESSION
+    }
+
+    private static class SmtpStartupProperty implements StartupProperty
+    {
+        @Override
+        public String getPropertyName()
+        {
+            return "<JavaMail SMTP setting>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "One property for each JavaMail SMTP setting, documented here: https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html";
+        }
+    }
+
+    private static Session initDefaultSession()
+    {
+        Session session = null;
+        try
+        {
+            /* first check if specified in startup properties */
+            var properties = new Properties();
+            ModuleLoader.getInstance().handleStartupProperties(new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
+            {
+                @Override
+                public void handle(Collection<StartupPropertyEntry> entries)
+                {
+                    entries.forEach(entry -> properties.put("mail.smtp." + entry.getName(), entry.getValue()));
+                }
+            });
+            if (!properties.isEmpty())
+            {
+                session = Session.getInstance(properties);
+            }
+            else
+            {
+                /* check if specified in tomcat config */
+                InitialContext ctx = new InitialContext();
+                Context envCtx = (Context) ctx.lookup("java:comp/env");
+                session = (Session) envCtx.lookup("mail/Session");
+            }
+
+            if ("true".equalsIgnoreCase(session.getProperty("mail.smtp.ssl.enable")) ||
+                    "true".equalsIgnoreCase(session.getProperty("mail.smtp.starttls.enable")))
+            {
+                String username = session.getProperty("mail.smtp.user");
+                String password = session.getProperty("mail.smtp.password");
+                session = Session.getInstance(session.getProperties(), new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication()
+                    {
+                        return new PasswordAuthentication(username, password);
+                    }
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            _log.log(Level.ERROR, "Exception loading mail session", e);
+        }
+
+        return session;
     }
 
     public static void setSession(@Nullable Session session)
@@ -87,48 +161,12 @@ public class MailHelper
         }
         else
         {
-            try
-            {
-                /* first check if specified in startup properties */
-                var config = ModuleLoader.getInstance().getConfigProperties("mail_smtp");
-                var properties = new Properties();
-                config.forEach(p -> properties.put("mail.smtp." + p.getName(), p.getValue()));
-                if (!properties.isEmpty())
-                {
-                    _session = Session.getInstance(properties);
-                }
-                else
-                {
-                    /* check if specified in tomcat config */
-                    InitialContext ctx = new InitialContext();
-                    Context envCtx = (Context) ctx.lookup("java:comp/env");
-                    _session = (Session) envCtx.lookup("mail/Session");
-                }
-
-                if ("true".equalsIgnoreCase(_session.getProperty("mail.smtp.ssl.enable")) ||
-                    "true".equalsIgnoreCase(_session.getProperty("mail.smtp.starttls.enable")))
-                {
-                    _session = Session.getInstance(_session.getProperties(), new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication()
-                        {
-                            String username = _session.getProperty("mail.smtp.user");
-                            String password = _session.getProperty("mail.smtp.password");
-
-                            return new PasswordAuthentication(username, password);
-                        }
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                _log.log(Level.ERROR, "Exception loading mail session", e);
-            }
+            _session = DEFAULT_SESSION;
         }
     }
 
     /**
-     * Creates a blank email message.  Caller must set all fields before sending.
+     * Creates a blank email message. Caller must set all fields before sending.
      */
     public static ViewMessage createMessage()
     {

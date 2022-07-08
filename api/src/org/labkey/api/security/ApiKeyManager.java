@@ -36,6 +36,9 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
@@ -45,6 +48,7 @@ import org.labkey.api.view.UnauthorizedException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -145,26 +149,48 @@ public class ApiKeyManager
 
     private static final String API_KEY_SCOPE = "ApiKey";
 
+    private static final class ApiKeyStartupProperty implements StartupProperty
+    {
+        @Override
+        public String getPropertyName()
+        {
+            return "<user email address>";
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Assigns the specified API key to the specified user. User must already exist.";
+        }
+    }
+
     public void handleStartupProperties()
     {
-        ModuleLoader.getInstance().getConfigProperties(API_KEY_SCOPE).forEach(prop->{
-            try
+        ModuleLoader.getInstance().handleStartupProperties(new LenientStartupPropertyHandler<>(API_KEY_SCOPE, new ApiKeyStartupProperty())
+        {
+            @Override
+            public void handle(Collection<StartupPropertyEntry> entries)
             {
-                User user = UserManager.getUser(new ValidEmail(prop.getName()));
+                entries.forEach(prop -> {
+                    try
+                    {
+                        User user = UserManager.getUser(new ValidEmail(prop.getName()));
 
-                if (null == user)
-                    throw new ConfigurationException("Unrecognized user specified in ApiKey startup property: " + prop.getName());
+                        if (null == user)
+                            throw new ConfigurationException("Unrecognized user specified in ApiKey startup property: " + prop.getName());
 
-                String apiKey = prop.getValue();
+                        String apiKey = prop.getValue();
 
-                if (!StringUtils.startsWith(apiKey, "apikey|"))
-                    throw new ConfigurationException("Invalid API key specified in ApiKey startup property; API keys must start with \"apikey|\": " + apiKey);
+                        if (!StringUtils.startsWith(apiKey, "apikey|"))
+                            throw new ConfigurationException("Invalid API key specified in ApiKey startup property; API keys must start with \"apikey|\": " + apiKey);
 
-                createKey(user, -1, apiKey);
-            }
-            catch (InvalidEmailException e)
-            {
-                throw new ConfigurationException("Invalid email address specified in ApiKey startup property: " + prop.getName(), e);
+                        createKey(user, -1, apiKey);
+                    }
+                    catch (InvalidEmailException e)
+                    {
+                        throw new ConfigurationException("Invalid email address specified in ApiKey startup property: " + prop.getName(), e);
+                    }
+                });
             }
         });
     }
