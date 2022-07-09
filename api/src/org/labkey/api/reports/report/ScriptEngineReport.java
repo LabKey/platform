@@ -24,30 +24,16 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
-import org.labkey.api.data.ResultsImpl;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.StashingResultsFactory;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -70,16 +56,14 @@ import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.DataView;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.api.writer.VirtualFile;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -100,6 +84,16 @@ import java.util.regex.Pattern;
  * Time: 2:45:37 PM
  *
  * A Report implementation that uses a ScriptEngine instance to execute the associated script.
+ *
+ * NOTE: This tree of the ScriptReport hierarchy is a little funny.  There are three main branches below this class and
+ * only one of them is actually uses a native javax.script.ScriptEngine.
+ *
+ *  1) InternalScriptEngineReport uses javax.script.ScriptEngine, but I'm not sure how to even create one of these...
+ *  2) JavaScriptReport is a executes javascript code in the browser (so not a ScriptEngine)
+ *  3) ExternalScriptEngineReport uses an external process to run the script, this process is wrapped in the javax.script.ScriptEngine interface (???)
+ *
+ *  See Also ScriptProcessReport which does not use javax.script.ScriptEngine.  It does however, try to use a lot of the
+ *  patterns established here (and shared public static methods where possible).
 */
 public abstract class ScriptEngineReport extends ScriptReport implements Report.ResultSetGenerator
 {
@@ -108,7 +102,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     public static final String TYPE = "ReportService.scriptEngineReport";
     public static final String DATA_INPUT = "input_data.tsv";
-    public static final String REPORT_DIR = "reports_temp";
     public static final String FILE_PREFIX = "rpt";
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
@@ -119,6 +112,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
         ParamReplacementSvc.get().registerHandler(new TextOutput());
+//        ParamReplacementSvc.get().registerHandler(new MarkdownOutput());
         ParamReplacementSvc.get().registerHandler(new HtmlOutput());
         ParamReplacementSvc.get().registerHandler(new SvgOutput());
         ParamReplacementSvc.get().registerHandler(new TsvOutput());
@@ -145,7 +139,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return RReportDescriptor.TYPE;
     }
 
-    @Override
     public ScriptEngine getScriptEngine(Container c)
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
@@ -177,41 +170,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     @Override
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
-        ReportDescriptor descriptor = getDescriptor();
-        QueryView view = createQueryView(context, descriptor);
-        validateQueryView(view);
-
-        if (view != null)
-        {
-            view.getSettings().setMaxRows(Table.ALL_ROWS);
-            DataView dataView = view.createDataView();
-            DataRegion rgn = dataView.getDataRegion();
-            RenderContext ctx = dataView.getRenderContext();
-            rgn.setAllowAsync(false);
-
-            // temporary code until we add a more generic way to specify a filter or grouping on the chart
-            final String filterParam = descriptor.getProperty(ReportDescriptor.Prop.filterParam);
-
-            if (!StringUtils.isEmpty(filterParam))
-            {
-                final String filterValue = (String)context.get(filterParam);
-
-                if (filterValue != null)
-                {
-                    SimpleFilter filter = new SimpleFilter();
-                    filter.addCondition(filterParam, filterValue, CompareType.EQUAL);
-
-                    ctx.setBaseFilter(filter);
-                }
-            }
-
-            if (null == rgn.getResults(ctx))
-                return null;
-
-            return new ResultsImpl(ctx);
-        }
-
-        return null;
+        return super._generateResults(context, allowAsyncQuery);
     }
 
     protected boolean validateScript(String text, List<String> errors)
@@ -231,7 +190,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
     {
         File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
-
         ResultsFactory factory = ()-> {
             try
             {
@@ -242,42 +200,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 throw new RuntimeException(e);
             }
         };
-
-        try (StashingResultsFactory srf = new StashingResultsFactory(factory))
-        {
-            Results results = srf.get();
-            if (results != null && results.getResultSet() != null)
-            {
-                ResultSetMetaData md = results.getMetaData();
-                List<String> outputColumnNames = outputColumnNames(results);
-                List<DisplayColumn> dataColumns = new ArrayList<>();
-
-                for (int i = 0; i < md.getColumnCount(); i++)
-                {
-                    int sqlColumn = i + 1;
-                    dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new BaseColumnInfo(md, sqlColumn)));
-                }
-
-                // TSVGridWriter closes the Results at render time
-                try (TSVGridWriter tsv = new TSVGridWriter(srf, dataColumns))
-                {
-                    tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
-                    tsv.write(resultFile);
-                }
-            }
-        }
-        catch (RuntimeException e)
-        {
-            Throwable cause = e.getCause();
-
-            if (cause instanceof ValidationException)
-                throw (ValidationException)cause;
-
-            throw e;
-        }
-
-        return resultFile;
+        return _createInputDataFile(context, factory, resultFile);
     }
+
 
     /**
      *
@@ -384,53 +309,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         }
     }
 
-    public static File getTempRoot(ReportDescriptor descriptor)
-    {
-        File tempRoot;
-        boolean isPipeline = BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground));
-
-        try
-        {
-            if (isPipeline && descriptor.getContainerId() != null)
-            {
-                Container c = ContainerManager.getForId(descriptor.getContainerId());
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                tempRoot = root.resolvePath(REPORT_DIR);
-
-                if (!tempRoot.exists())
-                    tempRoot.mkdirs();
-            }
-            else
-            {
-                tempRoot = getDefaultTempRoot();
-
-                if (!tempRoot.exists())
-                    tempRoot.mkdirs();
-            }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Error setting up temp directory", e);
-        }
-
-        return tempRoot;
-    }
-
-    @NotNull
-    public static File getDefaultTempRoot()
-    {
-        File tempDir = new File(System.getProperty("java.io.tmpdir"));
-        return new File(tempDir, REPORT_DIR);
-    }
-
-    protected List<String> outputColumnNames(Results r) throws SQLException
+    @Override
+    protected List<String> outputColumnNames(Results r)
     {
         assert null != r.getResultSet();
         CaseInsensitiveHashSet aliases = new CaseInsensitiveHashSet(); // output names
         Map<String, String> remap = new CaseInsensitiveHashMap<>();       // resultset name to output name
-                
+
         // process the FieldKeys in order to be backward compatible
-        for (Map.Entry<FieldKey,ColumnInfo> e : r.getFieldMap().entrySet())
+        for (Map.Entry<FieldKey, ColumnInfo> e : r.getFieldMap().entrySet())
         {
             ColumnInfo col = e.getValue();
             FieldKey fkey = e.getKey();
@@ -442,7 +329,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             {
                 int i;
 
-                for (i=1; !aliases.add(alias+i); i++)
+                for (i = 1; !aliases.add(alias + i); i++)
                     ;
 
                 alias = alias + i;
@@ -451,35 +338,42 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             remap.put(col.getAlias(), alias);
         }
 
-        ResultSetMetaData md = r.getResultSet().getMetaData();
-        ArrayList<String> ret = new ArrayList<>(md.getColumnCount());
-        // now go through the resultset
-
-        for (int col=1, count=md.getColumnCount(); col<=count; col++)
+        try
         {
-            String name = md.getColumnName(col);
-            String alias = remap.get(name);
+            ResultSetMetaData md = r.getResultSet().getMetaData();
+            ArrayList<String> ret = new ArrayList<>(md.getColumnCount());
+            // now go through the resultset
 
-            if (null != alias)
+            for (int col = 1, count = md.getColumnCount(); col <= count; col++)
             {
+                String name = md.getColumnName(col);
+                String alias = remap.get(name);
+
+                if (null != alias)
+                {
+                    ret.add(alias);
+                    continue;
+                }
+
+                alias = ColumnInfo.propNameFromName(name).toLowerCase();
+
+                if (!aliases.add(alias))
+                {
+                    int i;
+                    for (i = 1; !aliases.add(alias + i); i++)
+                        ;
+                    alias = alias + i;
+                }
+
                 ret.add(alias);
-                continue;
             }
 
-            alias = ColumnInfo.propNameFromName(name).toLowerCase();
-
-            if (!aliases.add(alias))
-            {
-                int i;
-                for (i=1; !aliases.add(alias+i); i++)
-                    ;
-                alias = alias + i;
-            }
-
-            ret.add(alias);
+            return ret;
         }
-
-        return ret;
+        catch (SQLException sqlx)
+        {
+            throw UnexpectedException.wrap(sqlx);
+        }
     }
     
 
@@ -550,7 +444,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     param.setHeaderVisible(false);
 
                 param.setReport(report);
-                view.addView(param.render(context));
+                view.addView(param.getView(context));
 
                 return true;
             }
@@ -722,75 +616,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
 
     @Override
-    public void serializeToFolder(FolderExportContext ctx, VirtualFile directory) throws IOException
-    {
-        ScriptReportDescriptor descriptor = getDescriptor();
-
-        if (descriptor.getReportId() != null)
-        {
-            // for script based reports, write the script portion to a separate file to facilitate script modifications
-            String scriptFileName = getSerializedScriptFileName(ctx);
-
-            try (PrintWriter writer = directory.getPrintWriter(scriptFileName))
-            {
-                String script = StringUtils.defaultString(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
-                writer.write(script);
-            }
-
-            super.serializeToFolder(ctx, directory);
-        }
-        else
-            throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
-    }
-
-    protected String getSerializedScriptFileName()
-    {
-        return getSerializedScriptFileName(null);
-    }
-    protected String getSerializedScriptFileName(FolderExportContext context)
+    protected String getDefaultExtension(FolderExportContext context)
     {
         ScriptEngine engine = getScriptEngine(context.getContainer());
-        String extension = "script";
-        String reportName;
-
         if (engine != null)
-            extension = engine.getFactory().getExtensions().get(0);
-
-        ReportNameContext rnc = context.getContext(ReportNameContext.class);
-        reportName = rnc.getSerializedName();
-
-        return FileUtil.makeLegalName(String.format("%s.%s", reportName, extension));
+            return engine.getFactory().getExtensions().get(0);
+        return super.getDefaultExtension(context);
     }
 
-    @Override
-    public void afterDeserializeFromFile(File reportFile) throws IOException
-    {
-        if (reportFile.exists())
-        {
-            // check to see if there is a separate script file on the disk, a separate
-            // script file takes precedence over any meta-data based script.
-
-            File scriptFile = new File(reportFile.getParent(), getSerializedScriptFileName());
-
-            if (scriptFile.exists())
-            {
-                StringBuilder sb = new StringBuilder();
-
-                try (BufferedReader br = Readers.getReader(scriptFile))
-                {
-                    String l;
-
-                    while ((l = br.readLine()) != null)
-                    {
-                        sb.append(l);
-                        sb.append('\n');
-                    }
-
-                    getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, sb.toString());
-                }
-            }
-        }
-    }
 
     public static class NADisplayColumn extends DataColumn
     {

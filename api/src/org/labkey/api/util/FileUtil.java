@@ -1063,6 +1063,10 @@ quickScan:
 
     public static String makeLegalName(String name)
     {
+        if (name == null)
+        {
+            return "__null__";
+        }
         //limit to 255 chars (FAT and OS X)
         //replace illegal chars
         //can't end with space (windows)

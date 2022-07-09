@@ -51,6 +51,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -97,6 +98,7 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
+import org.labkey.study.reports.ReportManager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -1111,5 +1113,11 @@ public class StudyServiceImpl implements StudyService
     public boolean participantExists(Study study, String participantId)
     {
         return null != StudyManager.getInstance().getParticipant(study, participantId);
+    }
+
+    @Override
+    public ReportUtil.ReportFilter getStudyReportFilter(boolean editOnly)
+    {
+        return new ReportManager.StudyReportFilter(editOnly);
     }
 }

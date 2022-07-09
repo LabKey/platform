@@ -54,6 +54,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
+import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -328,7 +329,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
         // NOTE there are module reports other than R
         if (id instanceof ModuleReportIdentifier &&
-                (descriptor instanceof ModuleRReportDescriptor || descriptor instanceof ModuleJavaScriptReportDescriptor))
+                (descriptor instanceof ModuleRReportDescriptor || descriptor instanceof ModuleJavaScriptReportDescriptor || descriptor instanceof ModuleIpynbReportDescriptor))
         {
             return _saveModuleReport(context, key, report, skipValidation);
         }
