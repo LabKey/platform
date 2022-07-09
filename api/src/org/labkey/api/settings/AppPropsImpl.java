@@ -17,17 +17,14 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -40,6 +37,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import javax.servlet.ServletContext;
@@ -55,6 +53,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.labkey.api.settings.SiteSettingsProperties.*;
+import static org.labkey.api.settings.RandomStartupProperties.*;
 
 /**
  * Mutable backing implementation for server-side application settings.
@@ -70,345 +70,17 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     private static Map<StashedStartupProperties, StartupPropertyEntry> _stashedProperties = Map.of();
 
-    // Site settings constants are defined here in the same order as on the site settings page
-    public enum SiteSettingsProperties implements StartupProperty
-    {
-        defaultDomain("Default email domain for authentication purposes. DO NOT USE... use Authentication.DefaultDomain instead.")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                AuthenticationManager.setDefaultDomain(UserManager.getGuestUser(), value);
-                LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
-            }
-        },
-        administratorContactEmail("Primary site administrator")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setAdministratorContactEmail(value);
-            }
-        },
-        baseServerURL("Base server URL (used to create links in emails sent by the system)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                try
-                {
-                    writeable.setBaseServerUrl(value);
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new IllegalArgumentException("Invalid URI for property " + name() + ": " + value, e);
-                }
-            }
-        },
-        useContainerRelativeURL("Use \"path first\" urls (/home/project-begin.view)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setUseContainerRelativeURL(Boolean.parseBoolean(value));
-            }
-        },
-        usageReportingLevel("Check for updates and report usage statistics to the LabKey team. Valid values: " + Arrays.toString(UsageReportingLevel.values()))
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setUsageReportingLevel(UsageReportingLevel.valueOf(value));
-            }
-        },
-        exceptionReportingLevel("Report exceptions to the LabKey team. Valid values: " + Arrays.toString(ExceptionReportingLevel.values()))
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setExceptionReportingLevel(ExceptionReportingLevel.valueOf(value));
-            }
-        },
-        selfReportExceptions("Report exceptions to the local server")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setSelfReportExceptions(Boolean.parseBoolean(value));
-            }
-        },
-        memoryUsageDumpInterval("Log memory usage frequency in minutes, for debugging. Set to 0 to disable.")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setMemoryUsageDumpInterval(Integer.parseInt(value));
-            }
-        },
-        maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setMaxBLOBSize(Integer.parseInt(value));
-            }
-        },
-        ext3Required("Require ExtJS v3.4.1 be loaded on each page (DEPRECATED)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setExt3Required(Boolean.parseBoolean(value));
-            }
-        },
-        ext3APIRequired("Require ExtJS v3.x based Client API be loaded on each page (DEPRECATED)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setExt3APIRequired(Boolean.parseBoolean(value));
-            }
-        },
-        sslRequired("Require SSL connections (users must connect via SSL)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setSSLRequired(Boolean.parseBoolean(value));
-            }
-        },
-        sslPort("SSL port number (specified in server config file)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setSSLPort(Integer.parseInt(value));
-            }
-        },
-        allowApiKeys("Let users create API keys")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setAllowApiKeys(Boolean.parseBoolean(value));
-            }
-        },
-        apiKeyExpirationSeconds("API key expiration in seconds. -1 represents no expiration.")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setApiKeyExpirationSeconds(Integer.parseInt(value));
-            }
-        },
-        allowSessionKeys("Let users create session keys, which are associated with the user's currents server session")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setAllowSessionKeys(Boolean.parseBoolean(value));
-            }
-        },
-        pipelineToolsDirectory("Semicolon-separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setPipelineToolsDir(value);
-            }
-        },
-        showRibbonMessage("Display ribbon bar message")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setShowRibbonMessage(Boolean.parseBoolean(value));
-            }
-        },
-        ribbonMessage("Ribbon bar message HTML")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setRibbonMessageHtml(value);
-            }
-        },
-        adminOnlyMode("Admin only mode (only site admins may log in)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setUserRequestedAdminOnlyMode(Boolean.parseBoolean(value));
-            }
-        },
-        adminOnlyMessage("Message to users when site is in admin-only mode (Wiki formatting allowed)")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setAdminOnlyMessage(value);
-            }
-        },
-        XFrameOption("Controls whether or not a browser may render a server page in a <frame> , <iframe> or <object>. Valid values: [SAMEORIGIN, ALLOW]")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setXFrameOptions(value);
-            }
-        },
-        navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setNavAccessOpen(Boolean.parseBoolean(value));
-            }
-        };
-
-        private final String _description;
-
-        SiteSettingsProperties(String description)
-        {
-            _description = description;
-        }
-
-        @Override
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public abstract void setValue(WriteableAppProps writeable, String value);
-    }
-
-    // Additional properties that are stored in the "SiteSettings" scope but not exposed on the site settings page
-    public enum RandomStartupProperties implements StartupProperty
-    {
-        BLASTBaseURL("BLAST server URL")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.storeStringValue(BLAST_SERVER_BASE_URL_PROP, value);
-            }
-        },
-        externalRedirectHostURLs("Allowed external redirect hosts")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(value, EXTERNAL_REDIRECT_HOST_DELIMITER)));
-            }
-        },
-        fileUploadDisabled("Disable file upload")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setFileUploadDisabled(Boolean.parseBoolean(value));
-            }
-        },
-        mailRecorderEnabled("Record email messages sent")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setMailRecorderEnabled(Boolean.parseBoolean(value));
-            }
-        },
-        // TODO: Remove SiteRootStartupProperties.siteRootFile in favor of this property
-        siteFileRoot("Site-level file root")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                FileContentService fcs = FileContentService.get();
-                if (null != fcs)
-                {
-                    File fileRoot = new File(value);
-                    fcs.setSiteDefaultRoot(fileRoot, null);
-                    fcs.setFileRootSetViaStartupProperty(true);
-                }
-                else
-                {
-                    LOG.warn("FileContentService is not available! Site-level file root can't be set.");
-                }
-            }
-        },
-        userFileRoot("Enable personal folders for users")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setUserFilesRoot(value);
-            }
-        },
-        webfilesEnabled("Alternative webfiles root")
-        {
-            @Override
-            public void setValue(WriteableAppProps writeable, String value)
-            {
-                writeable.setWebfilesEnabled(Boolean.parseBoolean(value));
-            }
-        };
-
-        private final String _description;
-
-        RandomStartupProperties(String description)
-        {
-            _description = description;
-        }
-
-        @Override
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public abstract void setValue(WriteableAppProps writeable, String value);
-    }
-
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    static final String BASE_SERVER_URL_PROP = "baseServerURL";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
-    static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";
-    static final String SSL_REQUIRED = "sslRequired";
-    static final String SSL_PORT = "sslPort";
-    static final String USER_REQUESTED_ADMIN_ONLY_MODE = "adminOnlyMode";
-    static final String ADMIN_ONLY_MESSAGE = "adminOnlyMessage";
-    static final String SHOW_RIBBON_MESSAGE = "showRibbonMessage";
-    static final String RIBBON_MESSAGE = "ribbonMessage";
-    static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
-    static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
-    static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
-    static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
-    static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
-    static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     static final String EXPERIMENTAL_FEATURE_PREFIX = EXPERIMENTAL_FEATURE + ".";
-    static final String SITE_FILE_ROOT = "siteFileRoot";
-    static final String USER_FILE_ROOT = "userFileRoot";
-    static final String WEBFILES_ROOT_ENABLED = "webfilesEnabled";
-    static final String FILE_UPLOAD_DISABLED = "fileUploadDisabled";
-    static final String MAX_BLOB_SIZE = "maxBLOBSize";
-    static final String EXT3_REQUIRED = "ext3Required";
-    static final String EXT3API_REQUIRED = "ext3APIRequired";
-    static final String NAV_ACCESS_OPEN = "navAccessOpen";
-    static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
-    static final String USE_CONTAINER_RELATIVE_URL = "useContainerRelativeURL";
-    static final String ALLOW_API_KEYS = "allowApiKeys";
-    static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
-    static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
-    static final String X_FRAME_OPTIONS = "XFrameOption";
-    static final String EXTERNAL_REDIRECT_HOSTS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
     static final String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
 
+    private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_GUID = "serverGUID";
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
-    private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
-    private static final Logger LOG = LogManager.getLogger(AppPropsImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(AppPropsImpl.class, "Site settings startup properties");
 
     @Override
     protected String getType()
@@ -485,7 +157,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 BaseServerProperties.validate(initialRequestBaseServerUrl);
 
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
-                writeable.storeStringValue(BASE_SERVER_URL_PROP, initialRequestBaseServerUrl);
+                writeable.storeStringValue(baseServerURL, initialRequestBaseServerUrl);
                 writeable.save(null);
             }
             catch (URISyntaxException e)
@@ -520,7 +192,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public String getBaseServerUrl()
     {
-        return lookupStringValue(BASE_SERVER_URL_PROP, null);
+        return lookupStringValue(baseServerURL, null);
     }
 
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
@@ -572,76 +244,76 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         File webappDir = new File(ModuleLoader.getServletContext().getRealPath(""));
         File binDir = new File(webappDir.getParentFile(), "bin");
 
-        return lookupStringValue(PIPELINE_TOOLS_DIR_PROP, binDir.getAbsolutePath());
+        return lookupStringValue(pipelineToolsDirectory, binDir.getAbsolutePath());
     }
 
     @Override
     public boolean isSSLRequired()
     {
-        return lookupBooleanValue(SSL_REQUIRED, false);
+        return lookupBooleanValue(sslRequired, false);
     }
 
     @Override
     public boolean isUserRequestedAdminOnlyMode()
     {
-        return lookupBooleanValue(USER_REQUESTED_ADMIN_ONLY_MODE, false);
+        return lookupBooleanValue(adminOnlyMode, false);
     }
 
     @Override
     public String getAdminOnlyMessage()
     {
-        return lookupStringValue(ADMIN_ONLY_MESSAGE, "This site is currently undergoing maintenance, and only administrators can log in.");
+        return lookupStringValue(adminOnlyMessage, "This site is currently undergoing maintenance, and only administrators can log in.");
     }
 
     @Override
     public boolean isShowRibbonMessage()
     {
-        return lookupBooleanValue(SHOW_RIBBON_MESSAGE, false);
+        return lookupBooleanValue(showRibbonMessage, false);
     }
 
     @Override
-    public @Nullable String getRibbonMessageHtml()
+    public @Nullable String getRibbonMessage()
     {
-        return lookupStringValue(RIBBON_MESSAGE, null);
+        return lookupStringValue(ribbonMessage, null);
     }
 
 
     @Override
     public int getSSLPort()
     {
-        return lookupIntValue(SSL_PORT, 443);
+        return lookupIntValue(sslPort, 443);
     }
 
     @Override
     public int getMemoryUsageDumpInterval()
     {
-        return lookupIntValue(MEMORY_USAGE_DUMP_INTERVAL, 0);
+        return lookupIntValue(memoryUsageDumpInterval, 0);
     }
 
     @Override
     public int getMaxBLOBSize()
     {
-        return lookupIntValue(MAX_BLOB_SIZE, 50_000_000);
+        return lookupIntValue(maxBLOBSize, 50_000_000);
     }
 
     @Override
     public boolean isExt3Required()
     {
-        return lookupBooleanValue(EXT3_REQUIRED, false);
+        return lookupBooleanValue(ext3Required, false);
     }
 
     @Override
-    public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, false); }
+    public boolean isExt3APIRequired() { return lookupBooleanValue(ext3APIRequired, false); }
 
     @Override
-    public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(SELF_REPORT_EXCEPTIONS, true); }
+    public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(selfReportExceptions, true); }
 
     @Override
     public ExceptionReportingLevel getExceptionReportingLevel()
     {
         try
         {
-            return ExceptionReportingLevel.valueOf(lookupStringValue(EXCEPTION_REPORTING_LEVEL, isDevMode() ? ExceptionReportingLevel.NONE.toString() : ExceptionReportingLevel.MEDIUM.toString()));
+            return ExceptionReportingLevel.valueOf(lookupStringValue(exceptionReportingLevel, isDevMode() ? ExceptionReportingLevel.NONE.toString() : ExceptionReportingLevel.MEDIUM.toString()));
         }
         catch (IllegalArgumentException e)
         {
@@ -652,7 +324,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean isNavigationAccessOpen()
     {
-        return lookupBooleanValue(NAV_ACCESS_OPEN, true);
+        return lookupBooleanValue(navAccessOpen, true);
     }
 
     @Override
@@ -687,7 +359,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public String getBLASTServerBaseURL()
     {
-        return lookupStringValue(BLAST_SERVER_BASE_URL_PROP, "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;LAYOUT=TwoWindows&amp;AUTO_FORMAT=Semiauto&amp;ALIGNMENTS=50&amp;ALIGNMENT_VIEW=Pairwise&amp;CDD_SEARCH=on&amp;CLIENT=web&amp;COMPOSITION_BASED_STATISTICS=on&amp;DATABASE=nr&amp;DESCRIPTIONS=100&amp;ENTREZ_QUERY=(none)&amp;EXPECT=1000&amp;FILTER=L&amp;FORMAT_OBJECT=Alignment&amp;FORMAT_TYPE=HTML&amp;I_THRESH=0.005&amp;MATRIX_NAME=BLOSUM62&amp;NCBI_GI=on&amp;PAGE=Proteins&amp;PROGRAM=blastp&amp;SERVICE=plain&amp;SET_DEFAULTS.x=41&amp;SET_DEFAULTS.y=5&amp;SHOW_OVERVIEW=on&amp;END_OF_HTTPGET=Yes&amp;SHOW_LINKOUT=yes&amp;QUERY=");
+        return lookupStringValue(BLASTBaseURL, "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;LAYOUT=TwoWindows&amp;AUTO_FORMAT=Semiauto&amp;ALIGNMENTS=50&amp;ALIGNMENT_VIEW=Pairwise&amp;CDD_SEARCH=on&amp;CLIENT=web&amp;COMPOSITION_BASED_STATISTICS=on&amp;DATABASE=nr&amp;DESCRIPTIONS=100&amp;ENTREZ_QUERY=(none)&amp;EXPECT=1000&amp;FILTER=L&amp;FORMAT_OBJECT=Alignment&amp;FORMAT_TYPE=HTML&amp;I_THRESH=0.005&amp;MATRIX_NAME=BLOSUM62&amp;NCBI_GI=on&amp;PAGE=Proteins&amp;PROGRAM=blastp&amp;SERVICE=plain&amp;SET_DEFAULTS.x=41&amp;SET_DEFAULTS.y=5&amp;SHOW_OVERVIEW=on&amp;END_OF_HTTPGET=Yes&amp;SHOW_LINKOUT=yes&amp;QUERY=");
     }
 
     @Override
@@ -699,7 +371,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean isMailRecorderEnabled()
     {
-        return lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
+        return lookupBooleanValue(mailRecorderEnabled, false);
     }
 
     @Override
@@ -766,13 +438,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Nullable
     public File getFileSystemRoot()
     {
-        String siteFileRoot = lookupStringValue(SITE_FILE_ROOT, null);
+        String fileRoot = lookupStringValue(siteFileRoot, null);
         // Fall back to "webRoot", the old property name
-        if (null == siteFileRoot)
-            siteFileRoot = lookupStringValue("webRoot", "");
-        if (!StringUtils.isEmpty(siteFileRoot))
+        if (null == fileRoot)
+            fileRoot = lookupStringValue("webRoot", "");
+        if (!StringUtils.isEmpty(fileRoot))
         {
-            return new File(siteFileRoot);
+            return new File(fileRoot);
         }
         return null;
     }
@@ -781,7 +453,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Nullable
     public File getUserFilesRoot()
     {
-        String userRoot = lookupStringValue(USER_FILE_ROOT, "");
+        String userRoot = lookupStringValue(userFileRoot, "");
         if (!StringUtils.isEmpty(userRoot))
         {
             return new File(userRoot);
@@ -795,7 +467,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         try
         {
-            return UsageReportingLevel.valueOf(lookupStringValue(USAGE_REPORTING_LEVEL, isDevMode() ? UsageReportingLevel.NONE.toString() : UsageReportingLevel.ON.toString()));
+            return UsageReportingLevel.valueOf(lookupStringValue(usageReportingLevel, isDevMode() ? UsageReportingLevel.NONE.toString() : UsageReportingLevel.ON.toString()));
         }
         catch (IllegalArgumentException e)
         {
@@ -838,7 +510,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 defaultValue = entry.getValue();
             }
         }
-        String result = lookupStringValue(ADMINISTRATOR_CONTACT_EMAIL, defaultValue);
+        String result = lookupStringValue(administratorContactEmail, defaultValue);
 
         // If that user is no longer a site admin, go back to the default value
         if (!validOptions.contains(result))
@@ -867,31 +539,31 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean getUseContainerRelativeURL()
     {
-        return lookupBooleanValue(USE_CONTAINER_RELATIVE_URL, true);
+        return lookupBooleanValue(useContainerRelativeURL, true);
     }
 
     @Override
     public boolean isAllowApiKeys()
     {
-        return lookupBooleanValue(ALLOW_API_KEYS, false);
+        return lookupBooleanValue(allowApiKeys, false);
     }
 
     @Override
     public int getApiKeyExpirationSeconds()
     {
-        return lookupIntValue(API_KEY_EXPIRATION_SECONDS, -1);
+        return lookupIntValue(apiKeyExpirationSeconds, -1);
     }
 
     @Override
     public boolean isAllowSessionKeys()
     {
-        return lookupBooleanValue(ALLOW_SESSION_KEYS, false);
+        return lookupBooleanValue(allowSessionKeys, false);
     }
 
     @Override
-    public String getXFrameOptions()
+    public String getXFrameOption()
     {
-        return lookupStringValue(X_FRAME_OPTIONS, "SAMEORIGIN");
+        return lookupStringValue(XFrameOption, "SAMEORIGIN");
     }
 
     @Override
@@ -963,20 +635,20 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public boolean isWebfilesRootEnabled()
     {
-        return lookupBooleanValue(WEBFILES_ROOT_ENABLED, false);
+        return lookupBooleanValue(webfilesEnabled, false);
     }
 
     @Override
     public boolean isFileUploadDisabled()
     {
-        return lookupBooleanValue(FILE_UPLOAD_DISABLED, false);
+        return lookupBooleanValue(fileUploadDisabled, false);
     }
 
     @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
-        String urls = lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
+        String urls = lookupStringValue(externalRedirectHostURLs, "");
         if (StringUtils.isNotBlank(urls))
         {
             return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));

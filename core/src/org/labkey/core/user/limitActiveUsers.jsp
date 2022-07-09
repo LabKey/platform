@@ -11,6 +11,7 @@
 <%@ page import="org.labkey.core.user.UserController.LimitActiveUsersAction" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="static org.labkey.core.user.LimitActiveUsersSettings.StartupProperties.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -23,7 +24,7 @@
         <%=formatMissedErrorsInTable("form", 2)%>
         <tr>
             <td class="labkey-form-label">Warn based on the number of active users</td>
-            <td><select name="userWarning" id="userWarning">
+            <td><select name="<%=userWarning%>" id="<%=userWarning%>">
                 <%  boolean userWarning = settings.isUserWarning(); %>
                 <option value="0"<%=selected(!userWarning)%>>No</option>
                 <option value="1"<%=selected(userWarning)%>>Yes</option>
@@ -31,16 +32,16 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Warning level user count</td>
-            <td><input type="text" name="userWarningLevel" id="userWarningLevel" value="<%=settings.getUserWarningLevel()%>" size="6"></td>
+            <td><input type="text" name="<%=userWarningLevel%>" id="<%=userWarningLevel%>" value="<%=settings.getUserWarningLevel()%>" size="6"></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Warning level message</td>
-            <td><textarea id="userWarningMessage" name="userWarningMessage" cols="100" rows="3"><%=h(settings.getUserWarningMessage())%></textarea></td>
+            <td><textarea name="<%=userWarningMessage%>" id="<%=userWarningMessage%>" cols="100" rows="3"><%=h(settings.getUserWarningMessage())%></textarea></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td class="labkey-form-label">Limit the number of active users</td>
-            <td><select name="userLimit" id="limitActiveUsers">
+            <td><select name="<%=userLimit%>" id="<%=userLimit%>">
                 <%  boolean userLimit = settings.isUserLimit(); %>
                 <option value="0"<%=selected(!userLimit)%>>No</option>
                 <option value="1"<%=selected(userLimit)%>>Yes</option>
@@ -48,11 +49,11 @@
         </tr>
         <tr>
             <td class="labkey-form-label">User limit</td>
-            <td><input type="text" name="userLimitLevel" id="userLimitLevel" value="<%=settings.getUserLimitLevel()%>" size="6"></td>
+            <td><input type="text" name="<%=userLimitLevel%>" id="<%=userLimitLevel%>" value="<%=settings.getUserLimitLevel()%>" size="6"></td>
         </tr>
         <tr>
             <td class="labkey-form-label">User limit message</td>
-            <td><textarea id="userLimitMessage" name="userLimitMessage" cols="100" rows="3"><%=h(settings.getUserLimitMessage())%></textarea></td>
+            <td><textarea name="<%=userLimitMessage%>" id="<%=userLimitMessage%>" cols="100" rows="3"><%=h(settings.getUserLimitMessage())%></textarea></td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr>
