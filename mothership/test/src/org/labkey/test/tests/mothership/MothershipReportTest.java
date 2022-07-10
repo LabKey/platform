@@ -131,7 +131,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     public void testServerHostName() throws Exception
     {
         log("Send test server host name from base server url");
-        String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
+        String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerURL()).getHost();
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
