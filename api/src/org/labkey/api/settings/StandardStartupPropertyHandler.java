@@ -1,11 +1,8 @@
 package org.labkey.api.settings;
 
-import org.labkey.api.collections.LabKeyCollectors;
-
 import java.util.Arrays;
-import java.util.Map;
 
-public abstract class StandardStartupPropertyHandler<T extends Enum<T> & StartupProperty> extends StartupPropertyHandler<T>
+public abstract class StandardStartupPropertyHandler<T extends Enum<T> & StartupProperty> extends MapBasedStartupPropertyHandler<T>
 {
     /**
      * @param scope The scope name
@@ -15,10 +12,6 @@ public abstract class StandardStartupPropertyHandler<T extends Enum<T> & Startup
      */
     protected StandardStartupPropertyHandler(String scope, Class<T> type)
     {
-        super(scope, type.getName(), Arrays.stream(type.getEnumConstants())
-            .filter(sp -> null != sp.getPropertyName())
-            .collect(LabKeyCollectors.toCaseInsensitiveLinkedMap(StartupProperty::getPropertyName, sp->sp)));
+        super(scope, type.getName(), Arrays.stream(type.getEnumConstants()));
     }
-
-    public abstract void handle(Map<T, StartupPropertyEntry> properties);
 }

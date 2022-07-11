@@ -25,6 +25,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -58,7 +59,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
-import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.MapBasedStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.StartupPropertyHandler;
@@ -206,7 +207,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
-    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(sph->sph.getStartupPropertyClassName()));
+    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
 
     private List<Module> _modules;
@@ -2158,7 +2159,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return unknownContexts;
     }
 
-    public <T extends Enum<T> & StartupProperty> void handleStartupProperties(StandardStartupPropertyHandler<T> handler)
+    public <T extends StartupProperty> void handleStartupProperties(MapBasedStartupPropertyHandler<T> handler)
     {
         if (handler.performChecks())
             startupPropertyChecks(handler);
@@ -2222,7 +2223,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
         ModuleLoader.getInstance().getStartupPropertyHandlers()
             .forEach(handler -> handler.getProperties().values().forEach(sp -> {
                 String previousScope = propertyScopeMap.put(sp, handler.getScope());
-                assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (" + sp + "\")!";
+                assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (\"" + sp + "\")!";
+            }));
+
+        Set<String> scopeNameMap = new CaseInsensitiveHashSet();
+        ModuleLoader.getInstance().getStartupPropertyHandlers()
+            .forEach(handler -> handler.getProperties().values().forEach(sp -> {
+                boolean notPresent = scopeNameMap.add(handler.getScope() + ":" + sp.getPropertyName());
+                assert notPresent : "Startup property \"" + handler.getScope() + "." + sp.getPropertyName() + "\" is handled by two separate code paths!";
             }));
 
         return true;
