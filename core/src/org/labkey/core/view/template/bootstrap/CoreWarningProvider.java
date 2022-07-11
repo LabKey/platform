@@ -207,16 +207,17 @@ public class CoreWarningProvider implements WarningProvider
 
         try
         {
-            boolean defaultTomcatWebappFound = false;
             Set<String> deployedWebapps = collectAllDeployedApps();
             deployedWebapps.remove(StringUtils.strip(AppProps.getInstance().getContextPath(),"/"));
-            defaultTomcatWebappFound |= deployedWebapps.contains("docs");
-            defaultTomcatWebappFound |= deployedWebapps.contains("HOST_MANAGER_");
-            defaultTomcatWebappFound |= deployedWebapps.contains("EXAMPLES_");
-            defaultTomcatWebappFound |= deployedWebapps.contains("MANAGER_");
+            boolean defaultTomcatWebappFound = deployedWebapps.stream().anyMatch(webapp ->
+                StringUtils.startsWithIgnoreCase(webapp,"docs") ||
+                StringUtils.startsWithIgnoreCase(webapp,"host-manager") ||
+                StringUtils.startsWithIgnoreCase(webapp,"examples") ||
+                StringUtils.startsWithIgnoreCase(webapp,"manager")
+            );
 
             if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
-                addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed.  These may include 'examples', 'docs', 'manager', and 'host-manager'.", "configTomcat", "Tomcat Configuration");
+                addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed. These may include 'docs', 'examples', 'host-manager', and 'manager'.", "configTomcat", "Tomcat Configuration");
         }
         catch (Exception x)
         {
