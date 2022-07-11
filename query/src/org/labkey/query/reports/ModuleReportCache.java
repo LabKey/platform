@@ -232,8 +232,6 @@ public class ModuleReportCache
             // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
 
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
-            var resources = MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(simpleTest);
-
             if (null != simpleTest)
                 assertEquals("Report descriptors from the simpletest module", 5, MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
 
