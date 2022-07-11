@@ -41,14 +41,29 @@ public abstract class AbstractSettingsGroup
         return SITE_CONFIG_USER;
     }
 
+    protected boolean lookupBooleanValue(Enum<?> e, boolean defaultValue)
+    {
+        return lookupBooleanValue(e.name(), defaultValue);
+    }
+
     protected boolean lookupBooleanValue(String name, boolean defaultValue)
     {
         return "TRUE".equalsIgnoreCase(lookupStringValue(name, defaultValue ? "TRUE" : "FALSE" ) );
     }
 
+    protected boolean lookupBooleanValue(Container c, Enum<?> e, boolean defaultValue)
+    {
+        return lookupBooleanValue(c, e.name(), defaultValue);
+    }
+
     protected boolean lookupBooleanValue(Container c, String name, boolean defaultValue)
     {
         return "TRUE".equalsIgnoreCase(lookupStringValue(c, name, defaultValue ? "TRUE" : "FALSE"));
+    }
+
+    protected int lookupIntValue(Enum<?> e, int defaultValue)
+    {
+        return lookupIntValue(e.name(), defaultValue);
     }
 
     protected int lookupIntValue(String name, int defaultValue)
@@ -61,6 +76,11 @@ public abstract class AbstractSettingsGroup
         {
             return defaultValue;
         }
+    }
+
+    protected String lookupStringValue(Enum<?> e, @Nullable String defaultValue)
+    {
+        return lookupStringValue(e.name(), defaultValue);
     }
 
     protected String lookupStringValue(String name, @Nullable String defaultValue)
@@ -76,6 +96,11 @@ public abstract class AbstractSettingsGroup
         }
 
         return null != root ? lookupStringValue(root, name, defaultValue) : defaultValue;
+    }
+
+    protected String lookupStringValue(Container c, Enum<?> e, @Nullable String defaultValue)
+    {
+        return lookupStringValue(c, e.name(), defaultValue);
     }
 
     protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)

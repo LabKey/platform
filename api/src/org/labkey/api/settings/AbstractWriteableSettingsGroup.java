@@ -66,14 +66,29 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         _properties.save();
     }
 
+    protected void storeBooleanValue(Enum<?> e, boolean value)
+    {
+        storeBooleanValue(e.name(), value);
+    }
+
     protected void storeBooleanValue(String name, boolean value)
     {
         storeStringValue(name, value ? "TRUE" : "FALSE");
     }
 
+    protected void storeIntValue(Enum<?> e, int value)
+    {
+        storeIntValue(e.name(), value);
+    }
+
     protected void storeIntValue(String name, int value)
     {
         storeStringValue(name, Integer.toString(value));
+    }
+
+    protected void storeStringValue(Enum<?> e, @Nullable String value)
+    {
+        storeStringValue(e.name(), value);
     }
 
     protected void storeStringValue(String name, @Nullable String value)
@@ -84,6 +99,11 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         }
 
         _properties.put(name, value);
+    }
+
+    public void remove(Enum<?> e)
+    {
+        remove(e.name());
     }
 
     // Clear out a single property... should then inherit this value from parent

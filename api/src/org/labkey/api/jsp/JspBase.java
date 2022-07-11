@@ -43,7 +43,6 @@ import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
@@ -572,17 +571,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return getViewContext().getMessage(e);
     }
 
-    JspView<?> _me = null;
-
-    JspView<?> getView()
-    {
-        if (null == _me)
-            _me = (JspView<?>)HttpView.currentView();
-        return _me;
-    }
-
-
-
     //
     // Spring error handling helpers
     //
@@ -670,7 +658,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
-    IdentityHashMap<ObjectError,String> _returnedErrors = new IdentityHashMap<>();
+    IdentityHashMap<ObjectError, String> _returnedErrors = new IdentityHashMap<>();
 
     // For extra credit, return list of errors not returned by formatErrorsForPath() or formatErrorForPath()
     public List<ObjectError> getMissedErrors(String bean)
