@@ -126,6 +126,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (_allObjects == null) // On first post, this is empty, so use the current selection
             _allObjects = new ArrayList<>(_selectedObjects);
+
+        if (form.getReturnURLHelper() == null)
+            errors.reject(SpringActionController.ERROR_MSG, "No return URL configured for this form");
     }
 
     @Override
