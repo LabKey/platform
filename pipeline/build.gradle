@@ -1,4 +1,5 @@
 import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
 
 plugins {
     id 'org.labkey.build.module'
@@ -6,34 +7,117 @@ plugins {
 
 dependencies {
     implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-    external("org.apache.activemq:activemq-core:${activemqCoreVersion}") {
-      exclude group: "javax.servlet", module: "servlet-api"
-    }
-    external("org.mule.modules:mule-module-builders:${muleModuleBuildersVersion}") // name changed based on pom file
-            {
-                // exclude slf4j here because it is also included by the transitive dependency on the tika library
-                exclude group: "org.slf4j", module: "slf4j-api"
-                exclude group: "org.slf4j", module: "slf4j-log4j12"
-                exclude group: "commons-beanutils", module: "commons-beanutils"
-                // This library causes interference with slf4j logger calls (method not found errors)
-                exclude group: "org.slf4j", module: "jcl104-over-slf4j"
-            }
-    external "com.thoughtworks.xstream:xstream:${xstreamVersion}"
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.activemq:activemq-core:${activemqCoreVersion}",
+            "Apache ActiveMQ",
+            "Apache",
+            "http://activemq.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Java Message Service queuing",
+        ),
+        {
+            exclude group: "javax.servlet", module: "servlet-api"
+        }
+    )
+
     // The following are all dependencies of the mule-module-builders, but since we use a version that is not readily available
     // externally, the pom file that is generated does not work (creates a stack overflow), so we declare these separately
     // If we ever update the version to use something more standard, I hope that these can go away.
-    external "commons-lang:commons-lang:${commonsLangVersion}"
-    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-connector_1.5_spec', version: geronimoJ2eeConnector15SpecVersion
-//    external group: 'org.apache.geronimo.specs', name: 'geronimo-j2ee-management_1.0_spec', version: geronimoJ2eeManagement10SpecVersion
-    // the jug jar offers a version with LGPL licence as well as  version with Apache Software Licence, distinguished by the classifier (lgpl vs asl)
-    external group: 'org.safehaus.jug', name: 'jug', version: jugVersion, classifier: 'asl'
-    external("dom4j:dom4j:${dom4jVersion}")
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "commons-lang:commons-lang:${commonsLangVersion}",
+            "Commons Lang",
+            "Apache",
+            "http://jakarta.apache.org/commons/lang/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Language helpers; older version required by Mule",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "dom4j:dom4j:${dom4jVersion}",
+            "DOM4J",
+            "DOM4J",
+            "http://www.dom4j.org/",
+            "BSD Style",
+            "http://www.dom4j.org/license.html",
+            "Pipeline (Mule XML parsing)",
+        ),
         {
-            // dom4j and jaxen don't play well together for tomcat versions higher than 7.0.33 apparently 
+            // dom4j and jaxen don't play well together for tomcat versions higher than 7.0.33 apparently
             // (but seem OK for tomcat8).  We exclude jaxen since that doesn't seem to be required for our purposes
             // Another possibility here would be to upgrade to jaxen-1.1.6 and dom4j-1.6.1
             exclude group:"jaxen", module: "jaxen"
         }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.geronimo.specs:geronimo-j2ee-connector_1.5_spec:${geronimoJ2eeConnector15SpecVersion}",
+            "J2EE Connector API",
+            "Apache Geronimo",
+            "http://geronimo.apache.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "J2EE Connector API classes",
+        )
+    )
+
+    // the jug jar offers a version with LGPL licence as well as version with Apache Software Licence, distinguished by the classifier (lgpl vs asl)
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.safehaus.jug:jug:${jugVersion}:asl",
+            "Jug",
+            "Safehaus",
+            "http://jug.safehaus.org/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Java UUID generator",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.mule.modules:mule-module-builders:${muleModuleBuildersVersion}", // name changed based on pom file
+            "Mule Enterprise Service Bus",
+            "MuleSoft",
+            "http://www.mulesoft.org/",
+            "Common Public Attribution License Version 1.0",
+            "http://www.opensource.org/licenses/cpal_1.0",
+            "Enterprise service bus implementation",
+        ),
+        {
+            // exclude slf4j here because it is also included by the transitive dependency on the tika library
+            exclude group: "org.slf4j", module: "slf4j-api"
+            exclude group: "org.slf4j", module: "slf4j-log4j12"
+            exclude group: "commons-beanutils", module: "commons-beanutils"
+            // This library causes interference with slf4j logger calls (method not found errors)
+            exclude group: "org.slf4j", module: "jcl104-over-slf4j"
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.thoughtworks.xstream:xstream:${xstreamVersion}",
+            "XStream",
+            "XStream",
+            "http://x-stream.github.io/index.html",
+            "BSD",
+            "http://x-stream.github.io/license.html",
+            "Pipeline (Mule dependency)",
+        )
+    )
 
     BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
     BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: 'apiJarFile')

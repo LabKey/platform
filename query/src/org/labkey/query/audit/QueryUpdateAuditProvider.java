@@ -273,8 +273,8 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             fields.add(createPropertyDescriptor(COLUMN_NAME_ROW_PK, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_SCHEMA_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_QUERY_NAME, PropertyType.STRING));
-            fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
-            fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }

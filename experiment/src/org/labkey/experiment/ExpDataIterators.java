@@ -224,8 +224,8 @@ public class ExpDataIterators
         {
             if (_aliquotedFromColInd == null)
             {
-                Map<String, Integer> columnNameMap = ((SimpleTranslator) data).getColumnNameMap();
-                if (columnNameMap != null && columnNameMap.containsKey("AliquotedFrom"))
+                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
+                if (columnNameMap.containsKey("AliquotedFrom"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
                 else
                     _aliquotedFromColInd = -1;
@@ -1379,6 +1379,9 @@ public class ExpDataIterators
                     {
                         if (isAliquot)
                         {
+                            if (namePart.equals(dataType) && entityName.equals(aliquotedFrom))
+                                continue;
+
                             String message = "Sample derivation parent input is not allowed for aliquots";
                             throw new ValidationException(message);
                         }

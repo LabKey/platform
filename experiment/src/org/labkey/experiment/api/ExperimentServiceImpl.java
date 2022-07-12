@@ -841,7 +841,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
                     catch (DeadlockLoserDataAccessException dldae)
                     {
-                        // if we're not in an transaction just keep going...
+                        // if we're not in a transaction just keep going...
                         if (dbscope.isTransactionActive())
                             throw dldae;
                     }
@@ -3136,6 +3136,17 @@ public class ExperimentServiceImpl implements ExperimentService
 
         void sync(@Nullable Map<String, Integer> cpasTypeToObjectId)
         {
+            DbScope expScope = getExpSchema().getScope();
+            expScope.executeWithRetry((DbScope.RetryFn<Void>) tx -> {
+                syncInner(cpasTypeToObjectId);
+                return null;
+            });
+        }
+
+        private void syncInner(@Nullable Map<String, Integer> cpasTypeToObjectId)
+        {
+            assert getExpSchema().getScope().isTransactionActive();
+
             // don't do any updates if we are just verifying
             if (verifyEdgesNoInsert)
                 deleteFirst = false;
@@ -3144,197 +3155,193 @@ public class ExperimentServiceImpl implements ExperimentService
             timer.start();
 
             LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
-            try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+            // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
+            SQLFragment datas = new SQLFragment()
+                    .append("SELECT d.Container, d.LSID, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
+                    .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
+                    .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
+                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
+
+            Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
+            Collection<Map<String, Object>> toDataLsids = new ArrayList<>();
+            new SqlSelector(getSchema(), datas).forEachMap(row -> {
+                if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
+                    fromDataLsids.add(row);
+                else
+                    toDataLsids.add(row);
+            });
+            if (LOG.isDebugEnabled())
             {
-                // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
-                SQLFragment datas = new SQLFragment()
-                        .append("SELECT d.Container, d.LSID, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
-                        .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
-                        .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                        .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
+                if (!fromDataLsids.isEmpty())
+                    LOG.debug("  fromDataLsids:\n  " + StringUtils.join(fromDataLsids, "\n  "));
+                if (!toDataLsids.isEmpty())
+                    LOG.debug("  toDataLsids:\n  " + StringUtils.join(toDataLsids, "\n  "));
+            }
 
-                Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
-                Collection<Map<String, Object>> toDataLsids = new ArrayList<>();
-                new SqlSelector(getSchema(), datas).forEachMap(row -> {
-                    if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
-                        fromDataLsids.add(row);
-                    else
-                        toDataLsids.add(row);
-                });
-                if (LOG.isDebugEnabled())
+            SQLFragment materials = new SQLFragment()
+                    .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
+                    .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
+                    .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
+                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
+
+            Set<String> toCpasTypes = new HashSet<>();
+            Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
+            Collection<Map<String, Object>> toMaterialLsids = new ArrayList<>();
+            new SqlSelector(getSchema(), materials).forEachMap(row -> {
+                if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
                 {
-                    if (!fromDataLsids.isEmpty())
-                        LOG.debug("  fromDataLsids:\n  " + StringUtils.join(fromDataLsids, "\n  "));
-                    if (!toDataLsids.isEmpty())
-                        LOG.debug("  toDataLsids:\n  " + StringUtils.join(toDataLsids, "\n  "));
-                }
-
-                SQLFragment materials = new SQLFragment()
-                        .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
-                        .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
-                        .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                        .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
-
-                Set<String> toCpasTypes = new HashSet<>();
-                Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
-                Collection<Map<String, Object>> toMaterialLsids = new ArrayList<>();
-                new SqlSelector(getSchema(), materials).forEachMap(row -> {
-                    if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
-                    {
-                        fromMaterialLsids.add(row);
-                    }
-                    else
-                    {
-                        toMaterialLsids.add(row);
-                        toCpasTypes.add((String)row.get("cpastype"));
-                    }
-                });
-
-                Set<Pair<Integer, Integer>> provenanceStartingInputs = emptySet();
-                Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
-
-                ProvenanceService pvs = ProvenanceService.get();
-                ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
-                if (null != startProtocolApp)
-                {
-                    provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
-                }
-
-                ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
-                if (null != finalProtocolApp)
-                {
-                    provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
-                }
-
-                // delete all existing edges for this run
-                if (deleteFirst)
-                    removeEdgesForRun(runId);
-
-                int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
-                LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, input prov=%d, output prov=%d, total=%d",
-                        fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount));
-
-                if (edgeCount > 0)
-                {
-                    // ensure the run has an exp.object
-                    if (null == runObjectId || 0 == runObjectId)
-                    {
-                        if (LOG.isDebugEnabled())
-                        {
-                            OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
-                            if (runObj == null)
-                                LOG.debug("  run exp.object is null, creating: " + runLsid);
-                        }
-                        if (!verifyEdgesNoInsert)
-                            runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Integer) null);
-                    }
-
-                    Map<String, Map<String, Object>> allDatasByLsid = new HashMap<>();
-                    fromDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
-                    toDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
-                    if (!verifyEdgesNoInsert)
-                        ensureNodeObjects(getTinfoData(), allDatasByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
-
-                    Map<String, Map<String, Object>> allMaterialsByLsid = new HashMap<>();
-                    fromMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
-                    toMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
-                    if (!verifyEdgesNoInsert)
-                        ensureNodeObjects(getTinfoMaterial(), allMaterialsByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
-
-                    List<List<Object>> params = new ArrayList<>(edgeCount);
-
-                    //
-                    // from lsid -> run lsid
-                    //
-
-                    Set<Integer> seen = new HashSet<>();
-                    for (Map<String, Object> fromDataLsid : fromDataLsids)
-                    {
-                        assert null != fromDataLsid.get("objectid");
-                        int objectid = (Integer)fromDataLsid.get("objectid");
-                        if (seen.add(objectid))
-                            prepEdgeForInsert(params, objectid, runObjectId, runId);
-                    }
-
-                    for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
-                    {
-                        assert null != fromMaterialLsid.get("objectid");
-                        int objectid = (Integer)fromMaterialLsid.get("objectid");
-                        if (seen.add(objectid))
-                            prepEdgeForInsert(params, objectid, runObjectId, runId);
-                    }
-
-                    if (!provenanceStartingInputs.isEmpty())
-                    {
-                        for (Pair<Integer, Integer> pair : provenanceStartingInputs)
-                        {
-                            Integer fromId = pair.first;
-                            if (null != fromId)
-                            {
-                                if (seen.add(fromId))
-                                    prepEdgeForInsert(params, fromId, runObjectId, runId);
-                            }
-                        }
-                    }
-
-                    //
-                    // run lsid -> to lsid
-                    //
-
-                    seen = new HashSet<>();
-                    for (Map<String, Object> toDataLsid : toDataLsids)
-                    {
-                        int objectid = (Integer)toDataLsid.get("objectid");
-                        if (seen.add(objectid))
-                            prepEdgeForInsert(params, runObjectId, objectid, runId);
-                    }
-
-                    for (Map<String, Object> toMaterialLsid : toMaterialLsids)
-                    {
-                        int objectid = (Integer)toMaterialLsid.get("objectid");
-                        if (seen.add(objectid))
-                            prepEdgeForInsert(params, runObjectId, objectid, runId);
-                    }
-
-                    if (!provenanceFinalOutputs.isEmpty())
-                    {
-                        for (Pair<Integer, Integer> pair : provenanceFinalOutputs)
-                        {
-                            Integer toObjectId = pair.second;
-                            if (null != toObjectId)
-                            {
-                                if (seen.add(toObjectId))
-                                    prepEdgeForInsert(params, runObjectId, toObjectId, runId);
-                            }
-                        }
-                    }
-
-                    if (verifyEdgesNoInsert)
-                        verifyEdges(runId, runObjectId, params);
-                    else
-                    {
-                        insertEdges(params);
-
-                    }
+                    fromMaterialLsids.add(row);
                 }
                 else
                 {
-                    if (verifyEdgesNoInsert)
-                        verifyEdges(runId, runObjectId, Collections.emptyList());
+                    toMaterialLsids.add(row);
+                    toCpasTypes.add((String)row.get("cpastype"));
                 }
+            });
 
+            Set<Pair<Integer, Integer>> provenanceStartingInputs = emptySet();
+            Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
 
-                tx.commit();
-                timer.stop();
-                LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
+            ProvenanceService pvs = ProvenanceService.get();
+            ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+            if (null != startProtocolApp)
+            {
+                provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
+            }
 
-                if (!verifyEdgesNoInsert && invalidateClosureCache)
+            ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+            if (null != finalProtocolApp)
+            {
+                provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
+            }
+
+            // delete all existing edges for this run
+            if (deleteFirst)
+                removeEdgesForRun(runId);
+
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
+            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, input prov=%d, output prov=%d, total=%d",
+                    fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), provenanceStartingInputs.size(), provenanceFinalOutputs.size(), edgeCount));
+
+            if (edgeCount > 0)
+            {
+                // ensure the run has an exp.object
+                if (null == runObjectId || 0 == runObjectId)
                 {
-                    toCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
+                    if (LOG.isDebugEnabled())
+                    {
+                        OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
+                        if (runObj == null)
+                            LOG.debug("  run exp.object is null, creating: " + runLsid);
+                    }
+                    if (!verifyEdgesNoInsert)
+                        runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Integer) null);
                 }
+
+                Map<String, Map<String, Object>> allDatasByLsid = new HashMap<>();
+                fromDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
+                toDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
+                if (!verifyEdgesNoInsert)
+                    ensureNodeObjects(getTinfoData(), allDatasByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
+
+                Map<String, Map<String, Object>> allMaterialsByLsid = new HashMap<>();
+                fromMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
+                toMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
+                if (!verifyEdgesNoInsert)
+                    ensureNodeObjects(getTinfoMaterial(), allMaterialsByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
+
+                List<List<Object>> params = new ArrayList<>(edgeCount);
+
+                //
+                // from lsid -> run lsid
+                //
+
+                Set<Integer> seen = new HashSet<>();
+                for (Map<String, Object> fromDataLsid : fromDataLsids)
+                {
+                    assert null != fromDataLsid.get("objectid");
+                    int objectid = (Integer)fromDataLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, objectid, runObjectId, runId);
+                }
+
+                for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
+                {
+                    assert null != fromMaterialLsid.get("objectid");
+                    int objectid = (Integer)fromMaterialLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, objectid, runObjectId, runId);
+                }
+
+                if (!provenanceStartingInputs.isEmpty())
+                {
+                    for (Pair<Integer, Integer> pair : provenanceStartingInputs)
+                    {
+                        Integer fromId = pair.first;
+                        if (null != fromId)
+                        {
+                            if (seen.add(fromId))
+                                prepEdgeForInsert(params, fromId, runObjectId, runId);
+                        }
+                    }
+                }
+
+                //
+                // run lsid -> to lsid
+                //
+
+                seen = new HashSet<>();
+                for (Map<String, Object> toDataLsid : toDataLsids)
+                {
+                    int objectid = (Integer)toDataLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, runObjectId, objectid, runId);
+                }
+
+                for (Map<String, Object> toMaterialLsid : toMaterialLsids)
+                {
+                    int objectid = (Integer)toMaterialLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, runObjectId, objectid, runId);
+                }
+
+                if (!provenanceFinalOutputs.isEmpty())
+                {
+                    for (Pair<Integer, Integer> pair : provenanceFinalOutputs)
+                    {
+                        Integer toObjectId = pair.second;
+                        if (null != toObjectId)
+                        {
+                            if (seen.add(toObjectId))
+                                prepEdgeForInsert(params, runObjectId, toObjectId, runId);
+                        }
+                    }
+                }
+
+                if (verifyEdgesNoInsert)
+                    verifyEdges(runId, runObjectId, params);
+                else
+                {
+                    insertEdges(params);
+
+                }
+            }
+            else
+            {
+                if (verifyEdgesNoInsert)
+                    verifyEdges(runId, runObjectId, Collections.emptyList());
+            }
+
+            timer.stop();
+            LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
+
+            if (!verifyEdgesNoInsert && invalidateClosureCache)
+            {
+                toCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
             }
         }
     }
+
 
     public void rebuildAllEdges()
     {

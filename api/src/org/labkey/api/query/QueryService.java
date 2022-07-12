@@ -48,7 +48,6 @@ import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -70,7 +69,7 @@ import java.util.Set;
 public interface QueryService
 {
     String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
-    String EXPERIMENTAL_SUBFOLDER_DATA_ENABLED = "isSubfolderDataEnabled";
+    String PRODUCT_PROJECTS_ENABLED = "isProductProjectsEnabled";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
@@ -616,8 +615,15 @@ public interface QueryService
         return col;
     }
 
-    default boolean isProductSubfolderDataEnabled()
-    {
-        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SUBFOLDER_DATA_ENABLED);
-    }
+    /**
+     * Resolves the ContainerFilter to be used for lookups during insert/update of data in product projects.
+     * Defaults to null if product projects are not enabled in container scope.
+     */
+    @Nullable
+    ContainerFilter getContainerFilterForLookups(Container container, User user);
+
+    /**
+     * Resolves if the product projects feature is enabled in the supplied container scope.
+     */
+    boolean isProductProjectsEnabled(Container container);
 }

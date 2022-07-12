@@ -17,7 +17,6 @@ package org.labkey.api.module;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +25,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
@@ -57,7 +57,11 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.LenientStartupPropertyHandler;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.settings.StartupPropertyHandler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
@@ -70,6 +74,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
@@ -112,15 +117,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -199,9 +205,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
     private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+    // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
+    private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(sph->sph.getStartupPropertyClassName()));
+    private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
 
     private List<Module> _modules;
-    private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
     {
@@ -276,7 +284,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        //load module instances using Spring
+        // Populate early so module include/exclude properties are available for loadModules()... and not reloaded when
+        // creating and loading modules using the module editor.
+        ModuleLoaderStartupProperties.populate();
+        // Load module instances using Spring
         List<Module> moduleList = loadModules(explodedModuleDirs);
 
         //sort the modules by dependencies
@@ -442,7 +453,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
 
-        // load startup configuration information from properties, side-effect may set newinstall=true
+        // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
         loadStartupProps();
 
@@ -924,22 +935,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
 
-        // filter by startup properties if specified
-        LinkedList<String> includeList = new LinkedList<>();
-        LinkedList<String> excludeList = new LinkedList<>();
-        for (ConfigProperty prop : getConfigProperties("ModuleLoader"))
-        {
-            if (prop.getName().equals("include"))
-                Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(includeList::add);
-            if (prop.getName().equals("exclude"))
-                Arrays.stream(StringUtils.split(prop.getValue(), ","))
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(excludeList::add);
-        }
+        // filter by startup properties if they were specified
+        LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
+        LinkedList<String> excludeList = ModuleLoaderStartupProperties.exclude.getList();
 
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
         if (!includeList.isEmpty())
@@ -1585,8 +1583,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
-
-
         clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
@@ -1798,7 +1794,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    // Did this server start up with no modules installed?  If so, it's a new install. This lets us tailor the
+    // Did this server start up with no modules installed? If so, it's a new install. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
@@ -2092,7 +2088,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
-        //NOTE: jasper encodes underscores and dashes in JSPs, so decode this here
+        //NOTE: jasper encodes underscores and dashes in JSPs, so decode them here
         path = path.replaceAll("_005f", "_");
         path = path.replaceAll("_002d", "-");
 
@@ -2162,44 +2158,112 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return unknownContexts;
     }
 
+    public <T extends Enum<T> & StartupProperty> void handleStartupProperties(StandardStartupPropertyHandler<T> handler)
+    {
+        if (handler.performChecks())
+            startupPropertyChecks(handler);
+        Map<String, T> props = handler.getProperties();
+        Map<T, StartupPropertyEntry> map = new LinkedHashMap<>();
+        handler.getStartupPropertyEntries().forEach(entry -> {
+            T sp = props.get(entry.getName());
+            if (null != sp)
+            {
+                entry.setStartupProperty(sp);
+                map.put(sp, entry);
+            }
+        });
+        handler.handle(map);
+    }
+
+    public <T extends StartupProperty> void handleStartupProperties(LenientStartupPropertyHandler<T> handler)
+    {
+        if (handler.performChecks())
+            startupPropertyChecks(handler);
+        StartupProperty sp = handler.getProperty();
+        handler.handle(handler.getStartupPropertyEntries().stream()
+            .peek(entry -> entry.setStartupProperty(sp))
+            .toList());
+    }
+
+    private void startupPropertyChecks(StartupPropertyHandler<?> handler)
+    {
+        assert !isStartupComplete() : "All startup properties must be handled during startup";
+        boolean notExists = _startupPropertyHandlers.add(handler);
+        assert notExists : "StartupPropertyHandler with scope " + handler.getScope() + " has already been registered!";
+    }
+
+    public static class StartupPropertyStartupListener implements StartupListener
+    {
+        @Override
+        public String getName()
+        {
+            return "Startup Property Validation";
+        }
+
+        @Override
+        public void moduleStartupComplete(ServletContext servletContext)
+        {
+            // Log error for any unknown startup properties (admin error)
+            ModuleLoader.getInstance().getStartupPropertyEntries(null)
+                .stream()
+                .filter(entry -> null == entry.getStartupProperty())
+                .forEach(entry -> _log.error("Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue()));
+
+            // Failing this check indicates a coding issue, so execute it only when assertions are on
+            assert checkPropertyScopeMapping();
+         }
+    }
+
+    private static boolean checkPropertyScopeMapping()
+    {
+        // Enumerate all StartupPropertyHandlers and verify that every supplied StartupProperty maps to a single
+        // source. If not, there's a coding error.
+        Map<StartupProperty, String> propertyScopeMap = new HashMap<>();
+        ModuleLoader.getInstance().getStartupPropertyHandlers()
+            .forEach(handler -> handler.getProperties().values().forEach(sp -> {
+                String previousScope = propertyScopeMap.put(sp, handler.getScope());
+                assert previousScope == null : "Two scopes (\"" + previousScope + "\" and \"" + handler.getScope() + "\") both used the same StartupProperty (" + sp + "\")!";
+            }));
+
+        return true;
+    }
+
+    public Set<StartupPropertyHandler<? extends StartupProperty>> getStartupPropertyHandlers()
+    {
+        return _startupPropertyHandlers;
+    }
+
     /**
-     * Returns the config properties for the specified scope. If no scope is
-     * specified then all properties are returned. If the server is bootstrapping then
-     * properties with both the bootstrap and startup modifiers are returned otherwise only
-     * startup properties are returned.
+     * Returns the startup property entries for the specified scope. If no scope is specified then all properties are
+     * returned. If the server is bootstrapping then properties with both the bootstrap and startup modifiers are
+     * returned otherwise only startup properties are returned.
+     *
+     * Do not call this directly! Use a StartupPropertyHandler instead.
      */
     @NotNull
-    public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
+    public Collection<StartupPropertyEntry> getStartupPropertyEntries(@Nullable String scope)
     {
-        Collection<ConfigProperty> props = Collections.emptyList();
-        if (!_configPropertyMap.isEmpty())
+        Collection<StartupPropertyEntry> props = Collections.emptyList();
+        if (!_startupPropertyMap.isEmpty())
         {
             if (scope != null)
             {
-                if (_configPropertyMap.containsKey(scope))
-                    props = _configPropertyMap.get(scope);
+                if (_startupPropertyMap.containsKey(scope))
+                    props = _startupPropertyMap.get(scope);
             }
             else
-                props = _configPropertyMap.values();
+                props = _startupPropertyMap.values();
         }
 
-        // filter out bootstrap scoped properties in the non-bootstrap startup case
+        // We filter here because loadStartupProps() gets called very early, before _newInstall is set
         return props.stream()
-            .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
+            .filter(prop -> prop.getModifier() != StartupPropertyEntry.modifier.bootstrap || isNewInstall())
             .collect(Collectors.toList());
     }
 
     /**
-     * Sets the entire config properties MultiValueMap.
-     */
-    public void setConfigProperties(@Nullable MultiValuedMap<String, ConfigProperty> configProperties)
-    {
-        _configPropertyMap = configProperties;
-    }
-
-    /**
      * Loads startup/bootstrap properties from configuration files.
-     * Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using">Documentation Page</a>
      */
     private void loadStartupProps()
     {
@@ -2215,7 +2279,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
-                    throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.getAbsolutePath());
             }
             else
             {
@@ -2227,8 +2291,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             if (propFiles != null)
             {
                 List<File> sortedPropFiles = Arrays.stream(propFiles)
-                        .sorted(Comparator.comparing(File::getName).reversed())
-                        .collect(Collectors.toList());
+                    .sorted(Comparator.comparing(File::getName).reversed())
+                    .toList();
 
                 for (File propFile : sortedPropFiles)
                 {
@@ -2245,10 +2309,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                             {
                                 _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
 
-                                ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
-                                if (_configPropertyMap.containsMapping(config.getScope(), config))
-                                    _configPropertyMap.removeMapping(config.getScope(), config);
-                                _configPropertyMap.put(config.getScope(), config);
+                                addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
                             }
                         }
                     }
@@ -2265,7 +2326,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
+            _log.debug("propsDir non-existent or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix
@@ -2274,23 +2335,28 @@ public class ModuleLoader implements Filter, MemTrackerListener
             String name = String.valueOf(entry.getKey());
             String value = String.valueOf(entry.getValue());
 
-            if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            if (name != null && name.startsWith(StartupPropertyEntry.SYS_PROP_PREFIX) && value != null)
             {
-                ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
-                if (_configPropertyMap.containsMapping(config.getScope(), config))
-                    _configPropertyMap.removeMapping(config.getScope(), config);
-                _configPropertyMap.put(config.getScope(), config);
+                addStartupPropertyEntry(name.substring(StartupPropertyEntry.SYS_PROP_PREFIX.length()), value);
             }
         }
     }
 
+    private void addStartupPropertyEntry(String scope, String value)
+    {
+        StartupPropertyEntry entry = createConfigProperty(scope, value);
+        if (_startupPropertyMap.containsMapping(entry.getScope(), entry))
+            _startupPropertyMap.removeMapping(entry.getScope(), entry);
+        _startupPropertyMap.put(entry.getScope(), entry);
+    }
+
     /**
-     * Parse the config property name and construct a ConfigProperty object. A config property
+     * Parse the startup property line and construct a StartupPropertyEntry object. A startup property
      * can have an optional dot delimited scope and an optional semicolon delimited modifier, for example:
-     * siteSettings.baseServerUrl;bootstrap defines a property named : baseServerUrl in the siteSettings scope and
-     * having the bootstrap modifier.
+     * siteSettings.baseServerUrl;bootstrap defines a property named "baseServerUrl" in the "siteSettings"
+     * scope having the bootstrap modifier.
      */
-    private ConfigProperty createConfigProperty(String key, String value)
+    private StartupPropertyEntry createConfigProperty(String key, String value)
     {
         String name;
         String scope = null;
@@ -2312,10 +2378,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         else
             name = key;
 
-        return new ConfigProperty(name, value, modifier, scope);
+        return new StartupPropertyEntry(name, value, modifier, scope);
     }
 
-    private class SchemaDetails
+    private static class SchemaDetails
     {
         private final Module _module;
         private final DbSchemaType _type;

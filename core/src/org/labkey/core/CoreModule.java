@@ -107,7 +107,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -115,7 +114,12 @@ import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureSer
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.settings.StashedStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -123,6 +127,7 @@ import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.usageMetrics.ClientSideMetricService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CommandLineTokenizer;
 import org.labkey.api.util.ContextListener;
@@ -142,6 +147,7 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
@@ -199,7 +205,7 @@ import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
-import org.labkey.core.metrics.ClientSideMetricManager;
+import org.labkey.core.metrics.ClientSideMetricServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
@@ -265,6 +271,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
+import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
+import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 
 /**
  * User: migra
@@ -343,6 +356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsProviderRegistry.setInstance(new AnalyticsProviderRegistryImpl());
         SummaryStatisticRegistry.setInstance(new SummaryStatisticRegistryImpl());
         UsageMetricsService.setInstance(new UsageMetricsServiceImpl());
+        ClientSideMetricService.setInstance(new ClientSideMetricServiceImpl());
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
@@ -456,20 +470,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (users.isEmpty())
             return;
 
-        Collection<ConfigProperty> properties = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
-        String fromEmail = null;
-        String subject = null;
-        String body = null;
-        for (ConfigProperty prop : properties)
-        {
-            if (prop.getName().equalsIgnoreCase("siteAvailableEmailMessage"))
-                body = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailSubject"))
-                subject = StringUtils.trimToNull(prop.getValue());
-            else if (prop.getName().equalsIgnoreCase("siteAvailableEmailFrom"))
-                fromEmail = StringUtils.trimToNull(prop.getValue());
+        Map<StashedStartupProperties, StartupPropertyEntry> map = AppProps.getInstance().getStashedProperties();
+        String fromEmail = getValue(map, siteAvailableEmailFrom);
+        String subject = getValue(map, siteAvailableEmailSubject);
+        String body = getValue(map, siteAvailableEmailMessage);
 
-        }
         if (fromEmail == null || subject == null || body == null)
             return;
 
@@ -485,6 +490,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
         // for hosted sites.  Another option is to use the guest user here, but that's strange.
         svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
+    }
+
+    private @Nullable String getValue(Map<StashedStartupProperties, StartupPropertyEntry> map, StashedStartupProperties prop)
+    {
+        StartupPropertyEntry entry = map.get(prop);
+        return null != entry ? StringUtils.trimToNull(entry.getValue()) : null;
     }
 
     @NotNull
@@ -880,14 +891,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
-        populateLookAndFeelWithStartupProps();
+        populateLookAndFeelResourcesWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
-        SecurityManager.populateGroupRolesWithStartupProps();
-        SecurityManager.populateUserRolesWithStartupProps();
-        SecurityManager.populateUserGroupsWithStartupProps();
-        // This method depends on resources (FolderType) from other modules, so handle in afterstartup()
+        SecurityManager.populateStartupProperties();
+        // This method depends on resources (FolderType) from other modules, so invoke after startup
         ContextListener.addStartupListener(new StartupListener()
         {
             @Override
@@ -904,7 +913,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-        // populate script engine definitions values read from startup properties as appropriate for not bootstrap
+        // populate script engine definitions values read from startup properties
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();
 
@@ -1014,7 +1023,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             return results;
         });
 
-        ClientSideMetricManager.get().registerUsageMetrics(getName());
+        ClientSideMetricService.get().registerUsageMetrics(getName());
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
@@ -1267,68 +1276,118 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     /**
-     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     * Handles startup props for LookAndFeelSettings resources
      */
-    private void populateLookAndFeelWithStartupProps()
+    private void populateLookAndFeelResourcesWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
-        boolean incrementRevision = false;
-
-        for (ConfigProperty prop : startupProps)
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, ResourceType.class)
         {
-            SiteResourceHandler handler = getResourceHandler(prop.getName());
-            if (handler != null)
-                incrementRevision = setSiteResource(handler, prop, user);
-        }
+            @Override
+            public void handle(Map<ResourceType, StartupPropertyEntry> map)
+            {
+                boolean incrementRevision = false;
 
-        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
-        if (incrementRevision)
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                for (Map.Entry<ResourceType, StartupPropertyEntry> entry : map.entrySet())
+                {
+                    SiteResourceHandler handler = getResourceHandler(entry.getKey());
+                    if (handler != null)
+                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
+                }
+
+                // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+                if (incrementRevision)
+                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            }
+        });
     }
 
     /**
-     * This method will handle those startup props for settings to apply at the site level.
+     * This method handles the home project settings
      */
     private void populateSiteSettingsWithStartupProps()
     {
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
-        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        Map<StashedStartupProperties, StartupPropertyEntry> props = AppProps.getInstance().getStashedProperties();
 
-        for (ConfigProperty prop : startupProps)
+        StartupPropertyEntry folderTypeEntry = props.get(homeProjectFolderType);
+        if (null != folderTypeEntry)
         {
-            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            FolderType folderType = FolderTypeManager.get().getFolderType(folderTypeEntry.getValue());
+            if (folderType != null)
+                // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+                ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
+            else
+                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+        }
+
+        StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
+        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        {
+            // reset the home project permissions to remove the default assignments given at server install
+            MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
+            SecurityPolicyManager.savePolicy(homePolicy);
+            // remove the guest role assignment from the support subfolder
+            Group guests = SecurityManager.getGroup(Group.groupGuests);
+            if (null != guests)
             {
-                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
-                if (folderType != null)
-                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
-                else
-                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
+                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                    supportPolicy.removeRoleAssignment(guests, assignedRole);
+                SecurityPolicyManager.savePolicy(supportPolicy);
             }
-            else if ("homeProjectResetPermissions".equalsIgnoreCase(prop.getName()) && Boolean.valueOf(prop.getValue()))
+        }
+
+        // TODO: Delete this (and inline replaceHomeProjectWebparts()) after transitioning to SiteSettings.homeProjectWebparts
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(WriteableLookAndFeelProperties.SCOPE_LOOK_AND_FEEL_SETTINGS, DeprecatedProperties.class)
+        {
+            @Override
+            public void handle(Map<DeprecatedProperties, StartupPropertyEntry> properties)
             {
-                // reset the home project permissions to remove the default assignments given at server install
-                MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
-                SecurityPolicyManager.savePolicy(homePolicy);
-                // remove the guest role assignment from the support subfolder
-                Group guests = SecurityManager.getGroup(Group.groupGuests);
-                if (null != guests)
+                if (!properties.isEmpty())
                 {
-                    MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
-                    for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
-                        supportPolicy.removeRoleAssignment(guests, assignedRole);
-                    SecurityPolicyManager.savePolicy(supportPolicy);
+                    LOG.warn("Support for the \"LookAndFeelSettings.homeProjectInitWebparts\" startup property will be removed shortly; use \"SiteSettings.homeProjectWebparts\" instead.");
+                    replaceHomeProjectWebparts(properties.get(DeprecatedProperties.homeProjectInitWebparts));
                 }
+            }
+        });
+
+        replaceHomeProjectWebparts(props.get(homeProjectWebparts));
+    }
+
+    private void replaceHomeProjectWebparts(StartupPropertyEntry webparts)
+    {
+        if (null != webparts)
+        {
+            // Clear existing webparts added by core and wiki modules
+            Container homeContainer = ContainerManager.getHomeContainer();
+            Portal.saveParts(homeContainer, Collections.emptyList());
+
+            for (String webpartName : StringUtils.split(webparts.getValue(), ';'))
+            {
+                WebPartFactory webPartFactory = Portal.getPortalPart(webpartName);
+                if (webPartFactory != null)
+                    addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
             }
         }
     }
 
-    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    private enum DeprecatedProperties implements StartupProperty
     {
-        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
+        homeProjectInitWebparts
+        {
+            @Override
+            public String getDescription()
+            {
+                return "Semicolon-separated list of webpart names to add to the home project. DO NOT USE... use SiteSettings.homeProjectWebparts instead.";
+            }
+        }
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull ResourceType type)
+    {
+        return LookAndFeelPropertiesManager.get().getResourceHandler(type);
+    }
+
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)

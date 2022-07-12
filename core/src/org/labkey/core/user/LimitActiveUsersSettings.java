@@ -10,14 +10,18 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static org.labkey.core.user.LimitActiveUsersSettings.StartupProperties.*;
 
 public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 {
@@ -44,82 +48,75 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         writeAuditLogEvent(ContainerManager.getRoot(), user);
     }
 
-    private static final String USER_WARNING = "userWarning";
-    private static final String USER_WARNING_LEVEL = "userWarningLevel";
-    private static final String USER_WARNING_MESSAGE = "userWarningMessage";
-    private static final String USER_LIMIT = "userLimit";
-    private static final String USER_LIMIT_LEVEL = "userLimitLevel";
-    private static final String USER_LIMIT_MESSAGE = "userLimitMessage";
-
-    public void setUserWarning(boolean userWarning)
+    public void setUserWarning(boolean warning)
     {
-        storeBooleanValue(USER_WARNING, userWarning);
+        storeBooleanValue(userWarning, warning);
     }
 
     public boolean isUserWarning()
     {
-        return lookupBooleanValue(USER_WARNING, false);
+        return lookupBooleanValue(userWarning, false);
     }
 
-    public void setUserWarningLevel(int userWarningLevel)
+    public void setUserWarningLevel(int level)
     {
-        storeIntValue(USER_WARNING_LEVEL, userWarningLevel);
+        storeIntValue(userWarningLevel, level);
     }
 
     public int getUserWarningLevel()
     {
-        return lookupIntValue(USER_WARNING_LEVEL, 10);
+        return lookupIntValue(userWarningLevel, 10);
     }
 
-    public void setUserWarningMessage(String userWarningMessage)
+    public void setUserWarningMessage(String message)
     {
-        storeStringValue(USER_WARNING_MESSAGE, userWarningMessage);
+        storeStringValue(userWarningMessage, message);
     }
 
     public String getUserWarningMessage()
     {
-        return lookupStringValue(USER_WARNING_MESSAGE, "");
+        return lookupStringValue(userWarningMessage, "");
     }
 
-    public void setUserLimit(boolean userLimit)
+    public void setUserLimit(boolean limit)
     {
-        storeBooleanValue(USER_LIMIT, userLimit);
+        storeBooleanValue(userLimit, limit);
     }
 
     public boolean isUserLimit()
     {
-        return lookupBooleanValue(USER_LIMIT, false);
+        return lookupBooleanValue(userLimit, false);
     }
 
-    public void setUserLimitLevel(int userLimitLevel)
+    public void setUserLimitLevel(int level)
     {
-        storeIntValue(USER_LIMIT_LEVEL, userLimitLevel);
+        storeIntValue(userLimitLevel, level);
     }
 
     public int getUserLimitLevel()
     {
-        return lookupIntValue(USER_LIMIT_LEVEL, 10);
+        return lookupIntValue(userLimitLevel, 10);
     }
 
-    public void setUserLimitMessage(String userLimitMessage)
+    public void setUserLimitMessage(String message)
     {
-        storeStringValue(USER_LIMIT_MESSAGE, userLimitMessage);
+        storeStringValue(userLimitMessage, message);
     }
 
     public String getUserLimitMessage()
     {
-        return lookupStringValue(USER_LIMIT_MESSAGE, "");
+        return lookupStringValue(userLimitMessage, "");
     }
 
-    public Map<String, Object> getMetricsMap()
+    public Map<StartupProperties, Object> getMetricsMap()
     {
-        Map<String, Object> map = new HashMap<>();
-        map.put(USER_WARNING, isUserWarning());
-        map.put(USER_WARNING_LEVEL, getUserWarningLevel());
-        map.put(USER_WARNING_MESSAGE, getUserWarningMessage());
-        map.put(USER_LIMIT, isUserLimit());
-        map.put(USER_LIMIT_LEVEL, getUserLimitLevel());
-        map.put(USER_LIMIT_MESSAGE, getUserLimitMessage());
+        Map<StartupProperties, Object> map = new HashMap<>();
+        map.put(userWarning, isUserWarning());
+        map.put(userWarningLevel, getUserWarningLevel());
+        map.put(userWarningMessage, getUserWarningMessage());
+        map.put(userLimit, isUserLimit());
+        map.put(userLimitLevel, getUserLimitLevel());
+        map.put(userLimitMessage, getUserLimitMessage());
 
         return map;
     }
@@ -144,16 +141,45 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
         return Math.max(getUserLimitLevel() - getActiveUserCount(), 0);
     }
 
+    public enum StartupProperties implements StartupProperty, SafeToRenderEnum
+    {
+        userWarning("Enable user warning"),
+        userWarningLevel("Warning level user count"),
+        userWarningMessage("Warning level message"),
+        userLimit("Enable user limit"),
+        userLimitLevel("User limit"),
+        userLimitMessage("User limit message");
+
+        private final String _description;
+
+        StartupProperties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
     public static void populateStartupProperties()
     {
-        Collection<ConfigProperty> userLimitsProperties = ModuleLoader.getInstance().getConfigProperties("UserLimits");
-        if (!userLimitsProperties.isEmpty())
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>("UserLimits", StartupProperties.class)
         {
-            LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
-            userLimitsProperties
-                .forEach(prop -> settings.storeStringValue(prop.getName(), prop.getValue()));
-            settings.save(null);
-        }
+            @Override
+            public void handle(Map<StartupProperties, StartupPropertyEntry> properties)
+            {
+                if (!properties.isEmpty())
+                {
+                    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
+                    properties
+                        .forEach((prop, entry) -> settings.storeStringValue(prop.name(), entry.getValue()));
+                    settings.save(null);
+                }
+            }
+        });
     }
 
     public static @Nullable HtmlString getWarningMessage(Container c, User user, boolean showAllWarnings)

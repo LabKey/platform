@@ -33,6 +33,7 @@ public class SignedSnapshot
     private String _entityId;
     private String _hash;
     private String _ownerEntityId;
+    private String _attachmentType;
 
     public SignedSnapshot()
     {
@@ -189,6 +190,16 @@ public class SignedSnapshot
         _ownerEntityId = ownerEntityId;
     }
 
+    public String getAttachmentType()
+    {
+        return _attachmentType;
+    }
+
+    public void setAttachmentType(String attachmentType)
+    {
+        _attachmentType = attachmentType;
+    }
+
     public Map<String, Object> toMap()
     {
         Map<String, Object> props = new HashMap<>();
@@ -205,6 +216,7 @@ public class SignedSnapshot
         props.put("Container", getContainer());
         props.put("Hash", getHash());
         props.put("OwnerEntityId", getOwnerEntityId());
+        props.put("AttachmentType", getAttachmentType());
         return props;
     }
 }

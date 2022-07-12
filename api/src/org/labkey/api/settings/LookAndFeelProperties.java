@@ -25,7 +25,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpressionFactory;
+
+import java.util.Arrays;
+
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
@@ -38,23 +43,73 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
     private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
 
-    protected static final String SYSTEM_DESCRIPTION_PROP = "systemDescription";
-    protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
-    protected static final String THEME_NAME_PROP = "themeName";
-    protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
-    public static final String APPLICATION_MENU_DISPLAY_MODE = "applicationMenuDisplayMode";
-    protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
-    protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
-    protected static final String LOGO_HREF_PROP = "logoHref";
+    // Defined in the same order they appear on the Site-level Look and Feel Settings page
+    public enum Properties implements StartupProperty, SafeToRenderEnum
+    {
+        systemDescription("System description (used in emails)"),
+        systemShortName("Header short name (appears in every page header and in emails)"),
+        themeName("Server color schema"),
+        folderDisplayMode("Show project and folder navigation. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
+        applicationMenuDisplayMode("Show application selection menu. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
+        helpMenuEnabled("Show LabKey Help menu item"),
+        discussionEnabled("Enable object-level discussions"),
+        logoHref("Logo link (specifies page to which header logo links)"),
+        reportAProblemPath("Support link (specifies page where users can request support)"),
+        supportEmail("Support email (shown to users if they don't have permission to see a page, or are having trouble logging in)"),
 
-    protected static final String COMPANY_NAME_PROP = "companyName";
-    protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
-    protected static final String SUPPORT_EMAIL = "supportEmail";
-    protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
+        systemEmailAddress("System email address (from address for system notification emails)"),
+        companyName("Organization name (appears in notification emails sent by system)"),
 
-    protected static final String DATE_PARSING_MODE = "dateParsingMode";
-    protected static final String CUSTOM_LOGIN_PROP = "customLogin";
-    protected static final String CUSTOM_WELCOME_PROP = "customWelcome";
+        defaultDateFormat("Default display format for dates"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultDateFormat(value); // Override to validate and use legacy property name
+            }
+        },
+        defaultDateTimeFormat("Default display format for date-times"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultDateTimeFormat(value); // Override to validate and use legacy property name
+            }
+        },
+        defaultNumberFormat("Default display format for numbers"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultNumberFormat(value); // Override to validate and use legacy property name
+            }
+        },
+
+        dateParsingMode("Date parsing mode. Valid values: " + Arrays.toString(DateParsingMode.values())),
+        extraDateParsingPattern("Additional parsing pattern for dates"),
+        extraDateTimeParsingPattern("Additional parsing pattern for date-times"),
+
+        restrictedColumnsEnabled("Restrict charting columns by measure and dimension flags"),
+
+        customLogin("Alternative login page"),
+
+        customWelcome("Alternative site welcome page");
+
+        private final String _description;
+
+        Properties(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void save(WriteableLookAndFeelProperties writeable, String value)
+        {
+            writeable.storeStringValue(name(), value);
+        }
+    }
 
     private final Container _settingsContainer;
 
@@ -98,12 +153,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getDescription()
     {
-        return lookupStringValue(SYSTEM_DESCRIPTION_PROP, "");
+        return lookupStringValue(systemDescription, "");
     }
 
     public String getUnsubstitutedShortName()
     {
-        return lookupStringValue(SYSTEM_SHORT_NAME_PROP, "LabKey Server");
+        return lookupStringValue(systemShortName, "LabKey Server");
     }
 
     public String getShortName()
@@ -114,37 +169,39 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getThemeName()
     {
-        return lookupStringValue(THEME_NAME_PROP, PageFlowUtil.DEFAULT_THEME_NAME);
+        return lookupStringValue(themeName, PageFlowUtil.DEFAULT_THEME_NAME);
     }
 
     public boolean isThemeNameInherited()
     {
-        return isPropertyInherited(_settingsContainer, THEME_NAME_PROP);
+        return isPropertyInherited(_settingsContainer, themeName.name());
     }
 
     public FolderDisplayMode getFolderDisplayMode()
     {
-        return FolderDisplayMode.fromString(lookupStringValue(FOLDER_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
+        return FolderDisplayMode.fromString(lookupStringValue(folderDisplayMode, FolderDisplayMode.ALWAYS.toString()));
     }
 
     public FolderDisplayMode getApplicationMenuDisplayMode()
     {
-        return FolderDisplayMode.fromString(lookupStringValue(APPLICATION_MENU_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
+        return FolderDisplayMode.fromString(lookupStringValue(applicationMenuDisplayMode, FolderDisplayMode.ALWAYS.toString()));
     }
 
     public boolean isHelpMenuEnabled()
     {
-        return lookupBooleanValue(HELP_MENU_ENABLED_PROP, true);
+        return lookupBooleanValue(helpMenuEnabled, true);
     }
 
     public boolean isDiscussionEnabled()
     {
-        return lookupBooleanValue(DISCUSSION_ENABLED_PROP, true);
+        // Prefer correctly spelled property name, but fall-back to the old, misspelled one
+        String enabled = lookupStringValue(discussionEnabled.name(), null);
+        return enabled != null ? "TRUE".equalsIgnoreCase(enabled) : lookupBooleanValue("dicussionEnabled", true);
     }
 
     public String getUnsubstitutedLogoHref()
     {
-        return lookupStringValue(LOGO_HREF_PROP, AppProps.getInstance().getHomePageUrl().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
+        return lookupStringValue(logoHref, AppProps.getInstance().getHomePageUrl().replaceAll("^" + AppProps.getInstance().getContextPath(), "\\${contextPath}"));
     }
 
     public String getLogoHref()
@@ -154,7 +211,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getCompanyName()
     {
-        return lookupStringValue(COMPANY_NAME_PROP, "Demo Installation");
+        return lookupStringValue(companyName, "Demo Installation");
     }
 
     /**
@@ -166,27 +223,27 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public String getSystemEmailAddress()
     {
         //initial login will be used as the default value. During setup user will be prompted to change.
-        String systemEmailAddress = lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, "");
-        if (systemEmailAddress.isEmpty())
+        String emailAddress = lookupStringValue(systemEmailAddress, "");
+        if (emailAddress.isEmpty())
             LogManager.getLogger(this.getClass()).error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
                     _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath()));
-        return systemEmailAddress;
+        return emailAddress;
     }
 
-    /** Let callers peek if there's an address configured without logging a error */
+    /** Let callers peek if there's an address configured without logging an error */
     public boolean hasSystemEmailAddress()
     {
-        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, null) != null;
+        return lookupStringValue(systemEmailAddress, null) != null;
     }
 
     public String getUnsubstitutedReportAProblemPath()
     {
-        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
+        return lookupStringValue(reportAProblemPath, "${contextPath}" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/project-begin.view");
     }
 
     public String getSupportEmail()
     {
-        return lookupStringValue(SUPPORT_EMAIL, null);
+        return lookupStringValue(supportEmail, null);
     }
 
     public String getReportAProblemPath()
@@ -211,17 +268,17 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getCustomLogin()
     {
-        return lookupStringValue(CUSTOM_LOGIN_PROP, "login-login");
+        return lookupStringValue(customLogin, "login-login");
     }
 
     public String getCustomWelcome()
     {
-        return lookupStringValue(CUSTOM_WELCOME_PROP, null);
+        return lookupStringValue(customWelcome, null);
     }
 
     public DateParsingMode getDateParsingMode()
     {
-        return DateParsingMode.fromString(lookupStringValue(DATE_PARSING_MODE, DateParsingMode.US.toString()));
+        return DateParsingMode.fromString(lookupStringValue(dateParsingMode, DateParsingMode.US.toString()));
     }
 
     public static Container getSettingsContainer(Container c)

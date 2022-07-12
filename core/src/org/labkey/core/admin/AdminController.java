@@ -293,9 +293,9 @@ public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         AdminController.class,
+        FileListAction.class,
         FilesSiteSettingsAction.class,
-        UpdateFilePathsAction.class,
-        FileListAction.class
+        UpdateFilePathsAction.class
     );
 
     private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
@@ -1275,7 +1275,7 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(SiteSettingsForm form, Errors errors)
         {
-            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessageHtml()))
+            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessage()))
             {
                 errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
             }
@@ -1314,7 +1314,7 @@ public class AdminController extends SpringActionController
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setShowRibbonMessage(form.isShowRibbonMessage());
-            props.setRibbonMessageHtml(form.getRibbonMessageHtml());
+            props.setRibbonMessage(form.getRibbonMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
             props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
@@ -1342,9 +1342,9 @@ public class AdminController extends SpringActionController
 
             props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
-            if (null != form.getBaseServerUrl())
+            if (null != form.getBaseServerURL())
             {
-                if (form.isSslRequired() && !form.getBaseServerUrl().startsWith("https"))
+                if (form.isSslRequired() && !form.getBaseServerURL().startsWith("https"))
                 {
                     errors.reject(ERROR_MSG, "Invalid Base Server URL. SSL connection is required. Consider https://.");
                     return false;
@@ -1352,25 +1352,25 @@ public class AdminController extends SpringActionController
 
                 try
                 {
-                    props.setBaseServerUrl(form.getBaseServerUrl());
+                    props.setBaseServerUrl(form.getBaseServerURL());
                 }
                 catch (URISyntaxException e)
                 {
                     errors.reject(ERROR_MSG, "Invalid Base Server URL, \"" + e.getMessage() + "\"." +
-                            "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
-                            "The webapp context path should not be included. " +
-                            "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
+                        "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
+                        "The webapp context path should not be included. " +
+                        "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
                     return false;
                 }
             }
 
-            String frameOptions = StringUtils.trimToEmpty(form.getXFrameOptions());
-            if (!frameOptions.equals("DENY") && !frameOptions.equals("SAMEORIGIN") && !frameOptions.equals("ALLOW"))
+            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
+            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
             {
-                errors.reject(ERROR_MSG, "XFrameOptions must equal DENY, or SAMEORIGIN, or ALLOW");
+                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
                 return false;
             }
-            props.setXFrameOptions(frameOptions);
+            props.setXFrameOption(frameOption);
 
             props.save(getViewContext().getUser());
 
@@ -1595,8 +1595,8 @@ public class AdminController extends SpringActionController
         private String _themeFont;
         private String _folderDisplayMode;
         private String _applicationMenuDisplayMode;
-        private boolean _enableHelpMenu;
-        private boolean _enableDiscussion;
+        private boolean _helpMenuEnabled;
+        private boolean _discussionEnabled;
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
@@ -1702,26 +1702,26 @@ public class AdminController extends SpringActionController
             _dateParsingMode = dateParsingMode;
         }
 
-        public boolean isEnableHelpMenu()
+        public boolean isHelpMenuEnabled()
         {
-            return _enableHelpMenu;
+            return _helpMenuEnabled;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setEnableHelpMenu(boolean enableHelpMenu)
+        public void setHelpMenuEnabled(boolean helpMenuEnabled)
         {
-            _enableHelpMenu = enableHelpMenu;
+            _helpMenuEnabled = helpMenuEnabled;
         }
 
-        public boolean isEnableDiscussion()
+        public boolean isDiscussionEnabled()
         {
-            return _enableDiscussion;
+            return _discussionEnabled;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setEnableDiscussion(boolean enableDiscussion)
+        public void setDiscussionEnabled(boolean discussionEnabled)
         {
-            _enableDiscussion = enableDiscussion;
+            _discussionEnabled = discussionEnabled;
         }
 
         public String getLogoHref()
@@ -2010,7 +2010,7 @@ public class AdminController extends SpringActionController
         private boolean _ext3APIRequired;
         private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
-        private String _ribbonMessageHtml;
+        private String _ribbonMessage;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _maxBLOBSize;
@@ -2022,7 +2022,7 @@ public class AdminController extends SpringActionController
         private String _networkDrivePath;
         private String _networkDriveUser;
         private String _networkDrivePassword;
-        private String _baseServerUrl;
+        private String _baseServerURL;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
         private boolean _allowApiKeys;
@@ -2030,7 +2030,7 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOptions;
+        private String _XFrameOption;
 
         public String getPipelineToolsDirectory()
         {
@@ -2222,14 +2222,14 @@ public class AdminController extends SpringActionController
             _networkDriveUser = networkDriveUser;
         }
 
-        public String getBaseServerUrl()
+        public String getBaseServerURL()
         {
-            return _baseServerUrl;
+            return _baseServerURL;
         }
 
-        public void setBaseServerUrl(String baseServerUrl)
+        public void setBaseServerURL(String baseServerURL)
         {
-            _baseServerUrl = baseServerUrl;
+            _baseServerURL = baseServerURL;
         }
 
         public boolean isTestInPage()
@@ -2262,14 +2262,14 @@ public class AdminController extends SpringActionController
             _showRibbonMessage = showRibbonMessage;
         }
 
-        public String getRibbonMessageHtml()
+        public String getRibbonMessage()
         {
-            return _ribbonMessageHtml;
+            return _ribbonMessage;
         }
 
-        public void setRibbonMessageHtml(String ribbonMessageHtml)
+        public void setRibbonMessage(String ribbonMessage)
         {
-            _ribbonMessageHtml = ribbonMessageHtml;
+            _ribbonMessage = ribbonMessage;
         }
 
         public boolean getUseContainerRelativeURL()
@@ -2312,14 +2312,14 @@ public class AdminController extends SpringActionController
             _allowSessionKeys = allowSessionKeys;
         }
 
-        public String getXFrameOptions()
+        public String getXFrameOption()
         {
-            return _XFrameOptions;
+            return _XFrameOption;
         }
 
-        public void setXFrameOptions(String XFrameOptions)
+        public void setXFrameOption(String XFrameOption)
         {
-            _XFrameOptions = XFrameOptions;
+            _XFrameOption = XFrameOption;
         }
     }
 
@@ -10335,8 +10335,8 @@ public class AdminController extends SpringActionController
 
             props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
             props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
-            props.setHelpMenuEnabled(form.isEnableHelpMenu());
-            props.setDiscussionEnabled(form.isEnableDiscussion());
+            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
+            props.setDiscussionEnabled(form.isDiscussionEnabled());
 
             DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
             props.setDateParsingMode(dateParsingMode);
@@ -10385,7 +10385,7 @@ public class AdminController extends SpringActionController
 
             for (ResourceType type : ResourceType.values())
             {
-                MultipartFile file = fileMap.get(type.getFieldName());
+                MultipartFile file = fileMap.get(type.name());
 
                 if (file != null && !file.isEmpty())
                 {
