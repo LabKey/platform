@@ -33,9 +33,8 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.Module;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -68,47 +67,24 @@ class SecurityQuery extends Query
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private final InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
-    SecurityQuery(User user, Container searchRoot, Container currentContainer, boolean recursive, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
+    SecurityQuery(User user, SearchScope searchScope, Container currentContainer, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
         // These three are used for hashCode() & equals(). We have disabled query caching for now (see #26416), but this gets us close to being able to use it. We
         // need to add some indication that permissions haven't changed since the query was cached, for example, include in the hash a counter that SecurityManager
         // increments for every group or role assignment change.
         _user = user;
         _currentContainer = currentContainer;
-        _recursive = recursive;
-
+        _recursive = searchScope.isRecursive();
         _iTimer = iTimer;
 
-        if (recursive)
-        {
-            // Returns root plus all children (including workbooks & tabs) where user has read permissions
-            List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-            _containerIds = new HashMap<>(containers.size() * 2);
+        _containerIds = searchScope.getSearchableContainers(user, currentContainer);
 
-            for (Container c : containers)
-            {
-                boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isContainerFor(ContainerType.DataType.search) || c.shouldDisplay(user));
-
-                if (searchable)
-                {
-                    _containerIds.put(c.getId(), c);
-                }
-            }
-        }
-        else
-        {
-            _containerIds = new HashMap<>();
-
-            if (searchRoot.hasPermission(user, ReadPermission.class))
-                _containerIds.put(searchRoot.getId(), searchRoot);
-        }
         SearchService.get().getSearchCategories().forEach(
                 category -> {
                     _categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, _containerIds));
                 }
         );
     }
-
 
     @Override
     public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost)
