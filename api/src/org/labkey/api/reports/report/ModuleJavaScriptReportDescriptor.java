@@ -45,6 +45,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 
         setReportKey(reportKey);
         setReportName(name);
+        setReportType(JavaScriptReport.TYPE);
         _resource = getModuleReportResource(sourceFile);
         loadMetaData();
         _resource.loadScript();
