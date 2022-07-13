@@ -17,7 +17,6 @@ package org.labkey.query.reports;
 
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +29,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
+import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
@@ -38,8 +38,8 @@ import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.logging.LogHelper;
 
-import java.io.FilenameFilter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -57,13 +57,12 @@ import java.util.stream.Stream;
  */
 public class ModuleReportCache
 {
-    private static final Logger LOG = LogManager.getLogger(ModuleResourceCache.class);
+    private static final Logger LOG = LogHelper.getLogger(ModuleResourceCache.class, "Cache module .R .ipynb .xml reports (etc)");
     private static final String REPORT_PATH_STRING = "reports/schemas";
     private static final Path REPORT_PATH = Path.parse(REPORT_PATH_STRING);
     private static final ReportCollections EMPTY_REPORT_COLLECTIONS = new ReportCollections(Collections.emptyMap());
-    private static final FilenameFilter moduleReportFilter = (dir, name) -> ModuleRReportDescriptor.accept(name) || StringUtils.endsWithIgnoreCase(name, ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
-    private static final FilenameFilter moduleReportFilterWithQuery = (dir, name) -> moduleReportFilter.accept(dir, name) || StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION);
     private static final ModuleResourceCache<ReportCollections> MODULE_REPORT_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Module reports", new ModuleReportHandler(), ResourceRootProvider.getHierarchy(REPORT_PATH));
+
 
     @Nullable
     static ReportDescriptor getModuleReportDescriptor(Module module, String path)
@@ -188,7 +187,10 @@ public class ModuleReportCache
 
         private boolean isResourceFile(String filename)
         {
-            return moduleReportFilterWithQuery.accept(null, filename);
+            return ModuleRReportDescriptor.accept(filename) ||
+                    ModuleIpynbReportDescriptor.accept(filename) ||
+                    StringUtils.endsWithIgnoreCase(filename, ModuleJavaScriptReportDescriptor.FILE_EXTENSION) ||
+                    StringUtils.endsWithIgnoreCase(filename, ModuleQueryReportDescriptor.FILE_EXTENSION);
         }
 
         // TODO: Create and register factories for these descriptors
@@ -201,6 +203,9 @@ public class ModuleReportCache
             // Create R Report Descriptor
             if (ModuleQueryRReportDescriptor.accept(lower))
                 return new ModuleQueryRReportDescriptor(module, parent, reportFile, path);
+
+            if (ModuleIpynbReportDescriptor.accept(lower))
+                return new ModuleIpynbReportDescriptor(module, parent, reportFile, path);
 
             // Create JS Report Descriptor
             if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
@@ -227,7 +232,6 @@ public class ModuleReportCache
             // Make sure the cache retrieves the expected number of report descriptors from a couple test modules, if present
 
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
-
             if (null != simpleTest)
                 assertEquals("Report descriptors from the simpletest module", 5, MODULE_REPORT_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
 

@@ -39,6 +39,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.views.DataViewInfo;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -99,7 +100,6 @@ import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.ReportViewProvider;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1692,11 +1692,18 @@ public class ReportsController extends BaseStudyController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<JSONObject> json = new ArrayList<>();
 
-            ReportViewProvider provider = new ReportViewProvider();
-            List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
-            for (DataViewInfo report : reports)
+            DataViewProvider.Type type = DataViewService.get().getDataTypeByName("reports");
+            if (type != null)
             {
-                json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+                DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
+                if (provider != null)
+                {
+                    List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
+                    for (DataViewInfo report : reports)
+                    {
+                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+                    }
+                }
             }
 
             response.put("schemaName", form.getSchemaName());

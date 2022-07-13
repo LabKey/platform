@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,10 @@ import java.util.List;
  */
 public interface ReportService
 {
+    // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
+    @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
+    Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
+
     String LINK_REPORT_TYPE = "ReportService.linkReport";
 
     static ReportService get()

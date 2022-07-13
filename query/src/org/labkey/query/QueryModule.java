@@ -57,6 +57,8 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.python.IpynbReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -108,6 +110,7 @@ import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
+import org.labkey.query.reports.ReportViewProvider;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
@@ -189,12 +192,15 @@ public class QueryModule extends DefaultModule
         ReportService.get().addUIProvider(new ReportUIProvider());
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
+        ReportService.get().addGlobalItemFilterType(IpynbReport.TYPE);
 
+        ReportService.get().registerDescriptor(new IpynbReportDescriptor());
         ReportService.get().registerDescriptor(new ReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
         ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
+        ReportService.get().registerReport(new IpynbReport());
         ReportService.get().registerReport(new QueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
@@ -211,6 +217,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new URLExportScriptFactory());
         QueryView.register(new PythonExportScriptFactory());
         QueryView.register(new SasExportScriptFactory());
+
+        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());

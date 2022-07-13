@@ -150,6 +150,9 @@ dependencies {
     api "org.apache.tomcat:tomcat-websocket-api:${apacheTomcatVersion}"
     api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
 
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
     runtimeOnly runtime
 
     BuildUtils.addTomcatBuildDependencies(project, "implementation")

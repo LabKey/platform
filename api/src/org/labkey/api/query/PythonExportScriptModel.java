@@ -170,6 +170,7 @@ public class PythonExportScriptModel extends ExportScriptModel
         StringBuilder sb = new StringBuilder();
 
         sb.append("# This script targets the Python client API version 2.0.0 and later").append("\n");
+        sb.append("import labkey").append("\n"); // for filters
         sb.append("from labkey.api_wrapper import APIWrapper").append("\n\n");
 
         //Generate server context object
