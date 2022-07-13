@@ -43,6 +43,12 @@ public class SampleTypeContentsView extends QueryView
         setTitle("Sample Type Contents");
         addClientDependency(ClientDependency.fromPath("Ext4"));
         addClientDependency(ClientDependency.fromPath("experiment/confirmDelete.js"));
+        setAllowableContainerFilterTypes(
+            ContainerFilter.Type.Current,
+            ContainerFilter.Type.CurrentAndSubfoldersPlusShared,
+            ContainerFilter.Type.CurrentPlusProjectAndShared,
+            ContainerFilter.Type.AllFolders
+        );
     }
 
     public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Integer targetSampleTypeId)

@@ -605,6 +605,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
         else
         {
+            //TODO should this be hasPermission(user, ReadPermission.class);  ?
             return true;
         }
     }

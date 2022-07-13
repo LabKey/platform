@@ -97,7 +97,7 @@ import static java.util.stream.Collectors.joining;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
+    private static final Cache<Pair<String, String>, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
@@ -712,6 +712,12 @@ public class OntologyManager
         void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
+    @NotNull
+    private static Pair<String, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    {
+        return Pair.of(container != null ? container.getEntityId().toStringNoDashes() : null, objectLSID);
+    }
+
 
     /**
      * Get ordered map of property values for an object. The order of the properties in the
@@ -719,9 +725,10 @@ public class OntologyManager
      *
      * @return map from PropertyURI to ObjectProperty
      */
-    public static Map<String, ObjectProperty> getPropertyObjects(Container container, String objectLSID)
+    public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Map<String, ObjectProperty> m = mapCache.get(objectLSID);
+        Pair<String, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        Map<String, ObjectProperty> m = mapCache.get(cacheKey);
         if (null != m)
             return m;
 
@@ -789,7 +796,7 @@ public class OntologyManager
         }
 
         m = unmodifiableMap(m);
-        mapCache.put(objectLSID, m);
+        mapCache.put(cacheKey, m);
         return m;
     }
 
@@ -2813,7 +2820,7 @@ public class OntologyManager
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        mapCache.remove(parentObjectURI);
+        mapCache.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
 
