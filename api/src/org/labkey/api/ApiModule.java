@@ -86,6 +86,7 @@ import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppPropsTestCase;
+import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
@@ -140,6 +141,8 @@ public class ApiModule extends CodeOnlyModule
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
+        ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 

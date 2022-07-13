@@ -43,7 +43,7 @@ public interface AppProps
     String SCOPE_SITE_SETTINGS = "SiteSettings";
 
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
-    String SCOPE_EXPERIMENTAL_FEATURE = EXPERIMENTAL_FEATURE;
+    String SCOPE_EXPERIMENTAL_FEATURE = "ExperimentalFeature";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
