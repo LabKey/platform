@@ -63,6 +63,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
@@ -96,6 +97,7 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryViewProvider;
@@ -7420,10 +7422,11 @@ public class ExperimentServiceImpl implements ExperimentService
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
         String oldDataClassName = dataClass.getName();
+        String newName = null;
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
-            String newName = StringUtils.trimToNull(options.getName());
+            newName = StringUtils.trimToNull(options.getName());
             if (newName != null && !oldDataClassName.equals(newName))
             {
                 hasNameChange = true;
@@ -7453,6 +7456,9 @@ public class ExperimentServiceImpl implements ExperimentService
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             dataClass.save(u);
+            if (hasNameChange)
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
+
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
 
             if (hasNameChange)
