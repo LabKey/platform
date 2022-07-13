@@ -29,9 +29,12 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.module.DefaultModule;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.view.BadRequestException;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
@@ -237,8 +240,8 @@ public class HttpUtil
         boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
         boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
         boolean apiClass = action instanceof BaseApiAction;
-        boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
-        return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || r);
+        boolean clientLibrary = getClientLibrary(request) != null;
+        return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || clientLibrary);
     }
 
     /** @return best guess if the request is from a browser vs. a WebDAV client or client API */
@@ -246,7 +249,7 @@ public class HttpUtil
     {
         if ("XMLHttpRequest".equals(request.getHeader("x-requested-with")))
             return true;
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = getUserAgent(request);
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
@@ -255,20 +258,20 @@ public class HttpUtil
     /** @return best guess if the request came from a Chrome browser */
     public static boolean isChrome(@NotNull HttpServletRequest request)
     {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = getUserAgent(request);
         return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
     }
 
     public static boolean isSafari(@NotNull HttpServletRequest request)
     {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = getUserAgent(request);
         return !isChrome(request) && StringUtils.containsIgnoreCase(userAgent, "safari");
     }
 
     /** @return best guess if the request came from the OSX integrated WebDAV client */
     public static boolean isMacFinder(@NotNull HttpServletRequest request)
     {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = getUserAgent(request);
         if (null == userAgent)
             return false;
         return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
@@ -277,9 +280,39 @@ public class HttpUtil
     /** @return best guess if the request came from the Windows Explorer integrated WebDAV client */
     public static boolean isWindowsExplorer(@NotNull HttpServletRequest request)
     {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = getUserAgent(request);
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Microsoft-WebDAV");
+    }
+
+    public static void trackClientApiRequests(HttpServletRequest request)
+    {
+        String clientLibrary = getClientLibrary(request);
+        if (null != clientLibrary)
+            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "ClientApiRequests", clientLibrary);
+    }
+
+    private static @Nullable String getClientLibrary(HttpServletRequest request)
+    {
+        String userAgent = getUserAgent(request);
+        if (null != userAgent)
+        {
+            if (userAgent.startsWith("Apache-HttpClient/")) // Can't distinguish between SAS, Java, and JDBC right now
+                return "Java";
+            else if (userAgent.startsWith("Rlabkey"))
+                return "R";
+            else if (userAgent.startsWith("python-requests/"))
+                return "Python";
+            else if (userAgent.startsWith("Perl API Client/"))
+                return "Perl";
+        }
+
+        return null;
+    }
+
+    public static @Nullable String getUserAgent(HttpServletRequest request)
+    {
+        return request.getHeader("User-Agent");
     }
 }
