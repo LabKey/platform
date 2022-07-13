@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2208,7 +2209,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
             ModuleLoader.getInstance().getStartupPropertyEntries(null)
                 .stream()
                 .filter(entry -> null == entry.getStartupProperty())
-                .forEach(entry -> _log.error("Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue()));
+                .forEach(entry -> {
+                    // Suppress ERROR logging on this special snowflake. TODO: Remove this hack once Server Provisioner, Accounterer, etc. are updated. See Issue 45867 and Issue 45842
+                    Level logLevel = "SiteSettings".equals(entry.getScope()) && "experimentalFeature.disableGuestAccount".equals(entry.getName()) ? Level.WARN : Level.ERROR;
+                    _log.log(logLevel, "Unknown startup property: " + entry.getScope() + "." + entry.getName() + ": " + entry.getValue());
+                });
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();
