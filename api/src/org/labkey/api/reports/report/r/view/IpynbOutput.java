@@ -239,11 +239,11 @@ public class IpynbOutput extends HtmlOutput
             sb.append(HtmlString.unsafe(
                 """
                 <style type="text/css">
-                div.ipynb-cell { }
+                div.ipynb-cell { display:grid; grid-template-columns: 50px auto; }
                 
                 div.ipynb-cell-index {
                     padding:5px; color:rgb(100,100,100); font-size:small;
-                    width:50px; float:left; clear:both; text-align:right; text-overflow:ellipsis, overflow-x:hidden; border:solid blue 0px;
+                    clear:both; text-align:right; text-overflow:ellipsis, overflow-x:hidden; border:solid blue 0px;
                 }
                 
                 div.ipynb-cell-source { border:solid red 0px;}
@@ -338,7 +338,7 @@ public class IpynbOutput extends HtmlOutput
                             var textArray = (JSONArray)data.get("image/svg+xml");
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-svg\">"));
                             for (int i=0 ; i<textArray.length() ; i++)
-                                sb.append((String)textArray.get(i));
+                                sb.append(HtmlString.unsafe((String)textArray.get(i)));
                             sb.append(HtmlString.unsafe("</div>"));
                             sbOutput.append(sb);
                             return;
