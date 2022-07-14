@@ -4,6 +4,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -128,12 +130,18 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
     }
 
     @Override
-    public long increment(@NotNull String moduleName, @NotNull String featureArea, @NotNull String metricName)
+    public long increment(@NotNull String requestedModuleName, @NotNull String featureArea, @NotNull String metricName)
     {
         if (featureArea.contains(","))
         {
             throw new IllegalArgumentException("Feature area names cannot contain commas");
         }
+        Module module = ModuleLoader.getInstance().getModule(requestedModuleName);
+        if (null == module)
+        {
+            throw new IllegalArgumentException("Unknown module: " + requestedModuleName);
+        }
+        String moduleName = module.getName();  // Use canonical name to ensure consistent casing
         String scoping = getScoping(moduleName, featureArea);
 
         Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(moduleName);
