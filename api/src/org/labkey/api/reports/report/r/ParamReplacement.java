@@ -84,7 +84,8 @@ public interface ParamReplacement
     void setHeaderVisible(boolean visible);
     boolean getHeaderVisible();
 
-    HttpView render(ViewContext context);
+    HttpView getView(ViewContext context);
     @Nullable Thumbnail renderThumbnail(ViewContext context) throws IOException;
+
     ScriptOutput renderAsScriptOutput(File file) throws Exception;
 }

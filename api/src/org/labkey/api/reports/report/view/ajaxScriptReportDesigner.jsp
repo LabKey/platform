@@ -47,6 +47,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.reports.report.python.IpynbReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -126,6 +127,7 @@
     reportConfig.put("viewName", PageFlowUtil.filter(bean.getViewName()));
     reportConfig.put("dataRegionName", PageFlowUtil.filter(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
+    reportConfig.put("reportName", bean.getReportName());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
     reportConfig.put("reportAccess", bean.getReportAccess());
     reportConfig.put("shareReport", bean.isShareReport());
@@ -151,6 +153,8 @@
     reportConfig.put("thumbnailOptions", report.supportsDynamicThumbnail());
     if (report.supportsDynamicThumbnail())
         reportConfig.put("thumbnailType", bean.getThumbnailType() != null ? bean.getThumbnailType() : DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
+
+    reportConfig.put("jupyterOptions", report instanceof IpynbReport);
 
     StudyService svc = StudyService.get();
     reportConfig.put("studyOptions", (report instanceof RReport) && (svc != null && svc.getStudy(c) != null));

@@ -4,7 +4,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.PageFlowUtil;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -86,7 +88,26 @@ public class LoggingTestCase extends Assert
             File tomcat = tomcatLib.getParentFile();
             try (Stream<Path> found = Files.find(tomcat.toPath(), 3, (path, basicFileAttributes) -> path.endsWith("jxl.log")))
             {
-                String allFound = found.map(Path::toString).collect(Collectors.joining(", "));
+                String allFound = found.map(p ->
+                {
+                    StringBuilder result = new StringBuilder(p.toString());
+                    try
+                    {
+                        result.append(", modified ").append(Files.getLastModifiedTime(p)).append(", size ").append(Files.size(p)).append(", content:");
+                        try (BufferedReader r = new BufferedReader(Files.newBufferedReader(p)))
+                        {
+                            int lineNum = 1;
+                            String line;
+                            while ((line = r.readLine()) != null && lineNum <= 4)
+                            {
+                                lineNum++;
+                                result.append("\n").append(line);
+                            }
+                        }
+                    }
+                    catch (IOException ignored) {}
+                    return result.toString();
+                }).collect(Collectors.joining(", "));
                 assertTrue("Found jxl.log file(s) in Tomcat folder; this likely means that log4j 1.2 is present! Files found: " + allFound, allFound.isEmpty());
             }
         }
