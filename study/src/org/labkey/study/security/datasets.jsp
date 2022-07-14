@@ -188,6 +188,11 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
     td.dataset-permission {
         padding: 5px 5px 0 5px !important;
     }
+
+    tr.header-lock {
+        position: sticky;
+        top: 0;
+    }
 </style>
 <labkey:form id="datasetSecurityForm" action="<%=urlFor(ApplyDatasetPermissionsAction.class)%>" onsubmit="LABKEY.setSubmit(true);" method="POST">
 <%
@@ -202,7 +207,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         %><col><%
     }
     %></colgroup>
-    <tr class="<%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
+    <tr class="header-lock <%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
