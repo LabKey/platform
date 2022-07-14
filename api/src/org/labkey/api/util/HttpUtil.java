@@ -298,14 +298,18 @@ public class HttpUtil
         String userAgent = getUserAgent(request);
         if (null != userAgent)
         {
-            if (userAgent.startsWith("Apache-HttpClient/")) // Can't distinguish between SAS, Java, and JDBC right now
+            if (userAgent.startsWith("Apache-HttpClient/") /* Note: This could be older SAS or JDBC access */ || userAgent.startsWith("LabKey Java API"))
                 return "Java";
-            else if (userAgent.startsWith("Rlabkey"))
+            else if (userAgent.startsWith("Rlabkey")|| userAgent.startsWith("LabKey R API"))
                 return "R";
-            else if (userAgent.startsWith("python-requests/"))
+            else if (userAgent.startsWith("python-requests/")|| userAgent.startsWith("LabKey Python API"))
                 return "Python";
-            else if (userAgent.startsWith("Perl API Client/"))
+            else if (userAgent.startsWith("LabKey JDBC API"))
+                return "JDBC";
+            else if (userAgent.startsWith("Perl API Client/") || userAgent.startsWith("LabKey Perl API"))
                 return "Perl";
+            else if (userAgent.startsWith("LabKey SAS API"))
+                return "SAS";
         }
 
         return null;
