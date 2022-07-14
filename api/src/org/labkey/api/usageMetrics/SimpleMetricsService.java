@@ -19,5 +19,14 @@ public interface SimpleMetricsService
         ServiceRegistry.get().registerService(SimpleMetricsService.class, impl);
     }
 
+    /**
+     * Increment the persistent counter associated with the given module, feature area, and metric name combination.
+     * The total will be reported to mothership in this module's "simpleMetricCounts" node. Isn't that simple?
+     * @param moduleName Module name. Must match a currently deployed module's name, though we'll grudgingly accept
+     *                  casing differences vs. the module's canonical name.
+     * @param featureArea Your name for the feature area. Needs to be unique within this module's simple metrics.
+     * @param metricName Your name for the specific metric within this feature area.
+     * @return new value for this counter
+     */
     long increment(String moduleName, String featureArea, String metricName);
 }
