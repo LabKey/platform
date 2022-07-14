@@ -58,6 +58,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
@@ -142,12 +143,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
-    private final TableResolver _tableResolver;
-
-    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -2066,11 +2061,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return name;
     }
 
+    private static final TableResolver TABLE_RESOLVER = new SynonymTableResolver();
 
     @Override
     public TableResolver getTableResolver()
     {
-        return _tableResolver;
+        return TABLE_RESOLVER;
     }
 
     @Override

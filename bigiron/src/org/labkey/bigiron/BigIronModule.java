@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.labkey.bigiron.mssql.MicrosoftSqlServerDialectFactory;
+import org.labkey.bigiron.mssql.synonym.SynonymTestCase;
 import org.labkey.bigiron.mysql.MySqlDialectFactory;
 import org.labkey.bigiron.oracle.OracleDialectFactory;
 import org.labkey.bigiron.sas.SasDialectFactory;
@@ -82,6 +83,9 @@ public class BigIronModule extends CodeOnlyModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Set.of(GroupConcatInstallationManager.TestCase.class);
+        return Set.of(
+            GroupConcatInstallationManager.TestCase.class,
+            SynonymTestCase.class
+        );
     }
 }

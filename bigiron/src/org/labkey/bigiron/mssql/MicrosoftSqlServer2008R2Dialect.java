@@ -18,18 +18,12 @@ package org.labkey.bigiron.mssql;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.dialect.TableResolver;
 
 /**
  * Created by adam on 12/4/2015.
  */
 public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDialect
 {
-    public MicrosoftSqlServer2008R2Dialect(TableResolver tableResolver)
-    {
-        super(tableResolver);
-    }
-
     // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
     @Override
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)

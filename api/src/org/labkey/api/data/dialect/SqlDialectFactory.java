@@ -43,9 +43,4 @@ public interface SqlDialectFactory
 
     // Caller must invoke initialize() on the dialects.
     Collection<? extends SqlDialect> getDialectsToTest();
-
-    // Factories can override if they want the ability to replace their standard TableResolver
-    default void setTableResolver(TableResolver tableResolver)
-    {
-    }
 }
