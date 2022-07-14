@@ -17,7 +17,6 @@ package org.labkey.bigiron.mssql;
 
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.data.dialect.TableResolver;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -31,11 +30,6 @@ import java.util.Calendar;
  */
 public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
 {
-    public MicrosoftSqlServer2016Dialect(TableResolver tableResolver)
-    {
-        super(tableResolver);
-    }
-
     @Override
     public StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {

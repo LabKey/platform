@@ -29,8 +29,6 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.SqlDialectManager;
-import org.labkey.api.data.dialect.StandardTableResolver;
-import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.VersionNumber;
 import org.labkey.api.util.logging.LogHelper;
@@ -51,8 +49,6 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private static final Logger LOG = LogHelper.getLogger(MicrosoftSqlServerDialectFactory.class, "Warnings about SQL Server versions");
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
-    private volatile TableResolver _tableResolver = new StandardTableResolver();
-
     private String getProductName()
     {
         return PRODUCT_NAME;
@@ -69,7 +65,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     {
         return switch (driverClassName)
         {
-            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect(_tableResolver);
+            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2014Dialect();
             default -> null;
         };
     }
@@ -116,16 +112,16 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             }
 
             if (version >= 150)
-                return new MicrosoftSqlServer2019Dialect(_tableResolver);
+                return new MicrosoftSqlServer2019Dialect();
 
             if (version >= 140)
-                return new MicrosoftSqlServer2017Dialect(_tableResolver);
+                return new MicrosoftSqlServer2017Dialect();
 
             if (version >= 130)
-                return new MicrosoftSqlServer2016Dialect(_tableResolver);
+                return new MicrosoftSqlServer2016Dialect();
 
             if (version >= 120)
-                return new MicrosoftSqlServer2014Dialect(_tableResolver);
+                return new MicrosoftSqlServer2014Dialect();
 
             // Accept 2008, 2008R2, or 2012 as an external/supplemental database, but not as the primary database
             if (!primaryDataSource)
@@ -134,9 +130,9 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                     LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
                 if (version >= 110)
-                    return new MicrosoftSqlServer2012Dialect(_tableResolver);
+                    return new MicrosoftSqlServer2012Dialect();
 
-                return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
+                return new MicrosoftSqlServer2008R2Dialect();
             }
         }
 
@@ -153,15 +149,8 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // The SQL Server dialects are identical, so just test one
-        return Set.of(new MicrosoftSqlServer2014Dialect(_tableResolver));
+        return Set.of(new MicrosoftSqlServer2014Dialect());
     }
-
-    @Override
-    public void setTableResolver(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
-
 
     private static SqlDialect getEarliestSqlDialect()
     {
