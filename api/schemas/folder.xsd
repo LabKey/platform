@@ -93,6 +93,17 @@
                 <xs:element name="moduleProperties" minOccurs="0" type="modulePropertiesType"/>
                 <xs:element name="xar" minOccurs="0" type="exportDirType" />
                 <xs:element name="inventory" minOccurs="0" type="exportDirType"/>
+                <xs:element name="fileBrowserConfig" minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Names the file that stores file browser admin configuration information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
             </xs:all>
             <xs:attribute name="archiveVersion" type="xs:double">
                 <xs:annotation>
