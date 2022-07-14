@@ -15,6 +15,7 @@
  */
 package org.labkey.core.wiki;
 
+import org.json.JSONObject;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -31,6 +32,7 @@ import javax.script.ScriptException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
@@ -53,6 +55,12 @@ public class MarkdownServiceImpl implements MarkdownService
 
     @Override
     public String toHtml(String mdText) throws NoSuchMethodException, ScriptException
+    {
+        return toHtml(mdText, Map.of());
+    }
+
+    @Override
+    public String toHtml(String mdText, Map<Options,Boolean> options) throws NoSuchMethodException, ScriptException
     {
         // make sure that the source text has the carriage returns escaped and the whole thing encoded
         // otherwise it wont parse right as a js string if it hits a cr or a quote.
@@ -88,10 +96,9 @@ public class MarkdownServiceImpl implements MarkdownService
         {
             throw new ConfigurationException("Could not open markdown-it.js", x);
         }
-        engine.eval("var md = new markdownit({" +
-                "breaks: true," +
-                "linkify: true" +
-                "})");
+        JSONObject json = new JSONObject(Map.of("breaks",true,"linkify",true, "html", false));
+        options.forEach((key, value) -> json.put(key.toString(), value));
+        engine.eval("var md = new markdownit(" + json + ")");
         Object mdCompiled = engine.eval("md");
         Invocable invocable = (Invocable) engine;
         invocable.invokeMethod(mdCompiled, "render", "# call render method here to ensure that nashorn compiles this method before use by app");

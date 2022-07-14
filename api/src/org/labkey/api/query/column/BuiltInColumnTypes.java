@@ -69,12 +69,12 @@ public enum BuiltInColumnTypes
         QueryService.get().registerColumnInfoTransformer(new ContainerIdColumnInfoTransformer());
     }
 
-    public static final String CONTAINERID_CONCEPT_URI = "http://www.labkey.org/types#containerId";         // JbcType.GUID
-    public static final String USERID_CONCEPT_URI      = "http://www.labkey.org/types#userId";              // JbcType.INTEGER
-    public static final String CREATEDBY_CONCEPT_URI   = "http://www.labkey.org/types#createdByUserId";    // JbcType.INTEGER
-    public static final String MODIFIEDBY_CONCEPT_URI  = "http://www.labkey.org/types#modifiedByUserId";     // JbcType.INTEGER
-    public static final String CREATED_CONCEPT_URI     = "http://www.labkey.org/types#createdTimestamp";    // JbcType.TIMESTAMP
-    public static final String MODIFIED_CONCEPT_URI    = "http://www.labkey.org/types#modifiedTimestamp";   // JbcType.TIMESTAMP
+    public static final String CONTAINERID_CONCEPT_URI = "http://www.labkey.org/types#containerId";         // JdcType.GUID
+    public static final String USERID_CONCEPT_URI      = "http://www.labkey.org/types#userId";              // JdbcType.INTEGER
+    public static final String CREATEDBY_CONCEPT_URI   = "http://www.labkey.org/types#createdByUserId";    // JdbcType.INTEGER
+    public static final String MODIFIEDBY_CONCEPT_URI  = "http://www.labkey.org/types#modifiedByUserId";     // JdbcType.INTEGER
+    public static final String CREATED_CONCEPT_URI     = "http://www.labkey.org/types#createdTimestamp";    // JdbcType.TIMESTAMP
+    public static final String MODIFIED_CONCEPT_URI    = "http://www.labkey.org/types#modifiedTimestamp";   // JdbcType.TIMESTAMP
 
     /*
      * EXPOBJECTID_CONCEPT_URI should only be applied to objectid from exp.object table (or columns that copy that value).

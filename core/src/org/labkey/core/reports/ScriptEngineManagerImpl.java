@@ -39,6 +39,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.docker.DockerService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
@@ -489,13 +490,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         {
             try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
-
                 // delete any folder scoped mappings
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EngineId"), def.getRowId());
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), filter);
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngines(), def.getRowId());
 
+                // delete the docker image config for docker engine types
+                if (def.getDockerImageRowId() != null && DockerService.get() != null)
+                {
+                    DockerService.get().deleteDockerImage(user, def.getDockerImageRowId());
+                }
+
+                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
                 tx.commit();
             }
         }

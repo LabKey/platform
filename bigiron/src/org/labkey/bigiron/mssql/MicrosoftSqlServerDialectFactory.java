@@ -93,8 +93,8 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
         String driverName = md.getDriverName();
 
-        if (!driverName.startsWith("jTDS"))
-            LOG.warn("LabKey Server has not been tested against " + driverName + ". Instead, we recommend configuring the jTDS JDBC Driver, which is distributed with LabKey Server.");
+        if (!driverName.startsWith("jTDS") && !driverName.startsWith("Microsoft"))
+            LOG.warn("LabKey Server has not been tested against " + driverName + ". Instead, we recommend configuring the Microsoft SQL Server JDBC Driver, which is distributed with LabKey Server.");
 
         return dialect;
     }

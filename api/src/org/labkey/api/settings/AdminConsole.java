@@ -149,7 +149,7 @@ public class AdminConsole
         return Collections.unmodifiableSet(_experimentalFlags);
     }
 
-    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>
+    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>, StartupProperty
     {
         private final String _flag;
         private final String _title;
@@ -193,6 +193,15 @@ public class AdminConsole
         public boolean isEnabled()
         {
             return AppProps.getInstance().isExperimentalFeatureEnabled(getFlag());
+        }
+
+        // StartupProperty implementation
+
+        @NotNull
+        @Override
+        public String getPropertyName()
+        {
+            return getFlag();
         }
     }
 }
