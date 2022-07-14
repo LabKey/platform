@@ -191,7 +191,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
 
     tr.header-lock {
         position: sticky;
-        top: 0;
+        top: -1px;
     }
 </style>
 <labkey:form id="datasetSecurityForm" action="<%=urlFor(ApplyDatasetPermissionsAction.class)%>" onsubmit="LABKEY.setSubmit(true);" method="POST">
