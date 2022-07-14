@@ -58,7 +58,7 @@ import java.util.Set;
  */
 public class ApiQueryResponse implements ApiResponse
 {
-    private static final String URL_COL_PREFIX = "_labkeyurl_";
+    public static final String URL_COL_PREFIX = "_labkeyurl_";
     boolean _doItWithStyle = false;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;

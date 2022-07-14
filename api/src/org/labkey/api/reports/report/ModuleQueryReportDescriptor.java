@@ -36,6 +36,7 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
 
     public ModuleQueryReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
+        super(TYPE);
         _module = module;
         _reportPath = reportPath;
 
@@ -43,7 +44,6 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor implement
 
         setReportKey(reportKey);
         setReportName(name);
-        setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
         _resource = new ModuleQueryReportResource(this, sourceFile);
         loadMetaData();

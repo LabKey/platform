@@ -46,6 +46,16 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         useDefaultOutputFormat /* pandoc only */
     }
 
+    public ScriptReportDescriptor()
+    {
+        super();
+    }
+
+    public ScriptReportDescriptor(String descriptorType)
+    {
+        super(descriptorType);
+    }
+
     public void setIncludedReports(List<String> reports)
     {
         _props.put(Prop.includedReports.toString(), reports);

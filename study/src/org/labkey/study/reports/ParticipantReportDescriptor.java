@@ -40,7 +40,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
 
     public ParticipantReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
     }
 
     @Override
