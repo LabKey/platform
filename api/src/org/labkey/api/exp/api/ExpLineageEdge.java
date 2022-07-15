@@ -1,5 +1,7 @@
 package org.labkey.api.exp.api;
 
+import java.util.Objects;
+
 public class ExpLineageEdge
 {
     private Integer _fromObjectId;
@@ -11,6 +13,15 @@ public class ExpLineageEdge
     // Necessary for database serialization
     public ExpLineageEdge()
     {
+    }
+
+    public ExpLineageEdge(Integer fromObjectId, Integer toObjectId, Integer runId, Integer sourceId, String sourceKey)
+    {
+        _fromObjectId = fromObjectId;
+        _toObjectId = toObjectId;
+        _runId = runId;
+        _sourceId = sourceId;
+        _sourceKey = sourceKey;
     }
 
     public Integer getFromObjectId()
@@ -61,6 +72,36 @@ public class ExpLineageEdge
     public void setToObjectId(Integer toObjectId)
     {
         _toObjectId = toObjectId;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format(
+            "fromObjectId: %d, toObjectId: %d, runId: %d, sourceId: %d, sourceKey: %s",
+            _fromObjectId, _toObjectId, _runId, _sourceId, _sourceKey
+        );
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_fromObjectId, _toObjectId, _runId, _sourceId, _sourceKey);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof ExpLineageEdge edge))
+            return false;
+
+        return (
+            Objects.equals(_fromObjectId, edge.getFromObjectId()) &&
+            Objects.equals(_toObjectId, edge.getToObjectId()) &&
+            Objects.equals(_runId, edge.getRunId()) &&
+            Objects.equals(_sourceId, edge.getSourceId()) &&
+            Objects.equals(_sourceKey, edge.getSourceKey())
+        );
     }
 
     public static class Options
