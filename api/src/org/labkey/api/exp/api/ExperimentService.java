@@ -859,7 +859,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
 
-    void addEdges(ExpLineageEdge... edges);
+    void addEdges(Collection<ExpLineageEdge> edges);
 
     @NotNull
     List<ExpLineageEdge> getEdges(ExpLineageEdge.Options options);

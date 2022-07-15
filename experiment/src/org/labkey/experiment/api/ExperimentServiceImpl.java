@@ -8093,9 +8093,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public void addEdges(ExpLineageEdge... edges)
+    public void addEdges(Collection<ExpLineageEdge> edges)
     {
-        if (edges.length == 0)
+        if (edges == null || edges.size() == 0)
             return;
 
         List<List<?>> params = new ArrayList<>();
