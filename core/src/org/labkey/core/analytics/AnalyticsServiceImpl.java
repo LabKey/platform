@@ -125,10 +125,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public enum AnalyticsProperty implements StartupProperty
     {
-        trackingStatus("Analytics tracking status. Valid values: " + Arrays.toString(TrackingStatus.values())),
-        accountId("Account ID"),
+        trackingStatus("Analytics tracking status. Valid values (comma delimited listing allowed): " + Arrays.toString(TrackingStatus.values())),
+        accountId("Universal Google Analytics Account ID (deprecated)"),
         // For GA 4
-        measurementId("Measurement ID"),
+        measurementId("Google Analytics 4 Measurement ID"),
         trackingScript("Custom analytics script");
 
         private final String _description;
