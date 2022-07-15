@@ -2383,8 +2383,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         for (Identifiable seed : seeds)
         {
-            var roughEdges = getEdges(new ExpLineageEdge.Options().sourceId(seed.getExpObject().getObjectId()));
-
             // create additional edges from the run for each ExpMaterial or ExpData seed
             if (seed instanceof ExpRunItem runSeed && !isUnknownMaterial(runSeed))
             {
@@ -8103,7 +8101,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (var edge : edges)
         {
             if (edge.getRunId() != null)
-                throw new IllegalArgumentException("Failed to add lineage edge. Edges with a runId are not supported. Use experiment protocol inputs/outputs if run support is necessary.");
+                throw new IllegalArgumentException("Failed to add lineage edge. Adding edges with a runId are not supported. Use experiment protocol inputs/outputs if run support is necessary.");
 
             // ignore cycles from and to itself
             if (Objects.equals(edge.getFromObjectId(), edge.getToObjectId()))
@@ -8189,13 +8187,13 @@ public class ExperimentServiceImpl implements ExperimentService
         @Before
         public void setUp()
         {
-            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+            JunitUtil.deleteTestContainer();
         }
 
         @After
         public void tearDown()
         {
-            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+            JunitUtil.deleteTestContainer();
         }
 
         @Test
