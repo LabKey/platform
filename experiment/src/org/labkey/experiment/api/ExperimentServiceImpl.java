@@ -843,7 +843,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
                     catch (DeadlockLoserDataAccessException dldae)
                     {
-                        // if we're not in an transaction just keep going...
+                        // if we're not in a transaction just keep going...
                         if (dbscope.isTransactionActive())
                             throw dldae;
                     }
