@@ -855,12 +855,10 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoSampleType(), rowId, ms);
     }
-
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
     {
@@ -2864,7 +2862,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         // query the exp.edge table for the run and find any differences
         TableInfo edge = getTinfoEdge();
-        TableSelector ts = new TableSelector(edge, edge.getColumns("fromObjectId", "toObjectId", "runId"), new SimpleFilter("runId", runId), null);
+        TableSelector ts = new TableSelector(edge, edge.getColumns("fromObjectId", "toObjectId", "runId"), new SimpleFilter(FieldKey.fromParts("runId"), runId), null);
 
         List<List<Object>> edges = new ArrayList<>(params.size());
         ts.forEach(r -> {
@@ -2971,9 +2969,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
-// LSID VERSION
-//            String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
-//                    "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
             TableInfo edge = getTinfoEdge();
             String edgeSql = "INSERT INTO " + edge +
                     /* (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "") + */
@@ -3346,15 +3341,14 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-
-    public void rebuildAllEdges()
+    public void rebuildAllRunEdges()
     {
         try (CustomTiming timing = MiniProfiler.custom("exp", "rebuildAllEdges"))
         {
             try (Timing ignored = MiniProfiler.step("delete edges"))
             {
-                LOG.debug("Deleting all edges");
-                Table.delete(getTinfoEdge());
+                LOG.debug("Deleting all run-based edges");
+                Table.delete(getTinfoEdge(), new SimpleFilter().addCondition(FieldKey.fromParts("runId"), null, CompareType.NONBLANK));
             }
 
             // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
@@ -3383,7 +3377,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (timing != null)
             {
                 timing.stop();
-                LOG.debug("Rebuilt all edges: " + timing.getDuration() + " ms");
+                LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
         ClosureQueryHelper.invalidateAll();
@@ -3422,7 +3416,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
             Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
 
-            SimpleFilter filter = new SimpleFilter("container", c.getId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
             var ts = new TableSelector(getTinfoExperimentRun(),
                     getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), filter, new Sort("rowId"));
             if (limit != null)
@@ -4500,13 +4494,16 @@ public class ExperimentServiceImpl implements ExperimentService
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
      */
-    private void deleteMaterialByRowIds(User user, Container container,
-                                        Collection<Integer> selectedMaterialIds,
-                                        boolean deleteRunsUsingMaterials,
-                                        boolean deleteFromAllSampleTypes,
-                                        @Nullable ExpSampleType stDeleteFrom,
-                                        boolean ignoreStatus,
-                                        boolean isTruncate)
+    private void deleteMaterialByRowIds(
+        User user,
+        Container container,
+        Collection<Integer> selectedMaterialIds,
+        boolean deleteRunsUsingMaterials,
+        boolean deleteFromAllSampleTypes,
+        @Nullable ExpSampleType stDeleteFrom,
+        boolean ignoreStatus,
+        boolean isTruncate
+    )
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4618,8 +4615,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 TableInfo edge = getTinfoEdge();
                 SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(edge))
                         .append(" WHERE ")
-                        .append("fromObjectId ").append(objectIdFrag)
-                        .append(" OR toObjectId ").append(objectIdFrag);
+                        .append(" fromObjectId ").append(objectIdFrag)
+                        .append(" OR toObjectId ").append(objectIdFrag)
+                        .append(" OR sourceId ").append(objectIdFrag);
                 executor.execute(deleteEdgeSql);
             }
 
@@ -4934,7 +4932,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment deleteSql = new SQLFragment()
                     .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?;\n").add(data.getLSID())
                     .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 if (data.getClassId() != null)
@@ -5111,8 +5110,9 @@ public class ExperimentServiceImpl implements ExperimentService
             // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
             String deleteObjEdges =
                     "DELETE FROM " + getTinfoEdge() + "\nWHERE fromObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n"+
-                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
-            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c);
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n" +
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE sourceId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
+            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c, c);
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoDataAliasMap(), containerFilter);
