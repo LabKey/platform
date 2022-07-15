@@ -191,6 +191,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get a Data with name at a specific time.
      */
+    @Nullable
     ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container);
 
     /**
@@ -857,6 +858,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @return The exp.object.rowId with legacy name at the effectiveDate of specified dataType
      */
     Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
+
+    void addEdges(ExpLineageEdge... edges);
+
+    @NotNull
+    List<ExpLineageEdge> getEdges(ExpLineageEdge.Options options);
+
+    int removeEdges(ExpLineageEdge.Options options);
 
     class XarExportOptions
     {
