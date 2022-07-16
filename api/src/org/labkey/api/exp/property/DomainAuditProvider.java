@@ -25,8 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
@@ -104,18 +102,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             {
                 if (COLUMN_NAME_DOMAIN_URI.equalsIgnoreCase(col.getName()))
                 {
-                    final ColumnInfo container = getColumn(FieldKey.fromParts("Container"));
-                    final ColumnInfo name = getColumn(FieldKey.fromParts("DomainName"));
-
                     col.setLabel("Domain");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new DomainAuditProvider.DomainColumn(colInfo, container, name);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new DomainColumn(colInfo, "Container", "DomainName"));
                 }
             }
         };
@@ -226,14 +214,24 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
     public static class DomainColumn extends DataColumn
     {
-        private ColumnInfo _containerId;
-        private ColumnInfo _defaultName;
+        private final String _containerColumnName;
+        private final String _defaultNameColumnName;
 
-        public DomainColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
+        public DomainColumn(ColumnInfo col, String containerColumnName, String defaultNameColumnName)
         {
             super(col);
-            _containerId = containerId;
-            _defaultName = defaultName;
+            _containerColumnName = containerColumnName;
+            _defaultNameColumnName = defaultNameColumnName;
+        }
+
+        private FieldKey getContainerFieldKey()
+        {
+            return FieldKey.fromString(getBoundColumn().getFieldKey().getParent(), _containerColumnName);
+        }
+
+        private FieldKey getDefaultNameFieldKey()
+        {
+            return FieldKey.fromString(getBoundColumn().getFieldKey().getParent(), _defaultNameColumnName);
         }
 
         @Override
@@ -246,9 +244,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             String uri = (String)getBoundColumn().getValue(ctx);
-            String cId = (String)ctx.get("ContainerId");
-            if (cId == null)
-                cId = (String)ctx.get("Container");
+            String cId = ctx.get(getContainerFieldKey(), String.class);
 
             if (uri != null && cId != null)
             {
@@ -258,7 +254,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     Domain domain = PropertyService.get().getDomain(c, uri);
                     if (domain != null)
                     {
-                        DomainKind kind = PropertyService.get().getDomainKind(domain.getTypeURI());
+                        DomainKind<?> kind = PropertyService.get().getDomainKind(domain.getTypeURI());
                         if (kind != null)
                             out.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
                         else
@@ -268,20 +264,15 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 }
             }
 
-            if (_defaultName != null)
-                out.write(Objects.toString(PageFlowUtil.filter(_defaultName.getValue(ctx)), "&nbsp;").toString());
-            else
-                out.write("&nbsp;");
+            out.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;").toString());
         }
 
         @Override
-        public void addQueryColumns(Set<ColumnInfo> columns)
+        public void addQueryFieldKeys(Set<FieldKey> keys)
         {
-            super.addQueryColumns(columns);
-            if (_containerId != null)
-                columns.add(_containerId);
-            if (_defaultName != null)
-                columns.add(_defaultName);
+            super.addQueryFieldKeys(keys);
+            keys.add(getContainerFieldKey());
+            keys.add(getDefaultNameFieldKey());
         }
 
         @Override
