@@ -2441,7 +2441,7 @@ public class ExperimentController extends SpringActionController
                                 qInfo.getString("query"), getViewContext().getActionURL(),
                                 rootObject.getString("auditMessage") + filename,
                                 null);
-                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "ConvertTable", "asExcel");
+                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "convertTable", "asExcel");
                     }
                 }
             }
@@ -2522,7 +2522,7 @@ public class ExperimentController extends SpringActionController
                             getViewContext().getActionURL(),
                             rootObject.getString("auditMessage") + filename,
                             rowsArray.length());
-                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "ConvertTable", "asDelimited");
+                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "convertTable", "asDelimited");
                 }
             }
             catch (JSONException e)

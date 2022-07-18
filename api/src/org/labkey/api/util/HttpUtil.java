@@ -290,7 +290,7 @@ public class HttpUtil
     {
         String clientLibrary = getClientLibrary(request);
         if (null != clientLibrary)
-            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "ClientApiRequests", clientLibrary);
+            SimpleMetricsService.get().increment(DefaultModule.CORE_MODULE_NAME, "clientApiRequests", clientLibrary);
     }
 
     private static @Nullable String getClientLibrary(HttpServletRequest request)
