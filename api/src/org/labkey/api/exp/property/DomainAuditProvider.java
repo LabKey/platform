@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -214,21 +215,25 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
     public static class DomainColumn extends DataColumn
     {
+        @NotNull
         private final String _containerColumnName;
+        @NotNull
         private final String _defaultNameColumnName;
 
-        public DomainColumn(ColumnInfo col, String containerColumnName, String defaultNameColumnName)
+        public DomainColumn(@NotNull ColumnInfo col, @NotNull String containerColumnName, @NotNull String defaultNameColumnName)
         {
             super(col);
             _containerColumnName = containerColumnName;
             _defaultNameColumnName = defaultNameColumnName;
         }
 
+        @NotNull
         private FieldKey getContainerFieldKey()
         {
             return FieldKey.fromString(getBoundColumn().getFieldKey().getParent(), _containerColumnName);
         }
 
+        @NotNull
         private FieldKey getDefaultNameFieldKey()
         {
             return FieldKey.fromString(getBoundColumn().getFieldKey().getParent(), _defaultNameColumnName);
@@ -264,7 +269,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 }
             }
 
-            out.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;").toString());
+            out.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;"));
         }
 
         @Override
