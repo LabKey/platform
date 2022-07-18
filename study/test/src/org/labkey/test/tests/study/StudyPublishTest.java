@@ -920,6 +920,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Role assignments for users and groups",
                 "Webpart properties and layout",
                 "Wikis and their attachments",
+                "File Browser Settings",
                 "Files",
                 "QC State Settings",
                 "Sample Types and Data Classes");
