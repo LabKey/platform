@@ -102,18 +102,8 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             {
                 if (COLUMN_NAME_LIST_DOMAIN_URI.equalsIgnoreCase(col.getName()))
                 {
-                    final ColumnInfo nameCol = getColumn(FieldKey.fromParts(COLUMN_NAME_LIST_NAME));
-                    final ColumnInfo containerCol = getColumn(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
-
                     col.setLabel("List");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new DomainAuditProvider.DomainColumn(colInfo, containerCol, nameCol);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new DomainAuditProvider.DomainColumn(colInfo, COLUMN_NAME_CONTAINER, COLUMN_NAME_LIST_NAME));
                 }
             }
         };
