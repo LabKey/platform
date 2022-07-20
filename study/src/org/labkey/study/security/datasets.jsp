@@ -195,7 +195,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         out.print(generateReturnUrlFormField(returnUrl));
 
     int row = 0;
-    %><br/><table class="table table-striped table-bordered table-hover" id="datasetSecurityFormTable"><colgroup>
+    %><br/><table class="table table-striped table-bordered table-hover labkey-data-region-header-lock" id="datasetSecurityFormTable"><colgroup>
     <%
     for (int i = 0; i < restrictedGroups.size() + 1; i++)
     {

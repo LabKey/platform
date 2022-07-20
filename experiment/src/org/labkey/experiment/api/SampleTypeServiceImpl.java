@@ -79,6 +79,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -1020,6 +1021,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
+            if (hasNameChange)
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);

@@ -45,7 +45,7 @@ class ActionsView extends HttpView
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
-        out.print("<table id=\"actions\" class=\"labkey-data-region-legacy labkey-show-borders\">");
+        out.print("<table id=\"actions\" class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">");
 
         if (_summary)
         {
