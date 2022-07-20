@@ -143,7 +143,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     viewFailure : function(cmp, resp, exp) {
 
-        var error = LABKEY.Utils.getMsgFromError(resp, exp, {msgPrefix : 'Failed to retrieve report results'});
+        var error = LABKEY.Utils.getMsgFromError(resp, exp, {msgPrefix : 'Failed to retrieve report results:\n'});
         if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
         {
             var contentType = resp.getResponseHeader('Content-Type');
