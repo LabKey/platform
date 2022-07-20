@@ -621,7 +621,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException
     {
-        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
+        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,nameExpression, null);
     }
 
     @NotNull
