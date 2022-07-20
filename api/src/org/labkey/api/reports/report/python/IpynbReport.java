@@ -24,7 +24,6 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -175,11 +174,13 @@ public class IpynbReport extends DockerScriptReport
 
         ExecuteStrategy ex = new DockerRunTarStdinStdout();
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
+        LOG.trace("EXIT: " + exitCode);
         File outputFile = ex.getOutputDocument();
+        LOG.trace("OUTPUT: " + outputFile);
 
         Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
         LOG.trace("wd:    " + workingDirectory.getPath());
-        LOG.trace("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
+        LOG.trace("AFTER: " + StringUtils.join(afterExecute.stream().map(f -> f.getName() + " : " + f.length()).toArray(), "\n\t"));
 
         try
         {
