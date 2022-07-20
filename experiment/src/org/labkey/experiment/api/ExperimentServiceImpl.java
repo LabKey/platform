@@ -8118,7 +8118,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (params.isEmpty())
             return;
 
-        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction tx = ensureTransaction())
         {
             String sql = "INSERT INTO " + getTinfoEdge().toString() +
                     " (fromObjectId, toObjectId, sourceId, sourceKey) " +
@@ -8151,8 +8151,15 @@ public class ExperimentServiceImpl implements ExperimentService
             filter.addCondition(FieldKey.fromParts("toObjectId"), options.toObjectId);
         if (options.runId != null)
             filter.addCondition(FieldKey.fromParts("runId"), options.runId);
-        if (options.sourceId != null)
-            filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceId);
+        if (options.sourceIds != null)
+        {
+            if (options.sourceIds.isEmpty())
+                filter.addWhereClause("0 = 1", new Object[]{});
+            if (options.sourceIds.size() == 1)
+                filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds.stream().findFirst().get());
+            else
+                filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds, CompareType.IN);
+        }
         if (StringUtils.trimToNull(options.sourceKey) != null)
             filter.addCondition(FieldKey.fromParts("sourceKey"), options.sourceKey);
 

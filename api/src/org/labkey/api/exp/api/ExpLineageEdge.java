@@ -1,6 +1,8 @@
 package org.labkey.api.exp.api;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class ExpLineageEdge
 {
@@ -108,7 +110,7 @@ public class ExpLineageEdge
     {
         public Integer fromObjectId;
         public Integer runId;
-        public Integer sourceId;
+        public Set<Integer> sourceIds;
         public String sourceKey;
         public Integer toObjectId;
 
@@ -126,7 +128,13 @@ public class ExpLineageEdge
 
         public Options sourceId(Integer sourceId)
         {
-            this.sourceId = sourceId;
+            this.sourceIds = Set.of(sourceId);
+            return this;
+        }
+
+        public Options sourceIds(Set<Integer> sourceIds)
+        {
+            this.sourceIds = new HashSet<>(sourceIds);
             return this;
         }
 
