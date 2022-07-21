@@ -27,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
@@ -235,6 +236,7 @@ public class AuthFilter implements Filter
         {
             SecurityLogger.pushSecurityContext("AuthFilter " + req.getRequestURI(), user);
             addRandomHeader(req, resp);
+            HttpUtil.trackClientApiRequests(req);
             chain.doFilter(req, resp);
         }
         finally
@@ -254,7 +256,6 @@ public class AuthFilter implements Filter
         }
     }
 
-
     private void addRandomHeader(HttpServletRequest req, HttpServletResponse resp)
     {
         // make response size  a bit random (compressed or not)
@@ -264,6 +265,7 @@ public class AuthFilter implements Filter
             sb.append((char)('A' + r.nextInt(26)));
         resp.addHeader("X-LK-NONCE", sb.toString());
     }
+
 
 
     private boolean clearRequestAttributes(HttpServletRequest request)

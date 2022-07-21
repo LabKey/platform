@@ -2857,7 +2857,7 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.filter(title));
             html.append(" (").append(stats.size()).append(")</b></p>\n");
 
-            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
+            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
             html.append("<tr><td class=\"labkey-column-header\">Debug Name</td>");
             html.append("<td class=\"labkey-column-header\">Limit</td>");
             html.append("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
@@ -8405,7 +8405,7 @@ public class AdminController extends SpringActionController
                 {
                     DIV(
                         DIV(_descriptionHtml),
-                        TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
+                        TABLE(cl("labkey-data-region-legacy","labkey-show-borders","labkey-data-region-header-lock"),
                             TR(
                                 TD(cl("labkey-column-header"),"Name"),
                                 TD(cl("labkey-column-header"),"Release Version"),

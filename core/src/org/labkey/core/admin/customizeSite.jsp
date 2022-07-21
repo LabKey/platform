@@ -51,19 +51,13 @@ var submitSystemMaintenance;
     }
 })();
 
-var enableUsageTest = function() {
-    var el = document.getElementById('testUsageReport');
-    var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
-    enableTestButtion(el, level);
-};
-
 var enableExceptionTest = function() {
     var el = document.getElementById('testExceptionReport');
     var level = document.querySelector('input[name="exceptionReportingLevel"]:checked').value;
-    enableTestButtion(el, level);
+    enableTestButton(el, level);
 };
 
-var enableTestButtion = function(el, level) {
+var enableTestButton = function(el, level) {
     if ("NONE" == level)
     {
         LABKEY.Utils.addClass(el, 'labkey-disabled-button');
@@ -75,8 +69,7 @@ var enableTestButtion = function(el, level) {
 };
 
 var testUsageReport = function() {
-    var level = document.querySelector('input[name="usageReportingLevel"]:checked').value;
-    testMothershipReport('CheckForUpdates', level);
+    testMothershipReport('CheckForUpdates', '<%=UsageReportingLevel.ON%>');
 };
 
 var testExceptionReport = function() {
@@ -193,8 +186,8 @@ Click the Save button at any time to accept the current settings and continue.</
                 </td>
             </tr>
             <tr>
-                <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testUsageReport").onClick("testUsageReport(); return false;").enabled(appProps.getUsageReportingLevel() != UsageReportingLevel.NONE)%>
-                    Display an example report for the selected level. <strong>No data will be submitted.</strong></td>
+                <td style="padding: 5px 0 5px;" colspan="2"><%=button("View").id("testUsageReport").onClick("testUsageReport(); return false;")%>
+                    Display an example usage report. <strong>No data will be submitted.</strong></td>
             </tr>
         </table>
     </td>
