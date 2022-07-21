@@ -8155,8 +8155,6 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             if (options.sourceIds.isEmpty())
                 filter.addWhereClause("0 = 1", new Object[]{});
-            if (options.sourceIds.size() == 1)
-                filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds.stream().findFirst().get());
             else
                 filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds, CompareType.IN);
         }
