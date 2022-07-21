@@ -8101,7 +8101,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (var edge : edges)
         {
             if (edge.getRunId() != null)
-                throw new IllegalArgumentException("Failed to add lineage edge. Adding edges with a runId are not supported. Use experiment protocol inputs/outputs if run support is necessary.");
+                throw new IllegalArgumentException("Failed to add lineage edge. Adding edges with a runId is not supported. Use experiment protocol inputs/outputs if run support is necessary.");
 
             // ignore cycles from and to itself
             if (Objects.equals(edge.getFromObjectId(), edge.getToObjectId()))
@@ -8135,13 +8135,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public List<ExpLineageEdge> getEdges(ExpLineageEdge.Options options)
+    public List<ExpLineageEdge> getEdges(ExpLineageEdge.FilterOptions options)
     {
         SimpleFilter filter = getEdgeFilterFromOptions(options);
         return new TableSelector(getTinfoEdge(), filter, null).getArrayList(ExpLineageEdge.class);
     }
 
-    private SimpleFilter getEdgeFilterFromOptions(ExpLineageEdge.Options options)
+    private SimpleFilter getEdgeFilterFromOptions(ExpLineageEdge.FilterOptions options)
     {
         SimpleFilter filter = new SimpleFilter();
 
@@ -8167,7 +8167,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public int removeEdges(ExpLineageEdge.Options options)
+    public int removeEdges(ExpLineageEdge.FilterOptions options)
     {
         if (options.runId != null)
             throw new IllegalArgumentException("Failed to remove lineage edges. Edges with a runId cannot be deleted via removeEdge(). Use experiment protocol inputs/outputs if run support is necessary.");

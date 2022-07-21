@@ -6,18 +6,18 @@ import java.util.Set;
 
 public class ExpLineageEdge
 {
-    private Integer _fromObjectId;
+    private int _fromObjectId; // not nullable
     private Integer _runId;
     private Integer _sourceId;
     private String _sourceKey;
-    private Integer _toObjectId;
+    private int _toObjectId; // not nullable
 
     // Necessary for database serialization
     public ExpLineageEdge()
     {
     }
 
-    public ExpLineageEdge(Integer fromObjectId, Integer toObjectId, Integer runId, Integer sourceId, String sourceKey)
+    public ExpLineageEdge(int fromObjectId, int toObjectId, Integer runId, Integer sourceId, String sourceKey)
     {
         _fromObjectId = fromObjectId;
         _toObjectId = toObjectId;
@@ -26,12 +26,12 @@ public class ExpLineageEdge
         _sourceKey = sourceKey;
     }
 
-    public Integer getFromObjectId()
+    public int getFromObjectId()
     {
         return _fromObjectId;
     }
 
-    public void setFromObjectId(Integer fromObjectId)
+    public void setFromObjectId(int fromObjectId)
     {
         _fromObjectId = fromObjectId;
     }
@@ -66,12 +66,12 @@ public class ExpLineageEdge
         _sourceKey = sourceKey;
     }
 
-    public Integer getToObjectId()
+    public int getToObjectId()
     {
         return _toObjectId;
     }
 
-    public void setToObjectId(Integer toObjectId)
+    public void setToObjectId(int toObjectId)
     {
         _toObjectId = toObjectId;
     }
@@ -106,7 +106,7 @@ public class ExpLineageEdge
         );
     }
 
-    public static class Options
+    public static class FilterOptions
     {
         public Integer fromObjectId;
         public Integer runId;
@@ -114,37 +114,37 @@ public class ExpLineageEdge
         public String sourceKey;
         public Integer toObjectId;
 
-        public Options fromObjectId(Integer fromObjectId)
+        public FilterOptions fromObjectId(Integer fromObjectId)
         {
             this.fromObjectId = fromObjectId;
             return this;
         }
 
-        public Options runId(Integer runId)
+        public FilterOptions runId(Integer runId)
         {
             this.runId = runId;
             return this;
         }
 
-        public Options sourceId(Integer sourceId)
+        public FilterOptions sourceId(Integer sourceId)
         {
             this.sourceIds = Set.of(sourceId);
             return this;
         }
 
-        public Options sourceIds(Set<Integer> sourceIds)
+        public FilterOptions sourceIds(Set<Integer> sourceIds)
         {
             this.sourceIds = new HashSet<>(sourceIds);
             return this;
         }
 
-        public Options sourceKey(String sourceKey)
+        public FilterOptions sourceKey(String sourceKey)
         {
             this.sourceKey = sourceKey;
             return this;
         }
 
-        public Options toObjectId(Integer toObjectId)
+        public FilterOptions toObjectId(Integer toObjectId)
         {
             this.toObjectId = toObjectId;
             return this;

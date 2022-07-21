@@ -76,6 +76,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME;
 
@@ -576,17 +577,15 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         expSvc.addEdges(Collections.emptyList());
 
         // Does not allow run-based edge insertion
-        var exceptionThrown = false;
         try
         {
             expSvc.addEdges(List.of(new ExpLineageEdge(aa.objectId, bb.objectId, -1, bb.objectId, sourceKey)));
+            fail("An error should have been thrown");
         }
         catch (IllegalArgumentException e)
         {
-            exceptionThrown = true;
-            assertTrue("Received unexpected error", e.getMessage().contains("Adding edges with a runId are not supported"));
+            assertTrue("Received unexpected error", e.getMessage().contains("Adding edges with a runId is not supported"));
         }
-        assertTrue("Expected exception when attempting to add run-based lineage edge", exceptionThrown);
 
         // skips cycles
         var edge1 = new ExpLineageEdge(aa.objectId, bb.objectId, null, bb.objectId, sourceKey);
@@ -594,7 +593,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         var edge3 = new ExpLineageEdge(cc.objectId, bb.objectId, null, bb.objectId, sourceKey);
         expSvc.addEdges(List.of(edge1, cycle, edge3));
 
-        var bbEdges = new HashSet<>(expSvc.getEdges(new ExpLineageEdge.Options().sourceId(bb.objectId)));
+        var bbEdges = new HashSet<>(expSvc.getEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId)));
         assertEquals("Unexpected number of edges", 2, bbEdges.size());
         assertFalse("Add edges inserted a cycle", bbEdges.contains(cycle));
     }
@@ -617,13 +616,13 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // Act
         // Handles empty options
-        assertEquals("Unexpected edges removed", 0, expSvc.removeEdges(new ExpLineageEdge.Options()));
+        assertEquals("Unexpected edges removed", 0, expSvc.removeEdges(new ExpLineageEdge.FilterOptions()));
 
         // Does not allow run-based edge removal
         var exceptionThrown = false;
         try
         {
-            expSvc.removeEdges(new ExpLineageEdge.Options().runId(-1));
+            expSvc.removeEdges(new ExpLineageEdge.FilterOptions().runId(-1));
         }
         catch (IllegalArgumentException e)
         {
@@ -633,10 +632,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertTrue("Expected exception when attempting to remove run-based lineage edge", exceptionThrown);
 
         // Successfully remove edges
-        var actualRemoved = expSvc.removeEdges(new ExpLineageEdge.Options().sourceId(bb.objectId).sourceKey(sourceKey));
+        var actualRemoved = expSvc.removeEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId).sourceKey(sourceKey));
         assertEquals("Unexpected number of edges removed", 3, actualRemoved);
 
-        var edges = expSvc.getEdges(new ExpLineageEdge.Options().sourceId(bb.objectId));
+        var edges = expSvc.getEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId));
         assertEquals("Unexpected edges still persisted", 0, edges.size());
     }
 

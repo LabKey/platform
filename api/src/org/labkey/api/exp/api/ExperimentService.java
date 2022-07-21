@@ -862,9 +862,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void addEdges(Collection<ExpLineageEdge> edges);
 
     @NotNull
-    List<ExpLineageEdge> getEdges(ExpLineageEdge.Options options);
+    List<ExpLineageEdge> getEdges(ExpLineageEdge.FilterOptions options);
 
-    int removeEdges(ExpLineageEdge.Options options);
+    int removeEdges(ExpLineageEdge.FilterOptions options);
 
     class XarExportOptions
     {
