@@ -33,7 +33,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
     private static final Logger LOG = LogHelper.getLogger(SimpleMetricsServiceImpl.class, "Tallies and persists simple counter metrics");
 
     /** Organized by module, featureArea, and metricName */
-    private final Map<String, Map<String, Map<String, AtomicLong>>> _counts = new ConcurrentHashMap<>();
+    private final Map<Module, Map<String, Map<String, AtomicLong>>> _counts = new ConcurrentHashMap<>();
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
@@ -62,23 +62,23 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
     private class SimpleMetricsProvider implements UsageMetricsProvider
     {
-        private final String _moduleName;
+        private final Module _module;
 
-        public SimpleMetricsProvider(String moduleName)
+        public SimpleMetricsProvider(Module module)
         {
-            _moduleName = moduleName;
+            _module = module;
         }
 
         @Override
         public Map<String, Object> getUsageMetrics()
         {
-            return Collections.singletonMap("simpleMetricCounts", _counts.get(_moduleName));
+            return Collections.singletonMap("simpleMetricCounts", _counts.get(_module));
         }
     }
 
-    private String getScoping(String moduleName, String featureArea)
+    private String getScoping(@NotNull Module module, String featureArea)
     {
-        return SimpleMetricsServiceImpl.class.getName() + "." + moduleName + "." + featureArea;
+        return SimpleMetricsServiceImpl.class.getName() + "." + module.getName() + "." + featureArea;
     }
 
     private String getRootScoping()
@@ -93,13 +93,17 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         for (Map.Entry<String, String> entry : map.entrySet())
         {
             String moduleName = entry.getKey();
-            Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(moduleName);
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            // Skip these metrics if module doesn't exist. (Perhaps the module been removed from this deployment.)
+            if (null == module)
+                continue;
+            Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(module);
             String featureAreas = entry.getValue();
             if (featureAreas != null)
             {
                 for (String featureArea : featureAreas.split(","))
                 {
-                    String scoping = getScoping(moduleName, featureArea);
+                    String scoping = getScoping(module, featureArea);
 
                     // Load from the properties stored in the DB
                     PropertyManager.PropertyMap storedProps = PropertyManager.getProperties(scoping);
@@ -119,12 +123,12 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         }
     }
 
-    private Map<String, Map<String, AtomicLong>> getModuleMetrics(String moduleName)
+    private Map<String, Map<String, AtomicLong>> getModuleMetrics(Module module)
     {
-        return _counts.computeIfAbsent(moduleName, (k) ->
+        return _counts.computeIfAbsent(module, (k) ->
         {
             // The first time a module is referenced, register a new provider
-            UsageMetricsService.get().registerUsageMetrics(moduleName, new SimpleMetricsProvider(moduleName));
+            UsageMetricsService.get().registerUsageMetrics(module.getName(), new SimpleMetricsProvider(module));
             return new ConcurrentHashMap<>();
         });
     }
@@ -136,15 +140,16 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         {
             throw new IllegalArgumentException("Feature area names cannot contain commas");
         }
+
         Module module = ModuleLoader.getInstance().getModule(requestedModuleName);
         if (null == module)
         {
             throw new IllegalArgumentException("Unknown module: " + requestedModuleName);
         }
-        String moduleName = module.getName();  // Use canonical name to ensure consistent casing
-        String scoping = getScoping(moduleName, featureArea);
 
-        Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(moduleName);
+        String scoping = getScoping(module, featureArea);
+        Map<String, Map<String, AtomicLong>> moduleMetrics = getModuleMetrics(module);
+        String moduleName = module.getName();  // Use canonical name to ensure consistent casing
 
         Map<String, AtomicLong> counts = moduleMetrics.computeIfAbsent(featureArea, k ->
         {
