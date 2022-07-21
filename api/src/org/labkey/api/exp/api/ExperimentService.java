@@ -859,11 +859,43 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c);
 
+    /**
+     * Persists a collection of lineage relationships (a.k.a. "edges") between experiment objects.
+     * Adding edges with a runId is not supported and this method will throw an exception if any run-based edges
+     * are supplied. Use experiment protocol inputs/outputs if run support is necessary.
+     * @param edges Collection of edges to persist.
+     */
     void addEdges(Collection<ExpLineageEdge> edges);
 
+    /**
+     * Fetch a collection of lineage relationships (a.k.a. "edges") between experiment objects. The constraints
+     * for which edges to fetch is provided via the ExpLineageEdge.FilterOptions parameter. Example:
+     *
+     * new ExpLineageEdge.FilterOptions().sourceId(42).sourceKey("happy")
+     *
+     * fetches edges where:
+     *
+     * sourceId = 42 AND sourceKey = "happy"
+     *
+     * @param options Filtering options used to constrain the edge's fetched.
+     * @return The collection of currently persisted lineage relationships matching the supplied filter options.
+     */
     @NotNull
     List<ExpLineageEdge> getEdges(ExpLineageEdge.FilterOptions options);
 
+    /**
+     * Removes lineage relationships (a.k.a. "edges") between experiment objects. The constraints for which edges
+     * are removed is provided via the ExpLineageEdge.FilterOptions parameter. Example:
+     *
+     * new ExpLineageEdge.FilterOptions().sourceId(24).sourceKey("cheerful")
+     *
+     * removes edges where:
+     *
+     * sourceId = 24 AND sourceKey = "cheerful"
+     *
+     * @param options Filtering options used to constrain the edge's removed.
+     * @return The number of edges removed.
+     */
     int removeEdges(ExpLineageEdge.FilterOptions options);
 
     class XarExportOptions
