@@ -171,7 +171,8 @@ public class IpynbReport extends DockerScriptReport
 
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
         LOG.trace("BEFORE: " + workingDirectory.getPath() + "\n\t" +
-                StringUtils.join(beforeExecute.stream().map(f -> f.getName() + " : " + f.length()).toArray(), "\n\t"));
+                StringUtils.join(beforeExecute.stream().map(f ->
+                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
 
         ExecuteStrategy ex = new DockerRunTarStdinStdout();
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
@@ -181,7 +182,8 @@ public class IpynbReport extends DockerScriptReport
 
         Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
         LOG.trace("AFTER: " + workingDirectory.getPath() + "\n\t" +
-                StringUtils.join(afterExecute.stream().map(f -> f.getName() + " : " + f.length()).toArray(), "\n\t"));
+                StringUtils.join(afterExecute.stream().map(f ->
+                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
 
         try
         {
@@ -201,6 +203,10 @@ public class IpynbReport extends DockerScriptReport
                 if (outputFileAttributes.isRegularFile() && 0 < outputFileAttributes.size())
                 {
                     vbox.addView(new IpynbOutput(outputFile).getView(context));
+                }
+                else
+                {
+                    vbox.addView(new HtmlView(DIV(cl("labkey-error"), "Unable to process report output.")));
                 }
             }
 
@@ -381,7 +387,10 @@ public class IpynbReport extends DockerScriptReport
                     {
                         ArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
                         tar.putArchiveEntry(entry);
-                        IOUtils.copy(new FileInputStream(file), tar);
+                        try(FileInputStream fis = new FileInputStream(file))
+                        {
+                            IOUtils.copy(fis, tar);
+                        }
                         tar.closeArchiveEntry();
                     }
                 }
