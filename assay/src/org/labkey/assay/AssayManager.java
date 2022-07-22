@@ -33,7 +33,6 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -123,8 +122,6 @@ public class AssayManager implements AssayService
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
-
-    public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
 
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols");
 
@@ -437,7 +434,6 @@ public class AssayManager implements AssayService
             vbox.setFrame(WebPartView.FrameType.PORTAL);
 
             NavTree menu = new NavTree();
-            createAssayDataImportButton(context, menu);
             if (context.getContainer().hasPermission(context.getUser(), DesignAssayPermission.class))
             {
                 ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(context.getContainer());
@@ -906,38 +902,6 @@ public class AssayManager implements AssayService
             return handler.getFlags(runId, cls);
         }
         return Collections.emptyList();
-    }
-
-    public void createAssayDataImportButton(ViewContext context, ButtonBar bar)
-    {
-        if (shouldShowAssayDataImport(context))
-        {
-            ActionButton button = new ActionButton("Import Data (Experimental)", getAssayDataImportURL(context));
-            button.setIconCls("plus");
-            button.setActionType(ActionButton.Action.LINK);
-            bar.add(button);
-        }
-    }
-
-    public void createAssayDataImportButton(ViewContext context, NavTree menu)
-    {
-        if (shouldShowAssayDataImport(context))
-        {
-            menu.addChild("Import Data", getAssayDataImportURL(context));
-        }
-    }
-
-    private boolean shouldShowAssayDataImport(ViewContext context)
-    {
-        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ASSAY_DATA_IMPORT);
-        return experimentalFlagEnabled && context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
-    }
-
-    private ActionURL getAssayDataImportURL(ViewContext context)
-    {
-        ActionURL importURL = new ActionURL("assay", "assayDataImport", context.getContainer());
-        importURL.addReturnURL(context.getActionURL());
-        return importURL;
     }
 
     List<AssayProvider> getRegisteredAssayProviders()
