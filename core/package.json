@@ -17,7 +17,8 @@
   "jest": {
     "globals": {
       "ts-jest": {
-        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
+        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json",
+        "isolatedModules": true
       },
       "LABKEY": {
         "container": {
@@ -37,9 +38,6 @@
       "ts",
       "js"
     ],
-    "moduleNameMapper": {
-      "\\.(css|scss)$": "<rootDir>/test/js/styleMock.ts"
-    },
     "preset": "ts-jest",
     "setupFilesAfterEnv": [
       "<rootDir>/test/js/setup.ts"
@@ -47,7 +45,10 @@
     "testEnvironment": "jsdom",
     "testMatch": null,
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-    "testResultsProcessor": "jest-teamcity-reporter"
+    "testResultsProcessor": "jest-teamcity-reporter",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    }
   },
   "dependencies": {
     "@labkey/api": "1.15.0",
@@ -66,6 +67,7 @@
     "enzyme-to-json": "3.6.2",
     "fs-extra": "10.0.1",
     "jest": "28.1.3",
+    "jest-environment-jsdom": "28.1.3",
     "jest-teamcity-reporter": "0.9.0",
     "react-test-renderer": "16.14.0",
     "ts-jest": "28.0.7"
