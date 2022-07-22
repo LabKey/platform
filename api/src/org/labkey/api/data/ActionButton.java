@@ -420,7 +420,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         if (_noFollow)
             button.nofollow();
 
-        if (_target.equalsIgnoreCase("_blank"))
+        if (_target != null && _target.equalsIgnoreCase("_blank"))
         {
             button.noOpener();
         }
