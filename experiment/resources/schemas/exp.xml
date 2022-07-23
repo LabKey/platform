@@ -1135,6 +1135,8 @@
             <column columnName="fromObjectId"/>
             <column columnName="toObjectId"/>
             <column columnName="runId"/>
+            <column columnName="sourceId"/>
+            <column columnName="sourceKey"/>
         </columns>
     </table>
     <table tableName="Exclusions" tableDbType="UNKNOWN">

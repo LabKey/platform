@@ -27,6 +27,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageEdge;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -63,6 +64,7 @@ import org.labkey.api.writer.DefaultContainerUser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,23 +76,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME;
 
 public class LineageTest extends ExpProvisionedTableTestHelper
 {
     Container c;
+    Lsid.LsidBuilder lsidBuilder;
 
     @Before
     public void setUp()
     {
         JunitUtil.deleteTestContainer();
         c = JunitUtil.getTestContainer();
+
+        lsidBuilder = new Lsid.LsidBuilder("JUnitTest", null);
+        LsidManager.get().registerHandler("JUnitTest", new LsidManager.OntologyObjectLsidHandler());
     }
 
     @After
     public void tearDown()
     {
+        JunitUtil.deleteTestContainer();
     }
 
     @Test
@@ -234,29 +242,29 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             ctx.getViewContext().setContainer(c);
             ctx.getViewContext().setActionURL(new ActionURL());
 
-            ColumnInfo colName    = rs.getColumn(rs.findColumn(FieldKey.fromParts("Name")));
-            DisplayColumn dcName  = colName.getRenderer();
+            ColumnInfo colName = rs.getColumn(rs.findColumn(FieldKey.fromParts("Name")));
+            DisplayColumn dcName = colName.getRenderer();
 
-            ColumnInfo colInputsAllNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsAllNames")));
-            LineageDisplayColumn dcInputsAllNames  = (LineageDisplayColumn)colInputsAllNames.getRenderer();
+            ColumnInfo colInputsAllNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsAllNames")));
+            LineageDisplayColumn dcInputsAllNames = (LineageDisplayColumn)colInputsAllNames.getRenderer();
 
-            ColumnInfo colInputsMaterialSampleNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsMaterialSampleNames")));
-            LineageDisplayColumn dcInputsMaterialSampleNames  = (LineageDisplayColumn)colInputsMaterialSampleNames.getRenderer();
+            ColumnInfo colInputsMaterialSampleNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsMaterialSampleNames")));
+            LineageDisplayColumn dcInputsMaterialSampleNames = (LineageDisplayColumn)colInputsMaterialSampleNames.getRenderer();
 
-            ColumnInfo colInputsDataAllNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataAllNames")));
-            LineageDisplayColumn dcInputsDataAllNames  = (LineageDisplayColumn)colInputsDataAllNames.getRenderer();
+            ColumnInfo colInputsDataAllNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataAllNames")));
+            LineageDisplayColumn dcInputsDataAllNames = (LineageDisplayColumn)colInputsDataAllNames.getRenderer();
 
-            ColumnInfo colInputsDataFirstDataClassNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataFirstDataClassNames")));
-            LineageDisplayColumn dcInputsDataFirstDataClassNames  = (LineageDisplayColumn)colInputsDataFirstDataClassNames.getRenderer();
+            ColumnInfo colInputsDataFirstDataClassNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataFirstDataClassNames")));
+            LineageDisplayColumn dcInputsDataFirstDataClassNames = (LineageDisplayColumn)colInputsDataFirstDataClassNames.getRenderer();
 
-            ColumnInfo colInputsRunsAllNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsAllNames")));
-            LineageDisplayColumn dcInputsRunsAllNames  = (LineageDisplayColumn)colInputsRunsAllNames.getRenderer();
+            ColumnInfo colInputsRunsAllNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsAllNames")));
+            LineageDisplayColumn dcInputsRunsAllNames = (LineageDisplayColumn)colInputsRunsAllNames.getRenderer();
 
-            ColumnInfo colInputsRunsDerivationNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsDerivationNames")));
-            LineageDisplayColumn dcInputsRunsDerivationNames  = (LineageDisplayColumn)colInputsRunsDerivationNames.getRenderer();
+            ColumnInfo colInputsRunsDerivationNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsDerivationNames")));
+            LineageDisplayColumn dcInputsRunsDerivationNames = (LineageDisplayColumn)colInputsRunsDerivationNames.getRenderer();
 
-            ColumnInfo colInputsRunsAliquotNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsAliquotNames")));
-            LineageDisplayColumn dcInputsRunsAliquotNames  = (LineageDisplayColumn)colInputsRunsAliquotNames.getRenderer();
+            ColumnInfo colInputsRunsAliquotNames = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsRunsAliquotNames")));
+            LineageDisplayColumn dcInputsRunsAliquotNames = (LineageDisplayColumn)colInputsRunsAliquotNames.getRenderer();
 
             Assert.assertTrue(rs.next());
             ctx.setRow(rs.getRowMap());
@@ -490,32 +498,11 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     @Test
     public void testObjectInputOutput() throws Exception
     {
-        Lsid.LsidBuilder lsidBuilder = new Lsid.LsidBuilder("JUnitTest", null);
-
-        // register a silly LsidHandler for our test namespace
-        LsidManager.get().registerHandler("JUnitTest", new LsidManager.OntologyObjectLsidHandler());
-
         // create some exp.object rows for use as input and outputs
-        Lsid a1Lsid = lsidBuilder.setObjectId("A1").build();
-        int a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
-        Identifiable a1 = LsidManager.get().getObject(a1Lsid);
-        assertNotNull(a1);
-
-        Lsid a2Lsid = lsidBuilder.setObjectId("A2").build();
-        int a2ObjectId = OntologyManager.ensureObject(c, a2Lsid.toString());
-        Identifiable a2 = LsidManager.get().getObject(a2Lsid);
-        assertNotNull(a2);
-
-        Lsid b1Lsid = lsidBuilder.setObjectId("B1").build();
-        int b1ObjectId = OntologyManager.ensureObject(c, b1Lsid.toString());
-        Identifiable b1 = LsidManager.get().getObject(b1Lsid);
-        assertNotNull(b1);
-
-        Lsid b2Lsid = lsidBuilder.setObjectId("B2").build();
-        int b2ObjectId = OntologyManager.ensureObject(c, b2Lsid.toString());
-        Identifiable b2 = LsidManager.get().getObject(b2Lsid);
-        assertNotNull(b2);
-
+        var a1 = createExpObject("A1");
+        var a2 = createExpObject("A2");
+        var b1 = createExpObject("B1");
+        var b2 = createExpObject("B2");
 
         // create empty run
         ExpRun run = ExperimentService.get().createExperimentRun(c, "testing");
@@ -528,43 +515,42 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // add A objects as inputs, B objects as outputs
         ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
         run = ExperimentServiceImpl.get().saveSimpleExperimentRun(run, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), info, null, false);
-        int runObjectId = run.getObjectId();
+        Integer runObjectId = run.getObjectId();
 
         // HACK: Until we have the ability to add provenance information to the run, just insert directly into exp.edge
         TableInfo edgeTable = ExperimentServiceImpl.get().getTinfoEdge();
         Table.insert(null, edgeTable, Map.of(
-                "runId", run.getRowId(), "fromObjectId", a1ObjectId, "toObjectId", runObjectId));
+                "runId", run.getRowId(), "fromObjectId", a1.objectId, "toObjectId", runObjectId));
         Table.insert(null, edgeTable, Map.of(
-                "runId", run.getRowId(), "fromObjectId", a2ObjectId, "toObjectId", runObjectId));
+                "runId", run.getRowId(), "fromObjectId", a2.objectId, "toObjectId", runObjectId));
 
         Table.insert(null, edgeTable, Map.of(
-                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b1ObjectId));
+                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b1.objectId));
         Table.insert(null, edgeTable, Map.of(
-                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b2ObjectId));
+                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b2.objectId));
 
         // query the lineage
-        ExpLineageOptions options = new ExpLineageOptions();
-        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(a1), options);
+        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(a1.identifiable), new ExpLineageOptions());
 
         assertTrue(lineage.getRuns().contains(run));
-        assertEquals(Set.of(a1), lineage.getSeeds());
-        assertEquals(Set.of(b1, b2), lineage.getObjects());
+        assertEquals(Set.of(a1.identifiable), lineage.getSeeds());
+        assertEquals(Set.of(b1.identifiable, b2.identifiable), lineage.getObjects());
 
         // verify lineage parent and children
-        assertTrue(lineage.getNodeParents(a1).isEmpty());
-        assertEquals(Set.of(run), lineage.getNodeChildren(a1));
-        assertEquals(Set.of(a1), lineage.getNodeParents(run));
-        assertEquals(Set.of(b1, b2), lineage.getNodeChildren(run));
+        assertTrue(lineage.getNodeParents(a1.identifiable).isEmpty());
+        assertEquals(Set.of(run), lineage.getNodeChildren(a1.identifiable));
+        assertEquals(Set.of(a1.identifiable), lineage.getNodeParents(run));
+        assertEquals(Set.of(b1.identifiable, b2.identifiable), lineage.getNodeChildren(run));
 
         // verify json structure
         JSONObject json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(false, false, false));
-        assertEquals(a1Lsid.toString(), json.getString("seed"));
+        assertEquals(a1.identifiable.getLSID(), json.getString("seed"));
 
         JSONObject nodes = json.getJSONObject("nodes");
         assertEquals(4, nodes.size());
-        JSONObject a1json = nodes.getJSONObject(a1Lsid.toString());
+        JSONObject a1json = nodes.getJSONObject(a1.identifiable.getLSID());
         assertEquals("A1", a1json.getString("name"));
-        assertEquals(a1Lsid.toString(), a1json.getString("lsid"));
+        assertEquals(a1.identifiable.getLSID(), a1json.getString("lsid"));
         assertEquals("JUnitTest", a1json.getString("type"));
 
         JSONArray a1parentsJson = a1json.getJSONArray("parents");
@@ -573,6 +559,94 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         JSONArray a1childrenJson = a1json.getJSONArray("children");
         assertEquals(1, a1childrenJson.length());
         assertEquals(run.getLSID(), a1childrenJson.getJSONObject(0).getString("lsid"));
-
     }
+
+    @Test
+    public void testAddEdges()
+    {
+        // Arrange
+        var expSvc = ExperimentServiceImpl.get();
+        var sourceKey = "testAddEdges";
+        var aa = createExpObject("addAA");
+        var bb = createExpObject("addBB");
+        var cc = createExpObject("addCC");
+
+        // Act
+        // Handles null/empty (noop)
+        expSvc.addEdges(null);
+        expSvc.addEdges(Collections.emptyList());
+
+        // Does not allow run-based edge insertion
+        try
+        {
+            expSvc.addEdges(List.of(new ExpLineageEdge(aa.objectId, bb.objectId, -1, bb.objectId, sourceKey)));
+            fail("An error should have been thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertTrue("Received unexpected error", e.getMessage().contains("Adding edges with a runId is not supported"));
+        }
+
+        // skips cycles
+        var edge1 = new ExpLineageEdge(aa.objectId, bb.objectId, null, bb.objectId, sourceKey);
+        var cycle = new ExpLineageEdge(bb.objectId, bb.objectId, null, bb.objectId, sourceKey);
+        var edge3 = new ExpLineageEdge(cc.objectId, bb.objectId, null, bb.objectId, sourceKey);
+        expSvc.addEdges(List.of(edge1, cycle, edge3));
+
+        var bbEdges = new HashSet<>(expSvc.getEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId)));
+        assertEquals("Unexpected number of edges", 2, bbEdges.size());
+        assertFalse("Add edges inserted a cycle", bbEdges.contains(cycle));
+    }
+
+    @Test
+    public void testRemoveEdges()
+    {
+        // Arrange
+        var expSvc = ExperimentServiceImpl.get();
+        var sourceKey = "testRemoveEdges";
+        var aa = createExpObject("removeAA");
+        var bb = createExpObject("removeBB");
+        var cc = createExpObject("removeCC");
+
+        expSvc.addEdges(List.of(
+            new ExpLineageEdge(aa.objectId, bb.objectId, null, bb.objectId, sourceKey),
+            new ExpLineageEdge(bb.objectId, cc.objectId, null, bb.objectId, sourceKey),
+            new ExpLineageEdge(aa.objectId, cc.objectId, null, bb.objectId, sourceKey)
+        ));
+
+        // Act
+        // Handles empty options
+        assertEquals("Unexpected edges removed", 0, expSvc.removeEdges(new ExpLineageEdge.FilterOptions()));
+
+        // Does not allow run-based edge removal
+        var exceptionThrown = false;
+        try
+        {
+            expSvc.removeEdges(new ExpLineageEdge.FilterOptions().runId(-1));
+        }
+        catch (IllegalArgumentException e)
+        {
+            exceptionThrown = true;
+            assertTrue("Received unexpected error", e.getMessage().contains("Edges with a runId cannot be deleted via removeEdge()"));
+        }
+        assertTrue("Expected exception when attempting to remove run-based lineage edge", exceptionThrown);
+
+        // Successfully remove edges
+        var actualRemoved = expSvc.removeEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId).sourceKey(sourceKey));
+        assertEquals("Unexpected number of edges removed", 3, actualRemoved);
+
+        var edges = expSvc.getEdges(new ExpLineageEdge.FilterOptions().sourceId(bb.objectId));
+        assertEquals("Unexpected edges still persisted", 0, edges.size());
+    }
+
+    private _ExpObject createExpObject(String objectName)
+    {
+        Lsid lsid = lsidBuilder.setObjectId(objectName).build();
+        Integer objectId = OntologyManager.ensureObject(c, lsid.toString());
+        Identifiable identifiable = LsidManager.get().getObject(lsid);
+        assertNotNull(identifiable);
+        return new _ExpObject(objectId, identifiable);
+    }
+
+    private record _ExpObject(Integer objectId, Identifiable identifiable) {}
 }

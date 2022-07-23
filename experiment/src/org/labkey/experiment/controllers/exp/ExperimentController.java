@@ -6726,7 +6726,7 @@ public class ExperimentController extends SpringActionController
             else
             {
                 // should this require site admin permissions?
-                ExperimentServiceImpl.get().rebuildAllEdges();
+                ExperimentServiceImpl.get().rebuildAllRunEdges();
             }
             return success();
         }
