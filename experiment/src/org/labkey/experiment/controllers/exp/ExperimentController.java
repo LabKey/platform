@@ -6167,13 +6167,13 @@ public class ExperimentController extends SpringActionController
             {
                 if (f.isFile())
                 {
-                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
+                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                     // TODO: Configure module resources with the appropriate log location per container
                     if (form.getModule() != null)
                     {
                         File logFile = new File(form.getPipeRoot(getContainer()).getRootPath(), "module-resource-xar.log");
-                        job.setLogFile(logFile);
+                        job.setLogFile(logFile.toPath());
                     }
 
                     PipelineService.get().queueJob(job);
@@ -6207,7 +6207,7 @@ public class ExperimentController extends SpringActionController
             for (File f : form.getValidatedFiles(getContainer()))
             {
                 Map<String, String> archive = new HashMap<>();
-                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
+                ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f.toPath(), "Experiment Import", false, form.getPipeRoot(getContainer()));
 
                 // TODO: Configure module resources with the appropriate log location per container
                 if (form.getModule() != null)
