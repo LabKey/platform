@@ -30,7 +30,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
@@ -42,31 +41,34 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class DataGenerator
+public class DataGenerator<T extends DataGenerator.Config>
 {
-    private Container _container;
-    private final User _user;
-    private final Logger _log;
-    private Config _config;
+    protected Container _container;
+    protected final User _user;
+    protected final Logger _log;
+    protected T  _config;
 
-    private List<ExpSampleType> _sampleTypes = new ArrayList<>();
-    private final Map<String, Pair<String, Long>> _nameData = new HashMap<>();
+    // Keep the set of timers so we can produce a report of all times at the end
+    protected final List<CPUTimer> _timers = new ArrayList<>();
 
-    private List<ExpDataClass> _customDataClasses = new ArrayList<>();
+    protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
+    protected final Map<String, Pair<String, Long>> _nameData = new HashMap<>();
 
-    // map from rowId to # of generations (including the root)
+    protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
+
+    // map from rowId to # of generations (including the root) TODO remove
     private final Map<Integer, Integer> _sampleGenerations = new HashMap<>();
-    // Map from rowId to # of aliquots.
+    // Map from rowId to # of aliquots. TODO remove
     private final Map<Integer, Integer> _numAliquotsPerParent = new HashMap<>();
 
-    private UserSchema _samplesSchema;
-    private UserSchema _dataClassSchema;
+    protected final UserSchema _samplesSchema;
+    protected final UserSchema _dataClassSchema;
 
-    private final BatchValidationException _errors = new BatchValidationException();
-
+    protected final int _sampleCount = 0;
 
     record FieldPrefix(String uri, String namePrefix) { }
 
@@ -78,12 +80,12 @@ public class DataGenerator
         fieldPrefixes.add(new FieldPrefix("date", "DateField"));
     }
 
-    public DataGenerator(Container container, User user, Map<String, String> parameters, Logger log)
+    public DataGenerator(Container container, User user, T config, Logger log)
     {
         _container = container;
         _user = user;
         _log = log;
-        _config = new Config(parameters);
+        _config = config;
         _samplesSchema = QueryService.get().getUserSchema(_user, _container, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));
         _dataClassSchema = QueryService.get().getUserSchema(_user, _container, ExpSchema.SCHEMA_EXP_DATA);
     }
@@ -98,12 +100,12 @@ public class DataGenerator
         _container = container;
     }
 
-    public Config getConfig()
+    public T getConfig()
     {
         return _config;
     }
 
-    public void setConfig(Config config)
+    public void setConfig(T config)
     {
         _config = config;
     }
@@ -181,8 +183,10 @@ public class DataGenerator
         for (int i = 0; i < config.getNumSampleTypes(); i++)
         {
             ExpSampleType sampleType = _sampleTypes.get(i);
+            // TODO take into account number of samples that exist
             _log.info(String.format("Generating %d samples for sample type %s.", numSamples, sampleType.getName()));
-            CPUTimer timer = new CPUTimer("Generate samples " + i);
+            CPUTimer timer = new CPUTimer("Generate " + sampleType.getName() + " samples");
+            _timers.add(timer);
             timer.start();
             generateSamples(_sampleTypes.get(i), numSamples);
             timer.stop();
@@ -203,7 +207,7 @@ public class DataGenerator
         generateDomainData(numSamples, svc, sampleType.getDomain());
         // TODO create 75% of the pooled samples
         int aliquotCount = generateAliquots(sampleType, svc, numAliquots);
-        // TODO create the other ppooled samples from aliquots
+        // TODO create the other pooled samples from aliquots
 //      poolSamples(samples, svc, sampleType.getName(), Math.round(numSamplesAndAliquots * _config.getPctPooled()));
     }
 
@@ -280,13 +284,19 @@ public class DataGenerator
     private List<Map<String, Object>> getRandomSamples(ExpSampleType sampleType, int quantity)
     {
         TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
-        SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
         var nameGenData = _nameData.get(sampleType.getName());
+        return getRowsByRandomNames(tableInfo, nameGenData.first, nameGenData.second, sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId", "AliquotedFrom", "AliquotedFrom/Name", "IsAliquot"));
+    }
+
+    protected List<Map<String, Object>> getRowsByRandomNames(TableInfo tableInfo, String namePrefix, long startIndex, long endIndex, int quantity, Set<String> columns)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
         filter.addCondition(FieldKey.fromParts("Name"),
-                getRandomNames(nameGenData.first, nameGenData.second, sampleType.getCurrentGenId(), quantity), CompareType.IN);
-        TableSelector selector = new TableSelector(tableInfo, Set.of("Name", "RowId", "AliquotedFrom", "AliquotedFrom/Name", "IsAliquot"), filter, null);
+                getRandomNames(namePrefix, startIndex, endIndex, quantity), CompareType.IN);
+        TableSelector selector = new TableSelector(tableInfo, columns, filter, null);
         return Arrays.asList(selector.getMapArray());
     }
+
 
 //    public List<Map<String, Object>> poolSamples(ExpSampleType sampleType, QueryUpdateService service, int numPooled) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
 //    {
@@ -341,26 +351,6 @@ public class DataGenerator
         return names;
     }
 
-    public void generateCustomDataClasses(String typeNamePrefix, String namingPatternPrefix) throws ExperimentException, SQLException
-    {
-        DataGenerator.Config config = getConfig();
-
-        int fieldIncrement = config.getNumDataClasses() <= 1 ? 0 : (config.getMaxFields() - config.getMinFields())/(config.getNumDataClasses()-1);
-
-        CPUTimer timer = new CPUTimer("Custom Data Classes");
-        timer.start();
-        int numFields = config.getMinFields();
-        for (int i = 1; i <= config.getNumDataClasses(); i++)
-        {
-            String dataClassName = typeNamePrefix + i;
-            String namingPattern = namingPatternPrefix + i + "_${genId}";
-            _customDataClasses.add(generateDataClass(dataClassName, namingPattern, numFields, _log, null));
-            numFields = Math.min(numFields + fieldIncrement, config.getMaxFields());
-        }
-        timer.stop();
-
-        _log.info(String.format("Generating %d data classes took %s.", config.getNumDataClasses(), timer.getDuration()));
-    }
 
    public ExpDataClass generateDataClass(String dataClassName, @Nullable String namingPattern, int numFields, Logger log, @Nullable String category) throws ExperimentException
     {
@@ -375,24 +365,6 @@ public class DataGenerator
                     namingPattern, null, category);
     }
 
-    public void generateCustomDataClassObjects() throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
-    {
-        DataGenerator.Config config = getConfig();
-
-        int increment = config.getMaxDataClassObjects() <= 1 ? 0 : (config.getMaxDataClassObjects() - config.getMinDataClassObjects())/(config.getNumDataClasses()-1);
-        int numObjects = config.getMinDataClassObjects();
-        for (int i = 0; i < config.getNumDataClasses(); i++)
-        {
-            var startTime = System.currentTimeMillis();
-            ExpDataClass dataClass = _customDataClasses.get(i);
-            _log.info(String.format("Generating %d data class objects for data class %s.", numObjects, dataClass.getName()));
-            generateDataClassObjects(dataClass, numObjects);
-            var endTime = System.currentTimeMillis();
-            _log.info(String.format("Generating %d data class objects for data class %s took %s.", numObjects, dataClass.getName(), DateUtil.formatDuration(endTime - startTime)));
-
-            numObjects = Math.min(numObjects+increment, config.getMaxDataClassObjects());
-        }
-    }
 
     public void generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
@@ -401,15 +373,33 @@ public class DataGenerator
     }
 
 
+    public void generateDerivedSamples(SchemaKey parentSchemaKey, String parentQueryName)
+    {
+        // TODO
+        // Choose random set of
+    }
+
+    public void logTimes()
+    {
+        _log.info("===== Timing Summary ======");
+        _timers.forEach((timer) -> {
+            _log.info(String.format("%s\t%s", timer.getName(), timer.getDuration()));
+        });
+    }
+
     private void generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        // TODO batch it up
-        List<Map<String, Object>> rows = createRows(totalRows, domain);
-        BatchValidationException errors = new BatchValidationException();
-        ListofMapsDataIterator rowDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-        service.importRows(_user, _container, rowDI, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
+        int numImported = 0;
+        int batchSize = Math.min(10000, totalRows);
+        while (numImported < totalRows)
+        {
+            List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
+            BatchValidationException errors = new BatchValidationException();
+            ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
+            numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
     }
 
     private void addDomainProperties(List<GWTPropertyDescriptor> props, int numFields)
@@ -493,8 +483,6 @@ public class DataGenerator
         public static final String NUM_CUSTOM_DATA_CLASSES = "numCustomDataClasses";
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
-        public static final String MIN_DATA_CLASS_OBJECTS = "minDataClassObjects";
-        public static final String MAX_DATA_CLASS_OBJECTS = "maxDataClassObjects";
 
         int _numSampleTypes = 0;
         int _minSamples = 0;
@@ -506,12 +494,10 @@ public class DataGenerator
         int _maxGenerations = 1;
         int _maxAliquotsPerParent = 0;
 
-        int _numDataClasses = 0;
-        int _minDataClassObjects = 0;
-        int _maxDataClassObjects = 0;
 
         int _minFields = 1;
         int _maxFields = 1;
+
 
         public Config(Map<String, String> parameters)
         {
@@ -524,12 +510,26 @@ public class DataGenerator
             _maxPoolSize = Integer.parseInt(parameters.getOrDefault(MAX_POOL_SIZE, "2"));
             _maxGenerations = Integer.parseInt(parameters.getOrDefault(MAX_GENERATIONS, "1"));
             _maxAliquotsPerParent = Integer.parseInt(parameters.getOrDefault(MAX_ALIQUOTS_PER_SAMPLE, "0"));
-            _numDataClasses = Integer.parseInt(parameters.getOrDefault(NUM_CUSTOM_DATA_CLASSES, "0"));
-            _minDataClassObjects = Integer.parseInt(parameters.getOrDefault(MIN_DATA_CLASS_OBJECTS, "0"));
-            _maxDataClassObjects = Math.max(Integer.parseInt(parameters.getOrDefault(MAX_DATA_CLASS_OBJECTS, "0")), _minDataClassObjects);
 
             _minFields = Integer.parseInt(parameters.getOrDefault(MIN_NUM_FIELDS, "1"));
             _maxFields = Math.max(Integer.parseInt(parameters.getOrDefault(MAX_NUM_FIELDS, "1")), _minFields);
+        }
+
+        public Config(Properties properties)
+        {
+            _numSampleTypes = Integer.parseInt(properties.getProperty(NUM_SAMPLE_TYPES, "0"));
+            _minSamples = Integer.parseInt(properties.getProperty(MIN_SAMPLES, "0"));
+            _maxSamples = Math.max(Integer.parseInt(properties.getProperty(DataGenerator.Config.MAX_SAMPLES, "0")), _minSamples);
+            _pctAliquots = Float.parseFloat(properties.getProperty(PCT_ALIQUOTS, "0.0"));
+            _pctDerived = Float.parseFloat(properties.getProperty(PCT_DERIVED, "0.0"));
+            _pctPooled = Float.parseFloat(properties.getProperty(PCT_POOLED, "0.0"));
+            _maxPoolSize = Integer.parseInt(properties.getProperty(MAX_POOL_SIZE, "2"));
+            _maxGenerations = Integer.parseInt(properties.getProperty(MAX_GENERATIONS, "1"));
+            _maxAliquotsPerParent = Integer.parseInt(properties.getProperty(MAX_ALIQUOTS_PER_SAMPLE, "0"));
+
+            _minFields = Integer.parseInt(properties.getProperty(MIN_NUM_FIELDS, "1"));
+            _maxFields = Math.max(Integer.parseInt(properties.getProperty(MAX_NUM_FIELDS, "1")), _minFields);
+
         }
 
         public int getNumSampleTypes()
@@ -620,36 +620,6 @@ public class DataGenerator
         public void setMaxAliquotsPerParent(int maxAliquotsPerParent)
         {
             _maxAliquotsPerParent = maxAliquotsPerParent;
-        }
-
-        public int getNumDataClasses()
-        {
-            return _numDataClasses;
-        }
-
-        public void setNumDataClasses(int numDataClasses)
-        {
-            _numDataClasses = numDataClasses;
-        }
-
-        public int getMinDataClassObjects()
-        {
-            return _minDataClassObjects;
-        }
-
-        public void setMinDataClassObjects(int minDataClassObjects)
-        {
-            _minDataClassObjects = minDataClassObjects;
-        }
-
-        public int getMaxDataClassObjects()
-        {
-            return _maxDataClassObjects;
-        }
-
-        public void setMaxDataClassObjects(int maxDataClassObjects)
-        {
-            _maxDataClassObjects = maxDataClassObjects;
         }
 
         public int getMinFields()
