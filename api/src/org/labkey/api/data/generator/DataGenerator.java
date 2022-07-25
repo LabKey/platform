@@ -451,11 +451,13 @@ public class DataGenerator<T extends DataGenerator.Config>
             }
             ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
             numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+
             _log.info("... " + numImported);
         }
         timer.stop();
+        if (errors.hasErrors())
+           _log.error("There were problems importing the samples", errors);
+
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
 
     }
