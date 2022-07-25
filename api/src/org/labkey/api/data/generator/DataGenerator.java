@@ -188,22 +188,23 @@ public class DataGenerator<T extends DataGenerator.Config>
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
             CPUTimer timer = addTimer(String.format("%d '%s' samples", numSamples, sampleType.getName()));
             timer.start();
-            generateSamples(sampleType, numSamples, dataClassParents, parentTypes);
+            int numGenerated = generateSamples(sampleType, numSamples, dataClassParents, parentTypes);
             timer.stop();
-            _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numSamples, sampleType.getName(), timer.getDuration()));
+            _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numGenerated, sampleType.getName(), timer.getDuration()));
 
             numSamples = Math.min(numSamples + sampleIncrement, config.getMaxSamples());
             parentTypes.add(sampleType.getName());
         }
     }
 
-    public void generateSamples(ExpSampleType sampleType, int numSamplesAndAliquots, List<String> dataClassParentTypes, List<String> sampleTypeParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    public int generateSamples(ExpSampleType sampleType, int numSamplesAndAliquots, List<String> dataClassParentTypes, List<String> sampleTypeParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
         QueryUpdateService svc = tableInfo.getUpdateService();
+        int numGenerated = 0;
         int numAliquots = Math.round(numSamplesAndAliquots * _config.getPctAliquots());
-        int numPooled = Math.round(numSamplesAndAliquots * _config.getPctPooled());
-        int numSamples = numSamplesAndAliquots - numAliquots - numPooled;
+//        int numPooled = Math.round(numSamplesAndAliquots * _config.getPctPooled());
+        int numSamples = numSamplesAndAliquots - numAliquots;
         // total number of derived samples
         int numDerived = dataClassParentTypes.isEmpty() && sampleTypeParents.isEmpty() ? 0 : Math.round(numSamples * _config.getPctDerived());
         int numDerivedFromDataClass = dataClassParentTypes.isEmpty() ? 0 :
@@ -215,11 +216,11 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromDataClass / dataClassParentTypes.size();
             for (String parentType : dataClassParentTypes)
             {
-                generateDerivedSamples(sampleType, parentType, true, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType);
             }
         }
 
-        generateDomainData(numSamples - numDerived, svc, sampleType.getDomain());
+        numGenerated += generateDomainData(numSamples - numDerived, svc, sampleType.getDomain());
         int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
@@ -227,13 +228,14 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
             {
-                generateDerivedSamples(sampleType, parentType, false, numPerParentType);
+                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType);
             }
         }
         // TODO create some % of the pooled samples
-        int aliquotCount = generateAliquots(sampleType, svc, numAliquots);
+        numGenerated += generateAliquots(sampleType, svc, numAliquots);
         // TODO create the other pooled samples from aliquots
 //      poolSamples(samples, svc, sampleType.getName(), Math.round(numSamplesAndAliquots * _config.getPctPooled()));
+        return numGenerated;
     }
 
     public int generateAliquots(ExpSampleType sampleType, QueryUpdateService svc, int quantity) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
@@ -253,7 +255,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         do
         {
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity/100)));
-            numGenerated = generateAliquotsForParents(parents, svc, quantity, 0, 1, randomInt(1, _config.getMaxGenerations()));
+            numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()));
             totalAliquots += numGenerated;
             iterations++;
         } while (totalAliquots < quantity && numGenerated > 0);
@@ -267,7 +269,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         int generatedCount = 0;
-        List<Map<String, Object>> allAliquots = new ArrayList<>();
+        List<Map<String, Object>> aliquots = new ArrayList<>();
         List<Map<String, Object>> rows = new ArrayList<>();
 
         for (int p = 0; p < parents.size() && generatedCount < quantity && generatedCount < MAX_BATCH_SIZE; p++)
@@ -296,17 +298,15 @@ public class DataGenerator<T extends DataGenerator.Config>
         if (!rows.isEmpty())
         {
             BatchValidationException errors = new BatchValidationException();
-            List<Map<String, Object>> aliquots = svc.insertRows(_user, _container, rows, errors, null, null);
+            aliquots = svc.insertRows(_user, _container, rows, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
-
-            allAliquots.addAll(aliquots);
         }
         _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
-        // for each of the aliquots, possibly generate further aliquot generations
+        // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
-            generatedCount += generateAliquotsForParents(allAliquots, svc, quantity-generatedCount, numGenerated + generatedCount, generation+1, maxGenerations);
+            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size()/2), randomInt(aliquots.size()/2, aliquots.size())), svc, quantity-generatedCount, numGenerated + generatedCount, generation+1, maxGenerations);
         }
         return generatedCount;
     }
@@ -401,34 +401,31 @@ public class DataGenerator<T extends DataGenerator.Config>
     }
 
 
-    public void generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         QueryUpdateService svc = _dataClassSchema.getTable(dataClass.getName()).getUpdateService();
-        generateDomainData(numObjects, svc, dataClass.getDomain());
+        return generateDomainData(numObjects, svc, dataClass.getDomain());
     }
 
-    public void generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity) throws SQLException, BatchValidationException
+    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity) throws SQLException, BatchValidationException
     {
         if (_config.getMaxChildrenPerParent() <= 0)
         {
             _log.info(String.format("No derivatives generated since maxChildrenPerParent is %d", _config.getMaxChildrenPerParent()));
-            return;
+            return 0;
         }
 
-        long currentGenId;
         String parentInput;
         ExpObject parentObject;
         if (isDataClass)
         {
             parentInput = "DataInputs";
             parentObject = ExperimentService.get().getDataClass(_container, _user, parentQueryName);
-            currentGenId = ((ExpDataClass) parentObject).getCurrentGenId();
         }
         else
         {
             parentInput = "MaterialInputs";
             parentObject = SampleTypeService.get().getSampleType(_container, _user, parentQueryName);
-            currentGenId = ((ExpSampleType) parentObject).getCurrentGenId();
         }
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryName));
         CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryName));
@@ -470,7 +467,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         timer.stop();
 
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
-
+        return numImported;
     }
 
     public void logTimes()
@@ -488,7 +485,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return timer;
     }
 
-    private void generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
+    private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
     {
         _log.info(String.format("Generating %d rows of data ...", totalRows));
         int numImported = 0;
@@ -503,6 +500,7 @@ public class DataGenerator<T extends DataGenerator.Config>
                 throw errors;
             _log.info("... " + numImported);
         }
+        return numImported;
     }
 
     private void addDomainProperties(List<GWTPropertyDescriptor> props, int numFields)
