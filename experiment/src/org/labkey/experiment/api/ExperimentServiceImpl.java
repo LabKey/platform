@@ -440,7 +440,7 @@ public class ExperimentServiceImpl implements ExperimentService
         try
         {
             ExpProtocol protocol;
-            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+            try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
             {
                 List<String> sequenceProtocols = new ArrayList<>();
                 Map<String, ExpProtocol> protocolCache = new HashMap<>();
@@ -454,10 +454,10 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (!protocolCache.containsKey(stepName))
                     {
                         // Check if it's in the database already
-                        ExpProtocol stepProtocol = ExperimentService.get().getExpProtocol(container, stepName);
+                        ExpProtocol stepProtocol = getExpProtocol(container, stepName);
                         if (stepProtocol == null)
                         {
-                            stepProtocol = ExperimentService.get().createExpProtocol(container, ProtocolApplication, stepName);
+                            stepProtocol = createExpProtocol(container, ProtocolApplication, stepName);
                             stepProtocol.save(user);
                         }
                         protocolCache.put(stepName, stepProtocol);
@@ -531,7 +531,6 @@ public class ExperimentServiceImpl implements ExperimentService
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
 
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
-
     }
 
     @Override
@@ -856,12 +855,10 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoSampleType(), rowId, ms);
     }
-
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
     {
@@ -1142,7 +1139,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         obj.setName(name);
         obj.setObjectType(objectType);
-        obj.setLSID(ExperimentService.get().generateGuidLSID(c, ExpProtocolInput.class));
+        obj.setLSID(generateGuidLSID(c, ExpProtocolInput.class));
         obj.setProtocolId(protocolId);
         obj.setInput(input);
         if (criteria != null)
@@ -1388,7 +1385,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull String dataClassName, @NotNull Date effectiveDate)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
+        Integer legacyObjectId = getObjectIdWithLegacyName(dataClassName, ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), effectiveDate, definitionContainer);
         if (legacyObjectId != null)
             return getDataClassByObjectId(definitionContainer, legacyObjectId);
 
@@ -1534,6 +1531,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return data == null ? null : new ExpDataImpl(data);
     }
 
+    @Nullable
     public ExpDataImpl getDataByObjectId(Container c, Integer objectId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -1546,9 +1544,10 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @Nullable
     public ExpData getEffectiveData(@NotNull ExpDataClass dataClass, String name, @NotNull Date effectiveDate, @NotNull Container container)
     {
-        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
+        Integer legacyObjectId = getObjectIdWithLegacyName(name, ExperimentServiceImpl.getNamespacePrefix(ExpData.class), effectiveDate, dataClass.getContainer());
         if (legacyObjectId != null)
             return getDataByObjectId(container, legacyObjectId);
 
@@ -1560,6 +1559,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    @Nullable
     public ExpData findExpData(Container c, User user,
                             @NotNull ExpDataClass dataClass,
                             @NotNull String dataClassName, String dataName,
@@ -1725,17 +1725,16 @@ public class ExperimentServiceImpl implements ExperimentService
         return view;
     }
 
-
     /**
      * export to temp directory
      */
     @Override
     public File exportXarForRuns(
-            User user,
-            Set<Integer> runIds,
-            Integer expRowId,
-            XarExportOptions options)
-            throws NotFoundException, IOException, ExperimentException
+        User user,
+        Set<Integer> runIds,
+        Integer expRowId,
+        XarExportOptions options
+    ) throws NotFoundException, IOException, ExperimentException
     {
         if (runIds.isEmpty())
         {
@@ -1747,7 +1746,7 @@ public class ExperimentServiceImpl implements ExperimentService
             List<ExpRun> runs = new ArrayList<>();
             for (int id : runIds)
             {
-                ExpRun run = ExperimentService.get().getExpRun(id);
+                ExpRun run = getExpRun(id);
                 if (run == null || !run.getContainer().hasPermission(user, ReadPermission.class))
                 {
                     throw new NotFoundException("Could not find run " + id);
@@ -1758,7 +1757,7 @@ public class ExperimentServiceImpl implements ExperimentService
             XarExportSelection selection = new XarExportSelection();
             if (expRowId != null)
             {
-                ExpExperiment experiment = ExperimentService.get().getExpExperiment(expRowId);
+                ExpExperiment experiment = getExpExperiment(expRowId);
                 if (experiment == null || !experiment.getContainer().hasPermission(user, ReadPermission.class))
                 {
                     throw new NotFoundException("Run group " + expRowId);
@@ -1796,7 +1795,6 @@ public class ExperimentServiceImpl implements ExperimentService
             throw new NotFoundException(runIds.toString());
         }
     }
-
 
     @Override
     public DbSchema getSchema()
@@ -1900,7 +1898,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Nullable
     public ExpDataRunInputImpl getDataInput(int dataId, int targetProtocolApplicationId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoDataInput();
+        TableInfo inputTable = getTinfoDataInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("dataId"), dataId);
         filter.addCondition(FieldKey.fromParts("targetApplicationId"), targetProtocolApplicationId);
@@ -1915,7 +1913,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Nullable
     public ExpDataProtocolInputImpl getDataProtocolInput(int rowId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
@@ -1935,7 +1933,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!DataProtocolInput.NAMESPACE.equals(namespace))
             return null;
 
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
         filter.addCondition(FieldKey.fromParts("lsid"), lsid);
@@ -1950,7 +1948,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public List<? extends ExpDataProtocolInput> getDataProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer dataClassId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
         filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
@@ -1991,7 +1989,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Nullable
     public ExpMaterialRunInputImpl getMaterialInput(int materialId, int targetProtocolApplicationId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoMaterialInput();
+        TableInfo inputTable = getTinfoMaterialInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("materialId"), materialId);
         filter.addCondition(FieldKey.fromParts("targetApplicationId"), targetProtocolApplicationId);
@@ -2021,7 +2019,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<? extends ExpProtocolInputImpl> getProtocolInputs(int protocolId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
         Collection<Map<String, Object>> rows = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, new Sort("rowId")).getMapCollection();
@@ -2031,7 +2029,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public ExpProtocolInputImpl getProtocolInput(int rowId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("rowId"), rowId);
         Map<String, Object> row = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
@@ -2046,7 +2044,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!AbstractProtocolInput.NAMESPACE.equals(namespace))
             return null;
 
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("lsid"), lsid);
         Map<String, Object> row = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
@@ -2057,7 +2055,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Nullable
     public ExpMaterialProtocolInputImpl getMaterialProtocolInput(int rowId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
         filter.addCondition(FieldKey.fromParts("rowId"), rowId);
@@ -2076,7 +2074,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!AbstractProtocolInput.NAMESPACE.equals(namespace))
             return null;
 
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
         filter.addCondition(FieldKey.fromParts("lsid"), lsid);
@@ -2091,7 +2089,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Nullable
     public List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId)
     {
-        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        TableInfo inputTable = getTinfoProtocolInput();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
         filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
@@ -2250,9 +2248,9 @@ public class ExperimentServiceImpl implements ExperimentService
         if (down)
         {
             if (start instanceof ExpData)
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDataIds(Arrays.asList(start.getRowId())));
+                runsToInvestigate.addAll(getRunsUsingDataIds(Arrays.asList(start.getRowId())));
             else if (start instanceof ExpMaterial)
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
+                runsToInvestigate.addAll(getRunsUsingMaterials(start.getRowId()));
             runsToInvestigate.remove(start.getRun());
         }
         return runsToInvestigate;
@@ -2287,9 +2285,9 @@ public class ExperimentServiceImpl implements ExperimentService
         if (down)
         {
             if (start instanceof ExpData)
-                runsDown.putAll(flattenPairs(ExperimentServiceImpl.get().getRunsAndRolesUsingDataIds(Arrays.asList(start.getRowId()))));
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingDataIds(Arrays.asList(start.getRowId()))));
             else if (start instanceof ExpMaterial)
-                runsDown.putAll(flattenPairs(ExperimentServiceImpl.get().getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
 
             if (parentRun != null)
                 runsDown.remove(parentRun.getLSID());
@@ -2386,9 +2384,9 @@ public class ExperimentServiceImpl implements ExperimentService
         for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
-            if (seed instanceof ExpRunItem && !isUnknownMaterial((ExpRunItem)seed))
+            if (seed instanceof ExpRunItem runSeed && !isUnknownMaterial(runSeed))
             {
-                Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate((ExpRunItem)seed, options);
+                Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(runSeed, options);
 
                 // add edges for initial runs and roles up
                 for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
@@ -2862,7 +2860,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         // query the exp.edge table for the run and find any differences
         TableInfo edge = getTinfoEdge();
-        TableSelector ts = new TableSelector(edge, edge.getColumns("fromObjectId", "toObjectId", "runId"), new SimpleFilter("runId", runId), null);
+        TableSelector ts = new TableSelector(edge, edge.getColumns("fromObjectId", "toObjectId", "runId"), new SimpleFilter(FieldKey.fromParts("runId"), runId), null);
 
         List<List<Object>> edges = new ArrayList<>(params.size());
         ts.forEach(r -> {
@@ -2969,9 +2967,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
-// LSID VERSION
-//            String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
-//                    "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
             TableInfo edge = getTinfoEdge();
             String edgeSql = "INSERT INTO " + edge +
                     /* (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "") + */
@@ -3344,15 +3339,14 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-
-    public void rebuildAllEdges()
+    public void rebuildAllRunEdges()
     {
         try (CustomTiming timing = MiniProfiler.custom("exp", "rebuildAllEdges"))
         {
             try (Timing ignored = MiniProfiler.step("delete edges"))
             {
-                LOG.debug("Deleting all edges");
-                Table.delete(getTinfoEdge());
+                LOG.debug("Deleting all run-based edges");
+                Table.delete(getTinfoEdge(), new SimpleFilter().addCondition(FieldKey.fromParts("runId"), null, CompareType.NONBLANK));
             }
 
             // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
@@ -3381,7 +3375,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (timing != null)
             {
                 timing.stop();
-                LOG.debug("Rebuilt all edges: " + timing.getDuration() + " ms");
+                LOG.debug("Rebuilt all run-based edges: " + timing.getDuration() + " ms");
             }
         }
         ClosureQueryHelper.invalidateAll();
@@ -3420,7 +3414,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
             Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
 
-            SimpleFilter filter = new SimpleFilter("container", c.getId());
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
             var ts = new TableSelector(getTinfoExperimentRun(),
                     getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), filter, new Sort("rowId"));
             if (limit != null)
@@ -4106,7 +4100,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                 if (input.getDataFileUrl().equals(output.getDataFileUrl()))
                                 {
                                     // Don't delete the exp.data output if it is being used in other runs
-                                    List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(output));
+                                    List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(output));
                                     otherUsages.remove(run);
                                     if (!otherUsages.isEmpty())
                                     {
@@ -4128,7 +4122,7 @@ public class ExperimentServiceImpl implements ExperimentService
                             }
 
                             // If the file has no other usages, we can delete it.
-                            List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(input));
+                            List<? extends ExpRun> otherUsages = getRunsUsingDatas(List.of(input));
                             otherUsages.remove(run);
                             if (otherUsages.isEmpty())
                             {
@@ -4498,13 +4492,16 @@ public class ExperimentServiceImpl implements ExperimentService
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
      */
-    private void deleteMaterialByRowIds(User user, Container container,
-                                        Collection<Integer> selectedMaterialIds,
-                                        boolean deleteRunsUsingMaterials,
-                                        boolean deleteFromAllSampleTypes,
-                                        @Nullable ExpSampleType stDeleteFrom,
-                                        boolean ignoreStatus,
-                                        boolean isTruncate)
+    private void deleteMaterialByRowIds(
+        User user,
+        Container container,
+        Collection<Integer> selectedMaterialIds,
+        boolean deleteRunsUsingMaterials,
+        boolean deleteFromAllSampleTypes,
+        @Nullable ExpSampleType stDeleteFrom,
+        boolean ignoreStatus,
+        boolean isTruncate
+    )
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4616,8 +4613,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 TableInfo edge = getTinfoEdge();
                 SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(edge))
                         .append(" WHERE ")
-                        .append("fromObjectId ").append(objectIdFrag)
-                        .append(" OR toObjectId ").append(objectIdFrag);
+                        .append(" fromObjectId ").append(objectIdFrag)
+                        .append(" OR toObjectId ").append(objectIdFrag)
+                        .append(" OR sourceId ").append(objectIdFrag);
                 executor.execute(deleteEdgeSql);
             }
 
@@ -4932,7 +4930,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment deleteSql = new SQLFragment()
                     .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?;\n").add(data.getLSID())
                     .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 if (data.getClassId() != null)
@@ -5033,11 +5032,11 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
             }
 
-            SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
+            SQLFragment sql = new SQLFragment("DELETE FROM " + getTinfoRunList()
                     + " WHERE ExperimentId IN ("
-                    + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                    + " SELECT E.RowId FROM " + getTinfoExperiment() + " E "
                     + " WHERE E.RowId = " + experiment.getRowId()
                     + " AND E.Container = ? )", experiment.getContainer());
             executor.execute(sql);
@@ -5050,7 +5049,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 listener.beforeExperimentDeleted(c, user, experiment);
             }
 
-            sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
+            sql = new SQLFragment("DELETE FROM " + getTinfoExperiment()
                     + " WHERE RowId = " + experiment.getRowId()
                     + " AND Container = ?", experiment.getContainer());
             executor.execute(sql);
@@ -5109,8 +5108,9 @@ public class ExperimentServiceImpl implements ExperimentService
             // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
             String deleteObjEdges =
                     "DELETE FROM " + getTinfoEdge() + "\nWHERE fromObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n"+
-                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
-            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c);
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n" +
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE sourceId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
+            new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c, c);
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoDataAliasMap(), containerFilter);
@@ -5257,7 +5257,6 @@ public class ExperimentServiceImpl implements ExperimentService
             materialListener.beforeMaterialDelete(materials, container, user);
         }
     }
-
 
     @Override
     public List<ExpRunImpl> getRunsUsingDatas(List<ExpData> datas)
@@ -5581,7 +5580,7 @@ public class ExperimentServiceImpl implements ExperimentService
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
 
         MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
+        TableSelector ts = new TableSelector(getTinfoData(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
         ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
 
         int count = 0;
@@ -6713,7 +6712,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     .append(" (ObjectUri, Container) VALUES (?, ?)");
             Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
 
-            StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoExperimentRun().toString()).
+            StringBuilder sql = new StringBuilder("INSERT INTO ").append(getTinfoExperimentRun().toString()).
                     append(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
                             "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '").
                     append(c.getId()).append("')");
@@ -6976,7 +6975,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoMaterialInput().toString() +
+                String sql = "INSERT INTO " + getTinfoMaterialInput().toString() +
                         " (MaterialId, TargetApplicationId, Role)" +
                         " VALUES (?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
@@ -6987,7 +6986,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoProtocolApplication().toString() +
+                String sql = "INSERT INTO " + getTinfoProtocolApplication().toString() +
                         " (Name, CpasType, ProtocolLsid, ActivityDate, RunId, ActionSequence, Lsid, EntityId)" +
                         " VALUES (?,?,?,?,?,?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
@@ -6998,7 +6997,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             if (!params.isEmpty())
             {
-                String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoDataInput().toString() +
+                String sql = "INSERT INTO " + getTinfoDataInput().toString() +
                         " (Role, DataId, TargetApplicationId)" +
                         " VALUES (?,?,?)";
                 Table.batchExecute(getExpSchema(), sql, params);
@@ -7462,7 +7461,7 @@ public class ExperimentServiceImpl implements ExperimentService
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
 
             if (hasNameChange)
-                ExperimentService.get().addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
+                addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
 
             if (!errors.hasErrors())
             {
@@ -7478,7 +7477,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (name == null)
             throw new IllegalArgumentException("DataClass name is required.");
 
-        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
+        TableInfo dataClassTable = getTinfoDataClass();
         int nameMax = dataClassTable.getColumn("Name").getScale();
         if (name.length() > nameMax)
             throw new IllegalArgumentException("DataClass name may not exceed " + nameMax + " characters.");
@@ -7494,7 +7493,7 @@ public class ExperimentServiceImpl implements ExperimentService
         if (options == null)
             return;
 
-        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
+        TableInfo dataClassTable = getTinfoDataClass();
         int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
         if (options.getNameExpression() != null && options.getNameExpression().length() > nameExpMax)
             throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
@@ -8047,7 +8046,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public Integer getObjectIdWithLegacyName(String name, String dataType, Date effectiveDate, Container c)
     {
-        TableInfo tableInfo = ExperimentService.get().getTinfoObjectLegacyNames();
+        TableInfo tableInfo = getTinfoObjectLegacyNames();
 
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
@@ -8091,18 +8090,115 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
+    @Override
+    public void addEdges(Collection<ExpLineageEdge> edges)
+    {
+        if (edges == null || edges.size() == 0)
+            return;
+
+        List<List<?>> params = new ArrayList<>();
+
+        for (var edge : edges)
+        {
+            if (edge.getRunId() != null)
+                throw new IllegalArgumentException("Failed to add lineage edge. Adding edges with a runId is not supported. Use experiment protocol inputs/outputs if run support is necessary.");
+
+            // ignore cycles from and to itself
+            if (Objects.equals(edge.getFromObjectId(), edge.getToObjectId()))
+                continue;
+
+            params.add(Arrays.asList(
+                edge.getFromObjectId(),
+                edge.getToObjectId(),
+                edge.getSourceId(),
+                StringUtils.trimToNull(edge.getSourceKey())
+            ));
+        }
+
+        if (params.isEmpty())
+            return;
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            String sql = "INSERT INTO " + getTinfoEdge().toString() +
+                    " (fromObjectId, toObjectId, sourceId, sourceKey) " +
+                    " VALUES (?, ?, ?, ?) ";
+
+            Table.batchExecute(getExpSchema(), sql, params);
+            tx.commit();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    @Override
+    @NotNull
+    public List<ExpLineageEdge> getEdges(ExpLineageEdge.FilterOptions options)
+    {
+        SimpleFilter filter = getEdgeFilterFromOptions(options);
+        return new TableSelector(getTinfoEdge(), filter, null).getArrayList(ExpLineageEdge.class);
+    }
+
+    private SimpleFilter getEdgeFilterFromOptions(ExpLineageEdge.FilterOptions options)
+    {
+        SimpleFilter filter = new SimpleFilter();
+
+        if (options.fromObjectId != null)
+            filter.addCondition(FieldKey.fromParts("fromObjectId"), options.fromObjectId);
+        if (options.toObjectId != null)
+            filter.addCondition(FieldKey.fromParts("toObjectId"), options.toObjectId);
+        if (options.runId != null)
+            filter.addCondition(FieldKey.fromParts("runId"), options.runId);
+        if (options.sourceIds != null)
+        {
+            if (options.sourceIds.isEmpty())
+                filter.addWhereClause("0 = 1", new Object[]{});
+            else
+                filter.addCondition(FieldKey.fromParts("sourceId"), options.sourceIds, CompareType.IN);
+        }
+        if (StringUtils.trimToNull(options.sourceKey) != null)
+            filter.addCondition(FieldKey.fromParts("sourceKey"), options.sourceKey);
+
+        return filter;
+    }
+
+    @Override
+    public int removeEdges(ExpLineageEdge.FilterOptions options)
+    {
+        if (options.runId != null)
+            throw new IllegalArgumentException("Failed to remove lineage edges. Edges with a runId cannot be deleted via removeEdge(). Use experiment protocol inputs/outputs if run support is necessary.");
+
+        int count = 0;
+        SimpleFilter filter = getEdgeFilterFromOptions(options);
+
+        if (filter.getClauses().isEmpty())
+            return count;
+
+        filter.addCondition(FieldKey.fromParts("runId"), null, CompareType.ISBLANK);
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            count = Table.delete(getTinfoEdge(), filter);
+            tx.commit();
+        }
+
+        return count;
+    }
+
     public static class TestCase extends Assert
     {
         @Before
         public void setUp()
         {
-            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+            JunitUtil.deleteTestContainer();
         }
 
         @After
         public void tearDown()
         {
-            ContainerManager.deleteAll(JunitUtil.getTestContainer(), TestContext.get().getUser());
+            JunitUtil.deleteTestContainer();
         }
 
         @Test
