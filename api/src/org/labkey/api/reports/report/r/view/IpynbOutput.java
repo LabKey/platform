@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.r.view;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
@@ -148,7 +149,7 @@ public class IpynbOutput extends HtmlOutput
         @Override
         protected String renderInternalAsString(File file) throws Exception
         {
-            String result = super.renderInternalAsString(file);
+            String result = StringUtils.trimToEmpty(super.renderInternalAsString(file));
             try
             {
                 final JSONObject obj = new JSONObject(result);
@@ -224,6 +225,12 @@ public class IpynbOutput extends HtmlOutput
                 sb.append(HtmlString.unsafe("<div class=\"labkey-error\">"));
                 sb.append(HtmlString.of(ex.getMessage()));
                 sb.append(HtmlString.unsafe("</div>"));
+                if (ex instanceof JSONException)
+                {
+                    sb.append(HtmlString.unsafe("<div>"));
+                    sb.append(HtmlString.of(result));
+                    sb.append(HtmlString.unsafe("</div>"));
+                }
                 return sb.toString();
             }
         }

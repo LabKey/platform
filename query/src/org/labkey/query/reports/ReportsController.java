@@ -879,6 +879,7 @@ public class ReportsController extends SpringActionController
 
             if (mr.getStatus() != HttpServletResponse.SC_OK)
             {
+                _log.trace("Report error. Status: " + mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
