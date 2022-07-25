@@ -897,7 +897,7 @@ public class ReportsController extends SpringActionController
             }
 
             final String html = mr.getContentAsString();
-            _log.trace("Report success. Size: " + html.length());
+            _log.trace("Report rendered. Size: " + html.length());
             resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
