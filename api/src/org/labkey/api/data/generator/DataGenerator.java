@@ -11,6 +11,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -316,6 +317,12 @@ public class DataGenerator<T extends DataGenerator.Config>
         return getRowsByRandomNames(tableInfo, _nameData.get(sampleType.getName()), sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
     }
 
+    private List<Map<String, Object>> getRandomDataClassObjects(ExpDataClass dataClass, int quantity)
+    {
+        TableInfo tableInfo = _dataClassSchema.getTable(dataClass.getName());
+        return getRowsByRandomNames(tableInfo, _nameData.get(dataClass.getName()), dataClass.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
+    }
+
     protected List<Map<String, Object>> getRowsByRandomNames(TableInfo tableInfo, NamingPatternData namingData, long endIndex, int quantity, Set<String> columns)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
@@ -410,15 +417,18 @@ public class DataGenerator<T extends DataGenerator.Config>
 
         long currentGenId;
         String parentInput;
+        ExpObject parentObject;
         if (isDataClass)
         {
             parentInput = "DataInputs";
-            currentGenId = ExperimentService.get().getDataClass(_container, _user, parentQueryName).getCurrentGenId();
+            parentObject = ExperimentService.get().getDataClass(_container, _user, parentQueryName);
+            currentGenId = ((ExpDataClass) parentObject).getCurrentGenId();
         }
         else
         {
             parentInput = "MaterialInputs";
-            currentGenId = SampleTypeService.get().getSampleType(_container, _user, parentQueryName).getCurrentGenId();
+            parentObject = SampleTypeService.get().getSampleType(_container, _user, parentQueryName);
+            currentGenId = ((ExpSampleType) parentObject).getCurrentGenId();
         }
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryName));
         CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryName));
@@ -434,8 +444,9 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numRows = Math.min(batchSize, quantity - numImported);
             List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
             // choose a random set of object names from the parent type
-            List<String> parentNames = getRandomNames(namingData.prefix, namingData.startGenId, currentGenId, batchSize);
-
+           List<Map<String, Object>> parents = isDataClass ?
+                    getRandomDataClassObjects((ExpDataClass) parentObject, batchSize):
+                    getRandomSamples((ExpSampleType) parentObject, batchSize);
             int rowNum = 0;
             int p = 0;
             while (rowNum < rows.size())
@@ -444,19 +455,19 @@ public class DataGenerator<T extends DataGenerator.Config>
                 int numDerivatives = randomInt(1, _config.getMaxChildrenPerParent());
                 for (int i = 0; i < numDerivatives && rowNum < rows.size(); i++)
                 {
-                    rows.get(rowNum).put(parentInput + "/" + parentQueryName, parentNames.get(p));
+                    rows.get(rowNum).put(parentInput + "/" + parentQueryName, parents.get(p).get("name"));
                     rowNum++;
                 }
                 p++;
             }
             ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
             numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
 
             _log.info("... " + numImported);
         }
         timer.stop();
-        if (errors.hasErrors())
-           _log.error("There were problems importing the samples", errors);
 
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
 
