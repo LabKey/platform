@@ -881,7 +881,7 @@ public class ReportsController extends SpringActionController
                 var script = sw.toString();
                 if (!script.isBlank())
                 {
-                    _log.trace("Prepending report end of body script.");
+                    _log.trace("Append end of body script.");
                     var out = mr.getWriter();
                     out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
                     out.print(script);
