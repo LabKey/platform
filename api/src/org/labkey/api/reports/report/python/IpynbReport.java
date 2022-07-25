@@ -219,6 +219,7 @@ public class IpynbReport extends DockerScriptReport
             if (error.isFile() && error.length() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
+            LOG.trace("VIEWS: " + vbox.getViews().size());
             return vbox;
         }
         catch (Exception x)
