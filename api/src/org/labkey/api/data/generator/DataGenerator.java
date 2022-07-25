@@ -30,7 +30,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -47,6 +46,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class DataGenerator<T extends DataGenerator.Config>
 {
+    protected static final int MAX_BATCH_SIZE = 10000;
     protected Container _container;
     protected final User _user;
     protected final Logger _log;
@@ -56,12 +56,14 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected final List<CPUTimer> _timers = new ArrayList<>();
 
     protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
-    protected final Map<String, Pair<String, Long>> _nameData = new HashMap<>();
+
+    public record NamingPatternData(String prefix, Long startGenId) {};
+
+    // Map from type name to pair of name prefix and suffix (genId) start value
+    protected final Map<String, NamingPatternData> _nameData = new HashMap<>();
 
     protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
 
-    // map from rowId to # of generations (including the root) TODO remove
-    private final Map<Integer, Integer> _sampleGenerations = new HashMap<>();
     // Map from rowId to # of aliquots. TODO remove
     private final Map<Integer, Integer> _numAliquotsPerParent = new HashMap<>();
 
@@ -137,8 +139,8 @@ public class DataGenerator<T extends DataGenerator.Config>
         int maxFields = _config.getMaxFields();
 
         int fieldIncrement = numSampleTypes <= 1 ? 0 : (maxFields - minFields)/(numSampleTypes-1);
-
-        CPUTimer timer = new CPUTimer("Sample Type Generation");
+        SampleTypeService service = SampleTypeService.get();
+        CPUTimer timer = new CPUTimer(String.format("%d sample types", numSampleTypes));
         timer.start();
         int numFields = minFields;
         int typeIndex = 0;
@@ -148,12 +150,11 @@ public class DataGenerator<T extends DataGenerator.Config>
             do {
                 typeIndex++;
                 sampleTypeName = namePrefix + typeIndex;
-            } while (SampleTypeService.get().getSampleType(_container, _user, sampleTypeName) != null);
+            } while (service.getSampleType(_container, _user, sampleTypeName) != null);
             String prefixWithIndex = namingPatternPrefix + typeIndex + "_";
             String namingPattern = prefixWithIndex + "${genId}";
             ExpSampleType sampleType = generateSampleType(sampleTypeName, namingPattern, numFields);
-            Pair<String, Long> nameData = new Pair<>(prefixWithIndex, sampleType.getCurrentGenId());
-            _nameData.put(sampleTypeName, nameData);
+            _nameData.put(sampleTypeName, new NamingPatternData(prefixWithIndex, sampleType.getCurrentGenId()));
             _sampleTypes.add(sampleType);
             numFields = Math.min(numFields + fieldIncrement, maxFields);
         }
@@ -174,38 +175,61 @@ public class DataGenerator<T extends DataGenerator.Config>
                 "Generated sample type", props, List.of(), namingPattern);
     }
 
-    public void generateSamplesForAllTypes() throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException, InvalidKeyException
+    public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         DataGenerator.Config config = getConfig();
 
         int sampleIncrement = config.getNumSampleTypes() <= 1 ? 0 : (config.getMaxSamples() - config.getMinSamples())/(config.getNumSampleTypes()-1);
         int numSamples = config.getMinSamples();
-        for (int i = 0; i < config.getNumSampleTypes(); i++)
+        List<String> parentTypes = new ArrayList<>();
+        for (ExpSampleType sampleType : _sampleTypes)
         {
-            ExpSampleType sampleType = _sampleTypes.get(i);
-            // TODO take into account number of samples that exist
-            _log.info(String.format("Generating %d samples for sample type %s.", numSamples, sampleType.getName()));
-            CPUTimer timer = new CPUTimer("Generate " + sampleType.getName() + " samples");
-            _timers.add(timer);
+            _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
+            CPUTimer timer = addTimer(String.format("%d '%s' samples", numSamples, sampleType.getName()));
             timer.start();
-            generateSamples(_sampleTypes.get(i), numSamples);
+            generateSamples(sampleType, numSamples, dataClassParents, parentTypes);
             timer.stop();
-            _log.info(String.format("Generating %d samples for sample type %s took %s.", numSamples, sampleType.getName(), timer.getDuration()));
+            _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numSamples, sampleType.getName(), timer.getDuration()));
 
-            numSamples = Math.min(numSamples+sampleIncrement, config.getMaxSamples());
+            numSamples = Math.min(numSamples + sampleIncrement, config.getMaxSamples());
+            parentTypes.add(sampleType.getName());
         }
     }
 
-    public void generateSamples(ExpSampleType sampleType, int numSamplesAndAliquots) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    public void generateSamples(ExpSampleType sampleType, int numSamplesAndAliquots, List<String> dataClassParentTypes, List<String> sampleTypeParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
         QueryUpdateService svc = tableInfo.getUpdateService();
         int numAliquots = Math.round(numSamplesAndAliquots * _config.getPctAliquots());
         int numPooled = Math.round(numSamplesAndAliquots * _config.getPctPooled());
         int numSamples = numSamplesAndAliquots - numAliquots - numPooled;
+        // total number of derived samples
+        int numDerived = dataClassParentTypes.isEmpty() && sampleTypeParents.isEmpty() ? 0 : Math.round(numSamples * _config.getPctDerived());
+        int numDerivedFromDataClass = dataClassParentTypes.isEmpty() ? 0 :
+                sampleTypeParents.isEmpty() ? numDerived : Math.round(numDerived * _config.getPctDerivedFromSamples());
+        if (!dataClassParentTypes.isEmpty() && numDerivedFromDataClass > 0)
+        {
+            _log.info(String.format("Generating %d samples derived from data class objects.", numDerivedFromDataClass));
 
-        generateDomainData(numSamples, svc, sampleType.getDomain());
-        // TODO create 75% of the pooled samples
+            int numPerParentType = numDerivedFromDataClass / dataClassParentTypes.size();
+            for (String parentType : dataClassParentTypes)
+            {
+                generateDerivedSamples(sampleType, parentType, true, numPerParentType);
+            }
+        }
+
+        generateDomainData(numSamples - numDerived, svc, sampleType.getDomain());
+        int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
+        if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
+        {
+            _log.info(String.format("Generated %d samples derived from sample types", numDerivedFromSamples));
+            int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
+            for (String parentType : sampleTypeParents)
+            {
+                generateDerivedSamples(sampleType, parentType, false, numPerParentType);
+            }
+        }
+        // TODO create some % of the pooled samples
         int aliquotCount = generateAliquots(sampleType, svc, numAliquots);
         // TODO create the other pooled samples from aliquots
 //      poolSamples(samples, svc, sampleType.getName(), Math.round(numSamplesAndAliquots * _config.getPctPooled()));
@@ -213,43 +237,50 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public int generateAliquots(ExpSampleType sampleType, QueryUpdateService svc, int quantity) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
-        _log.info(String.format("Generating %d aliquots for sample type %s.", quantity, sampleType.getName()));
-        CPUTimer timer = new CPUTimer(sampleType.getName() + " aliquots");
+        if (_config.getMaxAliquotsPerParent() <= 0)
+        {
+            _log.info(String.format("Generating no aliquots because maxAliquotsPerParent is %d", _config.getMaxAliquotsPerParent()));
+            return 0;
+        }
+
+        _log.info(String.format("Generating %d aliquots for sample type '%s' ...", quantity, sampleType.getName()));
+        CPUTimer timer = addTimer(String.format("%d '%s' aliquots", quantity, sampleType.getName()));
         timer.start();
         int totalAliquots = 0;
         int iterations = 0;
         int numGenerated;
         do
         {
-            List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(100, quantity/10));
-            numGenerated = generateAliquotsForParents(parents, svc, quantity);
+            List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity/100)));
+            numGenerated = generateAliquotsForParents(parents, svc, quantity, 0, 1, randomInt(1, _config.getMaxGenerations()));
             totalAliquots += numGenerated;
             iterations++;
         } while (totalAliquots < quantity && numGenerated > 0);
         timer.stop();
         if (totalAliquots < quantity)
             _log.warn(String.format("Generated only %d aliquots after %d iterations", totalAliquots, iterations));
-        _log.info(String.format("Generating %d aliquots for sample type %s in %d iterations took %s.", totalAliquots, sampleType.getName(), iterations, timer.getDuration()));
+        _log.info(String.format("Generating %d aliquots for sample type '%s' in %d iterations took %s.", totalAliquots, sampleType.getName(), iterations, timer.getDuration()));
         return totalAliquots;
     }
 
-    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         int generatedCount = 0;
         List<Map<String, Object>> allAliquots = new ArrayList<>();
-        for (int p = 0; p < parents.size() && generatedCount < quantity; p++)
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        for (int p = 0; p < parents.size() && generatedCount < quantity && generatedCount < MAX_BATCH_SIZE; p++)
         {
-            List<Map<String, Object>> rows = new ArrayList<>();
+            // increase the probability we'll get some aliquots in later generations
+            if (randomInt(0, 2) == 0)
+                continue;
 
             Map<String, Object> parent = parents.get(p);
             Integer parentId = (Integer) parent.get("rowId");
-            // skip any parents that already are at the max depth
-            if (_sampleGenerations.getOrDefault(parentId, 1) > _config.getMaxGenerations())
-                continue;
 
             // choose a number of aliquots to create
             int currentAliquots = _numAliquotsPerParent.getOrDefault(parentId, 0);
-            int numAliquots = Math.min(randomInt(0, _config.getMaxAliquotsPerParent()), _config.getMaxGenerations() - currentAliquots);
+            int numAliquots = Math.min(randomInt(0, _config.getMaxAliquotsPerParent()), _config.getMaxAliquotsPerParent() - currentAliquots);
             numAliquots = Math.min(numAliquots, quantity - generatedCount);
             // generate that number of aliquots
             for (int i = 0; i < numAliquots; i++)
@@ -258,25 +289,23 @@ public class DataGenerator<T extends DataGenerator.Config>
                 row.put("AliquotedFrom", parent.get("Name"));
                 rows.add(row);
             }
-            if (!rows.isEmpty())
-            {
-                BatchValidationException errors = new BatchValidationException();
-                List<Map<String, Object>> aliquots = svc.insertRows(_user, _container, rows, errors, null, null);
-                if (errors.hasErrors())
-                    throw errors;
-
-                // record generation number for the aliquots
-                int parentGen = _sampleGenerations.getOrDefault(parentId, 1);
-                aliquots.forEach(aliquot -> _sampleGenerations.put((Integer) aliquot.get("RowId"), parentGen + 1));
-                _numAliquotsPerParent.put(parentId, currentAliquots + numAliquots);
-                generatedCount += numAliquots;
-                allAliquots.addAll(aliquots);
-            }
+            generatedCount += numAliquots;
+            _numAliquotsPerParent.put(parentId, currentAliquots + numAliquots);
         }
-        // for each of the aliquots, possibly generate further aliquot generations
-        if (generatedCount < quantity)
+        if (!rows.isEmpty())
         {
-            generatedCount += generateAliquotsForParents(allAliquots, svc, quantity-generatedCount);
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> aliquots = svc.insertRows(_user, _container, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            allAliquots.addAll(aliquots);
+        }
+        _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
+        // for each of the aliquots, possibly generate further aliquot generations
+        if (generatedCount < quantity && generation < maxGenerations)
+        {
+            generatedCount += generateAliquotsForParents(allAliquots, svc, quantity-generatedCount, numGenerated + generatedCount, generation+1, maxGenerations);
         }
         return generatedCount;
     }
@@ -284,22 +313,21 @@ public class DataGenerator<T extends DataGenerator.Config>
     private List<Map<String, Object>> getRandomSamples(ExpSampleType sampleType, int quantity)
     {
         TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
-        var nameGenData = _nameData.get(sampleType.getName());
-        return getRowsByRandomNames(tableInfo, nameGenData.first, nameGenData.second, sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId", "AliquotedFrom", "AliquotedFrom/Name", "IsAliquot"));
+        return getRowsByRandomNames(tableInfo, _nameData.get(sampleType.getName()), sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
     }
 
-    protected List<Map<String, Object>> getRowsByRandomNames(TableInfo tableInfo, String namePrefix, long startIndex, long endIndex, int quantity, Set<String> columns)
+    protected List<Map<String, Object>> getRowsByRandomNames(TableInfo tableInfo, NamingPatternData namingData, long endIndex, int quantity, Set<String> columns)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(_container);
         filter.addCondition(FieldKey.fromParts("Name"),
-                getRandomNames(namePrefix, startIndex, endIndex, quantity), CompareType.IN);
+                getRandomNames(namingData.prefix, namingData.startGenId, endIndex, quantity), CompareType.IN);
         TableSelector selector = new TableSelector(tableInfo, columns, filter, null);
         return Arrays.asList(selector.getMapArray());
     }
 
 
-//    public List<Map<String, Object>> poolSamples(ExpSampleType sampleType, QueryUpdateService service, int numPooled) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
-//    {
+    public void poolSamples(ExpSampleType sampleType, QueryUpdateService service, int numPooled) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    {
 //        // TODO This can pool samples from different generations, which seems a little odd, but we'll go with it for now.
 //        List<Map<String, Object>> rows = new ArrayList<>();
 //        List<Map<String, Object>> oldKeys = new ArrayList<>();
@@ -340,7 +368,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 //            }
 //        }
 //        return service.updateRows(_user, _container, rows, oldKeys, null, null);
-//    }
+    }
 
 
     private List<String> getRandomNames(String namePrefix, long startIndex, long endIndex, int quantity)
@@ -372,11 +400,64 @@ public class DataGenerator<T extends DataGenerator.Config>
         generateDomainData(numObjects, svc, dataClass.getDomain());
     }
 
-
-    public void generateDerivedSamples(SchemaKey parentSchemaKey, String parentQueryName)
+    public void generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity) throws SQLException, BatchValidationException
     {
-        // TODO
-        // Choose random set of
+        if (_config.getMaxChildrenPerParent() <= 0)
+        {
+            _log.info(String.format("No derivatives generated since maxChildrenPerParent is %d", _config.getMaxChildrenPerParent()));
+            return;
+        }
+
+        long currentGenId;
+        String parentInput;
+        if (isDataClass)
+        {
+            parentInput = "DataInputs";
+            currentGenId = ExperimentService.get().getDataClass(_container, _user, parentQueryName).getCurrentGenId();
+        }
+        else
+        {
+            parentInput = "MaterialInputs";
+            currentGenId = SampleTypeService.get().getSampleType(_container, _user, parentQueryName).getCurrentGenId();
+        }
+        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryName));
+        CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryName));
+        timer.start();
+        NamingPatternData namingData = _nameData.get(parentQueryName);
+        BatchValidationException errors = new BatchValidationException();
+        TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
+        QueryUpdateService service = tableInfo.getUpdateService();
+        int batchSize = Math.min(MAX_BATCH_SIZE, quantity);
+        int numImported = 0;
+        while (numImported < quantity)
+        {
+            int numRows = Math.min(batchSize, quantity - numImported);
+            List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
+            // choose a random set of object names from the parent type
+            List<String> parentNames = getRandomNames(namingData.prefix, namingData.startGenId, currentGenId, batchSize);
+
+            int rowNum = 0;
+            int p = 0;
+            while (rowNum < rows.size())
+            {
+                // choose a random number of derivatives for the current parent
+                int numDerivatives = randomInt(1, _config.getMaxChildrenPerParent());
+                for (int i = 0; i < numDerivatives && rowNum < rows.size(); i++)
+                {
+                    rows.get(rowNum).put(parentInput + "/" + parentQueryName, parentNames.get(p));
+                    rowNum++;
+                }
+                p++;
+            }
+            ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
+            numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            _log.info("... " + numImported);
+        }
+        timer.stop();
+        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
+
     }
 
     public void logTimes()
@@ -387,18 +468,27 @@ public class DataGenerator<T extends DataGenerator.Config>
         });
     }
 
-    private void generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public CPUTimer addTimer(String name)
     {
+        CPUTimer timer = new CPUTimer(name);
+        _timers.add(timer);
+        return timer;
+    }
+
+    private void generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
+    {
+        _log.info(String.format("Generating %d rows of data ...", totalRows));
         int numImported = 0;
-        int batchSize = Math.min(10000, totalRows);
+        int batchSize = Math.min(MAX_BATCH_SIZE, totalRows);
+        BatchValidationException errors = new BatchValidationException();
         while (numImported < totalRows)
         {
             List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
-            BatchValidationException errors = new BatchValidationException();
             ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
             numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
+            _log.info("... " + numImported);
         }
     }
 
@@ -475,12 +565,13 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String PCT_ALIQUOTS = "percentAliquots";
         public static final String PCT_DERIVED = "percentDerived";
         public static final String PCT_POOLED = "percentPooled";
+        public static final String PCT_DERIVED_FROM_SAMPLES = "percentDerivedFromSamples";
         public static final String MAX_POOL_SIZE = "maxPoolSize";
         public static final String MIN_SAMPLES = "minSamples";
         public static final String MAX_SAMPLES = "maxSamples";
-        private static final String MAX_ALIQUOTS_PER_SAMPLE = "maxAliquotsPerSample";
-        private static final String MAX_GENERATIONS = "maxGenerations";
-        public static final String NUM_CUSTOM_DATA_CLASSES = "numCustomDataClasses";
+        public static final String MAX_ALIQUOTS_PER_SAMPLE = "maxAliquotsPerSample";
+        public static final String MAX_CHILDREN_PER_PARENT = "maxChildrenPerParent";
+        public static final String MAX_GENERATIONS = "maxGenerations";
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
 
@@ -490,30 +581,15 @@ public class DataGenerator<T extends DataGenerator.Config>
         float _pctAliquots = 0;
         float _pctPooled = 0;
         float _pctDerived = 0;
+        float _pctDerivedFromSamples = 1;
         int _maxPoolSize = 2;
         int _maxGenerations = 1;
         int _maxAliquotsPerParent = 0;
+        int _maxChildrenPerParent = 0;
 
 
         int _minFields = 1;
         int _maxFields = 1;
-
-
-        public Config(Map<String, String> parameters)
-        {
-            _numSampleTypes = Integer.parseInt(parameters.getOrDefault(NUM_SAMPLE_TYPES, "0"));
-            _minSamples = Integer.parseInt(parameters.getOrDefault(MIN_SAMPLES, "0"));
-            _maxSamples = Math.max(Integer.parseInt(parameters.getOrDefault(DataGenerator.Config.MAX_SAMPLES, "0")), _minSamples);
-            _pctAliquots = Float.parseFloat(parameters.getOrDefault(PCT_ALIQUOTS, "0.0"));
-            _pctDerived = Float.parseFloat(parameters.getOrDefault(PCT_DERIVED, "0.0"));
-            _pctPooled = Float.parseFloat(parameters.getOrDefault(PCT_POOLED, "0.0"));
-            _maxPoolSize = Integer.parseInt(parameters.getOrDefault(MAX_POOL_SIZE, "2"));
-            _maxGenerations = Integer.parseInt(parameters.getOrDefault(MAX_GENERATIONS, "1"));
-            _maxAliquotsPerParent = Integer.parseInt(parameters.getOrDefault(MAX_ALIQUOTS_PER_SAMPLE, "0"));
-
-            _minFields = Integer.parseInt(parameters.getOrDefault(MIN_NUM_FIELDS, "1"));
-            _maxFields = Math.max(Integer.parseInt(parameters.getOrDefault(MAX_NUM_FIELDS, "1")), _minFields);
-        }
 
         public Config(Properties properties)
         {
@@ -523,9 +599,12 @@ public class DataGenerator<T extends DataGenerator.Config>
             _pctAliquots = Float.parseFloat(properties.getProperty(PCT_ALIQUOTS, "0.0"));
             _pctDerived = Float.parseFloat(properties.getProperty(PCT_DERIVED, "0.0"));
             _pctPooled = Float.parseFloat(properties.getProperty(PCT_POOLED, "0.0"));
+            _pctDerivedFromSamples = Float.parseFloat(properties.getProperty(PCT_DERIVED_FROM_SAMPLES, "1.0"));
+
             _maxPoolSize = Integer.parseInt(properties.getProperty(MAX_POOL_SIZE, "2"));
             _maxGenerations = Integer.parseInt(properties.getProperty(MAX_GENERATIONS, "1"));
             _maxAliquotsPerParent = Integer.parseInt(properties.getProperty(MAX_ALIQUOTS_PER_SAMPLE, "0"));
+            _maxChildrenPerParent = Integer.parseInt(properties.getProperty(MAX_CHILDREN_PER_PARENT, "1"));
 
             _minFields = Integer.parseInt(properties.getProperty(MIN_NUM_FIELDS, "1"));
             _maxFields = Math.max(Integer.parseInt(properties.getProperty(MAX_NUM_FIELDS, "1")), _minFields);
@@ -592,6 +671,16 @@ public class DataGenerator<T extends DataGenerator.Config>
             _pctDerived = pctDerived;
         }
 
+        public float getPctDerivedFromSamples()
+        {
+            return _pctDerivedFromSamples;
+        }
+
+        public void setPctDerivedFromSamples(float pctDerivedFromSamples)
+        {
+            _pctDerivedFromSamples = pctDerivedFromSamples;
+        }
+
         public int getMaxPoolSize()
         {
             return _maxPoolSize;
@@ -620,6 +709,16 @@ public class DataGenerator<T extends DataGenerator.Config>
         public void setMaxAliquotsPerParent(int maxAliquotsPerParent)
         {
             _maxAliquotsPerParent = maxAliquotsPerParent;
+        }
+
+        public int getMaxChildrenPerParent()
+        {
+            return _maxChildrenPerParent;
+        }
+
+        public void setMaxChildrenPerParent(int maxChildrenPerParent)
+        {
+            _maxChildrenPerParent = maxChildrenPerParent;
         }
 
         public int getMinFields()
