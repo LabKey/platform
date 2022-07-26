@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -68,11 +69,6 @@ public class DataGenerator<T extends DataGenerator.Config>
     // Map from rowId to # of aliquots. TODO remove
     private final Map<Integer, Integer> _numAliquotsPerParent = new HashMap<>();
 
-    protected final UserSchema _samplesSchema;
-    protected final UserSchema _dataClassSchema;
-
-    protected final int _sampleCount = 0;
-
     record FieldPrefix(String uri, String namePrefix) { }
 
     private static final List<FieldPrefix> fieldPrefixes = new ArrayList<>();
@@ -89,8 +85,6 @@ public class DataGenerator<T extends DataGenerator.Config>
         _user = user;
         _log = log;
         _config = config;
-        _samplesSchema = QueryService.get().getUserSchema(_user, _container, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));
-        _dataClassSchema = QueryService.get().getUserSchema(_user, _container, ExpSchema.SCHEMA_EXP_DATA);
     }
 
     public Container getContainer()
@@ -101,6 +95,16 @@ public class DataGenerator<T extends DataGenerator.Config>
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    protected UserSchema getSamplesSchema()
+    {
+        return QueryService.get().getUserSchema(_user, _container, SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));
+    }
+
+    protected UserSchema getDataClassSchema()
+    {
+        return QueryService.get().getUserSchema(_user, _container, ExpSchema.SCHEMA_EXP_DATA);
     }
 
     public T getConfig()
@@ -141,7 +145,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
         int fieldIncrement = numSampleTypes <= 1 ? 0 : (maxFields - minFields)/(numSampleTypes-1);
         SampleTypeService service = SampleTypeService.get();
-        CPUTimer timer = new CPUTimer(String.format("%d sample types", numSampleTypes));
+        CPUTimer timer = addTimer(String.format("%d sample types", numSampleTypes));
         timer.start();
         int numFields = minFields;
         int typeIndex = 0;
@@ -164,7 +168,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         _log.info(String.format("Generating %d sample types took %s", numSampleTypes, timer.getDuration() + "."));
     }
 
-    public ExpSampleType generateSampleType(String sampleTypeName, @Nullable String namingPattern, int numFields) throws ExperimentException, SQLException
+    private ExpSampleType generateSampleType(String sampleTypeName, @Nullable String namingPattern, int numFields) throws ExperimentException, SQLException
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("Name", "string"));
@@ -199,7 +203,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public int generateSamples(ExpSampleType sampleType, int numSamplesAndAliquots, List<String> dataClassParentTypes, List<String> sampleTypeParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
-        TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
+        TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         QueryUpdateService svc = tableInfo.getUpdateService();
         int numGenerated = 0;
         int numAliquots = Math.round(numSamplesAndAliquots * _config.getPctAliquots());
@@ -313,13 +317,13 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     private List<Map<String, Object>> getRandomSamples(ExpSampleType sampleType, int quantity)
     {
-        TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
+        TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         return getRowsByRandomNames(tableInfo, _nameData.get(sampleType.getName()), sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
     }
 
     private List<Map<String, Object>> getRandomDataClassObjects(ExpDataClass dataClass, int quantity)
     {
-        TableInfo tableInfo = _dataClassSchema.getTable(dataClass.getName());
+        TableInfo tableInfo = getDataClassSchema().getTable(dataClass.getName());
         return getRowsByRandomNames(tableInfo, _nameData.get(dataClass.getName()), dataClass.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
     }
 
@@ -378,12 +382,12 @@ public class DataGenerator<T extends DataGenerator.Config>
     }
 
 
-    private List<String> getRandomNames(String namePrefix, long startIndex, long endIndex, int quantity)
+    private List<String> getRandomNames(String namePrefix, long startIndex, long endIndex, int maxSize)
     {
-        List<String> names = new ArrayList<>();
-        for (int i = 0; i < quantity; i++)
+        Set<String> names = new LinkedHashSet<>();
+        for (int i = 0; i < maxSize; i++)
             names.add(namePrefix + randomLong(startIndex, endIndex));
-        return names;
+        return names.stream().toList();
     }
 
 
@@ -403,7 +407,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public int generateDataClassObjects(ExpDataClass dataClass, int numObjects) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
-        QueryUpdateService svc = _dataClassSchema.getTable(dataClass.getName()).getUpdateService();
+        QueryUpdateService svc = getDataClassSchema().getTable(dataClass.getName()).getUpdateService();
         return generateDomainData(numObjects, svc, dataClass.getDomain());
     }
 
@@ -430,9 +434,8 @@ public class DataGenerator<T extends DataGenerator.Config>
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryName));
         CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryName));
         timer.start();
-        NamingPatternData namingData = _nameData.get(parentQueryName);
         BatchValidationException errors = new BatchValidationException();
-        TableInfo tableInfo = _samplesSchema.getTable(sampleType.getName());
+        TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         QueryUpdateService service = tableInfo.getUpdateService();
         int batchSize = Math.min(MAX_BATCH_SIZE, quantity);
         int numImported = 0;
@@ -457,16 +460,22 @@ public class DataGenerator<T extends DataGenerator.Config>
                 }
                 p++;
             }
-            ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-            numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            numImported += importRows(rows, errors, service);
 
             _log.info("... " + numImported);
         }
         timer.stop();
 
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
+        return numImported;
+    }
+
+    protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service) throws BatchValidationException, SQLException
+    {
+        ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
+        var numImported = service.importRows(_user, _container, rowsDI, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
         return numImported;
     }
 
@@ -494,10 +503,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         while (numImported < totalRows)
         {
             List<Map<String, Object>> rows = createRows(Math.min(batchSize, totalRows - numImported), domain);
-            ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-            numImported += service.importRows(_user, _container, rowsDI, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
+            numImported += importRows(rows, errors, service);
             _log.info("... " + numImported);
         }
         return numImported;
@@ -597,8 +603,6 @@ public class DataGenerator<T extends DataGenerator.Config>
         int _maxGenerations = 1;
         int _maxAliquotsPerParent = 0;
         int _maxChildrenPerParent = 0;
-
-
         int _minFields = 1;
         int _maxFields = 1;
 
