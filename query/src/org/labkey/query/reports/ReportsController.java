@@ -190,9 +190,11 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
+import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
@@ -833,6 +835,7 @@ public class ReportsController extends SpringActionController
             Report report = bean.getReport(getViewContext());
             if (report != null)
             {
+                _log.trace("Executing report: " + report.getClass().getSimpleName());
                 if (bean.getIsDirty())
                     report.clearCache();
 
@@ -841,9 +844,16 @@ public class ReportsController extends SpringActionController
                 {
                     if (report instanceof RReport)
                         resultsView.addView(new RenderBackgroundRReportView((RReport)report));
+                    else
+                        resultsView.addView(new HtmlView(DIV(cl("labkey-error"), "Report type not support background execution: " + report.getClass().getSimpleName())));
                 }
                 else
-                    resultsView.addView(report.renderReport(getViewContext()));
+                {
+                    HttpView<?> renderedReport = report.renderReport(getViewContext());
+                    _log.trace("Report views: " + (renderedReport != null ? renderedReport.getViews().stream()
+                            .map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")) : null));
+                    resultsView.addView(renderedReport);
+                }
             }
 
             Map<String, Object> resultProperties = new HashMap<>();
@@ -863,6 +873,7 @@ public class ReportsController extends SpringActionController
             nested.setResponse(mr);
             try (var init = HttpView.initForRequest(nested, getViewContext().getRequest(), mr))
             {
+                _log.trace("Rendering report");
                 resultsView.render(getViewContext().getRequest(), mr);
                 var config = HttpView.currentPageConfig();
                 var sw = new StringWriter();
@@ -870,6 +881,7 @@ public class ReportsController extends SpringActionController
                 var script = sw.toString();
                 if (!script.isBlank())
                 {
+                    _log.trace("Append end of body script.");
                     var out = mr.getWriter();
                     out.print("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">");
                     out.print(script);
@@ -879,11 +891,14 @@ public class ReportsController extends SpringActionController
 
             if (mr.getStatus() != HttpServletResponse.SC_OK)
             {
+                _log.trace("Report error. Status: " + mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
 
-            resultProperties.put("html", mr.getContentAsString());
+            final String html = mr.getContentAsString();
+            _log.trace("Report rendered. Size: " + html.length());
+            resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
             resultProperties.put("implicitJsIncludes", implicitIncludes);
