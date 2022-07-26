@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.202.0-fb-depChanges.1"
+    "@labkey/components": "2.202.0-fb-depChanges.2"
   },
   "devDependencies": {
     "@labkey/build": "6.1.5",
