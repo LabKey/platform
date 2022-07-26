@@ -280,13 +280,13 @@ public class SecurityController extends SpringActionController
 
         @Override
         @Nullable
-        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
+        public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
         {
             long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
                     filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
             if (viewCount > 0)
             {
-                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
                 url.addReturnURL(returnURL);
                 return url;
             }

@@ -100,7 +100,7 @@ public interface ExpRun extends ExpObject, Identifiable
 
     void deleteProtocolApplications(User user);
 
-    /** Mark this run and its data as being replaced (superceeded) by another, more current run */
+    /** Mark this run and its data as being replaced (superseded) by another, more current run */
     void setReplacedByRun(ExpRun run);
 
     /** @return the run that represents the updated version of this run's data, if any */
