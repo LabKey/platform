@@ -2100,6 +2100,7 @@ public class SecurityController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+            setHelpTopic("externalTools");
             root.addChild("External Tool Access");
         }
     }
