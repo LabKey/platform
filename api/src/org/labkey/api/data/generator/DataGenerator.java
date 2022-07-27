@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -20,6 +21,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -95,6 +98,26 @@ public class DataGenerator<T extends DataGenerator.Config>
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    public static void checkAlive(PipelineJob job)
+            throws CancelledException
+    {
+        if (job.checkInterrupted())
+            throw new CancelledException();
+
+        Container c = ContainerManager.getForId(job.getContainerId());
+        if (c == null)
+        {
+            job.warn("Container no longer exists: " + job.getContainerId());
+            throw new CancelledException();
+        }
+
+        if (ContainerManager.isDeleting(c))
+        {
+            job.warn("Container is being deleted: " + c.getPath());
+            throw new CancelledException();
+        }
     }
 
     protected UserSchema getSamplesSchema()
@@ -438,10 +461,11 @@ public class DataGenerator<T extends DataGenerator.Config>
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         QueryUpdateService service = tableInfo.getUpdateService();
         int batchSize = Math.min(MAX_BATCH_SIZE, quantity);
-        int numImported = 0;
-        while (numImported < quantity)
+        int totalImported = 0;
+        boolean dataChanged = true;
+        while (totalImported < quantity && dataChanged)
         {
-            int numRows = Math.min(batchSize, quantity - numImported);
+            int numRows = Math.min(batchSize, quantity - totalImported);
             List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
             // choose a random set of object names from the parent type
            List<Map<String, Object>> parents = isDataClass ?
@@ -449,7 +473,7 @@ public class DataGenerator<T extends DataGenerator.Config>
                     getRandomSamples((ExpSampleType) parentObject, batchSize);
             int rowNum = 0;
             int p = 0;
-            while (rowNum < rows.size())
+            while (rowNum < rows.size() && p < parents.size())
             {
                 // choose a random number of derivatives for the current parent
                 int numDerivatives = randomInt(1, _config.getMaxChildrenPerParent());
@@ -460,14 +484,16 @@ public class DataGenerator<T extends DataGenerator.Config>
                 }
                 p++;
             }
-            numImported += importRows(rows, errors, service);
+            int numImported = importRows(rows, errors, service);
+            dataChanged = numImported > 0;
+            totalImported += numImported;
 
-            _log.info("... " + numImported);
+            _log.info("... " + totalImported);
         }
         timer.stop();
 
         _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
-        return numImported;
+        return totalImported;
     }
 
     protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service) throws BatchValidationException, SQLException
