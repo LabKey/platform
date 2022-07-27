@@ -16,6 +16,10 @@ import {
 let component;
 let wrapper;
 
+beforeAll(() => {
+    window['__react-beautiful-dnd-disable-dev-warnings'] = true;
+});
+
 describe('<AuthenticationConfiguration/>', () => {
     const { location } = window;
 
