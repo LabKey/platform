@@ -14,8 +14,10 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.query.ExecuteQueryPage;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
+import org.labkey.test.util.PermissionsHelper;
 import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
@@ -27,6 +29,7 @@ import java.util.List;
 public class AutoLinkToStudyTest extends BaseWebDriverTest
 {
     private final static String ASSAY_NAME = "Test Assay";
+    private static final String READER_USER = "reader@assaylinktostudy.test";
     private static int cnt = 0; // to keep count of rows which are already linked.
     private final String STUDY1 = getProjectName() + " Study 1";
     private final String STUDY2 = getProjectName() + " Study 2";
@@ -63,6 +66,11 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         goToProjectHome();
         goToManageAssays();
         _assayHelper.createAssayDesign("General", ASSAY_NAME).clickSave();
+
+        log("Creating a reader user");
+        _userHelper.createUser(READER_USER);
+        ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
+        permissionsHelper.addMemberToRole(READER_USER, "Reader", PermissionsHelper.MemberType.user, getProjectName());
     }
 
     @Override
@@ -215,6 +223,28 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         checker().verifyEquals("Category should not have overridden", categoryName, getCategory(STUDY1, ASSAY_NAME));
     }
 
+    @Test
+    public void testReaderRoleLinkToStudy()
+    {
+        String runName = "Reader role testing";
+        log("Editing the assay design for auto link");
+        goToProjectHome();
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        _assayHelper.clickEditAssayDesign()
+                .setAutoLinkTarget("/ " + STUDY1)
+                .clickSave();
+
+        goToProjectHome();
+        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run4.xls");
+        importAssayRun(runFile, ASSAY_NAME, runName);
+
+        goToProjectHome(STUDY1);
+        impersonate(READER_USER);
+        //verify once it works
+
+    }
+
     private void linkToStudy(String runName, String targetStudy, int numOfRows, @Nullable String categoryName)
     {
         goToProjectHome();
@@ -308,5 +338,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         _containerHelper.deleteProject(STUDY1, afterTest);
         _containerHelper.deleteProject(STUDY2, afterTest);
         _containerHelper.deleteProject(STUDY3, afterTest);
+
+        _userHelper.deleteUsers(false, READER_USER);
     }
 }
