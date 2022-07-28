@@ -55,6 +55,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected Container _container;
     protected final User _user;
     protected final Logger _log;
+    protected  final PipelineJob _job;
     protected T  _config;
 
     // Keep the set of timers so we can produce a report of all times at the end
@@ -88,6 +89,16 @@ public class DataGenerator<T extends DataGenerator.Config>
         _user = user;
         _log = log;
         _config = config;
+        _job = null;
+    }
+
+    public DataGenerator(PipelineJob job, T config)
+    {
+        _container = job.getContainer();
+        _user = job.getUser();
+        _job = job;
+        _log = job.getLogger();
+        _config = config;
     }
 
     public Container getContainer()
@@ -103,6 +114,9 @@ public class DataGenerator<T extends DataGenerator.Config>
     public static void checkAlive(PipelineJob job)
             throws CancelledException
     {
+        if (job == null)
+            return;
+
         if (job.checkInterrupted())
             throw new CancelledException();
 
@@ -162,6 +176,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     public void generateSampleTypes(String namePrefix, String namingPatternPrefix) throws ExperimentException, SQLException
     {
+        checkAlive(_job);
         int numSampleTypes = _config.getNumSampleTypes();
         int minFields = _config.getMinFields();
         int maxFields = _config.getMaxFields();
@@ -228,6 +243,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
         QueryUpdateService svc = tableInfo.getUpdateService();
+        checkAlive(_job);
         int numGenerated = 0;
         int numAliquots = Math.round(numSamplesAndAliquots * _config.getPctAliquots());
 //        int numPooled = Math.round(numSamplesAndAliquots * _config.getPctPooled());
@@ -251,6 +267,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         int numDerivedFromSamples = numDerived - numDerivedFromDataClass;
         if (!sampleTypeParents.isEmpty() && numDerivedFromSamples > 0)
         {
+            checkAlive(_job);
             _log.info(String.format("Generated %d samples derived from sample types", numDerivedFromSamples));
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
@@ -281,6 +298,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         int numGenerated;
         do
         {
+            checkAlive(_job);
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity/100)));
             numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()));
             totalAliquots += numGenerated;
@@ -298,7 +316,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         int generatedCount = 0;
         List<Map<String, Object>> aliquots = new ArrayList<>();
         List<Map<String, Object>> rows = new ArrayList<>();
-
+        checkAlive(_job);
         for (int p = 0; p < parents.size() && generatedCount < quantity && generatedCount < MAX_BATCH_SIZE; p++)
         {
             // increase the probability we'll get some aliquots in later generations
@@ -522,6 +540,7 @@ public class DataGenerator<T extends DataGenerator.Config>
 
     private int generateDomainData(int totalRows, QueryUpdateService service, Domain domain) throws BatchValidationException, SQLException
     {
+        checkAlive(_job);
         _log.info(String.format("Generating %d rows of data ...", totalRows));
         int numImported = 0;
         int batchSize = Math.min(MAX_BATCH_SIZE, totalRows);
