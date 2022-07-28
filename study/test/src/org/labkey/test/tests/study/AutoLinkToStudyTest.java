@@ -70,7 +70,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         log("Creating a reader user");
         _userHelper.createUser(READER_USER);
         ApiPermissionsHelper permissionsHelper = new ApiPermissionsHelper(this);
-        permissionsHelper.addMemberToRole(READER_USER, "Reader", PermissionsHelper.MemberType.user, getProjectName());
+        permissionsHelper.addMemberToRole(READER_USER, "Reader", PermissionsHelper.MemberType.user, STUDY1);
     }
 
     @Override
@@ -223,6 +223,10 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         checker().verifyEquals("Category should not have overridden", categoryName, getCategory(STUDY1, ASSAY_NAME));
     }
 
+    /*
+        Test coverage for : https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=45071
+        Assay Link to Study Dataset View Permissions
+     */
     @Test
     public void testReaderRoleLinkToStudy()
     {
@@ -232,7 +236,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         goToManageAssays();
         clickAndWait(Locator.linkWithText(ASSAY_NAME));
         _assayHelper.clickEditAssayDesign()
-                .setAutoLinkTarget("/ " + STUDY1)
+                .setAutoLinkTarget("/" + STUDY1)
                 .clickSave();
 
         goToProjectHome();
@@ -240,9 +244,11 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         importAssayRun(runFile, ASSAY_NAME, runName);
 
         goToProjectHome(STUDY1);
+        clickAndWait(Locator.linkContainingText("dataset"));
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        checker().verifyTrue("View Source Assay button  should be visible for admin user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
         impersonate(READER_USER);
-        //verify once it works
-
+        checker().verifyFalse("View Source Assay button should not visible for reader user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
     }
 
     private void linkToStudy(String runName, String targetStudy, int numOfRows, @Nullable String categoryName)
