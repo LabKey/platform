@@ -807,7 +807,7 @@ dependencies {
             "thumbnailator",
             "https://github.com/coobird/thumbnailator",
             ExternalDependency.MIT_LICENSE_NAME,
-            "http://www.opensource.org/licenses/mit-license.html",
+            ExternalDependency.MIT_LICENSE_URL,
             "Thumbnail generator",
         )
     )

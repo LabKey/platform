@@ -5,7 +5,7 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.luceneVersion="9.1.0"
+ext.luceneVersion="9.2.0"
 ext.mime4jVersion="0.8.6"
 
 dependencies {
@@ -224,6 +224,18 @@ dependencies {
         )
     )
 
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.googlecode.plist:dd-plist:1.24",
+            "DD Plist",
+            "com.dd.plist",
+            "https://github.com/3breadt/dd-plist",
+            ExternalDependency.MIT_LICENSE_NAME,
+            ExternalDependency.MIT_LICENSE_URL,
+            "Needed to parse \"pages\" files for full-text search"
+        )
+    )
 }
 
 // TODO move resources files into resources directory to avoid this overlap
