@@ -850,8 +850,9 @@ public class ReportsController extends SpringActionController
                 else
                 {
                     HttpView<?> renderedReport = report.renderReport(getViewContext());
-                    _log.trace("Report views: " + (renderedReport != null ? renderedReport.getViews().stream()
-                            .map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")) : null));
+                    _log.trace("Report views: " + (renderedReport == null ? null : (
+                            renderedReport.getViews() == null ? renderedReport.getClass().getSimpleName() :
+                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")))));
                     resultsView.addView(renderedReport);
                 }
             }
