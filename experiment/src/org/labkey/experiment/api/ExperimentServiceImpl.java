@@ -7579,7 +7579,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
     {
-        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
+        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file.toPath(), description, false, root);
         try
         {
             PipelineService.get().queueJob(job);

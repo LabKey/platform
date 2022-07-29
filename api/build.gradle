@@ -35,11 +35,6 @@ List apache = [
         "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
 ]
 
-
-List gwt = [
-        "com.google.gwt:gwt-servlet:${gwtServletVersion}"
-]
-
 List jackson = [
         "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
         "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
@@ -47,54 +42,6 @@ List jackson = [
         // added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
         "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
 //        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}" // included separately below so we can exclude the json jar it brings in
-]
-
-List charting = [
-        "org.jfree:jfreechart:${jfreechartVersion}"
-]
-
-List caching = [
-        "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}"
-]
-
-List logging = [
-        "org.apache.logging.log4j:log4j-core:${log4j2Version}",
-        "org.apache.logging.log4j:log4j-api:${log4j2Version}",
-        "commons-logging:commons-logging:${commonsLoggingVersion}"
-]
-
-List r = [
-        "net.rforge:rengine:${rforgeVersion}",
-        "net.rforge:rserve:${rforgeVersion}"
-]
-
-List test = [
-        "org.jmock:jmock:${jmockVersion}",
-        "org.jmock:jmock-legacy:${jmockVersion}",
-        "junit:junit:${junitVersion}"
-]
-
-List others = [
-        "gov.nist.math:jama:${jamaVersion}",
-        "org.jetbrains:annotations:${annotationsVersion}",
-        "org.apache.xmlgraphics:batik-codec:${batikVersion}",
-        "org.apache.xmlgraphics:batik-transcoder:${batikVersion}",
-        "org.apache.xmlgraphics:fop:${fopVersion}",
-        "flyingsaucer:core-renderer:${flyingsaucerVersion}",
-        "com.google.guava:guava:${guavaVersion}",
-        "net.sf.jtidy:jtidy:${jtidyVersion}",
-        "org.quartz-scheduler:quartz:${quartzVersion}",
-        "net.coobird:thumbnailator:${thumbnailatorVersion}",
-        "org.apache.tika:tika-core:${tikaVersion}",
-        "cglib:cglib-nodep:${cglibNodepVersion}",
-        "xerces:xercesImpl:${xercesImplVersion}",
-        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
-        "org.postgresql:postgresql:${postgresqlDriverVersion}",
-        "org.hamcrest:hamcrest-core:${hamcrestVersion}"
-]
-
-List javax = [
-        "javax.validation:validation-api:${validationApiVersion}",
 ]
 
 List runtime = [
