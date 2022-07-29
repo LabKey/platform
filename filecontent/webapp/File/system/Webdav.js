@@ -110,7 +110,7 @@
 
         getURI: function (url)
         {
-            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, LABKEY.ActionURL.encodePath(url)));
+            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, url));
         },
 
         getAbsoluteBaseURL: function ()
@@ -182,7 +182,7 @@
         {
             var jsonProxy = {
                 type: 'ajax',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURL())),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL()),
                 extraParams: {
                     method: 'JSON'
                 },
@@ -217,7 +217,7 @@
         {
             return {
                 type: 'webdav',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getContextBaseURL())),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getContextBaseURL()),
                 reader: {
                     type: 'xml',
                     root: 'multistatus',

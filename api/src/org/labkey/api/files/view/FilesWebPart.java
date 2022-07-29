@@ -409,7 +409,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (!rootPath.endsWith("/"))
             rootPath += "/";
 
-        return rootPath;
+        return rootPath.replace("%", "%25").replace("+", "%2B");
     }
 
     public static String getWebPartFolderRootPath(Container c, @Nullable String folderFileRoot)

@@ -1375,7 +1375,7 @@ Ext4.define('File.panel.Browser', {
                     this.getGrid().getSelectionModel().select([]);
                 }
                 var fileStore = this.getFileStore();
-                fileStore.getProxy().url = LABKEY.ActionURL.encodePath(this.getFolderURL());
+                fileStore.getProxy().url = this.getFolderURL();
                 fileStore.load();
             }, this);
         }
@@ -1387,7 +1387,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
+        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), LABKEY.ActionURL.encodePath(this.getFolderOffset()));
     },
 
     getFolderOffset : function() {
@@ -1446,7 +1446,9 @@ Ext4.define('File.panel.Browser', {
      */
     _initFolderOffset : function(offsetPath) {
         // Replace the base URL so only offsets are used
-        var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
+        // var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
+        var path = offsetPath.replace(LABKEY.ActionURL.decodePath(this.fileSystem.getBaseURL()), this.folderSeparator);
+
         // If we don't go anywhere, don't fire a folder change
         if (this.rootOffset != path) {
             this.rootOffset = path;
@@ -1770,7 +1772,7 @@ Ext4.define('File.panel.Browser', {
             this.tree.getView().expand(rec);
         }
         else {
-            this.changeFolder(rec);
+            this.changeFolder(rec, false, true);
             this.tree.getView().expand(rec);
         }
     },
@@ -2542,8 +2544,8 @@ Ext4.define('File.panel.Browser', {
      * @param model - the record whose 'id' is the valid path
      * @param {boolean} [skipHistory=false]
      */
-    changeFolder : function(model, skipHistory) {
-        var url = model.data.id;
+    changeFolder : function(model, skipHistory, decode) {
+        var url = decode ? LABKEY.ActionURL.decodePath(model.data.id) : model.data.id;
         this.setFolderOffset(url, model, skipHistory);
     },
 
@@ -2763,7 +2765,7 @@ Ext4.define('File.panel.Browser', {
                     var browser = this;
                     var modifiedPath = path;
                     this.fileSystem.createDirectory({
-                        path : this.fileSystem.encodeForURL(path + folder),
+                        path : (path + folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();
@@ -2992,7 +2994,7 @@ Ext4.define('File.panel.Browser', {
         if (recs.length >= 1) {
             this.fileSystem.downloadResource({
                 record: recs,
-                directoryURL : LABKEY.ActionURL.getBaseURL(true) + LABKEY.ActionURL.encodePath(this.getFolderURL())
+                directoryURL : LABKEY.ActionURL.getBaseURL(true) + this.getFolderURL()
             });
         }
         else {
@@ -3087,7 +3089,7 @@ Ext4.define('File.panel.Browser', {
                 toMove.push({record : win.fileRecords[i]});
             }
 
-            this.doMove(toMove, destination);
+            this.doMove(toMove, destination, true);
             win.close();
         };
 
@@ -3134,16 +3136,18 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
-    doMove : function(toMove, destination) {
+    doMove : function(toMove, destination, encode) {
 
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
 
+            var dest = this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name));
+
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
                 fileRecord : selected,
-                source: selected.record.data.id,
-                destination: this.fileSystem.concatPaths(destination, (selected.newName || selected.record.data.name)),
+                source: encode ? LABKEY.ActionURL.encodePath(selected.record.data.id) : selected.record.data.id,
+                destination: encode ? LABKEY.ActionURL.encodePath(dest) : dest,
                 isFile: !selected.record.data.collection,
                 success: function() {
                     this.afterFileSystemChange();
@@ -3194,12 +3198,12 @@ Ext4.define('File.panel.Browser', {
             }
 
             if (newName != win.origName) {
-                var destination = me.getCurrentDirectory();
+                var destination = LABKEY.ActionURL.decodePath(me.getCurrentDirectory());
 
                 me.doMove([{
                     record: win.fileRecord,
                     newName: newName
-                }], destination);
+                }], destination, true);
             }
 
             win.close();
