@@ -246,11 +246,11 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         goToProjectHome(STUDY1);
         clickAndWait(Locator.linkContainingText("dataset"));
         clickAndWait(Locator.linkWithText(ASSAY_NAME));
-        checker().verifyTrue("View Source Assay button  should be visible for admin user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
+        checker().verifyTrue("View Source Assay button should be visible for admin user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
         impersonate(READER_USER);
         DataRegionTable table = DataRegionTable.DataRegion(getDriver()).withName("Dataset").waitFor();
         checker().verifyEquals("Incorrect number of row in dataset table", 6, table.getDataRowCount());
-        checker().verifyFalse("View Source Assay button should not visible for reader user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
+        checker().verifyFalse("View Source Assay button should not be visible for reader user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
     }
 
     private void linkToStudy(String runName, String targetStudy, int numOfRows, @Nullable String categoryName)
