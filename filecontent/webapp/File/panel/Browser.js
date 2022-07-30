@@ -1772,7 +1772,7 @@ Ext4.define('File.panel.Browser', {
             this.tree.getView().expand(rec);
         }
         else {
-            this.changeFolder(rec, false, true);
+            this.changeFolder(rec, false);
             this.tree.getView().expand(rec);
         }
     },
@@ -2544,8 +2544,8 @@ Ext4.define('File.panel.Browser', {
      * @param model - the record whose 'id' is the valid path
      * @param {boolean} [skipHistory=false]
      */
-    changeFolder : function(model, skipHistory, decode) {
-        var url = decode ? LABKEY.ActionURL.decodePath(model.data.id) : model.data.id;
+    changeFolder : function(model, skipHistory) {
+        var url = (model.data.id === this.fileSystem.getBaseURL()) ? LABKEY.ActionURL.decodePath(model.data.id) : model.data.id;
         this.setFolderOffset(url, model, skipHistory);
     },
 
@@ -3089,7 +3089,7 @@ Ext4.define('File.panel.Browser', {
                 toMove.push({record : win.fileRecords[i]});
             }
 
-            this.doMove(toMove, destination, true);
+            this.doMove(toMove, destination);
             win.close();
         };
 
@@ -3136,7 +3136,7 @@ Ext4.define('File.panel.Browser', {
         });
     },
 
-    doMove : function(toMove, destination, encode) {
+    doMove : function(toMove, destination) {
 
         for (var i = 0; i < toMove.length; i++) {
             var selected = toMove[i];
@@ -3146,8 +3146,8 @@ Ext4.define('File.panel.Browser', {
             // WebDav.movePath handles the "do you want to overwrite" case
             this.fileSystem.movePath({
                 fileRecord : selected,
-                source: encode ? LABKEY.ActionURL.encodePath(selected.record.data.id) : selected.record.data.id,
-                destination: encode ? LABKEY.ActionURL.encodePath(dest) : dest,
+                source: LABKEY.ActionURL.encodePath(selected.record.data.id),
+                destination: LABKEY.ActionURL.encodePath(dest),
                 isFile: !selected.record.data.collection,
                 success: function() {
                     this.afterFileSystemChange();
@@ -3203,7 +3203,7 @@ Ext4.define('File.panel.Browser', {
                 me.doMove([{
                     record: win.fileRecord,
                     newName: newName
-                }], destination, true);
+                }], destination);
             }
 
             win.close();
