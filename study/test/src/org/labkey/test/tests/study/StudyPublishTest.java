@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -216,7 +217,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         createMouseReport(MOUSE_REPORT, TIME_CHART_MEASURE2, TIME_CHART_MEASURE1);
         createTimeChart(TIME_CHART, TIME_CHART_MEASURE2, TIME_CHART_MEASURE1);
         createCustomView(CUSTOM_VIEW, DATASETS[1], CUSTOM_VIEW_PTIDS, true);
-        createCustomView(CUSTOM_VIEW2, DATASETS[2], CUSTOM_VIEW_PTIDS2, false);
+        createCustomView(CUSTOM_VIEW2, DATASETS[2], CUSTOM_VIEW_PTIDS2, null);
 
         // Create some lists
         _listHelper.importListArchive(getFolderName(), LIST_ARCHIVE);
@@ -1046,7 +1047,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         return filterStr;
     }
 
-    private void createCustomView(String name, String dataset, String[] ptids, boolean shared)
+    private void createCustomView(String name, String dataset, String[] ptids, @Nullable Boolean shared)
     {
         String ptidFilter = createOneOfFilterString(ptids);
 
