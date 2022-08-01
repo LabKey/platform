@@ -464,6 +464,10 @@ public interface DockerService
 
     boolean pingDocker();
 
+    void start(DockerContainer dc);
+
+    void start(String containerId);
+
     void stop(String containerId, Map<String, String> archivesFromContainer, boolean delete);
 
     void stop(DockerContainer dc);

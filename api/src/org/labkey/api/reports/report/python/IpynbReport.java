@@ -24,7 +24,6 @@ import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.r.view.IpynbOutput;
 import org.labkey.api.security.SessionApiKeyManager;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -171,15 +170,20 @@ public class IpynbReport extends DockerScriptReport
         IOUtil.copyCompletely(new StringReader(script), new FileWriter(scriptFile, StringUtilsLabKey.DEFAULT_CHARSET));
 
         Set<File> beforeExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        LOG.trace("BEFORE: " + StringUtils.join(beforeExecute.stream().map(File::getName).toArray(), "\n\t"));
+        LOG.trace("BEFORE: " + workingDirectory.getPath() + "\n\t" +
+                StringUtils.join(beforeExecute.stream().map(f ->
+                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
 
         ExecuteStrategy ex = new DockerRunTarStdinStdout();
         int exitCode = ex.execute(context, apikey, workingDirectory, scriptFile);
+        LOG.trace("EXIT: " + exitCode);
         File outputFile = ex.getOutputDocument();
+        LOG.trace("OUTPUT: " + outputFile);
 
         Set<File> afterExecute = new HashSet<>(FileUtils.listFiles(workingDirectory, null, true));
-        LOG.trace("wd:    " + workingDirectory.getPath());
-        LOG.trace("AFTER: " + StringUtils.join(afterExecute.stream().map(File::getName).toArray(), "\n\t"));
+        LOG.trace("AFTER: " + workingDirectory.getPath() + "\n\t" +
+                StringUtils.join(afterExecute.stream().map(f ->
+                        f.getPath().replace(workingDirectory.toString(), "") + " : " + f.length()).toArray(), "\n\t"));
 
         try
         {
@@ -200,6 +204,10 @@ public class IpynbReport extends DockerScriptReport
                 {
                     vbox.addView(new IpynbOutput(outputFile).getView(context));
                 }
+                else
+                {
+                    vbox.addView(new HtmlView(DIV(cl("labkey-error"), "Unable to process report output.")));
+                }
             }
 
             // if there is console.txt or errors.txt file render them
@@ -211,11 +219,12 @@ public class IpynbReport extends DockerScriptReport
             if (error.isFile() && error.length() > 0)
                 vbox.addView(new ConsoleOutput(error).getView(context));
 
+            LOG.trace("VIEWS: " + vbox.getViews().size());
             return vbox;
         }
         catch (Exception x)
         {
-            x.printStackTrace();
+            LOG.error("Error rendering report", x);
             throw x;
         }
     }
@@ -379,7 +388,10 @@ public class IpynbReport extends DockerScriptReport
                     {
                         ArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
                         tar.putArchiveEntry(entry);
-                        IOUtils.copy(new FileInputStream(file), tar);
+                        try(FileInputStream fis = new FileInputStream(file))
+                        {
+                            IOUtils.copy(fis, tar);
+                        }
                         tar.closeArchiveEntry();
                     }
                 }
