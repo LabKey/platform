@@ -897,7 +897,7 @@ public abstract class CompareType
 
                 sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
                 sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
-                sql.append("'%").append(LikeClause.escapeLikePattern(escapedValue)).append("%'");
+                sql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(escapedValue));
                 sql.append(LikeClause.sqlEscape());
             }
 
