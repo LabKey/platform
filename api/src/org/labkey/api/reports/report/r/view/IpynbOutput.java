@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -150,88 +149,90 @@ public class IpynbOutput extends HtmlOutput
         @Override
         protected String renderInternalAsString(File file) throws Exception
         {
-            String result = super.renderInternalAsString(file);
-            JSONObject obj;
+            String result = StringUtils.trimToEmpty(super.renderInternalAsString(file));
             try
             {
-                obj = new JSONObject(result);
-            }
-            catch (JSONException ex)
-            {
-                return null;
-            }
-            HtmlStringBuilder sb = HtmlStringBuilder.of();
-            sb.append(HtmlString.unsafe("<div class=labkey-wiki>"));
+                final JSONObject obj = new JSONObject(result);
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
+                sb.append(HtmlString.unsafe("<div class=labkey-wiki>"));
 
-            JSONArray arr = (JSONArray) obj.get("cells");
-            if (null == arr)
-            {
-                JSONArray worksheets = (JSONArray)obj.get("worksheets");
-                if (null != worksheets && worksheets.length() > 0)
-                    arr = (JSONArray)((JSONObject)worksheets.get(0)).get("cells");
-            }
-
-            // TODO move to stylesheet
-            renderStylesheet(sb);
-
-            for (int cellindex = 0; null != arr && cellindex < arr.length(); cellindex++)
-            {
-                JSONObject cell = (JSONObject)arr.get(cellindex);
-                String cell_type = String.valueOf(cell.get("cell_type"));
-                int execution_count = -1;
-                try
+                JSONArray arr = (JSONArray) obj.get("cells");
+                if (null == arr)
                 {
+                    JSONArray worksheets = (JSONArray) obj.get("worksheets");
+                    if (null != worksheets && worksheets.length() > 0)
+                        arr = (JSONArray) ((JSONObject) worksheets.get(0)).get("cells");
+                }
+
+                // TODO move to stylesheet
+                renderStylesheet(sb);
+
+                for (int cellindex = 0; null != arr && cellindex < arr.length(); cellindex++)
+                {
+                    JSONObject cell = (JSONObject) arr.get(cellindex);
+                    String cell_type = String.valueOf(cell.get("cell_type"));
+                    String execution_count = null;
                     if (null != cell.get("execution_count"))
-                        execution_count = ((Integer) JdbcType.INTEGER.convert(cell.get("execution_count")));
+                        execution_count = String.valueOf(cell.get("execution_count"));
                     else if (null != cell.get("prompt_number"))
-                        execution_count = ((Integer) JdbcType.INTEGER.convert(cell.get("prompt_number")));
-                }
-                catch (ConversionException x)
-                {
-                    // pass
-                }
+                        execution_count = String.valueOf(cell.get("prompt_number"));
 
-                HtmlString executionCountDiv = HtmlString.unsafe("<div class='ipynb-cell-index'>" + (execution_count > 0 ? "[ " + execution_count + " ]" : "") + "</div>");
-                sb.append(HtmlString.unsafe("<div class='ipynb-cell'>"));
-                sb.append(executionCountDiv);
-
-                sb.append(HtmlString.unsafe("<div class='ipynb-cell-source'>"));
-
-                switch (cell_type)
-                {
-                    case "markdown":
-                        renderMarkdownSource(sb, cell);
-                        break;
-                    case "raw":
-                        renderRawSource(sb, cell);
-                        break;
-                    case "code":
-                        renderCodeSource(sb, cell);
-                        break;
-                    case "header": // old format
-                        renderHeaderCell(sb, cell);
-                        break;
-                }
-
-                sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-source
-
-                JSONArray outputs = (JSONArray) cell.get("outputs");
-                if (outputs != null && outputs.length() > 0)
-                {
+                    HtmlString executionCountDiv = HtmlString.unsafe("<div class='ipynb-cell-index'>" + (execution_count != null ? "[ " + execution_count + " ]" : "") + "</div>");
+                    sb.append(HtmlString.unsafe("<div class='ipynb-cell'>"));
                     sb.append(executionCountDiv);
-                    sb.append(HtmlString.unsafe("<div class='ipynb-cell-outputs'>"));
 
-                    for (int outputindex=0 ; outputindex<outputs.length() ; outputindex++)
+                    sb.append(HtmlString.unsafe("<div class='ipynb-cell-source'>"));
+
+                    switch (cell_type)
                     {
-                        renderOutput(sb, (JSONObject)outputs.get(outputindex));
+                        case "markdown":
+                            renderMarkdownSource(sb, cell);
+                            break;
+                        case "raw":
+                            renderRawSource(sb, cell);
+                            break;
+                        case "code":
+                            renderCodeSource(sb, cell);
+                            break;
+                        case "header": // old format
+                            renderHeaderCell(sb, cell);
+                            break;
                     }
 
-                    sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-outputs
+                    sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-source
+
+                    JSONArray outputs = (JSONArray) cell.get("outputs");
+                    if (outputs != null && outputs.length() > 0)
+                    {
+                        sb.append(executionCountDiv);
+                        sb.append(HtmlString.unsafe("<div class='ipynb-cell-outputs'>"));
+
+                        for (int outputindex = 0; outputindex < outputs.length(); outputindex++)
+                        {
+                            renderOutput(sb, (JSONObject) outputs.get(outputindex));
+                        }
+
+                        sb.append(HtmlString.unsafe("</div>")); // ipynb-cell-outputs
+                    }
+                    sb.append(HtmlString.unsafe("</div>")); // ipynb-cell
                 }
-                sb.append(HtmlString.unsafe("</div>")); // ipynb-cell
+                sb.append(HtmlString.unsafe("</div>")); // labkey-wiki
+                return sb.toString();
             }
-            sb.append(HtmlString.unsafe("</div>")); // labkey-wiki
-            return sb.toString();
+            catch (Exception ex)
+            {
+                HtmlStringBuilder sb = HtmlStringBuilder.of();
+                sb.append(HtmlString.unsafe("<div class=\"labkey-error\">"));
+                sb.append(HtmlString.of(ex.getMessage()));
+                sb.append(HtmlString.unsafe("</div>"));
+                if (ex instanceof JSONException)
+                {
+                    sb.append(HtmlString.unsafe("<div>"));
+                    sb.append(HtmlString.of(result));
+                    sb.append(HtmlString.unsafe("</div>"));
+                }
+                return sb.toString();
+            }
         }
 
         private void renderStylesheet(HtmlStringBuilder sb)
@@ -239,11 +240,11 @@ public class IpynbOutput extends HtmlOutput
             sb.append(HtmlString.unsafe(
                 """
                 <style type="text/css">
-                div.ipynb-cell { }
+                div.ipynb-cell { display:grid; grid-template-columns: 50px auto; }
                 
                 div.ipynb-cell-index {
                     padding:5px; color:rgb(100,100,100); font-size:small;
-                    width:50px; float:left; clear:both; text-align:right; text-overflow:ellipsis, overflow-x:hidden; border:solid blue 0px;
+                    clear:both; text-align:right; text-overflow:ellipsis, overflow-x:hidden; border:solid blue 0px;
                 }
                 
                 div.ipynb-cell-source { border:solid red 0px;}
@@ -338,7 +339,7 @@ public class IpynbOutput extends HtmlOutput
                             var textArray = (JSONArray)data.get("image/svg+xml");
                             sb.append(HtmlString.unsafe("<div class=\"ipynb-svg\">"));
                             for (int i=0 ; i<textArray.length() ; i++)
-                                sb.append((String)textArray.get(i));
+                                sb.append(HtmlString.unsafe((String)textArray.get(i)));
                             sb.append(HtmlString.unsafe("</div>"));
                             sbOutput.append(sb);
                             return;
@@ -347,7 +348,7 @@ public class IpynbOutput extends HtmlOutput
                         {
                             boolean isError = "stderr".equals(data.get("name"));
                             var textArray = (JSONArray) Objects.requireNonNullElse(data.get("text/plain"), data.get("text"));
-                            sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"" + (isError ? "ipnyb-error" : "ipynb-text") + "\">"));
+                            sb.append(HtmlString.unsafe("<div class=\"ipynb-output\"><div class=\"" + (isError ? "ipynb-error" : "ipynb-text") + "\">"));
                             sb.append(HtmlString.unsafe("<pre>\n"));
                             for (int i=0 ; i<textArray.length() ; i++)
                                 sb.append((String)textArray.get(i));
