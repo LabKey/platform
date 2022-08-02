@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.15.0",
-    "@labkey/components": "2.202.5-fb-workflowJobTypeFieldDef.1",
+    "@labkey/components": "2.203.0",
     "@labkey/themes": "1.2.4"
   },
   "devDependencies": {
