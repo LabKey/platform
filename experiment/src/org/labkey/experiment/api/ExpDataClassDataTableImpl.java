@@ -35,6 +35,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -748,15 +749,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         SearchService ss = SearchService.get();
         if (null != ss)
         {
-            step0.setIndexFunction(lsids -> () ->
-                ListUtils.partition(lsids, 100).forEach(sublist ->
-                    ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                    {
-                        for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                            expData.index(ss.defaultTask());
-                    })
-                )
-            );
+            // Queue indexing after committing
+            propertiesTable.getSchema().getScope().addCommitTask(() ->
+            {
+                step0.setIndexFunction(lsids -> () ->
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                                        expData.index(ss.defaultTask());
+                                })
+                        )
+                );
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
         return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
     }
