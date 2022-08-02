@@ -3255,7 +3255,7 @@ public class AdminController extends SpringActionController
 
             if (getUser().hasRootAdminPermission() && (gc || cc))
             {
-                // If both are requested then try determine and record cache memory usage
+                // If both are requested then try to determine and record cache memory usage
                 if (gc && cc)
                 {
                     // gc once to get an accurate free memory read
