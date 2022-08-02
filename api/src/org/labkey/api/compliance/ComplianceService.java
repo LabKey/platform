@@ -19,8 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.ColumnInfoFilter;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
@@ -90,6 +93,10 @@ public interface ComplianceService
 
     ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
 
+    // Signing module manages the compliance schema, but TermsOfUseTableInfo is intertwined with the Compliance module
+    // code, so keep it in Compliance
+    TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter);
+
     class DefaultComplianceService implements ComplianceService
     {
         @Override
@@ -157,6 +164,12 @@ public interface ComplianceService
         public ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi)
         {
             return NOOP_COLUMN_INFO_TRANSFORMER;
+        }
+
+        @Override
+        public TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter)
+        {
+            return null;
         }
     }
 }
