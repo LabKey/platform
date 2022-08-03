@@ -1,0 +1,1 @@
+CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
