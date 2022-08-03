@@ -393,7 +393,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 for (String lsid : lsids)
                 {
                     if (lsid.startsWith(lsidPrefix))
+                    {
                         sampleLSIDToKeep = lsid;
+                        break;
+                    }
                 }
 
                 // rename all but one samples by adding suffix _2, _3, etc
