@@ -28,6 +28,7 @@ import org.labkey.api.query.column.ColumnInfoFilter;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -96,6 +97,8 @@ public interface ComplianceService
     // Signing module manages the compliance schema, but TermsOfUseTableInfo is intertwined with the Compliance module
     // code, so keep it in Compliance
     TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter);
+
+    StringExpression getSnapshotDownloadUrlExpression(Container c);
 
     class DefaultComplianceService implements ComplianceService
     {
@@ -168,6 +171,12 @@ public interface ComplianceService
 
         @Override
         public TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter)
+        {
+            return null;
+        }
+
+        @Override
+        public StringExpression getSnapshotDownloadUrlExpression(Container c)
         {
             return null;
         }
