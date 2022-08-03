@@ -102,6 +102,11 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
     private final Map<String, ConceptURIVocabularyDomainProvider> _conceptUriVocabularyProvider = new ConcurrentHashMap<>();
 
+    public static PropertyServiceImpl get()
+    {
+        return (PropertyServiceImpl) PropertyService.get();
+    }
+
     @Override
     public IPropertyType getType(Container container, String typeURI)
     {
@@ -115,7 +120,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 
     @Override
     @Nullable
-    public Domain getDomain(Container container, String domainURI)
+    public DomainImpl getDomain(Container container, String domainURI)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
         if (dd == null)
