@@ -9,7 +9,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 
 import java.util.Date;
 import java.util.HashMap;
