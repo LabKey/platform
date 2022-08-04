@@ -1,2 +1,1 @@
--- Move compliance schema management to Signing module
-UPDATE core.SqlScripts SET modulename = 'Signing' WHERE modulename = 'Compliance';
+CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
