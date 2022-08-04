@@ -192,7 +192,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplica
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
-public class ExperimentServiceImpl implements ExperimentService
+public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
@@ -220,6 +220,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private final Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
+    private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
@@ -2980,6 +2981,16 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    @NotNull @Override
+    public Collection<Integer> getItemsWithReferences(Collection<Integer> referencedRowIds, @NotNull String referencedSchemaName, @Nullable String referencedQueryName)
+    {
+        if ("exp.data".equalsIgnoreCase(referencedSchemaName))
+            return ExperimentServiceImpl.get().getDataUsedAsInput(referencedRowIds);
+        else if ("samples".equalsIgnoreCase(referencedSchemaName))
+            return ExperimentServiceImpl.get().getMaterialsUsedAsInput(referencedRowIds);
+        return emptyList();
+    }
+
     private class SyncRunEdgesTask implements Runnable
     {
         protected final int _runId;
@@ -4387,7 +4398,7 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
-    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, List<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
     {
         List<Integer> permittedIds = new ArrayList<>(requestIds);
         permittedIds.removeAll(notPermittedIds);
@@ -7260,6 +7271,18 @@ public class ExperimentServiceImpl implements ExperimentService
         ExpProtocolInputCriteria.Factory existing = _protocolInputCriteriaFactories.put(factory.getName(), factory);
         if (existing != null)
             throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims name '" + existing.getName() + "'");
+    }
+
+    @Override
+    public void registerObjectReferencer(ObjectReferencer referencer)
+    {
+        _objectReferencers.add(referencer);
+    }
+
+    @NotNull
+    public List<ObjectReferencer> getObjectReferencers()
+    {
+        return _objectReferencers;
     }
 
     @NotNull

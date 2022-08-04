@@ -3366,9 +3366,10 @@ public class ExperimentController extends SpringActionController
             Collection<Integer> requestIds = form.getIds(false);
             List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
+            Set<Integer> notPermittedIds = new HashSet<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
-                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
             return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
@@ -3441,10 +3442,11 @@ public class ExperimentController extends SpringActionController
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
-            // We prevent deletion if a sample is used as a parent or has assay data
+            Set<Integer> notPermittedIds = new HashSet<>();
+            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
-                notPermittedIds = service.getMaterialsUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
             if (SampleStatusService.get().supportsSampleStatus())
                 notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
