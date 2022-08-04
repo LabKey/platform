@@ -24,9 +24,12 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 var totalNum = numCanDelete + numCannotDelete;
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
                 var sampleStatusEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('samplemanagement') > -1;
-                var dependencyText = sampleStatusEnabled ?
-                        "derived sample or assay data dependencies or status that prevents deletion"
-                        : "derived sample or assay data dependencies";
+                var elnEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('labbook') > -1;
+                var dependencyText = 'derived sample, job, or assay data dependencies'
+                if (sampleStatusEnabled)
+                    dependencyText += ' or status that prevents deletion'
+               if (elnEnabled)
+                   dependencyText += ' or references in an active notebook'
                 var text;
                 if (totalNum === 0) {
                     text = "Either no " + nounPlural + " are selected for deletion or the selected " + nounPlural + " are no longer valid."
