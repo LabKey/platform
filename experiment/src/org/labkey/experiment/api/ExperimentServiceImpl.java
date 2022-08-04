@@ -2985,9 +2985,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public Collection<Integer> getItemsWithReferences(Collection<Integer> referencedRowIds, @NotNull String referencedSchemaName, @Nullable String referencedQueryName)
     {
         if ("exp.data".equalsIgnoreCase(referencedSchemaName))
-            return ExperimentServiceImpl.get().getDataUsedAsInput(referencedRowIds);
+            return ExperimentServiceImpl.get().getDataUsedAsParents(referencedRowIds);
         else if ("samples".equalsIgnoreCase(referencedSchemaName))
-            return ExperimentServiceImpl.get().getMaterialsUsedAsInput(referencedRowIds);
+            return ExperimentServiceImpl.get().getMaterialsUsedAsParents(referencedRowIds);
         return emptyList();
     }
 
@@ -4830,46 +4830,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      *
      * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
      */
-    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    public List<Integer> getMaterialsUsedAsParents(Collection<Integer> materialIds)
     {
-        if (materialIds.isEmpty())
-            return emptyList();
-        final SqlDialect dialect = getExpSchema().getSqlDialect();
-        SQLFragment rowIdInFrag = new SQLFragment();
-        dialect.appendInClauseSql(rowIdInFrag, materialIds);
-
-        // ex SQL:
-        /*
-            SELECT DISTINCT m.materialId
-            FROM exp.MaterialInput m, exp.protocolapplication pa
-            WHERE m.targetapplicationId = pa.rowId
-             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
-             AND m.materialId <materialIdRowSQL>;
-         */
-        SQLFragment sql = new SQLFragment();
-
-        sql.append("SELECT DISTINCT mi.materialID\n");
-        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
-        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
-                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
-                .append("AND mi.materialID ").append(rowIdInFrag).append("\n");
-
-
-        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
+        return getSubsetUsedAsParents(materialIds, getTinfoMaterial(), "materialID", getTinfoMaterialInput());
     }
 
     /**
-     * Finds the subset of data that are used as inputs to runs.
+     * Finds the subset of data that are used as inputs to runs, or as starting nodes for lineage edges.
      */
-    public List<Integer> getDataUsedAsInput(Collection<Integer> dataIds)
+    public List<Integer> getDataUsedAsParents(Collection<Integer> dataIds)
     {
-        if (dataIds.isEmpty())
+        return getSubsetUsedAsParents(dataIds, getTinfoData(), "dataID", getTinfoDataInput());
+    }
+
+    private List<Integer> getSubsetUsedAsParents(Collection<Integer> rowIds, TableInfo primaryTInfo, String inputsIdFieldName, TableInfo inputsTInfo)
+    {
+        if (rowIds.isEmpty())
             return emptyList();
         final SqlDialect dialect = getExpSchema().getSqlDialect();
         SQLFragment rowIdInFrag = new SQLFragment();
-        dialect.appendInClauseSql(rowIdInFrag, dataIds);
+        dialect.appendInClauseSql(rowIdInFrag, rowIds);
 
+        // get ids used in derivation runs, assay runs, or jobs
         // ex SQL:
         /*
             SELECT DISTINCT d.dataId
@@ -4880,14 +4862,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
          */
         SQLFragment sql = new SQLFragment();
 
-        sql.append("SELECT DISTINCT d.dataID\n");
-        sql.append("FROM ").append(getTinfoDataInput(), "d").append(", \n\t");
+        sql.append("SELECT DISTINCT i.").append(inputsIdFieldName).append("\n");
+        sql.append("FROM ").append(inputsTInfo, "i").append(", \n\t");
         sql.append(getTinfoProtocolApplication(), "pa").append("\n");
-        sql.append("WHERE d.TargetApplicationId = pa.rowId\n\t")
+        sql.append("WHERE i.TargetApplicationId = pa.rowId\n\t")
                 .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
-                .append("AND d.dataID ").append(rowIdInFrag).append("\n");
+                .append("AND i.").append(inputsIdFieldName).append(" ").append(rowIdInFrag).append("\n");
 
-        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
+        ArrayList<Integer> parents = new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
+
+        // get any parents that are in lineage relationships not created by runs (e.g., for registry data).
+        sql = new SQLFragment();
+        sql.append("SELECT DISTINCT d.rowId FROM ").append(primaryTInfo, "d").append("\n")
+                .append("  JOIN ").append(getTinfoEdge(), "e").append(" ON e.fromObjectId = d.objectId\n")
+                .append("  WHERE d.rowId ").append(rowIdInFrag).append(" AND e.runId IS NULL ");
+        parents.addAll(new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class));
+        return parents;
+
     }
 
 
