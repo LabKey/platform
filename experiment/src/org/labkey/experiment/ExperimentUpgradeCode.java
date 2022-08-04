@@ -367,7 +367,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         @NotNull Map<String, Object>[] results = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
         if (results.length > 0)
         {
-            LOG.warn("Samples with duplicate names found for sample type " + st.getName());
+            LOG.warn(results.length + " duplicate name(s) found for sample type " + st.getName());
 
             Set<String> existingValues = new CaseInsensitiveHashSet();
             existingValues.addAll(new TableSelector(table, Collections.singleton(table.getColumn("name")), new SimpleFilter(FieldKey.fromParts("CpasType"), targetCpas), null).getCollection(String.class));
