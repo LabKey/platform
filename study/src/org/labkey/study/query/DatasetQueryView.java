@@ -473,7 +473,7 @@ public class DatasetQueryView extends StudyQueryView
                 // Anyone with read permissions can see the dataset details page, #41515
                 ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), canManage ? "Manage" : "Details");
                 manageButton.setActionType(ActionButton.Action.LINK);
-                manageButton.setDisplayPermission(InsertPermission.class);
+                manageButton.setDisplayPermission(ReadPermission.class);
                 bar.add(manageButton);
             }
             else
