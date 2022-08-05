@@ -76,7 +76,7 @@ public class CopyConfig
     private String _targetString;
     private boolean _gating = false;
     private boolean _saveState = false;
-    protected String _containerPath;
+    protected String _sourceContainerPath;
 
     protected final Set<String> _alternateKeys = new HashSet<>();
 
@@ -441,13 +441,13 @@ public class CopyConfig
         return Collections.unmodifiableSet(_alternateKeys);
     }
 
-    public String getContainerPath()
+    public String getSourceContainerPath()
     {
-        return _containerPath;
+        return _sourceContainerPath;
     }
 
-    public void setContainerPath(String containerPath)
+    public void setSourceContainerPath(String containerPath)
     {
-        _containerPath = containerPath;
+        _sourceContainerPath = containerPath;
     }
 }
