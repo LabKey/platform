@@ -80,7 +80,7 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
             }
         });
 
-        function loadSuccessHandler() {
+        function loadSuccessHandler(resp, opts) {
             pb.destroy();
             Ext4.TaskManager.stopAll();
             this.parent.getEl().unmask();
@@ -91,13 +91,16 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
                     this);
         }
 
+        function loadFailureHandler(resp, opts) {
+            pb.destroy();
+            Ext4.TaskManager.stopAll();
+            this.parent.getEl().unmask();
+            LABKEY.Utils.displayAjaxErrorResponse(resp, opts, true);
+        }
+
         // clear the cache and re-load using the configured path
         this.parent.getEl().mask();
         this.dependencyCache.clear();
-        this.dependencyCache.load(this.analysisPath, loadSuccessHandler, this.onLoadError, this);
-    },
-
-    onLoadError : function() {
-        Ext4.Msg.alert('Cross Folder Dependencies', 'The query analysis failed, check the console log');
+        this.dependencyCache.load(this.analysisPath, loadSuccessHandler, loadFailureHandler, this);
     }
 });
