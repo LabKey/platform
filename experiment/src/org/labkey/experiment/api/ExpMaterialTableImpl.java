@@ -176,6 +176,30 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case MaterialSourceId:
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "RowId", "Name")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        ExpSampleTypeTable sampleTypeTable = ExperimentService.get().createSampleTypeTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
+                        sampleTypeTable.populate();
+                        return sampleTypeTable;
+                    }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return super.getURL(parent, true);
+                    }
+                });
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                columnInfo.setHidden(true);
+                return columnInfo;
+            }
             case RootMaterialLSID:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
@@ -355,7 +379,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return ret;
             }
             case RecomputeRollup:
-                return wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
+                ret.setHidden(true);
+                return ret;
+            }
             case AliquotCount:
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
@@ -492,7 +520,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
-        
+
+        addColumn(Column.MaterialSourceId);
+
         addColumn(Column.SourceProtocolApplication);
 
         addColumn(Column.SourceApplicationInput);
@@ -520,7 +550,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 nameCol.setNullable(false);
             }
-            nameCol.setDisplayColumnFactory(new IdColumnRendererFactory());
         }
         else
         {
@@ -720,6 +749,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         UserSchema schema = getUserSchema();
         Domain domain = st.getDomain();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
+        ColumnInfo nameColumn = getColumn(Column.Name);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));
 
@@ -739,7 +769,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
 
-            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey())
+                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
             // TODO this seems bad to me, why isn't this done in ss.getTinfo()
@@ -758,7 +789,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
-                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
+                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"), getContainerFilter());
 
                 if (idCols.contains(dp))
                 {
@@ -789,10 +820,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     addColumn(mvColumn);
                     propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                 }
-
-                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
-                if (!isTargetLookup && propColumn.getFk() instanceof PdLookupForeignKey)
-                    ((PdLookupForeignKey) propColumn.getFk()).setContainerFilter(getContainerFilter());
             }
 
             if (!mvColumns.contains(propColumn.getFieldKey()))
@@ -864,15 +891,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
-                // don't select lsid twice
-                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                // don't select twice
+                if (Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName()))
                     continue;
 
                 // don't need to generate SQL for columns that aren't selected
                 if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(propertyColumn.getFieldKey()) || propertyColumn.isMvIndicatorColumn())
                 {
                     sql.append(comma);
-                    if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
+                    boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
+                            || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
+                    if (!rootField
                             || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
                             || propertyColumn.isUniqueIdField())
                     {
@@ -1015,7 +1045,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
             SearchService ss = SearchService.get();
             if (null != ss)

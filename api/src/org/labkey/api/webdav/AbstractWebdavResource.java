@@ -612,6 +612,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             return false;
         if (name.equals(".DS_Store")) // mac
             return false;
+        if (name.startsWith("~") || name.startsWith(".~"))  // Office working files
+            return false;
         return true;
     }
 

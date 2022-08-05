@@ -33,6 +33,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.InvalidGroupMembershipException;
@@ -2006,7 +2007,7 @@ public class SecurityApiActions
         }
     }
 
-    public static class CreateNewUserForm
+    public static class CreateNewUsersForm
     {
         private String _email; // supports a semicolon list of email addresses
         private boolean _sendEmail = true;
@@ -2055,13 +2056,15 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
+    @ActionNames("CreateNewUsers, CreateNewUser")
+    public static class CreateNewUsersAction extends MutatingApiAction<CreateNewUsersForm>
     {
         @Override
-        public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
+        public ApiResponse execute(CreateNewUsersForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> responses = new ArrayList<>();
+            List<HtmlString> htmlErrors = new ArrayList<>();
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
             Container c = getContainer();
@@ -2085,38 +2088,39 @@ public class SecurityApiActions
                 User user = UserManager.getUser(email);
                 if (null == user)
                 {
-                    // NOTE IAE should not accept formatted HTML
-                    // throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
-                    throw new IllegalArgumentException("Error creating new user account.");
+                    htmlErrors.add(null != msg ? msg : HtmlString.of("Error creating new user account: " + email));
                 }
-
-                boolean isNew = !HtmlString.isBlank(msg);
-                HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
-
-                // Allow tests to create users that immediately register as having "logged in"
-                if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
+                else
                 {
-                    user.setLastLogin(new Date());
-                    UserManager.updateLogin(user);
-                    UserManager.clearUserList();
-                }
+                    boolean isNew = !HtmlString.isBlank(msg);
+                    HtmlString htmlMsg = HtmlString.isBlank(msg) ? HtmlString.of(email + " was already a registered system user.") : msg;
 
-                // if only one user being added, keep response object at top level for backwards compatibility
-                if (validEmails.size() == 1)
-                {
-                    response.put("userId", user.getUserId());
-                    response.put("email", user.getEmail());
-                    response.put("message", htmlMsg);
+                    // Allow tests to create users that immediately register as having "logged in"
+                    if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
+                    {
+                        user.setLastLogin(new Date());
+                        UserManager.updateLogin(user);
+                        UserManager.clearUserList();
+                    }
+
+                    // if only one user being added, write response properties to the top level as well for backwards compatibility
+                    if (validEmails.size() == 1)
+                    {
+                        response.put("userId", user.getUserId());
+                        response.put("email", user.getEmail());
+                        response.put("message", htmlMsg);
+                    }
+                    responses.add(Map.of(
+                            "userId", user.getUserId(),
+                            "email", user.getEmail(),
+                            "message", htmlMsg,
+                            "isNew", isNew
+                    ));
                 }
-                responses.add(Map.of(
-                    "userId", user.getUserId(),
-                    "email", user.getEmail(),
-                    "message", htmlMsg,
-                    "isNew", isNew
-                ));
             }
 
-            response.put("success", true);
+            if (htmlErrors.size() > 0) response.put("htmlErrors", htmlErrors);
+            response.put("success", htmlErrors.size() == 0);
             response.put("users", responses);
             return response;
         }
@@ -2244,7 +2248,7 @@ public class SecurityApiActions
                 new RenameGroupAction(),
                 new AddGroupMemberAction(),
                 new RemoveGroupMemberAction(),
-                new CreateNewUserAction()
+                new CreateNewUsersAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)

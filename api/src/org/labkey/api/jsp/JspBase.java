@@ -43,7 +43,6 @@ import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
@@ -64,6 +63,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
@@ -230,6 +230,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     public JSONObject toJsonObject(Collection<Object> c)
+    {
+        return new JSONObject(c);
+    }
+
+    public JSONObject toJsonObject(Map<?, ?> c)
     {
         return new JSONObject(c);
     }
@@ -566,17 +571,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return getViewContext().getMessage(e);
     }
 
-    JspView<?> _me = null;
-
-    JspView<?> getView()
-    {
-        if (null == _me)
-            _me = (JspView<?>)HttpView.currentView();
-        return _me;
-    }
-
-
-
     //
     // Spring error handling helpers
     //
@@ -664,7 +658,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
-    IdentityHashMap<ObjectError,String> _returnedErrors = new IdentityHashMap<>();
+    IdentityHashMap<ObjectError, String> _returnedErrors = new IdentityHashMap<>();
 
     // For extra credit, return list of errors not returned by formatErrorsForPath() or formatErrorForPath()
     public List<ObjectError> getMissedErrors(String bean)

@@ -37,6 +37,7 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 
     public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
+        super(TYPE);
         _module = module;
         _reportPath = reportPath;
 
@@ -44,7 +45,6 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 
         setReportKey(reportKey);
         setReportName(name);
-        setDescriptorType(TYPE);
         setReportType(JavaScriptReport.TYPE);
         _resource = getModuleReportResource(sourceFile);
         loadMetaData();

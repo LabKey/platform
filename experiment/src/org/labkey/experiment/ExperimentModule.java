@@ -27,6 +27,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -164,7 +165,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 22.003;
+        return 22.006;
     }
 
     @Nullable
@@ -596,6 +597,22 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
                         "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
                         "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+
+                results.put("sampleTypeAliquotSpecificField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ChildOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentOnlyField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND (D.derivationDataScope = ? OR D.derivationDataScope IS NULL)", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.ParentOnly.name()).getObject(Long.class));
+                results.put("sampleTypeParentAndAliquotField", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(D.PropertyURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.derivationDataScope = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, ExpSchema.DerivationDataScopeType.All.name()).getObject(Long.class));
 
                 results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
                 results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +

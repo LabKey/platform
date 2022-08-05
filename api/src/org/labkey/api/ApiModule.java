@@ -57,6 +57,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleLoader.StartupPropertyStartupListener;
 import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -84,7 +85,10 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppPropsTestCase;
+import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -99,6 +103,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
@@ -134,6 +140,10 @@ public class ApiModule extends CodeOnlyModule
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
+        MailHelper.init();
+        // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
+        ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
+        ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 
     @Override
@@ -228,6 +238,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CachingTestCase.class,
@@ -281,7 +292,8 @@ public class ApiModule extends CodeOnlyModule
             TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
-            WorkbookContainerType.TestCase.class
+            WorkbookContainerType.TestCase.class,
+            WriteableLookAndFeelProperties.TestCase.class
         );
     }
 
@@ -309,7 +321,7 @@ public class ApiModule extends CodeOnlyModule
             json.put("compliance", complianceSettings);
 
         LookAndFeelProperties properties = LookAndFeelProperties.getInstance(context.getContainer());
-        json.put(LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE, properties.getApplicationMenuDisplayMode());
+        json.put(applicationMenuDisplayMode.name(), properties.getApplicationMenuDisplayMode());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;

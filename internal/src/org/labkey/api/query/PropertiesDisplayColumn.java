@@ -20,6 +20,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
@@ -118,6 +119,9 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
                         String label = pc.getLabel();
                         pc.setFieldKey(FieldKey.fromParts(pd.getPropertyURI()));
                         pc.setLabel(label);
+
+                        if (pc.getPropertyType() == PropertyType.ATTACHMENT && pc.getURL() == null)
+                            pc.setPropertyType(PropertyType.STRING);
 
                         DisplayColumn dc = pc.getDisplayColumnFactory().createRenderer(pc);
                         // apply date and number formats

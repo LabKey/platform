@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
@@ -691,7 +692,8 @@ public class AssayController extends SpringActionController
                 bean = new AssayProviderBean();
                 bean.setName(provider.getName());
                 bean.setDescription(provider.getDescription());
-                bean.setFileTypes(provider.getDataType().getFileType().getSuffixes());
+                AssayDataType dataType = provider.getDataType();
+                bean.setFileTypes(dataType == null ? Collections.emptyList() : dataType.getFileType().getSuffixes());
                 beans.add(bean);
             }
 
@@ -1247,6 +1249,12 @@ public class AssayController extends SpringActionController
         public ActionURL getChooseAssayTypeURL(Container container)
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);
+        }
+
+        @Override
+        public ActionURL getImportAssayDesignURL(Container container)
+        {
+            return getChooseAssayTypeURL(container).addParameter("tab", "import");
         }
 
         @Override

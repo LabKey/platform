@@ -57,7 +57,7 @@ public class PopupUserView extends PopupMenuView
         NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
         tree.addChild(account);
 
-        ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, currentURL);
+        ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, c, currentURL);
         if (null != externalToolsViewURL)
         {
             NavTree externalToolSettings = new NavTree("External Tool Access", externalToolsViewURL);

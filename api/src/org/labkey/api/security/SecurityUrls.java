@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
@@ -40,7 +41,7 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getAddUsersURL(Container container);
     ActionURL getFolderAccessURL(Container container);
-    ActionURL getExternalToolsViewURL(User user, URLHelper returnURL); // Always root
+    ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL);
     ActionURL getCompleteUserURL(Container container);
     ActionURL getCompleteUserReadURL(Container container);
 }

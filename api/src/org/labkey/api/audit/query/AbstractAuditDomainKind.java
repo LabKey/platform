@@ -60,6 +60,7 @@ import java.util.Set;
  */
 public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
+
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 
@@ -71,6 +72,10 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
+    public static final String OLD_RECORD_PROP_CAPTION = "Old Record Values";
+    public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
+
+    public static final String AUDIT_RECORD_DATA_MAP_CONCEPT_URI = "http://www.labkey.org/types#auditRecordDataMap";
 
     static
     {
@@ -360,6 +365,22 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
         pd.setRequired(required);
 
         return pd;
+    }
+
+    protected PropertyDescriptor createOldDataMapPropertyDescriptor()
+    {
+        PropertyDescriptor d = createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1); // varchar max
+        d.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
+        d.setLabel(OLD_RECORD_PROP_CAPTION);
+        return d;
+    }
+
+    protected PropertyDescriptor createNewDataMapPropertyDescriptor()
+    {
+        PropertyDescriptor d = createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1); // varchar max
+        d.setConceptURI(AUDIT_RECORD_DATA_MAP_CONCEPT_URI);
+        d.setLabel(NEW_RECORD_PROP_CAPTION);
+        return d;
     }
 
     @Override

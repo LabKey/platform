@@ -18,6 +18,8 @@ package org.labkey.core.login;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -29,11 +31,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.core.login.DbLoginManager.Key;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -130,7 +135,20 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @Override
     public void handleStartupProperties()
     {
-        saveStartupProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(DATABASE_AUTHENTICATION_CATEGORY_KEY, Key.class)
+        {
+            @Override
+            public void handle(Map<Key, StartupPropertyEntry> map)
+            {
+                if (!map.isEmpty())
+                {
+                    PropertyManager.PropertyMap propertyMap = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+                    propertyMap.clear();
+                    map.forEach((key, value)->propertyMap.put(key.getPropertyName(), value.getValue()));
+                    propertyMap.save();
+                }
+            }
+        });
     }
 
     // A simple test validator that expires every authentication after 100 requests

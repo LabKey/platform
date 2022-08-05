@@ -98,6 +98,10 @@ public interface SampleTypeService
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException, SQLException;
 
+    @NotNull
+    ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
+            throws ExperimentException, SQLException;
+
     /**
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
@@ -135,6 +139,9 @@ public interface SampleTypeService
      * Get a SampleType by name within the definition container.
      */
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
+
+    /** Get the sample type with name at a specific time */
+    ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectDate);
 
     /**
      * Return the sample type for this LSID, optionally pass Container hint for performance

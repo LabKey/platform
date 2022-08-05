@@ -157,7 +157,7 @@
             <column columnName="JavaVersion"/>
             <column columnName="EnterprisePipelineEnabled"/>
             <column columnName="UserCount"/>
-            <column columnName="ActiveUserCount"/>
+            <column columnName="RecentUserCount"/>
             <column columnName="ProjectCount"/>
             <column columnName="ContainerCount"/>
             <column columnName="HeapSize">
@@ -169,6 +169,9 @@
             <column columnName="JsonMetrics"/>
             <column columnName="UsageReportingLevel"/>
             <column columnName="ExceptionReportingLevel"/>
+            <column columnName="ServerHostName"/>
+            <column columnName="ServerIP"/>
+            <column columnName="OriginalServerSessionId"/>
         </columns>
     </table>
 

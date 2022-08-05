@@ -16,6 +16,8 @@
 package org.labkey.search.model;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -52,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 public class SavePaths implements DavCrawler.SavePaths
 {
     final private long _startupTime = System.currentTimeMillis();
-    
+    final static Logger _log = LogManager.getLogger(SavePaths.class);
 
     SQLFragment pathFilter(TableInfo ti, String path)
     {
@@ -196,9 +198,12 @@ public class SavePaths implements DavCrawler.SavePaths
 
             // Issue 45008 - avoid logging warning when there's a duplicate row
             Integer ident = new SqlSelector(getSearchSchema(),insert).setLogLevel(Level.ERROR).getObject(Integer.class);
-            if (null == ident)
-                return getId(path);
-            return ident;
+            if (null != ident)
+            {
+                _log.debug("insertPath(" + path + ", " + valueNextCrawl + ")");
+                return ident;
+            }
+            return getId(path);
         }
         catch (DuplicateKeyException | RuntimeSQLException x)
         {
@@ -238,6 +243,8 @@ public class SavePaths implements DavCrawler.SavePaths
             f.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
             f.append(")");
             int count = new SqlExecutor(getSearchSchema()).execute(f);
+            if (count == 1)
+                _log.debug("insertPath(" + path + ", " + nextCrawl + ")");
             return count==1;
         }
         catch (SQLException x)
@@ -313,6 +320,7 @@ public class SavePaths implements DavCrawler.SavePaths
     @Override
     public void deletePath(Path path)
     {
+        _log.debug("deleting crawler paths that start with '" + path + "'");
         // UNDONE LIKE ESCAPE
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");

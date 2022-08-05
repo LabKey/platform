@@ -18,10 +18,12 @@ core/resources/web/core/css
 */resources/web/gen
 */resources/views/gen
 
+api/resources/credits/jars.txt
 bigiron/resources/credits/jars.txt
 core/resources/credits/jars.txt
 experiment/resources/credits/jars.txt
 internal/resources/credits/jars.txt
+pipeline/resources/credits/jars.txt
 query/resources/credits/jars.txt
 search/resources/credits/jars.txt
 

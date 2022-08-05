@@ -26,6 +26,8 @@ import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewServlet;
@@ -42,6 +44,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.Random;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -80,8 +83,8 @@ public class AuthFilter implements Filter
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
+            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
+                resp.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
             resp.setHeader("X-Content-Type-Options", "nosniff");
             resp.setHeader("Referrer-Policy", "origin-when-cross-origin" );
         }
@@ -198,7 +201,7 @@ public class AuthFilter implements Filter
                 user = User.guest;
         }
         else
-            UserManager.updateActiveUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
 
         req = AuthenticatedRequest.create(req, user);
 
@@ -232,6 +235,8 @@ public class AuthFilter implements Filter
         try
         {
             SecurityLogger.pushSecurityContext("AuthFilter " + req.getRequestURI(), user);
+            addRandomHeader(req, resp);
+            HttpUtil.trackClientApiRequests(req);
             chain.doFilter(req, resp);
         }
         finally
@@ -250,6 +255,17 @@ public class AuthFilter implements Filter
             ((AuthenticatedRequest) req).close();
         }
     }
+
+    private void addRandomHeader(HttpServletRequest req, HttpServletResponse resp)
+    {
+        // make response size  a bit random (compressed or not)
+        StringBuilder sb = new StringBuilder(GUID.makeHash(req.getQueryString()));
+        Random r = new Random();
+        for (int i=r.nextInt(32) ; i>0 ; i--)
+            sb.append((char)('A' + r.nextInt(26)));
+        resp.addHeader("X-LK-NONCE", sb.toString());
+    }
+
 
 
     private boolean clearRequestAttributes(HttpServletRequest request)

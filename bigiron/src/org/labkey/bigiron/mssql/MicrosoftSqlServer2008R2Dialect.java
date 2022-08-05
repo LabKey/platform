@@ -17,19 +17,14 @@ package org.labkey.bigiron.mssql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.dialect.TableResolver;
+import org.labkey.api.data.Table;
 
 /**
  * Created by adam on 12/4/2015.
  */
 public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDialect
 {
-    public MicrosoftSqlServer2008R2Dialect(TableResolver tableResolver)
-    {
-        super(tableResolver);
-    }
-
-    // Called only if rowCount and offset are both > 0
+    // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
     @Override
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
     {
@@ -43,10 +38,19 @@ public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDiale
         if (filter != null) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
         sql.append("\n) AS z\n");
-        sql.append("WHERE _RowNum BETWEEN ");
-        sql.append(offset + 1);
-        sql.append(" AND ");
-        sql.append(offset + maxRows);
+        sql.append("WHERE _RowNum ");
+
+        if (maxRows == Table.ALL_ROWS)
+        {
+            sql.append("> ").append(offset);
+        }
+        else
+        {
+            sql.append("BETWEEN ");
+            sql.append(offset + 1);
+            sql.append(" AND ");
+            sql.append(offset + maxRows);
+        }
 
         return sql;
     }

@@ -30,9 +30,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -42,6 +45,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
@@ -64,8 +68,10 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.ConceptURIVocabularyDomainProvider;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -74,11 +80,12 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -94,11 +101,14 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.Tuple3;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
@@ -110,6 +120,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -118,6 +129,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 
 /**
  * User: kevink
@@ -128,11 +140,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private final @NotNull ExpDataClassImpl _dataClass;
     public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(_userSchema);
-    }
+    private Map<String/*domain name*/, DataClassVocabularyProviderProperties> _vocabularyDomainProviders;
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
     {
@@ -257,7 +265,26 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataClass:
             {
                 var c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                c.setFk(new QueryForeignKey(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"))
+                {
+                    @Override
+                    protected ContainerFilter getLookupContainerFilter()
+                    {
+                        // Issue 45664: Data Class metadata not available in query when querying cross-folder
+                        // Same as CurrentPlusProjectAndShared except it includes the DataClass' container as well.
+                        Set<Container> containers = new HashSet<>();
+                        containers.add(_dataClass.getContainer());
+                        containers.add(getContainer());
+                        if (getContainer().getProject() != null)
+                            containers.add(getContainer().getProject());
+                        containers.add(ContainerManager.getSharedContainer());
+                        ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
+
+                        if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
+                            cf = new UnionContainerFilter(_containerFilter, cf);
+                        return cf;
+                    }
+                });
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
@@ -269,7 +296,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case Folder:
             {
-                var c = wrapColumn("Container", getRealTable().getColumn("Container"));
+                var c = wrapColumn(alias, getRealTable().getColumn("Container"));
                 c.setLabel("Folder");
                 c.setShownInDetailsView(false);
                 return c;
@@ -289,6 +316,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataFileUrl:
                 var dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
                 dataFileUrl.setUserEditable(false);
+                dataFileUrl.setHidden(true);
                 DetailsURL url = new DetailsURL(new ActionURL(ExperimentController.ShowFileAction.class, getContainer()), Collections.singletonMap("rowId", "rowId"));
                 dataFileUrl.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(url, getContainer(), FieldKey.fromParts("RowId")));
 
@@ -336,7 +364,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.ModifiedBy);
         addColumn(Column.Flag);
         addColumn(Column.DataClass);
-        addColumn(Column.Folder);
+        addContainerColumn(Column.Folder, null);
         addColumn(Column.Description);
         addColumn(Column.Alias);
 
@@ -386,7 +414,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
             if (dp != null && pd != null)
             {
-                PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey);
+                PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter());
                 wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
 
                 if (pd.getPropertyType() == PropertyType.ATTACHMENT)
@@ -411,10 +439,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     wrappedMvCol.getFieldKey();
                     wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
                 }
-
-                boolean isTargetLookup = dp.getLookup() != null && dp.getLookup().getContainer() != null;
-                if (!isTargetLookup && wrapped.getFk() instanceof PdLookupForeignKey)
-                    ((PdLookupForeignKey) wrapped.getFk()).setContainerFilter(getContainerFilter());
             }
 
             addColumn(wrapped);
@@ -426,7 +450,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         addColumn(Column.DataFileUrl);
 
-        addVocabularyDomains();
+        List<FieldKey> vocabularyDomainFields = addVocabularyDomainFields();
+        defaultVisible.addAll(vocabularyDomainFields);
+
         addColumn(Column.Properties);
 
         ColumnInfo colInputs = addColumn(Column.Inputs);
@@ -465,6 +491,40 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addExpObjectMethod();
     }
 
+    private Map<String, DataClassVocabularyProviderProperties> getVocabularyDomainProviders()
+    {
+        if (_vocabularyDomainProviders != null)
+            return _vocabularyDomainProviders;
+
+        TableInfo extTable = _dataClass.getTinfo();
+        _vocabularyDomainProviders = new CaseInsensitiveHashMap<>();
+
+        for (ColumnInfo col : extTable.getColumns())
+        {
+            String conceptURI = col.getConceptURI();
+            if (!StringUtils.isEmpty(conceptURI))
+            {
+                ConceptURIVocabularyDomainProvider conceptURIVocabularyDomainProvider = PropertyService.get().getConceptUriVocabularyDomainProvider(conceptURI);
+                if (conceptURIVocabularyDomainProvider != null)
+                {
+                    String domainName = conceptURIVocabularyDomainProvider.getDomainName(col.getName(), _dataClass);
+                    String domainURI = conceptURIVocabularyDomainProvider.getDomainURI(col.getName(), _dataClass);
+                    if (StringUtils.isEmpty(domainName) || StringUtils.isEmpty(domainURI))
+                        continue;
+
+                    Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                    if (domain == null)
+                        continue;
+
+                    String propertyColumnName = getVocabularyDomainColumnName(domain);
+                    _vocabularyDomainProviders.put(domainName, new DataClassVocabularyProviderProperties(col.getName(), col.getLabel(), propertyColumnName, conceptURIVocabularyDomainProvider));
+
+                }
+            }
+        }
+
+        return _vocabularyDomainProviders;
+    }
 
     @Override
     public ColumnInfo getExpObjectColumn()
@@ -474,7 +534,70 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return ret;
     }
 
+    protected PropertyForeignKey getDomainColumnForeignKey(Domain domain)
+    {
+        return new PropertyForeignKey(_userSchema, getContainerFilter(), domain)
+        {
+            @Override
+            public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
+            {
+                super.decorateColumn(columnInfo, pd);
+                if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                {
+                    columnInfo.setURL(StringExpressionFactory.createURL(
+                            new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, getContainer())
+                                    .addParameter("lsid", "${LSID}")
+                                    .addParameter("name", "${" + columnInfo.getFieldKey() + "}")));
 
+                }
+
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                if (fieldVocabularyDomainProvider != null)
+                    fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().decorateColumn(columnInfo, pd, _userSchema.getContainer());
+            }
+
+            @Override
+            protected @NotNull FieldKey decideColumnName(@NotNull ColumnInfo parent, @NotNull String displayField, @NotNull PropertyDescriptor pd)
+            {
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+                if (fieldVocabularyDomainProvider != null)
+                    return fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getColumnFieldKey(parent, pd);
+
+                return super.decideColumnName(parent, displayField, pd);
+          }
+
+        };
+    }
+
+    public String getVocabularyDomainColumnName(Domain domain)
+    {
+        return domain.getName().replaceAll(" ", "") + domain.getTypeId();
+    }
+
+    private List<FieldKey> addVocabularyDomainFields()
+    {
+        List<FieldKey> domainFields = new ArrayList<>();
+
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
+        for (Domain domain : domains)
+        {
+            String columnName = getVocabularyDomainColumnName(domain);
+            var col = this.addDomainColumns(domain, columnName);
+            col.setLabel(domain.getName());
+            col.setDescription("Properties from " + domain.getLabel(getContainer()));
+
+            DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(domain.getName());
+            if (fieldVocabularyDomainProvider != null)
+            {
+                col.setLabel(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getDomainLabel(fieldVocabularyDomainProvider.sourceColumnLabel()));
+                List<FieldKey> fieldKeys = fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().addLookupColumns(_dataClass, this, col, fieldVocabularyDomainProvider.sourceColumnName());
+                if (fieldKeys != null)
+                    domainFields.addAll(fieldKeys);
+            }
+        }
+
+        return domainFields;
+    }
 
     @NotNull
     @Override
@@ -529,6 +652,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         return (!col.isHidden() && !col.isUnselectable() && !DEFAULT_HIDDEN_COLS.contains(col.getName()));
+    }
+
+    @Override
+    public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
+    {
+        Set<String> excludeColumns = new HashSet<>();
+        for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
+        {
+            DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
+            if (fieldVocabularyDomainProvider != null)
+            {
+                excludeColumns.addAll(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getImportTemplateExcludeColumns(fieldVocabularyDomainProvider.vocabularyDomainName()));
+            }
+        }
+
+        if (excludeColumns.size() > 0)
+        {
+            List<Pair<String, String>> templates = new ArrayList<>();
+            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+            for (String excludeKey : excludeColumns)
+                url.addParameter("excludeColumn", excludeKey);
+            templates.add(Pair.of("Download Template", url.toString()));
+            return templates;
+
+        }
+
+        return super.getImportTemplates(ctx);
     }
 
     @NotNull
@@ -594,19 +745,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _dataClass, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
         SearchService ss = SearchService.get();
         if (null != ss)
         {
-            step0.setIndexFunction(lsids -> () ->
-                ListUtils.partition(lsids, 100).forEach(sublist ->
-                    ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                    {
-                        for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                            expData.index(ss.defaultTask());
-                    })
-                )
-            );
+            // Queue indexing after committing
+            propertiesTable.getSchema().getScope().addCommitTask(() ->
+            {
+                step0.setIndexFunction(lsids -> () ->
+                        ListUtils.partition(lsids, 100).forEach(sublist ->
+                                ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                                {
+                                    for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                                        expData.index(ss.defaultTask());
+                                })
+                        )
+                );
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
         return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
     }
@@ -814,6 +969,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (lsid == null)
                 throw new ValidationException("lsid required to update row");
 
+            String newName = (String) row.get(Name.name());
+            String oldName = (String) oldRow.get(Name.name());
+            boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
+
             // Replace attachment columns with filename and keep AttachmentFiles
             Map<String, Object> rowStripped = new CaseInsensitiveHashMap<>();
             Map<String, Object> attachments = new CaseInsensitiveHashMap<>();
@@ -833,6 +992,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             });
 
+            for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
+            {
+                DataClassVocabularyProviderProperties fieldVocabularyDomainProvider = getVocabularyDomainProviders().get(vocabularyDomainName);
+                if (fieldVocabularyDomainProvider != null)
+                    rowStripped.putAll(fieldVocabularyDomainProvider.conceptURIVocabularyDomainProvider().getUpdateRowProperties(user, c, rowStripped, oldRow, getAttachmentParentFactory(), fieldVocabularyDomainProvider.sourceColumnName(), fieldVocabularyDomainProvider.vocabularyDomainName(), getVocabularyDomainProviders().size() > 1));
+            }
+
             // update exp.data
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
@@ -844,14 +1010,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
             }
 
-            // update comment
             ExpDataImpl data = null;
+            if (hasNameChange)
+            {
+                data = ExperimentServiceImpl.get().getExpData(lsid);
+                ExperimentService.get().addObjectLegacyName(data.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpData.class), oldName, user);
+            }
+
+            // update comment
             if (row.containsKey("flag") || row.containsKey("comment"))
             {
                 Object o = row.containsKey("flag") ? row.get("flag") : row.get("comment");
                 String flag = Objects.toString(o, null);
 
-                data = ExperimentServiceImpl.get().getExpData(lsid);
+                if (data == null)
+                    data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.setComment(user, flag);
             }
 
@@ -884,7 +1057,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false, true);
+            ExpDataIterators.derive(user, container, di, false, _dataClass, true);
 
             return ret;
         }
@@ -969,9 +1142,28 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(standard, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,
                     container, getAttachmentParentFactory(), FieldKey.fromParts(Column.LSID));
+
+            dib = getConceptURIVocabularyDomainDataIteratorBuilder(user, container, dib);
+
             dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
 
             return dib;
+        }
+
+        private DataIteratorBuilder getConceptURIVocabularyDomainDataIteratorBuilder(User user, Container container, DataIteratorBuilder data)
+        {
+            for (DomainProperty property : getDomain().getProperties())
+            {
+                if (StringUtils.isEmpty(property.getConceptURI()))
+                    continue;
+
+                ConceptURIVocabularyDomainProvider conceptURIVocabularyDomainProvider = PropertyService.get().getConceptUriVocabularyDomainProvider(property.getConceptURI());
+
+                if (conceptURIVocabularyDomainProvider != null)
+                    return conceptURIVocabularyDomainProvider.getDataIteratorBuilder(data, _dataClass, getAttachmentParentFactory(), container, user);
+            }
+
+            return data;
         }
 
         @Override

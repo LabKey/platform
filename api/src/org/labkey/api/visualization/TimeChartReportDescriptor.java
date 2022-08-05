@@ -47,7 +47,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     public TimeChartReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        super(TYPE);
     }
 
     @Override

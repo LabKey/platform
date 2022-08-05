@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -38,12 +39,12 @@ import static java.util.stream.Collectors.toList;
  */
 public class ExpLineage
 {
-    private Set<Identifiable> _seeds;
-    private Set<ExpData> _datas;
-    private Set<ExpMaterial> _materials;
-    private Set<ExpRun> _runs;
-    private Set<Identifiable> _objects;
-    private Set<Edge> _edges;
+    private final Set<Identifiable> _seeds;
+    private final Set<ExpData> _datas;
+    private final Set<ExpMaterial> _materials;
+    private final Set<ExpRun> _runs;
+    private final Set<Identifiable> _objects;
+    private final Set<Edge> _edges;
 
     // constructed in processNodes
     private Map<String, Identifiable> _nodes;
@@ -159,7 +160,8 @@ public class ExpLineage
         return _nodesAndEdges;
     }
 
-    private Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges(Identifiable node)
+    @Nullable
+    private Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges(@NotNull Identifiable node)
     {
         Map<String, Identifiable> nodes = processNodes();
         String nodeLsid = node.getLSID();
@@ -167,8 +169,7 @@ public class ExpLineage
             throw new IllegalArgumentException("node not in lineage");
 
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges = edges.get(nodeLsid);
-        return nodeEdges;
+        return edges.get(nodeLsid);
     }
 
     /** Get the set of directly connected parents for the node. */
@@ -300,7 +301,13 @@ public class ExpLineage
         return findNearestParents(null, cpasType, seed, nodes, edges, false);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearestParents(@Nullable Class<T> parentClazz, @Nullable String cpasType, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges, boolean findBothMaterialAndData)
+    private <T extends ExpRunItem> Set<T> findNearestParents(
+        @Nullable Class<T> parentClazz,
+        @Nullable String cpasType,
+        Identifiable seed,
+        Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges,
+        boolean findBothMaterialAndData
+    )
     {
         if (edges.size() == 0)
             return Collections.emptySet();

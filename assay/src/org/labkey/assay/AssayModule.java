@@ -183,9 +183,6 @@ public class AssayModule extends SpringModule
             ss.addDocumentProvider(new AssayDocumentProvider());
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
-                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
-
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());
 

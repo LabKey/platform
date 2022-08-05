@@ -625,9 +625,11 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "P1-1"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "P1-3"));
+    rows.add(CaseInsensitiveHashMap.of("name", "P1-4,test"));
+
     List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
-    assertEquals("Number of parent1 samples inserted not as expected", 3, inserted.size());
+    assertEquals("Number of parent1 samples inserted not as expected", 4, inserted.size());
 
     // add second parents
     table = schema.getTable("Parent2Samples", null, true, false);
@@ -650,20 +652,23 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1"));
     rows.add(CaseInsensitiveHashMap.of("name", "C3", "age", 42, "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1, P2-2"));
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-2", "MaterialInputs/Parent2Samples", "P2-2"));
+    rows.add(CaseInsensitiveHashMap.of("name", "C5", "MaterialInputs/Parent1Samples", "P1-1, \"P1-4,test\", P1-2"));
+
     inserted = svc.insertRows(user, c, rows, errors, null, null);
     assertFalse(errors.hasErrors());
-    assertEquals("Number of child samples inserted not as expected", 4, inserted.size());
+    assertEquals("Number of child samples inserted not as expected", 5, inserted.size());
 
     ExpMaterial P11 = parent1Type.getSample(c, "P1-1");
     ExpMaterial P12 = parent1Type.getSample(c, "P1-2");
+    ExpMaterial P14 = parent1Type.getSample(c, "P1-4,test");
     ExpMaterial P21 = parent2Type.getSample(c, "P2-1");
     ExpMaterial P22 = parent2Type.getSample(c, "P2-2");
 
 
     ExpMaterial C1 = childType.getSample(c, "C1");
     ExpMaterial C2 = childType.getSample(c, "C2");
-    ExpMaterial C3 = childType.getSample(c, "C3");
     ExpMaterial C4 = childType.getSample(c, "C4");
+    ExpMaterial C5 = childType.getSample(c, "C5");
 
     ExpLineageOptions opts = new ExpLineageOptions();
     opts.setChildren(false);
@@ -703,6 +708,11 @@ public void testUpdateSomeParents() throws Exception
     assertTrue("Expected 'C4' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
     assertTrue("Expected 'C4' to be derived from 'P2-1'", lineage.getMaterials().contains(P21));
 
+    lineage = ExperimentService.get().getLineage(c, user, C5, opts);
+    assertEquals("Expected 'C5' to have three parents", 3, lineage.getMaterials().size());
+    assertTrue("Expected 'C5' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
+    assertTrue("Expected 'C5' to be derived from 'P1-4,test'", lineage.getMaterials().contains(P14));
+    assertTrue("Expected 'C5' to be derived from 'P1-2'", lineage.getMaterials().contains(P12));
 }
 
 // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleType even when Parent col is set

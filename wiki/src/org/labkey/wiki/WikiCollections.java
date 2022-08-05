@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -55,9 +56,10 @@ public class WikiCollections
     private final Map<Integer, WikiTree> _treesByRowId;
     private final Map<String, WikiTree> _treesByName;
     private final Map<String, String> _nameTitleMap;
+    private final Map<String, String> _nameAliasTitleMap;
     private final List<String> _names;
     private final Map<String, String> _namesByAlias;
-    private final MultiValuedMap<Integer, String> _aliasesByRowsId;
+    private final MultiValuedMap<Integer, String> _aliasesByRowId;
 
     private final List<NavTree> _adminNavTree;
     private final List<NavTree> _nonAdminNavTree;
@@ -123,14 +125,19 @@ public class WikiCollections
         _adminNavTree = createNavTree(c, true);
         _nonAdminNavTree = createNavTree(c, false);
 
-        _aliasesByRowsId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
+        _aliasesByRowId = new TableSelector(CommSchema.getInstance().getTableInfoPageAliases(), PageFlowUtil.set("Alias", "PageRowId"), SimpleFilter.createContainerFilter(c), null)
             .mapStream()
             .map(map->new Alias((Integer)map.get("PageRowId"), (String)map.get("Alias")))
             .sorted(Comparator.comparing(Alias::alias, String.CASE_INSENSITIVE_ORDER))
             .collect(LabKeyCollectors.toMultiValuedMap(record->record.pageRowId, record->record.alias));
-        _namesByAlias = _aliasesByRowsId.entries().stream()
+        _namesByAlias = _aliasesByRowId.entries().stream()
             .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
             .collect(LabKeyCollectors.toCaseInsensitiveMap(Map.Entry::getValue, e->_treesByRowId.get(e.getKey()).getName()));
+        Map<String, String> nameAliasTitleMap = new HashMap<>(_nameTitleMap);
+        _aliasesByRowId.entries().stream()
+            .filter(e->_treesByRowId.get(e.getKey()) != null) // Just in case - ignore orphaned aliases
+            .forEach(e->nameAliasTitleMap.put(e.getValue(), _treesByRowId.get(e.getKey()).getTitle()));
+        _nameAliasTitleMap = Collections.unmodifiableMap(nameAliasTitleMap);
     }
 
     public record Alias(int pageRowId, String alias) {}
@@ -232,6 +239,11 @@ public class WikiCollections
         return _nameTitleMap;
     }
 
+    public Map<String, String> getNameAndAliasTitleMap()
+    {
+        return _nameAliasTitleMap;
+    }
+
     String getName(int rowId)
     {
         WikiTree tree = getWikiTree(rowId);
@@ -270,7 +282,7 @@ public class WikiCollections
     // Ordered by alias (case-insensitive)
     Collection<String> getAliases(int rowId)
     {
-        return _aliasesByRowsId.get(rowId);
+        return _aliasesByRowId.get(rowId);
     }
 
     // Returns null for no match

@@ -16,6 +16,7 @@
 
 package org.labkey.core;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
@@ -124,6 +125,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -138,6 +140,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
@@ -160,7 +163,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -211,7 +213,7 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
-    private static final Logger _log = LogManager.getLogger(CoreController.class);
+    private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -435,23 +437,30 @@ public class CoreController extends SpringActionController
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
 
-                Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
-                SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                try
                 {
-                    if (results.getSize() != 1 || !results.next())
-                        throw new NotFoundException("Row not found for primary key");
+                    Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
+                    SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
+                    try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                    {
+                        if (results.getSize() != 1 || !results.next())
+                            throw new NotFoundException("Row not found for primary key");
 
-                    String filename = results.getString(col.getFieldKey());
-                    if (filename == null)
-                        throw new NotFoundException();
+                        String filename = results.getString(col.getFieldKey());
+                        if (filename == null)
+                            throw new NotFoundException();
 
-                    file = new File(filename);
+                        file = new File(filename);
+                    }
+                }
+                catch (ConversionException e)
+                {
+                    throw new NotFoundException("Invalid value specified for PK, could not convert to " + pkCol.getJavaClass());
                 }
             }
             else
             {
-                throw new IllegalArgumentException("objectURI or schemaName, queryName, and pk required.");
+                throw new NotFoundException("objectURI or schemaName, queryName, and pk required.");
             }
 
             // For security reasons, make sure the user hasn't tried to download a file that's not under
@@ -781,7 +790,7 @@ public class CoreController extends SpringActionController
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
-                    newContainer.setFolderType(folderType, getUser());
+                    newContainer.setFolderType(folderType, getUser(), errors);
                 }
                 if (!ensureModules.isEmpty())
                 {
@@ -2041,15 +2050,11 @@ public class CoreController extends SpringActionController
         public Object execute(LoadLibraryForm form, BindException errors)
         {
             String[] requestLibraries = form.getLibrary();
-
-            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
-
-            JSONArray resources;
             JSONObject libraries = new JSONObject();
 
             for (String library : requestLibraries)
             {
-                if (library.length() > 0)
+                if (!StringUtils.isBlank(library))
                 {
                     ClientDependency cd = ClientDependency.fromPath(library);
 
@@ -2059,18 +2064,12 @@ public class CoreController extends SpringActionController
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
                         dependencies.addAll(cd.getJsPaths(getContainer()));
-
-                        resources = new JSONArray(dependencies);
+                        libraries.put(library, new JSONArray(dependencies));
                     }
-                    else
-                    {
-                        resources = new JSONArray();
-                    }
-
-                    libraries.put(library, resources);
                 }
             }
 
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("libraries", libraries);
 
             return response;
@@ -2443,10 +2442,17 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
+            ApiSimpleResponse response = new ApiSimpleResponse();
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            svc.deleteDefinition(getUser(), def);
-
-            return new ApiSimpleResponse("success", true);
+            ExternalScriptEngineDefinition savedDef = svc.getEngineDefinition(def.getRowId(), def.getType());
+            if (savedDef != null)
+            {
+                svc.deleteDefinition(getUser(), savedDef);
+                response.put("success", true);
+            }
+            else
+                response.put("success", false);
+            return response;
         }
     }
 
@@ -2754,13 +2760,14 @@ public class CoreController extends SpringActionController
             String metricName = form.getMetricName();
             response.put("featureArea", featureArea);
             response.put("metricName", metricName);
-            response.put("count", ClientSideMetricManager.get().increment(featureArea, metricName));
+            response.put("count", SimpleMetricsService.get().increment(form.getModuleName(), featureArea, metricName));
             return response;
         }
     }
 
     public static class ClientSideMetricForm
     {
+        private String _moduleName = CoreModule.CORE_MODULE_NAME;
         private String _featureArea;
         private String _metricName;
 
@@ -2782,6 +2789,16 @@ public class CoreController extends SpringActionController
         public void setMetricName(String metricName)
         {
             _metricName = metricName;
+        }
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
         }
     }
 
@@ -2847,9 +2864,7 @@ public class CoreController extends SpringActionController
                 int v = (int) (Math.random() * verbs.length);
                 log.info(" that " + verbs[v] + " ");
             }
-
         }
-
 
         @Override
         protected ModelAndView handleGet()

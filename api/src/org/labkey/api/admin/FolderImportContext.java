@@ -67,8 +67,6 @@ public class FolderImportContext extends AbstractFolderContext
     {
         super(user, c, null, dataTypes, logger, root);
         _folderXml = folderXml;
-        DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(c, FOLDER_IMPORT_DB_SEQUENCE_PREFIX, 0, 1);
-        _xarJobId = "Xar-" + newSequence.next();
     }
 
     public FolderImportContext(User user, Container c, FolderDocument folderDoc, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
@@ -152,6 +150,12 @@ public class FolderImportContext extends AbstractFolderContext
 
     public Map<String, String> getXarJobIdContext()
     {
+        if (_xarJobId == null)
+        {
+            DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(getContainer(), FOLDER_IMPORT_DB_SEQUENCE_PREFIX, 0, 1);
+            _xarJobId = "Xar-" + newSequence.next();
+        }
+
         return new HashMap<>()
         {{
             put(XAR_JOB_ID_NAME, _xarJobId);

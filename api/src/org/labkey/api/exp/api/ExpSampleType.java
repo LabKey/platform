@@ -29,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,9 @@ public interface ExpSampleType extends ExpObject
 
     /** pass in a container to request a sample */
     ExpMaterial getSample(Container c, String name);
+
+    /** get the sample with name at a specific time */
+    ExpMaterial getEffectiveSample(Container c, String name, Date effectiveDate);
 
     @NotNull
     Domain getDomain();
@@ -207,6 +211,11 @@ public interface ExpSampleType extends ExpObject
      */
     Lsid.LsidBuilder generateSampleLSID();
 
+    /**
+     * @return LSID using the next DBSeq of the Sample Type.
+     */
+    Lsid.LsidBuilder generateNextDBSeqLSID();
+
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
@@ -225,5 +234,5 @@ public interface ExpSampleType extends ExpObject
 
     long getCurrentGenId();
 
-    void ensureMinGenId(long newSeqValue, Container container) throws ExperimentException;
+    void ensureMinGenId(long newSeqValue) throws ExperimentException;
 }

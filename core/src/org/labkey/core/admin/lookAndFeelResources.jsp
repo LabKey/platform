@@ -67,7 +67,7 @@
         {
 %>
     <tr>
-        <td>Replace with: <input type="file" name="<%=h(type.getFieldName())%>" size="25" style="border: none;"></td>
+        <td>Replace with: <input type="file" name="<%=type%>" size="25" style="border: none;"></td>
     </tr>
 <%
         }

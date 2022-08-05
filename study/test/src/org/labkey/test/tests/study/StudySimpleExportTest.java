@@ -520,7 +520,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToProjectHome();
         clickFolder(getFolderName());
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : newProps.keySet())
         {
@@ -536,12 +536,12 @@ public class StudySimpleExportTest extends StudyBaseTest
         _fileBrowserHelper.selectFileBrowserItem("export/folder.xml");
 
         log("Study Properties: import study into subfolder");
-        createSubfolderAndImportStudyFromPipeline("Study Properties");
+        createSubfolderAndImportStudyFromPipeline("Study Properties Folder");
 
         log("Study Properties: verify imported settings");
-        clickFolder("Study Properties");
+        clickFolder("Study Properties Folder");
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : newProps.keySet())
         {
@@ -557,7 +557,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Study Properties: clean up study properties");
         clickFolder(getFolderName());
         goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitAndClickAndWait(Locator.linkWithText("Study Properties"));
         waitForElement(Locator.name("Investigator"));
         for (String key : origProps.keySet())
         {
@@ -1168,8 +1168,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         });
 
         goToManageStudy();
-        waitForText("Change Study Properties");
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForText("Study Properties");
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForText("Study Properties");
         waitForElement(Ext4Helper.Locators.ext4Button("Submit"));
 
@@ -1187,8 +1187,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(FOLDER_NAME);
 
         goToManageStudy();
-        waitForText("Change Study Properties");
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        waitForText("Study Properties");
+        clickAndWait(Locator.linkWithText("Study Properties"));
         waitForText("Study Properties");
         waitForElement(Ext4Helper.Locators.ext4Button("Submit"));
 

@@ -17,7 +17,9 @@ package org.labkey.api.products;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -59,6 +61,9 @@ public abstract class ProductMenuProvider
     {
         return getProductId();
     }
+
+    @NotNull
+    public abstract ActionURL getAppURL(Container container);
 
     @NotNull
     public abstract Collection<String> getSectionNames(@Nullable ViewContext viewContext);

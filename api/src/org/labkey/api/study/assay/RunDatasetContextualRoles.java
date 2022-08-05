@@ -154,6 +154,8 @@ public class RunDatasetContextualRoles implements HasContextualRoles
 
                 Container studyContainer = ((StudyDatasetLinkedColumn)datasetColumn).getStudyContainer();
                 Dataset dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
+                if (null == dataset)
+                    return null;
                 if (dataset.hasPermission(user, ReadPermission.class))
                     return Collections.singleton(new ReaderRole());
             }

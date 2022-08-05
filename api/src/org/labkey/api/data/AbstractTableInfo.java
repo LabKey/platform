@@ -358,26 +358,21 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
             return ret;
-        ColumnInfo titleColumn = getColumn(getTitleColumn());
+        ColumnInfo titleColumn = titleColumnInfo != null ? titleColumnInfo : getColumn(getTitleColumn());
         if (titleColumn == null)
             return ret;
 
         List<ColumnInfo> cols;
         final int titleIndex;
-        if (titleColumnInfo != null && !(firstColumn.equals(titleColumnInfo)))
-        {
-            cols = Arrays.asList(firstColumn, titleColumnInfo);
-            titleIndex = 2;
-        }
-        else if (firstColumn == titleColumn || firstColumn.equals(titleColumnInfo))
-        {
-            cols = Arrays.asList(firstColumn);
-            titleIndex = 1;
-        }
-        else
+        if (!(firstColumn.equals(titleColumn)))
         {
             cols = Arrays.asList(firstColumn, titleColumn);
             titleIndex = 2;
+        }
+        else
+        {
+            cols = Arrays.asList(firstColumn);
+            titleIndex = 1;
         }
 
         SimpleFilter filter = null;
@@ -530,6 +525,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public MutableColumnInfo getMutableColumn(@NotNull String colName)
     {
         return getMutableColumn(colName, true);
+    }
+
+    /** @return a BaseColumnInfo, will throw if column doesn't exist or exists and is locked */
+    @NotNull
+    public MutableColumnInfo getMutableColumnOrThrow(@NotNull String colName)
+    {
+        MutableColumnInfo result = getMutableColumn(colName, true);
+        if (result == null)
+        {
+            UserSchema schema = getUserSchema();
+            throw new IllegalArgumentException("Could not find column '" + colName + "' in " + (schema == null ? "" : (schema.getName() + ".")) + getName() + (schema == null ? "" : (" in " + schema.getContainer().getPath())));
+        }
+        return result;
     }
 
     /**

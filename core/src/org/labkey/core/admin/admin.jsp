@@ -55,7 +55,7 @@
             <a href="#links" class="list-group-item">Settings</a>
             <a href="#info" class="list-group-item">Server Information</a>
             <a href="#modules" class="list-group-item">Module Information</a>
-            <a href="#users" class="list-group-item">Active Users</a>
+            <a href="#users" class="list-group-item">Recent Users</a>
         </div>
     </div>
     <div class="col-sm-12 col-md-9">
@@ -224,36 +224,42 @@
             </table>
         </labkey:panel>
         <labkey:panel id="users" className="lk-admin-section">
-            <h3 class="labkey-page-section-header">Active Users in the Last Hour</h3>
+            <h3 class="labkey-page-section-header">Users with Activity in the Last Hour</h3>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">User</td><td class="labkey-column-header">Last Activity</td></tr>
                 <%
                     int count = 0;
-                    for (var activeUser : AdminBean.getActiveUsers())
+                    for (var recentUser : AdminBean.getRecentUsers())
                     {
                 %>
-                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(activeUser.email)%></td><td><%=activeUser.minutes%> minutes ago</td></tr>
+                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(recentUser.email)%></td><td><%=recentUser.minutes%> minutes ago</td></tr>
                 <%
                         count++;
-                    } %>
+                    }
+                %>
             </table>
         </labkey:panel>
     </div>
 </div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     +function($) {
-
-        var defaultRoute = "links";
-
         function loadRoute(hash) {
-            if (!hash || hash === '#') {
-                hash = '#' + defaultRoute;
+            var adminNav = $('#lk-admin-nav');
+            adminNav.find('a').removeClass('active');
+
+            var activeSection = adminNav.find('a[href=\'' + $.escapeSelector(hash) + '\']');
+
+            // Section does not exist -- default to default route
+            if (activeSection.length === 0) {
+                hash = '#links';
+                activeSection = adminNav.find('a[href=\'' + $.escapeSelector(hash) + '\']');
             }
 
-            $('#lk-admin-nav').find('a').removeClass('active');
-            $('#lk-admin-nav').find('a[href=\'' + hash + '\']').addClass('active');
-            $('.lk-admin-section').hide();
-            $('.lk-admin-section[id=\'' + hash.replace('#', '') + '\']').show();
+            if (activeSection.length) {
+                activeSection.addClass('active');
+                $('.lk-admin-section').hide();
+                $('.lk-admin-section[id=\'' + hash.replace('#', '') + '\']').show();
+            }
         }
 
         $(window).on('hashchange', function() {

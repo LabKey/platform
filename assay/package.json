@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "setup": "npm ci",
+    "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
     "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
@@ -12,9 +12,10 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.149.5"
+    "@labkey/components": "2.202.1"
   },
   "devDependencies": {
-    "@labkey/build": "6.0.0"
+    "@labkey/build": "6.1.5",
+    "@types/react": "16.14.23"
   }
 }

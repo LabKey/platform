@@ -44,11 +44,11 @@ import java.util.stream.Collectors;
 
 public class AdminBean
 {
-    public static class ActiveUser
+    public static class RecentUser
     {
         public final String email;
         public final long minutes;
-        ActiveUser(String email, Long minutes)
+        RecentUser(String email, Long minutes)
         {
             this.email = email;
             this.minutes = null==minutes ? 0 : minutes.longValue();
@@ -139,10 +139,10 @@ public class AdminBean
         return links;
     }
 
-    public static List<ActiveUser> getActiveUsers()
+    public static List<RecentUser> getRecentUsers()
     {
         return UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR).stream()
-            .map(p -> new ActiveUser(p.first, p.second))
+            .map(p -> new RecentUser(p.first, p.second))
             .collect(Collectors.toList());
     }
 

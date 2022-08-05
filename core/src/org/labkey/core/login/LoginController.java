@@ -709,8 +709,8 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             PasswordRule passwordRule = DbLoginManager.getPasswordRule();
 
-            response.put("full", passwordRule.getFullRuleHTML());
-            response.put("summary", passwordRule.getSummaryRuleHTML());
+            response.put("full", passwordRule.getFullRuleHTML().toString());
+            response.put("summary", passwordRule.getSummaryRuleHTML().toString());
             return response;
         }
     }
@@ -1128,9 +1128,8 @@ public class LoginController extends SpringActionController
 
     public boolean isAdminOnlyMode()
     {
-        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && !UserManager.hasNoUsers());
+        return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (ModuleLoader.getInstance().isUpgradeRequired() && UserManager.hasUsers());
     }
-
 
     @Nullable
     private String getEmailFromCookie(HttpServletRequest request)
@@ -1250,7 +1249,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @Nullable
     private Project getTermsOfUseProject(AgreeToTermsForm form)
     {
@@ -1260,13 +1258,11 @@ public class LoginController extends SpringActionController
             return PageFlowUtil.getTermsOfUseProject(getContainer(), form.getReturnUrl());
     }
 
-
     private boolean isTermsOfUseApproved(AgreeToTermsForm form)
     {
         Project termsProject = getTermsOfUseProject(form);
         return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
     }
-
 
     private static abstract class AbstractLoginForm extends ReturnUrlForm
     {
@@ -1296,7 +1292,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     public static class AgreeToTermsForm extends AbstractLoginForm
     {
         private boolean approvedTermsOfUse;
@@ -1317,7 +1312,6 @@ public class LoginController extends SpringActionController
             this.approvedTermsOfUse = approvedTermsOfUse;
         }
     }
-
 
     public static class LoginForm extends AgreeToTermsForm
     {
@@ -1368,7 +1362,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -1408,7 +1401,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
@@ -1437,7 +1429,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -1455,7 +1446,6 @@ public class LoginController extends SpringActionController
             return response;
         }
     }
-
 
     public static class SsoRedirectForm extends AbstractLoginForm
     {
@@ -1484,7 +1474,6 @@ public class LoginController extends SpringActionController
             _configuration = configuration;
         }
     }
-
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -1525,7 +1514,6 @@ public class LoginController extends SpringActionController
         {
         }
     }
-
 
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
@@ -1773,7 +1761,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     private static boolean attemptVerification(SetPasswordForm form, ValidEmail email, Errors errors)
     {
         String verification = form.getVerification();
@@ -1784,7 +1771,6 @@ public class LoginController extends SpringActionController
 
         return isVerified && !errors.hasErrors();
     }
-
 
     public static void checkVerificationErrors(boolean isVerified, User user, ValidEmail email, String verification, Errors errors)
     {
@@ -1818,7 +1804,6 @@ public class LoginController extends SpringActionController
                 errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
     }
-
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -1979,7 +1964,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @AllowedDuringUpgrade
     // @CSRF don't need CSRF for actions that require a password
@@ -2105,7 +2089,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     public static class SetPasswordForm extends AbstractLoginForm
     {
         private String _verification;
@@ -2169,7 +2152,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public class ResetPasswordAction extends FormViewAction<LoginForm>
@@ -2232,7 +2214,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @SuppressWarnings("unused")
     @RequiresLogin
     public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
@@ -2264,7 +2245,6 @@ public class LoginController extends SpringActionController
         {
         }
     }
-
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
@@ -2320,7 +2300,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
@@ -2338,7 +2317,6 @@ public class LoginController extends SpringActionController
             return AppProps.getInstance().getHomePageActionURL();
         }
     }
-
 
     public static class TokenAuthenticationForm extends ReturnUrlForm
     {
@@ -2360,7 +2338,6 @@ public class LoginController extends SpringActionController
             return getReturnURLHelper();
         }
     }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>

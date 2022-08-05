@@ -79,6 +79,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
@@ -91,7 +92,6 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -333,6 +333,32 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" SET autolinkTargetContainer = NULL WHERE autolinkTargetContainer = ?")
                 .add(studyContainer.getId());
         new SqlExecutor(ExperimentService.get().getSchema()).execute(sql);
+    }
+
+    public ExpSampleTypeImpl getSampleTypeByObjectId(Container c, Integer objectId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("ObjectId"), objectId);
+
+        MaterialSource materialSource = new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
+        if (materialSource == null)
+            return null;
+        return new ExpSampleTypeImpl(materialSource);
+    }
+
+    @Override
+    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName, @NotNull Date effectiveDate)
+    {
+        Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer);
+        if (legacyObjectId != null)
+            return getSampleTypeByObjectId(definitionContainer, legacyObjectId);
+
+        ExpSampleTypeImpl sampleType = getSampleType(definitionContainer, sampleTypeName);
+        if (sampleType != null && sampleType.getCreated().compareTo(effectiveDate) <= 0)
+            return sampleType;
+
+        return null;
+
     }
 
     @Override
@@ -596,7 +622,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException
     {
-        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
+        return createSampleType(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,nameExpression, null);
+    }
+
+    @NotNull
+    @Override
+    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
+            throws ExperimentException
+    {
+        return createSampleType(c,u,name,description,properties,indices,-1,-1,-1, -1, nameExpression, null);
     }
 
     @NotNull
@@ -928,8 +962,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
         String newName = StringUtils.trimToNull(update.getName());
+        String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
-        if (newName != null && !st.getName().equals(newName))
+        if (newName != null && !oldSampleTypeName.equals(newName))
         {
             ExpSampleType duplicateType = SampleTypeService.get().getSampleType(container, user, newName);
             if (duplicateType != null)
@@ -994,7 +1029,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
+            if (hasNameChange)
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            if (hasNameChange)
+                ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
             if (!errors.hasErrors())
             {
@@ -1026,7 +1066,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public boolean parentAliasHasCorrectFormat(String parentAlias)
     {
         //check if it is of the expected format or targeting the to be created sample type
-        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
+        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;
@@ -1071,7 +1111,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return createAuditRecord(c, comment, null, row, null);
     }
 
-    // move to UploadSamplesHelper?
     private boolean isInputFieldKey(String fieldKey)
     {
         int slash = fieldKey.indexOf('/');

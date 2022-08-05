@@ -308,6 +308,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
     public boolean allowTextChoiceProperties() { return true; }
+    public boolean allowSampleSubjectProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
 

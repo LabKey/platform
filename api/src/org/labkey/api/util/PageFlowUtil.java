@@ -248,6 +248,9 @@ public class PageFlowUtil
                 case '>':
                     sb.append("&gt;");
                     break;
+                case '\\':
+                    sb.append("&#92;");
+                    break;
                 case '\n':
                     if (encodeSpace)
                         sb.append("<br>\n");
@@ -358,7 +361,12 @@ public class PageFlowUtil
     {
         if (value == null)
             return "null";
-        String ret = PageFlowUtil.filter("\"" + PageFlowUtil.groovyString(value.toString()) + "\"");
+        String s = value.toString();
+        //replace single backslash
+        s = s.replaceAll("\\\\", "\\\\\\\\");
+        //replace double quote
+        s = s.replaceAll("\"", "\\\\\"");
+        String ret = PageFlowUtil.filter("\"" + s + "\"");
         ret = ret.replace("&#039;", "\\&#039;");
         return ret;
     }
@@ -439,16 +447,6 @@ public class PageFlowUtil
         }
         js.append("'");
         return js.toString();
-    }
-
-    //used to output strings from Java in Groovy script.
-    private static String groovyString(String s)
-    {
-        //replace single backslash
-        s = s.replaceAll("\\\\", "\\\\\\\\");
-        //replace double quote
-        s = s.replaceAll("\"", "\\\\\"");
-        return s;
     }
 
     private static final List<Pair<String, String>> _emptyPairList = Collections.emptyList();
@@ -1702,23 +1700,20 @@ public class PageFlowUtil
         }
     }
 
-
-    public static SafeToRender getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
+    public static SafeToRender getAppIncludes(ViewContext context, @NotNull PageConfig config)
     {
-        return _getStandardIncludes(context, null, resources, false, false);
+        return _getStandardIncludes(context, config, config.getClientDependencies(), false, false);
     }
-
 
     public static SafeToRender getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         return _getStandardIncludes(context, null, resources, true, includePostParameters);
     }
 
-    public static SafeToRender getStandardIncludes(ViewContext context, PageConfig config)
+    public static SafeToRender getStandardIncludes(ViewContext context, @NotNull PageConfig config)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
-
 
     private static SafeToRender _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
             boolean includeDefaultResources, boolean includePostParameters)
@@ -2327,7 +2322,7 @@ public class PageFlowUtil
 
         if (null != container)
         {
-            json.put("container", container.toJSON(user, false));
+            json.put("container", container.toJSON(user, config != null && config.isIncludePermissions()));
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
 
@@ -2352,7 +2347,7 @@ public class PageFlowUtil
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationCountByUser(null, user.getUserId(), true)));
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2890,9 +2885,10 @@ public class PageFlowUtil
         for (String paramName : clone.getParameterMap().keySet())
         {
             if (paramName.endsWith("." + QueryParam.offset))
-            {
                 clone.deleteParameter(paramName);
-            }
+            // CONSIDER: Should we whitelist params that don't contain a "."?  They are not usually dataregion related.
+            // We know pageId should not be persisted (Issue 45617)
+            clone.deleteParameter("pageId");
         }
 
         clone.deleteParameter(scope + DataRegion.LAST_FILTER_PARAM);
