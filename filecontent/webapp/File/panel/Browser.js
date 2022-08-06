@@ -2763,9 +2763,8 @@ Ext4.define('File.panel.Browser', {
                 if (values && values.folderName) {
                     var folder = values.folderName;
                     var browser = this;
-                    var modifiedPath = path;
                     this.fileSystem.createDirectory({
-                        path : (path + folder),
+                        path : (folder.indexOf("+") >= 0 || folder.indexOf("%") >= 0) ? (path + folder) : this.fileSystem.encodeForURL(path + folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();
