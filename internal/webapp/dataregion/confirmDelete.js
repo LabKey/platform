@@ -1,16 +1,15 @@
 
-Ext4.namespace("LABKEY.experiment");
+Ext4.namespace("LABKEY.dataregion");
 
-LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+LABKEY.dataregion.confirmDelete = function(dataRegionName, schemaName, queryName, controller, deleteConfirmationActionName, selectionKey, nounSingular, nounPlural, dependencyText, extraConfirmationContext = {}) {
     var loadingMsg = Ext4.Msg.show({
         title: "Retrieving data",
         msg: "Loading ..."
     });
     Ext4.Ajax.request({
-        url: LABKEY.ActionURL.buildURL('experiment', "getMaterialOperationConfirmationData.api", LABKEY.containerPath, {
+        url: LABKEY.ActionURL.buildURL(controller, deleteConfirmationActionName, LABKEY.containerPath, Object.assign({}, {
             dataRegionSelectionKey: selectionKey,
-            sampleOperation: 'Delete',
-        }),
+        }, extraConfirmationContext)),
         method: "GET",
         success: LABKEY.Utils.getCallbackWrapper(function(response) {
             loadingMsg.hide();
@@ -23,13 +22,6 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
-                var sampleStatusEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('samplemanagement') > -1;
-                var elnEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('labbook') > -1;
-                var dependencyText = 'derived sample, job, or assay data dependencies'
-                if (sampleStatusEnabled)
-                    dependencyText += ' or status that prevents deletion'
-               if (elnEnabled)
-                   dependencyText += ' or references in an active notebook'
                 var text;
                 if (totalNum === 0) {
                     text = "Either no " + nounPlural + " are selected for deletion or the selected " + nounPlural + " are no longer valid."
@@ -66,9 +58,6 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                     text += "</ul>";
                 }
 
-                if (numCannotDelete > 0) {
-                    text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets#delete') + "'>more info</a>)";
-                }
                 if (numCanDelete > 0) {
                     if (associatedDatasetsLength === 0) {
                         text += "<br/><br/>";
@@ -79,6 +68,7 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 Ext4.Msg.show({
                     title: numCanDelete > 0 ? "Permanently delete " + numCanDelete + " " + canDeleteNoun : "No " + nounPlural + " can be deleted",
                     msg: text,
+                    width: 450, // added to keep the text from being swallowed vertically
                     icon: Ext4.window.MessageBox.QUESTION,
                     buttons: numCanDelete === 0 ? Ext4.Msg.CANCEL : Ext4.Msg.OKCANCEL,
                     buttonText: numCanDelete === 0 ?
@@ -106,7 +96,6 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
                                     // clear the selection only for the rows that were deleted
-                                    // TODO: support clearing selection in query-deleteRows.api using a selectionKey
                                     const ids = canDelete.map((row) => row.RowId);
                                     const dr = LABKEY.DataRegions[dataRegionName];
                                     if (dr) {
