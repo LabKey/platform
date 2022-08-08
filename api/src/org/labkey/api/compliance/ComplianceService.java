@@ -19,12 +19,16 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.ColumnInfoFilter;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -89,6 +93,12 @@ public interface ComplianceService
     ColumnInfoFilter filter(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
 
     ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
+
+    // Signing module manages the compliance schema, but TermsOfUseTableInfo is intertwined with the Compliance module
+    // code, so keep it in Compliance
+    TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter);
+
+    StringExpression getSnapshotDownloadUrlExpression(Container c);
 
     class DefaultComplianceService implements ComplianceService
     {
@@ -157,6 +167,18 @@ public interface ComplianceService
         public ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi)
         {
             return NOOP_COLUMN_INFO_TRANSFORMER;
+        }
+
+        @Override
+        public TableInfo createTermsOfUseTable(UserSchema schema, ContainerFilter containerFilter)
+        {
+            return null;
+        }
+
+        @Override
+        public StringExpression getSnapshotDownloadUrlExpression(Container c)
+        {
+            return null;
         }
     }
 }

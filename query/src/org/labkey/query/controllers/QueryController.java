@@ -101,6 +101,7 @@ import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -7310,37 +7311,45 @@ public class QueryController extends SpringActionController
         {
             JSONObject ret = new JSONObject();
 
-            QueryService.QueryAnalysisService analysisService = QueryService.get().getQueryAnalysisService();
-            if (analysisService != null)
+            try
             {
-                DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
-                var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
-
-                analysisService.analyzeFolder(start, deps);
-                ret.put("success", true);
-
-                JSONObject objects = new JSONObject();
-                for (var from : deps.keySet())
+                QueryService.QueryAnalysisService analysisService = QueryService.get().getQueryAnalysisService();
+                if (analysisService != null)
                 {
-                    objects.put(from.getKey(), from.toJSON());
-                    for (var to : deps.get(from))
-                        objects.put(to.getKey(), to.toJSON());
-                }
-                ret.put("objects", objects);
+                    DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+                    var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
 
-                JSONArray dependants = new JSONArray();
-                for (var from : deps.keySet())
-                {
-                    for (var to : deps.get(from))
-                        dependants.put(new String[] {from.getKey(), to.getKey()});
+                    analysisService.analyzeFolder(start, deps);
+                    ret.put("success", true);
+
+                    JSONObject objects = new JSONObject();
+                    for (var from : deps.keySet())
+                    {
+                        objects.put(from.getKey(), from.toJSON());
+                        for (var to : deps.get(from))
+                            objects.put(to.getKey(), to.toJSON());
+                    }
+                    ret.put("objects", objects);
+
+                    JSONArray dependants = new JSONArray();
+                    for (var from : deps.keySet())
+                    {
+                        for (var to : deps.get(from))
+                            dependants.put(new String[] {from.getKey(), to.getKey()});
+                    }
+                    ret.put("graph", dependants);
                 }
-                ret.put("graph", dependants);
+                else
+                {
+                    ret.put("success", false);
+                }
+                return ret;
             }
-            else
+            catch (Throwable e)
             {
-                ret.put("success", false);
+                LOG.error(e);
+                throw UnexpectedException.wrap(e);
             }
-            return ret;
         }
     }
 

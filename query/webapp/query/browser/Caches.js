@@ -191,13 +191,15 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         if (!this.queries) {
             this.analyzeQueries({
                 containerPath : containerPath,
-                success : function(resp){
+                success : function(resp, opts){
                     this.processDependencies(resp);
                     if (Ext4.isFunction(success)){
-                        success.call(scope || this)
+                        success.call(scope || this, resp, opts);
                     }
                 },
-                failure : failure,
+                failure : function(resp, opts) {
+                    failure.call(scope || this, resp, opts);
+                },
                 scope : this
             });
         }
