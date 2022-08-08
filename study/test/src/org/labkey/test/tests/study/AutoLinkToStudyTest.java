@@ -250,6 +250,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
 
         impersonate(READER_USER);
         DataRegionTable table = DataRegionTable.DataRegion(getDriver()).withName("Dataset").waitFor();
+        table.setFilter("Run/Name", "Equals", runName);
         checker().withScreenshot("DatasetRows").verifyEquals("Incorrect number of row in dataset table", 6, table.getDataRowCount());
         checker().verifyFalse("View Source Assay button should not be visible for reader user", isElementPresent(Locator.tagWithText("span", "View Source Assay")));
     }
