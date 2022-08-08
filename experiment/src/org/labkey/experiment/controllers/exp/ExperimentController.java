@@ -3385,6 +3385,8 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+            if (form.getDataOperation() == null)
+                errors.reject(ERROR_REQUIRED, "An operation type must be provided.");
         }
 
         @Override
@@ -3401,6 +3403,7 @@ public class ExperimentController extends SpringActionController
             return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
     }
+
 
     public static class DataOperationConfirmationForm extends OperationConfirmationForm
     {
@@ -3499,6 +3502,29 @@ public class ExperimentController extends SpringActionController
         public void setSampleOperation(SampleTypeService.SampleOperations sampleOperation)
         {
             _sampleOperation = sampleOperation;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    {
+
+        @Override
+        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> permittedIds = form.getIds(false);
+
+            Set<Integer> notPermittedIds = new HashSet<>();
+
+            ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
+            permittedIds.removeAll(notPermittedIds);
+            List<Map<String, Integer>> permittedRows = permittedIds.stream()
+                    .map(id -> Map.of("RowId", id))
+                    .collect(Collectors.toList());
+            return success(Map.of("allowed", permittedRows, "notAllowed", notPermittedIds));
+
         }
     }
 
