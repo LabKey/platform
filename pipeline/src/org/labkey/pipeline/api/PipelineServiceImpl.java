@@ -800,10 +800,19 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName)
     {
+        ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
+        options.setFolderArchiveSourceName(sourceName);
+        // Issue 45531 : query validation is off by default
+        options.setSkipQueryValidation(true);
+
+        return runGenerateFolderArchiveAndImportJob(c, user, url, options);
+    }
+
+    @Override
+    public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options)
+    {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
         Path folderXml = new File(pipelineRoot.getRootPath(), "folder.xml").toPath();
-        ImportOptions options = new ImportOptions(c.getId(), user.getUserId()); // TODO: Review: Any other options? Query validation?
-        options.setFolderArchiveSourceName(sourceName);
 
         return runFolderImportJob(c, user, null, folderXml, "folder.xml", pipelineRoot, options);
     }

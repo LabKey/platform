@@ -206,6 +206,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     FolderArchiveSource getFolderArchiveSource(String name);
 
     boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName);
+    boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);
 
