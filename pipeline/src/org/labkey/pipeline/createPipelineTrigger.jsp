@@ -28,14 +28,13 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("internal/jQuery");
-//        dependencies.add("http://localhost:3001/createPipelineTrigger.js");
         dependencies.add("gen/createPipelineTrigger");
     }
 %>
@@ -74,40 +73,57 @@
     }
 %>
 
-<div id="<%=h(appId)%>"></div>
+<%
+    if (PipelineTriggerRegistry.get().getTypes().isEmpty()) { // PREMIUM UPSELL
+%>
+    <div class="alert alert-info">
+        <h3>There are no pipeline trigger types available on this server.</h3>
+        <hr>
+        <p>Premium edition subscribers have access to powerful <a class="alert-link" href="<%=h(docLink)%>">file watcher</a>
+            triggers that can automatically initiate pipeline tasks.</p>
+        <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
+        <br>
+        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank" rel="noopener noreferrer">Go Premium <i class="fa fa-external-link"></i></a></p>
+    </div>
+<%
+    } else {
+%>
+    <div id="<%=h(appId)%>"></div>
 
-<script type="application/javascript">
-    const detailsFormSchema = JSON.parse(<%=q(jsonMapper.writeValueAsString(detailsFormSchema))%>);
-    const taskFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(taskFormSchemas))%>);
-    const customFieldFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(customFieldFormSchemas))%>);
-    const tasksHelpText = JSON.parse(<%=q(jsonMapper.writeValueAsString(tasksHelpText))%>);
-    const rowId = <%=bean.getRowId()%>;
-    const details = {
-        "assay provider": <%=q(bean.getAssayProvider())%> || undefined,
-        description: <%=q(bean.getDescription())%>,
-        enabled: <%=bean.isEnabled()%>,
-        name: <%=q(bean.getName())%>,
-        pipelineId: <%=q(bean.getPipelineId())%>,
-        type: <%=q(bean.getType())%>,
-        username: <%=q(bean.getUsername())%> || <%=q(getUser().getDisplayName(getUser()))%>
-    };
-    const triggerConfig = JSON.parse(<%=q(bean.getConfiguration())%>);
-    delete triggerConfig.parameters; // The CreatePipelineTrigger component does not expect this parameter.
-    const customConfig = JSON.parse(<%=q(bean.getCustomConfiguration())%>);
-    const docsHref = <%=q(docLink)%>;
-    const returnUrl = <%=q(bean.getReturnActionURL().toString())%>;
+    <script type="application/javascript">
+        const detailsFormSchema = JSON.parse(<%=q(jsonMapper.writeValueAsString(detailsFormSchema))%>);
+        const taskFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(taskFormSchemas))%>);
+        const customFieldFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(customFieldFormSchemas))%>);
+        const tasksHelpText = JSON.parse(<%=q(jsonMapper.writeValueAsString(tasksHelpText))%>);
+        const rowId = <%=bean.getRowId()%>;
+        const details = {
+            "assay provider": <%=q(bean.getAssayProvider())%> || undefined,
+            description: <%=q(bean.getDescription())%>,
+            enabled: <%=bean.isEnabled()%>,
+            name: <%=q(bean.getName())%>,
+            pipelineId: <%=q(bean.getPipelineId())%>,
+            type: <%=q(bean.getType())%>,
+            username: <%=q(bean.getUsername())%> || <%=q(getUser().getDisplayName(getUser()))%>
+        }
+        const triggerConfig = JSON.parse(<%=q(bean.getConfiguration())%>);
+        delete triggerConfig.parameters; // The CreatePipelineTrigger component does not expect this parameter.
+        const customConfig = JSON.parse(<%=q(bean.getCustomConfiguration())%>);
+        const docsHref = <%=q(docLink)%>;
+        const returnUrl = <%=q(bean.getReturnActionURL().toString())%>;
 
-    LABKEY.App.loadApp('createPipelineTrigger', <%=q(appId)%>, {
-        customConfig,
-        customFieldFormSchemas,
-        details,
-        detailsFormSchema,
-        docsHref,
-        returnUrl,
-        rowId,
-        taskFormSchemas,
-        tasksHelpText,
-        triggerConfig,
-    });
-</script>
-
+        LABKEY.App.loadApp('createPipelineTrigger', <%=q(appId)%>, {
+            customConfig,
+            customFieldFormSchemas,
+            details,
+            detailsFormSchema,
+            docsHref,
+            returnUrl,
+            rowId,
+            taskFormSchemas,
+            tasksHelpText,
+            triggerConfig,
+        });
+    </script>
+<%
+    }
+%>
