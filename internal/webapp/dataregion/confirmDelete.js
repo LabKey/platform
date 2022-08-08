@@ -17,7 +17,7 @@ LABKEY.dataregion.confirmDelete = function(dataRegionName, schemaName, queryName
                 var numCanDelete = response.data.allowed.length;
                 var numCannotDelete = response.data.notAllowed.length;
                 var associatedDatasets = response.data.associatedDatasets;
-                var associatedDatasetsLength = associatedDatasets.length;
+                var associatedDatasetsLength = associatedDatasets ? associatedDatasets.length : 0;
                 var canDeleteNoun = numCanDelete === 1 ? nounSingular : nounPlural;
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
