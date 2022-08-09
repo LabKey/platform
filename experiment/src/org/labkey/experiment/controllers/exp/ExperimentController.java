@@ -3505,29 +3505,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
-    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
-    {
-
-        @Override
-        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
-        {
-            Collection<Integer> permittedIds = form.getIds(false);
-
-            Set<Integer> notPermittedIds = new HashSet<>();
-
-            ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
-            permittedIds.removeAll(notPermittedIds);
-            List<Map<String, Integer>> permittedRows = permittedIds.stream()
-                    .map(id -> Map.of("RowId", id))
-                    .collect(Collectors.toList());
-            return success(Map.of("allowed", permittedRows, "notAllowed", notPermittedIds));
-
-        }
-    }
-
     @RequiresPermission(DeletePermission.class)
     public class DeleteSelectedDataAction extends AbstractDeleteAction
     {
