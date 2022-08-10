@@ -51,7 +51,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +59,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -88,13 +88,15 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             public int getMaxRows()
             {
                 // Return one less than the Excel max since we'll generally be including at least one header row
+                assert 65535 == SpreadsheetVersion.EXCEL97.getMaxRows() - 1;
                 return 65535;
             }
 
             @Override
             public int getMaxColumns()
             {
-                return HSSFCell.LAST_COLUMN_NUMBER + 1;
+                assert HSSFCell.LAST_COLUMN_NUMBER + 1 == SpreadsheetVersion.EXCEL97.getMaxColumns();
+                return SpreadsheetVersion.EXCEL97.getMaxColumns();
             }
 
             @Override
@@ -111,7 +113,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     if (null == propsTemp)
                         propsTemp = new CustomProperties();
                     CustomProperties props = propsTemp;
-                    metadata.forEach(props::put);
+                    props.putAll(metadata);
                     hssfWorkbook.getDocumentSummaryInformation().setCustomProperties(props);
                 }
             }
@@ -123,7 +125,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             {
                 // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
                 // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
-                return new SXSSFWorkbook(1000);
+                return new SXSSFWorkbook(1000){
+                    @Override
+                    public void close() throws IOException
+                    {
+                        super.close();
+                        dispose(); // Required to clean up temp/poifiles, #46060
+                    }
+                };
             }
 
             @Override
@@ -135,14 +144,16 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             @Override
             public int getMaxRows()
             {
+                assert 1048575 == SpreadsheetVersion.EXCEL2007.getMaxRows() - 1;
                 // Return one less than the Excel max since we'll generally be including at least one header row
-                return 1048575;
+                return SpreadsheetVersion.EXCEL2007.getMaxRows() - 1;
             }
 
             @Override
             public int getMaxColumns()
             {
-                return SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1;
+                assert SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1 == SpreadsheetVersion.EXCEL2007.getMaxColumns();
+                return SpreadsheetVersion.EXCEL2007.getMaxColumns();
             }
 
             @Override
@@ -213,13 +224,8 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public ExcelWriter(ExcelDocumentType docType)
     {
-        this(docType, null);
-    }
-
-    protected ExcelWriter(ExcelDocumentType docType, @Nullable Workbook workbook)
-    {
         _docType = docType;
-        _workbook = workbook == null ? docType.createWorkbook() : workbook;
+        _workbook = docType.createWorkbook();
     }
 
     public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
@@ -286,20 +292,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    public void createColumns(ResultSetMetaData md) throws SQLException
-    {
-        int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++)
-        {
-            int sqlColumn = i + 1;
-            cols.add(new BaseColumnInfo(md, sqlColumn));
-        }
-
-        setColumns(cols);
-    }
-
     public void setResultsFactory(@NotNull ResultsFactory factory)
     {
         _factory = factory;
@@ -328,10 +320,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public String getSheetName(int index)
     {
-        if (null == _sheetName)
-            return "data" + (index == 0 ? "" : Integer.toString(index));
-        else
-            return _sheetName;
+        return Objects.requireNonNullElseGet(_sheetName, () -> "data" + (index == 0 ? "" : Integer.toString(index)));
     }
 
     public void setFooter(String footer)
@@ -350,10 +339,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public String getFilenamePrefix()
     {
-        if (null == _filenamePrefix)
-            return getSheetName(0).replaceAll(" ", "_");
-        else
-            return _filenamePrefix;
+        return Objects.requireNonNullElseGet(_filenamePrefix, () -> getSheetName(0).replaceAll(" ", "_"));
     }
 
 
@@ -365,7 +351,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setHeaders(@NotNull List<String> headers)
     {
-        _headers = Collections.unmodifiableList(new ArrayList<>(headers));
+        _headers = List.copyOf(headers);
     }
 
     public void setHeaders(String... headers)
@@ -504,13 +490,15 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _metadata = metadata;
     }
 
-    // Write the spreadsheet to the file system.
-    public void renderSheetAndWrite(OutputStream stream)
+    /**
+     * Renders the sheet(s) and writes the workbook to the supplied stream
+     */
+    public void renderWorkbook(OutputStream stream)
     {
-        try
+        try (Workbook workbook = _workbook)
         {
-            renderNewSheet();
-            _write(stream);
+            renderSheets(workbook);
+            _write(workbook, stream);
         }
         catch (IOException e)
         {
@@ -518,47 +506,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    @Deprecated // Use renamed method renderSheetAndWrite
-    public void write(HttpServletResponse response)
-    {
-        renderSheetAndWrite(response);
-    }
-
     /**
-     * Renders the sheet then writes out the workbook to supplied stream
-     * @param response to write out the file
+     * Renders the sheet(s) and writes the workbook to the supplied response
      */
-    public void renderSheetAndWrite(HttpServletResponse response)
+    public void renderWorkbook(HttpServletResponse response)
     {
-        renderSheetAndWrite(response, getFilenamePrefix());
-    }
-
-    /**
-     * Writes out the workbook to the response stream
-     * @param response to write to
-     */
-    public void writeWorkbook(HttpServletResponse response)
-    {
-        writeWorkbook(response, getFilenamePrefix());
-    }
-
-    // Create the spreadsheet and stream it to the browser.
-    public void renderSheetAndWrite(HttpServletResponse response, String filenamePrefix)
-    {
-        renderNewSheet();
-        writeWorkbook(response, filenamePrefix);
-    }
-
-    /**
-     * Write workbook out to supplied response
-     * @param response to write to
-     * @param filenamePrefix string to prepend to a time stamp as filename
-     */
-    public void writeWorkbook(HttpServletResponse response, String filenamePrefix)
-    {
-        try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
+        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), _docType))
         {
-            _write(outputStream);
+            renderWorkbook(outputStream);
         }
         catch (IOException e)
         {
@@ -576,11 +531,26 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    // Should be called within a try/catch
-    private void _write(OutputStream stream) throws IOException
+    /**
+     * By default, this renders a single sheet and writes the workbook. Subclasses can override to write multiple sheets, etc.
+     */
+    protected void renderSheets(Workbook workbook)
     {
-        _docType.setMetadata(_workbook, _metadata);
-        _workbook.write(stream);
+        renderNewSheet();
+    }
+
+    public void renderNewSheet()
+    {
+        _currentRow = 0;
+        _currentSheet++;
+        renderSheet(_workbook, _currentSheet);
+    }
+
+    // Should be called within a try/catch
+    private void _write(Workbook workbook, OutputStream stream) throws IOException
+    {
+        _docType.setMetadata(workbook, _metadata);
+        workbook.write(stream);
         stream.flush();
     }
 
@@ -621,6 +591,55 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return null;
     }
 
+    /**
+     * Renders the sheet then writes out the workbook to supplied stream
+     * @param response to write out the file
+     */
+    @Deprecated
+    public void renderSheetAndWrite(HttpServletResponse response)
+    {
+        renderNewSheet();
+        writeWorkbook(_workbook, response, getFilenamePrefix());
+    }
+
+    /**
+     * Writes out the workbook to the response stream
+     * @param response to write to
+     */
+    @Deprecated
+    public void writeWorkbook(HttpServletResponse response)
+    {
+        writeWorkbook(_workbook, response, getFilenamePrefix());
+    }
+
+    /**
+     * Write workbook out to supplied response
+     * @param response to write to
+     * @param filenamePrefix string to prepend to a time stamp as filename
+     */
+    @Deprecated
+    private void writeWorkbook(Workbook workbook, HttpServletResponse response, String filenamePrefix)
+    {
+        try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
+        {
+            _write(workbook, outputStream);
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+        catch (OpenXML4JRuntimeException e)
+        {
+            // We can get this message if there's an IOException when writing out the document to the stream.
+            // It happens because the browser has disconnected before receiving the full file. We can safely ignore it.
+            // Otherwise, rethrow. See issue #14987
+            if (e.getMessage() == null || e.getMessage().contains("to be saved in the stream with marshaller"))
+            {
+                throw e;
+            }
+        }
+    }
+
     public int getCurrentRow()
     {
         return _currentRow;
@@ -652,37 +671,25 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    public void renderNewSheet()
-    {
-        _currentRow = 0;
-        _currentSheet++;
-        renderSheet(_currentSheet);
-    }
-
-    public void renderCurrentSheet()
-    {
-        renderSheet(_currentSheet);
-    }
-
-    public void renderSheet(int sheetNumber)
+    public void renderSheet(Workbook workbook, int sheetNumber)
     {
         Sheet sheet;
         //TODO: Pass render context all the way through Excel writers...
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
-        if (_workbook.getNumberOfSheets() > sheetNumber)
+        if (workbook.getNumberOfSheets() > sheetNumber)
         {
-            sheet = _workbook.getSheetAt(sheetNumber);
+            sheet = workbook.getSheetAt(sheetNumber);
         }
         else
         {
-            sheet = _workbook.getSheet(getSheetName(sheetNumber));
+            sheet = workbook.getSheet(getSheetName(sheetNumber));
             if (sheet == null)
             {
-                sheet = _workbook.createSheet(getSheetName(sheetNumber));
+                sheet = workbook.createSheet(getSheetName(sheetNumber));
                 sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
 
-                Drawing drawing = sheet.createDrawingPatriarch();
+                Drawing<?> drawing = sheet.createDrawingPatriarch();
                 ctx.put(SHEET_DRAWING, drawing);
                 ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
                 ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
@@ -722,14 +729,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List visibleColumns)
+    public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns)
     {
-        if (sheet instanceof SXSSFSheet)
-            ((SXSSFSheet)sheet).trackAllColumnsForAutoSizing();
+        if (sheet instanceof SXSSFSheet sx)
+            sx.trackAllColumnsForAutoSizing();
 
         for (int column = visibleColumns.size() - 1; column >= 0; column--)
         {
-            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
+            visibleColumns.get(column).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
         }
     }
 

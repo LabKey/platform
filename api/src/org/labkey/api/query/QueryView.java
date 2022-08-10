@@ -2764,7 +2764,7 @@ public class QueryView extends WebPartView<Object>
                 if (config.getPrefix() != null)
                     ew.setFilenamePrefix(config.getPrefix());
                 ew.setAutoSize(true);
-                ew.renderSheetAndWrite(config.getResponse());
+                ew.renderWorkbook(config.getResponse());
 
                 if (!config.getTemplateOnly())
                     logAuditEvent("Exported to Excel", ew.getDataRowCount());
@@ -2793,7 +2793,7 @@ public class QueryView extends WebPartView<Object>
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
-                ew.renderSheetAndWrite(stream);
+                ew.renderWorkbook(stream);
                 stream.flush();
                 String extension = docType.name();
                 String filename = includeTimestamp ?

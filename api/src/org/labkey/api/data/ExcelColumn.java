@@ -896,7 +896,7 @@ public class ExcelColumn extends RenderColumn
             {
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
                 {
-                    excel.renderSheetAndWrite(baos);
+                    excel.renderWorkbook(baos);
                     Sheet wb = WorkbookFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
                     DataFormatter formatter = new DataFormatter();
                     for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)

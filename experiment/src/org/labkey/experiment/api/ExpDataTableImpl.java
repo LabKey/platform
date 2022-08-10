@@ -955,7 +955,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
                     try (OutputStream os = f.getOutputStream("excel.xlsx"))
                     {
-                        excel.renderSheetAndWrite(os);
+                        excel.renderWorkbook(os);
                     }
 
                     try (ExcelLoader loader = new ExcelLoader(f.getInputStream("excel.xlsx"), true, getProject()))
