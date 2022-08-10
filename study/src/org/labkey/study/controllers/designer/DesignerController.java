@@ -345,9 +345,12 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
-            xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
-            xlWriter.renderWorkbook(response);
+
+            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols))
+            {
+                xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
+                xlWriter.renderWorkbook(response);
+            }
         }
     }
 

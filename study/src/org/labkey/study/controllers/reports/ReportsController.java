@@ -1647,9 +1647,11 @@ public class ReportsController extends BaseStudyController
                             rows.add(row);
                         }
 
-                        MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()]));
-                        xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + assayData.get("name"), "#"));
-                        xlWriter.renderWorkbook(response);
+                        try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()])))
+                        {
+                            xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + assayData.get("name"), "#"));
+                            xlWriter.renderWorkbook(response);
+                        }
                     }
                 }
             }

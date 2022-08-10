@@ -408,7 +408,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         addColumns(columns);
     }
 
-    // ColumnModifier will be invoked on each visible ExcelColumn at creation time
+    // Column modifier will be invoked on each visible ExcelColumn at creation time
     public void setColumnModifier(Consumer<ExcelColumn> columnModifier)
     {
         _columnModifier = columnModifier;

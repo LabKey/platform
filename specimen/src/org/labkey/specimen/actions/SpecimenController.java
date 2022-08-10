@@ -1127,9 +1127,11 @@ public class SpecimenController extends SpringActionController
             List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-            xlWriter.renderWorkbook(getViewContext().getResponse());
+            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns()))
+            {
+                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+                xlWriter.renderWorkbook(getViewContext().getResponse());
+            }
 
             return null;
         }
