@@ -176,7 +176,7 @@ public class ExperimentRunListView extends QueryView
 
         if (showDeleteButton())
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteRunsURL(context.getContainer());
             ActionButton deleteButton = new ActionButton(url, "Delete");
             deleteButton.setIconCls("trash");
             deleteButton.setActionType(ActionButton.Action.POST);
@@ -184,11 +184,11 @@ public class ExperimentRunListView extends QueryView
             deleteButton.setDisplayPermission(DeletePermission.class);
             deleteButton.setScript("LABKEY.dataregion.confirmDelete(" +
                     PageFlowUtil.jsString(getDataRegionName()) + ", " +
-                    PageFlowUtil.jsString(getSchema().getName())  + ", " +
+                    PageFlowUtil.jsString("assay." + getSchema().getName())  + ", " +
                     PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
                     "'assay', 'getAssayRunDeletionConfirmationData.api', " +
                     PageFlowUtil.jsString(getSelectionKey()) + ", " +
-                    "'assay run', 'assay runs', 'references in one or more active notebooks')");
+                    "'assay run', 'assay runs', 'references in one or more active notebooks', {}, " + PageFlowUtil.jsString(url) + ", 'rowIds')");
             bar.add(deleteButton);
         }
 

@@ -1739,10 +1739,7 @@ public class AssayController extends SpringActionController
             ExperimentService.get().getObjectReferencers().forEach(referencer ->
                     notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
             permittedIds.removeAll(notPermittedIds);
-            List<Map<String, Integer>> permittedRows = permittedIds.stream()
-                    .map(id -> Map.of("RowId", id))
-                    .collect(Collectors.toList());
-            return success(Map.of("allowed", permittedRows, "notAllowed", notPermittedIds));
+            return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
 
         }
     }

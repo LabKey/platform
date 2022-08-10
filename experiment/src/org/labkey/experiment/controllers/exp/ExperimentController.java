@@ -3206,8 +3206,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(CascadeDeleteForm form, Errors errors)
         {
-            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
-                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId, dataRegionSelectionKey, or rowIds is required");
         }
 
         @Override
@@ -6481,6 +6481,12 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
             return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
+        }
+
+        @Override
+        public ActionURL getDeleteRunsURL(Container container)
+        {
+            return new ActionURL(DeleteRunsAction.class, container);
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)

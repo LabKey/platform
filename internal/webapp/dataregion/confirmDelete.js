@@ -1,7 +1,19 @@
 
 Ext4.namespace("LABKEY.dataregion");
 
-LABKEY.dataregion.confirmDelete = function(dataRegionName, schemaName, queryName, controller, deleteConfirmationActionName, selectionKey, nounSingular, nounPlural, dependencyText, extraConfirmationContext = {}) {
+LABKEY.dataregion.confirmDelete = function(
+        dataRegionName,
+        schemaName,
+        queryName,
+        controller,
+        deleteConfirmationActionName,
+        selectionKey,
+        nounSingular,
+        nounPlural,
+        dependencyText,
+        extraConfirmationContext = {},
+        deleteUrl = LABKEY.ActionURL.buildURL('query', 'deleteRows'),
+        rowParameterName = 'rows') {
     var loadingMsg = Ext4.Msg.show({
         title: "Retrieving data",
         msg: "Loading ..."
@@ -86,12 +98,12 @@ LABKEY.dataregion.confirmDelete = function(dataRegionName, schemaName, queryName
                         else if (btn === 'ok') {
                             const canDelete = response.data.allowed;
                             Ext4.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
+                                url: deleteUrl,
                                 method: 'POST',
                                 jsonData: {
                                     schemaName: schemaName,
                                     queryName: queryName,
-                                    rows: canDelete,
+                                    [rowParameterName]: canDelete,
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
@@ -106,9 +118,10 @@ LABKEY.dataregion.confirmDelete = function(dataRegionName, schemaName, queryName
                                     }
 
                                     Ext4.Msg.hide();
+                                    var numDeleted = response.rowsAffected ? response.rowsAffected : ids.length;
                                     var responseMsg = Ext4.Msg.show({
                                         title: "Delete " + totalNoun,
-                                        msg:  response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted."
+                                        msg:  numDeleted + " " + (numDeleted === 1 ? nounSingular : nounPlural) + " deleted."
                                     });
                                     Ext4.defer(function() {
                                         responseMsg.hide();
