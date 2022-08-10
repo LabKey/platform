@@ -389,30 +389,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _captionRowVisible = captionRowVisible;
     }
 
-
-    public ExcelColumn getExcelColumn(int index)
-    {
-        return _columns.get(index);
-    }
-
-
-    public ExcelColumn getExcelColumn(String columnName)
-    {
-        for (ExcelColumn column : _columns)
-        {
-            if (column.getName().equalsIgnoreCase(columnName))
-                return column;
-        }
-
-        return null;
-    }
-
-
     private void addColumn(DisplayColumn col)
     {
         _columns.add(new ExcelColumn(col, _formatters, _workbook));
     }
-
 
     private void addDisplayColumns(List<DisplayColumn> columns)
     {
@@ -424,7 +404,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     private void addColumns(List<ColumnInfo> cols)
     {
         for (ColumnInfo col : cols)
@@ -435,13 +414,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     public void setDisplayColumns(List<DisplayColumn> columns)
     {
         _columns = new ArrayList<>(10);
         addDisplayColumns(columns);
     }
-
 
     public void setColumns(List<ColumnInfo> columns)
     {
@@ -454,7 +431,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     {
         return _columns;
     }
-
 
     public List<ExcelColumn> getVisibleColumns(RenderContext ctx)
     {
@@ -476,7 +452,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
         return visibleColumns;
     }
-
 
     // Sets AutoSize property on all columns
     public void setAutoSize(boolean autoSize)
