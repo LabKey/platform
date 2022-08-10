@@ -1129,6 +1129,8 @@ public class SpecimenController extends SpringActionController
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
             try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns()))
             {
+                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+                // the DisplayColumn's caption, not its own caption. That seems wrong...
                 xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
                 xlWriter.renderWorkbook(getViewContext().getResponse());
             }
