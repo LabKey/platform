@@ -16,7 +16,6 @@
 package org.labkey.issue.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
@@ -54,8 +53,7 @@ public class SummaryWebPart extends JspView<IssuesController.SummaryBean>
             return;
 
         ActionURL listUrl = new ActionURL(IssuesController.ListAction.class, getViewContext().getContainer()).
-                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).
-                addParameter(DataRegion.LAST_FILTER_PARAM, true);
+                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName);
 
         setTitleHref(listUrl);
 
