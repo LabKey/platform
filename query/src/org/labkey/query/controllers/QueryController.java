@@ -1692,7 +1692,7 @@ public class QueryController extends SpringActionController
 
         public String getFilename()
         {
-            return this.filename;
+            return filename;
         }
 
         public void setQueryForms(List<ExportQueryForm> queryForms)
@@ -1702,7 +1702,7 @@ public class QueryController extends SpringActionController
 
         public List<ExportQueryForm> getQueryForms()
         {
-            return this.queryForms;
+            return queryForms;
         }
 
         /**
@@ -1751,7 +1751,7 @@ public class QueryController extends SpringActionController
             for (JSONObject queryModel : models.toJSONObjectArray())
             {
                 ExportQueryForm qf = new ExportQueryForm();
-                qf.setViewContext(this.getViewContext());
+                qf.setViewContext(getViewContext());
 
                 qf.bindParameters(getPropertyValues(queryModel));
                 forms.add(qf);
@@ -1775,10 +1775,9 @@ public class QueryController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
             response.setHeader("Content-Disposition", "attachment");
-
             ViewContext viewContext = getViewContext();
 
-            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx){
+            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
                 @Override
                 protected void renderSheets(Workbook workbook)
                 {
@@ -1788,12 +1787,17 @@ public class QueryController extends SpringActionController
                         qf.getSchema();
 
                         QueryView qv = qf.getQueryView();
-                        qv.exportToExcelSheet(this, workbook,
-                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
-                                .setExcludeColumns(qf.getExcludeColumns())
-                                .setRenamedColumns(qf.getRenameColumnMap()),
-                            qf.getSheetName()
-                        );
+                        QueryView.ExcelExportConfig config = new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                            .setExcludeColumns(qf.getExcludeColumns())
+                            .setRenamedColumns(qf.getRenameColumnMap());
+                        String sheetName = qf.getSheetName();
+                        qv.configureExcelWriter(this, config);
+                        String name = StringUtils.isNotBlank(sheetName)? sheetName : qv.getQueryDef().getName();
+                        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(qv.getDataRegionName()) ? qv.getDataRegionName() : "Data";
+                        setSheetName(name);
+                        setAutoSize(true);
+                        renderNewSheet(workbook);
+                        qv.logAuditEvent("Exported to Excel", getDataRowCount());
                     }
 
                     workbook.setActiveSheet(0);
@@ -1840,12 +1844,12 @@ public class QueryController extends SpringActionController
 
         public FieldKey[] getIncludeColumn()
         {
-            return this.includeColumn;
+            return includeColumn;
         }
 
         public void setIncludeColumn(FieldKey[] includeColumn)
         {
-            this.includeColumn = includeColumn;
+            includeColumn = includeColumn;
         }
 
         public String getFilenamePrefix()
@@ -1855,7 +1859,7 @@ public class QueryController extends SpringActionController
 
         public void setFilenamePrefix(String prefix)
         {
-            this.filenamePrefix = prefix;
+            filenamePrefix = prefix;
         }
 
         public String getFileType()
@@ -1865,7 +1869,7 @@ public class QueryController extends SpringActionController
 
         public void setFileType(String fileType)
         {
-            this.fileType = fileType;
+            fileType = fileType;
         }
     }
 
@@ -1951,7 +1955,7 @@ public class QueryController extends SpringActionController
 
         public String getSheetName()
         {
-            return this.sheetName;
+            return sheetName;
         }
 
         public ColumnHeaderType getHeaderType()
@@ -2449,7 +2453,6 @@ public class QueryController extends SpringActionController
         {
             this.newName = newName;
         }
-
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5493,7 +5496,6 @@ public class QueryController extends SpringActionController
         {
             this.replace = replace;
         }
-
     }
 
     // Moves a session view into the database.
@@ -5992,7 +5994,6 @@ public class QueryController extends SpringActionController
         {
             this.validateIds = validateIds;
         }
-
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -7383,7 +7384,7 @@ public class QueryController extends SpringActionController
         @Override
         protected ObjectMapper createResponseObjectMapper()
         {
-            return this.createRequestObjectMapper();
+            return createRequestObjectMapper();
         }
 
         @Override
@@ -7417,7 +7418,7 @@ public class QueryController extends SpringActionController
         @Override
         protected ObjectMapper createResponseObjectMapper()
         {
-            return this.createRequestObjectMapper();
+            return createRequestObjectMapper();
         }
 
         @Override

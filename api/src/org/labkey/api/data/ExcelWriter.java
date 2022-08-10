@@ -650,12 +650,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return null;
     }
 
-    @Deprecated
-    public void renderNewSheet()
-    {
-        renderNewSheet(_workbook);
-    }
-
     public int getCurrentRow()
     {
         return _currentRow;
