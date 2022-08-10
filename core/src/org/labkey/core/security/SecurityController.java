@@ -1083,7 +1083,6 @@ public class SecurityController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
     {

@@ -2776,7 +2776,6 @@ public class QueryView extends WebPartView<Object>
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
                 ew.renderWorkbook(stream);
-                stream.flush();
                 String extension = docType.name();
                 String filename = includeTimestamp ?
                                     FileUtil.makeFileNameWithTimestamp(ew.getFilenamePrefix(), extension) :

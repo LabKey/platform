@@ -67,7 +67,7 @@ public class SpecimenReportExcelWriter
             settings.setArrayGrowSize(300000);
             workbook = Workbook.createWorkbook(ostream, settings);
 
-            for (SpecimenVisitReport report : _parameters.getReports())
+            for (SpecimenVisitReport<?> report : _parameters.getReports())
                 writeReport(workbook, report);
         }
         catch (WriteException | IOException e)

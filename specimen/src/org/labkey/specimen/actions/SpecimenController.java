@@ -5199,7 +5199,6 @@ public class SpecimenController extends SpringActionController
                         try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
                         {
                             xlsWriter.renderWorkbook(ostream);
-                            ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }
                     }
