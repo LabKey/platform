@@ -211,8 +211,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private int _currentRow = 0;
     private int _currentSheet = -1;
 
-    private final Workbook _workbook;
-
     // Some columns may need to be Aliased (e.g., Name -> Sample ID)
     private Map<String, String> _renameColumnMap;
 
@@ -224,7 +222,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public ExcelWriter(ExcelDocumentType docType)
     {
         _docType = docType;
-        _workbook = docType.createWorkbook();
     }
 
     public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
@@ -258,6 +255,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns, @Nullable List<FieldKey> excludeColumns)
     {
         _insertableColumnsOnly = b;
+
+        // Consider: just set the boolean and stash the column lists in this method, deferring the "insertable" checks
+        // until ExcelColumn creation time. That's arguably more correct since setColumns/addColumns don't currently
+        // respect includeColumns & excludeColumns.
         if (_insertableColumnsOnly)
         {
             // Remove any insert only columns that have already made their way into the list
@@ -266,9 +267,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             while (i.hasNext())
             {
                 DisplayColumn dc = i.next();
-                if (dc == null)
-                    continue;
-
                 ColumnInfo c = dc.getColumnInfo();
                 if (c == null)
                     continue;
@@ -378,18 +376,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _captionRowVisible = captionRowVisible;
     }
 
-    private void addColumn(DisplayColumn col)
-    {
-        _columns.add(col);
-    }
-
     private void addDisplayColumns(List<DisplayColumn> columns)
     {
         for (DisplayColumn column : columns)
         {
             if (_insertableColumnsOnly && (null == column.getColumnInfo() || !column.getColumnInfo().isShownInInsertView()))
                 continue;
-            addColumn(column);
+            _columns.add(column);
         }
     }
 
@@ -399,7 +392,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             if (_insertableColumnsOnly && !col.isShownInInsertView())
                 continue;
-            addColumn(new DataColumn(col));
+            _columns.add(new DataColumn(col));
         }
     }
 
@@ -435,9 +428,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     /**
      * Renders the sheet(s) and writes the workbook to the supplied stream
      */
-    public void renderWorkbook(OutputStream stream)
+    public final void renderWorkbook(OutputStream stream)
     {
-        try (Workbook workbook = _workbook)
+        try (Workbook workbook = _docType.createWorkbook())
         {
             renderSheets(workbook);
             _write(workbook, stream);
