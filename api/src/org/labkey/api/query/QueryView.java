@@ -368,7 +368,7 @@ public class QueryView extends WebPartView<Object>
      * @param config settings to apply to writer prior to sheet export
           * @param sheetName Name to give to sheet, if not unique within workbook existing sheet will be overwritten
      */
-    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config, @Nullable String sheetName)
+    public void exportToExcelSheet(ExcelWriter writer, Workbook workbook, ExcelExportConfig config, @Nullable String sheetName)
     {
         configureExcelWriter(writer, config);
         String name = StringUtils.isNotBlank(sheetName)? sheetName : getQueryDef().getName();

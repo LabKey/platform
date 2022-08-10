@@ -27,6 +27,7 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -1775,26 +1776,32 @@ public class QueryController extends SpringActionController
             response.setHeader("X-Robots-Tag", "noindex");
             response.setHeader("Content-Disposition", "attachment");
 
-            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
+            ViewContext viewContext = getViewContext();
+
+            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx){
+                @Override
+                protected void renderSheets(Workbook workbook)
+                {
+                    for (ExportQueryForm qf : form.getQueryForms())
+                    {
+                        qf.setViewContext(viewContext);
+                        qf.getSchema();
+
+                        QueryView qv = qf.getQueryView();
+                        qv.exportToExcelSheet(this, workbook,
+                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                                .setExcludeColumns(qf.getExcludeColumns())
+                                .setRenamedColumns(qf.getRenameColumnMap()),
+                            qf.getSheetName()
+                        );
+                    }
+
+                    workbook.setActiveSheet(0);
+                }
+            })
             {
                 writer.setFilenamePrefix(form.getFilename());
-                ViewContext viewContext = getViewContext();
-                for(ExportQueryForm qf : form.getQueryForms())
-                {
-                    qf.setViewContext(viewContext);
-                    qf.getSchema();
-
-                    QueryView qv = qf.getQueryView();
-                    qv.exportToExcelSheet(writer,
-                        new QueryView.ExcelExportConfig(response, qf.getHeaderType())
-                            .setExcludeColumns(qf.getExcludeColumns())
-                            .setRenamedColumns(qf.getRenameColumnMap()),
-                        qf.getSheetName()
-                    );
-                }
-
-                writer.getWorkbook().setActiveSheet(0);
-                writer.writeWorkbook(response);
+                writer.renderWorkbook(response);
                 return null; //Returning anything here will cause error as excel writer will close the response stream
             }
         }
