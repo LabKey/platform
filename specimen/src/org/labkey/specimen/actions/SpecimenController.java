@@ -1128,9 +1128,7 @@ public class SpecimenController extends SpringActionController
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            for (ExcelColumn col : xlWriter.getColumns())
-                col.setCaption(importer.label(col.getName()));
-
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
             xlWriter.renderWorkbook(getViewContext().getResponse());
 
             return null;

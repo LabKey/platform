@@ -37,7 +37,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -417,13 +416,11 @@ public class DesignerController extends SpringActionController
             //Search for a template in all folders up to root.
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            for (ExcelColumn col : xlWriter.getColumns())
+            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns()))
             {
-                col.setCaption(importer.label(col.getName()));
+                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+                xlWriter.renderWorkbook(response);
             }
-
-            xlWriter.renderWorkbook(response);
         }
     }
 

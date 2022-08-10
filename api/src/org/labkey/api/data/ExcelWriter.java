@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
@@ -60,6 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -88,14 +88,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             public int getMaxRows()
             {
                 // Return one less than the Excel max since we'll generally be including at least one header row
-                assert 65535 == SpreadsheetVersion.EXCEL97.getMaxRows() - 1;
-                return 65535;
+                return SpreadsheetVersion.EXCEL97.getMaxRows() - 1;
             }
 
             @Override
             public int getMaxColumns()
             {
-                assert HSSFCell.LAST_COLUMN_NUMBER + 1 == SpreadsheetVersion.EXCEL97.getMaxColumns();
                 return SpreadsheetVersion.EXCEL97.getMaxColumns();
             }
 
@@ -144,7 +142,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             @Override
             public int getMaxRows()
             {
-                assert 1048575 == SpreadsheetVersion.EXCEL2007.getMaxRows() - 1;
                 // Return one less than the Excel max since we'll generally be including at least one header row
                 return SpreadsheetVersion.EXCEL2007.getMaxRows() - 1;
             }
@@ -152,7 +149,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             @Override
             public int getMaxColumns()
             {
-                assert SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1 == SpreadsheetVersion.EXCEL2007.getMaxColumns();
                 return SpreadsheetVersion.EXCEL2007.getMaxColumns();
             }
 
@@ -193,9 +189,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private List<String> _commentLines = Collections.emptyList();
     private ColumnHeaderType _captionType = ColumnHeaderType.Caption;
     private boolean _insertableColumnsOnly = false;
-    private List<ExcelColumn> _columns = new ArrayList<>();
+    private List<DisplayColumn> _columns = new ArrayList<>(10);
+    private Consumer<ExcelColumn> _columnModifier = excelColumn -> {}; // No-op modifier by default
+
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
+    private boolean _autoSize = false;
     private Map<String, String> _metadata = Collections.emptyMap();
 
     // Careful: these can't be static.  As a cell format is added to a workbook, it gets assigned an internal index number, so each workbook must have a new one.
@@ -263,11 +262,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             // Remove any insert only columns that have already made their way into the list
             // except those explicitly requested
-            Iterator<ExcelColumn> i = _columns.iterator();
+            Iterator<DisplayColumn> i = _columns.iterator();
             while (i.hasNext())
             {
-                ExcelColumn column = i.next();
-                DisplayColumn dc = column.getDisplayColumn();
+                DisplayColumn dc = i.next();
                 if (dc == null)
                     continue;
 
@@ -298,18 +296,16 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
-
     public void setSheetName(String sheetName)
     {
         _sheetName = cleanSheetName(sheetName);
     }
 
-
-    private static final Pattern badSheetNameChars = Pattern.compile("[\\\\:/\\[\\]?*|]");
+    private static final Pattern BAD_SHEET_NAME_CHARS = Pattern.compile("[\\\\:/\\[\\]?*|]");
 
     public static String cleanSheetName(String sheetName)
     {
-        sheetName = badSheetNameChars.matcher(sheetName).replaceAll("_");
+        sheetName = BAD_SHEET_NAME_CHARS.matcher(sheetName).replaceAll("_");
         // CONSIDER: collapse whitespaces and underscores
 
         if (sheetName.length() > 31)
@@ -336,18 +332,15 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             return _footer;
     }
 
-
     public String getFilenamePrefix()
     {
         return Objects.requireNonNullElseGet(_filenamePrefix, () -> getSheetName(0).replaceAll(" ", "_"));
     }
 
-
     public void setFilenamePrefix(String filenamePrefix)
     {
         _filenamePrefix = filenamePrefix;
     }
-
 
     public void setHeaders(@NotNull List<String> headers)
     {
@@ -365,24 +358,20 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return _headers;
     }
 
-
     public boolean isCaptionRowFrozen()
     {
         return _captionRowFrozen;
     }
-
 
     public void setCaptionRowFrozen(boolean captionColumnFrozen)
     {
         _captionRowFrozen = captionColumnFrozen;
     }
 
-
     public boolean isCaptionRowVisible()
     {
         return _captionRowVisible;
     }
-
 
     public void setCaptionRowVisible(boolean captionRowVisible)
     {
@@ -391,7 +380,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     private void addColumn(DisplayColumn col)
     {
-        _columns.add(new ExcelColumn(col, _formatters, _workbook));
+        _columns.add(col);
     }
 
     private void addDisplayColumns(List<DisplayColumn> columns)
@@ -416,48 +405,26 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setDisplayColumns(List<DisplayColumn> columns)
     {
-        _columns = new ArrayList<>(10);
+        _columns = new ArrayList<>(Math.max(10, columns.size()));
         addDisplayColumns(columns);
     }
 
     public void setColumns(List<ColumnInfo> columns)
     {
-        _columns = new ArrayList<>(10);
+        _columns = new ArrayList<>(Math.max(10, columns.size()));
         addColumns(columns);
     }
 
-
-    public List<ExcelColumn> getColumns()
+    // ColumnModifier will be invoked on each visible ExcelColumn at creation time
+    public void setColumnModifier(Consumer<ExcelColumn> columnModifier)
     {
-        return _columns;
-    }
-
-    public List<ExcelColumn> getVisibleColumns(RenderContext ctx)
-    {
-        if (null == _columns)
-            return null;
-
-        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
-
-        for (ExcelColumn column : _columns)
-        {
-            if (column.isVisible(ctx))
-                visibleColumns.add(column);
-
-            if (visibleColumns.size() >= _docType.getMaxColumns())
-            {
-                return visibleColumns;
-            }
-        }
-
-        return visibleColumns;
+        _columnModifier = columnModifier;
     }
 
     // Sets AutoSize property on all columns
     public void setAutoSize(boolean autoSize)
     {
-        for (ExcelColumn _column : _columns)
-            _column.setAutoSize(autoSize);
+        _autoSize = autoSize;
     }
 
     public void setMetadata(@NotNull Map<String, String> metadata)
@@ -547,7 +514,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             }
         }
 
-        List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
+        List<ExcelColumn> visibleColumns = getVisibleColumns(workbook, ctx);
 
         try
         {
@@ -578,6 +545,29 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    {
+        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
+
+        for (DisplayColumn dc : _columns)
+        {
+            ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
+            if (column.isVisible(ctx))
+            {
+                column.setAutoSize(_autoSize);
+                _columnModifier.accept(column);
+                visibleColumns.add(column);
+            }
+
+            if (visibleColumns.size() >= _docType.getMaxColumns())
+            {
+                return visibleColumns;
+            }
+        }
+
+        return visibleColumns;
     }
 
     // Should be called within a try/catch
