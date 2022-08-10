@@ -44,7 +44,7 @@ LABKEY.dataregion.confirmDelete = function(
                 }
                 else if (numCanDelete === 0) {
                     if (totalNum === 1) {
-                        text = "The " + totalNoun + " you've selected cannot be deleted because it has " + dependencyText;
+                        text = "The " + totalNoun + " you've selected cannot be deleted because it has " + dependencyText + ".";
                     } else {
                         text = (numCannotDelete === 2) ? "Neither of" : "None of";
                         text += " the " + totalNum + " " + totalNoun + " you've selected can be deleted";

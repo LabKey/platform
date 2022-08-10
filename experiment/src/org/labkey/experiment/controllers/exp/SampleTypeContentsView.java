@@ -172,7 +172,7 @@ public class SampleTypeContentsView extends QueryView
             if (ModuleLoader.getInstance().hasModule("samplemanagement"))
                 dependencyText += " or status that prevents deletion";
             if (ModuleLoader.getInstance().hasModule("labbook"))
-                dependencyText += " or references in an active notebook";
+                dependencyText += " or references in one or more active notebooks";
             button.setScript("LABKEY.dataregion.confirmDelete(" +
                     PageFlowUtil.jsString(getDataRegionName()) + ", " +
                     PageFlowUtil.jsString(getSchema().getName())  + ", " +
