@@ -212,7 +212,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private int _currentRow = 0;
     private int _currentSheet = -1;
 
-    protected final Workbook _workbook;
+    private final Workbook _workbook;
 
     // Some columns may need to be Aliased (e.g., Name -> Sample ID)
     private Map<String, String> _renameColumnMap;
@@ -654,50 +654,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void renderNewSheet()
     {
         renderNewSheet(_workbook);
-    }
-
-    /**
-     * Writes out the workbook to the response stream
-     * @param response to write to
-     */
-    @Deprecated
-    public void writeWorkbook(HttpServletResponse response)
-    {
-        writeWorkbook(_workbook, response, getFilenamePrefix());
-    }
-
-    @Deprecated
-    public Workbook getWorkbook()
-    {
-        return _workbook;
-    }
-
-    /**
-     * Write workbook out to supplied response
-     * @param response to write to
-     * @param filenamePrefix string to prepend to a time stamp as filename
-     */
-    @Deprecated
-    private void writeWorkbook(Workbook workbook, HttpServletResponse response, String filenamePrefix)
-    {
-        try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
-        {
-            _write(workbook, outputStream);
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-        catch (OpenXML4JRuntimeException e)
-        {
-            // We can get this message if there's an IOException when writing out the document to the stream.
-            // It happens because the browser has disconnected before receiving the full file. We can safely ignore it.
-            // Otherwise, rethrow. See issue #14987
-            if (e.getMessage() == null || e.getMessage().contains("to be saved in the stream with marshaller"))
-            {
-                throw e;
-            }
-        }
     }
 
     public int getCurrentRow()
