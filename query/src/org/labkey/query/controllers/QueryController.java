@@ -1786,10 +1786,10 @@ public class QueryController extends SpringActionController
 
                     QueryView qv = qf.getQueryView();
                     qv.exportToExcelSheet(writer,
-                            new QueryView.ExcelExportConfig(response, qf.getHeaderType())
-                                .setExcludeColumns(qf.getExcludeColumns())
-                                .setRenamedColumns(qf.getRenameColumnMap()),
-                            qf.getSheetName()
+                        new QueryView.ExcelExportConfig(response, qf.getHeaderType())
+                            .setExcludeColumns(qf.getExcludeColumns())
+                            .setRenamedColumns(qf.getRenameColumnMap()),
+                        qf.getSheetName()
                     );
                 }
 

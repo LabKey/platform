@@ -547,6 +547,64 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         renderSheet(workbook, _currentSheet);
     }
 
+    protected void renderSheet(Workbook workbook, int sheetNumber)
+    {
+        Sheet sheet;
+        //TODO: Pass render context all the way through Excel writers...
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+
+        if (workbook.getNumberOfSheets() > sheetNumber)
+        {
+            sheet = workbook.getSheetAt(sheetNumber);
+        }
+        else
+        {
+            sheet = workbook.getSheet(getSheetName(sheetNumber));
+            if (sheet == null)
+            {
+                sheet = workbook.createSheet(getSheetName(sheetNumber));
+                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+
+                Drawing<?> drawing = sheet.createDrawingPatriarch();
+                ctx.put(SHEET_DRAWING, drawing);
+                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+            }
+        }
+
+        List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
+
+        try
+        {
+            try
+            {
+                renderCommentLines(sheet);
+                renderSheetHeaders(sheet, visibleColumns.size());
+                renderColumnCaptions(sheet, visibleColumns);
+
+                renderGrid(ctx, sheet, visibleColumns);
+            }
+            catch(MaxRowsExceededException e)
+            {
+                // Just continue on
+            }
+
+            adjustColumnWidths(ctx, sheet, visibleColumns);
+
+            if (null != getFooter())
+            {
+                Footer hf = sheet.getFooter();
+                hf.setLeft("&D");
+                hf.setCenter(getFooter());
+                hf.setRight("Page &P/&N");
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Should be called within a try/catch
     private void _write(Workbook workbook, OutputStream stream) throws IOException
     {
@@ -571,7 +629,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         // it were downloading a file (you get a dialog saying you wish to open or save
         // the workbook). The other choice is to specify "inline" instead of "attachment"
         // so that the file is always opened inside the browser, not outside by launching
-        // excel as a standalone application (not embeded)
+        // excel as a standalone application (not embedded)
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
@@ -580,7 +638,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
         try
         {
-            // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
+            // Get the output stream of the servlet (BTW, always get the output stream AFTER you've
             // set the content-disposition and content-type)
             return response.getOutputStream();
         }
@@ -596,17 +654,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void renderNewSheet()
     {
         renderNewSheet(_workbook);
-    }
-
-    /**
-     * Renders the sheet then writes out the workbook to supplied stream
-     * @param response to write out the file
-     */
-    @Deprecated
-    public void renderSheetAndWrite(HttpServletResponse response)
-    {
-        renderNewSheet(_workbook);
-        writeWorkbook(_workbook, response, getFilenamePrefix());
     }
 
     /**
@@ -681,64 +728,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         protected MaxRowsExceededException()
         {
             super("Maximum rows exceeded");
-        }
-    }
-
-    public void renderSheet(Workbook workbook, int sheetNumber)
-    {
-        Sheet sheet;
-        //TODO: Pass render context all the way through Excel writers...
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
-
-        if (workbook.getNumberOfSheets() > sheetNumber)
-        {
-            sheet = workbook.getSheetAt(sheetNumber);
-        }
-        else
-        {
-            sheet = workbook.getSheet(getSheetName(sheetNumber));
-            if (sheet == null)
-            {
-                sheet = workbook.createSheet(getSheetName(sheetNumber));
-                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
-
-                Drawing<?> drawing = sheet.createDrawingPatriarch();
-                ctx.put(SHEET_DRAWING, drawing);
-                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
-                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
-            }
-        }
-
-        List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
-
-        try
-        {
-            try
-            {
-                renderCommentLines(sheet);
-                renderSheetHeaders(sheet, visibleColumns.size());
-                renderColumnCaptions(sheet, visibleColumns);
-
-                renderGrid(ctx, sheet, visibleColumns);
-            }
-            catch(MaxRowsExceededException e)
-            {
-                // Just continue on
-            }
-
-            adjustColumnWidths(ctx, sheet, visibleColumns);
-
-            if (null != getFooter())
-            {
-                Footer hf = sheet.getFooter();
-                hf.setLeft("&D");
-                hf.setCenter(getFooter());
-                hf.setRight("Page &P/&N");
-            }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
         }
     }
 
