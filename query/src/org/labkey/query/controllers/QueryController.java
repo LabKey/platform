@@ -1777,7 +1777,7 @@ public class QueryController extends SpringActionController
             response.setHeader("Content-Disposition", "attachment");
             ViewContext viewContext = getViewContext();
 
-            try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
+            ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
                 @Override
                 protected void renderSheets(Workbook workbook)
                 {
@@ -1802,12 +1802,10 @@ public class QueryController extends SpringActionController
 
                     workbook.setActiveSheet(0);
                 }
-            })
-            {
-                writer.setFilenamePrefix(form.getFilename());
-                writer.renderWorkbook(response);
-                return null; //Returning anything here will cause error as excel writer will close the response stream
-            }
+            };
+            writer.setFilenamePrefix(form.getFilename());
+            writer.renderWorkbook(response);
+            return null; //Returning anything here will cause error as excel writer will close the response stream
         }
     }
 

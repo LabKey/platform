@@ -1127,13 +1127,11 @@ public class SpecimenController extends SpringActionController
             List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
                     getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
-            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns()))
-            {
-                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
-                // the DisplayColumn's caption, not its own caption. That seems wrong...
-                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-                xlWriter.renderWorkbook(getViewContext().getResponse());
-            }
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(getViewContext().getResponse());
 
             return null;
         }
@@ -5045,10 +5043,8 @@ public class SpecimenController extends SpringActionController
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    try (ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
-                    {
-                        writer.renderWorkbook(getViewContext().getResponse());
-                    }
+                    ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type);
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;
@@ -5198,8 +5194,9 @@ public class SpecimenController extends SpringActionController
 
                     if (form.isSendXls())
                     {
-                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
                         {
+                            ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.renderWorkbook(ostream);
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
                         }

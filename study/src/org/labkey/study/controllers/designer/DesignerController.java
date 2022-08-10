@@ -346,11 +346,9 @@ public class DesignerController extends SpringActionController
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
 
-            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols))
-            {
-                xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
-                xlWriter.renderWorkbook(response);
-            }
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
+            xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
+            xlWriter.renderWorkbook(response);
         }
     }
 
@@ -419,13 +417,11 @@ public class DesignerController extends SpringActionController
             //Search for a template in all folders up to root.
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
-            try (MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns()))
-            {
-                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
-                // the DisplayColumn's caption, not its own caption. That seems wrong...
-                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-                xlWriter.renderWorkbook(response);
-            }
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(response);
         }
     }
 

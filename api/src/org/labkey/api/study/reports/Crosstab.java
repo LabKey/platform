@@ -326,7 +326,7 @@ public class Crosstab
 
     public static class CrosstabExcelWriter extends ExcelWriter
     {
-        private Crosstab _crosstab;
+        private final Crosstab _crosstab;
         private static final String STAT_COLUMN = "Stat";
 
         public CrosstabExcelWriter(Crosstab crosstab)

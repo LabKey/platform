@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 /**
  * Knows how to create an Excel file (of various formats) based on the {@link Results} of a database query.
  */
-public class ExcelWriter implements ExportWriter, AutoCloseable
+public class ExcelWriter implements ExportWriter
 {
     /** Flavors of supported Excel file formats */
     public enum ExcelDocumentType
@@ -861,12 +861,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public int getDataRowCount()
     {
         return _totalDataRows;
-    }
-
-    @Override
-    public void close()
-    {
-        // No-op: Results are closed via try-with-resources at render time
     }
 
     public void setRenameColumnMap(Map<String, String> renameColumnMap)

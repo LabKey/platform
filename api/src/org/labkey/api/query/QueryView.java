@@ -2739,18 +2739,16 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = config.getTemplateOnly() ? getExcelTemplateWriter(config) : getExcelWriter(config))
-            {
-                ew.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
-                ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
-                if (config.getPrefix() != null)
-                    ew.setFilenamePrefix(config.getPrefix());
-                ew.setAutoSize(true);
-                ew.renderWorkbook(config.getResponse());
+            ExcelWriter ew = config.getTemplateOnly() ? getExcelTemplateWriter(config) : getExcelWriter(config);
+            ew.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
+            ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
+            if (config.getPrefix() != null)
+                ew.setFilenamePrefix(config.getPrefix());
+            ew.setAutoSize(true);
+            ew.renderWorkbook(config.getResponse());
 
-                if (!config.getTemplateOnly())
-                    logAuditEvent("Exported to Excel", ew.getDataRowCount());
-            }
+            if (!config.getTemplateOnly())
+                logAuditEvent("Exported to Excel", ew.getDataRowCount());
         }
     }
 
@@ -2770,8 +2768,9 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            try (OutputStream stream = new BufferedOutputStream(byteStream); ExcelWriter ew = getExcelWriter(docType))
+            try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
+                ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
