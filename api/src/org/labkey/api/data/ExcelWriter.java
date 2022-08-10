@@ -619,6 +619,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         writeWorkbook(_workbook, response, getFilenamePrefix());
     }
 
+    @Deprecated
+    public Workbook getWorkbook()
+    {
+        return _workbook;
+    }
+
     /**
      * Write workbook out to supplied response
      * @param response to write to
@@ -852,7 +858,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
         if (_currentRow <= _docType.getMaxRows())
@@ -939,11 +944,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         incrementRow();
     }
 
-    public Workbook getWorkbook()
-    {
-        return _workbook;
-    }
-
     public ExcelDocumentType getDocumentType()
     {
         return _docType;
@@ -974,6 +974,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setRenameColumnMap(Map<String, String> renameColumnMap)
     {
-        this._renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
+        _renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
     }
 }
