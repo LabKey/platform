@@ -532,18 +532,19 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     /**
-     * By default, this renders a single sheet and writes the workbook. Subclasses can override to write multiple sheets, etc.
+     * By default, this renders a single sheet and writes the workbook. Subclasses can override to write multiple sheets
+     * or otherwise customize the workbook.
      */
     protected void renderSheets(Workbook workbook)
     {
-        renderNewSheet();
+        renderNewSheet(workbook);
     }
 
-    public void renderNewSheet()
+    protected void renderNewSheet(Workbook workbook)
     {
         _currentRow = 0;
         _currentSheet++;
-        renderSheet(_workbook, _currentSheet);
+        renderSheet(workbook, _currentSheet);
     }
 
     // Should be called within a try/catch
@@ -591,6 +592,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return null;
     }
 
+    @Deprecated
+    public void renderNewSheet()
+    {
+        renderNewSheet(_workbook);
+    }
+
     /**
      * Renders the sheet then writes out the workbook to supplied stream
      * @param response to write out the file
@@ -598,7 +605,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     @Deprecated
     public void renderSheetAndWrite(HttpServletResponse response)
     {
-        renderNewSheet();
+        renderNewSheet(_workbook);
         writeWorkbook(_workbook, response, getFilenamePrefix());
     }
 
@@ -741,11 +748,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     }
 
     // Initialize non-wrapping text format for this worksheet
-    protected CellStyle getWrappingTextFormat()
+    protected CellStyle getWrappingTextFormat(Workbook workbook)
     {
         if (null == _wrappingTextFormat)
         {
-            _wrappingTextFormat = _workbook.createCellStyle();
+            _wrappingTextFormat = workbook.createCellStyle();
             _wrappingTextFormat.setWrapText(true);
             _wrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
@@ -755,13 +762,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
 
     // Initialize bold format for this worksheet
-    protected CellStyle getBoldFormat()
+    protected CellStyle getBoldFormat(Workbook workbook)
     {
         if (null == _boldFormat)
         {
-            Font boldFont = _workbook.createFont();
+            Font boldFont = workbook.createFont();
             boldFont.setBold(true);
-            _boldFormat = _workbook.createCellStyle();
+            _boldFormat = workbook.createCellStyle();
             _boldFormat.setFont(boldFont);
         }
 
@@ -770,11 +777,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
 
     // Initialize non-wrapping text format for this worksheet
-    protected CellStyle getNonWrappingTextFormat()
+    protected CellStyle getNonWrappingTextFormat(Workbook workbook)
     {
         if (null == _nonWrappingTextFormat)
         {
-            _nonWrappingTextFormat = _workbook.createCellStyle();
+            _nonWrappingTextFormat = workbook.createCellStyle();
             _nonWrappingTextFormat.setWrapText(false);
             _nonWrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
@@ -831,7 +838,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     // Wrap text in the case of full-size headers; don't wrap text in column mode.
                     // This helps in cases like "FileName: t:/data/databases/rat051004_NCBI.fasta" in columns.
                     // If text wrap were on, path+filename may appear blank since Excel wraps at spaces.
-                    cell.setCellStyle(headerColumnCount > 1 ? getNonWrappingTextFormat() : getWrappingTextFormat());
+                    cell.setCellStyle(headerColumnCount > 1 ? getNonWrappingTextFormat(sheet.getWorkbook()) : getWrappingTextFormat(sheet.getWorkbook()));
 
                     // Give all the remaining space to the last column
                     if (j == headerColumnCount - 1)
@@ -854,7 +861,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 return;
 
             for (int column = 0; column < visibleColumns.size(); column++)
-                visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(), _captionType);
+                visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(sheet.getWorkbook()), _captionType);
 
             incrementRow();
 
