@@ -15,15 +15,17 @@
  */
 package org.labkey.api.wiki;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,9 +37,9 @@ import java.util.Set;
 public class WikiRendererDisplayColumn extends DataColumn
 {
     @NotNull
-    private String _renderTypeColumnName;
+    private final String _renderTypeColumnName;
     private WikiRendererType _defaultRenderer = WikiRendererType.TEXT_WITH_LINKS;
-    private static final Logger _log = LogManager.getLogger(WikiRendererDisplayColumn.class);
+    private static final Logger _log = LogHelper.getLogger(WikiRendererDisplayColumn.class, "Renders wiki content for grid and detail views");
 
     public WikiRendererDisplayColumn(ColumnInfo contentColumn, @NotNull String renderTypeColumnName, WikiRendererType defaultRenderer)
     {
@@ -56,26 +58,37 @@ public class WikiRendererDisplayColumn extends DataColumn
     @Override @NotNull
     public HtmlString getFormattedHtml(RenderContext ctx)
     {
-        WikiRenderingService wikiService = WikiRenderingService.get();
-        String content = (String) getValue(ctx);
-        if (null == content)
-            return HtmlString.NBSP;
-
-        WikiRendererType rendererType = _defaultRenderer;
-        Object rendererTypeName = ctx.get(getRenderTypeFieldKey());
-        if (null != rendererTypeName)
+        // Remember the rendered result so we don't recreate it multiple times for a single cell in a grid
+        FieldKey renderedFK = FieldKey.fromString(getBoundColumn().getFieldKey(), "Rendered");
+        HtmlString rendered = (HtmlString) ctx.getRow().get(renderedFK.encode());
+        if (rendered == null)
         {
-            try
-            {
-                rendererType = WikiRendererType.valueOf(rendererTypeName.toString());
-            }
-            catch(IllegalArgumentException err)
-            {
-                _log.error("Bad wiki renderer type: " + rendererTypeName, err);
-            }
-        }
+            String content = (String) getValue(ctx);
+            if (null == content)
+                return HtmlString.NBSP;
 
-        return wikiService.getFormattedHtml(rendererType, content);
+            WikiRenderingService wikiService = WikiRenderingService.get();
+            WikiRendererType rendererType = _defaultRenderer;
+            Object rendererTypeName = ctx.get(getRenderTypeFieldKey());
+            if (null != rendererTypeName)
+            {
+                try
+                {
+                    rendererType = WikiRendererType.valueOf(rendererTypeName.toString());
+                }
+                catch (IllegalArgumentException err)
+                {
+                    _log.error("Bad wiki renderer type: " + rendererTypeName, err);
+                }
+            }
+
+            rendered = wikiService.getFormattedHtml(rendererType, content);
+
+            Map<String, Object> newRow = new CaseInsensitiveHashMap<>(ctx.getRow());
+            newRow.put(renderedFK.encode(), rendered);
+            ctx.setRow(newRow);
+        }
+        return rendered;
     }
 
     private FieldKey getRenderTypeFieldKey()

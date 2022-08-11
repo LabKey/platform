@@ -49,11 +49,14 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependencies;
+import org.labkey.api.view.template.ClientDependency;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A grid view of a subset of all experiment runs, typically of a given protocol or assay type.
@@ -83,6 +86,10 @@ public class ExperimentRunListView extends QueryView
         AssayService svc = AssayService.get();
         if (svc != null)
             addClientDependencies(svc.getClientDependenciesForImportButtons());
+        addClientDependencies(Set.of(
+                ClientDependency.fromPath("Ext4"),
+                ClientDependency.fromPath("dataregion/confirmDelete.js")
+        ));
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
@@ -169,12 +176,19 @@ public class ExperimentRunListView extends QueryView
 
         if (showDeleteButton())
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteRunsURL(context.getContainer());
             ActionButton deleteButton = new ActionButton(url, "Delete");
             deleteButton.setIconCls("trash");
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(DeletePermission.class);
+            deleteButton.setScript("LABKEY.dataregion.confirmDelete(" +
+                    PageFlowUtil.jsString(getDataRegionName()) + ", " +
+                    PageFlowUtil.jsString("assay." + getSchema().getName())  + ", " +
+                    PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
+                    "'assay', 'getAssayRunDeletionConfirmationData.api', " +
+                    PageFlowUtil.jsString(getSelectionKey()) + ", " +
+                    "'assay run', 'assay runs', 'references in one or more active notebooks', {}, " + PageFlowUtil.jsString(url) + ", 'rowIds')");
             bar.add(deleteButton);
         }
 

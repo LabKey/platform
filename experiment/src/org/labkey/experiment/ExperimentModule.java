@@ -222,6 +222,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
 
         WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
+        ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
     }
 
     @Override

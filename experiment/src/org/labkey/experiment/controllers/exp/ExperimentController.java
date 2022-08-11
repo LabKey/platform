@@ -180,6 +180,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
@@ -1115,10 +1116,39 @@ public class ExperimentController extends SpringActionController
         {
             ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
             UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
-            if (dataClassSchema == null)
-                throw new NotFoundException("exp.dataclass schema not found");
+            QuerySettings settings = dataClassSchema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName());
+            return new QueryView(dataClassSchema, settings, errors){
 
-            return dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
+                @Override
+                public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
+                {
+                    LinkedHashSet<ClientDependency> resources = super.getClientDependencies();
+                    resources.add(ClientDependency.fromPath("Ext4"));
+                    resources.add(ClientDependency.fromPath("dataregion/confirmDelete.js"));
+                    return resources;
+                }
+
+                @Override
+                public ActionButton createDeleteButton()
+                {
+                    ActionButton button = super.createDeleteButton();
+                    if (button != null)
+                    {
+                        String dependencyText = "derived data or sample dependencies";
+                        if (ModuleLoader.getInstance().hasModule("labbook"))
+                            dependencyText += " or references in one or more active notebooks";
+                        button.setScript("LABKEY.dataregion.confirmDelete(" +
+                                PageFlowUtil.jsString(getDataRegionName()) + ", " +
+                                PageFlowUtil.jsString(getSchema().getName())  + ", " +
+                                PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
+                                "'experiment', 'getDataOperationConfirmationData.api', " +
+                                PageFlowUtil.jsString(getSelectionKey()) + ", " +
+                                "'data object', 'data objects', '" + dependencyText + "', {dataOperation: 'Delete'})");
+                        button.setRequiresSelection(true);
+                    }
+                    return button;
+                }
+            };
         }
 
         @Override
@@ -3179,8 +3209,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(CascadeDeleteForm form, Errors errors)
         {
-            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
-                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId, dataRegionSelectionKey, or rowIds is required");
         }
 
         @Override
@@ -3358,6 +3388,8 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+            if (form.getDataOperation() == null)
+                errors.reject(ERROR_REQUIRED, "An operation type must be provided.");
         }
 
         @Override
@@ -3366,13 +3398,15 @@ public class ExperimentController extends SpringActionController
             Collection<Integer> requestIds = form.getIds(false);
             List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
+            Set<Integer> notPermittedIds = new HashSet<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
-                notPermittedIds = ExperimentServiceImpl.get().getDataUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
             return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
         }
     }
+
 
     public static class DataOperationConfirmationForm extends OperationConfirmationForm
     {
@@ -3441,10 +3475,11 @@ public class ExperimentController extends SpringActionController
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            List<Integer> notPermittedIds = new ArrayList<>();
-            // We prevent deletion if a sample is used as a parent or has assay data
+            Set<Integer> notPermittedIds = new HashSet<>();
+            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
-                notPermittedIds = service.getMaterialsUsedAsInput(requestIds);
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
             if (SampleStatusService.get().supportsSampleStatus())
                 notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
@@ -6449,6 +6484,12 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
             return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
+        }
+
+        @Override
+        public ActionURL getDeleteRunsURL(Container container)
+        {
+            return new ActionURL(DeleteRunsAction.class, container);
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
