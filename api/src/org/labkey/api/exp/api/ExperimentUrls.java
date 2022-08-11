@@ -66,6 +66,8 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL) { return null; }
 
+    default ActionURL getDeleteRunsURL(Container container) { return null; }
+
     default ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns) { return null; }
 
     default ActionURL getShowRunsURL(Container c, ExperimentRunType type) { return null; }
