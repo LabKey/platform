@@ -36,6 +36,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("gen/createPipelineTrigger");
+        //dependencies.add("http://localhost:3001/createPipelineTrigger.js");
     }
 %>
 <%
