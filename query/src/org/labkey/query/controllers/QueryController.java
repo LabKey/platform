@@ -1847,7 +1847,7 @@ public class QueryController extends SpringActionController
 
         public void setIncludeColumn(FieldKey[] includeColumn)
         {
-            includeColumn = includeColumn;
+            this.includeColumn = includeColumn;
         }
 
         public String getFilenamePrefix()
@@ -1867,7 +1867,7 @@ public class QueryController extends SpringActionController
 
         public void setFileType(String fileType)
         {
-            fileType = fileType;
+            this.fileType = fileType;
         }
     }
 
