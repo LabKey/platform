@@ -18,6 +18,8 @@ package org.labkey.api.exp.form;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.DataRegionSelection;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -30,6 +32,7 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     private boolean _forceDelete;
     private String _dataRegionSelectionKey;
     private Integer _singleObjectRowId;
+    private List<Integer> _rowIds;
 
     public Set<Integer> getIds(boolean clear)
     {
@@ -37,7 +40,10 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
         {
             return singleton(_singleObjectRowId);
         }
-        return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        else if (_dataRegionSelectionKey != null)
+            return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
+        else
+            return new HashSet<>(_rowIds);
     }
 
     public Integer getSingleObjectRowId()
@@ -76,5 +82,15 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     {
         if (_singleObjectRowId == null)
             DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
+    }
+
+    public List<Integer> getRowIds()
+    {
+        return _rowIds;
+    }
+
+    public void setRowIds(List<Integer> rowIds)
+    {
+        _rowIds = rowIds;
     }
 }
