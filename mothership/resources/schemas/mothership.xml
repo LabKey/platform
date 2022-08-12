@@ -82,6 +82,7 @@
             </column>
             <column columnName="Note">
                 <inputLength>80</inputLength>
+                <inputRows>3</inputRows>
             </column>
             <column columnName="Container"/>
             <column columnName="SystemDescription">
@@ -106,7 +107,6 @@
             <column columnName="ServerHostName">
                 <inputLength>60</inputLength>
                 <scale>255</scale>
-                <isReadOnly>true</isReadOnly>
             </column>
             <column columnName="UsedInstaller"/>
             <column columnName="IgnoreExceptions"/>

@@ -62,6 +62,7 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
@@ -102,13 +103,10 @@ import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.rows;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
-import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.LK.ERRORS;
 import static org.labkey.api.util.DOM.LK.FORM;
-import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TEXTAREA;
 import static org.labkey.api.util.DOM.at;
-import static org.labkey.api.util.DOM.cl;
 
 /**
  * User: jeckels
@@ -117,7 +115,7 @@ import static org.labkey.api.util.DOM.cl;
 public class MothershipController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
-    private static final Logger _log = LogManager.getLogger(MothershipController.class);
+    private static final Logger _log = LogHelper.getLogger(MothershipController.class, "Mothership UI");
 
     public MothershipController()
     {
@@ -142,7 +140,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
+    public static class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
     {
         @Override
         public ModelAndView getView(SoftwareReleaseForm form, BindException errors)
@@ -252,7 +250,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
+    public static class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
     {
         @Override
         public void validateCommand(CreateIssueFinishedForm target, Errors errors)
@@ -302,7 +300,7 @@ public class MothershipController extends SpringActionController
 
     @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(UpdatePermission.class)
-    public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
+    public static class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
         @Override
         public void validateCommand(UpgradeMessageForm target, Errors errors)
@@ -456,7 +454,7 @@ public class MothershipController extends SpringActionController
             StringBuilder title = new StringBuilder();
             BufferedReader reader = new BufferedReader(new StringReader(stackTraceString));
             // Grab the exception class
-            String className = reader.readLine().split("\\:")[0];
+            String className = reader.readLine().split(":")[0];
             if (className.lastIndexOf('.') != -1)
             {
                 // Strip off the package name to make the title a little shorter
@@ -776,6 +774,8 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ManualMetricImportAction extends FormViewAction<ManualImportForm>
     {
+        private int _serverInstallId;
+
         @Override
         public void validateCommand(ManualImportForm target, Errors errors)
         {
@@ -783,10 +783,10 @@ public class MothershipController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ManualImportForm manualImportForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ManualImportForm manualImportForm, boolean reshow, BindException errors)
         {
             return new HtmlView(
-                    DIV("This is intended for servers that are not auto-reporting their metrics for whatever reason. Admins can export the JSON for their metrics via Admin Console->Site Settings.",
+                    DIV("This is intended for servers that are not auto-reporting their metrics for whatever reason. Admins can export the JSON for their metrics via Admin Console->Site Settings, which can then be pasted here.",
                             ERRORS(errors),
                             FORM(at(method, "POST"),
                                 TEXTAREA(at(name, "json", rows, "20", cols, "80"), manualImportForm.getJson()),
@@ -797,7 +797,7 @@ public class MothershipController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ManualImportForm manualImportForm, BindException errors) throws Exception
+        public boolean handlePost(ManualImportForm manualImportForm, BindException errors)
         {
             try
             {
@@ -835,7 +835,8 @@ public class MothershipController extends SpringActionController
                 // Poke the jsonMetrics back in
                 form.setJsonMetrics(jsonMetrics);
                 form.setServerHostName("ManualMetricImport");
-                saveSessionInfo(form);
+                ServerSession session = saveSessionInfo(form).first;
+                _serverInstallId = session.getServerInstallationId();
             }
             catch (JSONException e)
             {
@@ -848,7 +849,7 @@ public class MothershipController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ManualImportForm manualImportForm)
         {
-            return getContainer().getStartURL(getUser());
+            return new ActionURL(ShowInstallationDetailAction.class, getContainer()).addParameter("serverInstallationId", _serverInstallId);
         }
 
         @Override
@@ -1119,12 +1120,12 @@ public class MothershipController extends SpringActionController
                     ObjectMapper mapper = new ObjectMapper();
                     Map<String, Object> parsed = mapper.readValue(getJsonMetrics(), Map.class);
                     Object modulesObject = parsed.get("modules");
-                    if (modulesObject instanceof Map)
+                    if (modulesObject instanceof Map modulesMap)
                     {
-                        Object coreObject = ((Map)modulesObject).get("Core");
-                        if (coreObject instanceof Map)
+                        Object coreObject = modulesMap.get("Core");
+                        if (coreObject instanceof Map coreMap)
                         {
-                            Object buildInfoObject = ((Map)coreObject).get("buildInfo");
+                            Object buildInfoObject = coreMap.get("buildInfo");
                             if (buildInfoObject instanceof Map)
                             {
                                 Map<String, Object> buildInfo = (Map<String, Object>) buildInfoObject;
@@ -1702,17 +1703,17 @@ public class MothershipController extends SpringActionController
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();
 
+            requestedColumns.add(FieldKey.fromParts("ServerHostName"));
+            requestedColumns.add(FieldKey.fromParts("Note"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
+            requestedColumns.add(FieldKey.fromParts("ServerIP"));
+            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationId"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationGUID"));
-            requestedColumns.add(FieldKey.fromParts("Note"));
-            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
-            requestedColumns.add(FieldKey.fromParts("ServerHostName"));
-            requestedColumns.add(FieldKey.fromParts("ServerIP"));
             requestedColumns.add(FieldKey.fromParts("LogoLink"));
             requestedColumns.add(FieldKey.fromParts("SystemDescription"));
             requestedColumns.add(FieldKey.fromParts("SystemShortName"));
 
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UserCount"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ActiveUserCount"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ProjectCount"));
@@ -1736,7 +1737,9 @@ public class MothershipController extends SpringActionController
             {
                 // The 5 columns from the lookup via MostRecentSession are all user editable by default, which is
                 // incorrect for their usage on this page.
-                if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
+                if (!("Note".equalsIgnoreCase(col.getColumnName()) ||
+                        "ServerHostName".equalsIgnoreCase(col.getColumnName()) ||
+                        "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
                     ((BaseColumnInfo)col).setUserEditable(false);
                 }
