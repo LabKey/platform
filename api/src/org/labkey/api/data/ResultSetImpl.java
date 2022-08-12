@@ -51,7 +51,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     protected int _size;
 
     // for resource tracking
-    private StackTraceElement[] _debugCreated;
+    private final StackTraceElement[] _debugCreated;
     protected boolean _wasClosed = false;
 
 
