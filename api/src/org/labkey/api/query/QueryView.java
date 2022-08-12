@@ -362,28 +362,10 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    /**
-     * Writes this query view as a sheet in the provided ExcelWriter (CALLER MUST CLOSE)
-     * @param writer to write to
-     * @param config settings to apply to writer prior to sheet export
-          * @param sheetName Name to give to sheet, if not unique within workbook existing sheet will be overwritten
-     */
-    public void exportToExcelSheet(ExcelWriter writer, ExcelExportConfig config, @Nullable String sheetName)
-    {
-        configureExcelWriter(writer, config);
-        String name = StringUtils.isNotBlank(sheetName)? sheetName : getQueryDef().getName();
-        name = StringUtils.isNotBlank(name)? name : StringUtils.isNotBlank(getDataRegionName()) ? getDataRegionName() : "Data";
-        writer.setSheetName(name);
-        writer.setAutoSize(true);
-        writer.renderNewSheet();
-        logAuditEvent("Exported to Excel", writer.getDataRowCount());
-    }
-
-
     /* delay load menu, because it is usually visible==false */
     private class QueryNavTreeMenuButton extends MenuButton
     {
-        boolean populated = false;
+        private boolean populated = false;
 
         QueryNavTreeMenuButton(String label)
         {
@@ -2757,18 +2739,16 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = config.getTemplateOnly() ? getExcelTemplateWriter(config) : getExcelWriter(config))
-            {
-                ew.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
-                ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
-                if (config.getPrefix() != null)
-                    ew.setFilenamePrefix(config.getPrefix());
-                ew.setAutoSize(true);
-                ew.renderSheetAndWrite(config.getResponse());
+            ExcelWriter ew = config.getTemplateOnly() ? getExcelTemplateWriter(config) : getExcelWriter(config);
+            ew.setCaptionType(config.getHeaderType() == null ? getColumnHeaderType() : config.getHeaderType());
+            ew.setShowInsertableColumnsOnly(config.getInsertColumnsOnly(), config.getIncludeColumns(), config.getExcludeColumns());
+            if (config.getPrefix() != null)
+                ew.setFilenamePrefix(config.getPrefix());
+            ew.setAutoSize(true);
+            ew.renderWorkbook(config.getResponse());
 
-                if (!config.getTemplateOnly())
-                    logAuditEvent("Exported to Excel", ew.getDataRowCount());
-            }
+            if (!config.getTemplateOnly())
+                logAuditEvent("Exported to Excel", ew.getDataRowCount());
         }
     }
 
@@ -2788,13 +2768,13 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            try (OutputStream stream = new BufferedOutputStream(byteStream); ExcelWriter ew = getExcelWriter(docType))
+            try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
+                ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
-                ew.renderSheetAndWrite(stream);
-                stream.flush();
+                ew.renderWorkbook(stream);
                 String extension = docType.name();
                 String filename = includeTimestamp ?
                                     FileUtil.makeFileNameWithTimestamp(ew.getFilenamePrefix(), extension) :
@@ -2965,7 +2945,7 @@ public class QueryView extends WebPartView<Object>
         return DataRegionSelection.setSelectionForAll(this, this.getSelectionKey(), true);
     }
 
-    protected void logAuditEvent(String comment, int dataRowCount)
+    public void logAuditEvent(String comment, int dataRowCount)
     {
         QueryService.get().addAuditEvent(this, comment, dataRowCount);
     }
