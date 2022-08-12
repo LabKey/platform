@@ -23,7 +23,12 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.labkey.api.action.BaseApiAction;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -45,8 +50,10 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -58,6 +65,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -87,6 +95,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.Attribute.cols;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.rows;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LK.ERRORS;
+import static org.labkey.api.util.DOM.LK.FORM;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.TEXTAREA;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * User: jeckels
@@ -707,25 +729,132 @@ public class MothershipController extends SpringActionController
         @Override
         public Object execute(UpdateCheckForm form, BindException errors) throws Exception
         {
-            // First log this installation and session
-            Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
-            ServerInstallation installation = new ServerInstallation();
             if (form.getServerGUID() != null)
             {
-                installation.setServerInstallationGUID(form.getServerGUID());
-                installation.setLogoLink(form.getLogoLink());
-                installation.setOrganizationName(form.getOrganizationName());
-                installation.setServerIP(getRemoteAddr(form.getServerGUID()));
-                installation.setSystemDescription(form.getSystemDescription());
-                installation.setSystemShortName(form.getSystemShortName());
-                installation.setContainer(getContainer().getId());
-                installation.setUsedInstaller(form.isUsedInstaller());
-                MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
+                // First log this installation and session
+                var sessionAndRelease = saveSessionInfo(form);
                 setSuccessHeader();
                 getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
             }
 
             return null;
+        }
+    }
+
+    private Pair<ServerSession, SoftwareRelease> saveSessionInfo(UpdateCheckForm form)
+    {
+        Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
+        ServerInstallation installation = new ServerInstallation();
+        installation.setServerInstallationGUID(form.getServerGUID());
+        installation.setLogoLink(form.getLogoLink());
+        installation.setOrganizationName(form.getOrganizationName());
+        installation.setServerIP(getRemoteAddr(form.getServerGUID()));
+        installation.setSystemDescription(form.getSystemDescription());
+        installation.setSystemShortName(form.getSystemShortName());
+        installation.setContainer(getContainer().getId());
+        installation.setUsedInstaller(form.isUsedInstaller());
+        MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
+        return sessionAndRelease;
+    }
+
+    public static class ManualImportForm
+    {
+        private String _json;
+
+        public String getJson()
+        {
+            return _json;
+        }
+
+        public void setJson(String json)
+        {
+            _json = json;
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    @RequiresPermission(AdminPermission.class)
+    public class ManualMetricImportAction extends FormViewAction<ManualImportForm>
+    {
+        @Override
+        public void validateCommand(ManualImportForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(ManualImportForm manualImportForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new HtmlView(
+                    DIV("This is intended for servers that are not auto-reporting their metrics for whatever reason. Admins can export the JSON for their metrics via Admin Console->Site Settings.",
+                            ERRORS(errors),
+                            FORM(at(method, "POST"),
+                                TEXTAREA(at(name, "json", rows, "20", cols, "80"), manualImportForm.getJson()),
+                                BR(),
+                                new Button.ButtonBuilder("Save").submit(true).build()
+                            ))
+                    );
+        }
+
+        @Override
+        public boolean handlePost(ManualImportForm manualImportForm, BindException errors) throws Exception
+        {
+            try
+            {
+                JSONObject parsed = new JSONObject(manualImportForm.getJson());
+
+                UpdateCheckForm form = new UpdateCheckForm();
+
+                if (!parsed.has("serverGUID"))
+                {
+                    errors.reject("foo", "No serverGUID property");
+                }
+                if (!parsed.has("serverSessionGUID"))
+                {
+                    errors.reject("foo", "No serverSessionGUID property");
+                }
+                if (!parsed.has("jsonMetrics"))
+                {
+                    errors.reject("foo", "No jsonMetrics property");
+                }
+
+                if (errors.hasErrors())
+                {
+                    return false;
+                }
+
+                // We don't support nested properties in our form binding. Extract and set as a string after
+                // form binding.
+                String jsonMetrics = parsed.getJSONObject("jsonMetrics").toString();
+                parsed.remove("jsonMetrics");
+
+                // Translate to the same form as automated submissions use
+                BaseApiAction.JsonPropertyValues values = new BaseApiAction.JsonPropertyValues(parsed);
+                BaseViewAction.defaultBindParameters(form, "form", values);
+
+                // Poke the jsonMetrics back in
+                form.setJsonMetrics(jsonMetrics);
+                form.setServerHostName("ManualMetricImport");
+                saveSessionInfo(form);
+            }
+            catch (JSONException e)
+            {
+                errors.reject("foo", e.toString());
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ManualImportForm manualImportForm)
+        {
+            return getContainer().getStartURL(getUser());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Manual metric import");
         }
     }
 
