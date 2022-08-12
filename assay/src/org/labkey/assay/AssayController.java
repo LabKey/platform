@@ -131,6 +131,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.*;
 import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
@@ -157,6 +158,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -1719,6 +1721,57 @@ public class AssayController extends SpringActionController
 
             response.put("containers", containersInfo);
             return response;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    {
+
+        @Override
+        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> permittedIds = form.getIds(false);
+
+            Set<Integer> notPermittedIds = new HashSet<>();
+
+            ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
+            permittedIds.removeAll(notPermittedIds);
+            return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
+
+        }
+    }
+
+    public static class OperationConfirmationForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Set<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds(boolean clear)
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 }

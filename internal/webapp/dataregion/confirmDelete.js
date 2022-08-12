@@ -1,16 +1,27 @@
 
-Ext4.namespace("LABKEY.experiment");
+Ext4.namespace("LABKEY.dataregion");
 
-LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+LABKEY.dataregion.confirmDelete = function(
+        dataRegionName,
+        schemaName,
+        queryName,
+        controller,
+        deleteConfirmationActionName,
+        selectionKey,
+        nounSingular,
+        nounPlural,
+        dependencyText,
+        extraConfirmationContext = {},
+        deleteUrl = LABKEY.ActionURL.buildURL('query', 'deleteRows'),
+        rowParameterName = 'rows') {
     var loadingMsg = Ext4.Msg.show({
         title: "Retrieving data",
         msg: "Loading ..."
     });
     Ext4.Ajax.request({
-        url: LABKEY.ActionURL.buildURL('experiment', "getMaterialOperationConfirmationData.api", LABKEY.containerPath, {
+        url: LABKEY.ActionURL.buildURL(controller, deleteConfirmationActionName, LABKEY.containerPath, Object.assign({}, {
             dataRegionSelectionKey: selectionKey,
-            sampleOperation: 'Delete',
-        }),
+        }, extraConfirmationContext)),
         method: "GET",
         success: LABKEY.Utils.getCallbackWrapper(function(response) {
             loadingMsg.hide();
@@ -18,15 +29,11 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 var numCanDelete = response.data.allowed.length;
                 var numCannotDelete = response.data.notAllowed.length;
                 var associatedDatasets = response.data.associatedDatasets;
-                var associatedDatasetsLength = associatedDatasets.length;
+                var associatedDatasetsLength = associatedDatasets ? associatedDatasets.length : 0;
                 var canDeleteNoun = numCanDelete === 1 ? nounSingular : nounPlural;
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
-                var sampleStatusEnabled = LABKEY.moduleContext.api.moduleNames.indexOf('samplemanagement') > -1;
-                var dependencyText = sampleStatusEnabled ?
-                        "derived sample or assay data dependencies or status that prevents deletion"
-                        : "derived sample or assay data dependencies";
                 var text;
                 if (totalNum === 0) {
                     text = "Either no " + nounPlural + " are selected for deletion or the selected " + nounPlural + " are no longer valid."
@@ -37,7 +44,7 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 }
                 else if (numCanDelete === 0) {
                     if (totalNum === 1) {
-                        text = "The " + totalNoun + " you've selected cannot be deleted because it has " + dependencyText;
+                        text = "The " + totalNoun + " you've selected cannot be deleted because it has " + dependencyText + ".";
                     } else {
                         text = (numCannotDelete === 2) ? "Neither of" : "None of";
                         text += " the " + totalNum + " " + totalNoun + " you've selected can be deleted";
@@ -63,9 +70,6 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                     text += "</ul>";
                 }
 
-                if (numCannotDelete > 0) {
-                    text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets#delete') + "'>more info</a>)";
-                }
                 if (numCanDelete > 0) {
                     if (associatedDatasetsLength === 0) {
                         text += "<br/><br/>";
@@ -76,6 +80,7 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                 Ext4.Msg.show({
                     title: numCanDelete > 0 ? "Permanently delete " + numCanDelete + " " + canDeleteNoun : "No " + nounPlural + " can be deleted",
                     msg: text,
+                    width: 450, // added to keep the text from being swallowed vertically
                     icon: Ext4.window.MessageBox.QUESTION,
                     buttons: numCanDelete === 0 ? Ext4.Msg.CANCEL : Ext4.Msg.OKCANCEL,
                     buttonText: numCanDelete === 0 ?
@@ -93,17 +98,16 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                         else if (btn === 'ok') {
                             const canDelete = response.data.allowed;
                             Ext4.Ajax.request({
-                                url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
+                                url: deleteUrl,
                                 method: 'POST',
                                 jsonData: {
                                     schemaName: schemaName,
                                     queryName: queryName,
-                                    rows: canDelete,
+                                    [rowParameterName]: canDelete,
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
                                     // clear the selection only for the rows that were deleted
-                                    // TODO: support clearing selection in query-deleteRows.api using a selectionKey
                                     const ids = canDelete.map((row) => row.RowId);
                                     const dr = LABKEY.DataRegions[dataRegionName];
                                     if (dr) {
@@ -114,9 +118,10 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                                     }
 
                                     Ext4.Msg.hide();
+                                    var numDeleted = response.rowsAffected ? response.rowsAffected : ids.length;
                                     var responseMsg = Ext4.Msg.show({
                                         title: "Delete " + totalNoun,
-                                        msg:  response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted."
+                                        msg:  numDeleted + " " + (numDeleted === 1 ? nounSingular : nounPlural) + " deleted."
                                     });
                                     Ext4.defer(function() {
                                         responseMsg.hide();
