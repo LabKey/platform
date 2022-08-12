@@ -156,10 +156,11 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
                 _initialFileTypesFromTask = false;
                 _initialFileTypes = inputFilterExts;
             }
-            else if (_initialFileTypesFromTask)
+            else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
             {
+                _initialFileTypesFromTask = true;
                 TaskId tid = getTaskProgression()[0];
-                TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(tid);
+                TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
                 _initialFileTypes = factory.getInputTypes();
             }
 
