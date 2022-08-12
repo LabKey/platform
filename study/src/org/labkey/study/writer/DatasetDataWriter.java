@@ -310,9 +310,17 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
-                // don't include the sample type alias column for export
-                if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(in.getName()) && def.isPublishedData())
-                    continue;
+                if (def.isPublishedData())
+                {
+                    // don't include some published data columns in the export
+                    if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(in.getName()) ||
+                            ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(in.getName()) ||
+                            "run".equalsIgnoreCase(in.getName()) ||
+                            "participantVisit/visit".equalsIgnoreCase(in.getName()) ||
+                            "ancestors".equalsIgnoreCase(in.getName()) ||
+                            "rowId".equalsIgnoreCase(in.getName()))
+                        continue;
+                }
 
                 if (in.equals(qcStateColumn))
                 {
