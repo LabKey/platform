@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
-import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
@@ -51,7 +50,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,12 +58,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
  * Knows how to create an Excel file (of various formats) based on the {@link Results} of a database query.
  */
-public class ExcelWriter implements ExportWriter, AutoCloseable
+public class ExcelWriter implements ExportWriter
 {
     /** Flavors of supported Excel file formats */
     public enum ExcelDocumentType
@@ -88,13 +88,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             public int getMaxRows()
             {
                 // Return one less than the Excel max since we'll generally be including at least one header row
-                return 65535;
+                return SpreadsheetVersion.EXCEL97.getMaxRows() - 1;
             }
 
             @Override
             public int getMaxColumns()
             {
-                return HSSFCell.LAST_COLUMN_NUMBER + 1;
+                return SpreadsheetVersion.EXCEL97.getMaxColumns();
             }
 
             @Override
@@ -111,7 +111,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     if (null == propsTemp)
                         propsTemp = new CustomProperties();
                     CustomProperties props = propsTemp;
-                    metadata.forEach(props::put);
+                    props.putAll(metadata);
                     hssfWorkbook.getDocumentSummaryInformation().setCustomProperties(props);
                 }
             }
@@ -123,7 +123,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             {
                 // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
                 // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
-                return new SXSSFWorkbook(1000);
+                return new SXSSFWorkbook(1000){
+                    @Override
+                    public void close() throws IOException
+                    {
+                        super.close();
+                        dispose(); // Required to clean up temp/poifiles, #46060
+                    }
+                };
             }
 
             @Override
@@ -136,13 +143,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             public int getMaxRows()
             {
                 // Return one less than the Excel max since we'll generally be including at least one header row
-                return 1048575;
+                return SpreadsheetVersion.EXCEL2007.getMaxRows() - 1;
             }
 
             @Override
             public int getMaxColumns()
             {
-                return SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1;
+                return SpreadsheetVersion.EXCEL2007.getMaxColumns();
             }
 
             @Override
@@ -182,9 +189,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private List<String> _commentLines = Collections.emptyList();
     private ColumnHeaderType _captionType = ColumnHeaderType.Caption;
     private boolean _insertableColumnsOnly = false;
-    private List<ExcelColumn> _columns = new ArrayList<>();
+    private List<DisplayColumn> _columns = new ArrayList<>(10);
+    private Consumer<ExcelColumn> _columnModifier = excelColumn -> {}; // No-op modifier by default
+
     private boolean _captionRowFrozen = true;
     private boolean _captionRowVisible = true;
+    private boolean _autoSize = false;
     private Map<String, String> _metadata = Collections.emptyMap();
 
     // Careful: these can't be static.  As a cell format is added to a workbook, it gets assigned an internal index number, so each workbook must have a new one.
@@ -201,8 +211,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     private int _currentRow = 0;
     private int _currentSheet = -1;
 
-    protected final Workbook _workbook;
-
     // Some columns may need to be Aliased (e.g., Name -> Sample ID)
     private Map<String, String> _renameColumnMap;
 
@@ -213,13 +221,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public ExcelWriter(ExcelDocumentType docType)
     {
-        this(docType, null);
-    }
-
-    protected ExcelWriter(ExcelDocumentType docType, @Nullable Workbook workbook)
-    {
         _docType = docType;
-        _workbook = workbook == null ? docType.createWorkbook() : workbook;
     }
 
     public ExcelWriter(@NotNull ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
@@ -253,18 +255,18 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns, @Nullable List<FieldKey> excludeColumns)
     {
         _insertableColumnsOnly = b;
+
+        // Consider: just set the boolean and stash the column lists in this method, deferring the "insertable" checks
+        // until ExcelColumn creation time. That's arguably more correct since setColumns/addColumns don't currently
+        // respect includeColumns & excludeColumns.
         if (_insertableColumnsOnly)
         {
             // Remove any insert only columns that have already made their way into the list
             // except those explicitly requested
-            Iterator<ExcelColumn> i = _columns.iterator();
+            Iterator<DisplayColumn> i = _columns.iterator();
             while (i.hasNext())
             {
-                ExcelColumn column = i.next();
-                DisplayColumn dc = column.getDisplayColumn();
-                if (dc == null)
-                    continue;
-
+                DisplayColumn dc = i.next();
                 ColumnInfo c = dc.getColumnInfo();
                 if (c == null)
                     continue;
@@ -286,38 +288,22 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    public void createColumns(ResultSetMetaData md) throws SQLException
-    {
-        int columnCount = md.getColumnCount();
-        List<ColumnInfo> cols = new ArrayList<>(columnCount);
-
-        for (int i = 0; i < columnCount; i++)
-        {
-            int sqlColumn = i + 1;
-            cols.add(new BaseColumnInfo(md, sqlColumn));
-        }
-
-        setColumns(cols);
-    }
-
     public void setResultsFactory(@NotNull ResultsFactory factory)
     {
         _factory = factory;
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
-
     public void setSheetName(String sheetName)
     {
         _sheetName = cleanSheetName(sheetName);
     }
 
-
-    private static final Pattern badSheetNameChars = Pattern.compile("[\\\\:/\\[\\]?*|]");
+    private static final Pattern BAD_SHEET_NAME_CHARS = Pattern.compile("[\\\\:/\\[\\]?*|]");
 
     public static String cleanSheetName(String sheetName)
     {
-        sheetName = badSheetNameChars.matcher(sheetName).replaceAll("_");
+        sheetName = BAD_SHEET_NAME_CHARS.matcher(sheetName).replaceAll("_");
         // CONSIDER: collapse whitespaces and underscores
 
         if (sheetName.length() > 31)
@@ -328,10 +314,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public String getSheetName(int index)
     {
-        if (null == _sheetName)
-            return "data" + (index == 0 ? "" : Integer.toString(index));
-        else
-            return _sheetName;
+        return Objects.requireNonNullElseGet(_sheetName, () -> "data" + (index == 0 ? "" : Integer.toString(index)));
     }
 
     public void setFooter(String footer)
@@ -347,25 +330,19 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
             return _footer;
     }
 
-
     public String getFilenamePrefix()
     {
-        if (null == _filenamePrefix)
-            return getSheetName(0).replaceAll(" ", "_");
-        else
-            return _filenamePrefix;
+        return Objects.requireNonNullElseGet(_filenamePrefix, () -> getSheetName(0).replaceAll(" ", "_"));
     }
-
 
     public void setFilenamePrefix(String filenamePrefix)
     {
         _filenamePrefix = filenamePrefix;
     }
 
-
     public void setHeaders(@NotNull List<String> headers)
     {
-        _headers = Collections.unmodifiableList(new ArrayList<>(headers));
+        _headers = List.copyOf(headers);
     }
 
     public void setHeaders(String... headers)
@@ -379,54 +356,25 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return _headers;
     }
 
-
     public boolean isCaptionRowFrozen()
     {
         return _captionRowFrozen;
     }
-
 
     public void setCaptionRowFrozen(boolean captionColumnFrozen)
     {
         _captionRowFrozen = captionColumnFrozen;
     }
 
-
     public boolean isCaptionRowVisible()
     {
         return _captionRowVisible;
     }
 
-
     public void setCaptionRowVisible(boolean captionRowVisible)
     {
         _captionRowVisible = captionRowVisible;
     }
-
-
-    public ExcelColumn getExcelColumn(int index)
-    {
-        return _columns.get(index);
-    }
-
-
-    public ExcelColumn getExcelColumn(String columnName)
-    {
-        for (ExcelColumn column : _columns)
-        {
-            if (column.getName().equalsIgnoreCase(columnName))
-                return column;
-        }
-
-        return null;
-    }
-
-
-    private void addColumn(DisplayColumn col)
-    {
-        _columns.add(new ExcelColumn(col, _formatters, _workbook));
-    }
-
 
     private void addDisplayColumns(List<DisplayColumn> columns)
     {
@@ -434,10 +382,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             if (_insertableColumnsOnly && (null == column.getColumnInfo() || !column.getColumnInfo().isShownInInsertView()))
                 continue;
-            addColumn(column);
+            _columns.add(column);
         }
     }
-
 
     private void addColumns(List<ColumnInfo> cols)
     {
@@ -445,58 +392,32 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             if (_insertableColumnsOnly && !col.isShownInInsertView())
                 continue;
-            addColumn(new DataColumn(col));
+            _columns.add(new DataColumn(col));
         }
     }
-
 
     public void setDisplayColumns(List<DisplayColumn> columns)
     {
-        _columns = new ArrayList<>(10);
+        _columns = new ArrayList<>(Math.max(10, columns.size()));
         addDisplayColumns(columns);
     }
 
-
     public void setColumns(List<ColumnInfo> columns)
     {
-        _columns = new ArrayList<>(10);
+        _columns = new ArrayList<>(Math.max(10, columns.size()));
         addColumns(columns);
     }
 
-
-    public List<ExcelColumn> getColumns()
+    // Column modifier will be invoked on each visible ExcelColumn at creation time
+    public void setColumnModifier(Consumer<ExcelColumn> columnModifier)
     {
-        return _columns;
+        _columnModifier = columnModifier;
     }
-
-
-    public List<ExcelColumn> getVisibleColumns(RenderContext ctx)
-    {
-        if (null == _columns)
-            return null;
-
-        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
-
-        for (ExcelColumn column : _columns)
-        {
-            if (column.isVisible(ctx))
-                visibleColumns.add(column);
-
-            if (visibleColumns.size() >= _docType.getMaxColumns())
-            {
-                return visibleColumns;
-            }
-        }
-
-        return visibleColumns;
-    }
-
 
     // Sets AutoSize property on all columns
     public void setAutoSize(boolean autoSize)
     {
-        for (ExcelColumn _column : _columns)
-            _column.setAutoSize(autoSize);
+        _autoSize = autoSize;
     }
 
     public void setMetadata(@NotNull Map<String, String> metadata)
@@ -504,13 +425,15 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _metadata = metadata;
     }
 
-    // Write the spreadsheet to the file system.
-    public void renderSheetAndWrite(OutputStream stream)
+    /**
+     * Renders the sheet(s) and writes the workbook to the supplied stream
+     */
+    public final void renderWorkbook(OutputStream stream)
     {
-        try
+        try (Workbook workbook = _docType.createWorkbook())
         {
-            renderNewSheet();
-            _write(stream);
+            renderSheets(workbook);
+            _write(workbook, stream);
         }
         catch (IOException e)
         {
@@ -518,47 +441,14 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    @Deprecated // Use renamed method renderSheetAndWrite
-    public void write(HttpServletResponse response)
-    {
-        renderSheetAndWrite(response);
-    }
-
     /**
-     * Renders the sheet then writes out the workbook to supplied stream
-     * @param response to write out the file
+     * Renders the sheet(s) and writes the workbook to the supplied response
      */
-    public void renderSheetAndWrite(HttpServletResponse response)
+    public void renderWorkbook(HttpServletResponse response)
     {
-        renderSheetAndWrite(response, getFilenamePrefix());
-    }
-
-    /**
-     * Writes out the workbook to the response stream
-     * @param response to write to
-     */
-    public void writeWorkbook(HttpServletResponse response)
-    {
-        writeWorkbook(response, getFilenamePrefix());
-    }
-
-    // Create the spreadsheet and stream it to the browser.
-    public void renderSheetAndWrite(HttpServletResponse response, String filenamePrefix)
-    {
-        renderNewSheet();
-        writeWorkbook(response, filenamePrefix);
-    }
-
-    /**
-     * Write workbook out to supplied response
-     * @param response to write to
-     * @param filenamePrefix string to prepend to a time stamp as filename
-     */
-    public void writeWorkbook(HttpServletResponse response, String filenamePrefix)
-    {
-        try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
+        try (ServletOutputStream outputStream = getOutputStream(response, getFilenamePrefix(), _docType))
         {
-            _write(outputStream);
+            renderWorkbook(outputStream);
         }
         catch (IOException e)
         {
@@ -576,11 +466,108 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    // Should be called within a try/catch
-    private void _write(OutputStream stream) throws IOException
+    /**
+     * By default, this renders a single sheet and writes the workbook. Subclasses can override to write multiple sheets
+     * or otherwise customize the workbook.
+     */
+    protected void renderSheets(Workbook workbook)
     {
-        _docType.setMetadata(_workbook, _metadata);
-        _workbook.write(stream);
+        renderNewSheet(workbook);
+    }
+
+    protected void renderNewSheet(Workbook workbook)
+    {
+        _currentRow = 0;
+        _currentSheet++;
+        renderSheet(workbook, _currentSheet);
+    }
+
+    protected void renderSheet(Workbook workbook, int sheetNumber)
+    {
+        Sheet sheet;
+        //TODO: Pass render context all the way through Excel writers...
+        RenderContext ctx = new RenderContext(HttpView.currentContext());
+
+        if (workbook.getNumberOfSheets() > sheetNumber)
+        {
+            sheet = workbook.getSheetAt(sheetNumber);
+        }
+        else
+        {
+            sheet = workbook.getSheet(getSheetName(sheetNumber));
+            if (sheet == null)
+            {
+                sheet = workbook.createSheet(getSheetName(sheetNumber));
+                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
+
+                Drawing<?> drawing = sheet.createDrawingPatriarch();
+                ctx.put(SHEET_DRAWING, drawing);
+                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
+                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
+            }
+        }
+
+        List<ExcelColumn> visibleColumns = getVisibleColumns(workbook, ctx);
+
+        try
+        {
+            try
+            {
+                renderCommentLines(sheet);
+                renderSheetHeaders(sheet, visibleColumns.size());
+                renderColumnCaptions(sheet, visibleColumns);
+
+                renderGrid(ctx, sheet, visibleColumns);
+            }
+            catch(MaxRowsExceededException e)
+            {
+                // Just continue on
+            }
+
+            adjustColumnWidths(ctx, sheet, visibleColumns);
+
+            if (null != getFooter())
+            {
+                Footer hf = sheet.getFooter();
+                hf.setLeft("&D");
+                hf.setCenter(getFooter());
+                hf.setRight("Page &P/&N");
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<ExcelColumn> getVisibleColumns(Workbook workbook, RenderContext ctx)
+    {
+        List<ExcelColumn> visibleColumns = new ArrayList<>(_columns.size());
+
+        for (DisplayColumn dc : _columns)
+        {
+            ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
+            if (column.isVisible(ctx))
+            {
+                column.setAutoSize(_autoSize);
+                _columnModifier.accept(column);
+                visibleColumns.add(column);
+            }
+
+            if (visibleColumns.size() >= _docType.getMaxColumns())
+            {
+                return visibleColumns;
+            }
+        }
+
+        return visibleColumns;
+    }
+
+    // Should be called within a try/catch
+    private void _write(Workbook workbook, OutputStream stream) throws IOException
+    {
+        _docType.setMetadata(workbook, _metadata);
+        workbook.write(stream);
         stream.flush();
     }
 
@@ -600,7 +587,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         // it were downloading a file (you get a dialog saying you wish to open or save
         // the workbook). The other choice is to specify "inline" instead of "attachment"
         // so that the file is always opened inside the browser, not outside by launching
-        // excel as a standalone application (not embeded)
+        // excel as a standalone application (not embedded)
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
@@ -609,7 +596,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
         try
         {
-            // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
+            // Get the output stream of the servlet (BTW, always get the output stream AFTER you've
             // set the content-disposition and content-type)
             return response.getOutputStream();
         }
@@ -652,93 +639,23 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-    public void renderNewSheet()
+    public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns)
     {
-        _currentRow = 0;
-        _currentSheet++;
-        renderSheet(_currentSheet);
-    }
-
-    public void renderCurrentSheet()
-    {
-        renderSheet(_currentSheet);
-    }
-
-    public void renderSheet(int sheetNumber)
-    {
-        Sheet sheet;
-        //TODO: Pass render context all the way through Excel writers...
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
-
-        if (_workbook.getNumberOfSheets() > sheetNumber)
-        {
-            sheet = _workbook.getSheetAt(sheetNumber);
-        }
-        else
-        {
-            sheet = _workbook.getSheet(getSheetName(sheetNumber));
-            if (sheet == null)
-            {
-                sheet = _workbook.createSheet(getSheetName(sheetNumber));
-                sheet.getPrintSetup().setPaperSize(PrintSetup.LETTER_PAPERSIZE);
-
-                Drawing drawing = sheet.createDrawingPatriarch();
-                ctx.put(SHEET_DRAWING, drawing);
-                ctx.put(SHEET_IMAGE_SIZES, new HashMap<>());
-                ctx.put(SHEET_IMAGE_PICTURES, new HashMap<>());
-            }
-        }
-
-        List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
-
-        try
-        {
-            try
-            {
-                renderCommentLines(sheet);
-                renderSheetHeaders(sheet, visibleColumns.size());
-                renderColumnCaptions(sheet, visibleColumns);
-
-                renderGrid(ctx, sheet, visibleColumns);
-            }
-            catch(MaxRowsExceededException e)
-            {
-                // Just continue on
-            }
-
-            adjustColumnWidths(ctx, sheet, visibleColumns);
-
-            if (null != getFooter())
-            {
-                Footer hf = sheet.getFooter();
-                hf.setLeft("&D");
-                hf.setCenter(getFooter());
-                hf.setRight("Page &P/&N");
-            }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List visibleColumns)
-    {
-        if (sheet instanceof SXSSFSheet)
-            ((SXSSFSheet)sheet).trackAllColumnsForAutoSizing();
+        if (sheet instanceof SXSSFSheet sx)
+            sx.trackAllColumnsForAutoSizing();
 
         for (int column = visibleColumns.size() - 1; column >= 0; column--)
         {
-            ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
+            visibleColumns.get(column).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
         }
     }
 
     // Initialize non-wrapping text format for this worksheet
-    protected CellStyle getWrappingTextFormat()
+    protected CellStyle getWrappingTextFormat(Workbook workbook)
     {
         if (null == _wrappingTextFormat)
         {
-            _wrappingTextFormat = _workbook.createCellStyle();
+            _wrappingTextFormat = workbook.createCellStyle();
             _wrappingTextFormat.setWrapText(true);
             _wrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
@@ -748,13 +665,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
 
     // Initialize bold format for this worksheet
-    protected CellStyle getBoldFormat()
+    protected CellStyle getBoldFormat(Workbook workbook)
     {
         if (null == _boldFormat)
         {
-            Font boldFont = _workbook.createFont();
+            Font boldFont = workbook.createFont();
             boldFont.setBold(true);
-            _boldFormat = _workbook.createCellStyle();
+            _boldFormat = workbook.createCellStyle();
             _boldFormat.setFont(boldFont);
         }
 
@@ -763,11 +680,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
 
     // Initialize non-wrapping text format for this worksheet
-    protected CellStyle getNonWrappingTextFormat()
+    protected CellStyle getNonWrappingTextFormat(Workbook workbook)
     {
         if (null == _nonWrappingTextFormat)
         {
-            _nonWrappingTextFormat = _workbook.createCellStyle();
+            _nonWrappingTextFormat = workbook.createCellStyle();
             _nonWrappingTextFormat.setWrapText(false);
             _nonWrappingTextFormat.setVerticalAlignment(VerticalAlignment.TOP);
         }
@@ -824,7 +741,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                     // Wrap text in the case of full-size headers; don't wrap text in column mode.
                     // This helps in cases like "FileName: t:/data/databases/rat051004_NCBI.fasta" in columns.
                     // If text wrap were on, path+filename may appear blank since Excel wraps at spaces.
-                    cell.setCellStyle(headerColumnCount > 1 ? getNonWrappingTextFormat() : getWrappingTextFormat());
+                    cell.setCellStyle(headerColumnCount > 1 ? getNonWrappingTextFormat(sheet.getWorkbook()) : getWrappingTextFormat(sheet.getWorkbook()));
 
                     // Give all the remaining space to the last column
                     if (j == headerColumnCount - 1)
@@ -838,7 +755,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
         if (_currentRow <= _docType.getMaxRows())
@@ -847,7 +763,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 return;
 
             for (int column = 0; column < visibleColumns.size(); column++)
-                visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(), _captionType);
+                visibleColumns.get(column).renderCaption(sheet, getCurrentRow(), column, getBoldFormat(sheet.getWorkbook()), _captionType);
 
             incrementRow();
 
@@ -925,11 +841,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         incrementRow();
     }
 
-    public Workbook getWorkbook()
-    {
-        return _workbook;
-    }
-
     public ExcelDocumentType getDocumentType()
     {
         return _docType;
@@ -952,14 +863,8 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         return _totalDataRows;
     }
 
-    @Override
-    public void close()
-    {
-        // No-op: Results are closed via try-with-resources at render time
-    }
-
     public void setRenameColumnMap(Map<String, String> renameColumnMap)
     {
-        this._renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
+        _renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
     }
 }
