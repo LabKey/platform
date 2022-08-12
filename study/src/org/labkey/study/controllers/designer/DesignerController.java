@@ -37,7 +37,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -346,9 +345,10 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
+
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
-            xlWriter.renderSheetAndWrite(response);
+            xlWriter.renderWorkbook(response);
         }
     }
 
@@ -418,12 +418,10 @@ public class DesignerController extends SpringActionController
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), TimepointType.DATE, "Subject");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
-            for (ExcelColumn col : xlWriter.getColumns())
-            {
-                col.setCaption(importer.label(col.getName()));
-            }
-
-            xlWriter.renderSheetAndWrite(response);
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(response);
         }
     }
 
