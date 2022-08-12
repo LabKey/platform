@@ -1058,31 +1058,28 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            try (ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
-                {
-                    @Override
-                    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
-                    {
-                        for (Pair<Integer, String> memberGroup : memberGroups)
-                        {
-                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                            row.put("displayName", memberGroup.getValue());
-                            row.put("userId", memberGroup.getKey());
-                            ctx.setRow(row);
-                            renderGridRow(sheet, ctx, visibleColumns);
-                        }
-                        super.renderGrid(ctx, sheet, visibleColumns);
-                    }
-                })
+            ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
             {
-                ew.setAutoSize(true);
-                ew.setSheetName(group + " Members");
-                ew.setFooter(group + " Members");
-                ew.renderSheetAndWrite(response);
-            }
+                @Override
+                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
+                {
+                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    {
+                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                        row.put("displayName", memberGroup.getValue());
+                        row.put("userId", memberGroup.getKey());
+                        ctx.setRow(row);
+                        renderGridRow(sheet, ctx, visibleColumns);
+                    }
+                    super.renderGrid(ctx, sheet, visibleColumns);
+                }
+            };
+            ew.setAutoSize(true);
+            ew.setSheetName(group + " Members");
+            ew.setFooter(group + " Members");
+            ew.renderWorkbook(response);
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
