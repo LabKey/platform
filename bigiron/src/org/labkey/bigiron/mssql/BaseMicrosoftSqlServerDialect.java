@@ -1697,7 +1697,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (WarningService.get().showAllWarnings() || CoreSchema.getInstance().getScope().getDriverName().contains("jTDS"))
             warnings.add(HtmlStringBuilder.of(
-                    "LabKey Server prefers the Microsoft JDBC driver to jTDS. jTDS support will be completely removed in 23.3.0; please upgrade. ").
+                    "LabKey Server prefers the Microsoft JDBC driver for SQL Server. jTDS support will be completely removed in 23.3.0; please upgrade. ").
                     append(new HelpTopic("configSQLServer").getLinkHtml("docs")));
     }
 
