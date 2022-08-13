@@ -9853,6 +9853,10 @@ public class AdminController extends SpringActionController
                         params.put("upgradeMessage", report.getContent());
                 }
             }
+            if (form.isDownload())
+            {
+                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+            }
             return new ApiSimpleResponse(params);
         }
     }
@@ -9863,6 +9867,7 @@ public class AdminController extends SpringActionController
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
         private String _level = UsageReportingLevel.ON.toString();
         private boolean _submit = false;
+        private boolean _download = false;
         private String _forwardedFor = null;
         // indicates action is being invoked for dev/test
         private boolean _testMode = false;
@@ -9915,6 +9920,16 @@ public class AdminController extends SpringActionController
         public void setTestMode(boolean testMode)
         {
             _testMode = testMode;
+        }
+
+        public boolean isDownload()
+        {
+            return _download;
+        }
+
+        public void setDownload(boolean download)
+        {
+            _download = download;
         }
     }
 

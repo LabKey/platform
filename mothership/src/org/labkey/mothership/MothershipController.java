@@ -23,7 +23,12 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.labkey.api.action.BaseApiAction;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -45,8 +50,10 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -55,9 +62,11 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -88,6 +97,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.Attribute.cols;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.rows;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.LK.ERRORS;
+import static org.labkey.api.util.DOM.LK.FORM;
+import static org.labkey.api.util.DOM.TEXTAREA;
+import static org.labkey.api.util.DOM.at;
+
 /**
  * User: jeckels
  * Date: Apr 19, 2006
@@ -95,7 +115,7 @@ import java.util.stream.Collectors;
 public class MothershipController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
-    private static final Logger _log = LogManager.getLogger(MothershipController.class);
+    private static final Logger _log = LogHelper.getLogger(MothershipController.class, "Mothership UI");
 
     public MothershipController()
     {
@@ -120,7 +140,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
+    public static class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
     {
         @Override
         public ModelAndView getView(SoftwareReleaseForm form, BindException errors)
@@ -230,7 +250,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
+    public static class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
     {
         @Override
         public void validateCommand(CreateIssueFinishedForm target, Errors errors)
@@ -280,7 +300,7 @@ public class MothershipController extends SpringActionController
 
     @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(UpdatePermission.class)
-    public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
+    public static class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
         @Override
         public void validateCommand(UpgradeMessageForm target, Errors errors)
@@ -434,7 +454,7 @@ public class MothershipController extends SpringActionController
             StringBuilder title = new StringBuilder();
             BufferedReader reader = new BufferedReader(new StringReader(stackTraceString));
             // Grab the exception class
-            String className = reader.readLine().split("\\:")[0];
+            String className = reader.readLine().split(":")[0];
             if (className.lastIndexOf('.') != -1)
             {
                 // Strip off the package name to make the title a little shorter
@@ -707,25 +727,135 @@ public class MothershipController extends SpringActionController
         @Override
         public Object execute(UpdateCheckForm form, BindException errors) throws Exception
         {
-            // First log this installation and session
-            Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
-            ServerInstallation installation = new ServerInstallation();
             if (form.getServerGUID() != null)
             {
-                installation.setServerInstallationGUID(form.getServerGUID());
-                installation.setLogoLink(form.getLogoLink());
-                installation.setOrganizationName(form.getOrganizationName());
-                installation.setServerIP(getRemoteAddr(form.getServerGUID()));
-                installation.setSystemDescription(form.getSystemDescription());
-                installation.setSystemShortName(form.getSystemShortName());
-                installation.setContainer(getContainer().getId());
-                installation.setUsedInstaller(form.isUsedInstaller());
-                MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
+                // First log this installation and session
+                var sessionAndRelease = saveSessionInfo(form);
                 setSuccessHeader();
                 getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
             }
 
             return null;
+        }
+    }
+
+    private Pair<ServerSession, SoftwareRelease> saveSessionInfo(UpdateCheckForm form)
+    {
+        Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
+        ServerInstallation installation = new ServerInstallation();
+        installation.setServerInstallationGUID(form.getServerGUID());
+        installation.setLogoLink(form.getLogoLink());
+        installation.setOrganizationName(form.getOrganizationName());
+        installation.setServerIP(getRemoteAddr(form.getServerGUID()));
+        installation.setSystemDescription(form.getSystemDescription());
+        installation.setSystemShortName(form.getSystemShortName());
+        installation.setContainer(getContainer().getId());
+        installation.setUsedInstaller(form.isUsedInstaller());
+        MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
+        return sessionAndRelease;
+    }
+
+    public static class ManualImportForm
+    {
+        private String _json;
+
+        public String getJson()
+        {
+            return _json;
+        }
+
+        public void setJson(String json)
+        {
+            _json = json;
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    @RequiresPermission(AdminPermission.class)
+    public class ManualMetricImportAction extends FormViewAction<ManualImportForm>
+    {
+        private int _serverInstallId;
+
+        @Override
+        public void validateCommand(ManualImportForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(ManualImportForm manualImportForm, boolean reshow, BindException errors)
+        {
+            return new HtmlView(
+                    DIV("This is intended for servers that are not auto-reporting their metrics for whatever reason. Admins can export the JSON for their metrics via Admin Console->Site Settings, which can then be pasted here.",
+                            ERRORS(errors),
+                            FORM(at(method, "POST"),
+                                TEXTAREA(at(name, "json", rows, "20", cols, "80"), manualImportForm.getJson()),
+                                BR(),
+                                new Button.ButtonBuilder("Save").submit(true).build()
+                            ))
+                    );
+        }
+
+        @Override
+        public boolean handlePost(ManualImportForm manualImportForm, BindException errors)
+        {
+            try
+            {
+                JSONObject parsed = new JSONObject(manualImportForm.getJson());
+
+                UpdateCheckForm form = new UpdateCheckForm();
+
+                if (!parsed.has("serverGUID"))
+                {
+                    errors.reject("foo", "No serverGUID property");
+                }
+                if (!parsed.has("serverSessionGUID"))
+                {
+                    errors.reject("foo", "No serverSessionGUID property");
+                }
+                if (!parsed.has("jsonMetrics"))
+                {
+                    errors.reject("foo", "No jsonMetrics property");
+                }
+
+                if (errors.hasErrors())
+                {
+                    return false;
+                }
+
+                // We don't support nested properties in our form binding. Extract and set as a string after
+                // form binding.
+                String jsonMetrics = parsed.getJSONObject("jsonMetrics").toString();
+                parsed.remove("jsonMetrics");
+
+                // Translate to the same form as automated submissions use
+                BaseApiAction.JsonPropertyValues values = new BaseApiAction.JsonPropertyValues(parsed);
+                BaseViewAction.defaultBindParameters(form, "form", values);
+
+                // Poke the jsonMetrics back in
+                form.setJsonMetrics(jsonMetrics);
+                form.setServerHostName("ManualMetricImport");
+                ServerSession session = saveSessionInfo(form).first;
+                _serverInstallId = session.getServerInstallationId();
+            }
+            catch (JSONException e)
+            {
+                errors.reject("foo", e.toString());
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ManualImportForm manualImportForm)
+        {
+            return new ActionURL(ShowInstallationDetailAction.class, getContainer()).addParameter("serverInstallationId", _serverInstallId);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Manual metric import");
         }
     }
 
@@ -990,12 +1120,12 @@ public class MothershipController extends SpringActionController
                     ObjectMapper mapper = new ObjectMapper();
                     Map<String, Object> parsed = mapper.readValue(getJsonMetrics(), Map.class);
                     Object modulesObject = parsed.get("modules");
-                    if (modulesObject instanceof Map)
+                    if (modulesObject instanceof Map modulesMap)
                     {
-                        Object coreObject = ((Map)modulesObject).get("Core");
-                        if (coreObject instanceof Map)
+                        Object coreObject = modulesMap.get("Core");
+                        if (coreObject instanceof Map coreMap)
                         {
-                            Object buildInfoObject = ((Map)coreObject).get("buildInfo");
+                            Object buildInfoObject = coreMap.get("buildInfo");
                             if (buildInfoObject instanceof Map)
                             {
                                 Map<String, Object> buildInfo = (Map<String, Object>) buildInfoObject;
@@ -1573,17 +1703,17 @@ public class MothershipController extends SpringActionController
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();
 
+            requestedColumns.add(FieldKey.fromParts("ServerHostName"));
+            requestedColumns.add(FieldKey.fromParts("Note"));
+            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
+            requestedColumns.add(FieldKey.fromParts("ServerIP"));
+            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationId"));
             requestedColumns.add(FieldKey.fromParts("ServerInstallationGUID"));
-            requestedColumns.add(FieldKey.fromParts("Note"));
-            requestedColumns.add(FieldKey.fromParts("OrganizationName"));
-            requestedColumns.add(FieldKey.fromParts("ServerHostName"));
-            requestedColumns.add(FieldKey.fromParts("ServerIP"));
             requestedColumns.add(FieldKey.fromParts("LogoLink"));
             requestedColumns.add(FieldKey.fromParts("SystemDescription"));
             requestedColumns.add(FieldKey.fromParts("SystemShortName"));
 
-            requestedColumns.add(FieldKey.fromParts("MostRecentSession", "AdministratorEmail"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "UserCount"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ActiveUserCount"));
             requestedColumns.add(FieldKey.fromParts("MostRecentSession", "ProjectCount"));
@@ -1607,7 +1737,9 @@ public class MothershipController extends SpringActionController
             {
                 // The 5 columns from the lookup via MostRecentSession are all user editable by default, which is
                 // incorrect for their usage on this page.
-                if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
+                if (!("Note".equalsIgnoreCase(col.getColumnName()) ||
+                        "ServerHostName".equalsIgnoreCase(col.getColumnName()) ||
+                        "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
                     ((BaseColumnInfo)col).setUserEditable(false);
                 }
