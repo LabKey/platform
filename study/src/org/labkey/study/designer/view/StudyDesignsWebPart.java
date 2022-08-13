@@ -67,7 +67,7 @@ public class StudyDesignsWebPart extends GridView
         dr.getDisplayColumn("StudyId").setCaption("Id");
 
         ActionURL helper = new ActionURL(DesignerController.DesignerAction.class, ctx.getContainer());
-        dr.getDisplayColumn("Label").setURL(helper.clone().addParameter("studyId", "${studyId}").getLocalURIString(true));
+        dr.getDisplayColumn("Label").setURL(helper.clone().addParameter("studyId", "${studyId}"));
         dr.getDisplayColumn("PublicRevision").setCaption("Revision");
         dr.getDisplayColumn("Container").setVisible(false);
         dr.getDisplayColumn("Active").setVisible(false);

@@ -612,7 +612,7 @@ public class ExperimentController extends SpringActionController
             QueryView queryView = new SampleTypeContentsView(_sampleType, schema, settings, errors);
 
             DetailsView detailsView = new DetailsView(getSampleTypeRegion(getViewContext()), _sampleType.getRowId());
-            detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
+            detailsView.getDataRegion().getDisplayColumn("Name").setURL((ActionURL)null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("LabelColor").setVisible(false);
@@ -3800,7 +3800,7 @@ public class ExperimentController extends SpringActionController
         dr.getDisplayColumn("parentcol").setVisible(false);
 
         ActionURL url = new ActionURL(ShowSampleTypeAction.class, model.getContainer());
-        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
+        dr.getDisplayColumn(1).setURL(url.addParameter("rowId", "${RowId}"));
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
 
         return dr;
