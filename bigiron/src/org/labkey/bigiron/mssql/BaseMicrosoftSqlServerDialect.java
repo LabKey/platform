@@ -25,25 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.DatabaseMetaDataWrapper;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScanner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -53,7 +35,9 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
@@ -1710,6 +1694,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
             warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+
+        if (WarningService.get().showAllWarnings() || CoreSchema.getInstance().getScope().getDriverName().contains("jTDS"))
+            warnings.add(HtmlStringBuilder.of(
+                    "LabKey Server prefers the Microsoft JDBC driver for SQL Server. jTDS support will be completely removed in 23.3.0; please upgrade. ").
+                    append(new HelpTopic("configSQLServer").getLinkHtml("docs")));
     }
 
     @Override
