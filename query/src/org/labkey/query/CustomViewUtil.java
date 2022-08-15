@@ -95,14 +95,8 @@ public class CustomViewUtil
             for (Map<String, Object> filterInfo : jsonFilters.toMapList())
             {
                 String fieldKey = (String)filterInfo.get("fieldKey");
-                String op = (String)filterInfo.get("op");
-                if (op == null)
-                    op = "";
-
-                String value = (String)filterInfo.get("value");
-                if (value == null)
-                    value = "";
-
+                String op = filterInfo.get("op") != null ? filterInfo.get("op").toString() : "";
+                String value = filterInfo.get("value") != null ? filterInfo.get("value").toString() : "";
                 url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
             }
         }
