@@ -84,9 +84,31 @@ else
         </ul>
     <% } %>
 
+<% if (bean.getReferencedItems().size() > 0) { %>
+    <span class="labkey-error">
+        <%= h(bean.getReferencedItems().size() > 1 ? Integer.toString(bean.getReferencedItems().size()) : "One") %> <%= h(bean.getObjectType())%><%= h(bean.getReferencedItems().size() > 1 ? "s" : "") %> cannot be deleted because there are <%= h(bean.getReferencesDescription())%>:
+    </span>
+    <ul>
+        <%  int count = 0;
+        for (ExpObject item: bean.getReferencedItems()) {
+            if (count >= 50)
+            {
+                %>(<%= bean.getReferencedItems().size() - count %> others omitted from list)<%
+                break;
+            }
+            count++;
+        %>
+            <li>
+                <a href="<%= h(item.detailsURL()) %>"><%= h(item.getName()) %></a>
+            </li>
+        <% } %>
+    </ul>
+<% } %>
+
 <% if (bean.getNoPermissionExtras().size() > 0) { %>
     <span class="labkey-error">
-        <%= h(bean.getNoPermissionExtras().size() > 1 ? Integer.toString(bean.getNoPermissionExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> reference the <%= h(bean.getObjectType()) %>, but you do not have permission to delete them:</span>
+        <%= h(bean.getNoPermissionExtras().size() > 1 ? Integer.toString(bean.getNoPermissionExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> reference the <%= h(bean.getObjectType()) %>, but you do not have permission to delete them:
+    </span>
 
     <ul>
     <%  int count = 0;

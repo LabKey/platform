@@ -48,12 +48,14 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private ActionURL _cancelUrl;
         private ActionURL _successUrl;
         private String _dataRegionSelectionKey;
-        private Integer _singleObjectRowId;
+        private final Integer _singleObjectRowId;
         private final String _extraNoun;
         private final List<Pair<SecurableResource, ActionURL>> _deleteableExtras;
         private final List<Pair<SecurableResource, ActionURL>> _noPermissionExtras;
+        private final List<? extends ExpObject> _referencedItems;
+        private final String _referencesDescription;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, List<? extends ExpObject> referencedItems, String referencesDescription)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
@@ -64,6 +66,8 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             _extraNoun = extraNoun;
             _deleteableExtras = deleteableExtras;
             _noPermissionExtras = noPermissionExtras;
+            _referencedItems = referencedItems;
+            _referencesDescription = referencesDescription;
         }
 
         public Map<ExpRun, Container> getRunsWithPermission()
@@ -140,14 +144,24 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         {
             return _singleObjectRowId;
         }
+
+        public List<? extends ExpObject> getReferencedItems()
+        {
+            return _referencedItems;
+        }
+
+        public String getReferencesDescription()
+        {
+            return _referencesDescription;
+        }
     }
 
     public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs)
     {
-        this(objectType, detailAction, objects, form, runs, null, Collections.emptyList(), Collections.emptyList());
+        this(objectType, detailAction, objects, form, runs, null, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null);
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras)
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, List<? extends ExpObject> referencedItems, String referenceDescription)
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 
@@ -166,7 +180,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             }
         }
 
-        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, objects, objectType, detailAction, form.getSingleObjectRowId(), extraNoun, deleteableExtras, noPermissionExtras);
+        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, objects, objectType, detailAction, form.getSingleObjectRowId(), extraNoun, deleteableExtras, noPermissionExtras, referencedItems, referenceDescription);
         bean.setSuccessUrl(form.getSuccessActionURL());
         bean.setCancelUrl(form.getCancelActionURL());
         bean.setDataRegionSelectionKey(form.getDataRegionSelectionKey());

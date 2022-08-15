@@ -49,7 +49,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.ClientDependency;
 
 import javax.servlet.http.HttpServletRequest;
@@ -176,19 +175,12 @@ public class ExperimentRunListView extends QueryView
 
         if (showDeleteButton())
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteRunsURL(context.getContainer());
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
             ActionButton deleteButton = new ActionButton(url, "Delete");
             deleteButton.setIconCls("trash");
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(DeletePermission.class);
-            deleteButton.setScript("LABKEY.dataregion.confirmDelete(" +
-                    PageFlowUtil.jsString(getDataRegionName()) + ", " +
-                    PageFlowUtil.jsString("assay." + getSchema().getName())  + ", " +
-                    PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
-                    "'assay', 'getAssayRunDeletionConfirmationData.api', " +
-                    PageFlowUtil.jsString(getSelectionKey()) + ", " +
-                    "'assay run', 'assay runs', 'references in one or more active notebooks', {}, " + PageFlowUtil.jsString(url) + ", 'rowIds')");
             bar.add(deleteButton);
         }
 
