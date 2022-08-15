@@ -18,6 +18,7 @@ import org.labkey.api.util.logging.LogHelper;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,6 +38,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
 
     /** Timestamp when we last saved the counts to the DB */
     private Runnable _saver;
+    private boolean _shutdownStarted = false;
 
     public SimpleMetricsServiceImpl()
     {
@@ -50,7 +52,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
             }
 
             @Override
-            public void shutdownPre() {}
+            public void shutdownPre() { _shutdownStarted = true; }
 
             @Override
             public void shutdownStarted()
@@ -190,8 +192,21 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                 save();
                 _saver = null;
             };
-            // Save more frequently on dev machines to facilitate testing
-            JobRunner.getDefault().execute(_saver, TimeUnit.MINUTES.toMillis(AppProps.getInstance().isDevMode() ? 1 : 15));
+
+            // We're OK losing a few events if they're happening mid-shutdown
+            if (!_shutdownStarted)
+            {
+                try
+                {
+                    // Save more frequently on dev machines to facilitate testing
+                    JobRunner.getDefault().execute(_saver, TimeUnit.MINUTES.toMillis(AppProps.getInstance().isDevMode() ? 1 : 15));
+                }
+                catch (RejectedExecutionException e)
+                {
+                    LOG.warn("Failed to queue saving simple metric values. Saving synchronously");
+                    save();
+                }
+            }
         }
     }
 
