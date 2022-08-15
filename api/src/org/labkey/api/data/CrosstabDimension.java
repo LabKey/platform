@@ -15,8 +15,10 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Arrays;
 
@@ -30,8 +32,8 @@ import java.util.Arrays;
  */
 public class CrosstabDimension
 {
-    private FieldKey _fieldKey;
-    private ColumnInfo _sourceColumn = null;
+    private final FieldKey _fieldKey;
+    private ColumnInfo _sourceColumn;
     private String _url = null;
 
     public CrosstabDimension(TableInfo table, FieldKey sourceKey)
@@ -70,13 +72,18 @@ public class CrosstabDimension
         _sourceColumn = sourceColumn;
     }
 
-    // XXX: Change to DetailsURL
+    // XXX: Change to ActionURL?
     public String getUrl()
     {
         return _url;
     }
 
-    // XXX: Change to DetailsURL
+    public void setUrl(@NotNull ActionURL url)
+    {
+        _url = url.toString();
+    }
+
+    @Deprecated // Prefer setUrl(ActionURL)
     public void setUrl(String url)
     {
         _url = url;

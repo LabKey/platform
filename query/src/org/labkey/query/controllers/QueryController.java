@@ -1496,9 +1496,10 @@ public class QueryController extends SpringActionController
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
                     (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
 
-                ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
-                url.addParameter("schemaName", _schemaName);
-                String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
+                ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer())
+                    .addParameter("schemaName", _schemaName)
+                    .addParameter("query.queryName", null);
+                String tableLink = url.getEncodedLocalURIString();
                 tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink)
                 {
                     @Override

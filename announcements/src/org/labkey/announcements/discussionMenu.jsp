@@ -42,7 +42,7 @@
     URLHelper pageURL = me.pageURL;
 
     String toggleId = "discussionAreaToggle" + getRequestScopedUID();
-    String pageUrl = pageURL.clone().deleteScopeParameters("discussion").getLocalURIString();
+    URLHelper clonedUrl = pageURL.clone().deleteScopeParameters("discussion");
     String emailUrl = "mailto:?subject=" + PageFlowUtil.encode(me.title) + "&body=" + PageFlowUtil.encode(me.pageURL.getURIString());
     String emailPreferencesUrl = me.emailPreferencesURL.getLocalURIString();
     String adminEmailUrl = me.adminEmailURL.getLocalURIString();
@@ -55,7 +55,7 @@
         for (AnnouncementModel a : discussions)
         {
             String title = a.getTitle();
-            menu.addChild(title, pageUrl + "&discussion.id=" + a.getRowId() + "#discussionArea");
+            menu.addChild(title, clonedUrl.clone().addParameter("discussion.id", String.valueOf(a.getRowId())) + "#discussionArea");
         }
     }
     else if (!discussions.isEmpty())
@@ -67,12 +67,12 @@
         else
         {
             AnnouncementModel a = discussions.get(0);
-            menu.addChild("Show discussion", pageUrl + "&discussion.id=" + a.getRowId() + "#discussionArea");
+            menu.addChild("Show discussion", clonedUrl.clone().addParameter("discussion.id", String.valueOf(a.getRowId())) + "#discussionArea");
         }
     }
     if ((me.allowMultipleDiscussions || discussions.isEmpty()) && canInsert)
     {
-        menu.addChild("Start" + (me.allowMultipleDiscussions ? " new " : "") + "discussion", pageUrl + "&discussion.start=true#discussionArea", null, "fa fa-comments");
+        menu.addChild("Start" + (me.allowMultipleDiscussions ? " new " : "") + "discussion", clonedUrl.clone().addParameter("discussion.start", true) + "#discussionArea", null, "fa fa-comments");
     }
     menu.addChild("Start email discussion", emailUrl, null, "fa fa-envelope");
     menu.addSeparator();
