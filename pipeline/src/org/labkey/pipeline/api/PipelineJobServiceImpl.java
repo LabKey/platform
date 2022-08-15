@@ -101,7 +101,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
 
-    private static final Logger LOG = LogManager.getLogger(PipelineJobServiceImpl.class);
+    public static final Logger LOG = LogManager.getLogger(PipelineJobServiceImpl.class);
     private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
     private static final String MODULE_TASKS_DIR = "tasks";
@@ -361,7 +361,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     {
         synchronized (_taskFactoryStore)
         {
-            TaskFactory factory = _taskFactoryStore.get(id);
+            TaskFactory<?> factory = _taskFactoryStore.get(id);
             if (factory != null)
                 return factory;
         }
@@ -424,8 +424,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         synchronized (_taskFactoryStore)
         {
             factories.addAll(_taskFactoryStore.values().stream()
-                .filter(factory -> module.equals(factory.getDeclaringModule()))
-                .collect(Collectors.toList()));
+                    .filter(factory -> module.equals(factory.getDeclaringModule())).toList());
         }
 
         factories.addAll(TASK_FACTORY_CACHE.getResourceMap(module).values());
@@ -547,7 +546,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public FormSchema getFormSchema(Container container)
     {
         List<Option<String>> typeOptions = new ArrayList<>();
-        for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
+        for (PipelineTriggerType<?> pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
         {
             typeOptions.add(new Option<>(pipelineTriggerType.getName(), pipelineTriggerType.getName()));
         }
@@ -563,8 +562,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 .filter(FileAnalysisTaskPipeline.class::isInstance)
                 .map(FileAnalysisTaskPipeline.class::cast)
                 .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
-                .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
-                .collect(Collectors.toList());
+                .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription())).toList();
 
         for (FileAnalysisTaskPipeline task : tasks)
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
@@ -576,7 +574,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String usernameHref = baseHref + "runasusername";
         String assayProviderHref = baseHref + "assayprovider";
 
-        List<Field> fields = List.of(
+        List<Field<?>> fields = List.of(
                 new TextField("name", "Name", null, true, ""),
                 new TextareaField("description", "Description", null, false, ""),
                 new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
@@ -906,10 +904,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
         if (provider == null)
             throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
 
-        if (!(taskPipeline instanceof FileAnalysisTaskPipeline))
+        if (!(taskPipeline instanceof FileAnalysisTaskPipeline fatp))
             throw new NotFoundException("Task pipeline is not a FileAnalysisTaskPipeline: " + taskPipeline);
 
-        FileAnalysisTaskPipeline fatp = (FileAnalysisTaskPipeline)taskPipeline;
         //noinspection unchecked
         return provider.getProtocolFactory(fatp);
     }

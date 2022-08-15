@@ -44,8 +44,6 @@ import java.util.Map;
 */
 public class ProtocolSuccessorPredecessorView extends GridView
 {
-    private Map<String, ExpProtocol> _protocolCache = new HashMap<>();
-
     protected ProtocolSuccessorPredecessorView(String parentProtocolLSID, int actionSequence, Container c, String lsidSelectColumn, String sequenceSelectColumn, String filterColumn, String title)
     {
         super(new DataRegion(), (BindException)null);
@@ -53,9 +51,12 @@ public class ProtocolSuccessorPredecessorView extends GridView
         List<ColumnInfo> cols = ti.getColumns(lsidSelectColumn, sequenceSelectColumn);
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(lsidSelectColumn).setVisible(false);
-        getDataRegion().addDisplayColumn(0, new ProtocolNameDisplayColumn(lsidSelectColumn, _protocolCache, "Name"));
-        getDataRegion().addDisplayColumn(new ProtocolDescriptionDisplayColumn(lsidSelectColumn, _protocolCache));
-        getDataRegion().getDisplayColumn(0).setURL(new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c) + "?ParentLSID=" + parentProtocolLSID + "&Sequence=${" + sequenceSelectColumn + "}");
+        final Map<String, ExpProtocol> protocolCache = new HashMap<>();
+        getDataRegion().addDisplayColumn(0, new ProtocolNameDisplayColumn(lsidSelectColumn, protocolCache, "Name"));
+        getDataRegion().addDisplayColumn(new ProtocolDescriptionDisplayColumn(lsidSelectColumn, protocolCache));
+        getDataRegion().getDisplayColumn(0).setURL(new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c)
+            .addParameter("ParentLSID", parentProtocolLSID)
+            .addParameter("Sequence", "${" + sequenceSelectColumn + "}"));
         getDataRegion().getDisplayColumn(0).setTextAlign("left");
 
         SimpleFilter filter = new SimpleFilter();

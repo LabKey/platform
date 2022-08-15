@@ -37,25 +37,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.IgnoresAllocationTracking;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -8688,8 +8670,14 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public static class ExperimentalFeatureAction extends MutatingApiAction<ExperimentalFeaturesForm>
+    public static class ExperimentalFeatureAction extends BaseApiAction<ExperimentalFeaturesForm>
     {
+        @Override
+        protected ModelAndView handleGet() throws Exception
+        {
+            return handlePost(); // 'execute' ensures that only POSTs are mutating
+        }
+
         @Override
         public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
         {
@@ -9853,6 +9841,10 @@ public class AdminController extends SpringActionController
                         params.put("upgradeMessage", report.getContent());
                 }
             }
+            if (form.isDownload())
+            {
+                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+            }
             return new ApiSimpleResponse(params);
         }
     }
@@ -9863,6 +9855,7 @@ public class AdminController extends SpringActionController
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
         private String _level = UsageReportingLevel.ON.toString();
         private boolean _submit = false;
+        private boolean _download = false;
         private String _forwardedFor = null;
         // indicates action is being invoked for dev/test
         private boolean _testMode = false;
@@ -9915,6 +9908,16 @@ public class AdminController extends SpringActionController
         public void setTestMode(boolean testMode)
         {
             _testMode = testMode;
+        }
+
+        public boolean isDownload()
+        {
+            return _download;
+        }
+
+        public void setDownload(boolean download)
+        {
+            _download = download;
         }
     }
 
