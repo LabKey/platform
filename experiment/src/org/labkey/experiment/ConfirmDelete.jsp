@@ -45,9 +45,30 @@
         cancelUrl = successUrl;
 %>
 
+<% if (bean.getReferencedItems().size() > 0) { %>
+    <span class="labkey-error">
+        <%= h(bean.getReferencedItems().size() > 1 ? Integer.toString(bean.getReferencedItems().size()) : "One") %> <%= h(bean.getObjectType())%><%= h(bean.getReferencedItems().size() > 1 ? "s" : "") %> cannot be deleted because there are <%= h(bean.getReferencesDescription())%>:
+    </span>
+    <ul>
+        <%  int count = 0;
+            for (ExpObject item: bean.getReferencedItems()) {
+                if (count >= 50)
+                {
+        %>(<%= bean.getReferencedItems().size() - count %> others omitted from list)<%
+            break;
+        }
+        count++;
+    %>
+        <li>
+            <a href="<%= h(item.detailsURL()) %>"><%= h(item.getName()) %></a>
+        </li>
+        <% } %>
+    </ul>
+<% } %>
+
 <% if (bean.getObjects().isEmpty())
 {
-    %><p>There are no selected objects to delete.</p>
+    %><p>There are no <%= h(bean.getReferencedItems().size() > 0 ? " additional " : "")%>selected objects to delete.</p>
     <%= text(button("OK").href(successUrl).toString())%><%
 }
 else
@@ -84,26 +105,7 @@ else
         </ul>
     <% } %>
 
-<% if (bean.getReferencedItems().size() > 0) { %>
-    <span class="labkey-error">
-        <%= h(bean.getReferencedItems().size() > 1 ? Integer.toString(bean.getReferencedItems().size()) : "One") %> <%= h(bean.getObjectType())%><%= h(bean.getReferencedItems().size() > 1 ? "s" : "") %> cannot be deleted because there are <%= h(bean.getReferencesDescription())%>:
-    </span>
-    <ul>
-        <%  int count = 0;
-        for (ExpObject item: bean.getReferencedItems()) {
-            if (count >= 50)
-            {
-                %>(<%= bean.getReferencedItems().size() - count %> others omitted from list)<%
-                break;
-            }
-            count++;
-        %>
-            <li>
-                <a href="<%= h(item.detailsURL()) %>"><%= h(item.getName()) %></a>
-            </li>
-        <% } %>
-    </ul>
-<% } %>
+
 
 <% if (bean.getNoPermissionExtras().size() > 0) { %>
     <span class="labkey-error">
