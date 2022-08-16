@@ -54,6 +54,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
@@ -95,14 +96,8 @@ public class CustomViewUtil
             for (Map<String, Object> filterInfo : jsonFilters.toMapList())
             {
                 String fieldKey = (String)filterInfo.get("fieldKey");
-                String op = (String)filterInfo.get("op");
-                if (op == null)
-                    op = "";
-
-                String value = (String)filterInfo.get("value");
-                if (value == null)
-                    value = "";
-
+                String op = Objects.toString(filterInfo.get("op"), "");
+                String value = Objects.toString(filterInfo.get("value"), "");
                 url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
             }
         }
