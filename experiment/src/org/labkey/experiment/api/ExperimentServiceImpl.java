@@ -2991,6 +2991,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return emptyList();
     }
 
+    @Nullable @Override
+    public String getObjectReferenceDescription(Class referencedClass)
+    {
+        if (referencedClass != ExpRun.class)
+            return "derived data or sample dependencies";
+        return null;
+    }
+
     private class SyncRunEdgesTask implements Runnable
     {
         protected final int _runId;
