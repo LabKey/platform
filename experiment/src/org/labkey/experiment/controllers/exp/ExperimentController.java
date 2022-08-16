@@ -6529,12 +6529,6 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
         }
 
-        @Override
-        public ActionURL getDeleteRunsURL(Container container)
-        {
-            return new ActionURL(DeleteRunsAction.class, container);
-        }
-
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
         {
             return new ActionURL(ShowUpdateAction.class, experiment.getContainer()).addParameter("rowId", experiment.getRowId());

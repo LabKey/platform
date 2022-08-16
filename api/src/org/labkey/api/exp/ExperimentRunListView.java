@@ -85,10 +85,6 @@ public class ExperimentRunListView extends QueryView
         AssayService svc = AssayService.get();
         if (svc != null)
             addClientDependencies(svc.getClientDependenciesForImportButtons());
-        addClientDependencies(Set.of(
-                ClientDependency.fromPath("Ext4"),
-                ClientDependency.fromPath("dataregion/confirmDelete.js")
-        ));
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
