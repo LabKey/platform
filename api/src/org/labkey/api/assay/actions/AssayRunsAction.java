@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunsView;
 import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.PipelineDataCollector;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.TsvDataExchangeHandler;
@@ -32,6 +33,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
+
+import static org.labkey.api.assay.AssayFileWriter.TEMP_DIR_NAME;
 
 /**
  * User: brittp
@@ -88,7 +91,13 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         {
             File tempDir = TsvDataExchangeHandler.removeWorkingDirectory(summaryForm, getUser());
             if(null != tempDir && tempDir.exists())
-                FileUtils.deleteDirectory(tempDir);
+            {
+                if (tempDir.getParentFile().isDirectory() && tempDir.getParentFile().getName().equals(TEMP_DIR_NAME)) // tempDir is at .uploadTemp/tempGUID for temp import files
+                    FileUtils.deleteDirectory(tempDir);
+                else // don't delete files on the server's file system that are not temp files, but do remove them from file queue in session.
+                    PipelineDataCollector.clearFileQueue(context.getRequest().getSession(true), context.getContainer(), _protocol);
+            }
+
         }
 
         if (resultsView != null)
