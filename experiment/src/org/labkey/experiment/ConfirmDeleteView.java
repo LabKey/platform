@@ -16,6 +16,8 @@
 
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
@@ -55,7 +57,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<? extends ExpObject> _referencedItems;
         private final String _referencesDescription;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, List<? extends ExpObject> referencedItems, String referencesDescription)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, List<? extends ExpObject> objects, String objectType, Class<? extends Controller> detailAction, Integer singleObjectRowId, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, @NotNull List<? extends ExpObject> referencedItems, @Nullable String referencesDescription)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
@@ -161,7 +163,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         this(objectType, detailAction, objects, form, runs, null, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), null);
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, List<? extends ExpObject> referencedItems, String referenceDescription)
+    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs, String extraNoun, List<Pair<SecurableResource, ActionURL>> deleteableExtras, List<Pair<SecurableResource, ActionURL>> noPermissionExtras, @NotNull List<? extends ExpObject> referencedItems, @Nullable String referenceDescription)
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 
