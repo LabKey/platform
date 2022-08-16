@@ -43,18 +43,22 @@
     ActionURL cancelUrl = bean.getCancelUrl();
     if (cancelUrl == null)
         cancelUrl = successUrl;
+    int numReferencedItems = bean.getReferencedItems().size();
+    int numObjects = bean.getObjects().size();
+    int numNoPermissionExtras = bean.getNoPermissionExtras().size();
+    int numWithPermission = bean.getRunsWithPermission().size();
 %>
 
-<% if (bean.getReferencedItems().size() > 0) { %>
+<% if (numReferencedItems > 0) { %>
     <span class="labkey-error">
-        <%= h(bean.getReferencedItems().size() > 1 ? Integer.toString(bean.getReferencedItems().size()) : "One") %> <%= h(bean.getObjectType())%><%= h(bean.getReferencedItems().size() > 1 ? "s" : "") %> cannot be deleted because there are <%= h(bean.getReferencesDescription())%>:
+        <%= h(numReferencedItems > 1 ? Integer.toString(numReferencedItems) : "One") %> <%= h(bean.getObjectType())%><%= h(numReferencedItems > 1 ? "s" : "") %> cannot be deleted because there are <%= h(bean.getReferencesDescription())%>:
     </span>
     <ul>
         <%  int count = 0;
             for (ExpObject item: bean.getReferencedItems()) {
                 if (count >= 50)
                 {
-        %>(<%= bean.getReferencedItems().size() - count %> others omitted from list)<%
+        %>(<%= numReferencedItems - count %> others omitted from list)<%
             break;
         }
         count++;
@@ -68,12 +72,12 @@
 
 <% if (bean.getObjects().isEmpty())
 {
-    %><p>There are no <%= h(bean.getReferencedItems().size() > 0 ? " additional " : "")%>selected objects to delete.</p>
+    %><p>There are no <%= h(numReferencedItems > 0 ? " additional " : "")%>selected objects to delete.</p>
     <%= text(button("OK").href(successUrl).toString())%><%
 }
 else
 { %>
-    <p>Are you sure you want to delete the following <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "") %>?</p>
+    <p>Are you sure you want to delete the following <%= h(bean.getObjectType()) %><%= h(numObjects > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "") %>?</p>
 
     <ul>
     <% for (ExpObject object : bean.getObjects()) { %>
@@ -89,7 +93,7 @@ else
             for (Pair<SecurableResource, ActionURL> entry : bean.getDeleteableExtras()) {
             if (count >= 50)
             {
-                %>(<%= bean.getRunsWithPermission().size() - count %> <%= h(bean.getExtraNoun()) %>s omitted from list)<%
+                %>(<%= numWithPermission - count %> <%= h(bean.getExtraNoun()) %>s omitted from list)<%
                 break;
             }
             count++;
@@ -107,9 +111,9 @@ else
 
 
 
-<% if (bean.getNoPermissionExtras().size() > 0) { %>
+<% if (numNoPermissionExtras > 0) { %>
     <span class="labkey-error">
-        <%= h(bean.getNoPermissionExtras().size() > 1 ? Integer.toString(bean.getNoPermissionExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> reference the <%= h(bean.getObjectType()) %>, but you do not have permission to delete them:
+        <%= h(numNoPermissionExtras > 1 ? Integer.toString(numNoPermissionExtras) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> reference the <%= h(bean.getObjectType()) %>, but you do not have permission to delete them:
     </span>
 
     <ul>
@@ -117,7 +121,7 @@ else
     for (Pair<SecurableResource, ActionURL> entry : bean.getNoPermissionExtras()) {
         if (count >= 50)
         {
-            %>(<%= bean.getNoPermissionExtras().size() - count %> others omitted from list)<%
+            %>(<%= numNoPermissionExtras - count %> others omitted from list)<%
             break;
         }
         count++;
@@ -133,8 +137,8 @@ else
     </ul>
 <% } %>
 
-    <% if (bean.getRunsWithPermission().size() > 0) { %>
-        <%= h(bean.getRunsWithPermission().size() > 1 ? Integer.toString(bean.getRunsWithPermission().size()) : "One") %> run<%= h(bean.getRunsWithPermission().size() > 1 ? "s" : "") %> will also be deleted:
+    <% if (numWithPermission > 0) { %>
+        <%= h(numWithPermission > 1 ? Integer.toString(numWithPermission) : "One") %> run<%= h(numWithPermission > 1 ? "s" : "") %> will also be deleted:
 
         <ul>
         <%  int count = 0;
@@ -143,7 +147,7 @@ else
             Container runContainer = runEntry.getValue();
             if (count >= 50)
             {
-                %>(<%= bean.getRunsWithPermission().size() - count %> runs omitted from list)<%
+                %>(<%= numWithPermission - count %> runs omitted from list)<%
                 break;
             }
             count++;
@@ -161,7 +165,7 @@ else
     <% } %>
 
     <% if (bean.getRunsWithoutPermission().size() > 0) { %>
-        <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(bean.getObjects().size() > 1 ? "s" : "") %> are also referenced by the following
+        <span class="labkey-error">The <%= h(bean.getObjectType()) %><%= h(numObjects > 1 ? "s" : "") %> are also referenced by the following
             run<%= h(bean.getRunsWithoutPermission().size() > 1 ? "s" : "") %>, which you do not have permission to delete:</span>
 
         <ul>
