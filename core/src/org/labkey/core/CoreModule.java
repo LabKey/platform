@@ -291,7 +291,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     static
     {
         // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other module touches Quartz in its setup, it initializes with these setting.
+        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other
+        // module touches Quartz in its setup, it initializes with these setting.
         Properties props = System.getProperties();
         props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
         props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
@@ -988,7 +989,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
 
         // Temporary hack to force no-question-mark mode for a round of testing. TODO: Remove
-        //ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
+        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
 
         if (null != PropertyService.get())
         {
