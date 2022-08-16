@@ -48,6 +48,8 @@ import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -3081,6 +3083,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpRun> runs = new ArrayList<>();
+
+            Map<Integer, ExpRun> idToRunMap = new HashMap<>();
             for (int runId : deleteForm.getIds(false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
@@ -3092,7 +3096,36 @@ public class ExperimentController extends SpringActionController
                                 + " in " + run.getContainer());
 
                     runs.add(run);
+                    idToRunMap.put(run.getRowId(), run);
                 }
+            }
+
+            Map<Integer, ExpRun> referencedItems = new HashMap<>();
+            List<String> referenceDescriptions = new ArrayList<>();
+            AssayService assayService = AssayService.get();
+            if (!idToRunMap.isEmpty() && assayService != null )
+            {
+                // using the first run as a representative, since all interactions here are (I believe) using the same protocol.
+                ExpProtocol protocol = runs.get(0).getProtocol();
+                AssayProvider provider = assayService.getProvider(protocol);
+                if (provider != null)
+                {
+                    SchemaKey key = AssayProtocolSchema.schemaName(provider, protocol);
+                    ExperimentService.get().getObjectReferencers()
+                            .forEach(referencer -> {
+                                        Collection<Integer> referenced = referencer.getItemsWithReferences(
+                                                idToRunMap.keySet(),
+                                                key.toString(),
+                                                "Runs"
+                                        );
+                                        referenced.forEach(id -> {
+                                            referencedItems.put(id, idToRunMap.get(id));
+                                        });
+                                        referenceDescriptions.add(referencer.getObjectReferenceDescription(ExpRun.class));
+                                    }
+                            );
+                }
+
             }
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
@@ -3114,7 +3147,17 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView("run", ShowRunGraphAction.class, runs, deleteForm, Collections.emptyList(), "dataset(s) have one or more rows which", permissionDatasetRows, noPermissionDatasetRows);
+            return new ConfirmDeleteView(
+                    "run",
+                    ShowRunGraphAction.class,
+                    runs.stream().filter(run -> !referencedItems.containsKey(run.getRowId())).toList(),
+                    deleteForm,
+                    Collections.emptyList(),
+                    "dataset(s) have one or more rows which",
+                    permissionDatasetRows,
+                    noPermissionDatasetRows,
+                    referencedItems.values().stream().toList(),
+                    referenceDescriptions.stream().filter(Objects::nonNull).collect(Collectors.joining(", or ")));
         }
 
         @Override
@@ -3366,7 +3409,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
+            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets, Collections.emptyList(), null);
         }
 
         @Override
@@ -3735,7 +3778,7 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
-            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets);
+            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets, Collections.emptyList(), null);
         }
 
         private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)
@@ -6484,12 +6527,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
             return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
-        }
-
-        @Override
-        public ActionURL getDeleteRunsURL(Container container)
-        {
-            return new ActionURL(DeleteRunsAction.class, container);
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)

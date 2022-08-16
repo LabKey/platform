@@ -728,6 +728,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull
     List<ObjectReferencer> getObjectReferencers();
 
+    @NotNull
+    String getObjectReferenceDescription(Class referencedClass);
+
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
     @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);

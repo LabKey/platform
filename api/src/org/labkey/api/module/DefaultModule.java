@@ -43,6 +43,7 @@ import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -1115,6 +1116,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             _log.error("error", x);
             throw new ServletException(x);
+        }
+        finally
+        {
+            // Issue 45853 - Switch controllerHits metrics to cumulative totals instead of per-server-session tallies
+            SimpleMetricsService.get().increment(getName(), "controllerHits", url.getController());
         }
     }
 
