@@ -150,7 +150,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             sb.append("&queryName=");
             sb.append(PageFlowUtil.encodeURIComponent(queryName));
             sb.append("&pk=${");
-            sb.append(pkFieldKey.toString());
+            sb.append(pkFieldKey);
             sb.append("}");
             ContainerContext context = new ContainerContext.FieldKeyContext(new FieldKey(pkFieldKey.getParent(), "Folder"));
             setURLExpression(DetailsURL.fromString(sb.toString(), context));
