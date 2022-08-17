@@ -467,8 +467,9 @@ public class JsonWriter
             extGridColumn.put("align", dc.getTextAlign());
         if (dc.getDescription() != null)
             extGridColumn.put("tooltip", dc.getDescription());
-        if (dc.getCaption() != null)
-            extGridColumn.put("header", dc.getCaption());
+        String caption = dc.getCaption(null, false);
+        if (caption != null)
+            extGridColumn.put("header", caption);
         if (dc.getWidth() != null)
         {
             try
