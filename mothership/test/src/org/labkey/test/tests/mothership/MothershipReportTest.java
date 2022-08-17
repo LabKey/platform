@@ -25,6 +25,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
 import org.labkey.test.pages.test.TestActions;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
@@ -34,6 +35,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
@@ -94,14 +96,27 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         assertTextPresent("jsonMetrics",
                 "modules",
-                "CoreController", // in the module page hit counts
+                "controllerHits", // Should have multiple sections for this across different modules
                 "folderTypeCounts",
                 "Collaboration", // a folder type guaranteed to exist, different from any module name
-                "runCount", // targetedMS runs. TODO: this makes the test dependent on the TargetedMS module. replace this once a base build module registers usage metrics.
+                "customViewCounts", // From Query module
                 "activeDayCount" // a LOW level metric, should also exist at MEDIUM
         );
 
-        // TODO: Verify jsonMetrics persisted?
+        // Self-report so that we have some metrics to verify
+        String relativeUrl = "/mothership-selfReportMetrics.view";
+        beginAt(relativeUrl);
+
+        goToProjectHome("/_mothership");
+        goToSchemaBrowser();
+        var table = viewQueryData("mothership", "recentJsonMetricValues");
+        table.setFilter("DisplayKey", "Equals", "modules.Core.simpleMetricCounts.controllerHits.admin");
+        table = new DataRegionTable("query", this);
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
+        table.clearAllFilters();
+        table = new DataRegionTable("query", this);
+        table.setFilter("DisplayKey", "Equals", "activeDayCount");
+        assertTrue("Should have at least one row, but was " + table.getDataRowCount(), table.getDataRowCount() > 0);
     }
 
     @Test
