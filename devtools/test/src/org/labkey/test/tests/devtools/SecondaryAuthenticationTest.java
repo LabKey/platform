@@ -118,7 +118,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         currentDate= new Date();
 
         //URL before User Signs In
-        String relativeURLBeforeSignIn = getCurrentRelativeURL();
+        String relativeURLBeforeSignIn = StringUtils.stripEnd(getCurrentRelativeURL(), "?");
 
             //Sign In - Primary Authentication before Secondary Authentication
             attemptSignIn(PasswordUtil.getUsername(), PasswordUtil.getPassword());
