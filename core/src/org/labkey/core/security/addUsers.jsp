@@ -17,11 +17,13 @@
 %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
+<%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController.ShowUsersAction" %>
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -35,6 +37,7 @@
 %>
 <%
     AddUsersForm form = (AddUsersForm)HttpView.currentModel();
+    LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     document.addEventListener("DOMContentLoaded", function() {
@@ -42,24 +45,22 @@
             document.getElementById('provider').value = LABKEY.ActionURL.getParameter('provider');
         }
     });
-    var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
-    var permissionLink_show = '<a href="#blank" class="labkey-button" onclick="showUserAccess();"><span>permissions</span><\/a>';
 
     function enableText()
     {
-        var checkBoxElem = document.getElementById("cloneUserCheck");
-        var textElem = document.getElementById("cloneUser");
+        const checkBoxElem = document.getElementById("cloneUserCheck");
+        const textElem = document.getElementById("cloneUser");
 
         if (checkBoxElem != null && textElem != null)
         {
-            var checked = checkBoxElem.checked;
+            const checked = checkBoxElem.checked;
 
             textElem.disabled = !checked;
             textElem.value = "";
 
-            var permissionElem = document.getElementById("permissions");
-            if (permissionElem != null)
-                permissionElem.innerHTML = checked ? permissionLink_show : permissionLink_hide;
+            const showUserAccessElem = document.getElementById("showUserAccessLink");
+            if (showUserAccessElem != null)
+                showUserAccessElem.style.display = checked ? 'inline' : 'none';
         }
     }
 
@@ -95,15 +96,25 @@
 </script>
 
 <labkey:form action="<%=urlFor(AddUsersAction.class)%>" method="POST">
-    <table><%
+    <table>
+        <%
             if (getErrors("form").hasErrors());
-            { %>
-        <tr><td><labkey:errors /></td></tr><%
+            {
+        %>
+        <tr><td><labkey:errors /></td></tr>
+        <%
             }
             HtmlString msg = form.getMessage();
             if (!HtmlString.isBlank(msg))
             {
                 %><tr><td><div class="labkey-message"><%=msg%></div></td></tr><%
+            }
+            if (settings.isUserLimit())
+            {
+        %>
+        <tr><td>Number of users that can be added: <%=settings.getRemainingUserCount()%></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <%
             }
         %>
         <tr>
@@ -114,15 +125,31 @@
                 <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
         <tr>
-            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:<span id="auto-completion-div"></span>
-            <span id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></span></td>
+            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck">Clone permissions from user:<span id="auto-completion-div"></span>
+            <span id=permissions><a id="showUserAccessLink" href="#" class="labkey-button" style="display:none">permissions</a></span></td>
+            <%
+                addHandler("cloneUserCheck", "click", "enableText();");
+                addHandler("showUserAccessLink", "click", "showUserAccess();");
+            %>
         </tr>
         <tr><td>
             <br><input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail"><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%></label><br><br>
         </td></tr>
         <tr>
             <td>
-                <labkey:button text="Add Users" />
+<%
+    ButtonBuilder submit = button("Add Users");
+    if (settings.isUserLimitReached())
+    {
+        submit.enabled(false);
+        submit.tooltip("User limit has been reached");
+    }
+    else
+    {
+        submit.submit(true);
+    }
+%>
+                <%=submit%>
                 <% if (form.getReturnURLHelper() == null) { %>
                 <%= button("Done").href(urlFor(ShowUsersAction.class)) %>
                 <% }
@@ -146,4 +173,6 @@
     %>
 
 </labkey:form>
-<script for=window event=onload type="text/javascript">try {document.getElementById("newUsers").focus();} catch(x){}</script>
+<%
+    getPageConfig().setFocusId("newusers");
+%>

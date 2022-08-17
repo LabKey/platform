@@ -123,6 +123,10 @@ public interface FileContentService
 
     void setSiteDefaultRoot(File root, User user);
 
+    public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
+
+    boolean isFileRootSetViaStartupProperty();
+
     @NotNull
     File getUserFilesRoot();
 
@@ -201,6 +205,8 @@ public interface FileContentService
     FilesAdminOptions getAdminOptions(Container c);
 
     void setAdminOptions(Container c, FilesAdminOptions options);
+
+    void setAdminOptions(Container c, String properties);
 
     /**
      * Returns the default file root of the specified container.  This will default to a path

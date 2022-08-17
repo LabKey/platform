@@ -122,12 +122,6 @@ public class JavaScriptReport extends ScriptReport
         return view;
     }
 
-    @Override
-    public ScriptEngine getScriptEngine(Container c)
-    {
-        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
-        return mgr.getEngineByExtension(c, "js");
-    }
 
     public class JavaScriptReportBean
     {

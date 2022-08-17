@@ -23,6 +23,7 @@ import org.labkey.api.event.PropertyChange;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Listener for table and query events that fires when the structure/schema changes, but not when individual data
@@ -135,6 +136,22 @@ public interface QueryChangeListener
             _property = property;
             _oldValue = oldValue;
             _newValue = newValue;
+        }
+
+        public static void handleQueryNameChange(@NotNull String oldValue, String newValue, @NotNull SchemaKey schemaPath, User user, Container container)
+        {
+            if (oldValue.equals(newValue))
+                return;
+
+            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                    QueryService.get().getUserSchema(user, container, schemaPath).getQueryDefForTable(newValue),
+                    QueryChangeListener.QueryProperty.Name,
+                    oldValue,
+                    newValue
+            );
+
+            QueryService.get().fireQueryChanged(user, container, null, schemaPath,
+                    QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
         }
 
         public QueryDefinition getSource() { return _queryDef; }

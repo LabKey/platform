@@ -27,7 +27,6 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -163,7 +162,7 @@ public class JsonWriter
         props.put("measure", cinfo != null && cinfo.isMeasure());
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
-        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHIType.NotPHI.name());
+        props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHI.NotPHI.name());
         props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
@@ -468,8 +467,9 @@ public class JsonWriter
             extGridColumn.put("align", dc.getTextAlign());
         if (dc.getDescription() != null)
             extGridColumn.put("tooltip", dc.getDescription());
-        if (dc.getCaption() != null)
-            extGridColumn.put("header", dc.getCaption());
+        String caption = dc.getCaption(null, false);
+        if (caption != null)
+            extGridColumn.put("header", caption);
         if (dc.getWidth() != null)
         {
             try

@@ -43,7 +43,6 @@ public class AssayListPortalView extends AssayListQueryView
     {
         bar.add(createViewButton(getItemFilter()));
         populateChartsReports(bar);
-        AssayManager.get().createAssayDataImportButton(getViewContext(), bar);
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(view.getViewContext().getContainer());

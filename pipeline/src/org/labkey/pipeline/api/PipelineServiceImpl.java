@@ -457,7 +457,7 @@ public class PipelineServiceImpl implements PipelineService
                 if (sf != null)
                 {
                     sf.setActiveHostName(null);  //indicates previous task was complete
-                    PipelineStatusManager.updateStatusFile(sf);
+                    PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.activeHostName);
                 }
 
                 EPipelineQueueImpl.dispatchJob(job);
@@ -477,7 +477,7 @@ public class PipelineServiceImpl implements PipelineService
         {
             //Use the absolute Path helper to strip user element
             sf.setFilePath(FileUtil.getAbsolutePath(otherFile));
-            PipelineStatusManager.updateStatusFile(sf);
+            PipelineStatusManager.updateStatusFile(sf, PipelineStatusManager.StatusFileField.filePath);
         }
     }
 
@@ -631,7 +631,7 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public PipelineStatusFile getStatusFile(String jobGuid)
+    public PipelineStatusFileImpl getStatusFile(String jobGuid)
     {
         return PipelineStatusManager.getJobStatusFile(jobGuid);
     }
@@ -800,10 +800,19 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, String sourceName)
     {
+        ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
+        options.setFolderArchiveSourceName(sourceName);
+        // Issue 45531 : query validation is off by default
+        options.setSkipQueryValidation(true);
+
+        return runGenerateFolderArchiveAndImportJob(c, user, url, options);
+    }
+
+    @Override
+    public boolean runGenerateFolderArchiveAndImportJob(Container c, User user, ActionURL url, ImportOptions options)
+    {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
         Path folderXml = new File(pipelineRoot.getRootPath(), "folder.xml").toPath();
-        ImportOptions options = new ImportOptions(c.getId(), user.getUserId()); // TODO: Review: Any other options? Query validation?
-        options.setFolderArchiveSourceName(sourceName);
 
         return runFolderImportJob(c, user, null, folderXml, "folder.xml", pipelineRoot, options);
     }
@@ -811,15 +820,12 @@ public class PipelineServiceImpl implements PipelineService
     @Override
     public Integer getJobId(User u, Container c, String jobGUID)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("job"), jobGUID);
-        Collection<Map<String, Object>> selectResults = new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null).getMapCollection();
-        Integer rowId = null;
-
-        for (Map<String, Object> m : selectResults)
+        PipelineStatusFileImpl statusFile = getStatusFile(jobGUID);
+        if (statusFile == null || !statusFile.getContainerId().equalsIgnoreCase(c.getId()))
         {
-            rowId = (Integer)m.get("RowId");
+            return null;
         }
-        return rowId;
+        return statusFile.getRowId();
     }
 
     @Override

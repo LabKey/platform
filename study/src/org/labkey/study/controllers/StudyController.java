@@ -547,8 +547,8 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("datasetProperties");
-            _addNavTrailDatasetAdmin(root);
-            root.addChild(_def.getLabel() + " Dataset Properties");
+            root.addChild(_def.getLabel(), urlProvider(StudyUrls.class).getDatasetURL(getContainer(), _def.getDatasetId()));
+            root.addChild("Dataset Properties");
         }
     }
 
@@ -4604,7 +4604,11 @@ public class StudyController extends BaseStudyController
             "       /* place the webpart into the 'participantData' div: */\n" +
             "       participantWebPart.render();\n" +
             "   });\n" +
-            "</script>";
+            "</script> \n" +
+            "/* Adjust width of first column: */\n" +
+            "<style>\n" +
+            "  .labkey-data-region tr td:first-child {width: 300px}\n" +
+            "</style>";
 
     public static class CustomizeParticipantViewForm extends ReturnUrlForm
     {

@@ -16,7 +16,6 @@
 package org.labkey.api.cache;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
@@ -182,5 +181,12 @@ public class CacheManager
         {
             LOG.warn(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
         }
+    }
+
+
+    /* This interface allows a Collection to declare it self immutable when being added to a cache */
+    public interface Sealable
+    {
+        boolean isSealed();
     }
 }

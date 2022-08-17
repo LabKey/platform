@@ -1002,7 +1002,7 @@ public class DbScope
 
             if (_transaction.isEmpty())
             {
-                log.info("There are no threads holding connections for the data source '" + this + "'");
+                log.info("There are no threads holding transactions for the data source '" + this + "'");
             }
             else
             {
@@ -1608,10 +1608,10 @@ public class DbScope
 
         LOG.info("Attempting to create database \"" + dbName + "\"");
 
-        String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
+        String defaultUrl = StringUtils.replace(url, dbName, dialect.getDefaultDatabaseName());
         String createSql = "(undefined)";
 
-        try (Connection conn = getRawConnection(masterUrl, props))
+        try (Connection conn = getRawConnection(defaultUrl, props))
         {
             // Get version-specific dialect; don't log version warnings.
             dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);

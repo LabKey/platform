@@ -49,11 +49,13 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A grid view of a subset of all experiment runs, typically of a given protocol or assay type.
@@ -183,9 +185,9 @@ public class ExperimentRunListView extends QueryView
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
             addToExperimentButton.setRequiresSelection(true);
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getContainer(), getReturnURL(), true);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getContainer(), getReturnURL(), true).addParameter("noPost", "true");
             String javascript = view.getDataRegion().getJavascriptFormReference() + ".method = \"POST\";\n " +
-                    view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
+                    view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.jsString(url) + ";\n " +
                     view.getDataRegion().getJavascriptFormReference() + ".submit();";
             addToExperimentButton.addMenuItem("Create new run group...", javascript);
 

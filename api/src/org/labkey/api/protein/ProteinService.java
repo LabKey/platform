@@ -18,6 +18,8 @@ package org.labkey.api.protein;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.ms.Replicate;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
@@ -74,7 +76,9 @@ public interface ProteinService
     List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
 
     /** @param aaRowWidth the number of amino acids to display in a single row */
-    WebPartView<?> getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures);
+    WebPartView<?> getProteinCoverageView(int seqId, List<PeptideCharacteristic> peptideCharacteristics, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures);
+
+    WebPartView<?> getProteinCoverageViewWithSettings(int seqId, List<PeptideCharacteristic> combinedPeptideCharacteristics, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures, List<Replicate> replicates, List<PeptideCharacteristic> modifiedPeptideCharacteristics, boolean showStackedPeptides);
 
     /** @return a web part with all of the annotations and identifiers we know for a given protein */
     WebPartView<?> getAnnotationsView(int seqId, Map<String, Collection<HtmlString>> extraAnnotations);
@@ -86,6 +90,8 @@ public interface ProteinService
 
     /** Get seqId for the sequence -- there may be more than one if organism matches */
     List<Integer> getProteinSeqId(String sequence);
+
+    TableInfo getSequencesTable();
 
     interface FormViewProvider<FormType>
     {

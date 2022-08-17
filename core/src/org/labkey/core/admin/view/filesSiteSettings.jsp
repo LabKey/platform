@@ -165,9 +165,6 @@
                     header:'Project',
                     width:330,
                     dataIndex:'name',
-                    renderer: function(val){
-                        return Ext4.util.Format.htmlEncode(val);
-                    }
                 },{
                     header:'Directory',
                     width:420,

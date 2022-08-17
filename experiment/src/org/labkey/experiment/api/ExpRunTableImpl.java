@@ -69,6 +69,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -182,7 +183,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public void setRuns(List<ExpRun> runs)
+    public void setRuns(Collection<ExpRun> runs)
     {
         checkLocked();
         if (runs.isEmpty())
@@ -192,7 +193,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         else
         {
             SQLFragment sql = new SQLFragment();
-            //sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun());
             sql.append("RowID IN (");
             String separator = "";
             for (ExpRun run : runs)

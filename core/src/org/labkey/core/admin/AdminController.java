@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
@@ -38,25 +37,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.IgnoresAllocationTracking;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -168,6 +149,7 @@ import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
@@ -293,14 +275,14 @@ public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         AdminController.class,
+        FileListAction.class,
         FilesSiteSettingsAction.class,
-        UpdateFilePathsAction.class,
-        FileListAction.class
+        UpdateFilePathsAction.class
     );
 
-    private static final Logger LOG = LogManager.getLogger(AdminController.class);
+    private static final Logger LOG = LogHelper.getLogger(AdminController.class, "Admin-related UI and APIs");
     @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger CLIENT_LOG = LogManager.getLogger(LogAction.class);
+    private static final Logger CLIENT_LOG = LogHelper.getLogger(LogAction.class, "Client/browser logging submitted to server");
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
     private static long _errorMark = 0;
@@ -1275,7 +1257,7 @@ public class AdminController extends SpringActionController
         @Override
         public void validateCommand(SiteSettingsForm form, Errors errors)
         {
-            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessageHtml()))
+            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessage()))
             {
                 errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
             }
@@ -1314,7 +1296,7 @@ public class AdminController extends SpringActionController
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setShowRibbonMessage(form.isShowRibbonMessage());
-            props.setRibbonMessageHtml(form.getRibbonMessageHtml());
+            props.setRibbonMessage(form.getRibbonMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
 
             props.setUseContainerRelativeURL(form.getUseContainerRelativeURL());
@@ -1342,9 +1324,9 @@ public class AdminController extends SpringActionController
 
             props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
-            if (null != form.getBaseServerUrl())
+            if (null != form.getBaseServerURL())
             {
-                if (form.isSslRequired() && !form.getBaseServerUrl().startsWith("https"))
+                if (form.isSslRequired() && !form.getBaseServerURL().startsWith("https"))
                 {
                     errors.reject(ERROR_MSG, "Invalid Base Server URL. SSL connection is required. Consider https://.");
                     return false;
@@ -1352,25 +1334,25 @@ public class AdminController extends SpringActionController
 
                 try
                 {
-                    props.setBaseServerUrl(form.getBaseServerUrl());
+                    props.setBaseServerUrl(form.getBaseServerURL());
                 }
                 catch (URISyntaxException e)
                 {
                     errors.reject(ERROR_MSG, "Invalid Base Server URL, \"" + e.getMessage() + "\"." +
-                            "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
-                            "The webapp context path should not be included. " +
-                            "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
+                        "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
+                        "The webapp context path should not be included. " +
+                        "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
                     return false;
                 }
             }
 
-            String frameOptions = StringUtils.trimToEmpty(form.getXFrameOptions());
-            if (!frameOptions.equals("DENY") && !frameOptions.equals("SAMEORIGIN") && !frameOptions.equals("ALLOW"))
+            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
+            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
             {
-                errors.reject(ERROR_MSG, "XFrameOptions must equal DENY, or SAMEORIGIN, or ALLOW");
+                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
                 return false;
             }
-            props.setXFrameOptions(frameOptions);
+            props.setXFrameOption(frameOption);
 
             props.save(getViewContext().getUser());
 
@@ -1595,8 +1577,8 @@ public class AdminController extends SpringActionController
         private String _themeFont;
         private String _folderDisplayMode;
         private String _applicationMenuDisplayMode;
-        private boolean _enableHelpMenu;
-        private boolean _enableDiscussion;
+        private boolean _helpMenuEnabled;
+        private boolean _discussionEnabled;
         private String _logoHref;
         private String _companyName;
         private String _systemEmailAddress;
@@ -1702,26 +1684,26 @@ public class AdminController extends SpringActionController
             _dateParsingMode = dateParsingMode;
         }
 
-        public boolean isEnableHelpMenu()
+        public boolean isHelpMenuEnabled()
         {
-            return _enableHelpMenu;
+            return _helpMenuEnabled;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setEnableHelpMenu(boolean enableHelpMenu)
+        public void setHelpMenuEnabled(boolean helpMenuEnabled)
         {
-            _enableHelpMenu = enableHelpMenu;
+            _helpMenuEnabled = helpMenuEnabled;
         }
 
-        public boolean isEnableDiscussion()
+        public boolean isDiscussionEnabled()
         {
-            return _enableDiscussion;
+            return _discussionEnabled;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setEnableDiscussion(boolean enableDiscussion)
+        public void setDiscussionEnabled(boolean discussionEnabled)
         {
-            _enableDiscussion = enableDiscussion;
+            _discussionEnabled = discussionEnabled;
         }
 
         public String getLogoHref()
@@ -2010,7 +1992,7 @@ public class AdminController extends SpringActionController
         private boolean _ext3APIRequired;
         private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
-        private String _ribbonMessageHtml;
+        private String _ribbonMessage;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _maxBLOBSize;
@@ -2022,7 +2004,7 @@ public class AdminController extends SpringActionController
         private String _networkDrivePath;
         private String _networkDriveUser;
         private String _networkDrivePassword;
-        private String _baseServerUrl;
+        private String _baseServerURL;
         private String _callbackPassword;
         private boolean _useContainerRelativeURL;
         private boolean _allowApiKeys;
@@ -2030,7 +2012,7 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOptions;
+        private String _XFrameOption;
 
         public String getPipelineToolsDirectory()
         {
@@ -2222,14 +2204,14 @@ public class AdminController extends SpringActionController
             _networkDriveUser = networkDriveUser;
         }
 
-        public String getBaseServerUrl()
+        public String getBaseServerURL()
         {
-            return _baseServerUrl;
+            return _baseServerURL;
         }
 
-        public void setBaseServerUrl(String baseServerUrl)
+        public void setBaseServerURL(String baseServerURL)
         {
-            _baseServerUrl = baseServerUrl;
+            _baseServerURL = baseServerURL;
         }
 
         public boolean isTestInPage()
@@ -2262,14 +2244,14 @@ public class AdminController extends SpringActionController
             _showRibbonMessage = showRibbonMessage;
         }
 
-        public String getRibbonMessageHtml()
+        public String getRibbonMessage()
         {
-            return _ribbonMessageHtml;
+            return _ribbonMessage;
         }
 
-        public void setRibbonMessageHtml(String ribbonMessageHtml)
+        public void setRibbonMessage(String ribbonMessage)
         {
-            _ribbonMessageHtml = ribbonMessageHtml;
+            _ribbonMessage = ribbonMessage;
         }
 
         public boolean getUseContainerRelativeURL()
@@ -2312,14 +2294,14 @@ public class AdminController extends SpringActionController
             _allowSessionKeys = allowSessionKeys;
         }
 
-        public String getXFrameOptions()
+        public String getXFrameOption()
         {
-            return _XFrameOptions;
+            return _XFrameOption;
         }
 
-        public void setXFrameOptions(String XFrameOptions)
+        public void setXFrameOption(String XFrameOption)
         {
-            _XFrameOptions = XFrameOptions;
+            _XFrameOption = XFrameOption;
         }
     }
 
@@ -2857,7 +2839,7 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.filter(title));
             html.append(" (").append(stats.size()).append(")</b></p>\n");
 
-            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
+            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
             html.append("<tr><td class=\"labkey-column-header\">Debug Name</td>");
             html.append("<td class=\"labkey-column-header\">Limit</td>");
             html.append("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
@@ -3255,7 +3237,7 @@ public class AdminController extends SpringActionController
 
             if (getUser().hasRootAdminPermission() && (gc || cc))
             {
-                // If both are requested then try determine and record cache memory usage
+                // If both are requested then try to determine and record cache memory usage
                 if (gc && cc)
                 {
                     // gc once to get an accurate free memory read
@@ -4441,6 +4423,116 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public enum ExportOption
+    {
+        PipelineRootAsFiles("pipeline root as files")
+                {
+                    @Override
+                    public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+                    {
+                        PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                        if (root == null || !root.isValid())
+                        {
+                            throw new NotFoundException("No valid pipeline root found");
+                        }
+                        else if (root.isCloudRoot())
+                        {
+                            errors.reject(ERROR_MSG, "Cannot export as individual files when root is in the cloud");
+                        }
+                        else
+                        {
+                            File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
+                            try
+                            {
+                                writer.write(container, ctx, new FileSystemFile(exportDir));
+                            }
+                            catch (ContainerException e)
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                            }
+                            return urlProvider(PipelineUrls.class).urlBrowse(container);
+                        }
+                        return null;
+                    }
+                },
+
+        PipelineRootAsZip("pipeline root as a zip file")
+        {
+            @Override
+            public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                if (root == null || !root.isValid())
+                {
+                    throw new NotFoundException("No valid pipeline root found");
+                }
+                Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
+                Files.createDirectories(exportDir);
+                exportFolderToFile(exportDir, container, writer, ctx, errors);
+                return urlProvider(PipelineUrls.class).urlBrowse(container);
+            }
+        },
+        DownloadAsZip("browser download as a zip file")
+                {
+                    @Override
+                    public ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception
+                    {
+                        try
+                        {
+                            // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
+                            // Same pattern as ExportListArchiveAction
+                            Path tempDir = FileUtil.getTempDirectory().toPath();
+                            Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
+
+                            // No exceptions, so stream the resulting zip file to the browser and delete it
+                            try (OutputStream os = ZipFile.getOutputStream(response, tempZipFile.getFileName().toString()))
+                            {
+                                Files.copy(tempZipFile, os);
+                            }
+                            finally
+                            {
+                                Files.delete(tempZipFile);
+                            }
+                        }
+                        catch (ContainerException e)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
+                        return null;
+                    }
+                };
+
+        private final String _description;
+
+        ExportOption(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public abstract ActionURL initiateExport(Container container, BindException errors, FolderWriterImpl writer, FolderExportContext ctx, HttpServletResponse response) throws Exception;
+
+        Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
+        {
+            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
+
+            try (ZipFile zip = new ZipFile(exportDir, filename))
+            {
+                writer.write(container, ctx, zip);
+            }
+            catch (Container.ContainerException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+
+            return exportDir.resolve(filename);
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public static class ExportFolderAction extends FolderManagementViewPostAction<ExportFolderForm>
     {
@@ -4455,7 +4547,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        protected HttpView getTabView(ExportFolderForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ExportFolderForm form, boolean reshow, BindException errors)
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
@@ -4477,92 +4569,30 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException();
             }
 
+            ExportOption exportOption = null;
+            if (form.getLocation() >= 0 && form.getLocation() < ExportOption.values().length)
+            {
+                exportOption = ExportOption.values()[form.getLocation()];
+            }
+            if (exportOption == null)
+            {
+                throw new NotFoundException("Invalid export location: " + form.getLocation());
+            }
+            ContainerManager.checkContainerValidity(container);
+
             FolderWriterImpl writer = new FolderWriterImpl();
             FolderExportContext ctx = new FolderExportContext(getUser(), container, PageFlowUtil.set(form.getTypes()),
                 form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
-                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
+                form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(FolderWriterImpl.LOG));
 
-            switch (form.getLocation())
-            {
-                case 0 -> {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    else if (root.isCloudRoot())
-                    {
-                        errors.reject(ERROR_MSG, "Cannot export as individual files when root is in the cloud");
-                    }
-                    else
-                    {
-                        File exportDir = root.resolvePath(PipelineService.EXPORT_DIR);
-                        try
-                        {
-                            writer.write(container, ctx, new FileSystemFile(exportDir));
-                        }
-                        catch (ContainerException e)
-                        {
-                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                        }
-                        _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                    }
-                }
-                case 1 -> {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
-                    Files.createDirectories(exportDir);
-                    exportFolderToFile(exportDir, container, writer, ctx, errors);
-                    _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
-                }
-                case 2 -> {
-                    try
-                    {
-                        ContainerManager.checkContainerValidity(container); // TODO: Why isn't this called in the other two cases?
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), "Folder export initiated to " + exportOption.getDescription() + " " + (form.isIncludeSubfolders() ? "including" : "excluding") + " subfolders.");
+            if (container.getProject() != null)
+                event.setProjectId(container.getProject().getId());
+            AuditLogService.get().addEvent(getUser(), event);
 
-                        // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
-                        // Same pattern as ExportListArchiveAction
-                        Path tempDir = FileUtil.getTempDirectory().toPath();
-                        Path tempZipFile = exportFolderToFile(tempDir, container, writer, ctx, errors);
-
-                        // No exceptions, so stream the resulting zip file to the browser and delete it
-                        try (OutputStream os = ZipFile.getOutputStream(getViewContext().getResponse(), tempZipFile.getFileName().toString()))
-                        {
-                            Files.copy(tempZipFile, os);
-                        }
-                        finally
-                        {
-                            Files.delete(tempZipFile);
-                        }
-                    }
-                    catch (ContainerException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
+            _successURL = exportOption.initiateExport(container, errors, writer, ctx, getViewContext().getResponse());
 
             return !errors.hasErrors();
-        }
-
-        private Path exportFolderToFile(Path exportDir, Container container, FolderWriterImpl writer, FolderExportContext ctx, BindException errors) throws Exception
-        {
-            String filename = FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip");
-
-            try (ZipFile zip = new ZipFile(exportDir, filename))
-            {
-                writer.write(container, ctx, zip);
-            }
-            catch (Container.ContainerException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            }
-
-            return exportDir.resolve(filename);
         }
 
         @Override
@@ -5137,7 +5167,7 @@ public class AdminController extends SpringActionController
 
             if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
             {
-                container.setFolderType(FolderType.NONE, activeModules, getUser(), errors);
+                container.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                 Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                 container.setDefaultModule(defaultModule);
             }
@@ -5147,7 +5177,7 @@ public class AdminController extends SpringActionController
                 if (container.isContainerTab() && folderType.hasContainerTabs())
                     errors.reject(null, "You cannot set a tab folder to a folder type that also has tab folders");
                 else
-                    container.setFolderType(folderType, activeModules, getUser(), errors);
+                    container.setFolderType(folderType, getUser(), errors, activeModules);
             }
             if (errors.hasErrors())
                 return false;
@@ -6598,7 +6628,7 @@ public class AdminController extends SpringActionController
         }
 
         /**
-         * Note: this is designed to allow code to specify a set of children to delete in bulk.  The main use-case is workbooks,
+         * Note: this is designed to allow code to specify a set of children to delete in bulk. The main use-case is workbooks,
          * but it will work for non-workbook children as well.
          */
         public List<Container> getTargetContainers(final Container currentContainer) throws IllegalArgumentException
@@ -7024,7 +7054,7 @@ public class AdminController extends SpringActionController
 
                         newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
                         afterCreateHandler.accept(newContainer);
-                        newContainer.setFolderType(type, getUser());
+                        newContainer.setFolderType(type, getUser(), errors);
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
                         {
@@ -7036,7 +7066,7 @@ public class AdminController extends SpringActionController
                                     activeModules.add(module);
                             }
 
-                            newContainer.setFolderType(FolderType.NONE, activeModules, getUser());
+                            newContainer.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
                             Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
                             newContainer.setDefaultModule(defaultModule);
                         }
@@ -7121,7 +7151,7 @@ public class AdminController extends SpringActionController
             {
                 return c -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
-                    policy.addRoleAssignment(getUser(), RoleManager.getRole(ProjectAdminRole.class));
+                    policy.addRoleAssignment(getUser(), ProjectAdminRole.class);
                     SecurityPolicyManager.savePolicy(policy);
                 };
             }
@@ -7234,16 +7264,16 @@ public class AdminController extends SpringActionController
                             Group g = (Group) p;
                             if (!g.isProjectGroup())
                             {
-                                np.addRoleAssignment(p, r);
+                                np.addRoleAssignment(p, r, false);
                             }
                             else
                             {
-                                np.addRoleAssignment(groupMap.get(p), r);
+                                np.addRoleAssignment(groupMap.get(p), r, false);
                             }
                         }
                         else
                         {
-                            np.addRoleAssignment(p, r);
+                            np.addRoleAssignment(p, r, false);
                         }
                     }
                     SecurityPolicyManager.savePolicy(np);
@@ -7451,7 +7481,7 @@ public class AdminController extends SpringActionController
 
                     if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
                     {
-                        throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children.  You do not have admin permission on all subfolders.");
+                        throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children. You do not have admin permission on all subfolders.");
                     }
 
                     if (target.equals(ContainerManager.getSharedContainer()) || target.equals(ContainerManager.getHomeContainer()))
@@ -8357,7 +8387,7 @@ public class AdminController extends SpringActionController
                 {
                     DIV(
                         DIV(_descriptionHtml),
-                        TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
+                        TABLE(cl("labkey-data-region-legacy","labkey-show-borders","labkey-data-region-header-lock"),
                             TR(
                                 TD(cl("labkey-column-header"),"Name"),
                                 TD(cl("labkey-column-header"),"Release Version"),
@@ -8556,7 +8586,7 @@ public class AdminController extends SpringActionController
 
             return new HtmlView(DIV(
                 !hasFiles ? null : DIV(cl("labkey-warning-messages"),
-                        "This module still has files on disk.  Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
+                        "This module still has files on disk. Consider, first stopping the server, deleting these files, and restarting the server before continuing.",
                         null==module.getExplodedPath()?null:UL(LI(module.getExplodedPath().getPath())),
                         null==module.getZippedPath()?null:UL(LI(module.getZippedPath().getPath()))
                     ),
@@ -8640,8 +8670,14 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public static class ExperimentalFeatureAction extends MutatingApiAction<ExperimentalFeaturesForm>
+    public static class ExperimentalFeatureAction extends BaseApiAction<ExperimentalFeaturesForm>
     {
+        @Override
+        protected ModelAndView handleGet() throws Exception
+        {
+            return handlePost(); // 'execute' ensures that only POSTs are mutating
+        }
+
         @Override
         public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
         {
@@ -9785,19 +9821,31 @@ public class AdminController extends SpringActionController
                         target,
                         ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
-            Map<String, Object> result = new LinkedHashMap<>();
-            if (null != report)
+
+            Map<String, Object> params = new LinkedHashMap<>();
+            if (report != null)
             {
-                result.put("report", report.getParams());
+                params.putAll(report.getParams());
+                // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
+                Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
+                if (jsonMetrics instanceof String)
+                {
+                    JSONObject o = new JSONObject((String)jsonMetrics);
+                    params.put(MothershipReport.JSON_METRICS_KEY, o);
+                }
                 if (form.isSubmit())
                 {
                     report.setForwardedFor(form.getForwardedFor());
                     report.run();
                     if (null != report.getContent())
-                        result.put("upgradeMessage", report.getContent());
+                        params.put("upgradeMessage", report.getContent());
                 }
             }
-            return new ObjectMapper().writeValueAsString(result);
+            if (form.isDownload())
+            {
+                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+            }
+            return new ApiSimpleResponse(params);
         }
     }
 
@@ -9807,6 +9855,7 @@ public class AdminController extends SpringActionController
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
         private String _level = UsageReportingLevel.ON.toString();
         private boolean _submit = false;
+        private boolean _download = false;
         private String _forwardedFor = null;
         // indicates action is being invoked for dev/test
         private boolean _testMode = false;
@@ -9859,6 +9908,16 @@ public class AdminController extends SpringActionController
         public void setTestMode(boolean testMode)
         {
             _testMode = testMode;
+        }
+
+        public boolean isDownload()
+        {
+            return _download;
+        }
+
+        public void setDownload(boolean download)
+        {
+            _download = download;
         }
     }
 
@@ -10279,8 +10338,8 @@ public class AdminController extends SpringActionController
 
             props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
             props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
-            props.setHelpMenuEnabled(form.isEnableHelpMenu());
-            props.setDiscussionEnabled(form.isEnableDiscussion());
+            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
+            props.setDiscussionEnabled(form.isDiscussionEnabled());
 
             DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
             props.setDateParsingMode(dateParsingMode);
@@ -10329,7 +10388,7 @@ public class AdminController extends SpringActionController
 
             for (ResourceType type : ResourceType.values())
             {
-                MultipartFile file = fileMap.get(type.getFieldName());
+                MultipartFile file = fileMap.get(type.name());
 
                 if (file != null && !file.isEmpty())
                 {

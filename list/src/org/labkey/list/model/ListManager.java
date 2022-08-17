@@ -130,12 +130,12 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getPicklists(Container container)
     {
-        return getLists(container).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
+        return getLists(container, true).stream().filter(ListDef::isPicklist).collect(Collectors.toList());
     }
 
     public Collection<ListDef> getLists(Container container)
     {
-        return getLists(container, true);
+        return getLists(container, false);
     }
 
     public Collection<ListDef> getLists(Container container, boolean includeProjectAndShared)
@@ -334,18 +334,7 @@ public class ListManager implements SearchService.DocumentProvider
     private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
     {
         _listDefCache.remove(c.getId());
-        if (!oldName.equals(updatedName))
-        {
-            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(updatedName),
-                    QueryChangeListener.QueryProperty.Name,
-                    oldName,
-                    updatedName
-            );
-
-            QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
-                    QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
-        }
+        QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
     // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency

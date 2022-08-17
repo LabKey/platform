@@ -302,65 +302,75 @@ public class FilesAdminOptions
         return o;
     }
 
+    public PipelineOptionsDocument getPipelineOptionsDocument()
+    {
+        PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
+        PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
+
+        pipelineOptions.setImportEnabled(isImportDataEnabled());
+        pipelineOptions.setFilePropertiesConfig(_fileConfig.name());
+        if (_expandFileUpload != null)
+            pipelineOptions.setExpandFileUpload(_expandFileUpload);
+        if (_showFolderTree != null)
+            pipelineOptions.setShowFolderTree(_showFolderTree);
+
+        if (!_pipelineConfig.isEmpty())
+        {
+            ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
+
+            for (PipelineActionConfig ac : _pipelineConfig.values())
+            {
+                ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
+
+                displayOption.setId(ac.getId());
+                displayOption.setState(ac.getState().name());
+                displayOption.setLabel(ac.getLabel());
+
+                ActionLink link = displayOption.addNewLinks();
+                for (PipelineActionConfig lac : ac.getLinks())
+                {
+                    ActionLink.DisplayOption linkOption = link.addNewDisplayOption();
+
+                    linkOption.setId(lac.getId());
+                    linkOption.setState(lac.getState().name());
+                    linkOption.setLabel(lac.getLabel());
+                }
+            }
+        }
+
+        pipelineOptions.setInheritedTbarConfig(_inheritedTbarConfig);
+
+        if (!_tbarConfig.isEmpty())
+        {
+            TbarBtnOptions tbarOptions = pipelineOptions.addNewTbarConfig();
+
+            for (FilesTbarBtnOption o : _tbarConfig.values())
+            {
+                TbarBtnOptions.TbarBtnOption tbarOption = tbarOptions.addNewTbarBtnOption();
+
+                tbarOption.setId(o.getId());
+                tbarOption.setPosition(o.getPosition());
+                tbarOption.setHideText(o.isHideText());
+                tbarOption.setHideIcon(o.isHideIcon());
+            }
+        }
+
+        if (_gridConfig != null)
+            pipelineOptions.setGridConfig(_gridConfig);
+
+        return doc;
+    }
+
     public String serialize()
+    {
+        return serialize(getPipelineOptionsDocument(), _container);
+    }
+
+    public static String serialize(PipelineOptionsDocument doc, Container container)
     {
         try (ByteArrayOutputStream output = new ByteArrayOutputStream())
         {
-            PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
-            PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
-
-            pipelineOptions.setImportEnabled(isImportDataEnabled());
-            pipelineOptions.setFilePropertiesConfig(_fileConfig.name());
-            if (_expandFileUpload != null)
-                pipelineOptions.setExpandFileUpload(_expandFileUpload);
-            if (_showFolderTree != null)
-                pipelineOptions.setShowFolderTree(_showFolderTree);
-
-            if (!_pipelineConfig.isEmpty())
-            {
-                ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
-
-                for (PipelineActionConfig ac : _pipelineConfig.values())
-                {
-                    ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
-
-                    displayOption.setId(ac.getId());
-                    displayOption.setState(ac.getState().name());
-                    displayOption.setLabel(ac.getLabel());
-
-                    ActionLink link = displayOption.addNewLinks();
-                    for (PipelineActionConfig lac : ac.getLinks())
-                    {
-                        ActionLink.DisplayOption linkOption = link.addNewDisplayOption();
-
-                        linkOption.setId(lac.getId());
-                        linkOption.setState(lac.getState().name());
-                        linkOption.setLabel(lac.getLabel());
-                    }
-                }
-            }
-
-            pipelineOptions.setInheritedTbarConfig(_inheritedTbarConfig);
-
-            if (!_tbarConfig.isEmpty())
-            {
-                TbarBtnOptions tbarOptions = pipelineOptions.addNewTbarConfig();
-
-                for (FilesTbarBtnOption o : _tbarConfig.values())
-                {
-                    TbarBtnOptions.TbarBtnOption tbarOption = tbarOptions.addNewTbarBtnOption();
-
-                    tbarOption.setId(o.getId());
-                    tbarOption.setPosition(o.getPosition());
-                    tbarOption.setHideText(o.isHideText());
-                    tbarOption.setHideIcon(o.isHideIcon());
-                }
-            }
-
-            if (_gridConfig != null)
-                pipelineOptions.setGridConfig(_gridConfig);
-
-            XmlBeansUtil.validateXmlDocument(doc, "FilesAdminOptions for " + _container);
+            XmlBeansUtil.validateXmlDocument(doc, "FilesAdminOptions for " + container);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
 
             return output.toString();

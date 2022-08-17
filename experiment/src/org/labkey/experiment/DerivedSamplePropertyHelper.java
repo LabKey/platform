@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -59,7 +60,7 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
-    private final Map<Integer, Lsid> _lsids = new HashMap<>();
+    private final Map<Integer, Pair<Lsid, String>> _lsids = new HashMap<>();
     private final ExpSampleTypeImpl _sampleType;
     private final Container _container;
     private final User _user;
@@ -75,7 +76,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
         _sampleType = sampleType;
         if (_sampleType != null)
-            _nameGenerator = _sampleType.getNameGenerator();
+            _nameGenerator = _sampleType.getNameGenerator(c);
         else
             _nameGenerator = null;
 
@@ -121,10 +122,19 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     @Override
     protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
-        Lsid lsid = _lsids.get(index);
-        if (lsid == null)
+        return getObjectWithName(index, sampleProperties, parentMaterials).first;
+    }
+
+    @Override
+    protected Pair<Lsid, String> getObjectWithName(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    {
+        Pair<Lsid, String> lsidName = _lsids.get(index);
+        Lsid lsid;
+        String name;
+        boolean isDuplicate;
+        if (lsidName == null)
         {
-            String name = determineMaterialName(sampleProperties, parentMaterials);
+            name = determineMaterialName(sampleProperties, parentMaterials);
             if (_sampleType == null)
             {
                 XarContext context = new XarContext("DeriveSamples", _container, _user);
@@ -132,6 +142,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                 {
                     String lsidStr = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
                     lsid = Lsid.parse(lsidStr);
+                    isDuplicate = ExperimentService.get().getExpMaterial(lsid.toString()) != null;
                 }
                 catch (XarFormatException e)
                 {
@@ -141,10 +152,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             else
             {
-                lsid = _sampleType.generateSampleLSID().setObjectId(name).build();
+                lsid = _sampleType.generateNextDBSeqLSID().build();
+                isDuplicate = _sampleType.getSample(_container, name) != null;
             }
 
-            if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
+            lsidName = new Pair<>(lsid, name);
+
+            if (isDuplicate || _lsids.containsValue(lsidName))
             {
                 // Default to not showing on a particular column
                 String colName = "main";
@@ -154,9 +168,9 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                 }
                 throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
             }
-            _lsids.put(index, lsid);
+            _lsids.put(index, lsidName);
         }
-        return lsid;
+        return lsidName;
     }
 
     public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)

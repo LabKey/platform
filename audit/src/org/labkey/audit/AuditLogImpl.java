@@ -200,19 +200,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public String getTableName()
-    {
-        return AuditQuerySchema.AUDIT_TABLE_NAME;
-    }
-
-    @Override
-    public TableInfo getTable(ViewContext context, String name)
-    {
-        UserSchema schema = createSchema(context.getUser(), context.getContainer());
-        return schema.getTable(name);
-    }
-
-    @Override
     public UserSchema createSchema(User user, Container container)
     {
         return new AuditQuerySchema(user, container);

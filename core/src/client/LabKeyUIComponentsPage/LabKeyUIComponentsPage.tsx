@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { fromJS, List, Map } from 'immutable';
 import {
     Alert,
+    AppContextProvider,
     AppURL,
     Cards,
     ConfirmModal,
@@ -175,10 +176,11 @@ export class App extends React.Component<any, State> {
 
         return (
             <ServerContextProvider initialContext={serverContext}>
+                <AppContextProvider>
                 <p>
                     This page is setup to show examples of shared React components from
-                    the <a href={'https://github.com/LabKey/labkey-ui-components'} target={'_blank'}>labkey-ui-components</a> repository.
-                    To find more information about any of the components, check the <a href={'https://labkey.github.io/labkey-ui-components/'} target={'_blank'}>documentation</a> page.
+                    the <a href="https://github.com/LabKey/labkey-ui-components" target="_blank" rel="noopener noreferrer">labkey-ui-components</a> repository.
+                    To find more information about any of the components, check the <a href="https://github.com/LabKey/labkey-ui-components/blob/develop/packages/components/docs/public.md" target="_blank" rel="noopener noreferrer">documentation</a> page.
                 </p>
 
                 <SelectInput
@@ -334,7 +336,7 @@ export class App extends React.Component<any, State> {
                     this.renderPanel('LabelHelpTip',
                         <LabelHelpTip title="test">
                             <div>
-                                Testing body of the LabelHelpTip, with a <a href="https://www.labkey.com" target="_blank">link</a> in it.
+                                Testing body of the LabelHelpTip, with a <a href="https://www.labkey.com" target="_blank" rel="noopener noreferrer">link</a> in it.
                             </div>
                         </LabelHelpTip>
                     )
@@ -476,6 +478,7 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
+                </AppContextProvider>
             </ServerContextProvider>
         )
     }

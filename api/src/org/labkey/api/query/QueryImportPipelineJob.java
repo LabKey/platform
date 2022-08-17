@@ -301,7 +301,7 @@ public class QueryImportPipelineJob extends PipelineJob
         }
         catch (Exception e)
         {
-            error("Import failed: " + e.getMessage());
+            error("Import failed", e);
             setStatus(TaskStatus.error);
 
             if (notificationProvider != null)

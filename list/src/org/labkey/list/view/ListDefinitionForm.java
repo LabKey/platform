@@ -42,7 +42,7 @@ public class ListDefinitionForm extends ViewForm
             }
             else if (null != getName())
             {
-                _listDef = ListService.get().getList(getContainer(), getName());
+                _listDef = ListService.get().getList(getContainer(), getName(), true);
             }
             else
             {

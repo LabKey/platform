@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.mothership.MothershipController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,6 +32,9 @@
     <%= link("View All Installations", new ActionURL(MothershipController.ShowInstallationsAction.class, c)) %>
     <%= link("Configure Mothership", new ActionURL(MothershipController.EditUpgradeMessageAction.class, c)) %>
     <%= link("List of Releases", new ActionURL(MothershipController.ShowReleasesAction.class, c)) %>
+    <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %>
+    <%= link("Manual Metric Import", new ActionURL(MothershipController.ManualMetricImportAction.class, c)) %>
+    <%}%>
     <% if (getUser() != null && !getUser().isGuest()) {
             ActionURL myExceptions = new ActionURL(MothershipController.ShowExceptionsAction.class, c);
             myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("BugNumber"), CompareType.ISBLANK, null);

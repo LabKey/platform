@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -59,20 +60,25 @@ class LineageForeignKey extends AbstractForeignKey
     private final boolean _parents;
 
     /* generate a ForeignKey that returns a wrapper over objectid with a LineageDisplayColumn */
-    public static LineageForeignKey createWithDisplayColumn(UserSchema schema, ExpTableImpl seedTable, boolean parents)
+    public static LineageForeignKey createWithDisplayColumn(UserSchema schema, @NotNull ExpTableImpl seedTable, boolean parents, @Nullable ContainerFilter cf)
     {
-        return new LineageForeignKey(schema, seedTable, null, parents, true);
+        return new LineageForeignKey(schema, seedTable, null, parents, true, cf);
     }
 
     /* generate a real MultiValued ForeignKey, use for one row at a time */
-    public static LineageForeignKey createWithMultiValuedColumn(UserSchema schema, SQLFragment seedSql, boolean parents)
+    public static LineageForeignKey createWithMultiValuedColumn(UserSchema schema, @NotNull SQLFragment seedSql, boolean parents, @Nullable ContainerFilter cf)
     {
-        return new LineageForeignKey(schema, null, seedSql, parents, false);
+        return new LineageForeignKey(schema, null, seedSql, parents, false, cf);
     }
 
-    protected LineageForeignKey(UserSchema schema, ExpTableImpl seedTable, SQLFragment seedSql, boolean parents, boolean useLineageDisplayColumn)
+    protected LineageForeignKey(UserSchema schema,
+                                @Nullable ExpTableImpl seedTable,
+                                @Nullable SQLFragment seedSql,
+                                boolean parents,
+                                boolean useLineageDisplayColumn,
+                                @Nullable ContainerFilter cf)
     {
-        super(schema, null);
+        super(schema, cf);
         _seedTable = seedTable;
         _seedSql = seedSql;
         _userSchema = schema;
@@ -92,7 +98,7 @@ class LineageForeignKey extends AbstractForeignKey
         Path cacheKey = new Path(this.getClass().getName(), (_useLineageDisplayColumn ? "LDC": "MVFK"), (_parents ? "Inputs" : "Outputs"));
         return _userSchema.getCachedLookupTableInfo(cacheKey.toString(), () ->
         {
-            var ret = new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _userSchema, cacheKey).init();
+            var ret = new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _userSchema, cacheKey, getLookupContainerFilter()).init();
             ret.setLocked(true);
             return ret;
         });
@@ -254,7 +260,7 @@ class LineageForeignKey extends AbstractForeignKey
         if (_useLineageDisplayColumn)
         {
             final FieldKey ldcfk = lineageDisplayColumnFieldKey;
-            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, ldcfk));
+            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, ldcfk, getLookupContainerFilter()));
         }
     }
 
@@ -263,9 +269,9 @@ class LineageForeignKey extends AbstractForeignKey
     {
         final private Path cacheKeyPrefix;
 
-        LineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKeyPrefix)
+        LineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKeyPrefix, ContainerFilter cf)
         {
-            super(schema.getDbSchema(), name, schema);
+            super(schema.getDbSchema(), name, schema, cf);
             this.cacheKeyPrefix = cacheKeyPrefix;
         }
 
@@ -282,7 +288,7 @@ class LineageForeignKey extends AbstractForeignKey
         {
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(level.columnName), sql, JdbcType.VARCHAR);
-            col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix));
+            col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix, getContainerFilter()));
             col.setUserEditable(false);
             col.setReadOnly(true);
             col.setIsUnselectable(true);
@@ -295,7 +301,7 @@ class LineageForeignKey extends AbstractForeignKey
 //            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
-            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
+            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid, getContainerFilter()));
             applyDisplayColumn(col, depth, expType, cpasType, lookupColumnName);
             addColumn(col);
         }
@@ -308,9 +314,14 @@ class LineageForeignKey extends AbstractForeignKey
         final String expType;
         final String cpasType;
 
-        public _MultiValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType, String runProtocolLsid)
+        public _MultiValuedForeignKey(Path cacheKeyPrefix,
+                                      Integer depth,
+                                      String expType,
+                                      String cpasType,
+                                      String runProtocolLsid,
+                                      @Nullable ContainerFilter cf)
         {
-            super(new LookupForeignKey("self", "Name")
+            super(new LookupForeignKey(cf, "self", "Name")
             {
                 TableInfo _table = null;
 
@@ -331,7 +342,7 @@ class LineageForeignKey extends AbstractForeignKey
                             {
                                 objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
                             }
-                            var ret = new LineageTableInfo("LineageTableInfo (" + (_parents?"parents)":"children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid);
+                            var ret = new LineageTableInfo("LineageTableInfo (" + (_parents ? "parents)" : "children)"), _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid, getLookupContainerFilter());
                             ret.setLocked(true);
                             return ret;
                         });
@@ -419,9 +430,9 @@ class LineageForeignKey extends AbstractForeignKey
         private final Path _cacheKeyPrefix;
         private TableInfo _table;
 
-        ByTypeLineageForeignKey( @NotNull UserSchema s, @NotNull LevelColumnType level, Path cacheKeyPrefix)
+        ByTypeLineageForeignKey(@NotNull UserSchema s, @NotNull LevelColumnType level, Path cacheKeyPrefix, @Nullable ContainerFilter cf)
         {
-            super(s, null);
+            super(s, cf);
             _schema = s;
             _level = level;
             _cacheKeyPrefix = cacheKeyPrefix;
@@ -447,7 +458,7 @@ class LineageForeignKey extends AbstractForeignKey
                 Path cacheKey = _cacheKeyPrefix.append(getClass().getSimpleName(), _level.name());
                 _table = _schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
                 {
-                    var ret = new ByTypeLineageForeignKeyLookupTable("ByTypeLineageForeignKeyLookupTable (" + _level.expType + ")", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema)).init();
+                    var ret = new ByTypeLineageForeignKeyLookupTable("ByTypeLineageForeignKeyLookupTable (" + _level.expType + ")", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema), getLookupContainerFilter()).init();
                     ret.setLocked(true);
                     return ret;
                 });
@@ -462,9 +473,14 @@ class LineageForeignKey extends AbstractForeignKey
         private final @NotNull String _expType;
         private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKey, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKeyLookupTable(String name,
+                                           UserSchema schema,
+                                           Path cacheKey,
+                                           @NotNull String expType,
+                                           @NotNull Supplier<List<? extends ExpObject>> items,
+                                           @Nullable ContainerFilter cf)
         {
-            super(name, schema, cacheKey);
+            super(name, schema, cacheKey, cf);
             _expType = expType;
             _items = items;
         }

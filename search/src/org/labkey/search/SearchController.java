@@ -585,6 +585,8 @@ public class SearchController extends SpringActionController
                 throw new NotFoundException();
             }
 
+            audit(form);
+
             final Path contextPath = Path.parse(getViewContext().getContextPath());
             final String query = form.getQueryString();
             final JSONObject response = new JSONObject();

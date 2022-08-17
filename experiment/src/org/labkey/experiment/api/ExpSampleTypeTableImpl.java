@@ -116,7 +116,15 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 
     private AliasedColumn createImportAliasColumn(String name, String prefix)
     {
-        AliasedColumn aliasedColumn = new AliasedColumn(this, name, _rootTable.getColumn("RowId"));
+        AliasedColumn aliasedColumn = new AliasedColumn(this, name, _rootTable.getColumn("RowId"))
+        {
+            @Override
+            public boolean isNumericType()
+            {
+                // Issue 45374: don't apply number format to the RowId
+                return false;
+            }
+        };
         aliasedColumn.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(prefix));
         aliasedColumn.setDescription("Display column for sample type import alias key/value pairs.");
         aliasedColumn.setKeyField(false);

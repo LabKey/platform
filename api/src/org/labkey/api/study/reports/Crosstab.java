@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -325,7 +326,7 @@ public class Crosstab
 
     public static class CrosstabExcelWriter extends ExcelWriter
     {
-        private Crosstab _crosstab;
+        private final Crosstab _crosstab;
         private static final String STAT_COLUMN = "Stat";
 
         public CrosstabExcelWriter(Crosstab crosstab)
@@ -364,9 +365,9 @@ public class Crosstab
         }
 
         @Override
-        protected CellStyle getWrappingTextFormat()
+        protected CellStyle getWrappingTextFormat(Workbook workbook)
         {
-            CellStyle format = _workbook.createCellStyle();
+            CellStyle format = workbook.createCellStyle();
             format.setWrapText(true);
             format.setVerticalAlignment(VerticalAlignment.TOP);
             format.setAlignment(HorizontalAlignment.CENTER);

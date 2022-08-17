@@ -35,6 +35,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
@@ -48,6 +49,7 @@ import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.TextArea;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TypeAheadSelectDisplayColumn;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -93,7 +95,13 @@ public class DataColumn extends DisplayColumn
             _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
-        _width = _displayColumn.getWidth();
+        // Issue 45559 - use the width set on the bound column when configured. If not set, use the display column's
+        // width (in non-lookup cases they will be the same)
+        _width = _boundColumn.getWidth();
+        if ("".equals(_width))
+        {
+            _width = _displayColumn.getWidth();
+        }
         StringExpression url = withLookups ?
                 _boundColumn.getEffectiveURL() :
                 _boundColumn.getURL();
@@ -863,27 +871,26 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
-        String str =
-                "<script type=\"text/javascript\">" +
-                "Ext4.onReady(function(){\n" +
-                "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                "            sharedStore     : true,\n" +
-                "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                "            tagConfig   : {\n" +
-                "                tag     : 'input',\n" +
-                "                type    : 'text',\n" +
-                "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
-                "                size    : " + _inputLength + ",\n" +
-                "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
-                "                autocomplete : 'off'\n" +
-                "            }\n" +
-                "        });\n" +
-                "      });\n" +
-                "</script>\n" +
-                "<div id='" + renderId + "'></div>";
-        out.write(str);
+        out.write("<div id='" + renderId + "'></div>");
+        String initScript =
+                        "Ext4.onReady(function(){\n" +
+                        "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                        "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                        "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+                        "            sharedStore     : true,\n" +
+                        "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+                        "            tagConfig   : {\n" +
+                        "                tag     : 'input',\n" +
+                        "                type    : 'text',\n" +
+                        "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
+                        "                size    : " + _inputLength + ",\n" +
+                        "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
+                        "                autocomplete : 'off'\n" +
+                        "            }\n" +
+                        "        });\n" +
+                        "      });\n"
+                ;
+        HttpView.currentPageConfig().addDOMContentLoadedHandler(JavaScriptFragment.unsafe(initScript));
     }
 
     protected @Nullable ActionURL getAutoCompleteURLPrefix()

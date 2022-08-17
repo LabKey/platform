@@ -339,6 +339,7 @@ public class ExceptionUtil
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
+    @Nullable
     public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode, @Nullable String sqlState, @Nullable String extraInfo)
     {
         if (!shouldSend(level, target.isLocal()))
@@ -453,6 +454,7 @@ public class ExceptionUtil
         return send;
     }
 
+    @NotNull
     private static MothershipReport createReportFromStacktrace(String stackTrace, String exceptionMessage, String browser, String sqlState, String requestURL, String referrerURL, String username, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         try
@@ -647,8 +649,8 @@ public class ExceptionUtil
                 // mostly to make security scanners happy
                 if (ModuleLoader.getInstance().isStartupComplete())
                 {
-                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOptions()))
-                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOptions());
+                    if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
+                        response.setHeader("X-Frame-Options", AppProps.getInstance().getXFrameOption());
                     response.setHeader("X-Content-Type-Options", "nosniff");
                 }
             }

@@ -34,11 +34,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,9 +54,117 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
     @Test
     public void testTableSelector() throws SQLException
     {
+//  Calls below can be used to test that Oracle and MySQL dialects behave as expected, following our maxRows, offset,
+//  and other rules. Uncomment these lines and their corresponding bean classes below.
+//        testTableSelector(DbSchema.get("oracle.granite", DbSchemaType.Bare).getTable("account"), Account.class);
+//        testTableSelector(DbSchema.get("mySql.sakila", DbSchemaType.Bare).getTable("country"), Country.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
     }
+
+//    public static class Country
+//    {
+//        private int _country_id;
+//        private String _country;
+//        private Date _last_update;
+//
+//        public int getCountry_id()
+//        {
+//            return _country_id;
+//        }
+//
+//        public void setCountry_id(int country_id)
+//        {
+//            _country_id = country_id;
+//        }
+//
+//        public String getCountry()
+//        {
+//            return _country;
+//        }
+//
+//        public void setCountry(String country)
+//        {
+//            _country = country;
+//        }
+//
+//        public Date getLast_update()
+//        {
+//            return _last_update;
+//        }
+//
+//        public void setLast_update(Date last_update)
+//        {
+//            _last_update = last_update;
+//        }
+//
+//        @Override
+//        public boolean equals(Object o)
+//        {
+//            if (this == o) return true;
+//            if (o == null || getClass() != o.getClass()) return false;
+//            Country country = (Country) o;
+//            return _country_id == country._country_id && Objects.equals(_country, country._country) && Objects.equals(_last_update, country._last_update);
+//        }
+//
+//        @Override
+//        public int hashCode()
+//        {
+//            return Objects.hash(_country_id, _country, _last_update);
+//        }
+//    }
+//
+//    public static class Account
+//    {
+//        private int _account_id;
+//        private String _account_number;
+//        private String _account_desc;
+//
+//        public int getAccount_id()
+//        {
+//            return _account_id;
+//        }
+//
+//        public void setAccount_id(int account_id)
+//        {
+//            _account_id = account_id;
+//        }
+//
+//        public String getAccount_number()
+//        {
+//            return _account_number;
+//        }
+//
+//        public void setAccount_number(String account_number)
+//        {
+//            _account_number = account_number;
+//        }
+//
+//        public String getAccount_desc()
+//        {
+//            return _account_desc;
+//        }
+//
+//        public void setAccount_desc(String account_desc)
+//        {
+//            _account_desc = account_desc;
+//        }
+//
+//        @Override
+//        public boolean equals(Object o)
+//        {
+//            if (this == o) return true;
+//            if (o == null || getClass() != o.getClass()) return false;
+//            Account account = (Account) o;
+//            return _account_id == account._account_id && Objects.equals(_account_number, account._account_number) && Objects.equals(_account_desc, account._account_desc);
+//        }
+//
+//        @Override
+//        public int hashCode()
+//        {
+//            return Objects.hash(_account_id, _account_number, _account_desc);
+//        }
+//    }
 
     @Test
     public void testGetObject()
@@ -318,9 +428,12 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         test(selector, clazz);
         testOffsetAndLimit(selector, clazz);
 
-        // Verify that we can generate some execution plan
-        Collection<String> executionPlan = selector.getExecutionPlan();
-        assertTrue(!executionPlan.isEmpty());
+        // Verify that we can generate an execution plan (if supported)
+        if (table.getSqlDialect().canShowExecutionPlan())
+        {
+            Collection<String> executionPlan = selector.getExecutionPlan();
+            assertTrue(!executionPlan.isEmpty());
+        }
     }
 
     @Override
@@ -371,27 +484,18 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             List<K> sortedList = new ArrayList<>(selector.getCollection(clazz));
             verifyResultSets(selector, count, true);
 
-            // Set a row count, verify the lengths and contents against the expected array & list subsets
+            // Set just a row count, verify the lengths and contents against the expected array & list subsets
             selector.setMaxRows(rowCount);
-            assertEquals(rowCount, (int) selector.getRowCount());
-            K[] rowCountArray = selector.getArray(clazz);
-            assertEquals(rowCount, rowCountArray.length);
-            assertArrayEquals(Arrays.copyOf(sortedArray, rowCount), rowCountArray);
-            List<K> rowCountList = new ArrayList<>(selector.getCollection(clazz));
-            assertEquals(rowCount, rowCountList.size());
-            assertEquals(sortedList.subList(0, rowCount), rowCountList);
-            verifyResultSets(selector, rowCount, false);
+            test(selector, clazz, 0, rowCount, sortedArray, sortedList, false);
 
-            // Set an offset, verify the lengths and contents against the expected array & list subsets
+            // Set just an offset, verify the lengths and contents against the expected array & list subsets
             selector.setOffset(offset);
-            assertEquals(rowCount, (int) selector.getRowCount());
-            K[] offsetArray = selector.getArray(clazz);
-            assertEquals(rowCount, offsetArray.length);
-            assertArrayEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), offsetArray);
-            List<K> offsetList = new ArrayList<>(selector.getCollection(clazz));
-            assertEquals(rowCount, offsetList.size());
-            assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
-            verifyResultSets(selector, rowCount, false);
+            selector.setMaxRows(Table.ALL_ROWS);
+            test(selector, clazz, offset, count - offset, sortedArray, sortedList, true);
+
+            // Set an offset and a rowCount, verify the lengths and contents against the expected array & list subsets
+            selector.setMaxRows(rowCount);
+            test(selector, clazz, offset, rowCount, sortedArray, sortedList, false);
 
             // Back to all rows and verify
             selector.setMaxRows(Table.ALL_ROWS);
@@ -401,5 +505,17 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(count, selector.getCollection(clazz).size());
             verifyResultSets(selector, count, true);
         }
+    }
+
+    private <K> void test(TableSelector selector, Class<K> clazz, int offset, int rowCount, K[] sortedArray, List<K> sortedList, boolean expectedComplete) throws SQLException
+    {
+        assertEquals(rowCount, (int) selector.getRowCount());
+        K[] array = selector.getArray(clazz);
+        assertEquals(rowCount, array.length);
+        assertArrayEquals(Arrays.copyOfRange(sortedArray, offset, offset + rowCount), array);
+        List<K> list = new ArrayList<>(selector.getCollection(clazz));
+        assertEquals(rowCount, list.size());
+        assertEquals(sortedList.subList(offset, offset + rowCount), list);
+        verifyResultSets(selector, rowCount, expectedComplete);
     }
 }

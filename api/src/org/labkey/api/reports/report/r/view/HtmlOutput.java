@@ -76,7 +76,7 @@ public class HtmlOutput extends AbstractParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView<?> getView(ViewContext context)
     {
         return new HtmlOutputView(this, getLabel());
     }

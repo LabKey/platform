@@ -8,7 +8,10 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     extend: 'Ext.tab.Panel',
 
-    mixins: {externaleditor: 'LABKEY.ext4.ExternalEditorHelper'},
+    mixins: {
+        externaleditor: 'LABKEY.ext4.ExternalEditorHelper',
+        jupyterOptions: 'LABKEY.ext4.JupyterReportOptions'
+    },
 
     border: false,
 
@@ -23,6 +26,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     constructor: function(config){
         this.mixins.externaleditor.constructor.apply(this, arguments);
+        this.mixins.jupyterOptions.constructor.apply(this, arguments);
         this.callParent([config]);
     },
 
@@ -53,6 +57,17 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             if (this.preferSourceTab)
                 this.activeTab = this.items.length-2;
         }
+
+        this.errorTpl = new Ext4.XTemplate(
+                '<span class="labkey-error" style="display: block; margin-top: 50px; margin-left: 50px;"><div>Failed to retrieve report results : {exception}</div>',
+                '<pre>',
+                '<tpl for="stackTrace">',
+                '<div>{.}</div>',
+                '</tpl>',
+                '</pre>',
+                '</span>'
+        );
+
         this.callParent();
 
         window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this);
@@ -114,7 +129,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                                     cmp.doLayout();
                                 });
                             },
-                            failure : function(resp) {this.viewFailure(cmp);},
+                            failure : function(resp, exp) {
+                                this.viewFailure(cmp, resp, exp);
+                            },
                             jsonData: config.parameters,
                             scope   : this
                         });
@@ -124,9 +141,22 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         };
     },
 
-    viewFailure : function(cmp) {
+    viewFailure : function(cmp, resp, exp) {
 
-        Ext4.get(cmp.getEl()).update('<span class="labkey-error" style="width: 600px; height: 400px; display: block; margin-left: 250px;">Failed to retrieve report results</span>');
+        var error = null;
+        if (resp && resp.responseText && resp.getResponseHeader('Content-Type'))
+        {
+            var contentType = resp.getResponseHeader('Content-Type');
+            if (contentType.indexOf('application/json') >= 0)
+            {
+                var json = LABKEY.Utils.decode(resp.responseText);
+                error = this.errorTpl.apply(json);
+            }
+        }
+        if (!error) {
+            error = this.errorTpl.apply({exception: LABKEY.Utils.getMsgFromError(resp, exp)});
+        }
+        Ext4.get(cmp.getEl()).update(error);
         cmp.getEl().unmask();
         this.prevScriptSource = null;
         this.prevViewURL = null;
@@ -311,6 +341,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
                             LABKEY.codemirror.RegisterEditorInstance('script-report-editor', this.codeMirror);
                         }
+
+                        // for new reports give the option of a report specific initialization behavior
+                        if (!this.reportConfig.reportId)
+                            this.onNewReport();
+
                     }, scope : this}
                 }
             }]
@@ -461,6 +496,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 ]
             });
         }
+
+        this.getJupyterReportOptions(items, isScriptEditor);
 
         if (this.reportConfig.thumbnailOptions)
         {
@@ -648,7 +685,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         return {
             title   : 'Help',
             frame   : false,
-            hidden  : !this.sourceAndHelp,
+            hidden  : !this.sourceAndHelp || !this.reportConfig.helpHtml,
             bodyPadding : 10,
             html    : this.reportConfig.helpHtml
         };

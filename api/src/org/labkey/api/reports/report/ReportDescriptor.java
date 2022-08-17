@@ -119,13 +119,19 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         json,
         serializedReportName,
         moduleReportCreatedDate, // creation date of module report, used by cds
-        showInDashboard, // used in Argos (show visible reports in the grid, show in my links if this is true)
-        showInParticipantView // boolean used in participant view for showing the saved charts for a dataset
+        showInDashboard, // show visible reports in the grid, show in my links if this is true or null
+        showInParticipantView, // boolean used in participant view for showing the saved charts for a dataset,
+        hideInManageViews // boolean used to hide the view from Managed Views. By default, hidden views are still visible in manage mode.
     }
 
     public ReportDescriptor()
     {
-        setDescriptorType(TYPE);
+        this(TYPE);
+    }
+
+    public ReportDescriptor(String descriptorType)
+    {
+        setDescriptorType(descriptorType);
 
         // set the report version to the one that is stored in the query module
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
@@ -244,7 +250,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return null;
     }
 
-    public void setDescriptorType(String type)
+    private void setDescriptorType(String type)
     {
         setProperty(Prop.descriptorType, type);
     }

@@ -97,7 +97,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
+                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -123,7 +124,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
+                new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name")
         )));
 
         logger = LogManager.getLogger(SampleTypeDomainKind.class);

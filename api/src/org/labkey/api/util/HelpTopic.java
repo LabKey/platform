@@ -90,7 +90,9 @@ public class HelpTopic
         /** Help links under the Developer header menu */
         devMenu,
         /** Links in the main page or its tooltips */
-        inPage
+        inPage,
+        /** Links from exported script comments */
+        script
     }
 
     public String getHelpTopicHref(@NotNull Referrer referrer)
@@ -129,7 +131,7 @@ public class HelpTopic
     /**
      * @return a link to this class' JavaDoc for the currently running JDK version
      */
-    public static String getJDKJavaDocLink(Class c)
+    public static String getJDKJavaDocLink(Class<?> c)
     {
         return JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
     }

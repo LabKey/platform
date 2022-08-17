@@ -429,7 +429,9 @@ public abstract class ClientDependency
     {
         return getDependencySuppliers(c)
             .stream()
-            .map(cd->cd.get().getRequiredModuleContexts(c))
+            .map(Supplier::get)
+            .filter(Objects::nonNull)
+            .map(cd->cd.getRequiredModuleContexts(c))
             .flatMap(Collection::stream)
             .collect(Collectors.toSet());
     }

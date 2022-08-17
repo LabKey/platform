@@ -91,7 +91,7 @@
                 name: 'permissionType',
                 columns: 1,
                 defaults: {
-                    width: 400,
+                    width: 600,
                     listeners: {
                         specialkey: function(field, e){
                             if (e.getKey() == e.ENTER) { checkSubmit(field); }
@@ -200,6 +200,7 @@
                     editable: false,
                     displayField: 'Name',
                     valueField: 'EntityId',
+                    width: 400,
                     store: Ext4.create('LABKEY.ext4.data.Store', {
                         containerPath: '/home',
                         schemaName: 'core',
@@ -211,7 +212,10 @@
                             LABKEY.Filter.create('containerType', 'project', LABKEY.Filter.Types.EQUAL)
                         ],
                         containerFilter: 'CurrentAndSiblings'
-                    })
+                    }),
+                    tpl : new Ext4.XTemplate(
+                        '<tpl for="."><div class="x4-boundlist-item">{Name:htmlEncode}</div></tpl>'
+                    ),
                 });
             }
         });
@@ -221,8 +225,6 @@
             enter: function() { checkSubmit(panel, true); }
         });
     });
-
-
 </script>
 
 

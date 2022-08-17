@@ -15,8 +15,7 @@
  */
 package org.labkey.test.pages.mothership;
 
-import org.apache.commons.lang3.text.WordUtils;
-import org.labkey.test.LabKeySiteWrapper;
+import org.apache.commons.text.WordUtils;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
@@ -56,13 +55,13 @@ public class ShowInstallationDetailPage extends LabKeyPage<ShowInstallationDetai
 
     public String getServerHostName()
     {
-        return getInstallationValue("Server Host Name");
+        return Locator.input("serverHostName").findElement(getDriver()).getAttribute("value");
     }
 
     public String getInstallationValue(String labelText)
     {
         return Locator.tagWithClassContaining("td", "lk-form-label")
-                .withText(WordUtils.capitalize(labelText))  // TODO: WordUtils is deprecated in Commons Lang 3.6; this class is now maintained in Commons Text
+                .withText(WordUtils.capitalize(labelText))
                 .followingSibling("td")
                 .findElement(getDriver()).getText();
     }

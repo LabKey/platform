@@ -25,38 +25,26 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Constraint;
-import org.labkey.api.data.DatabaseMetaDataWrapper;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MetadataSqlSelector;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScanner;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableChange;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TempTableInClauseGenerator;
-import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.*;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -139,12 +127,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
-    private final TableResolver _tableResolver;
-
-    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -161,10 +143,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "opendatasource, openquery, openrowset, openxml, option, or, order, outer, over, percent, pivot, plan, primary, " +
             "print, proc, procedure, public, raiserror, read, readtext, reconfigure, references, replication, restore, " +
             "restrict, return, revert, revoke, right, rollback, rowcount, rowguidcol, rule, save, schema, select, " +
+            "semantickeyphrasetable, semanticsimilaritydetailstable, semanticsimilaritytable, " +
             "session_user, set, setuser, shutdown, some, statistics, system_user, table, tablesample, textsize, then, to, " +
-            "top, tran, transaction, trigger, truncate, tsequal, union, unique, unpivot, update, updatetext, use, user, " +
-            "values, varying, view, waitfor, when, where, while, with, writetext"
+            "top, tran, transaction, trigger, truncate, try_convert, tsequal, union, unique, unpivot, update, updatetext, " +
+            "use, user, values, varying, view, waitfor, when, where, while, with, within, writetext"
         ));
+    }
+
+    static
+    {
+        // The Microsoft JDBC driver does a lackluster job of translating errors to the appropriate SQLState. Do our
+        // own translation for the ones we care about. See issue 37040
+        CustomSQLExceptionTranslatorRegistry.getInstance().registerTranslator("Microsoft SQL Server", (task, sql, ex) -> {
+            if (ex.getErrorCode() == 8134)
+            {
+                return new DataIntegrityViolationException(ex.getMessage(), ex);
+            }
+            return null;
+        });
     }
 
     @Override
@@ -474,10 +470,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
-            int offset = 6;
+            int index = 6;
             if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
-                offset = 15;
-            frag.insert(offset, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
+                index = 15;
+            frag.insert(index, " TOP " + (Table.NO_ROWS == maxRows ? 0 : maxRows));
         }
         return frag;
     }
@@ -490,27 +486,24 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS || offset == 0)
+        // If there's no offset or requesting no rows then we can use a simple TOP approach for maxRows, which doesn't
+        // require an ORDER BY and allows 0 rows (unlike OFFSET + FETCH)
+        if (offset == 0 || maxRows == Table.NO_ROWS)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append(select);
-            sql.append("\n").append(from);
-            if (filter != null) sql.append("\n").append(filter);
-            if (groupBy != null) sql.append("\n").append(groupBy);
-            if (order != null) sql.append("\n").append(order);
+            SQLFragment sql = LimitRowsSqlGenerator.appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
 
             return limitRows(sql, maxRows);
         }
         else
         {
-            if (order == null || order.trim().length() == 0)
-                throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
+            if (StringUtils.isBlank(order))
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to use maxRows and offset");
 
             return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
     }
 
-    // Called only if rowCount and offset are both > 0... and order is non-blank
+    // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
     abstract protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset);
 
     @Override
@@ -769,7 +762,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public boolean isNoDatabaseException(SQLException e)
     {
-        return "S1000".equals(e.getSQLState());
+        return "S1000".equals(e.getSQLState()) // jTDS driver
+                || ("S0001".equals(e.getSQLState()) && e.getErrorCode() == 4060); // Microsoft driver
     }
 
     @Override
@@ -983,7 +977,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         return "master";
     }
@@ -1700,6 +1694,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (WarningService.get().showAllWarnings() || "2008R2".equals(_versionYear) || "2012".equals(_versionYear))
             warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+
+        if (WarningService.get().showAllWarnings() || CoreSchema.getInstance().getScope().getDriverName().contains("jTDS"))
+            warnings.add(HtmlStringBuilder.of(
+                    "LabKey Server prefers the Microsoft JDBC driver for SQL Server. jTDS support will be completely removed in 23.3.0; please upgrade. ").
+                    append(new HelpTopic("configSQLServer").getLinkHtml("docs")));
     }
 
     @Override
@@ -1931,7 +1930,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                     // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    if (isJTDS(scope))
+                    {
+                        parameters.put("return_status", new MetadataParameterInfo(traitMap));
+                    }
+                    else
+                    {
+                        parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
+                    }
                 }
                 else
                 {
@@ -1947,11 +1953,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         StringBuilder sb = new StringBuilder();
         if (hasReturn || assignResult)
         {
+            if (!isJTDS(procScope))
+            {
+                sb.append("{");
+            }
             sb.append("? = ");
             paramCount--;
         }
@@ -1962,6 +1972,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
         }
+        if (hasReturn || assignResult && !isJTDS(procScope))
+        {
+            sb.append("}");
+        }
 
         return sb.toString();
     }
@@ -1969,6 +1983,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
+        int index = 1;
+        boolean jTDS = isJTDS(scope);
         for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
@@ -1977,10 +1993,34 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
             if (direction != DatabaseMetaData.procedureColumnOut)
-                stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+            {
+                if (jTDS)
+                {
+                    stmt.setObject(paramName, paramInfo.getParamValue(), datatype); // TODO: Can likely drop the "@"
+                }
+                else
+                {
+                    stmt.setObject(index, paramInfo.getParamValue(), datatype);
+                }
+            }
             if (direction == DatabaseMetaData.procedureColumnInOut || direction == DatabaseMetaData.procedureColumnOut)
-                stmt.registerOutParameter(paramName, datatype);
+            {
+                if (jTDS)
+                {
+                    stmt.registerOutParameter(paramName, datatype);
+                }
+                else
+                {
+                    stmt.registerOutParameter(index, datatype);
+                }
+            }
+            index++;
         }
+    }
+
+    protected boolean isJTDS(DbScope scope)
+    {
+        return scope.getDriverName().contains("jTDS");
     }
 
     @Override
@@ -2010,11 +2050,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return name;
     }
 
+    private static final TableResolver TABLE_RESOLVER = new SynonymTableResolver();
 
     @Override
     public TableResolver getTableResolver()
     {
-        return _tableResolver;
+        return TABLE_RESOLVER;
     }
 
     @Override

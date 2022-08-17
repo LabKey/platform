@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExportFolderForm" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -92,7 +93,7 @@ Ext4.onReady(function(){
                 hideLabel: true,
                 boxLabel: parentName,
                 name: "types",
-                itemId: parentName,
+                itemId: parentName.replaceAll(',', ''),
                 inputValue: parentName,
                 checked: checked,
                 objectType: "parent"
@@ -108,7 +109,7 @@ Ext4.onReady(function(){
                         hideLabel: true,
                         boxLabel: childName,
                         name: "types",
-                        itemId: childName,
+                        itemId: childName.replaceAll(',', ''),
                         inputValue: childName,
                         checked: checked,
                         objectType: "child",
@@ -186,9 +187,9 @@ Ext4.onReady(function(){
             hideLabel: true,
             columns: 1,
             items: [
-                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: 0, style:"margin-left: 2px", disabled: isCloudRoot},
-                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: 1, style:"margin-left: 2px"},
-                {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
+                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.PipelineRootAsFiles.ordinal() %>, style:"margin-left: 2px", disabled: isCloudRoot},
+                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.PipelineRootAsZip.ordinal() %>, style:"margin-left: 2px"},
+                {boxLabel: "Browser as zip file", cls: 'export-location', name: "location", inputValue: <%= AdminController.ExportOption.DownloadAsZip.ordinal() %>, checked: true, style:"margin-left: 2px"}
             ]
         });
         formItemsCol2.push({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
@@ -219,6 +220,20 @@ Ext4.onReady(function(){
 
                     exportForm.getForm().submit();
                 }
+            }, {
+                text:'Clear All Objects',
+                handler: function(btn) {
+                    const leftColumnItems = exportForm.items.items[0].items.items;
+                    for (const item of leftColumnItems)
+                        if (item.xtype === 'checkbox')
+                            item.setValue(false);
+                }
+            }, {
+                text:'Reset',
+                handler: function(btn) {
+                    document.getElementById('exportForm').innerHTML = '';
+                    initializeForm(initExportForm);
+                }
             }],
             buttonAlign:'left',
             listeners : {
@@ -233,7 +248,6 @@ Ext4.onReady(function(){
                                     child.setDisabled(!checked);
                                 });
                             });
-
                         });
                     }
                 }
@@ -248,6 +262,11 @@ Ext4.onReady(function(){
                 'NotPHI';
     };
 
+    initializeForm(initExportForm);
+});
+
+function initializeForm(initExportForm)
+{
     LABKEY.Ajax.request({
         url: LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
         method: 'POST',
@@ -256,11 +275,11 @@ Ext4.onReady(function(){
         },
         scope: this,
         success: function (response) {
-            var responseText = Ext4.decode(response.responseText);
+            const responseText = Ext4.decode(response.responseText);
             initExportForm(responseText['writers']);
         }
     });
-});
+}
 
 </script>
 

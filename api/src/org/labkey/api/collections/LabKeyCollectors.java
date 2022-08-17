@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * Static methods that return custom {@link Collector}s that can be used to collect elements of a {@link Stream} into a
- * a variety of useful collections.
+ * variety of useful collections.
  */
 public class LabKeyCollectors
 {
@@ -61,6 +61,23 @@ public class LabKeyCollectors
                 throw new IllegalStateException(String.format("Duplicate key %s", u));
             },
             CaseInsensitiveHashMap::new
+        );
+    }
+
+    /**
+     * Returns a {@link Collector} that builds a {@link CaseInsensitiveLinkedHashMap}
+     */
+    public static <T, U> Collector<T, ?, Map<String, U>> toCaseInsensitiveLinkedMap(
+        Function<? super T, String> keyMapper,
+        Function<? super T, ? extends U> valueMapper)
+    {
+        return toMap(
+            keyMapper,
+            valueMapper,
+            (u, v) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", u));
+            },
+            CaseInsensitiveLinkedHashMap::new
         );
     }
 

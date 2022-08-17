@@ -152,6 +152,7 @@ concurrent
 concurrently
 condition
 condition_number
+conditional
 configuration
 confirm
 conflict
@@ -481,8 +482,18 @@ issuer
 iterate
 join
 json
+json_array
+json_arrayagg
+json_exists
+json_object
+json_objectagg
+json_query
+json_scalar
+json_serialize
 json_table
+json_value
 k
+keep
 key
 key_block_size
 key_member
@@ -630,6 +641,7 @@ nchar
 nclob
 ndb
 ndbcluster
+nested
 nested_table_id
 nesting
 never
@@ -686,6 +698,7 @@ offsets
 oids
 old
 old_password
+omit
 on
 once
 one
@@ -800,6 +813,7 @@ quarter
 query
 quick
 quote
+quotes
 raiserror
 range
 rank
@@ -908,6 +922,7 @@ rtree
 rule
 save
 savepoint
+scalar
 scale
 schedule
 schema
@@ -927,6 +942,9 @@ securityaudit
 select
 selective
 self
+semantickeyphrasetable
+semanticsimilaritydetailstable
+semanticsimilaritytable
 sensitive
 separator
 sequence
@@ -1099,6 +1117,7 @@ trim_array
 true
 truncate
 trusted
+try_convert
 tsequal
 type
 types
@@ -1106,6 +1125,7 @@ uescape
 uid
 unbounded
 uncommitted
+unconditional
 undefined
 under
 undo

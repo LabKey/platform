@@ -920,6 +920,7 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Role assignments for users and groups",
                 "Webpart properties and layout",
                 "Wikis and their attachments",
+                "File Browser Settings",
                 "Files",
                 "QC State Settings",
                 "Sample Types and Data Classes");
@@ -1086,7 +1087,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setStudyProperties(String label, String investigator, String grant, String description)
     {
         clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Change Study Properties"));
+        clickAndWait(Locator.linkWithText("Study Properties"));
 
         waitForElement(Locator.name("Label"));
         setFormElement(Locator.name("Label"), label);

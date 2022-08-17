@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
@@ -130,6 +131,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.*;
 import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
@@ -156,6 +158,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -691,7 +694,8 @@ public class AssayController extends SpringActionController
                 bean = new AssayProviderBean();
                 bean.setName(provider.getName());
                 bean.setDescription(provider.getDescription());
-                bean.setFileTypes(provider.getDataType().getFileType().getSuffixes());
+                AssayDataType dataType = provider.getDataType();
+                bean.setFileTypes(dataType == null ? Collections.emptyList() : dataType.getFileType().getSuffixes());
                 beans.add(bean);
             }
 
@@ -1250,6 +1254,12 @@ public class AssayController extends SpringActionController
         }
 
         @Override
+        public ActionURL getImportAssayDesignURL(Container container)
+        {
+            return getChooseAssayTypeURL(container).addParameter("tab", "import");
+        }
+
+        @Override
         public ActionURL getShowSelectedDataURL(Container container, ExpProtocol protocol)
         {
             return getProtocolURL(container, protocol, ShowSelectedDataAction.class);
@@ -1711,6 +1721,57 @@ public class AssayController extends SpringActionController
 
             response.put("containers", containersInfo);
             return response;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    {
+
+        @Override
+        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
+        {
+            Collection<Integer> permittedIds = form.getIds(false);
+
+            Set<Integer> notPermittedIds = new HashSet<>();
+
+            ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
+            permittedIds.removeAll(notPermittedIds);
+            return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
+
+        }
+    }
+
+    public static class OperationConfirmationForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Set<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds(boolean clear)
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 }

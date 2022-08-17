@@ -29,6 +29,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -160,7 +161,7 @@ public class SecurityController extends SpringActionController
         SecurityApiActions.DeleteUserAction.class,
         SecurityApiActions.AddGroupMemberAction.class,
         SecurityApiActions.RemoveGroupMemberAction.class,
-        SecurityApiActions.CreateNewUserAction.class,
+        SecurityApiActions.CreateNewUsersAction.class,
         SecurityApiActions.AddAssignmentAction.class,
         SecurityApiActions.RemoveAssignmentAction.class,
         SecurityApiActions.ClearAssignedRolesAction.class,
@@ -279,13 +280,13 @@ public class SecurityController extends SpringActionController
 
         @Override
         @Nullable
-        public ActionURL getExternalToolsViewURL(User user, @NotNull URLHelper returnURL)
+        public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
         {
             long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
                     filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
             if (viewCount > 0)
             {
-                ActionURL url = new ActionURL(ExternalToolsViewAction.class, ContainerManager.getRoot());
+                ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
                 url.addReturnURL(returnURL);
                 return url;
             }
@@ -1057,31 +1058,28 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            try (ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
-                {
-                    @Override
-                    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
-                    {
-                        for (Pair<Integer, String> memberGroup : memberGroups)
-                        {
-                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                            row.put("displayName", memberGroup.getValue());
-                            row.put("userId", memberGroup.getKey());
-                            ctx.setRow(row);
-                            renderGridRow(sheet, ctx, visibleColumns);
-                        }
-                        super.renderGrid(ctx, sheet, visibleColumns);
-                    }
-                })
+            ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
             {
-                ew.setAutoSize(true);
-                ew.setSheetName(group + " Members");
-                ew.setFooter(group + " Members");
-                ew.write(response);
-            }
+                @Override
+                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
+                {
+                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    {
+                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                        row.put("displayName", memberGroup.getValue());
+                        row.put("userId", memberGroup.getKey());
+                        ctx.setRow(row);
+                        renderGridRow(sheet, ctx, visibleColumns);
+                    }
+                    super.renderGrid(ctx, sheet, visibleColumns);
+                }
+            };
+            ew.setAutoSize(true);
+            ew.setSheetName(group + " Members");
+            ew.setFooter(group + " Members");
+            ew.renderWorkbook(response);
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
@@ -1428,7 +1426,7 @@ public class SecurityController extends SpringActionController
                 if (user != null)
                     form.addMessage(HtmlString.unsafe(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail()))));
                 else
-                    form.addMessage(result);
+                    errors.addError(new LabKeyErrorWithHtml("", result));
             }
 
             return false;
@@ -2099,6 +2097,7 @@ public class SecurityController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+            setHelpTopic("externalTools");
             root.addChild("External Tool Access");
         }
     }

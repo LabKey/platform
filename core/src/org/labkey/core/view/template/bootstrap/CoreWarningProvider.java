@@ -31,17 +31,25 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.user.LimitActiveUsersSettings;
 
+import javax.management.MBeanServerFactory;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.substringAfterLast;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 public class CoreWarningProvider implements WarningProvider
@@ -97,11 +105,19 @@ public class CoreWarningProvider implements WarningProvider
             }
         }
 
-        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), SHOW_ALL_WARNINGS);
+        if (null != warning)
+            warnings.add(warning);
+
+        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessage()))
         {
-            String message = AppProps.getInstance().getRibbonMessageHtml();
+            String message = AppProps.getInstance().getRibbonMessage();
             message = ModuleHtmlView.replaceTokens(message, context);
             warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
+        }
+        else if (SHOW_ALL_WARNINGS)
+        {
+            warnings.add(HtmlString.of("Here is a sample ribbon message."));
         }
     }
 
@@ -148,12 +164,56 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
+    private Set<String> collectAllDeployedApps()
+    {
+        var result = new HashSet<String>();
+        try
+        {
+            var servers = MBeanServerFactory.findMBeanServer(null);
+            for (var server : servers)
+            {
+                for (var domain : server.getDomains())
+                {
+                    if (!domain.equals("Catalina"))
+                        continue;
+                    final var instances = server.queryNames(new ObjectName("Catalina:j2eeType=WebModule,*"), null);
+                    for (ObjectName each : instances)
+                        result.add(substringAfterLast(each.getKeyProperty("name"), '/'));
+                }
+            }
+        }
+        catch (MalformedObjectNameException x)
+        {
+            // pass
+        }
+        return result;
+    }
+
     private void getTomcatWarnings(Warnings warnings)
     {
         if (SHOW_ALL_WARNINGS || ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
             addStandardWarning(warnings, "The deployed version of Tomcat, " + serverInfo + ", is not supported.", "supported", "Supported Technologies page");
+        }
+
+        try
+        {
+            Set<String> deployedWebapps = collectAllDeployedApps();
+            deployedWebapps.remove(StringUtils.strip(AppProps.getInstance().getContextPath(),"/"));
+            boolean defaultTomcatWebappFound = deployedWebapps.stream().anyMatch(webapp ->
+                StringUtils.startsWithIgnoreCase(webapp,"docs") ||
+                StringUtils.startsWithIgnoreCase(webapp,"host-manager") ||
+                StringUtils.startsWithIgnoreCase(webapp,"examples") ||
+                StringUtils.startsWithIgnoreCase(webapp,"manager")
+            );
+
+            if (SHOW_ALL_WARNINGS || (defaultTomcatWebappFound && !AppProps.getInstance().isDevMode()))
+                addStandardWarning(warnings, "This server appears to be running with one or more default Tomcat web applications that should be removed. These may include 'docs', 'examples', 'host-manager', and 'manager'.", "configTomcat", "Tomcat Configuration");
+        }
+        catch (Exception x)
+        {
+            LogHelper.getLogger(CoreWarningProvider.class, "core warning provider").warn("Exception encountered while verifying Tomcat configuration", x);
         }
     }
 

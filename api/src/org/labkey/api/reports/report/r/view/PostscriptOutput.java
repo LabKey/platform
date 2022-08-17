@@ -55,7 +55,7 @@ public class PostscriptOutput extends DownloadParamReplacement
     }
 
     @Override
-    public HttpView render(ViewContext context)
+    public HttpView getView(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)
             return new PostscriptReportView(this, getReport());

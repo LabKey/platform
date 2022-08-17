@@ -849,17 +849,14 @@ public abstract class CompareType
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            final Object param = getParamVals()[0];
-            final String escapedValue = escapeLabKeySqlValue(param, JdbcType.VARCHAR, true);
-            if (_selectColumns == null || _selectColumns.isEmpty() || escapedValue.isEmpty())
+            final String param = Objects.toString(getParamVals()[0], null) ;
+            if (_selectColumns == null || _selectColumns.isEmpty() || null == param)
                 return new SQLFragment("1=1");
 
             Integer paramNum = null;
             try
             {
-                String paramString = Objects.toString(param, null);
-                if (paramString != null)
-                    paramNum = Integer.parseInt(paramString);
+                paramNum = Integer.parseInt(param);
             }
             catch (NumberFormatException ex)
             {
@@ -897,7 +894,7 @@ public abstract class CompareType
 
                 sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
                 sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
-                sql.append("'%").append(LikeClause.escapeLikePattern(escapedValue)).append("%'");
+                sql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
                 sql.append(LikeClause.sqlEscape());
             }
 

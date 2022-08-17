@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 // Extend this to implement a dialect that will work as an external data source.
 public abstract class SimpleSqlDialect extends SqlDialect
 {
-    // The following methods must be implemented by all dialects.  Standard implementations are provided; override them
+    // The following methods must be implemented by all dialects. Standard implementations are provided; override them
     // if your dialect requires it.
 
     @Override
@@ -121,7 +121,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
     {
         throw new IllegalStateException("Should not call when canShowExecutionPlan() returns false");
     }
@@ -205,12 +205,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
         return null;
-    }
-
-    @Override
-    public boolean supportsOffset()
-    {
-        return false;
     }
 
     @Override
@@ -456,7 +450,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getMasterDataBaseName()
+    public String getDefaultDatabaseName()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -530,7 +524,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         throw new UnsupportedOperationException();
     }

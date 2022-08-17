@@ -412,14 +412,16 @@ public class ListDefinitionImpl implements ListDefinition
             if (ensureKey)
                 ensureKey();
 
+            Domain domain = getDomain();
+
             if (_new)
             {
                 // The domain kind cannot lookup the list definition if the domain has not been saved
-                ((ListDomainKind) _domain.getDomainKind()).setListDefinition(this);
+                ((ListDomainKind) domain.getDomainKind()).setListDefinition(this);
 
-                _domain.save(user);
+                domain.save(user);
 
-                _def.setDomainId(_domain.getTypeId());
+                _def.setDomainId(domain.getTypeId());
                 ListDef inserted = ListManager.get().insert(user, _def, _preferredListIds);
                 _def = new ListDef.ListDefBuilder(inserted);
                 _new = false;
@@ -441,23 +443,29 @@ public class ListDefinitionImpl implements ListDefinition
                 throw new ValidationException("The name '" + _def.getName() + "' is already in use.");
             throw e;
         }
+
+        // Fetch the domain again to prime the cache, reducing potential for DB deadlocks
+        _domain = null;
+        getDomain();
+
         ListManager.get().indexList(_def, true);
     }
 
     private void ensureKey()
     {
-        for (DomainProperty dp : _domain.getProperties())
+        Domain domain = getDomain();
+        for (DomainProperty dp : domain.getProperties())
         {
             if (dp.getName().equalsIgnoreCase(getKeyName()))
                 return;
         }
 
-        DomainProperty prop = _domain.addProperty();
-        prop.setPropertyURI(_domain.getTypeURI() + "#" + getKeyName());
+        DomainProperty prop = domain.addProperty();
+        prop.setPropertyURI(domain.getTypeURI() + "#" + getKeyName());
         prop.setName(getKeyName());
-        prop.setType(PropertyService.get().getType(_domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
+        prop.setType(PropertyService.get().getType(domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
 
-        _domain.setPropertyIndex(prop, 0);
+        domain.setPropertyIndex(prop, 0);
     }
 
     @Override
@@ -713,6 +721,16 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    public TableInfo getTableForInsert(User user, Container c)
+    {
+        return getTable(user, c, QueryService.get().getContainerFilterForLookups(c, user));
+    }
+
+    public ActionURL urlImport(Container c)
+    {
+        return urlForName(ListController.UploadListItemsAction.class, c);
+    }
+
     @Override
     public ActionURL urlShowDefinition()
     {
@@ -722,7 +740,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public ActionURL urlShowData(Container c)
     {
-        return urlFor(ListController.GridAction.class, c);
+        return urlForName(ListController.GridAction.class, c);
     }
 
     @Override
@@ -752,7 +770,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public ActionURL urlDetails(@Nullable Object pk, Container c)
     {
-        ActionURL url = urlFor(ListController.DetailsAction.class, c);
+        ActionURL url = urlForName(ListController.DetailsAction.class, c);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
 
         if (null != pk)
@@ -784,6 +802,13 @@ public class ListDefinitionImpl implements ListDefinition
     {
         ActionURL ret = new ActionURL(actionClass, c);
         ret.addParameter("listId", getListId());
+        return ret;
+    }
+
+    private ActionURL urlForName(Class<? extends Controller> actionClass, Container c)
+    {
+        ActionURL ret = new ActionURL(actionClass, c);
+        ret.addParameter("name", getName());
         return ret;
     }
 

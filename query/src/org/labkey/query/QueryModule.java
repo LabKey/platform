@@ -57,6 +57,8 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.JavaScriptReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
+import org.labkey.api.reports.report.python.IpynbReport;
+import org.labkey.api.reports.report.python.IpynbReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -70,6 +72,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -107,6 +110,7 @@ import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
+import org.labkey.query.reports.ReportViewProvider;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
@@ -188,12 +192,15 @@ public class QueryModule extends DefaultModule
         ReportService.get().addUIProvider(new ReportUIProvider());
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
+        ReportService.get().addGlobalItemFilterType(IpynbReport.TYPE);
 
+        ReportService.get().registerDescriptor(new IpynbReportDescriptor());
         ReportService.get().registerDescriptor(new ReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
         ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
+        ReportService.get().registerReport(new IpynbReport());
         ReportService.get().registerReport(new QueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
@@ -211,6 +218,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new PythonExportScriptFactory());
         QueryView.register(new SasExportScriptFactory());
 
+        DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
+
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
@@ -219,8 +228,6 @@ public class QueryModule extends DefaultModule
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
                 "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
                 "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
-        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, "Subfolder data in LabKey Products",
-                "View and interact with data from subfolders of a Product Project.", false);
     }
 
 
@@ -390,7 +397,7 @@ public class QueryModule extends DefaultModule
         JSONObject json = super.getPageContextJson(context);
         boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
-        json.put(QueryServiceImpl.EXPERIMENTAL_SUBFOLDER_DATA_ENABLED, QueryService.get().isProductSubfolderDataEnabled());
+        json.put(QueryServiceImpl.PRODUCT_PROJECTS_ENABLED, QueryService.get().isProductProjectsEnabled(context.getContainer()));
 
         return json;
     }

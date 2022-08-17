@@ -109,10 +109,6 @@ public interface AuditLogService
 
     <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf);
 
-    String getTableName();
-
-    TableInfo getTable(ViewContext context, String name);
-
     UserSchema createSchema(User user, Container container);
 
     ActionURL getAuditUrl();

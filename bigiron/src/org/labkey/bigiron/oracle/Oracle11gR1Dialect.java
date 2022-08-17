@@ -30,7 +30,7 @@ import java.util.Set;
 public class Oracle11gR1Dialect extends OracleDialect
 {
 
-    /* Reserved and KeyWords for Oracle 11gR1
+    /* Reserved and Keywords for Oracle 11gR1
        See: http://download.oracle.com/docs/cd/B28359_01/server.111/b28286/ap_keywd.htm#SQLRF022
 
        On keywords:

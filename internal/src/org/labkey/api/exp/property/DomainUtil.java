@@ -305,6 +305,7 @@ public class DomainUtil
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+            gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -320,6 +321,7 @@ public class DomainUtil
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
         gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
+        gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
@@ -334,15 +336,23 @@ public class DomainUtil
 
     public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
     {
+        return getPropertyDescriptor(prop, false);
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop, boolean copy)
+    {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
 
-        gwtProp.setPropertyId(prop.getPropertyId());
+        if (!copy)
+        {
+            gwtProp.setPropertyId(prop.getPropertyId());
+            gwtProp.setPropertyURI(prop.getPropertyURI());
+        }
         gwtProp.setDescription(prop.getDescription());
         gwtProp.setFormat(prop.getFormat());
         gwtProp.setLabel(prop.getLabel());
         gwtProp.setConceptURI(prop.getConceptURI());
         gwtProp.setName(prop.getName());
-        gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
         gwtProp.setRangeURI(prop.getPropertyType() != null ? prop.getPropertyType().getTypeUri() : prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
@@ -378,10 +388,11 @@ public class DomainUtil
             GWTPropertyValidator gpv = new GWTPropertyValidator();
             Lsid lsid = new Lsid(pv.getTypeURI());
 
+            if (!copy)
+                gpv.setRowId(pv.getRowId());
             gpv.setName(pv.getName());
             gpv.setDescription(pv.getDescription());
             gpv.setExpression(pv.getExpressionValue());
-            gpv.setRowId(pv.getRowId());
             gpv.setType(PropertyValidatorType.getType(lsid.getObjectId()));
             gpv.setErrorMessage(pv.getErrorMessage());
 
