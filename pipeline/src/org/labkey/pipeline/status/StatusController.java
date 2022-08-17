@@ -570,7 +570,7 @@ public class StatusController extends SpringActionController
 
                     // Ensure that the requested file is under the root for this container
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                    if (root != null && root.isUnderRoot(fileShow) && NetworkDrive.exists(fileShow))
+                    if (root != null && fileShow != null && root.isUnderRoot(fileShow) && NetworkDrive.exists(fileShow))
                     {
                         boolean visible = isVisibleFile(fileName, basename);
 
