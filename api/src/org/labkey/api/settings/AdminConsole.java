@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,7 @@ public class AdminConsole
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<ExperimentalFeatureFlag> _experimentalFlags = new ConcurrentSkipListSet<>();
+    private static final Set<ProductGroup> _productGroups = new ConcurrentSkipListSet<>();
 
     static
     {
@@ -174,6 +176,7 @@ public class AdminConsole
             return _title;
         }
 
+        @Override
         public String getDescription()
         {
             return _description;
@@ -204,4 +207,53 @@ public class AdminConsole
             return getFlag();
         }
     }
+
+    public static void addProductGroup(ProductGroup group)
+    {
+        _productGroups.add(group);
+    }
+
+    public static Set<ProductGroup> getProductGroups()
+    {
+        return Collections.unmodifiableSet(_productGroups);
+    }
+
+    public static Set<String> getProductFeatureList()
+    {
+        Set<String> productFeatures = new HashSet<>();
+        AdminConsole.getProductGroups().forEach(group -> {
+            group.getProducts().forEach(product -> {
+                if (product.isEnabled())
+                    productFeatures.addAll(product.getFeatureFlags());
+            });
+        });
+        return productFeatures;
+    }
+
+    public static abstract class ProductGroup implements Comparable<ProductGroup>
+    {
+        public abstract String getName();
+
+        public abstract String getKey();
+
+        public abstract List<Product> getProducts();
+
+        @Override
+        public int compareTo(@NotNull ProductGroup o)
+        {
+            return getName().compareToIgnoreCase(o.getName());
+        }
+    }
+
+    public interface Product
+    {
+        String getName();
+
+        String getKey();
+
+        boolean isEnabled();
+
+        @NotNull List<String> getFeatureFlags();
+    }
+
 }
