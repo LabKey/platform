@@ -24,9 +24,9 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
+import org.labkey.test.util.Maps;
 
 import java.io.File;
-import java.util.Map;
 
 @Category(Daily.class)
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -135,7 +135,8 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         waitForElement(Locator.tag("span").containing("You must choose"));
 
         log("Check url's to are correctly constructed");
-        final String url = WebTestHelper.buildRelativeUrl("study", PROJECT_NAME + "/" + FOLDER_NAME, "dataset", Map.of("datasetId", 5018, "Dataset.ParticipantId~in", PTID_NO_ALIAS + ";" + PTID_NEW_2));
+        final String url = WebTestHelper.buildRelativeUrl("study", PROJECT_NAME + "/" + FOLDER_NAME, "dataset",
+                Maps.of("datasetId", 5018, "Dataset.ParticipantId~in", PTID_NO_ALIAS + ";" + PTID_NEW_2));
         assertElementPresent(Locator.linkWithHref(url));
 
         log("Resolve conflicts and check for correct row retention");
