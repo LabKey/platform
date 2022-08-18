@@ -11,15 +11,15 @@ public enum ProductFeature
     SampleManagement("sampleManager"),
     Workflow("sampleManagement");
 
-    private final String _moduleProvider;
+    private final String _module;
 
-    ProductFeature(String moduleProvider)
+    ProductFeature(String module)
     {
-        _moduleProvider = moduleProvider;
+        _module = module;
     }
 
-    public String getModuleProvider()
+    public String getModule()
     {
-        return _moduleProvider;
+        return _module;
     }
 }
