@@ -230,6 +230,11 @@ public class AdminConsole
         return productFeatures;
     }
 
+    public static boolean isProductFeatureEnabled(ProductFeature feature)
+    {
+        return getProductFeatureList().contains(feature.toString());
+    }
+
     public static abstract class ProductGroup implements Comparable<ProductGroup>
     {
         public abstract String getName();
