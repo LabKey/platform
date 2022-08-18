@@ -117,6 +117,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -811,6 +812,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
@@ -1315,6 +1317,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
     }
+
+
 
     /**
      * This method handles the home project settings
