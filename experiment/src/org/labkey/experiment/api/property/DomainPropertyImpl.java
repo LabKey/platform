@@ -982,6 +982,7 @@ public class DomainPropertyImpl implements DomainProperty
         setConceptSubtree(propSrc.getConceptSubtree());
         setConceptImportColumn(propSrc.getConceptImportColumn());
         setConceptLabelColumn(propSrc.getConceptLabelColumn());
+        setDerivationDataScope(propSrc.getDerivationDataScope());
 
         // check to see if we're moving a lookup column to another container:
         Lookup lookup = propSrc.getLookup();

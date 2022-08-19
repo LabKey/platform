@@ -24,6 +24,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.DefaultValueEnumType;
+import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.FilterGroupType;
 import org.labkey.data.xml.PHIType;
@@ -136,6 +137,9 @@ public class TableInfoWriter
 
         if (column.isScannable())
             columnXml.setScannable(column.isScannable());
+
+        if (null != column.getDerivationDataScope())
+            columnXml.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(column.getDerivationDataScope()));
 
         if (column.getDefaultScale() != null)
         {
