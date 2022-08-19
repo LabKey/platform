@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -47,7 +48,8 @@ public class ChooseExperimentTypeBean
 
     public static ExperimentRunType getBestTypeSelection(Set<ExperimentRunType> types, ExperimentRunType selectedType, List<? extends ExpProtocol> protocols)
     {
-        LOG.info("selectedType: " + selectedType);
+        LOG.info("-------------------------");
+        LOG.info("requestedType: " + selectedType);
         if (selectedType != null)
         {
             return selectedType;
@@ -59,7 +61,7 @@ public class ChooseExperimentTypeBean
             return ExperimentRunType.ALL_RUNS_TYPE;
         }
 
-        LOG.info("types: " + types);
+        LOG.info("types: " + types.stream().map(ExperimentRunType::getDescription).collect(Collectors.joining(", ")));
         Handler.Priority bestPriority = null;
         for (ExperimentRunType type : types)
         {
@@ -80,7 +82,7 @@ public class ChooseExperimentTypeBean
             }
         }
 
-        LOG.info("selectedType: " + selectedType);
+        LOG.info("selectedType: " + (null != selectedType ? selectedType.getDescription() : null));
         return selectedType;
     }
 
