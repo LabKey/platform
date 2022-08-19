@@ -16,9 +16,11 @@
 
 package org.labkey.experiment;
 
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
@@ -41,12 +43,17 @@ public class ChooseExperimentTypeBean
         _url = url;
     }
 
+    private static final Logger LOG = LogHelper.getLogger(ChooseExperimentTypeBean.class, "Track down MS2Test failure");
+
     public static ExperimentRunType getBestTypeSelection(Set<ExperimentRunType> types, ExperimentRunType selectedType, List<? extends ExpProtocol> protocols)
     {
+        LOG.info("selectedType: " + selectedType);
         if (selectedType != null)
         {
             return selectedType;
         }
+
+        LOG.info("protocols: " + protocols);
         if (protocols == null || protocols.isEmpty())
         {
             return ExperimentRunType.ALL_RUNS_TYPE;
