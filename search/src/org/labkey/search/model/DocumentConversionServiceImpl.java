@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.ImageTranscoder;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.wmf.tosvg.WMFTranscoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -63,6 +64,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
 
         PNGTranscoder transcoder = new PNGTranscoder();
         transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
+        transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
 
         if (null != height)
             transcoder.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
@@ -75,6 +77,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     {
         TranscoderInput xIn = new TranscoderInput(is);
         WMFTranscoder transcoder = new WMFTranscoder();
+        transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
         transcoder.transcode(xIn, new TranscoderOutput(os));
     }
 
