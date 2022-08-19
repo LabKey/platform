@@ -1136,12 +1136,15 @@ public class ExperimentController extends SpringActionController
                     ActionButton button = super.createDeleteButton();
                     if (button != null)
                     {
-                        String dependencyText = "derived data or sample dependencies";
-                        if (ModuleLoader.getInstance().hasModule("labbook"))
-                            dependencyText += " or references in one or more active notebooks";
+                        String dependencyText = ExperimentService.get()
+                                .getObjectReferencers()
+                                .stream()
+                                .map(referencer -> referencer.getObjectReferenceDescription(ExpData.class))
+                                .collect(Collectors.joining(" or "));
+
                         button.setScript("LABKEY.dataregion.confirmDelete(" +
                                 PageFlowUtil.jsString(getDataRegionName()) + ", " +
-                                PageFlowUtil.jsString(getSchema().getName())  + ", " +
+                                PageFlowUtil.jsString(ExpSchema.SCHEMA_EXP_DATA.toString())  + ", " +
                                 PageFlowUtil.jsString(getQueryDef().getName()) + ", " +
                                 "'experiment', 'getDataOperationConfirmationData.api', " +
                                 PageFlowUtil.jsString(getSelectionKey()) + ", " +
