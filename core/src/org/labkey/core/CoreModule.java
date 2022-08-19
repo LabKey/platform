@@ -989,7 +989,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
 
         // Temporary hack to force no-question-mark mode for a round of testing. TODO: Remove
-        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
+        //ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
 
         if (null != PropertyService.get())
         {

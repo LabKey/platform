@@ -59,6 +59,7 @@ public class ChooseExperimentTypeBean
             return ExperimentRunType.ALL_RUNS_TYPE;
         }
 
+        LOG.info("types: " + types);
         Handler.Priority bestPriority = null;
         for (ExperimentRunType type : types)
         {
@@ -79,6 +80,7 @@ public class ChooseExperimentTypeBean
             }
         }
 
+        LOG.info("selectedType: " + selectedType);
         return selectedType;
     }
 
