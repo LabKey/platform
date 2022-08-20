@@ -2495,7 +2495,7 @@ public class ReportsController extends SpringActionController
                 if (report instanceof CrosstabReport)
                 {
                     ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
-                    writer.renderSheetAndWrite(getViewContext().getResponse());
+                    writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
             return null;

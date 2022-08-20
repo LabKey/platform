@@ -723,6 +723,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
+    void registerObjectReferencer(ObjectReferencer referencer);
+
+    @NotNull
+    List<ObjectReferencer> getObjectReferencers();
+
+    @NotNull
+    String getObjectReferenceDescription(Class referencedClass);
+
     @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
     @Nullable ExpProtocolApplication getExpProtocolApplication(int rowId);

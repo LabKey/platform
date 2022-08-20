@@ -92,7 +92,7 @@ public abstract class DisplayColumn extends RenderColumn
     private StringExpression _urlTitleCompiled = null;
 
     protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
-    private List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
+    private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -134,6 +134,12 @@ public abstract class DisplayColumn extends RenderColumn
         return _url != null ? _url : _urlExpression != null ? _urlExpression.getSource() : null;
     }
 
+    public void setURL(ActionURL url)
+    {
+        setURL(null != url ? url.toString() : null);
+    }
+
+    @Deprecated // Prefer setURL(ActionURL)
     public void setURL(String url)
     {
         _url = url;

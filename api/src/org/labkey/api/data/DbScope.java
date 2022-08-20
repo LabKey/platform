@@ -1002,7 +1002,7 @@ public class DbScope
 
             if (_transaction.isEmpty())
             {
-                log.info("There are no threads holding connections for the data source '" + this + "'");
+                log.info("There are no threads holding transactions for the data source '" + this + "'");
             }
             else
             {

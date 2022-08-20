@@ -15,7 +15,6 @@
  */
 package org.labkey.issue.view;
 
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -69,8 +68,7 @@ public class IssuesListView extends VBox
         addView(queryView);
 
         setTitleHref(new ActionURL(IssuesController.ListAction.class, getViewContext().getContainer()).
-                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).
-                addParameter(DataRegion.LAST_FILTER_PARAM, true));
+                addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName));
     }
 
 
