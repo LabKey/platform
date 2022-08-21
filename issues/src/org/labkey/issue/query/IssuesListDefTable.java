@@ -26,7 +26,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -45,8 +44,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -199,7 +196,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                             if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
                             {
                                 out.write("<a href=\"");
-                                out.write(c.getStartURL(getUserSchema().getUser()).getLocalURIString());
+                                out.write(PageFlowUtil.filter(c.getStartURL(getUserSchema().getUser()).getLocalURIString()));
                                 out.write("\">");
                                 out.write(PageFlowUtil.filter(c.getName()));
                                 out.write("</a>");

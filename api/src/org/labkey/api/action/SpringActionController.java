@@ -599,10 +599,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     StringBuilder url = new StringBuilder(request.getRequestURL().toString());
-                    if (request.getQueryString() != null)
+                    if (!StringUtils.isBlank(request.getQueryString()))
                     {
                         url.append("?");
                         url.append(request.getQueryString());
+                    }
+                    else if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+                    {
+                        url.append("?");
                     }
                     returnURL = new URLHelper(url.toString());
                 }
