@@ -136,7 +136,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
         log("Test for an expected error when changing type from String to Int");
         GetDomainCommand getCmd = new GetDomainCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
-        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(false), getContainerPath());
+        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
         List<PropertyDescriptor> getDomainCols = getDomainResponse.getDomain().getFields();
         PropertyDescriptor activityCodeCol = getDomainCols.get(3);
 
@@ -164,7 +164,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     private void renameColumnName() throws IOException, CommandException
     {
         GetDomainCommand getCmd = new GetDomainCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
-        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(false), getContainerPath());
+        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
         List<PropertyDescriptor> getDomainCols = getDomainResponse.getDomain().getFields();
         PropertyDescriptor activityCommentsCol = getDomainCols.get(3);
 
@@ -177,14 +177,14 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         updatedDomain.setDomainId(existingDomain.getDomainId());
         updatedDomain.setDomainURI(existingDomain.getDomainURI());
         updatedDomain.setFields(getDomainCols);
-        saveCmd.execute(this.createDefaultConnection(false), getContainerPath());
+        saveCmd.execute(this.createDefaultConnection(), getContainerPath());
     }
 
     private void testForExpectedErrorMessage(AbstractDomainUpdateCommand cmd, String expectedErrorMsg, String domainApiType) throws IOException
     {
         try
         {
-            cmd.execute(this.createDefaultConnection(false), getContainerPath());
+            cmd.execute(this.createDefaultConnection(), getContainerPath());
             fail("Expected " + domainApiType + " API to throw CommandException.");
         }
         catch (CommandException e)
@@ -233,6 +233,6 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     {
         CreateDomainCommand cmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         cmd.getDomainDesign().setFields(goodColumns);
-        return cmd.execute(this.createDefaultConnection(false), getContainerPath());
+        return cmd.execute(this.createDefaultConnection(), getContainerPath());
     }
 }
