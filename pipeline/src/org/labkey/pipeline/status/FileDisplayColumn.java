@@ -87,7 +87,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 if (Files.isReadable(file))
                 {
                     out.write("<a href=\"");
-                    out.write(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString());
+                    out.write(PageFlowUtil.filter(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString()));
                     out.write("\">");
                     out.write(PageFlowUtil.filter(fileName));
                     out.write("</a>\n");

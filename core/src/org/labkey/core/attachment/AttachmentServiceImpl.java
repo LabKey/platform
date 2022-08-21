@@ -704,7 +704,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             SQLFragment allSql = new SQLFragment("SELECT Type, COUNT(*) AS Count FROM (\n");
             allSql.append(SQLFragment.join(selectStatements, "UNION\n"));
             allSql.append(") u\nGROUP BY Type\nORDER BY Type");
-            String link = currentUrl.clone().deleteParameters().getLocalURIString() + "type=";
+            String link = currentUrl.clone().deleteParameters().addParameter("type", null).getLocalURIString();
 
             // The second query shows all attachments that we can't associate with a type. We just need to assemble a big
             // WHERE NOT clause that ORs the conditions from every registered type.
