@@ -1021,7 +1021,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
                 .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
                 .collect(Collectors.toList()));
-            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureList());
+            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
 
             // Report the total number of login entries in the audit log
@@ -1093,7 +1093,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
-        json.put("productFeatures", AdminConsole.getProductFeatureList());
+        json.put("productFeatures", AdminConsole.getProductFeatureSet());
         return json;
     }
 

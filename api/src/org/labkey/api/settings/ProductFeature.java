@@ -8,7 +8,7 @@ public enum ProductFeature
     Assay("assay"),
     ELN("labbook"),
     FreezerManagement("inventory"),
-    SampleManagement("sampleManager"),
+    SampleManagement("sampleManagement"),
     Workflow("sampleManagement");
 
     private final String _module;

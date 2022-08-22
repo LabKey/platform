@@ -8790,39 +8790,20 @@ public class AdminController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ProductConfigurationAction extends FormViewAction<Object>
+    public class ProductConfigurationAction extends SimpleViewAction<Object>
     {
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-
-        }
-
-        @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
-        {
-            JspView<Object> view = new JspView<>("/org/labkey/core/admin/productConfiguration.jsp");
-            view.setFrame(WebPartView.FrameType.NONE);
-            return view;
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            throw new UnsupportedOperationException("Nope");
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return getShowAdminURL();
-        }
-
         @Override
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Product Configuration", getClass());
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/productConfiguration.jsp");
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
         }
     }
 

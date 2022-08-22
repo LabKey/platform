@@ -218,7 +218,7 @@ public class AdminConsole
         return Collections.unmodifiableSet(_productGroups);
     }
 
-    public static Set<String> getProductFeatureList()
+    public static Set<String> getProductFeatureSet()
     {
         Set<String> productFeatures = new HashSet<>();
         AdminConsole.getProductGroups().forEach(group -> {
@@ -232,7 +232,7 @@ public class AdminConsole
 
     public static boolean isProductFeatureEnabled(ProductFeature feature)
     {
-        return getProductFeatureList().contains(feature.toString());
+        return getProductFeatureSet().contains(feature.toString());
     }
 
     public static abstract class ProductGroup implements Comparable<ProductGroup>
