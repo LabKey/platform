@@ -40,6 +40,12 @@
     }
 </style>
 
+<% if (AdminConsole.getProductGroups().isEmpty()) { %>
+        <div class="description-text">
+            No products requiring configuration have been registered for this deployment.
+        </div>
+<% } else { %>
+
 <div class="description-text">
     The set of features associated with each product is dependent on the modules included in the current deployment.
     If you don't see features you might expect associated with certain products,
@@ -79,4 +85,4 @@
         });
     })();
 </script>
-
+<% } %>
