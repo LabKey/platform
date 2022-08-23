@@ -82,7 +82,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
             _inputStream = null;
         }
         else
-            LOG.debug("No input stream is active for this ByteArrayAttachmentFile");
+            LOG.warn("No input stream is active for this ByteArrayAttachmentFile");
     }
 
     @Override

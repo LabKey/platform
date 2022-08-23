@@ -129,6 +129,6 @@ public class DatabaseAttachmentFile implements AttachmentFile
             _rs = ResultSetUtil.close(_rs);
         }
         else
-            LOG.debug("No input stream is active for this DatabaseAttachmentFile");
+            LOG.warn("No input stream is active for this DatabaseAttachmentFile");
     }
 }
