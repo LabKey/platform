@@ -786,6 +786,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        // Force no-question-mark mode on only for new servers. TODO: Once testing is complete, switch this to an
+        // upgrade script that flips the flag on all servers.
+        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
     }
 
 
@@ -987,9 +991,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "No Question Marks in URLs",
                 "Don't append '?' to URLs unless there are query parameters.",
                 false);
-
-        // Temporary hack to force no-question-mark mode for a round of testing. TODO: Remove
-//        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
 
         if (null != PropertyService.get())
         {
