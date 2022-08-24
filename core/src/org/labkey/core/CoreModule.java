@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -116,6 +117,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
+import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -166,6 +168,7 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
@@ -786,6 +789,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
+
+        // Force no-question-mark mode on only for new servers. TODO: Once testing is complete, switch this to an
+        // upgrade script that flips the flag on all servers.
+        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
     }
 
 
@@ -810,6 +817,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
         ContainerManager.clearCache();
 
+        ProductConfiguration.handleStartupProperties();
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
@@ -988,9 +996,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Don't append '?' to URLs unless there are query parameters.",
                 false);
 
-        // Temporary hack to force no-question-mark mode for a round of testing. TODO: Remove
-//        ExperimentalFeatureService.get().setFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL, true, null);
-
         if (null != PropertyService.get())
         {
             PropertyService.get().registerDomainKind(new UsersDomainKind());
@@ -1017,6 +1022,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .filter(AdminConsole.ExperimentalFeatureFlag::isEnabled)
                 .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
                 .collect(Collectors.toList()));
+            results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
 
             // Report the total number of login entries in the audit log
@@ -1082,6 +1088,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         TempTableTracker.init();
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put("productFeatures", AdminConsole.getProductFeatureSet());
+        return json;
     }
 
     @Override
@@ -1305,6 +1319,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
     }
+
+
 
     /**
      * This method handles the home project settings
