@@ -141,6 +141,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.NetworkDriveProps;
+import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -296,6 +297,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
+        if (!AdminConsole.getProductGroups().isEmpty())
+            AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
         if (ModuleLoader.getInstance().hasModule("FileContent"))
             AdminConsole.addLink(Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
@@ -8740,6 +8743,70 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "Experimental Features", getClass());
         }
     }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class ProductFeatureAction extends BaseApiAction<ProductConfigForm>
+    {
+        @Override
+        protected ModelAndView handleGet() throws Exception
+        {
+            return handlePost(); // 'execute' ensures that only POSTs are mutating
+        }
+
+        @Override
+        public ApiResponse execute(ProductConfigForm form, BindException errors)
+        {
+            String productKey = StringUtils.trimToNull(form.getProductKey());
+            if (productKey == null)
+                throw new ApiUsageException("productKey is required");
+
+            Map<String, Object> ret = new HashMap<>();
+
+            if (isPost())
+            {
+               ProductConfiguration.setProductKey(form.getProductKey());
+            }
+
+            ret.put("productKey", new ProductConfiguration().getCurrentProduct());
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    public static class ProductConfigForm
+    {
+        private String productKey;
+
+        public String getProductKey()
+        {
+            return productKey;
+        }
+
+        public void setProductKey(String productKey)
+        {
+            this.productKey = productKey;
+        }
+
+    }
+
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class ProductConfigurationAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Product Configuration", getClass());
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            JspView<Object> view = new JspView<>("/org/labkey/core/admin/productConfiguration.jsp");
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
+        }
+    }
+
 
     public static class FolderTypesBean
     {
