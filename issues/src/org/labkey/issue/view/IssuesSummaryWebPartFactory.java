@@ -43,14 +43,14 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> propertyMap = webPart.getPropertyMap();
         String issueDefName = propertyMap.get(IssuesListView.ISSUE_LIST_DEF_NAME);
         if (issueDefName == null)
             issueDefName = IssueManager.getDefaultIssueListDefName(context.getContainer());
 
-        WebPartView view;
+        WebPartView<?> view;
         IssueListDef issueListDef = IssueManager.getIssueListDef(context.getContainer(), issueDefName);
         if (issueListDef != null)
             view = new SummaryWebPart(issueDefName, propertyMap);
@@ -65,7 +65,7 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
     {
         if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())
             return new IssuesListView.IssuesListConfig(webPart);
