@@ -176,6 +176,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         this.currentContainer = undefined;
         this.totalContainers = 0;
         this.containers = [];
+        this.error = undefined;
     },
 
     getCacheKey : function(container, schemaName, queryName) {
@@ -240,55 +241,71 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     // hits the server endpoint (premium only) to create the dependency graph
     analyzeQueries : function(config) {
         function fixupJsonResponse(json, response, options, container) {
-            var callback = LABKEY.Utils.getOnSuccess(config);
             this.currentContainer = container;
 
-            if (json && json.success) {
+            if (json) {
+                if (json.success) {
 
-                var key,toKey,fromKey;
-                var objects = json.objects;
+                    var key,toKey,fromKey;
+                    var objects = json.objects;
 
-                var dependantsMap = {};
-                var dependeesMap  = {};
+                    var dependantsMap = {};
+                    var dependeesMap  = {};
 
-                for (var edge = 0; edge < json.graph.length; edge++) {
-                    fromKey = json.graph[edge][0];
-                    toKey = json.graph[edge][1];
+                    for (var edge = 0; edge < json.graph.length; edge++) {
+                        fromKey = json.graph[edge][0];
+                        toKey = json.graph[edge][1];
 
-                    // objects I am dependant on are my dependees
-                    dependeesMap[fromKey] = dependeesMap[fromKey] || [];
-                    dependeesMap[fromKey].push(objects[toKey]);
+                        // objects I am dependant on are my dependees
+                        dependeesMap[fromKey] = dependeesMap[fromKey] || [];
+                        dependeesMap[fromKey].push(objects[toKey]);
 
-                    // objects are dependant on me are my dependants
-                    dependantsMap[toKey] = dependantsMap[toKey] || [];
-                    dependantsMap[toKey].push(objects[fromKey]);
-                }
+                        // objects are dependant on me are my dependants
+                        dependantsMap[toKey] = dependantsMap[toKey] || [];
+                        dependantsMap[toKey].push(objects[fromKey]);
+                    }
 
-                for (key in dependeesMap) {
-                    if (dependeesMap.hasOwnProperty(key)) {
-                        let from = objects[key];
-                        // limit dependants to only queries in the current folder
-                        if (LABKEY.container.id === from.containerId) {
-                            this.dependeesList.push({from: from, to: dependeesMap[key]});
+                    for (key in dependeesMap) {
+                        if (dependeesMap.hasOwnProperty(key)) {
+                            let from = objects[key];
+                            // limit dependants to only queries in the current folder
+                            if (LABKEY.container.id === from.containerId) {
+                                this.dependeesList.push({from: from, to: dependeesMap[key]});
+                            }
+                        }
+                    }
+
+                    for (key in dependantsMap) {
+                        if (dependantsMap.hasOwnProperty(key)) {
+                            let to = objects[key];
+                            // limit dependants to only queries in the current folder
+                            if (LABKEY.container.id === to.containerId) {
+                                this.dependantsList.push({to:to, from:dependantsMap[key]});
+                            }
                         }
                     }
                 }
-
-                for (key in dependantsMap) {
-                    if (dependantsMap.hasOwnProperty(key)) {
-                        let to = objects[key];
-                        // limit dependants to only queries in the current folder
-                        if (LABKEY.container.id === to.containerId) {
-                            this.dependantsList.push({to:to, from:dependantsMap[key]});
-                        }
-                    }
+                else if (json.error) {
+                    // only save the first error (if multiple)
+                    if (!this.error)
+                        this.error = {response: response, options: options};
                 }
             }
 
             this.removeContainer(container);
-            if (this.containers.length === 0){
-                if (callback)
-                    callback.call(this, {success:json ? json.success : false, dependants:this.dependantsList, dependees:this.dependeesList}, response, options);
+            if (this.containers.length === 0) {
+                var callback = this.error ? LABKEY.Utils.getOnFailure(config) : LABKEY.Utils.getOnSuccess(config);
+                var resp = response;
+                var opts = options;
+                if (this.error) {
+                    resp = this.error.response;
+                    opts = this.error.options;
+                }
+
+                if (callback) {
+                    var success = this.error ? false : (json ? json.success : false);
+                    callback.call(this, {success: success, dependants: this.dependantsList, dependees: this.dependeesList}, resp, opts);
+                }
             }
         }
 
@@ -304,9 +321,9 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             containerPath : config.containerPath,
             includeSubfolders : includeSubfolders,
             scope : this,
-            success : function(resp){
+            success : function(json){
                 if (includeSubfolders) {
-                    Ext4.each(resp.children, function(c) {
+                    Ext4.each(json.children, function(c) {
                         this.addContainer(c, config.containerPath != null);
                     }, this);
                 }
@@ -330,11 +347,19 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                                 fixupJsonResponse.call(this, null, resp, options, c);
                             }
                         },
-                        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+                        failure: function(resp, options){
+                            console.warn('Analyze query request failed : ' + resp.responseText);
+                            fixupJsonResponse.call(this, {error: true}, resp, options, c);
+                        }
                     });
                 }, this);
             },
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+            failure : function(json, resp, options) {
+                var callback = LABKEY.Utils.getOnFailure(config);
+                if (callback) {
+                    callback.call(this, {success: false, dependants: this.dependantsList, dependees: this.dependeesList}, resp, options);
+                }
+            }
         });
     },
 

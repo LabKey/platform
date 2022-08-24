@@ -107,27 +107,47 @@ LABKEY.dataregion.confirmDelete = function(
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
-                                    // clear the selection only for the rows that were deleted
-                                    const ids = canDelete.map((row) => row.RowId);
-                                    const dr = LABKEY.DataRegions[dataRegionName];
-                                    if (dr) {
-                                        dr.setSelected({
-                                            ids,
-                                            checked: false
+                                    if (response.errors) {
+                                        var errorMsg = "There was a problem deleting your " + totalNoun + ". ";
+                                        if (typeof response.errors === 'string') {
+                                            errorMsg += response.errors;
+                                        } else if (response.errors.message) {
+                                            errorMsg += response.errors.message;
+                                        } else if (response.errors.msg) {
+                                            errorMsg += response.errors.msg;
+                                        } else if (response.errors.exception) {
+                                            errorMsg += response.errors.exception;
+                                        }
+                                        Ext4.Msg.hide();
+                                        Ext4.Msg.show({
+                                            title: "Delete " + totalNoun,
+                                            msg: errorMsg,
+                                            width: 450, // added to keep the text from being swallowed vertically
+                                            buttons: Ext4.Msg.OK
                                         });
                                     }
+                                    else {
+                                        // clear the selection only for the rows that were deleted
+                                        const ids = canDelete.map((row) => row.RowId);
+                                        const dr = LABKEY.DataRegions[dataRegionName];
+                                        if (dr) {
+                                            dr.setSelected({
+                                                ids,
+                                                checked: false
+                                            });
+                                        }
 
-                                    Ext4.Msg.hide();
-                                    var numDeleted = response.rowsAffected ? response.rowsAffected : ids.length;
-                                    var responseMsg = Ext4.Msg.show({
-                                        title: "Delete " + totalNoun,
-                                        msg:  numDeleted + " " + (numDeleted === 1 ? nounSingular : nounPlural) + " deleted."
-                                    });
-                                    Ext4.defer(function() {
-                                        responseMsg.hide();
-                                        window.location.reload();
-                                    }, 2500, responseMsg);
-
+                                        Ext4.Msg.hide();
+                                        var numDeleted = response.rowsAffected ? response.rowsAffected : ids.length;
+                                        var responseMsg = Ext4.Msg.show({
+                                            title: "Delete " + totalNoun,
+                                            msg: numDeleted + " " + (numDeleted === 1 ? nounSingular : nounPlural) + " deleted."
+                                        });
+                                        Ext4.defer(function () {
+                                            responseMsg.hide();
+                                            window.location.reload();
+                                        }, 2500, responseMsg);
+                                    }
                                 }),
                                 failure: LABKEY.Utils.getCallbackWrapper(function(response) {
                                     console.error("There was a problem deleting " + nounPlural, response);
@@ -135,6 +155,7 @@ LABKEY.dataregion.confirmDelete = function(
                                     Ext4.Msg.show({
                                         title: "Delete " + totalNoun,
                                         msg: "There was a problem deleting your " + totalNoun + ".",
+                                        width: 450, // added to keep the text from being swallowed vertically
                                         buttons: Ext4.Msg.OK
                                     });
                                 })
