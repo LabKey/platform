@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
+import org.apache.batik.transcoder.TranscoderException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -791,6 +792,10 @@ public class VisualizationController extends SpringActionController
 
         // remove xlink:title to prevent org.apache.batik.transcoder.TranscoderException (issue #16173)
         svg = svg.replaceAll("xlink:title", "title");
+
+        // Reject hrefs. See #45819.
+        if (svg.contains("xlink:href"))
+            throw new RuntimeException(new TranscoderException("The security settings do not allow any external resources to be referenced from the document"));
 
         return svg;
     }
