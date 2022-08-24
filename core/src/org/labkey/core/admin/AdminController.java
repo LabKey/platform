@@ -1019,14 +1019,8 @@ public class AdminController extends SpringActionController
             super(title);
 
             _component = StringUtils.trimToEmpty(component);
-
-            // If both wikiSource and filenames are null there can't be a problem.
-            // trims/empty check allow for problem reporting if one is null but not the other.
-            if (!filenames.isEmpty())
-            {
-                _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
-                wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
-            }
+            _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
+            wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
@@ -1041,11 +1035,11 @@ public class AdminController extends SpringActionController
             return _errors;
         }
 
-        private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
 
-            if (null != wikiSource)
+            if (null != wikiSource && null != wikiSourceSearchPattern)
             {
                 Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
                 Matcher m = p.matcher(wikiSource);
