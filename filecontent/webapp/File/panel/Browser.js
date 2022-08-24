@@ -1375,7 +1375,7 @@ Ext4.define('File.panel.Browser', {
                     this.getGrid().getSelectionModel().select([]);
                 }
                 var fileStore = this.getFileStore();
-                fileStore.getProxy().url = this.getFolderURL();
+                fileStore.getProxy().url = this.getFolderURL(true);
                 fileStore.load();
             }, this);
         }
@@ -1386,8 +1386,9 @@ Ext4.define('File.panel.Browser', {
         return this.fileSystem.getBaseURL();
     },
 
-    getFolderURL : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), LABKEY.ActionURL.encodePath(this.getFolderOffset()));
+    getFolderURL : function(encode) {
+        var folderOffset = encode ? LABKEY.ActionURL.encodePath(this.getFolderOffset()) : this.getFolderOffset();
+        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), folderOffset);
     },
 
     getFolderOffset : function() {
@@ -2755,7 +2756,7 @@ Ext4.define('File.panel.Browser', {
 
         var onCreateDir = function(panel) {
 
-            var path = this.getFolderURL();
+            var path = this.getFolderURL(false);
             if (!LABKEY.Utils.endsWith(path, this.folderSeparator))
                 path = path + this.folderSeparator;
             if (panel.getForm().isValid()) {
@@ -2764,7 +2765,7 @@ Ext4.define('File.panel.Browser', {
                     var folder = values.folderName;
                     var browser = this;
                     this.fileSystem.createDirectory({
-                        path : (folder.indexOf("+") >= 0 || folder.indexOf("%") >= 0) ? (path + folder) : this.fileSystem.encodeForURL(path + folder),
+                        path : this.fileSystem.encodeForURL(path + folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();
@@ -2993,7 +2994,7 @@ Ext4.define('File.panel.Browser', {
         if (recs.length >= 1) {
             this.fileSystem.downloadResource({
                 record: recs,
-                directoryURL : LABKEY.ActionURL.getBaseURL(true) + this.getFolderURL()
+                directoryURL : LABKEY.ActionURL.getBaseURL(true) + this.getFolderURL(true)
             });
         }
         else {

@@ -108,9 +108,9 @@
             return path;
         },
 
-        getURI: function (url)
+        getURI: function (url, encode)
         {
-            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, url));
+            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, encode ? LABKEY.ActionURL.encodePath(url) : url));
         },
 
         getAbsoluteBaseURL: function ()

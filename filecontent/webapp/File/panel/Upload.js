@@ -697,7 +697,7 @@ Ext4.define('File.panel.Upload', {
                 var options = {
                     method:'POST',
                     form : form,
-                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
+                    url : this.fileSystem.getURI(cwd, true) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
                     name : name,
                     success : function(f, action, message) {
 
