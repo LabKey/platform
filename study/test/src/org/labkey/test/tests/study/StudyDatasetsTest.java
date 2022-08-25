@@ -512,7 +512,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         _customizeViewsHelper.addColumn("DataSets/ECI-1/ECIelig");
         _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMbdt");
         _customizeViewsHelper.addColumn("DataSets/DEM-1/DEMsex");
-        _customizeViewsHelper.saveCustomView(CUSTOM_VIEW_PRIVATE, false);
+        _customizeViewsHelper.saveCustomView(CUSTOM_VIEW_PRIVATE, null);
 
         EXPECTED_CUSTOM_VIEWS.put(CUSTOM_VIEW_PRIVATE, "CPS-1: Screening Chemistry Panel");
     }
