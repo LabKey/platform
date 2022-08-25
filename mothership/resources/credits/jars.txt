@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-json-path-2.4.0.jar|Jayway JsonPath|2.4.0|{link:Github|https://github.com/json-path/JsonPath}|{link:Apache|http://www.apache.org/licenses/LICENSE-2.0.txt}|ankurj|Java port of Stefan Goessner JsonPath.
-{table}
