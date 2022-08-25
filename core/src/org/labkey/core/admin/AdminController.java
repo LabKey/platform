@@ -954,7 +954,7 @@ public class AdminController extends SpringActionController
             addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, errorSource);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, AppProps.getInstance().isDevMode() ? errorSource : new StringBuilder() /* No staging dir in production mode so just throw away the errors */);
 
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
@@ -1037,38 +1037,33 @@ public class AdminController extends SpringActionController
 
         private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
         {
-            return "creditsFilename: " + creditsFilename + "\\\\" +
-                "foundFilenames: " + foundFilenames + "\\\\" +
-                "Dev mode: " + AppProps.getInstance().isDevMode() + "\\\\" +
-                "wikisource length: " + (null == wikiSource ? "null" : wikiSource.length()) + "\\\\";
+            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
+                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
 
-//            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
-//                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
-//
-//            Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
-//
-//            if (null != wikiSource && null != wikiSourceSearchPattern)
-//            {
-//                Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
-//                Matcher m = p.matcher(wikiSource);
-//
-//                while(m.find())
-//                {
-//                    String found = m.group(1);
-//                    documentedFilenames.add(found);
-//                }
-//            }
-//
-//            Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
-//            documentedFilenames.removeAll(foundFilenames);
-//            foundFilenames.removeAll(documentedFilenamesCopy);
-//            Collection<String> undocumented = new CaseInsensitiveTreeSet(foundFilenames);
-//            undocumented.removeIf(name->name.startsWith("."));
-//
-//            String undocumentedErrors = foundFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (undocumented.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (foundFilenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(foundFilenames.iterator(), "\\\\");
-//            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
-//
-//            return undocumentedErrors + missingErrors;
+            Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
+
+            if (null != wikiSource && null != wikiSourceSearchPattern)
+            {
+                Pattern p = Pattern.compile(wikiSourceSearchPattern, Pattern.MULTILINE);
+                Matcher m = p.matcher(wikiSource);
+
+                while(m.find())
+                {
+                    String found = m.group(1);
+                    documentedFilenames.add(found);
+                }
+            }
+
+            Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
+            documentedFilenames.removeAll(foundFilenames);
+            foundFilenames.removeAll(documentedFilenamesCopy);
+            Collection<String> undocumented = new CaseInsensitiveTreeSet(foundFilenames);
+            undocumented.removeIf(name->name.startsWith("."));
+
+            String undocumentedErrors = foundFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (undocumented.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (foundFilenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(foundFilenames.iterator(), "\\\\");
+            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
+
+            return undocumentedErrors + missingErrors;
         }
 
         @Override
