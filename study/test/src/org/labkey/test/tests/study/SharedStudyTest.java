@@ -150,7 +150,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         _customizeViewsHelper.addColumn("Folder");
 
         String viewName = "withfolder";
-        _customizeViewsHelper.saveCustomView(viewName, false, true);
+        _customizeViewsHelper.saveCustomView(viewName, null, true);
 
         log("Verify visit folder is project");
         DataRegionTable table = new DataRegionTable("query", this);
