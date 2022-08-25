@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.ImageTranscoder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fop.svg.PDFTranscoder;
 import org.jetbrains.annotations.NotNull;
@@ -75,6 +76,7 @@ public class VisualizationServiceImpl implements VisualizationService
 
         // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
         transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
+        transcoder.addTranscodingHint(ImageTranscoder.KEY_ALLOW_EXTERNAL_RESOURCES, false);
 
         try
         {
