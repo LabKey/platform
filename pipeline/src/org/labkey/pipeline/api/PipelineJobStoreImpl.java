@@ -124,7 +124,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     @Override
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
-        PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job, true));
+        PipelineStatusManager.storeJob(job.getJobGUID(), job.serializeJob(true));
     }
 
     // Synchronize all splitting and joining to avoid SQL deadlocks.  Splitting
