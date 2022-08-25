@@ -393,11 +393,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             view.getDataRegion().addHiddenFormField("batchId", form.getBatchId().toString());
         }
+        // Strip parameters from the URL since they're being added as hidden POST values
+        ActionURL action = getViewContext().getActionURL().clone();
+        action.deleteParameter("uploadStep");
+        action.deleteParameter("rowId");
+        view.getDataRegion().setFormActionUrl(action);
+
         view.getDataRegion().addHiddenFormField("uploadStep", uploadStepName);
+        view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("multiRunUpload", "false");
         view.getDataRegion().addHiddenFormField("severityLevel",((form.getTransformResult().getWarnings() != null)?"ERROR":"WARN"));
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
-        view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
         if (form.isAllowCrossRunFileInputs())
             view.getDataRegion().addHiddenFormField("allowCrossRunFileInputs", "true");
@@ -493,7 +499,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addCancelButton(bbar, returnURL);
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
-        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", runForm);
+        JspView<AssayRunUploadForm<?>> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", runForm);
         assayPropsView.setTitle("Assay Properties");
 
         _stepDescription = "Batch Properties";
