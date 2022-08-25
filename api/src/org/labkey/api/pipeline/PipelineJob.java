@@ -538,7 +538,7 @@ abstract public class PipelineJob extends Job implements Serializable
         File newFile = new File(file.getPath() + ".new");
         File origFile = new File(file.getPath() + ".orig");
 
-        String serializedJob = PipelineJob.serializeJob(this, true);
+        String serializedJob = serializeJob(true);
 
         try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
@@ -704,7 +704,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (taskPipeline != null)
         {
             // Save the current job state marshalled to XML, in case of error.
-            String serializedJob = PipelineJob.serializeJob(this, true);
+            String serializedJob = serializeJob(true);
 
             // Note runStateMachine returns false, if the job cannot be run locally.
             // The job may still need to be put on a JMS queue for remote processing.
@@ -1885,14 +1885,9 @@ abstract public class PipelineJob extends Job implements Serializable
         return status.getNotificationType();
     }
 
-    public static String serializeJob(PipelineJob job)
+    public String serializeJob(boolean ensureDeserialize)
     {
-        return serializeJob(job, true);
-    }
-
-    public static String serializeJob(PipelineJob job, boolean ensureDeserialize)
-    {
-        return PipelineJobService.get().getJobStore().serializeToJSON(job, ensureDeserialize);
+        return PipelineJobService.get().getJobStore().serializeToJSON(this, ensureDeserialize);
     }
 
     public static String getClassNameFromJson(String serialized)
