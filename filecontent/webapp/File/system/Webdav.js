@@ -102,6 +102,7 @@
 
             if (encode !== false)
             {
+                path = path.replaceAll("%25", "%").replaceAll("%2B", "+");
                 path = LABKEY.ActionURL.encodePath(path);
             }
 
@@ -110,7 +111,15 @@
 
         getURI: function (url, encode)
         {
-            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, encode ? LABKEY.ActionURL.encodePath(url) : url));
+            var u;
+            if (encode) {
+                u = url.replaceAll("%25", "%").replaceAll("%2B", "+");
+                u = LABKEY.ActionURL.encodePath(u);
+            }
+            else {
+                u = url;
+            }
+            return this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.concatPaths(this.contextUrl, u));
         },
 
         getAbsoluteBaseURL: function ()
@@ -152,7 +161,8 @@
 
         getURL: function ()
         {
-            return this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl));
+            var url = this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl));
+            return url.replaceAll("%25", "%").replaceAll("%2B", "+");
         },
 
         init: function (config)
@@ -182,7 +192,7 @@
         {
             var jsonProxy = {
                 type: 'ajax',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getURL()),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURL())),
                 extraParams: {
                     method: 'JSON'
                 },
@@ -215,9 +225,11 @@
 
         getXMLProxyCfg: function ()
         {
+            var contextBaseURL = this.getContextBaseURL().replaceAll("%25", "%").replaceAll("%2B", "+");
+
             return {
                 type: 'webdav',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), this.getContextBaseURL()),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(contextBaseURL)),
                 reader: {
                     type: 'xml',
                     root: 'multistatus',
@@ -459,8 +471,8 @@
          */
         movePath: function (config)
         {
-            var resourcePath = this.getURI(config.source);
-            var destinationPath = this.getURI(config.destination);
+            var resourcePath = this.getURI(config.source, false);
+            var destinationPath = this.getURI(config.destination, false);
             var headers = {
                 Destination: destinationPath
             };

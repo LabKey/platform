@@ -1375,7 +1375,7 @@ Ext4.define('File.panel.Browser', {
                     this.getGrid().getSelectionModel().select([]);
                 }
                 var fileStore = this.getFileStore();
-                fileStore.getProxy().url = this.getFolderURL(true);
+                fileStore.getProxy().url = LABKEY.ActionURL.encodePath(this.getFolderURL());
                 fileStore.load();
             }, this);
         }
@@ -1386,9 +1386,9 @@ Ext4.define('File.panel.Browser', {
         return this.fileSystem.getBaseURL();
     },
 
-    getFolderURL : function(encode) {
-        var folderOffset = encode ? LABKEY.ActionURL.encodePath(this.getFolderOffset()) : this.getFolderOffset();
-        return this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), folderOffset);
+    getFolderURL : function() {
+        var folderURL = this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
+        return folderURL.replaceAll("%25", "%").replaceAll("%2B", "+");
     },
 
     getFolderOffset : function() {
@@ -1447,7 +1447,6 @@ Ext4.define('File.panel.Browser', {
      */
     _initFolderOffset : function(offsetPath) {
         // Replace the base URL so only offsets are used
-        // var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
         var path = offsetPath.replace(LABKEY.ActionURL.decodePath(this.fileSystem.getBaseURL()), this.folderSeparator);
 
         // If we don't go anywhere, don't fire a folder change
@@ -2756,7 +2755,8 @@ Ext4.define('File.panel.Browser', {
 
         var onCreateDir = function(panel) {
 
-            var path = this.getFolderURL(false);
+            var path = this.getFolderURL();
+
             if (!LABKEY.Utils.endsWith(path, this.folderSeparator))
                 path = path + this.folderSeparator;
             if (panel.getForm().isValid()) {
@@ -2994,7 +2994,7 @@ Ext4.define('File.panel.Browser', {
         if (recs.length >= 1) {
             this.fileSystem.downloadResource({
                 record: recs,
-                directoryURL : LABKEY.ActionURL.getBaseURL(true) + this.getFolderURL(true)
+                directoryURL : LABKEY.ActionURL.getBaseURL(true) + LABKEY.ActionURL.encodePath(this.getFolderURL())
             });
         }
         else {
@@ -3198,7 +3198,7 @@ Ext4.define('File.panel.Browser', {
             }
 
             if (newName != win.origName) {
-                var destination = LABKEY.ActionURL.decodePath(me.getCurrentDirectory());
+                var destination = me.getCurrentDirectory();
 
                 me.doMove([{
                     record: win.fileRecord,
