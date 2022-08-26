@@ -298,16 +298,6 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Collection<String> getJarFilenames()
-    {
-        // Filter out "labkey-client-api-XX.X.jar" -- we don't need credits for our own jar. All of its dependencies will
-        // appear on the credits page, though.
-        return super.getJarFilenames().stream()
-            .filter(fn->!fn.startsWith("labkey-client-api-"))
-            .collect(Collectors.toList());
-    }
-
-    @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
