@@ -52,8 +52,8 @@
   },
   "dependencies": {
     "@labkey/api": "1.15.0",
-    "@labkey/components": "2.207.0",
-    "@labkey/themes": "1.2.4"
+    "@labkey/components": "2.211.2-fb-tableLeftColLock.0",
+    "@labkey/themes": "1.2.4-fb-tableLeftColLock.0"
   },
   "devDependencies": {
     "@labkey/build": "6.1.5",
