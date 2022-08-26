@@ -36,14 +36,12 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -67,8 +65,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
@@ -122,7 +118,6 @@ import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -1320,6 +1315,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
+        private DatasetDefinition _def;
         boolean _multiContainer;
         BaseColumnInfo _ptid;
 
@@ -1346,6 +1342,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         {
             super(StudySchema.getInstance().getSchema(), DatabaseTableType.TABLE, def.getName());
             setTitle(def.getLabel());
+            _def = def;
             _autoLoadMetaData = false;
             _container = def.getContainer();
             _multiContainer = multiContainer;     /* true: don't preapply the container filter, let wrapper tableinfo handle it */
@@ -1661,12 +1658,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         @Override
         public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
         {
-            return new DatasetAuditHandler();
+            return new DatasetAuditHandler(_def);
         }
     }
 
-    private class DatasetAuditHandler extends AbstractAuditHandler
+    public static class DatasetAuditHandler extends AbstractAuditHandler
     {
+        private Dataset _dataset;
+
+        public DatasetAuditHandler(Dataset dataset)
+        {
+            _dataset = dataset;
+        }
+
         @Override
         public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
         {
@@ -1760,7 +1764,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             if (c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
-            event.setDatasetId(getDatasetId());
+            event.setDatasetId(_dataset.getDatasetId());
             event.setHasDetails(true);
 
             event.setLsid(lsid == null ? null : lsid.toString());
@@ -2669,102 +2673,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return canonicalDatas;
     }
 
-
-    // This is tragically convoluted this method is only called by DatasetUpdateService.updateRow(), but calls back to
-    // a new instance of DatasetUpdateService, often within a loop.
-    // CONSIDER moving this logic to DatasetUpdateService.updateRow() and simplifying the whole thing
-    @Override
-    public String updateDatasetRow_forDatasetUpdateService(User u, String lsid, Map<String, Object> data) throws ValidationException
-    {
-        boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
-
-        DataState defaultQCState = null;
-        Integer defaultQcStateId = getStudy().getDefaultDirectEntryQCState();
-        if (defaultQcStateId != null)
-             defaultQCState = DataStateManager.getInstance().getStateForRowId(getContainer(), defaultQcStateId.intValue());
-
-        String managedKey = null;
-        if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
-            managedKey = getKeyPropertyName();
-
-        try (Transaction transaction = ensureTransaction())
-        {
-            Map<String, Object> oldData = getDatasetRow(u, lsid);
-
-            if (oldData == null)
-            {
-                // No old record found, so we can't update
-                ValidationException error = new ValidationException();
-                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
-                throw error;
-            }
-
-            Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
-            // don't default to using old qcstate
-            mergeData.remove("qcstate");
-
-            TableInfo target = getTableInfo(u);
-            Map<String,ColumnInfo> colMap = DataIteratorUtil.createTableMap(target, allowAliasesInUpdate);
-
-            // If any fields aren't included, reuse the old values
-            for (Map.Entry<String,Object> entry : data.entrySet())
-            {
-                var col = colMap.get(entry.getKey());
-                String name = null == col ? entry.getKey() : col.getName();
-                if (name.equalsIgnoreCase(managedKey))
-                    continue;
-                mergeData.put(name,entry.getValue());
-            }
-
-            // these columns are always recalculated
-            mergeData.remove("lsid");
-            mergeData.remove("participantsequencenum");
-
-            deleteRows(Collections.singletonList(lsid));
-
-            List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
-
-            BatchValidationException errors = new BatchValidationException();
-            List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true, true);
-
-            if (errors.hasErrors())
-            {
-                // Update failed
-                ValidationException error = new ValidationException();
-                errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
-                throw error;
-            }
-
-            // lsid is not in the updated map by default since it is not editable,
-            // however it can be changed by the update
-            String newLSID = result.get(0);
-            mergeData.put("lsid", newLSID);
-
-            // Since we do a delete and an insert, we need to manually propagate the Created/CreatedBy values to the
-            // new row. See issue 18118
-            SQLFragment resetCreatedColumnsSQL = new SQLFragment("UPDATE ");
-            resetCreatedColumnsSQL.append(getStorageTableInfo(), "");
-            resetCreatedColumnsSQL.append(" SET Created = ?, CreatedBy = CAST(? AS INTEGER) WHERE LSID = ?");
-            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED));
-            resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
-            resetCreatedColumnsSQL.add(newLSID);
-            new SqlExecutor(getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
-
-            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
-                    List.of(mergeData), List.of(oldData));
-
-            // Successfully updated
-            transaction.commit();
-
-            return newLSID;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
         // change a map's keys to have proper casing just like the list of columns
     private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
     {
@@ -2806,7 +2714,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
+            new DatasetAuditHandler(this).addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
 
             transaction.commit();
         }
