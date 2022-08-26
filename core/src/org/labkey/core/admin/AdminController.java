@@ -954,7 +954,7 @@ public class AdminController extends SpringActionController
             addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, errorSource);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, AppProps.getInstance().isDevMode() ? errorSource : new StringBuilder() /* No staging dir in production mode so just throw away the errors */);
 
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
@@ -1037,6 +1037,9 @@ public class AdminController extends SpringActionController
 
         private @NotNull String getErrors(@Nullable String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, @Nullable String wikiSourceSearchPattern)
         {
+            if (foundFilenames.isEmpty() && null != wikiSource && "jars.txt".equals(creditsFilename))
+                return WIKI_LINE_SEP + "**WARNING: jars.txt file exists when no external jars are present in " + _component + "**";
+
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
 
             if (null != wikiSource && null != wikiSourceSearchPattern)

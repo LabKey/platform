@@ -1289,9 +1289,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     public Collection<String> getJarFilenames()
     {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
         return getDependenciesFromFile();
     }
 
