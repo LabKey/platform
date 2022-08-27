@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
@@ -88,6 +89,18 @@ public class SafeFlushResponseWrapper extends HttpServletResponseWrapper
         {
             _canFlush = false;
             _out.close();
+        }
+
+        @Override
+        public boolean isReady()
+        {
+            return true;
+        }
+
+        @Override
+        public void setWriteListener(WriteListener writeListener)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

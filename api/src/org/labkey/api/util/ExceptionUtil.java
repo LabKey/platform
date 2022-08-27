@@ -54,10 +54,12 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.DavException;
+import org.labkey.api.writer.PrintWriters;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -1312,10 +1314,11 @@ public class ExceptionUtil
         String redirect = null;
         String contentType = null;
         String characterEncoding = null;
-        int contentLength = 0;
+        long contentLength = 0;
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Locale locale = null;
-        PrintWriter printWriter = new PrintWriter(os);
+        PrintWriter printWriter = PrintWriters.getPrintWriter(os);
+
 
         ServletOutputStream servletOutputStream = new ServletOutputStream()
         {
@@ -1323,6 +1326,18 @@ public class ExceptionUtil
             public void write(int i)
             {
                 os.write(i);
+            }
+
+            @Override
+            public boolean isReady()
+            {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener)
+            {
+                throw new UnsupportedOperationException();
             }
         };
 
@@ -1489,6 +1504,12 @@ public class ExceptionUtil
         public void setContentLength(int i)
         {
             contentLength = i;
+        }
+
+        @Override
+        public void setContentLengthLong(long len)
+        {
+            contentLength = len;
         }
 
         @Override
