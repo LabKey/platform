@@ -293,7 +293,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     static
     {
-        // Accept most of the standard Quartz properties, but set the misfire threshold to five minutes. Set it early so
+        // Accept most of the standard Quartz properties, but set the misfire threshold to five minutes. This prevents
+        // Quartz from dropping scheduled work if a lot of items fire at the same time, like a lot of ETLs triggering at 2AM.
+        // This can overwhelm the thread pool running them so they don't complete in the default 1 minute window. Set it early so
         // if any other module touches Quartz in its setup, it initializes with this setting.
         Properties props = System.getProperties();
         props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
