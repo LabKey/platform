@@ -180,7 +180,7 @@ Ext4.define('File.panel.Upload', {
                         file.uri = this.uploadPanel.fileSystem.getURI(uri);
 
                         // Folder the file will be POSTed into
-                        var folderUri = this.uploadPanel.fileSystem.getParentPath(file.uri);
+                        var folderUri = this.uploadPanel.fileSystem.encodeForURL(this.uploadPanel.fileSystem.getParentPath(file.uri));
                         this.options.url = folderUri + '?overwrite=' + (overwrite ? 'T' : 'F');
                     }
                 });

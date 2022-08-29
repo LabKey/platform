@@ -1437,7 +1437,8 @@ Ext4.define('File.panel.Browser', {
     },
 
     getCurrentDirectory : function() {
-        return this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
+        var currentDir = this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
+        return currentDir.replaceAll("%25", "%").replaceAll("%2B", "+")
     },
 
     /**
