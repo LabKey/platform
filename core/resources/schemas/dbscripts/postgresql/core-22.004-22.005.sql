@@ -1,1 +1,1 @@
-SELECT core.executeJavaInitializationCode('turnOnNoQuestionMarkMode');
+SELECT core.executeJavaUpgradeCode('turnOnNoQuestionMarkMode');
