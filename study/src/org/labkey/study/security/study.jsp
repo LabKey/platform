@@ -45,7 +45,7 @@ Any user with READ access to this folder may view some summary data. However, ac
     if (returnUrl != null)
         out.print(generateReturnUrlFormField(returnUrl));
 %>
-    <table class="table table-striped table-bordered labkey-data-region-header-lock" id="datasetSecurityFormTable">
+    <table class="table table-striped table-bordered labkey-data-region-header-lock" id="datasetSecurityGroupTable">
         <tr>
             <th>&nbsp;</th>
             <% if (includeEditOption)
