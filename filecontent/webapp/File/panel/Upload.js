@@ -118,6 +118,7 @@ Ext4.define('File.panel.Upload', {
                 var root = this.uploadPanel.fileSystem.rootPath;
                 if (root && file.isDirectory)
                 {
+                    root = root.replaceAll("%25", "%").replaceAll("%2B", "+");
                     root = this.uploadPanel.fileSystem.concatPaths(root, this.uploadPanel.getWorkingDirectory('path'));
                     var uri = this.uploadPanel.fileSystem.concatPaths(root, file.fullPath ? file.fullPath : file.name);
 

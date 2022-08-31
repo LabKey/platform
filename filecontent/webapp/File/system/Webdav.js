@@ -382,6 +382,12 @@
                 else if ('}' === str[i]) res += '%7D';
                 else if ('[' === str[i]) res += '%5B';
                 else if (']' === str[i]) res += '%5D';
+                else if ('+' === str[i]) res += '%2B';
+                else if ('$' === str[i]) res += '%24';
+                else if ('-' === str[i]) res += '%2D';
+                else if ('(' === str[i]) res += '%28';
+                else if (')' === str[i]) res += '%29';
+                else if ('=' === str[i]) res += '%3D';
                 else res += str[i];
             }
             return res;
