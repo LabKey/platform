@@ -28,7 +28,6 @@ package org.radeox.test.macro.list;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.radeox.test.macro.*;
 
 public class AllListTests extends TestCase {
   public AllListTests(String name) {
