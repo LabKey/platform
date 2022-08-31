@@ -2312,6 +2312,7 @@ boxPlot.render();
             var pointLayerConfig = {
                 geom: new LABKEY.vis.Geom.Point({
                     position: config.properties.position,
+                    groupBy: config.properties.groupBy,
                     opacity: config.properties.pointOpacityFn,
                     size: config.properties.pointSize ? config.properties.pointSize : 3
                 }),
