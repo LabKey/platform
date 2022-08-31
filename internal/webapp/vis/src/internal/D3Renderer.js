@@ -1987,21 +1987,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     jitterIndex[x] = true;
                 } else if (geom.position === position.sequential) {
 
-                    if (!jitterIndex[x]) {
+                    // We calculate based on both the x-axis position and (optionally) within the series as configured via groupBy
+                    const xGrouped = x + (geom.groupBy ? ('-' + row[geom.groupBy]) : '');
+
+                    if (!jitterIndex[xGrouped]) {
                         // Count how many points we have to distribute across the grouping, and reset the current
                         // indices for the groupings
                         jitters = {};
                         for (var i = 0; i < data.length; i++) {
-                            var x2 = geom.xAes.getValue(data[i]);
-                            var count = jitterIndex[x2] || 0;
-                            jitterIndex[x2] = count + 1;
+                            const x2 = geom.xAes.getValue(data[i]);
+                            const x2Grouped = x2 + (geom.groupBy ? ('-' + data[i][geom.groupBy]) : '');
+                            const count = jitterIndex[x2Grouped] || 0;
+                            jitterIndex[x2Grouped] = count + 1;
                         }
                     }
 
                     // Calculate the offset for the current point within the full count for the grouping
-                    var index = jitters[x] || 0;
-                    value = value - (xBinWidth / 2) + (xBinWidth / jitterIndex[x]) * (index + 0.5);
-                    jitters[x] = index + 1;
+                    var index = jitters[xGrouped] || 0;
+                    value = value - (xBinWidth / 2) + (xBinWidth / jitterIndex[xGrouped]) * (index + 0.5);
+                    jitters[xGrouped] = index + 1;
                 }
                 return value;
             };
