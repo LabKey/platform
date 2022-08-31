@@ -1448,7 +1448,7 @@ Ext4.define('File.panel.Browser', {
      */
     _initFolderOffset : function(offsetPath) {
         // Replace the base URL so only offsets are used
-        var path = offsetPath.replace(LABKEY.ActionURL.decodePath(this.fileSystem.getBaseURL()), this.folderSeparator);
+        var path = offsetPath.replace(this.fileSystem.getBaseURL(), this.folderSeparator);
 
         // If we don't go anywhere, don't fire a folder change
         if (this.rootOffset != path) {
@@ -2546,7 +2546,7 @@ Ext4.define('File.panel.Browser', {
      * @param {boolean} [skipHistory=false]
      */
     changeFolder : function(model, skipHistory) {
-        var url = (model.data.id === this.fileSystem.getBaseURL()) ? LABKEY.ActionURL.decodePath(model.data.id) : model.data.id;
+        var url = model.data.id.replaceAll("%25", "%").replaceAll("%2B", "+");
         this.setFolderOffset(url, model, skipHistory);
     },
 

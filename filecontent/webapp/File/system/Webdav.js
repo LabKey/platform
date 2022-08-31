@@ -142,7 +142,7 @@
          */
         getBaseURL: function ()
         {
-            return this.baseUrl;
+            return this.baseUrl.replaceAll("%25", "%").replaceAll("%2B", "+");
         },
 
         getContextBaseURL: function ()
