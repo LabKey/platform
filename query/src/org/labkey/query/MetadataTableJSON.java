@@ -45,6 +45,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
+import org.labkey.data.xml.DerivationDataScopeTypes;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -296,6 +297,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             else if (xmlColumn.isSetDefaultScale())
             {
                 xmlColumn.unsetDefaultScale();
+            }
+
+            if (!StringUtils.equals(metadataColumnJSON.getDerivationDataScope(), rawColumnInfo.getDerivationDataScope()))
+            {
+                xmlColumn.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(metadataColumnJSON.getDerivationDataScope()));
+            }
+            else if (xmlColumn.isSetDerivationDataScope())
+            {
+                xmlColumn.unsetDerivationDataScope();
             }
 
             /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment

@@ -2908,6 +2908,7 @@ public class OntologyManager
         p.setExcludeFromShifting(pd.isExcludeFromShifting());
         p.setDefaultValueTypeEnum(pd.getDefaultValueTypeEnum());
         p.setScannable(pd.isScannable());
+        p.setDerivationDataScope(pd.getDerivationDataScope());
     }
 
     @TestWhen(TestWhen.When.BVT)

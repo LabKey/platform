@@ -528,6 +528,8 @@ public class DomainUtil
             gwtProp.setScale(columnXml.getScale());
         if (columnXml.isSetScannable())
             gwtProp.setScannable(columnXml.getScannable());
+        if (columnXml.isSetDerivationDataScope())
+            gwtProp.setDerivationDataScope(columnXml.getDerivationDataScope().toString());
 
         return gwtProp;
     }
@@ -969,6 +971,9 @@ public class DomainUtil
 
         if (from.isScannable())
             to.setScannable(from.isScannable());
+
+        if (from.getDerivationDataScope() != null)
+            to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
     @SuppressWarnings("unchecked")
