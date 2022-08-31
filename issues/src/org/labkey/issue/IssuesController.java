@@ -103,6 +103,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -166,6 +167,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.at;
 
 public class IssuesController extends SpringActionController
 {
@@ -669,7 +672,7 @@ public class IssuesController extends SpringActionController
     /**
      * Generates a standard message if no issue list is available in the current folder (plus a link to create a list)
      */
-    public static String getUndefinedIssueListMessage(ContainerUser context, String issueDefName)
+    public static DOM.Renderable getUndefinedIssueListMessage(ContainerUser context, String issueDefName)
     {
         String warningMessage =
                 issueDefName == null ?
@@ -677,16 +680,14 @@ public class IssuesController extends SpringActionController
                         "There are no issues lists defined for this folder." :
                         String.format("'%s' not specified.", IssuesListView.ISSUE_LIST_DEF_NAME)) :
                 String.format("There is no issues list '%s' defined in this folder.", issueDefName);
-        StringBuilder sb = new StringBuilder().append("<span class='labkey-error'>").append(PageFlowUtil.filter(warningMessage)).append("</span><p>");
         boolean userHasAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
         Button button = PageFlowUtil.button(userHasAdmin ? "Manage Issue List Definitions" : "Show Available Issue Lists").href(QueryService.get().urlFor(context.getUser(),
                 context.getContainer(),
                 QueryAction.executeQuery,
                 "issues",
                 IssuesQuerySchema.TableType.IssueListDef.name())).build();
-        sb.append(button.toString());
 
-        return sb.toString();
+        return DOM.SPAN(at(DOM.cl("labkey-error")), warningMessage, DOM.P(), button);
     }
 
     public static class IssuesApiForm extends SimpleApiJsonForm

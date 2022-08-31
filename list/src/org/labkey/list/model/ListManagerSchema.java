@@ -183,8 +183,7 @@ public class ListManagerSchema extends UserSchema
 
                     if (s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
                     {
-                        urlExport = new ActionURL(getReturnURL().toString());
-                        btnExport = new ActionButton(urlExport, "Export List Archive");
+                        btnExport = new ActionButton("Export List Archive", getReturnURL());
                         btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
                     }
                     else

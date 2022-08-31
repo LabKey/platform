@@ -951,10 +951,10 @@ public class AdminController extends SpringActionController
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
 
-            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
+            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource, true);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, AppProps.getInstance().isDevMode() ? errorSource : new StringBuilder() /* No staging dir in production mode so just throw away the errors */);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx,  errorSource, AppProps.getInstance().isDevMode() /* No staging dir in production mode so skip error checking */);
 
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
@@ -980,10 +980,10 @@ public class AdminController extends SpringActionController
 
     private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource);
+        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource, true);
     }
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource, boolean checkForErrors) throws IOException
     {
         for (Module module : modules)
         {
@@ -998,7 +998,7 @@ public class AdminController extends SpringActionController
             {
                 String component = "the " + module.getName() + " Module";
                 String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
-                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern);
+                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern, checkForErrors);
                 views.addView(credits);
                 errorSource.append(credits.getErrors());
             }
@@ -1014,12 +1014,13 @@ public class AdminController extends SpringActionController
         private HtmlString _html;
         private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern)
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern, boolean checkForErrors)
         {
             super(title);
 
             _component = StringUtils.trimToEmpty(component);
-            _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
+            if (checkForErrors)
+                _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
             wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
 
             if (StringUtils.isNotEmpty(wikiSource))
