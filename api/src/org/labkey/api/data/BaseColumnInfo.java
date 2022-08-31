@@ -1192,6 +1192,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _nullable = xmlCol.getNullable();
         if (xmlCol.isSetExcludeFromShifting())
             _isExcludeFromShifting = xmlCol.getExcludeFromShifting();
+        if (xmlCol.isSetDerivationDataScope())
+            _derivationDataScope = xmlCol.getDerivationDataScope().toString();
         if (xmlCol.isSetImportAliases())
         {
             LinkedHashSet<String> set = new LinkedHashSet<>(getImportAliasSet());
