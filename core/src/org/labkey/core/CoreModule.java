@@ -293,11 +293,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     static
     {
-        // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other
-        // module touches Quartz in its setup, it initializes with these setting.
+        // Accept most of the standard Quartz properties, but set the misfire threshold to five minutes. This prevents
+        // Quartz from dropping scheduled work if a lot of items fire at the same time, like a lot of ETLs triggering at 2AM.
+        // This can overwhelm the thread pool running them so they don't complete in the default 1 minute window. Set it early so
+        // if any other module touches Quartz in its setup, it initializes with this setting.
         Properties props = System.getProperties();
-        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
         props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
 
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()

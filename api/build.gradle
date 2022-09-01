@@ -105,7 +105,7 @@ dependencies {
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
     // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
     // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-    api "javax.servlet:servlet-api:${servletApiVersion}"
+    api "javax.servlet:javax.servlet-api:${servletApiVersion}"
     api "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
     BuildUtils.addExternalDependency(
