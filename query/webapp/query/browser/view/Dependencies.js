@@ -14,8 +14,9 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
         this.addEvents('dependencychanged');
 
         this.errorTpl = new Ext4.XTemplate(
-                '<span class="labkey-error" style="display: block; margin-top: 50px; margin-left: 50px;"><div>An Error Occurred Analyzing Queries : {exception}</div>',
+                '<span class="labkey-error" style="display: block; margin: 50px;"><div>An Error Occurred Analyzing Queries : {exception}</div>',
                 '<pre>',
+                '<div>{url}</div>',
                 '<div>{exceptionClass}</div>',
                 '<tpl for="stackTrace">',
                 '<div>{.}</div>',
@@ -140,12 +141,18 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
         if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                 && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0){
             try {
-                return LABKEY.Utils.decode(response.responseText);
+                var error = LABKEY.Utils.decode(response.responseText);
+                error["url"] = response.responseURL;
+
+                return error;
             }
             catch (error){
                 //we still want to proceed even if we cannot decode the JSON
             }
         }
-        return {exception: LABKEY.Utils.getMsgFromError(response, opts)};
+        return {
+            exception: LABKEY.Utils.getMsgFromError(response, opts),
+            url: response.responseURL
+        };
     }
 });
