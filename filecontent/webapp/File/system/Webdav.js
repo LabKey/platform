@@ -159,7 +159,7 @@
 
         getURL: function ()
         {
-            this.getURLWithCharsReplaced(this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl)));
+            return this.getURLWithCharsReplaced(this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl)));
         },
 
         init: function (config)
