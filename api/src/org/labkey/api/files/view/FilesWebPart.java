@@ -411,7 +411,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             rootPath += "/";
 
         // Issue 43374: Some characters in file names cause a problem when creating exp.data rows in FileImporter.
-        // This fix requires decoding these characters so that they don't get encoded twice - see getURLWithCharsReplaced() in Webdav.js and its usages.
+        // Need to centrally encode characters that are special in URIs but not in most file systems. See getURLWithCharsReplaced() in Webdav.js for special client-side handling of these characters.
+
         return rootPath.replace("%", "%25").replace("+", "%2B");
     }
 
