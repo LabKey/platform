@@ -102,8 +102,7 @@
 
             if (encode !== false)
             {
-                path = path.replaceAll("%25", "%").replaceAll("%2B", "+");
-                path = LABKEY.ActionURL.encodePath(path);
+                path = LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(path));
             }
 
             return path;
@@ -113,8 +112,7 @@
         {
             var u;
             if (encode) {
-                u = url.replaceAll("%25", "%").replaceAll("%2B", "+");
-                u = LABKEY.ActionURL.encodePath(u);
+                u = LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(url));
             }
             else {
                 u = url;
@@ -142,7 +140,7 @@
          */
         getBaseURL: function ()
         {
-            return this.baseUrl.replaceAll("%25", "%").replaceAll("%2B", "+");
+            return this.getURLWithCharsReplaced(this.baseUrl);
         },
 
         getContextBaseURL: function ()
@@ -161,8 +159,7 @@
 
         getURL: function ()
         {
-            var url = this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl));
-            return url.replaceAll("%25", "%").replaceAll("%2B", "+");
+            this.getURLWithCharsReplaced(this.concatPaths(this.contextUrl, this.concatPaths(this.baseUrl, this.offsetUrl)));
         },
 
         init: function (config)
@@ -225,17 +222,22 @@
 
         getXMLProxyCfg: function ()
         {
-            var contextBaseURL = this.getContextBaseURL().replaceAll("%25", "%").replaceAll("%2B", "+");
-
             return {
                 type: 'webdav',
-                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(contextBaseURL)),
+                url: this.concatPaths(LABKEY.ActionURL.getBaseURL(true), LABKEY.ActionURL.encodePath(this.getURLWithCharsReplaced(this.getContextBaseURL()))),
                 reader: {
                     type: 'xml',
                     root: 'multistatus',
                     record: 'response'
                 }
             }
+        },
+
+        // Compensate for encoding done in FilesWebPart._getRootPath() as part of a fix for
+        // 'Issue 43374: Some characters in file names cause a problem when creating exp.data rows in FileImporter'
+        getURLWithCharsReplaced : function(url)
+        {
+            return url.replaceAll("%25", "%").replaceAll("%2B", "+");
         },
 
         /**

@@ -1387,8 +1387,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFolderURL : function() {
-        var folderURL = this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset());
-        return folderURL.replaceAll("%25", "%").replaceAll("%2B", "+");
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getContextBaseURL(), this.getFolderOffset()));
     },
 
     getFolderOffset : function() {
@@ -1437,8 +1436,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getCurrentDirectory : function() {
-        var currentDir = this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset());
-        return currentDir.replaceAll("%25", "%").replaceAll("%2B", "+")
+        return this.fileSystem.getURLWithCharsReplaced(this.fileSystem.concatPaths(this.fileSystem.getBaseURL(), this.getFolderOffset()));
     },
 
     /**
@@ -2546,7 +2544,7 @@ Ext4.define('File.panel.Browser', {
      * @param {boolean} [skipHistory=false]
      */
     changeFolder : function(model, skipHistory) {
-        var url = model.data.id.replaceAll("%25", "%").replaceAll("%2B", "+");
+        var url = this.fileSystem.getURLWithCharsReplaced(model.data.id);
         this.setFolderOffset(url, model, skipHistory);
     },
 

@@ -395,6 +395,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         return _getRootPath(c, relativePath, skipDavPrefix);
     }
+
     private static String _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
     {
         String webdavPrefix = skipDavPrefix ? "" : AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
@@ -409,6 +410,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (!rootPath.endsWith("/"))
             rootPath += "/";
 
+        // Issue 43374: Some characters in file names cause a problem when creating exp.data rows in FileImporter.
+        // This fix requires decoding these characters so that they don't get encoded twice - see getURLWithCharsReplaced() in Webdav.js and its usages.
         return rootPath.replace("%", "%25").replace("+", "%2B");
     }
 
