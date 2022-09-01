@@ -10918,11 +10918,23 @@ public class AdminController extends SpringActionController
 
     public static class SerializationTest extends PipelineJob.TestSerialization
     {
-        static class TestJob
+        static class TestJob extends PipelineJob
         {
             ImpersonationContext _impersonationContext;
             ImpersonationContext _impersonationContext1;
             ImpersonationContext _impersonationContext2;
+
+            @Override
+            public URLHelper getStatusHref()
+            {
+                return null;
+            }
+
+            @Override
+            public String getDescription()
+            {
+                return "Test Job";
+            }
         }
 
         @Test

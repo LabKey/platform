@@ -1909,11 +1909,7 @@ abstract public class PipelineJob extends Job implements Serializable
         try
         {
             String className = PipelineJob.getClassNameFromJson(serialized);
-            Object job = PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, Class.forName(className));
-            if (job instanceof PipelineJob)
-                return (PipelineJob) job;
-
-            _log.error("Deserialized object not instance of PipelineJob: " + job.getClass().getName());
+            return PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, (Class<? extends PipelineJob>)Class.forName(className));
         }
         catch (ClassNotFoundException e)
         {
@@ -1954,28 +1950,24 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public abstract static class TestSerialization extends org.junit.Assert
     {
-        public void testSerialize(Object job, @Nullable Logger log)
+        public void testSerialize(PipelineJob job, @Nullable Logger log)
         {
             PipelineStatusFile.JobStore jobStore = PipelineJobService.get().getJobStore();
             try
             {
                 if (null != log)
                     log.info("Hi Logger is here!");
-                String json = jobStore.serializeToJSON(job);
+                String json = jobStore.serializeToJSON(job, true);
                 if (null != log)
                     log.info(json);
-                Object job2 = jobStore.deserializeFromJSON(json, job.getClass());
+                PipelineJob job2 = jobStore.deserializeFromJSON(json, job.getClass());
                 if (null != log)
                     log.info(job2.toString());
 
-                if (job instanceof PipelineJob)
+                List<String> errors = job.compareJobs(job2);
+                if (!errors.isEmpty())
                 {
-                    assert (job2 instanceof PipelineJob);
-                    List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)job2);
-                    if (!errors.isEmpty())
-                    {
-                        fail("Pipeline objects don't match: " + StringUtils.join(errors, ","));
-                    }
+                    fail("Pipeline objects don't match: " + StringUtils.join(errors, ","));
                 }
             }
             catch (Exception e)
