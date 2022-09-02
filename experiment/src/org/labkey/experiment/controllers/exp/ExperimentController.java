@@ -3454,7 +3454,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    public static class DataOperationConfirmationForm extends OperationConfirmationForm
+    public static class DataOperationConfirmationForm extends DataViewSelectionForm
     {
         private ExpDataImpl.DataOperations _dataOperation;
 
@@ -3469,7 +3469,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class OperationConfirmationForm extends ViewForm
+    public static class DataViewSelectionForm extends ViewForm
     {
         private String _dataRegionSelectionKey;
         private Set<Integer> _rowIds;
@@ -3539,7 +3539,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class MaterialOperationConfirmationForm extends OperationConfirmationForm
+    public static class MaterialOperationConfirmationForm extends DataViewSelectionForm
     {
         private SampleTypeService.SampleOperations _sampleOperation;
 
@@ -7468,6 +7468,48 @@ public class ExperimentController extends SpringActionController
             _genId = genId;
         }
 
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    {
+        @Override
+        public void validateForm(CrossFolderSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
+            if (!"sample".equalsIgnoreCase(form.getDataType()) && "data".equalsIgnoreCase(form.getDataType()))
+                errors.reject(ERROR_REQUIRED, "Data type (sample or data) must be specified.");
+        }
+
+        @Override
+        public Object execute(CrossFolderSelectionForm form, BindException errors)
+        {
+            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), "sample".equalsIgnoreCase(form.getDataType()), getContainer());
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("currentFolderSelectionCount", result.first);
+            resp.put("crossFolderSelectionCount", result.second);
+
+            return success(resp);
+        }
+    }
+
+    public static class CrossFolderSelectionForm extends DataViewSelectionForm
+    {
+        private String _dataType;
+
+        public String getDataType()
+        {
+            return _dataType;
+        }
+
+        public void setDataType(String dataType)
+        {
+            _dataType = dataType;
+        }
     }
 
 }

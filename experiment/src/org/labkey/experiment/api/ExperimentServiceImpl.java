@@ -8209,6 +8209,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
+    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, boolean isSample, Container container)
+    {
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        TableInfo tableInfo = isSample ? ExperimentService.get().getTinfoMaterial() : ExperimentService.get().getTinfoData();
+        SQLFragment currentFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container = ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(currentFolderCountSql, rowIds);
+        int currentFolderSelectionCount = new SqlSelector(expSchema, currentFolderCountSql).getArrayList(Integer.class).get(0);
+
+        SQLFragment crossFolderCountSql = new SQLFragment()
+                .append(" SELECT COUNT(*) FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container <> ? ")
+                .add(container.getId())
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(crossFolderCountSql, rowIds);
+        int crossFolderSelectionCount = new SqlSelector(expSchema, crossFolderCountSql).getArrayList(Integer.class).get(0);
+
+        return new Pair<>(currentFolderSelectionCount, crossFolderSelectionCount);
+    }
+
     public static class TestCase extends Assert
     {
         @Before

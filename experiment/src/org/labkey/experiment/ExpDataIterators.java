@@ -37,6 +37,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.RequiredValidator;
+import org.labkey.api.dataiterator.CrossFolderRecordDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -1769,10 +1770,14 @@ public class ExpDataIterators
             if (!context.getInsertOption().mergeRows)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
+            Map<String,Object> extraKeyValueMap = null;
             if (isSample)
             {
                 if (context.getInsertOption().mergeRows)
                 {
+                    extraKeyValueMap = new CaseInsensitiveHashMap<>();
+                    extraKeyValueMap.put("materialSourceId", ((ExpMaterialTableImpl) _expTable).getSampleType().getRowId());
+
                     keyColumns.add("materialSourceId");
                     keyColumns.add("name");
                     propertyKeyColumns.add("name");
@@ -1784,44 +1789,51 @@ public class ExpDataIterators
             }
             else if (context.getInsertOption().mergeRows)
             {
+                extraKeyValueMap = new CaseInsensitiveHashMap<>();
+                extraKeyValueMap.put("classid", ((ExpDataClassDataTableImpl) _expTable).getDataClass().getRowId());
+
                 keyColumns.add("classid");
                 keyColumns.add("name");
             }
 
+            // Check if record exist in related folder as cross folder merge is not supported
+            // this is a NOOP unless we are merging and QueryService.get().isProductProjectsEnabled()
+            DataIteratorBuilder step1 = CrossFolderRecordDataIterator.createBuilder(step0, _expTable, Set.of(ExpDataTable.Column.Name.toString()), extraKeyValueMap);
+
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging and detailed logging is enabled
-            DataIteratorBuilder step1 = ExistingRecordDataIterator.createBuilder(step0, _expTable, isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString()), true);
+            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString()), true);
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step1, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
                     .setCommitRowsBeforeContinuing(true));
 
             // pass in remap columns to help reconcile columns that may be aliased in the virtual table
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
+            DataIteratorBuilder step4 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step3, _propertiesTable, _container)
                     .setKeyColumns(propertyKeyColumns.isEmpty() ? keyColumns : propertyKeyColumns)
                     .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(PropertyService.get().findVocabularyProperties(_container, colNameMap.keySet()))
                     .setRemapSchemaColumns(((UpdateableTableInfo)_expTable).remapSchemaColumns()));
 
-            DataIteratorBuilder step4 = step3;
+            DataIteratorBuilder step5 = step4;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
             {
-                step4 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample, _dataTypeObject, _container));
+                step5 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step4, _user, isSample, _dataTypeObject, _container));
             }
 
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, _dataTypeObject, false));
+            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step6 = step5;
+            DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
-                step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
-            return LoggingDataIterator.wrap(step6.getDataIterator(context));
+            return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
 }
