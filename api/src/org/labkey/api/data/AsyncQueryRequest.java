@@ -16,7 +16,9 @@
 
 package org.labkey.api.data;
 
+import datadog.trace.api.CorrelationIdentifier;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -98,9 +100,14 @@ public class AsyncQueryRequest<T>
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 
+        String traceId = CorrelationIdentifier.getTraceId();
+
         Runnable runnable = () -> {
             if (current != null)
                  MemTracker.get().startProfiler("async query");
+            
+            ThreadContext.put("dd.trace_id", traceId);
+            ThreadContext.put("dd.span_id", CorrelationIdentifier.getSpanId());
 
             qs.copyEnvironment(state);
             try
@@ -116,6 +123,8 @@ public class AsyncQueryRequest<T>
                 if (current != null)
                     MemTracker.get().merge(current);
                 qs.clearEnvironment();
+                ThreadContext.remove("dd.trace_id");
+                ThreadContext.remove("dd.span_id");
             }
         };
 

@@ -15,8 +15,10 @@
  */
 package org.labkey.api.view;
 
+import datadog.trace.api.CorrelationIdentifier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -183,6 +185,9 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
+        ThreadContext.put("dd.trace_id", CorrelationIdentifier.getTraceId());
+        ThreadContext.put("dd.span_id", CorrelationIdentifier.getSpanId());
+
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
         try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
         {
@@ -236,6 +241,12 @@ public class ViewServlet extends HttpServlet
                 _log.debug("<< " + request.getMethod());
             }
         }
+        finally
+        {
+            ThreadContext.remove("dd.trace_id");
+            ThreadContext.remove("dd.span_id");
+        }
+
     }
 
 
