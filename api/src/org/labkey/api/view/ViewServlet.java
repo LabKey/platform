@@ -185,8 +185,9 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> " + description);
         }
 
-        ThreadContext.put("dd.trace_id", CorrelationIdentifier.getTraceId());
-        ThreadContext.put("dd.span_id", CorrelationIdentifier.getSpanId());
+        // Connect log messages with the active trace and span
+        ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+        ThreadContext.put(CorrelationIdentifier.getSpanId(), CorrelationIdentifier.getSpanId());
 
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
         try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
@@ -243,8 +244,8 @@ public class ViewServlet extends HttpServlet
         }
         finally
         {
-            ThreadContext.remove("dd.trace_id");
-            ThreadContext.remove("dd.span_id");
+            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
 
     }

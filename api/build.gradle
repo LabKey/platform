@@ -177,13 +177,39 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.datadoghq:dd-trace-api:0.108.1",
+            "com.datadoghq:dd-trace-api:${datadogVersion}",
             "Datadog Trace API client",
             "Datadog",
             "http://www.datadoghq.com/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Integrations to pass trace_ids and other info to Datadog",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "io.opentracing:opentracing-api:${openTracingVersion}",
+            "OpenTracing Java API",
+            "OpenTracing",
+            "https://opentracing.io",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Standard telemetry/tracing APIs, used with Datadog",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "io.opentracing:opentracing-util:${openTracingVersion}",
+            "OpenTracing Java Util",
+            "OpenTracing",
+            "https://opentracing.io",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Standard telemetry/tracing APIs, used with Datadog",
         )
     )
 
