@@ -87,6 +87,11 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
+            else if ("Recipe".equals(prefix))
+            {
+                String recipeName = suffix.substring(0, suffix.indexOf(":"));
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Recipe." + recipeName + ":Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION, lsid.getObjectId(), lsid.getVersion());
+            }
             else if (MATERIAL_PREFIX_PLACEHOLDER_SUFFIX.equals(lsid.getObjectId()))
             {
                 /*
@@ -100,7 +105,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                     id = suffix.substring(ind);
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
             }
-            else if (("Sample".equals(prefix) || "Material".equals(prefix)))
+            else if (("Sample".equals(prefix) || "Material".equals(prefix) || ("Data".equals(prefix) && !lsid.getObjectId().contains("%2F"))))
             {
                 String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
@@ -144,6 +149,11 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             else if ("ProtocolApplication".equals(prefix))
             {
                 return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
+            }
+            else if ("Recipe".equals(prefix))
+            {
+                String recipeName = suffix.substring(0, suffix.indexOf(":"));
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Recipe." + recipeName + ":Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION, lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Sample".equals(prefix))
             {
