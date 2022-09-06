@@ -2993,8 +2993,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return emptyList();
     }
 
-    @Nullable @Override
-    public String getObjectReferenceDescription(Class referencedClass)
+    @Override
+    public @NotNull String getObjectReferenceDescription(Class referencedClass)
     {
         if (referencedClass != ExpRun.class)
             return "derived data or sample dependencies";
@@ -7286,28 +7286,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         _columnExporters.add(exporter);
     }
 
-    public boolean shouldExportColumn(ColumnInfo col)
+    @Override
+    public List<ColumnExporter> getColumnExporters()
     {
-        for (ColumnExporter exporter : _columnExporters)
-        {
-            if (!exporter.shouldExportColumn(col))
-                return false;
-        }
-        return true;
+        return _columnExporters;
     }
 
-    public ColumnExporter getColumnExporter(TableInfo tInfo, ColumnInfo col, FolderExportContext ctx)
-    {
-        // TODO need a way to establish precedence
-        for (ColumnExporter exporter : _columnExporters)
-        {
-            Collection<ColumnInfo> columns = exporter.getExportColumns(tInfo, col, ctx);
-            if (columns != null)
-                return exporter;
-        }
-        return null;
-    }
-
+    @Override
     @NotNull
     public List<ObjectReferencer> getObjectReferencers()
     {

@@ -727,8 +727,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerObjectReferencer(ObjectReferencer referencer);
 
-    void registerColumnExporter(ColumnExporter exporer);
-    ColumnExporter getColumnExporter(TableInfo tInfo, ColumnInfo col, FolderExportContext ctx);
+    void registerColumnExporter(ColumnExporter exporter);
+
+    List<ColumnExporter> getColumnExporters();
 
     @NotNull
     List<ObjectReferencer> getObjectReferencers();

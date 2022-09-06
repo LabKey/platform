@@ -9,7 +9,7 @@ import java.util.Collection;
 
 public interface ColumnExporter
 {
-    boolean shouldExportColumn(ColumnInfo col);
+    boolean shouldExcludeColumn(TableInfo tableInfo, ColumnInfo col, FolderExportContext context);
 
     @Nullable Collection<ColumnInfo> getExportColumns(TableInfo tinfo, ColumnInfo col, FolderExportContext ctx);
 
