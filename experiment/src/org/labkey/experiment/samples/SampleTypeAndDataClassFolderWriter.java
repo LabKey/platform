@@ -1,5 +1,7 @@
 package org.labkey.experiment.samples;
 
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
@@ -8,12 +10,15 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -30,6 +35,7 @@ import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarExportContext;
+import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -37,6 +43,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -46,11 +54,13 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
@@ -75,7 +85,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
+public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter implements ColumnExporter
 {
     public static final String DEFAULT_DIRECTORY = "sample-types";
     public static final String XAR_TYPES_NAME = "sample_types.xar";             // the file which contains the sample type and data class definitions
@@ -87,6 +97,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
     private PHI _exportPhiLevel = PHI.NotPHI;
     private XarExportContext _xarCtx;
+    private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -187,11 +198,11 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
-        LSIDRelativizer.RelativizedLSIDs relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
+        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {
-            XarExporter exporter = new XarExporter(relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, typesSelection, ctx.getUser(), XAR_TYPES_XML_NAME, ctx.getLogger());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_TYPES_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -201,7 +212,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         // create the XAR which contains any derivation protocol runs
         if (exportRuns)
         {
-            XarExporter exporter = new XarExporter(relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(_relativizedLSIDs, runsSelection, ctx.getUser(), XAR_RUNS_XML_NAME, ctx.getLogger());
             try (OutputStream fOut = xarDir.getOutputStream(XAR_RUNS_NAME))
             {
                 exporter.writeAsArchive(fOut);
@@ -209,13 +220,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
 
         // write the sample type data as .tsv files
-        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir, relativizedLSIDs);
+        writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
 
         // write the data class data as .tsv files
-        writeDataClassDataFiles(dataClasses, ctx, xarDir, relativizedLSIDs);
+        writeDataClassDataFiles(dataClasses, ctx, xarDir);
     }
 
-    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir) throws Exception
     {
         // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
@@ -235,7 +246,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
                     Sort sort = new Sort(FieldKey.fromParts("RowId"));
 
-                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
+                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo);
 
                     if (!columns.isEmpty())
                         writeTsv(tinfo, columns, filter, sort, dir, SAMPLE_TYPE_PREFIX + sampleType.getName());
@@ -246,7 +257,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         }
     }
 
-    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
+    private ColumnExporter getColumnExporter(TableInfo tInfo, ColumnInfo col, FolderExportContext ctx)
+    {
+        ColumnExporter exporter = ExperimentService.get().getColumnExporter(tInfo, col, ctx) ;
+        return exporter == null ? this : exporter;
+    }
+
+    private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir) throws Exception
     {
         // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
@@ -257,7 +274,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 TableInfo tinfo = userSchema.getTable(dataClass.getName());
                 if (tinfo != null)
                 {
-                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo, relativizedLSIDs);
+                    Collection<ColumnInfo> columns = getColumnsToExport(ctx, tinfo);
 
                     if (!columns.isEmpty())
                     {
@@ -323,7 +340,92 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         return columns;
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(FolderExportContext ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)
+    @Override
+    public boolean shouldExportColumn(ColumnInfo col)
+    {
+        // don't include sample state here so the sample type data and then all related
+        // runs, storage info, etc. can be imported without sample state restrictions.
+        // SampleState is exported and imported from a separate file.
+        return !ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName());
+    }
+
+    @Override
+    public Collection<ColumnInfo> getExportColumns(TableInfo tinfo, ColumnInfo col, FolderExportContext ctx)
+    {
+        if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
+        {
+            // substitute the comment value for the lsid lookup value
+            FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
+            Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
+            return Collections.singletonList(new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey)));
+        }
+        else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
+        {
+            MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
+
+            if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+                aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
+            else
+                aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
+
+            return Collections.singletonList(aliasCol);
+        }
+        else if ("Components".equalsIgnoreCase(col.getName()) && tinfo.getName().equalsIgnoreCase("Molecule"))
+        {
+            MutableColumnInfo componentsCol = WrappedColumnInfo.wrap(col);
+
+            componentsCol.setDisplayColumnFactory(colInfo -> new MoleculeComponentDataColumn(colInfo, ctx.getUser()));
+            return Collections.singletonList(componentsCol);
+        }
+        else if (col.getFk() instanceof MultiValuedForeignKey)
+        {
+            MutableColumnInfo multiValueCol = WrappedColumnInfo.wrap(col);
+            multiValueCol.setDisplayColumnFactory(colInfo -> new ExportMultiValuedLookupColumn(col));
+            return Collections.singletonList(multiValueCol);
+            // output json array???
+            // skip multi-value columns
+            // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
+            // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
+            // CONSIDER: Alternate strategy would be to export the lookup target values?
+        }
+        else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
+        {
+            // In order to reimport Aliquots, the AliquotedFrom field, which is the
+            // name of the aliquot's parent, must be present.  We get the name from the LSID.
+            return Collections.singletonList(getAliquotedFromNameColumn(tinfo));
+        }
+        else if (col.isKeyField() ||
+                ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
+                (col.isUserEditable() && !col.isHidden() && !col.isReadOnly()))
+        {
+            MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+            // Relativize the LSID column or any column with LSID values (e.g. MoleculeSet.intendedMoleculeLsid)
+            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || (col.getName().toLowerCase().endsWith("lsid") && col.isStringType() && col.getScale() == 300))
+            {
+                wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, _relativizedLSIDs));
+            }
+            else
+            {
+                wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+            }
+            List<ColumnInfo> columns = new ArrayList<>();
+            columns.add( wrappedCol);
+
+            // If the column is MV enabled, export the data in the indicator column as well
+            if (col.isMvEnabled())
+            {
+                ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
+                if (null == mvIndicator)
+                    ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
+                else
+                    columns.add(mvIndicator);
+            }
+            return columns;
+        }
+        return null;
+    }
+
+    private Collection<ColumnInfo> getColumnsToExport(FolderExportContext ctx, TableInfo tinfo)
     {
         Map<FieldKey, ColumnInfo> columns = new LinkedHashMap<>();
         Set<PropertyStorageSpec> baseProps = tinfo.getDomainKind().getBaseProperties(tinfo.getDomain());
@@ -336,79 +438,97 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             if (!isExportable(col))
                 continue;
 
+            ColumnExporter columnExporter = getColumnExporter(tinfo, col, ctx);
+
             if ((basePropNames.contains(col.getName())
                     && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(col.getName())
                     && !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()))
-                    || ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(col.getName())
-                    // don't include sample state here so the sample type data and then all related
-                    // runs, storage info, etc. can be imported without sample state restrictions.
-                    // SampleState is exported and imported from a separate file.
+                    || !columnExporter.shouldExportColumn(col)
             )
             {
                 continue;
             }
 
-            if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
+            Collection<ColumnInfo> exportColumns = columnExporter.getExportColumns(tinfo, col, ctx);
+            if (exportColumns != null)
             {
-                // substitute the comment value for the lsid lookup value
-                FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
-                Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
-                ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));
+                exportColumns.forEach(exportCol -> {
+                    columns.put(exportCol.getFieldKey(), exportCol);
+                });
+            }
 
-                columns.put(flagAlias.getFieldKey(), flagAlias);
-            }
-            else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
-            {
-                MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
-
-                if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-                    aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
-                else
-                    aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
-
-                columns.put(aliasCol.getFieldKey(), aliasCol);
-            }
-            else if (col.getFk() instanceof MultiValuedForeignKey)
-            {
-                // skip multi-value columns
-                // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
-                // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
-                // CONSIDER: Alternate strategy would be to export the lookup target values?
-                ctx.getLogger().info("Skipping multi-value column: " + col.getName());
-            }
-            else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
-            {
-                // In order to reimport Aliquots, the AliquotedFrom field, which is the
-                // name of the aliquot's parent, must be present.  We get the name from the LSID.
-                ColumnInfo wrappedCol = getAliquotedFromNameColumn(tinfo);
-                columns.put(col.getFieldKey(), wrappedCol);
-            }
-            else if (col.isKeyField() ||
-                    ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
-                    (col.isUserEditable() && !col.isHidden() && !col.isReadOnly()))
-            {
-                MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
-                // Relativize the LSID column or any column with LSID values (e.g. MoleculeSet.intendedMoleculeLsid)
-                if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || (col.getName().toLowerCase().endsWith("lsid") && col.isStringType() && col.getScale() == 300))
-                {
-                    wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, relativizedLSIDs));
-                }
-                else
-                {
-                    wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
-                }
-                columns.put(wrappedCol.getFieldKey(), wrappedCol);
-
-                // If the column is MV enabled, export the data in the indicator column as well
-                if (col.isMvEnabled())
-                {
-                    ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
-                    if (null == mvIndicator)
-                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
-                    else
-                        columns.put(mvIndicator.getFieldKey(), mvIndicator);
-                }
-            }
+//            if (ExpMaterialTable.Column.Flag.name().equalsIgnoreCase(col.getName()))
+//            {
+//                // substitute the comment value for the lsid lookup value
+//                FieldKey flagFieldKey = FieldKey.fromParts(ExpMaterialTable.Column.Flag.name(), "Comment");
+//                Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(flagFieldKey));
+//                ColumnInfo flagAlias = new AliasedColumn(tinfo, ExpMaterialTable.Column.Flag.name(), select.get(flagFieldKey));
+//
+//                columns.put(flagAlias.getFieldKey(), flagAlias);
+//            }
+//            else if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(col.getName()))
+//            {
+//                MutableColumnInfo aliasCol = WrappedColumnInfo.wrap(col);
+//
+//                if (tinfo.getSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+//                    aliasCol.setDisplayColumnFactory(new SampleTypeAliasColumnFactory(aliasCol));
+//                else
+//                    aliasCol.setDisplayColumnFactory(new DataClassAliasColumnFactory(aliasCol));
+//
+//                columns.put(aliasCol.getFieldKey(), aliasCol);
+//            }
+//            else if ("Components".equalsIgnoreCase(col.getName()) && tinfo.getName().equalsIgnoreCase("Molecule"))
+//            {
+//                MutableColumnInfo componentsCol = WrappedColumnInfo.wrap(col);
+//
+//                componentsCol.setDisplayColumnFactory(colInfo -> new MoleculeComponentDataColumn(colInfo, ctx.getUser()));
+//                columns.put(componentsCol.getFieldKey(), componentsCol);
+//            }
+//            else if (col.getFk() instanceof MultiValuedForeignKey)
+//            {
+//                MutableColumnInfo multiValueCol = WrappedColumnInfo.wrap(col);
+//                multiValueCol.setDisplayColumnFactory(colInfo -> new ExportMultiValuedLookupColumn(col));
+//                columns.put(multiValueCol.getFieldKey(), multiValueCol);
+//                // output json array???
+//                // skip multi-value columns
+//                // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
+//                // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
+//                // CONSIDER: Alternate strategy would be to export the lookup target values?
+//                ctx.getLogger().info("Skipping multi-value column: " + col.getName());
+//            }
+//            else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
+//            {
+//                // In order to reimport Aliquots, the AliquotedFrom field, which is the
+//                // name of the aliquot's parent, must be present.  We get the name from the LSID.
+//                ColumnInfo wrappedCol = getAliquotedFromNameColumn(tinfo);
+//                columns.put(col.getFieldKey(), wrappedCol);
+//            }
+//            else if (col.isKeyField() ||
+//                    ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(col.getName()) ||
+//                    (col.isUserEditable() && !col.isHidden() && !col.isReadOnly()))
+//            {
+//                MutableColumnInfo wrappedCol = WrappedColumnInfo.wrap(col);
+//                // Relativize the LSID column or any column with LSID values (e.g. MoleculeSet.intendedMoleculeLsid)
+//                if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || (col.getName().toLowerCase().endsWith("lsid") && col.isStringType() && col.getScale() == 300))
+//                {
+//                    wrappedCol.setDisplayColumnFactory(colInfo -> new ExportLsidDataColumn(colInfo, _relativizedLSIDs));
+//                }
+//                else
+//                {
+//                    wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
+//                }
+//                columns.put(wrappedCol.getFieldKey(), wrappedCol);
+//
+//                // If the column is MV enabled, export the data in the indicator column as well
+//                if (col.isMvEnabled())
+//                {
+//                    ColumnInfo mvIndicator = tinfo.getColumn(col.getMvColumnName());
+//                    if (null == mvIndicator)
+//                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("MV indicator column not found: " + tinfo.getName() + "|" + col.getMvColumnName()));
+//                    else
+//                        columns.put(mvIndicator.getFieldKey(), mvIndicator);
+//                }
+//            }
         }
         return columns.values();
     }
@@ -474,6 +594,77 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         return col.getPHI().isExportLevelAllowed(_exportPhiLevel);
     }
 
+    private static class MoleculeComponentDataColumn extends DataColumn
+    {
+        private static final Logger LOG = LogHelper.getLogger(MoleculeComponentDataColumn.class, "Data column used for exporting molecule components");
+        private final User _user;
+        private final ColumnInfo _lookupCol;
+        public MoleculeComponentDataColumn(ColumnInfo col, User user)
+        {
+            super(col);
+            _user = user;
+            BaseColumnInfo lookupCol = null;
+
+            // Retrieve the value column so it can be used when rendering json or tsv values.
+            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)col.getFk();
+            ColumnInfo childKey = mvfk.createJunctionLookupColumn(col);
+            if (childKey != null && childKey.getFk() != null)
+            {
+                ForeignKey childKeyFk = childKey.getFk();
+                lookupCol = (BaseColumnInfo)childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
+                if (lookupCol == null)
+                {
+                    LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaKey() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
+                }
+                else
+                {
+                    // Remove the intermediate junction table from the FieldKey
+                    lookupCol.setFieldKey(new FieldKey(col.getFieldKey(), lookupCol.getFieldKey().getName()));
+                }
+            }
+
+            _lookupCol = lookupCol;
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            Object boundValue = getBoundColumn().getValue(ctx);
+            ListDefinition listDef = ListService.get().getList(ctx.getContainer(), "MoleculeSequenceJunction");
+            if (listDef == null)
+                return null;
+            TableInfo listTable = listDef.getTable(_user);
+            if (listTable == null)
+                return null;
+
+            SQLFragment sql = new SQLFragment("SELECT L.stoichiometry, D.name, DC.name as DataClassName FROM ").append(listTable, "L")
+                    .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "D")
+                    .append(" ON L.componentLsid = D.lsid")
+                    .append(" JOIN ").append(ExperimentService.get().getTinfoDataClass(), "DC")
+                    .append(" ON DC.rowId = D.classId")
+                    .append(" WHERE L.moleculeLsid = ?")
+                    .add(boundValue);
+            SqlSelector selector = new SqlSelector(ExperimentService.get().getSchema(), sql);
+            List<Map<String, Object>> ret = new ArrayList<>();
+            selector.mapStream().forEach(map -> {
+                Map<String, Object> row = new HashMap<>();
+                row.put("type", map.get("DataClassName").equals("NucSequence") ? "nucleotide" : "protein");
+                row.put("stoichiometry", map.get("stoichiometry"));
+                row.put("name", map.get("name"));
+                ret.add(row);
+            });
+
+//
+//            SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
+//            filter.addCondition(FieldKey.fromParts("moleculeLsid"), boundValue);
+//            TableSelector tSelector = new TableSelector(listTable, filter, null);
+//            // select all values from the junction table where the molecule is the current molecule
+//            // [{type: protein, name: PS-17, stoichiometry: 2}, {type: protein, name: PS-18, stoichiometry: 2}]
+//            ret = new JSONArray( tSelector.getMapCollection());
+            return new JSONArray(ret);
+        }
+    }
+
     private static class SampleTypeAliasColumnFactory extends AbstractAliasColumnFactory
     {
         public SampleTypeAliasColumnFactory(ColumnInfo aliasColumn)
@@ -510,7 +701,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private abstract static class AbstractAliasColumnFactory implements DisplayColumnFactory
     {
-        private ColumnInfo _aliasColumn;
+        private final ColumnInfo _aliasColumn;
 
         public AbstractAliasColumnFactory(ColumnInfo aliasColumn)
         {
@@ -572,6 +763,26 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         {
             return getValue(ctx);
         }
+    }
+
+    private static class ExportMultiValuedLookupColumn extends ExportDataColumn
+    {
+        private ExportMultiValuedLookupColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+//        public ExportMultiValuedLookupColumn(DisplayColumn dc)
+//        {
+//            super(dc);
+//        }
+//
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            return new JSONArray(new MultiValuedDisplayColumn(getBoundColumn().getRenderer(), true).getTsvFormattedValues(ctx));
+        }
+
     }
 
     // similar to XarExporter.relativizeLSIDPropertyValue but for columns

@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -221,6 +222,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private final Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
     private final Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
     private final List<ObjectReferencer> _objectReferencers = new ArrayList<>();
+    private final List<ColumnExporter> _columnExporters = new ArrayList<>();
 
     private final List<QueryViewProvider<ExpRun>> _runInputsQueryViews = new CopyOnWriteArrayList<>();
     private final List<QueryViewProvider<ExpRun>> _runOutputsQueryViews = new CopyOnWriteArrayList<>();
@@ -7276,6 +7278,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void registerObjectReferencer(ObjectReferencer referencer)
     {
         _objectReferencers.add(referencer);
+    }
+
+    @Override
+    public void registerColumnExporter(ColumnExporter exporter)
+    {
+        _columnExporters.add(exporter);
+    }
+
+    public boolean shouldExportColumn(ColumnInfo col)
+    {
+        for (ColumnExporter exporter : _columnExporters)
+        {
+            if (!exporter.shouldExportColumn(col))
+                return false;
+        }
+        return true;
+    }
+
+    public ColumnExporter getColumnExporter(TableInfo tInfo, ColumnInfo col, FolderExportContext ctx)
+    {
+        // TODO need a way to establish precedence
+        for (ColumnExporter exporter : _columnExporters)
+        {
+            Collection<ColumnInfo> columns = exporter.getExportColumns(tInfo, col, ctx);
+            if (columns != null)
+                return exporter;
+        }
+        return null;
     }
 
     @NotNull
