@@ -381,14 +381,11 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         }
         else if (col.getFk() instanceof MultiValuedForeignKey)
         {
-            MutableColumnInfo multiValueCol = WrappedColumnInfo.wrap(col);
-            multiValueCol.setDisplayColumnFactory(colInfo -> new ExportMultiValuedLookupColumn(col));
-            return Collections.singletonList(multiValueCol);
-            // output json array???
             // skip multi-value columns
             // NOTE: This assumes that we are exporting the junction table and lookup target tables.  Is that ok?
             // NOTE: This needs to happen after the Alias column is handled since it has a MultiValuedForeignKey.
             // CONSIDER: Alternate strategy would be to export the lookup target values?
+            ctx.getLogger().info("Skipping multi-value column: " + col.getName());
         }
         else if (ExpMaterialTable.Column.AliquotedFromLSID.name().equalsIgnoreCase(col.getName()))
         {
@@ -411,7 +408,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
                 wrappedCol.setDisplayColumnFactory(ExportDataColumn::new);
             }
             columns = new ArrayList<>();
-            columns.add( wrappedCol);
+            columns.add(wrappedCol);
 
             // If the column is MV enabled, export the data in the indicator column as well
             if (col.isMvEnabled())
@@ -519,77 +516,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     private boolean isExportable(ColumnInfo col)
     {
         return col.getPHI().isExportLevelAllowed(_exportPhiLevel);
-    }
-
-    private static class MoleculeComponentDataColumn extends DataColumn
-    {
-        private static final Logger LOG = LogHelper.getLogger(MoleculeComponentDataColumn.class, "Data column used for exporting molecule components");
-        private final User _user;
-        private final ColumnInfo _lookupCol;
-        public MoleculeComponentDataColumn(ColumnInfo col, User user)
-        {
-            super(col);
-            _user = user;
-            BaseColumnInfo lookupCol = null;
-
-            // Retrieve the value column so it can be used when rendering json or tsv values.
-            MultiValuedForeignKey mvfk = (MultiValuedForeignKey)col.getFk();
-            ColumnInfo childKey = mvfk.createJunctionLookupColumn(col);
-            if (childKey != null && childKey.getFk() != null)
-            {
-                ForeignKey childKeyFk = childKey.getFk();
-                lookupCol = (BaseColumnInfo)childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
-                if (lookupCol == null)
-                {
-                    LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaKey() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");
-                }
-                else
-                {
-                    // Remove the intermediate junction table from the FieldKey
-                    lookupCol.setFieldKey(new FieldKey(col.getFieldKey(), lookupCol.getFieldKey().getName()));
-                }
-            }
-
-            _lookupCol = lookupCol;
-        }
-
-        @Override
-        public Object getValue(RenderContext ctx)
-        {
-            Object boundValue = getBoundColumn().getValue(ctx);
-            ListDefinition listDef = ListService.get().getList(ctx.getContainer(), "MoleculeSequenceJunction");
-            if (listDef == null)
-                return null;
-            TableInfo listTable = listDef.getTable(_user);
-            if (listTable == null)
-                return null;
-
-            SQLFragment sql = new SQLFragment("SELECT L.stoichiometry, D.name, DC.name as DataClassName FROM ").append(listTable, "L")
-                    .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "D")
-                    .append(" ON L.componentLsid = D.lsid")
-                    .append(" JOIN ").append(ExperimentService.get().getTinfoDataClass(), "DC")
-                    .append(" ON DC.rowId = D.classId")
-                    .append(" WHERE L.moleculeLsid = ?")
-                    .add(boundValue);
-            SqlSelector selector = new SqlSelector(ExperimentService.get().getSchema(), sql);
-            List<Map<String, Object>> ret = new ArrayList<>();
-            selector.mapStream().forEach(map -> {
-                Map<String, Object> row = new HashMap<>();
-                row.put("type", map.get("DataClassName").equals("NucSequence") ? "nucleotide" : "protein");
-                row.put("stoichiometry", map.get("stoichiometry"));
-                row.put("name", map.get("name"));
-                ret.add(row);
-            });
-
-//
-//            SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
-//            filter.addCondition(FieldKey.fromParts("moleculeLsid"), boundValue);
-//            TableSelector tSelector = new TableSelector(listTable, filter, null);
-//            // select all values from the junction table where the molecule is the current molecule
-//            // [{type: protein, name: PS-17, stoichiometry: 2}, {type: protein, name: PS-18, stoichiometry: 2}]
-//            ret = new JSONArray( tSelector.getMapCollection());
-            return new JSONArray(ret);
-        }
     }
 
     private static class SampleTypeAliasColumnFactory extends AbstractAliasColumnFactory
