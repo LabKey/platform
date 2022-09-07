@@ -410,6 +410,7 @@ public class ViewServlet extends HttpServlet
                 ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + paramName);
                 if (null != expand)
                 {
+                    expand = expand.clone();
                     // any parameters on the URL override those stored in the last filter:
                     for (Pair<String, String> parameter : url.getParameters())
                     {
