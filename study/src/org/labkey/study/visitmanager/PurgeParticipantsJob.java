@@ -1,5 +1,6 @@
 package org.labkey.study.visitmanager;
 
+import datadog.trace.api.Trace;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -110,6 +111,7 @@ public class PurgeParticipantsJob extends PipelineJob
             _error = error;
         }
 
+        @Trace
         public void purgeParticipants()
         {
             // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
