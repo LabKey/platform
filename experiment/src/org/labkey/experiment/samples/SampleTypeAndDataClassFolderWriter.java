@@ -1,6 +1,5 @@
 package org.labkey.experiment.samples;
 
-import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -10,14 +9,12 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
@@ -43,8 +40,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -54,13 +49,11 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
@@ -98,6 +91,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     private PHI _exportPhiLevel = PHI.NotPHI;
     private XarExportContext _xarCtx;
     private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
+    public static final List<String> EXCLUDED_TABLES = List.of("MoleculeSet", "MolecularSpecies");
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -265,6 +259,9 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         {
             for (ExpDataClass dataClass : dataClasses)
             {
+                if (EXCLUDED_TABLES.contains(dataClass.getName()))
+                    continue;
+
                 TableInfo tinfo = userSchema.getTable(dataClass.getName());
                 if (tinfo != null)
                 {

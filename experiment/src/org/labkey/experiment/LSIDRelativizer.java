@@ -105,17 +105,22 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                     id = suffix.substring(ind);
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution+ ".${XarJobId}" + id, lsid.getObjectId(), lsid.getVersion());
             }
-            else if (("Sample".equals(prefix) || "Material".equals(prefix) || ("Data".equals(prefix) && !lsid.getObjectId().contains("%2F"))))
+            else if ("Sample".equals(prefix) || "Material".equals(prefix))
             {
                 String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
-            else if ("Data".equals(prefix))
-            {
-                // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
-                // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
-                // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
-                return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
+            else if ("Data".equals(prefix))  {
+                if (lsid.getObjectId().contains("%2F"))
+                {
+                    // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
+                    return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
+                }
+                else
+                {
+                    String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
+                }
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
