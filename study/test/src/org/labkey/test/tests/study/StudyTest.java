@@ -803,7 +803,7 @@ public class StudyTest extends StudyBaseTest
             clickButton("Manage");
             DatasetDesignerPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
             editDatasetPage.getFieldsPanel()
-                    .addField(new FieldDefinition("Bad Name").setLabel("Bad Name").setType(FieldDefinition.ColumnType.String));
+                    .addField(new FieldDefinition("Bad Name", FieldDefinition.ColumnType.String).setLabel("Bad Name"));
             editDatasetPage.clickSave();
             new DatasetPropertiesPage(getDriver())
                 .clickViewData();
@@ -1287,7 +1287,7 @@ public class StudyTest extends StudyBaseTest
                 .clickEditDefinition();
         editDatasetPage
                 .getFieldsPanel()
-                .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
+                .addField(new FieldDefinition("VisitDay", FieldDefinition.ColumnType.Integer).setLabel("VisitDay"));
         editDatasetPage.openAdvancedDatasetSettings()
                 .selectVisitDateColumn("DEMdt")
                 .clickApply()
