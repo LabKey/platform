@@ -92,6 +92,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                     .filter(
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
+                                && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
+                                && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
                             && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
                     )
                     .collect(Collectors.toList());
@@ -115,7 +117,10 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                     .stream()
                     .filter(protocol ->
                             !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME) &&
-                                    !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME))
+                                    !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME)
+                            && !"recipe".equalsIgnoreCase(protocol.getImplementationName())
+                            && !"recipe".equalsIgnoreCase(protocol.getLSIDNamespacePrefix())
+                    )
                     .collect(Collectors.toList());
             // the sm template tasks can make reference to assay designs, so we will put all the SM Job and Task Protocols at the end to assure
             // the assay definitions have already been processed and can be resolved properly.

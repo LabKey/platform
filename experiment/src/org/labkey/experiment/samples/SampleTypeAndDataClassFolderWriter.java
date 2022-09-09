@@ -91,7 +91,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     private PHI _exportPhiLevel = PHI.NotPHI;
     private XarExportContext _xarCtx;
     private LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
-    public static final List<String> EXCLUDED_TABLES = List.of("MoleculeSet", "MolecularSpecies");
+    public static final List<String> EXCLUDED_TYPES = List.of("MoleculeSet", "MolecularSpecies", "MixtureBatches");
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -106,7 +106,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
     @Override
     public boolean show(Container c)
     {
-        // need to always return true so it can be used in a folder template
+        // need to always return true, so it can be used in a folder template
         return true;
     }
 
@@ -136,10 +136,10 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
                 continue;
 
             // ignore sample types that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
+            if ((_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId())) || EXCLUDED_TYPES.contains(sampleType.getName()))
                 continue;
 
-            // filter out non sample type material sources
+            // filter out non-sample type material sources
             Lsid lsid = new Lsid(sampleType.getLSID());
 
             if (sampleTypeLsid.getNamespacePrefix().equals(lsid.getNamespacePrefix()))
@@ -157,7 +157,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, ctx.getUser(), false))
         {
             // ignore data classes that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
+            if ((_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId())) || EXCLUDED_TYPES.contains(dataClass.getName()))
                 continue;
 
             Set<Integer> includedDatas = _xarCtx != null ? _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()) : null;
@@ -259,9 +259,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter impleme
         {
             for (ExpDataClass dataClass : dataClasses)
             {
-                if (EXCLUDED_TABLES.contains(dataClass.getName()))
-                    continue;
-
                 TableInfo tinfo = userSchema.getTable(dataClass.getName());
                 if (tinfo != null)
                 {
