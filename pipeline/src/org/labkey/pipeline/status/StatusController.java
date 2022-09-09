@@ -71,6 +71,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.SpringErrorView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.AnalysisController;
@@ -300,6 +301,7 @@ public class StatusController extends SpringActionController
             if (c.isRoot())
                 gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            WebPartView.renderEndOfBodyScript(getPageConfig(), getViewContext().getResponse());
             return null;
         }
     }
