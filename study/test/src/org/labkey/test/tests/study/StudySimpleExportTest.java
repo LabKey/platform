@@ -139,15 +139,15 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .setName(TEST_DATASET_NAME);
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
-        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt", FieldDefinition.ColumnType.Integer).setLabel("TestInt")
                 .setValidators(List.of(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
                         "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999"))).setRequired(false));
-        fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
+        fieldsEditor.addField(new FieldDefinition("TestString", FieldDefinition.ColumnType.String).setLabel("TestRequiredString")
                 .setRequired(true));
         // Format "TestDate" as "Date"
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
+        fieldsEditor.addField(new FieldDefinition("TestDate", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDate"));
         // "TestDateTime" format will default to date-time
-        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateAndTime));
+        fieldsEditor.addField(new FieldDefinition("TestDateTime", FieldDefinition.ColumnType.DateAndTime).setLabel("TestDateTime"));
         editDatasetPage
             .clickSave()
             .clickViewData()
