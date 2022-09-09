@@ -29,6 +29,8 @@ List apache = [
         "commons-validator:commons-validator:${commonsValidatorVersion}",
         "org.apache.httpcomponents:httpclient:${httpclientVersion}",
         "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
+        "org.apache.httpcomponents.client5:httpclient5:${httpclient5Version}",
+        "org.apache.httpcomponents.core5:httpcore5:${httpcore5Version}",
         "org.apache.poi:poi:${poiVersion}",
         "org.apache.poi:poi-ooxml:${poiVersion}",
         "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
@@ -350,7 +352,7 @@ dependencies {
             "http://hamcrest.org/JavaHamcrest/",
             "New BSD License",
             ExternalDependency.BSD_LICENSE_URL,
-            "Library for writing declartive matches for testing",
+            "Library for writing declarative matches for testing",
         )
     )
 
@@ -371,6 +373,32 @@ dependencies {
         project,
         new ExternalDependency(
             "org.apache.httpcomponents:httpcore:${httpcoreVersion}",
+            "Apache HTTP Core",
+            "Apache",
+            "http://hc.apache.org/httpcomponents-core-ga/index.html",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "HTTP core library, HttpClient dependency",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.httpcomponents.client5:httpclient5:${httpclient5Version}",
+            "Apache HTTP Client",
+            "Apache",
+            "http://hc.apache.org/httpcomponents-client-ga",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "HTTP client for requests of remote servers",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.httpcomponents.core5:httpcore5:${httpcore5Version}",
             "Apache HTTP Core",
             "Apache",
             "http://hc.apache.org/httpcomponents-core-ga/index.html",
